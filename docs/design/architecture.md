@@ -1067,6 +1067,8 @@ ViewModels against the fakes of `APP/fake/` and `:testing`; `AutoLock` with a fa
 
 ### 8.3 Instrumented tests (`:app:connectedDebugAndroidTest` on emulators with Android 7, 9 and 17; every run sets `ANDROID_SERIAL` to its own devices)
 
+A run is checked per device, through `tools/emu/adb.sh --connected` (or `--connected-results` after a run by hand): AGP 9.4.1 reports success when it skips a device it cannot install on, so a run counts only when each serial has a passing report.
+
 - `OsFiles`: write, sync, rename, directory sync; `rename` onto an existing name replaces it (so the check of 4.9 step 8 is needed); each failure of [L-sto] throws.
 - `NativeArgon2id` and `BouncyCastleArgon2id` give the vectors on the device. On API 37 a derivation under Android 17's memory limiter (`adb shell am memory-limiter manual <pid> <MB>`, with the limit just above and just below what Argon2id needs) either succeeds or gives `KdfUnavailable`: never a crash, never "wrong password"; the result is recorded [V-P7].
 - The vectors of 4.13 (A reproduced, A and B opened, through the real codec) and lock.md §4.3 (`MasterPasswordBytes` on API 24's ICU 56 against JDK 25's results) pass on the device (lock.md A5).
