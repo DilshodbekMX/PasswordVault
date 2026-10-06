@@ -1,3 +1,4 @@
 <resources>
-    <string name="app_name">PasswordVault</string>
+    <string name="app_name" translatable="false">PasswordVault</string>
+    <string name="placeholder_body">The app is still being built, so nothing is stored yet. When it is ready, your passwords will stay on this phone only.</string>
 </resources>
