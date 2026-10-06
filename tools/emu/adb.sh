@@ -63,7 +63,8 @@ pv_sleep() { sleep "$1" 2>/dev/null || python3 -c "import time; time.sleep($1)";
 
 # ---- the device registry (written by boot.sh, read by every script) ------------------------
 # One file per device, $PV_REG/emulator-PORT, with key=value lines:
-#   serial port api owner mode(package|integrator|provision) pid booter started log tmpfiles
+#   serial port api avd owner mode(package|integrator|provision) pid (the qemu process, 0 while
+#   starting) booter (the boot.sh process) epoch started log tmpfiles (its overlays in /tmp)
 
 pv_entry_get() { # FILE KEY
     sed -n "s/^$2=//p" "$1" 2>/dev/null | head -n 1
@@ -88,12 +89,17 @@ pv_find_emulator_pid() { # PORT -> prints the pid of the emulator on that consol
 }
 
 pv_entry_alive() { # FILE -> 0 if its emulator runs, or boot.sh is still starting it
-    local f=$1 pid port booter
+    local f=$1 pid port booter epoch cmd
     [ -f "$f" ] || return 1
-    pid=$(pv_entry_get "$f" pid); port=$(pv_entry_get "$f" port); booter=$(pv_entry_get "$f" booter)
+    pid=$(pv_entry_get "$f" pid); port=$(pv_entry_get "$f" port)
     pv_is_emulator_pid "$pid" "$port" && return 0
     if [ -z "$pid" ] || [ "$pid" = 0 ]; then
-        [ -n "$booter" ] && kill -0 "$booter" 2>/dev/null && return 0
+        # Reserved, emulator not started yet: alive while its boot.sh runs, at most 15 minutes
+        # (a pid reused after a reboot must not keep the port forever).
+        booter=$(pv_entry_get "$f" booter); epoch=$(pv_entry_get "$f" epoch)
+        [ -n "$booter" ] && [ -n "$epoch" ] && [ $(( $(date +%s) - epoch )) -lt 900 ] || return 1
+        cmd=$( { tr '\0' ' ' < "/proc/$booter/cmdline"; } 2>/dev/null ) || return 1
+        case "$cmd" in *boot.sh*) return 0 ;; esac
     fi
     return 1
 }

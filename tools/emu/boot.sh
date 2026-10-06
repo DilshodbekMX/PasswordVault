@@ -251,6 +251,7 @@ owner=$(pv_owner)
 mode=$mode
 pid=0
 booter=$$
+epoch=$(date +%s)
 started=$(date -Iseconds)
 log=$PV_LOGS/emulator-$port-$(date +%Y%m%d-%H%M%S).log
 tmpfiles=
@@ -290,8 +291,6 @@ pv_wait_pid() { # PORT -> prints the emulator's pid once it exists (60 s)
     done
     return 1
 }
-
-pv_launcher_focused() { case "$(pv_focus)" in *[Ll]auncher*) return 0 ;; esac; return 1; }
 
 pv_wait_boot() { # TIMEOUT PID -> 0 once booted, unlocked and on the home screen ($PV_SERIAL)
     local deadline=$((SECONDS + $1)) pid=$2 port=${PV_SERIAL#emulator-} v focus stable=0
@@ -391,6 +390,7 @@ pv_reserve_waiting() { # API MODE SLOT-WAIT -> prints the port
 pv_boot() { # API MODE SLOT-WAIT BOOT-TIMEOUT -> prints the serial
     local api=$1 mode=$2 port pid tmp
     pv_base_check "$api" || exit 1
+    find "$PV_LOGS" -maxdepth 1 -name 'emulator-*.log' -mtime +14 -delete 2>/dev/null
     port=$(pv_reserve_waiting "$api" "$mode" "$3") || exit 1
     PV_BOOT_PORT=$port
     trap pv_boot_abort EXIT

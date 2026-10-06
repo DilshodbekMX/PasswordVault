@@ -65,7 +65,13 @@ Exit codes of all scripts: 0 success, 1 failure, 2 usage, 3 refused serial.
   `adb kill-server`. This path cannot be tested by an agent, because no agent may restart the
   server; it was tested only with a device that dropped off by itself (`adb root`).
 - **Stop your devices** when done: `tools/emu/stop.sh --mine`. Stopping throws away everything
-  done on the device; the next boot starts again from the base.
+  done on the device; the next boot starts again from the base. An agent that was cut off
+  leaves its devices running; the next agent in the same worktree is their owner and stops them
+  the same way. The integrator can stop another worktree's devices with
+  `PV_EMU_OWNER=/home/asus/pvwork/<branch> tools/emu/stop.sh --mine`.
+- **Crashes and reboots.** An entry whose emulator is gone is forgotten at the next
+  `boot.sh` (or `stop.sh --stale`), and the overlays a killed emulator left in
+  `/tmp/android-$USER/` are deleted then.
 
 ## Steps in scripts: `needs-debuggable`, `needs-root`, SKIPPED
 
