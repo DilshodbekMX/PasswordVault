@@ -1103,6 +1103,13 @@ R-1 to R-7 of lock.md §15.5 (R-6 as widened in 5.6), and:
 
 **Offline** (a part of `tools/check.sh`): no `INTERNET` in any merged manifest, `aapt2 dump permissions` on the APKs, and a source scan for the classes that open connections: `java.net.URL`, `URLConnection`, `HttpURLConnection`, `HttpsURLConnection`, `Socket`, `ServerSocket`, `DatagramSocket`, `InetAddress`, `java.nio.channels.SocketChannel`, `DatagramChannel`, `WebView`. `java.net.IDN` and `java.net.URI` stay allowed: `WebAddress` uses `IDN` for punycode.
 
+**How the checks are run** (package 0.1). R-4, R-6, R-10, R-11, R-13 and the offline class scan are unit tests (`core/src/test/java/…/core/arch/`, `app/src/test/java/…/arch/`) over the scanner of `:testing` (2.1). They read code this way:
+1. Comments, and the text inside string and character literals, are ignored; the code of a template expression (`${…}`) is code again. So `Text("Toast")` breaks R-13 and not R-11.
+2. R-11's "`.format(` without a `Locale`" does not flag a call on one of our own types or objects, written in UpperCamelCase, other than `String` and `MessageFormat`: `IsoTime.format(ms)` is not flagged, and whatever such a function formats inside is checked where it does. `String.format`, `MessageFormat.format`, `"…".format(…)`, variables and constants are always checked.
+3. R-13's "only inside `VaultTextField`, `VaultSecureField`, `VaultDialog` and `VaultSheet`" is checked per file: a call is allowed in a file of `ui/common` that declares the wrapper.
+
+The checks that are Gradle tasks run with each variant's `assemble`: `buildCheck<Variant>Manifest` (R-1, R-5, R-7, R-9, R-14, and `allowBackup` per variant), `buildCheck<Variant>Apk` (R-2's class in or out of the APK, R-8), `buildCheck<Variant>BuildConfig` (R-2's switches) and `buildCheckNoTrackedBuildOutput` (R-12).
+
 Lint runs with `:core:lintDebug :app:lintDebug`; `:core`'s lint is what checks every JDK call against API 24.
 
 ### 8.6 What the user must check on a real phone
