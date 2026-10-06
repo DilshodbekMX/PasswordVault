@@ -72,5 +72,14 @@ subprojects {
                 fileTree(rootDir.resolve("docs/lab")) { include("*-artifacts/**/*.kt", "*-artifacts/**/*.java") },
             ).withPathSensitivity(PathSensitivity.RELATIVE).withPropertyName("auditedSources")
         }
+        // Any other pv.* property starts a program that runs as a test (the audit above; search's
+        // benchmark and its two converters, build plan 1.2). Such a run is never skipped as up to date
+        // or taken from the build cache: a program may read and write files that are not the task's
+        // inputs and outputs (a converter's draft is written only when it really runs), and a
+        // benchmark must print its numbers every time.
+        if (pv.keys.any { it != "pv.testLocale" }) {
+            outputs.upToDateWhen { false }
+            outputs.doNotCacheIf("a pv.* program run reads and writes files that are not declared") { true }
+        }
     }
 }
