@@ -94,6 +94,8 @@ class AppSourceRulesSamplesTest {
             val s = rememberTextFieldState()
             override fun destroy() = Unit
             val toaster = showToast()
+            Button(onClick = {}) { Text("Toast") }
+            probe("java.nio.file.Files.move") { }
         """
         assertEquals(listOf(1, 3, 4, 5, 6, 7, 8, 9), lines(AppSourceRules.r11Apis, text))
     }

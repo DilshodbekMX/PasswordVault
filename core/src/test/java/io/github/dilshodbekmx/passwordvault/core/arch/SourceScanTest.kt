@@ -99,9 +99,26 @@ class SourceScanTest {
             val f = "%d".format(appLocale, n)
             // val g = "%d".format(n)
             val h = ".format(n)"
+            val i = IsoTime.format(ms)
+            val j = PATTERN.format(n)
+            val k = java.lang.String.format("%d", n)
+            val l = MessageFormat.format("{0}", n)
+            val m = template.format(n)
+            val o = pattern().format(n)
         """.trimIndent()
         val found = scan(listOf(SourceFile("A.kt", text)), listOf(CoreSourceRules.formatWithLocale)).map { it.line }
-        assertEquals(listOf(1, 2), found)
+        assertEquals(listOf(1, 2, 11, 12, 13, 14, 15), found)
+    }
+
+    @Test
+    fun namesInsideLiteralsAreTextButTemplatesAreCode() {
+        val text = """
+            val a = "java.time is API 26"
+            val b = 'j'
+            val c = "now: ${'$'}{java.time.Instant.now()}"
+            val d = ""${'"'}java.time""${'"'}
+        """.trimIndent()
+        assertEquals(listOf(3), lines("A.kt", text))
     }
 
     @Test

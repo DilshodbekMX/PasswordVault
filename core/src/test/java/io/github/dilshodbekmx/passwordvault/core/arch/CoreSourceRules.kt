@@ -44,19 +44,29 @@ object CoreSourceRules {
 
     /**
      * R-11: in :core, `String.format` and `.format(` take a Locale as their first argument, such as
-     * `Locale.ROOT` or a parameter named `locale`. Declarations (`fun String.format(`) are not calls.
+     * `Locale.ROOT` or a parameter named `locale`. Not calls: declarations (`fun String.format(`).
+     * Not locale formatting: a call on one of our own types or objects, written in UpperCamelCase
+     * (`IsoTime.format(ms)`); whatever such a function formats inside is checked where it does.
+     * `String.format`, `MessageFormat.format`, `"…".format(…)`, variables and constants
+     * (`PATTERN.format(n)`) are always checked.
      */
     val formatWithLocale = object : Rule("R-11", "String.format or .format( without a Locale in :core") {
         private val call = Regex("""\.\s*format\s*\(""")
         private val declaration = Regex("""\bfun\s+(<[^>]*>\s*)?[\w.<>?, ]*$""")
         private val localeFirst = Regex("""^((java\.util\.)?Locale\b|\w*[lL]ocale\b)""")
+        private val receiverName = Regex("""(\w+)\s*$""")
+        private val localeFormatters = setOf("String", "MessageFormat")
 
         override fun offsetsIn(file: SourceFile): List<Int> {
             if (file.path in formatAllowList) return emptyList()
             return call.findAll(file.code).filter { match ->
                 if (file.isLiteral(match.range.first)) return@filter false
                 val lineStart = file.code.lastIndexOf('\n', match.range.first) + 1
-                if (declaration.containsMatchIn(file.code.substring(lineStart, match.range.first))) return@filter false
+                val before = file.code.substring(lineStart, match.range.first)
+                if (declaration.containsMatchIn(before)) return@filter false
+                val receiver = receiverName.find(before)?.groupValues?.get(1).orEmpty()
+                val ownType = receiver.isNotEmpty() && receiver.first().isUpperCase() && receiver.any { it.isLowerCase() }
+                if (ownType && receiver !in localeFormatters) return@filter false
                 val first = file.arguments(match.range.last).firstOrNull()
                 first == null || !localeFirst.containsMatchIn(file.code.substring(first.first, first.last + 1))
             }.map { it.range.first }.toList()

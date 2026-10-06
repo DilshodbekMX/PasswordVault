@@ -8,8 +8,10 @@ import java.io.File
  * them (`arch/` in the tests of :core and :app), so this file never spells out a forbidden name and
  * passes its own scans.
  *
- * Comments are ignored: they are blanked before any rule looks at the code. String and character
- * literals are kept, and their extent is known, so a rule can tell `Text("Hi")` from `Text(name)`.
+ * Comments are ignored: they are blanked before any rule looks at the code. A name inside a string
+ * or character literal is text, not a use, so pattern rules ignore matches that start in one (the
+ * code of a `${…}` template is code again). The extent of every literal is known, so a rule can also
+ * tell `Text("Hi")` from `Text(name)`.
  */
 
 /** A Kotlin or Java source file. [path] is relative to the repository root, with `/`. */
@@ -133,8 +135,8 @@ abstract class Rule(
 }
 
 /**
- * A rule that forbids every match of [pattern] in the code (comments ignored, literals included),
- * except where [allowed] says otherwise.
+ * A rule that forbids every match of [pattern] in the code, except where [allowed] says otherwise.
+ * Comments are ignored, and so is a match that starts inside a string or character literal.
  */
 open class PatternRule(
     id: String,
@@ -142,8 +144,10 @@ open class PatternRule(
     val pattern: Regex,
     private val allowed: (SourceFile, MatchResult) -> Boolean = { _, _ -> false },
 ) : Rule(id, what) {
-    override fun offsetsIn(file: SourceFile): List<Int> =
-        pattern.findAll(file.code).filterNot { allowed(file, it) }.map { it.range.first }.toList()
+    override fun offsetsIn(file: SourceFile): List<Int> = pattern.findAll(file.code)
+        .filterNot { file.isLiteral(it.range.first) || allowed(file, it) }
+        .map { it.range.first }
+        .toList()
 }
 
 /** Every finding of [rules] in [files], in file and line order. */
@@ -153,6 +157,27 @@ fun scan(files: List<SourceFile>, rules: List<Rule>): List<Finding> =
 /** A readable list of [findings], one per line. */
 fun describe(findings: List<Finding>): String =
     if (findings.isEmpty()) "no findings" else findings.joinToString("\n", prefix = "${findings.size} findings:\n")
+
+/** [findings] as one line per file and rule, with runs of lines joined: `path | rule | 3-10 14`. */
+fun summarize(findings: List<Finding>): List<String> =
+    findings.groupBy { it.path to it.rule }.entries
+        .sortedWith(compareBy({ it.key.first }, { it.key.second }))
+        .map { (key, group) ->
+            val lines = group.map { it.line }.distinct().sorted()
+            val runs = mutableListOf<String>()
+            var start = lines.first()
+            var end = start
+            for (line in lines.drop(1) + Int.MIN_VALUE) {
+                if (line == end + 1) {
+                    end = line
+                } else {
+                    runs += if (start == end) "$start" else "$start-$end"
+                    start = line
+                    end = line
+                }
+            }
+            "${key.first} | ${key.second} | ${runs.joinToString(" ")}"
+        }
 
 object SourceTree {
     /**
@@ -166,6 +191,17 @@ object SourceTree {
             dir = dir.parentFile
         }
         error("No settings.gradle.kts above ${File("").absolutePath}")
+    }
+
+    /**
+     * Code that is not built: `prototypes/` and every `docs/lab/<lab>-artifacts/`. The scans were
+     * tried on it once (build plan 0.1) to see that they report what they should and nothing else.
+     */
+    fun auditDirs(root: File): List<String> {
+        val labs = File(root, "docs/lab").listFiles().orEmpty()
+            .filter { it.isDirectory && it.name.endsWith("-artifacts") }
+            .map { "docs/lab/${it.name}" }
+        return (listOf("prototypes") + labs).sorted()
     }
 
     /**
