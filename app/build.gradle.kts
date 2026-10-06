@@ -3,13 +3,13 @@ plugins {
 }
 
 android {
-    namespace = "com.example.passwordvault"
+    namespace = "io.github.dilshodbekmx.passwordvault"
     compileSdk {
         version = release(37)
     }
 
     defaultConfig {
-        applicationId = "com.example.passwordvault"
+        applicationId = "io.github.dilshodbekmx.passwordvault"
         minSdk = 24
         targetSdk = 37
         versionCode = 1

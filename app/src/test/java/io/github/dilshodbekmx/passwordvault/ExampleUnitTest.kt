@@ -1,4 +1,4 @@
-package com.example.passwordvault
+package io.github.dilshodbekmx.passwordvault
 
 import org.junit.Test
 
