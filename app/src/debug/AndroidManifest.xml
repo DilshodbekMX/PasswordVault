@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- debug: the test hooks of architecture.md §3.6 and lock.md §15.3. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application>
+        <!-- Reached with "adb shell am broadcast -a io.github.dilshodbekmx.passwordvault.debug.CMD
+             -p io.github.dilshodbekmx.passwordvault" and the string extra cmd set to
+             "<name> [arguments]" (see DebugCommands.kt). Exported so that adb can reach it, and
+             guarded by DUMP, which adb shell holds and other apps do not (the same guard as
+             ProfileInstallReceiver). -->
+        <receiver
+            android:name=".debug.DebugCommandReceiver"
+            android:exported="true"
+            android:permission="android.permission.DUMP">
+            <intent-filter>
+                <action android:name="io.github.dilshodbekmx.passwordvault.debug.CMD" />
+            </intent-filter>
+        </receiver>
+    </application>
+
+</manifest>
