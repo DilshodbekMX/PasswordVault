@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Needed only so the overlay demo can draw over other apps (granted with appops). -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+
+    <application
+        android:label="PV Lab Helper"
+        android:allowBackup="false">
+
+        <!-- Logging-only autofill service. Enable with:
+             adb shell settings put secure autofill_service com.example.pvlab.helper/.LabAutofillService -->
+        <service
+            android:name=".LabAutofillService"
+            android:exported="true"
+            android:label="LabFill"
+            android:permission="android.permission.BIND_AUTOFILL_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.autofill.AutofillService" />
+            </intent-filter>
+        </service>
+
+        <!-- Draws / removes a TYPE_APPLICATION_OVERLAY window:
+             adb shell am broadcast -n com.example.pvlab.helper/.OverlayReceiver ... -->
+        <receiver
+            android:name=".OverlayReceiver"
+            android:exported="true" />
+        <!-- Non-tool accessibility service used to check isAccessibilityDataSensitive. -->
+        <service
+            android:name=".LabA11yService"
+            android:exported="true"
+            android:label="LabA11y"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/lab_a11y" />
+        </service>
+    </application>
+</manifest>
