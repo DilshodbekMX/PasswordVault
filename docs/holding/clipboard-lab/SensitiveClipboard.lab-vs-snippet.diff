@@ -1,0 +1,97 @@
+--- snippet/SensitiveClipboard.kt	2026-10-06 15:20:39.586049468 +0500
++++ project/app/src/main/java/com/example/pvlab/clip/SensitiveClipboard.kt	2026-10-06 15:04:52.118936635 +0500
+@@ -1,4 +1,4 @@
+-package io.github.dilshodbekmx.passwordvault.clipboard
++package com.example.pvlab.clip
+ 
+ import android.app.AlarmManager
+ import android.app.PendingIntent
+@@ -25,15 +25,17 @@
+  *    ends at the deadline;
+  *  - a timer in the process, which needs no alarm delivery but only runs while the process is alive and
+  *    not frozen.
++ *
++ * (Lab build: the lines marked LAB-ONLY write the measurements and are not part of the recommendation.)
+  */
+ object SensitiveClipboard {
+     /** Value of ClipDescription.EXTRA_IS_SENSITIVE (constant added in API 33; older releases ignore the extra). */
+     private const val EXTRA_IS_SENSITIVE = "android.content.extra.IS_SENSITIVE"
+ 
+     /** Marks a clip as ours, so that a clear can leave alone what the user copied later, when that can be read. */
+-    private const val EXTRA_COPY_ID = "io.github.dilshodbekmx.passwordvault.extra.COPY_ID"
++    private const val EXTRA_COPY_ID = "com.example.pvlab.clip.extra.COPY_ID"
+ 
+-    const val ACTION_CLEAR = "io.github.dilshodbekmx.passwordvault.action.CLEAR_CLIPBOARD"
++    const val ACTION_CLEAR = "com.example.pvlab.clip.action.CLEAR_SENSITIVE_CLIP"
+     const val KEY_COPY_ID = "copyId"
+     const val KEY_CLEAR_AT = "clearAtElapsed"
+ 
+@@ -58,7 +60,10 @@
+         val clearAt = SystemClock.elapsedRealtime() + clearAfterMs
+ 
+         timer?.let(mainHandler::removeCallbacks)
+-        val r = Runnable { clear(app, copyId) }
++        val r = Runnable {
++            Lab.log("final_timer", "copyId" to copyId, "state" to Lab.importance()) // LAB-ONLY
++            clear(app, copyId)
++        }
+         timer = r
+         mainHandler.postDelayed(r, clearAfterMs)
+         scheduleAlarm(app, copyId, clearAt)
+@@ -77,6 +82,7 @@
+         if (Build.VERSION.SDK_INT < 31 || am.canScheduleExactAlarms()) {
+             try {
+                 am.setExactAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP, clearAt, pi)
++                Lab.log("final_sched", "copyId" to copyId, "kind" to "exact", "at" to clearAt) // LAB-ONLY
+                 return
+             } catch (e: SecurityException) {
+                 // Exact-alarm access was revoked between the check and the call: fall through.
+@@ -89,6 +95,7 @@
+         val now = SystemClock.elapsedRealtime()
+         val at = now + ((clearAt - now) / 1.75).toLong()
+         am.setAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP, at, pi)
++        Lab.log("final_sched", "copyId" to copyId, "kind" to "inexact", "at" to at, "clearAt" to clearAt) // LAB-ONLY
+     }
+ 
+     /**
+@@ -111,14 +118,19 @@
+             }
+             if (current != null && current.extras?.getString(EXTRA_COPY_ID) != copyId) {
+                 handledCopyId = copyId
++                Lab.finalClear(copyId, "skipped", null, 0L, 0L) // LAB-ONLY
+                 return false
+             }
+         }
++        val el0 = SystemClock.elapsedRealtime() // LAB-ONLY
++        val up0 = SystemClock.uptimeMillis() // LAB-ONLY
+         return try {
+             if (Build.VERSION.SDK_INT >= 28) cm.clearPrimaryClip() else cm.setPrimaryClip(ClipData.newPlainText("", ""))
+             handledCopyId = copyId
++            Lab.finalClear(copyId, "cleared", null, el0, up0) // LAB-ONLY
+             true
+         } catch (e: RuntimeException) {
++            Lab.finalClear(copyId, "failed", e, el0, up0) // LAB-ONLY
+             false
+         }
+     }
+@@ -133,6 +145,12 @@
+ 
+     private fun clearIntent(app: Context): Intent =
+         Intent(app, ClipboardClearReceiver::class.java).setAction(ACTION_CLEAR)
++
++    /** LAB-ONLY: removes the in-process timer so that the alarm path can be measured on its own. */
++    fun dropTimerForLab() {
++        timer?.let(mainHandler::removeCallbacks)
++        timer = null
++    }
+ }
+ 
+ /** Declared in the manifest, not exported: only our own PendingIntent reaches it. */
+@@ -143,6 +161,7 @@
+         val copyId = intent.getStringExtra(SensitiveClipboard.KEY_COPY_ID) ?: return
+         val clearAt = intent.getLongExtra(SensitiveClipboard.KEY_CLEAR_AT, 0L)
+         val wait = clearAt - SystemClock.elapsedRealtime()
++        Lab.log("final_alarm", "copyId" to copyId, "wait" to wait, "state" to Lab.importance()) // LAB-ONLY
+         when {
+             wait <= 0L -> SensitiveClipboard.clear(app, copyId)
+             // An inexact alarm that came early and far from the deadline: aim again.
