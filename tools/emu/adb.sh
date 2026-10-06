@@ -208,7 +208,7 @@ pv_wait_device() { # SERIAL [SECONDS] -> 0 once "adb get-state" says device
     local s=$1 deadline state offline_since="" kicked=0
     deadline=$((SECONDS + ${2:-$PV_ADB_WAIT_S}))
     while :; do
-        state=$("$PV_ADB" -s "$s" get-state 2>/dev/null | tr -d '\r')
+        state=$(timeout -k 2 10 "$PV_ADB" -s "$s" get-state 2>/dev/null | tr -d '\r')
         [ "$state" = device ] && return 0
         if ! pv_entry_alive "$PV_REG/$s"; then pv_log "$s: its emulator is not running"; return 1; fi
         if [ "$state" = offline ]; then
@@ -228,13 +228,16 @@ pv_wait_device() { # SERIAL [SECONDS] -> 0 once "adb get-state" says device
     done
 }
 
+# With PV_ADB_TIMEOUT=N set, each call is killed after N seconds (exit 124): a wedged device can
+# leave "adb shell" hanging for ever, so every polling loop sets it.
 pv_adb() { # ADB-ARGS... on $PV_SERIAL
     [ -n "${PV_SERIAL:-}" ] || pv_die "pv_adb: no device chosen; call pv_use SERIAL first" 2
-    local errf rc deadline
+    local errf rc deadline tmo=()
+    [ -z "${PV_ADB_TIMEOUT:-}" ] || tmo=(timeout -k 5 "$PV_ADB_TIMEOUT")
     errf=$(mktemp "${TMPDIR:-/tmp}/pv-adb.XXXXXX")
     deadline=$((SECONDS + PV_ADB_WAIT_S))
     while :; do
-        "$PV_ADB" -s "$PV_SERIAL" "$@" 2>"$errf"
+        "${tmo[@]}" "$PV_ADB" -s "$PV_SERIAL" "$@" 2>"$errf"
         rc=$?
         if [ $rc -ne 0 ] && pv_transport_error "$errf" && [ $SECONDS -lt $deadline ]; then
             pv_log "adb lost $PV_SERIAL ($(tr '\n' ' ' < "$errf" | cut -c1-160)); waiting for it"
@@ -378,11 +381,11 @@ pv_unlock() { # [PIN] -> dismisses the keyguard with the device PIN
     local pin=${1:-$PV_DEVICE_PIN} i
     for i in 1 2 3 4; do
         pv_keyguard_showing || return 0
-        pv_adb shell input keyevent KEYCODE_WAKEUP
-        pv_adb shell input keyevent 82   # MENU: shows the PIN bouncer
+        pv_adb shell input keyevent KEYCODE_WAKEUP || return 1
+        pv_adb shell input keyevent 82 || return 1   # MENU: shows the PIN bouncer
         pv_sleep 1
-        pv_adb shell input text "$pin"
-        pv_adb shell input keyevent 66   # ENTER
+        pv_adb shell input text "$pin" || return 1
+        pv_adb shell input keyevent 66 || return 1   # ENTER
         pv_sleep 2
     done
     ! pv_keyguard_showing
@@ -393,11 +396,11 @@ pv_unlock() { # [PIN] -> dismisses the keyguard with the device PIN
 # the emulator exits.
 pv_reboot() { # [SECONDS] (default 300) on $PV_SERIAL
     local deadline=$((SECONDS + ${1:-300})) before now
-    before=$(pv_shell cat /proc/sys/kernel/random/boot_id 2>/dev/null | tr -d '\r')
+    before=$(PV_ADB_TIMEOUT=30 pv_shell cat /proc/sys/kernel/random/boot_id 2>/dev/null | tr -d '\r')
     [ -n "$before" ] || { pv_log "cannot read the boot id of $PV_SERIAL"; return 1; }
-    pv_adb reboot || return 1
+    PV_ADB_TIMEOUT=60 pv_adb reboot || return 1
     while :; do
-        now=$("$PV_ADB" -s "$PV_SERIAL" shell cat /proc/sys/kernel/random/boot_id 2>/dev/null | tr -d '\r')
+        now=$(timeout -k 5 20 "$PV_ADB" -s "$PV_SERIAL" shell cat /proc/sys/kernel/random/boot_id 2>/dev/null | tr -d '\r')
         [ -n "$now" ] && [ "$now" != "$before" ] && break
         [ $SECONDS -lt $deadline ] || { pv_log "$PV_SERIAL did not come back from the reboot"; return 1; }
         pv_sleep 2
@@ -410,9 +413,12 @@ pv_reboot() { # [SECONDS] (default 300) on $PV_SERIAL
 # in front three times in a row, 2 s apart.
 pv_wait_booted() { # [SECONDS] (default 300) on $PV_SERIAL
     local deadline=$((SECONDS + ${1:-300})) v focus stable=0
+    # Bound every call: a guest that hangs while booting can leave "adb shell" waiting for ever,
+    # and the deadline is only looked at between calls.
+    local PV_ADB_TIMEOUT=${PV_ADB_TIMEOUT:-30}
     while :; do
         pv_entry_alive "$PV_REG/$PV_SERIAL" || { pv_log "the emulator of $PV_SERIAL is not running"; return 1; }
-        v=$("$PV_ADB" -s "$PV_SERIAL" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')
+        v=$(timeout -k 5 20 "$PV_ADB" -s "$PV_SERIAL" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')
         [ "$v" = 1 ] && break
         [ $SECONDS -lt $deadline ] || { pv_log "no sys.boot_completed on $PV_SERIAL in time"; return 1; }
         pv_sleep 2

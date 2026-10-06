@@ -38,6 +38,8 @@ REPO=$(cd "$PV_EMU_DIR/../.." && pwd)
 AAPT2=$(ls -d "$PV_SDK"/build-tools/*/aapt2 2>/dev/null | sort -V | tail -n 1)
 
 pv_use "$SERIAL"
+# A wedged device must not hang the smoke test: every adb call gets at most 180 s.
+PV_ADB_TIMEOUT=${PV_ADB_TIMEOUT:-180}
 API=$(pv_api)
 echo "smoke.sh $VARIANT on $SERIAL (API $API): $APK"
 

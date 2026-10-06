@@ -335,7 +335,7 @@ pv_reserve_waiting() { # API MODE SLOT-WAIT -> prints the port
 }
 
 pv_boot() { # API MODE SLOT-WAIT BOOT-TIMEOUT -> prints the serial
-    local api=$1 mode=$2 port pid tmp
+    local api=$1 mode=$2 port pid tmp attempt
     pv_base_check "$api" || exit 1
     find "$PV_LOGS" -maxdepth 1 -name 'emulator-*.log' -mtime +14 -delete 2>/dev/null
     port=$(pv_reserve_waiting "$api" "$mode" "$3") || exit 1
@@ -343,13 +343,25 @@ pv_boot() { # API MODE SLOT-WAIT BOOT-TIMEOUT -> prints the serial
     trap pv_boot_abort EXIT
     trap 'exit 130' INT TERM HUP
     PV_BOOT_LOG=$(pv_entry_get "$PV_REG/emulator-$port" log)
-    pv_launch "$api" "$port" "$PV_BOOT_LOG" 1
-    pid=$(pv_wait_pid "$port") || { pv_log "the emulator did not start"; exit 1; }
-    PV_BOOT_PID=$pid
-    pv_entry_set "$PV_REG/emulator-$port" pid "$pid"
-    pv_use "emulator-$port"
-    pv_log "emulator-$port (API $api, read-only, pid $pid) is booting"
-    pv_wait_booted "$4" || exit 1
+    # A guest now and then hangs while booting (seen once on API 37: no "Boot completed" after
+    # 12 minutes, adb shell not answering). Such a boot is stopped and started once more.
+    for attempt in 1 2; do
+        pv_launch "$api" "$port" "$PV_BOOT_LOG" 1
+        pid=$(pv_wait_pid "$port") || { pv_log "the emulator did not start"; exit 1; }
+        PV_BOOT_PID=$pid
+        pv_entry_set "$PV_REG/emulator-$port" pid "$pid"
+        pv_use "emulator-$port"
+        pv_log "emulator-$port (API $api, read-only, pid $pid) is booting"
+        pv_wait_booted "$4" && break
+        [ $attempt = 1 ] || exit 1
+        pv_log "emulator-$port did not get ready in $4 s; stopping it and booting once more"
+        pv_kill_emulator "$port" "$pid"
+        PV_BOOT_PID=""
+        PV_BOOT_LOG=$PV_LOGS/emulator-$port-$(date +%Y%m%d-%H%M%S)-retry.log
+        pv_entry_set "$PV_REG/emulator-$port" pid 0
+        pv_entry_set "$PV_REG/emulator-$port" epoch "$(date +%s)"
+        pv_entry_set "$PV_REG/emulator-$port" log "$PV_BOOT_LOG"
+    done
     tmp=$(pv_emulator_tmpfiles "$pid")
     pv_entry_set "$PV_REG/emulator-$port" tmpfiles "$tmp"
     if [ "$(pv_shell settings get global animator_duration_scale | tr -d '\r')" != 0 ] \
