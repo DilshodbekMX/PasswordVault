@@ -7,6 +7,9 @@
 #   tools/emu/adb.sh -s SERIAL --unlock         dismiss the keyguard with the device PIN (1111)
 #   tools/emu/adb.sh -s SERIAL --step NAME [needs-debuggable] [needs-root] -- COMMAND...
 #                                               run COMMAND as a step: prints PASS, FAIL or SKIPPED
+#   tools/emu/adb.sh --connected SERIAL... [-- GRADLE-ARGS...]
+#                                               :app:connectedDebugAndroidTest on exactly these
+#                                               devices (ANDROID_SERIAL), then --connected-results
 #   tools/emu/adb.sh --connected-results DIR SERIAL...
 #                                               after connectedDebugAndroidTest: did every SERIAL
 #                                               run tests, all passing, and no other device?
@@ -410,6 +413,39 @@ sys.exit(bad)
 EOF
 }
 
+pv_gradle() { # GRADLE-ARGS... -> through tools/gradle.sh once it exists (package 0.1)
+    local repo
+    repo=$(cd "$PV_EMU_DIR/../.." && pwd)
+    if [ -x "$repo/tools/gradle.sh" ]; then
+        "$repo/tools/gradle.sh" "$@"
+    else
+        (cd "$repo" && JAVA_HOME=/home/asus/.jdks/jdk-25 ANDROID_HOME=$PV_SDK ./gradlew --no-daemon "$@")
+    fi
+}
+
+# Runs :app:connectedDebugAndroidTest on exactly the given devices of this worktree and checks
+# that each of them reported passing tests.
+pv_connected() { # SERIAL... [-- GRADLE-ARGS...]
+    local serials=() s repo results rc
+    while [ $# -gt 0 ] && [ "$1" != "--" ]; do serials+=("$1"); shift; done
+    [ "${1:-}" = "--" ] && shift
+    [ ${#serials[@]} -gt 0 ] || pv_die "--connected: no serial given" 2
+    for s in "${serials[@]}"; do pv_require_serial "$s"; done
+    # AGP 9.4.1 installs without -r on API 24 and then skips a device where the app exists.
+    for s in "${serials[@]}"; do
+        PV_SERIAL=$s pv_adb uninstall "$PV_PACKAGE.test" >/dev/null 2>&1
+        PV_SERIAL=$s pv_adb uninstall "$PV_PACKAGE" >/dev/null 2>&1
+    done
+    repo=$(cd "$PV_EMU_DIR/../.." && pwd)
+    results=$repo/app/build/outputs/androidTest-results/connected/debug
+    rm -rf "$results"
+    pv_log "connectedDebugAndroidTest with ANDROID_SERIAL=$(IFS=,; echo "${serials[*]}")"
+    ANDROID_SERIAL=$(IFS=,; echo "${serials[*]}") pv_gradle :app:connectedDebugAndroidTest "$@"
+    rc=$?
+    pv_connected_results "$results" "${serials[@]}" || rc=1
+    return $rc
+}
+
 # ---- command mode -----------------------------------------------------------------------------
 pv_usage() { # FILE -> prints the file's header comment and exits 2
     awk 'NR > 1 && /^#/ { sub(/^# ?/, ""); print; next } NR > 1 { exit }' "$1" >&2
@@ -419,12 +455,18 @@ pv_usage() { # FILE -> prints the file's header comment and exits 2
 pv_adb_usage() { pv_usage "${BASH_SOURCE[0]}"; }
 
 if [ "${BASH_SOURCE[0]}" = "$0" ]; then
-    if [ "${1:-}" = "--connected-results" ]; then
-        [ $# -ge 3 ] || pv_adb_usage
-        shift
-        pv_connected_results "$@"
-        exit $?
-    fi
+    case "${1:-}" in
+        --connected-results)
+            [ $# -ge 3 ] || pv_adb_usage
+            shift
+            pv_connected_results "$@"
+            exit $? ;;
+        --connected)
+            [ $# -ge 2 ] || pv_adb_usage
+            shift
+            pv_connected "$@"
+            exit $? ;;
+    esac
     [ "${1:-}" = "-s" ] && [ $# -ge 3 ] || pv_adb_usage
     pv_use "$2"
     shift 2

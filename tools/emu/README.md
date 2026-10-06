@@ -12,7 +12,7 @@ read-only base under `/home/asus/pvlab/`. Nobody uses the user's own emulator
 S37=$(tools/emu/boot.sh 37)          # prints emulator-PORT once booted and unlocked
 S24=$(tools/emu/boot.sh 24)
 tools/emu/adb.sh -s "$S37" install -r app/build/outputs/apk/debug/app-debug.apk
-ANDROID_SERIAL=$S24,$S37 tools/gradle.sh :app:connectedDebugAndroidTest
+tools/emu/adb.sh --connected "$S24" "$S37"   # connectedDebugAndroidTest with ANDROID_SERIAL
 tools/emu/smoke.sh staging "$S37"
 tools/emu/stop.sh "$S24" "$S37"      # or: tools/emu/stop.sh --mine
 ```
@@ -31,6 +31,8 @@ API level can run at once (each is its own read-only instance of the base).
 | `boot.sh --provision API` | Makes the base again from its system image and provisions it (below). Refuses while any device of that base runs. Only needed after `/home/asus/pvlab/` is lost or a base is damaged. |
 | `stop.sh SERIAL...` | Stops the devices (`emu kill`, then TERM, then KILL), removes overlays a killed emulator left in `/tmp/android-$USER/`, forgets them. `--mine`: every device of this worktree. `--stale`: forget entries whose emulator is gone. |
 | `adb.sh -s SERIAL ARGS...` | `adb -s SERIAL ARGS...` for a device of this worktree; waits up to 60 s for the device to come back when adb lost it. `--wait`, `--unlock`, and `--step NAME [needs-debuggable] [needs-root] -- COMMAND...` for scripts in other languages. |
+| `adb.sh --connected SERIAL... [-- GRADLE-ARGS]` | The connected tests (A §8.3) on exactly these devices: refuses a serial that is not this worktree's, removes the app and its test APK from each, clears the old reports, runs `:app:connectedDebugAndroidTest` with `ANDROID_SERIAL` set (through `tools/gradle.sh`; `./gradlew --no-daemon` with JAVA_HOME and ANDROID_HOME until 0.1 has made it), then checks the report of every serial. |
+| `adb.sh --connected-results DIR SERIAL...` | That last check alone: a JUnit report with at least one test and no failure for each serial, and none for any other device. |
 | `smoke.sh VARIANT SERIAL [--apk FILE]` | The smoke test (A §8.4). VARIANT is `debug` or `staging`; the APK defaults to `app/build/outputs/apk/VARIANT/app-VARIANT.apk`. Wave 0: checks the APK (package, debuggable flag, x86_64 code), removes an installed copy, installs, starts the launcher activity, checks that it is in front and still running after 5 s without a crash. Later waves add stages. |
 | `checks/` | The integrator's integration checks, `checks/<wave>.sh`. Empty in wave 0. |
 
@@ -49,9 +51,14 @@ Exit codes of all scripts: 0 success, 1 failure, 2 usage, 3 refused serial.
   `PV_EMU_OWNER` if set). `adb.sh`, `stop.sh` and `smoke.sh` refuse (exit 3) any serial that is
   not registered to the calling worktree, and always refuse `emulator-5554`.
 - **`-s` everywhere.** Every adb call names its device. Connected tests set `ANDROID_SERIAL`
-  to the package's own serials, comma-separated (AGP runs on exactly those and fails if one is
-  missing); never run `connectedAndroidTest` without it, because the user's emulator is
-  usually running.
+  to the package's own serials, comma-separated (AGP runs on exactly those); never run
+  `connectedAndroidTest` without it, because the user's emulator is usually running.
+- **A green connected run is not enough.** AGP 9.4.1's test runner prints
+  `AndroidTestRunner failed on emulator-N` and still ends with BUILD SUCCESSFUL (exit 0) when it
+  cannot install the APK on one device. Seen on API 24 with the app already installed: it
+  installs without `-r`, and Android 7 refuses that (`INSTALL_FAILED_ALREADY_EXISTS`; API 28
+  and 37 replace silently). That device then has no report at all. `adb.sh --connected`
+  removes the app first and fails unless every serial has a passing report.
 - **adb server restarts.** Android Studio sometimes restarts the adb server, and a lab saw an
   emulator stay `offline` afterwards. `pv_adb` waits up to 60 s for the device; if it stays
   offline for 10 s it runs `adb -s SERIAL reconnect` (only that device). No script ever runs
@@ -71,7 +78,9 @@ pv_step "smaller Java heap" needs-root -- heapsim 128m 256m
 pv_summary                             # SUMMARY emulator-5556: 2 passed, 0 failed, 1 skipped
 ```
 
-Each step prints `PASS name`, `FAIL name (exit N)` or `SKIPPED name (reason)`.
+Each step prints `PASS name`, `FAIL name (exit N)` or `SKIPPED name (reason)`, and returns
+the command's status (0 when skipped). Scripts use `set -u`, not `set -e`: under `set -e` a
+failing command inside `pv_step` would end the script before FAIL is printed.
 `needs-debuggable` holds when `run-as` works for the app (`PV_PACKAGE`, default
 `io.github.dilshodbekmx.passwordvault`): the debug build, not staging. `needs-root` holds when
 the image is a userdebug build (`ro.debuggable=1`): API 24 and 28 here; the API 37 image is a
