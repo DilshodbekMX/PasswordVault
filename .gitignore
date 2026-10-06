@@ -1,0 +1,21 @@
+*.iml
+.gradle
+.kotlin/
+/local.properties
+/.idea/*
+!/.idea/codeStyles/
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+
+# Release signing keys and their passwords must never be committed
+*.jks
+*.keystore
+keystore.properties
+
+# JVM crash logs
+hs_err_pid*.log
+replay_pid*.log
