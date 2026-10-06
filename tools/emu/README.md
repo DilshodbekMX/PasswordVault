@@ -24,7 +24,7 @@ API level can run at once (each is its own read-only instance of the base).
 
 | Script | What it does |
 |---|---|
-| `boot.sh API` | API 24 (Android 7.0), 28 (Android 9) or 37 (Android 17). Hands out a console port, starts the base with `-read-only`, waits for `sys.boot_completed` and the package manager, dismisses the lock screen with the PIN 1111, waits for the launcher, prints the serial. `--slot-wait S` (default 1800) is how long it waits for a free slot; `--boot-timeout S` (default 300). Exit 1 and no device left behind on failure. |
+| `boot.sh API` | API 24 (Android 7.0), 28 (Android 9) or 37 (Android 17). Hands out a console port, starts the base with `-read-only`, waits for `sys.boot_completed` and the package manager, dismisses the lock screen with the PIN 1111, waits for the launcher, prints the serial. `--slot-wait S` (default 1800) is how long it waits for a free slot; `--boot-timeout S` (default 300). A boot that is not ready in time (a guest now and then hangs while booting) is stopped and started once more; after a second failure: exit 1 and no device, entry or overlay left behind. |
 | `boot.sh --integrator API` | The integrator's fixed ports: 5580 (API 37), 5582 (API 28), 5584 (API 24). They do not count toward the six. |
 | `boot.sh --list` | Every device `boot.sh` started, with its worktree, mode, pid and whether it still runs. |
 | `boot.sh --verify-base [API]` | sha1 of each base disk image against the record written at provisioning. |
@@ -87,6 +87,12 @@ pv_summary                             # SUMMARY emulator-5556: 2 passed, 0 fail
 Each step prints `PASS name`, `FAIL name (exit N)` or `SKIPPED name (reason)`, and returns
 the command's status (0 when skipped). Scripts use `set -u`, not `set -e`: under `set -e` a
 failing command inside `pv_step` would end the script before FAIL is printed.
+
+A wedged guest can leave `adb shell` waiting for ever. Set `PV_ADB_TIMEOUT=N` and every
+`pv_adb` call is killed after N seconds (exit 124); the waiting helpers (`pv_wait_booted`,
+`pv_reboot`, `pv_wait_device`) always bound their calls, and `smoke.sh` gives each call 180 s.
+Leave it unset around commands that may legitimately run long (`am instrument`, `logcat`
+without `-d`).
 `needs-debuggable` holds when `run-as` works for the app (`PV_PACKAGE`, default
 `io.github.dilshodbekmx.passwordvault`): the debug build, not staging. `needs-root` holds when
 the image is a userdebug build (`ro.debuggable=1`): API 24 and 28 here; the API 37 image is a
@@ -141,6 +147,24 @@ the provisioned state, and several boots of one base can run at once. Before eac
 `boot.sh` checks that the size and time of every disk image are still the recorded ones and
 refuses to boot a base that changed. (The image files cannot be made read-only on disk: the
 emulator crashes when it cannot open them for writing, even with `-read-only`.)
+
+## Checking package 0.2 again (the wave-0 integration check)
+
+```sh
+S24=$(tools/emu/boot.sh 24); S28=$(tools/emu/boot.sh 28); S37=$(tools/emu/boot.sh 37)
+tools/emu/boot.sh --list                          # three ports from 5556..5578, -read-only
+for s in $S24 $S28 $S37; do tools/emu/adb.sh -s $s install -r app/build/outputs/apk/debug/app-debug.apk; done
+SX=$(tools/emu/boot.sh 37)                        # another emulator running
+tools/emu/adb.sh --connected $S24 $S28 $S37       # ExampleInstrumentedTest on exactly those three
+tools/emu/adb.sh -s $SX shell pm list packages | grep -c passwordvault   # 0
+tools/emu/smoke.sh staging $S24; tools/emu/smoke.sh staging $S37
+tools/emu/stop.sh --mine; tools/emu/boot.sh --verify-base
+```
+
+The user's AVD: list `~/.android/avd/Medium_Phone.avd` with sizes and times before and after.
+While the user's emulator runs, it changes its own `userdata-qemu.img.qcow2` and `tmpAdbCmds`;
+nothing in `tools/emu` names that directory, and no emulator started here opens it (each log
+says `Found systemPath /home/asus/pvlab/sysimg/...`).
 
 ## Device facts worth knowing
 
