@@ -7,6 +7,9 @@
 #   tools/emu/adb.sh -s SERIAL --unlock         dismiss the keyguard with the device PIN (1111)
 #   tools/emu/adb.sh -s SERIAL --step NAME [needs-debuggable] [needs-root] -- COMMAND...
 #                                               run COMMAND as a step: prints PASS, FAIL or SKIPPED
+#   tools/emu/adb.sh --connected-results DIR SERIAL...
+#                                               after connectedDebugAndroidTest: did every SERIAL
+#                                               run tests, all passing, and no other device?
 # As a library (bash):
 #   source tools/emu/adb.sh
 #   pv_use SERIAL                 choose the device; refuses (exit 3) a serial boot.sh did not
@@ -373,6 +376,40 @@ pv_unlock() { # [PIN] -> dismisses the keyguard with the device PIN
     ! pv_keyguard_showing
 }
 
+# ---- connected-test results -------------------------------------------------------------------
+# AGP 9.4.1's test runner prints "AndroidTestRunner failed on emulator-N" and still ends with
+# BUILD SUCCESSFUL (exit code 0) when it cannot install the APK on one of the devices, for
+# example on API 24 when the app is already installed (it installs without -r there). So after
+# "ANDROID_SERIAL=... tools/gradle.sh :app:connectedDebugAndroidTest", check every serial:
+#   pv_connected_results app/build/outputs/androidTest-results/connected/debug SERIAL...
+# 0 if each SERIAL has a JUnit report with at least one test and no failure or error.
+pv_connected_results() { # DIR SERIAL...
+    local dir=$1
+    shift
+    python3 - "$dir" "$@" <<'EOF'
+import glob, sys, xml.etree.ElementTree as ET
+d, serials = sys.argv[1], sys.argv[2:]
+seen = {}
+for f in sorted(glob.glob(d + "/TEST-*.xml")):
+    for suite in ET.parse(f).getroot().iter("testsuite"):
+        devs = [p.get("value") for p in suite.iter("property") if p.get("name") == "device"]
+        for dev in devs:
+            t, fl, er = seen.get(dev, (0, 0, 0))
+            seen[dev] = (t + int(suite.get("tests", 0)), fl + int(suite.get("failures", 0)), er + int(suite.get("errors", 0)))
+bad = 0
+for s in serials:
+    t, fl, er = seen.get(s, (0, 0, 0))
+    ok = s in seen and t > 0 and fl == 0 and er == 0
+    bad |= not ok
+    print(("PASS" if ok else "FAIL") + f" connected tests on {s} ({t} tests, {fl} failures, {er} errors"
+          + ("" if s in seen else ", no report: the tests did not run there") + ")")
+for dev in sorted(set(seen) - set(serials)):
+    print(f"FAIL connected tests also ran on {dev}, which is not among the serials given")
+    bad = 1
+sys.exit(bad)
+EOF
+}
+
 # ---- command mode -----------------------------------------------------------------------------
 pv_usage() { # FILE -> prints the file's header comment and exits 2
     awk 'NR > 1 && /^#/ { sub(/^# ?/, ""); print; next } NR > 1 { exit }' "$1" >&2
@@ -382,6 +419,12 @@ pv_usage() { # FILE -> prints the file's header comment and exits 2
 pv_adb_usage() { pv_usage "${BASH_SOURCE[0]}"; }
 
 if [ "${BASH_SOURCE[0]}" = "$0" ]; then
+    if [ "${1:-}" = "--connected-results" ]; then
+        [ $# -ge 3 ] || pv_adb_usage
+        shift
+        pv_connected_results "$@"
+        exit $?
+    fi
     [ "${1:-}" = "-s" ] && [ $# -ge 3 ] || pv_adb_usage
     pv_use "$2"
     shift 2

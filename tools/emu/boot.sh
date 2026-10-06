@@ -277,7 +277,9 @@ pv_launch() { # API PORT LOG READONLY(1|0) [EXTRA EMULATOR ARGS...]
     [ "$ro" = 1 ] && args+=(-read-only)
     args+=(-port "$port" -no-window -no-audio -no-boot-anim -no-snapshot -no-metrics -gpu swiftshader_indirect "$@")
     pv_log "starting: emulator ${args[*]}"
-    ANDROID_AVD_HOME=$PV_AVD_HOME nohup setsid "$PV_EMULATOR" "${args[@]}" > "$log" 2>&1 < /dev/null &
+    # Close fd 3 (the caller's stdout, see pv_main) and the lock's fd 9: an emulator holding
+    # the write end of "S=$(boot.sh 37)" would keep that command waiting until it exits.
+    ANDROID_AVD_HOME=$PV_AVD_HOME nohup setsid "$PV_EMULATOR" "${args[@]}" > "$log" 2>&1 < /dev/null 3>&- 9>&- &
 }
 
 pv_wait_pid() { # PORT -> prints the emulator's pid once it exists (60 s)
