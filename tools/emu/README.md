@@ -30,7 +30,7 @@ API level can run at once (each is its own read-only instance of the base).
 | `boot.sh --verify-base [API]` | sha1 of each base disk image against the record written at provisioning. |
 | `boot.sh --provision API` | Makes the base again from its system image and provisions it (below). Refuses while any device of that base runs. Only needed after `/home/asus/pvlab/` is lost or a base is damaged. |
 | `stop.sh SERIAL...` | Stops the devices (`emu kill`, then TERM, then KILL), removes overlays a killed emulator left in `/tmp/android-$USER/`, forgets them. `--mine`: every device of this worktree. `--stale`: forget entries whose emulator is gone. |
-| `adb.sh -s SERIAL ARGS...` | `adb -s SERIAL ARGS...` for a device of this worktree; waits up to 60 s for the device to come back when adb lost it. `--wait`, `--unlock`, and `--step NAME [needs-debuggable] [needs-root] -- COMMAND...` for scripts in other languages. |
+| `adb.sh -s SERIAL ARGS...` | `adb -s SERIAL ARGS...` for a device of this worktree; waits up to 60 s for the device to come back when adb lost it. Also `--reboot [S]` (adb reboot, then wait for the new boot, unlock, launcher in front), `--wait-boot [S]`, `--wait`, `--unlock`, and `--step NAME [needs-debuggable] [needs-root] -- COMMAND...` for scripts in other languages. |
 | `adb.sh --connected SERIAL... [-- GRADLE-ARGS]` | The connected tests (A §8.3) on exactly these devices: refuses a serial that is not this worktree's, removes the app and its test APK from each, clears the old reports, runs `:app:connectedDebugAndroidTest` with `ANDROID_SERIAL` set (through `tools/gradle.sh`; `./gradlew --no-daemon` with JAVA_HOME and ANDROID_HOME until 0.1 has made it), then checks the report of every serial. |
 | `adb.sh --connected-results DIR SERIAL...` | That last check alone: a JUnit report with at least one test and no failure for each serial, and none for any other device. |
 | `smoke.sh VARIANT SERIAL [--apk FILE]` | The smoke test (A §8.4). VARIANT is `debug` or `staging`; the APK defaults to `app/build/outputs/apk/VARIANT/app-VARIANT.apk`. Wave 0: checks the APK (package, debuggable flag, x86_64 code), removes an installed copy, installs, starts the launcher activity, checks that it is in front and still running after 5 s without a crash. Later waves add stages. |
@@ -91,7 +91,7 @@ failing command inside `pv_step` would end the script before FAIL is printed.
 `io.github.dilshodbekmx.passwordvault`): the debug build, not staging. `needs-root` holds when
 the image is a userdebug build (`ro.debuggable=1`): API 24 and 28 here; the API 37 image is a
 user build without root. A step whose marker does not hold is not run and prints SKIPPED.
-Other helpers: `pv_shell`, `pv_unlock`, `pv_keyguard_showing`, `pv_focus`, `pv_ui_nodes`,
+Other helpers: `pv_shell`, `pv_reboot`, `pv_wait_booted`, `pv_unlock`, `pv_keyguard_showing`, `pv_focus`, `pv_ui_nodes`,
 `pv_ui_tap REGEX`, `pv_ui_wait REGEX SECONDS` (REGEX is matched against
 `text|content-desc|resource-id`; write a literal `|` as `[|]`), `pv_is_debuggable`,
 `pv_has_root`, `pv_api`.
@@ -146,6 +146,11 @@ emulator crashes when it cannot open them for writing, even with `-read-only`.)
 
 - The lock screen is up after every boot; `boot.sh` dismisses it. After `KEYCODE_SLEEP` it is
   back: `tools/emu/adb.sh -s SERIAL --unlock` (or `pv_unlock`).
+- A reboot of the guest keeps everything done on the device (an installed app, its files):
+  the read-only overlay lives as long as the emulator process, so checks such as lock.md E3
+  can reboot with `tools/emu/adb.sh -s SERIAL --reboot` (or `pv_reboot`), which waits for a new
+  boot id, the boot to complete and the lock screen to be dismissed. Tried on API 24, 28 and 37.
+  API 28 comes back without a start-up PIN screen.
 - Fingerprint: `adb -s SERIAL emu finger touch 1` then `emu finger remove`; touches sent
   together are merged into one (docs/lab/biometric.md). The Android 7 and 9 images never change
   their sensor's authenticator id, so a new finger does not invalidate keys there.

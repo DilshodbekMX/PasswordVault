@@ -292,59 +292,6 @@ pv_wait_pid() { # PORT -> prints the emulator's pid once it exists (60 s)
     return 1
 }
 
-pv_wait_boot() { # TIMEOUT PID -> 0 once booted, unlocked and on the home screen ($PV_SERIAL)
-    local deadline=$((SECONDS + $1)) pid=$2 port=${PV_SERIAL#emulator-} v focus stable=0
-    while :; do
-        pv_is_emulator_pid "$pid" "$port" || { pv_log "the emulator exited while booting"; return 1; }
-        v=$("$PV_ADB" -s "$PV_SERIAL" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')
-        [ "$v" = 1 ] && break
-        [ $SECONDS -lt $deadline ] || { pv_log "no sys.boot_completed after $1 s"; return 1; }
-        pv_sleep 2
-    done
-    # Full-disk encryption with a start-up PIN (API 28 when the PIN was set without turning
-    # "require_password_to_decrypt" off first; provisioning turns it off). Enter the PIN.
-    if [ "$(pv_getprop vold.decrypt)" = trigger_restart_min_framework ]; then
-        pv_log "$PV_SERIAL asks for the start-up PIN; entering it"
-        pv_shell input text "$PV_DEVICE_PIN"
-        pv_shell input keyevent 66
-        pv_sleep 5
-        until [ "$(pv_getprop vold.decrypt)" = trigger_restart_framework ] && [ "$(pv_getprop sys.boot_completed)" = 1 ]; do
-            [ $SECONDS -lt $deadline ] || { pv_log "the device did not decrypt"; return 1; }
-            pv_sleep 2
-        done
-    fi
-    until pv_shell pm path android 2>/dev/null | grep -q '^package:'; do
-        [ $SECONDS -lt $deadline ] || { pv_log "the package manager does not answer"; return 1; }
-        pv_sleep 2
-    done
-    # The lock screen comes up around the end of the boot; dismiss it with the PIN and wait
-    # until the launcher has been in front three times in a row, 2 s apart.
-    while :; do
-        if pv_keyguard_showing; then
-            stable=0
-            pv_unlock || pv_log "the PIN did not dismiss the lock screen yet"
-        else
-            focus=$(pv_focus)
-            case "$focus" in
-                *[Ll]auncher*) stable=$((stable + 1)); [ $stable -ge 3 ] && return 0 ;;
-                *"Not Responding"*|*"isn't responding"*)
-                    stable=0
-                    pv_log "a system dialog is open ($focus); choosing Wait"
-                    pv_ui_tap '^(Wait|WAIT)[|]' || pv_shell input keyevent KEYCODE_BACK ;;
-                *)
-                    stable=0
-                    pv_shell input keyevent KEYCODE_HOME ;;
-            esac
-        fi
-        if [ $SECONDS -ge $deadline ]; then
-            if pv_keyguard_showing; then pv_log "the lock screen is still showing"; return 1; fi
-            pv_log "warning: the launcher never came to the front (focus: $(pv_focus)); going on"
-            return 0
-        fi
-        pv_sleep 2
-    done
-}
-
 pv_boot_abort() { # EXIT trap while a boot or a provisioning is under way
     local i
     [ "${PV_BOOT_DONE:-0}" = 1 ] && return
@@ -402,7 +349,7 @@ pv_boot() { # API MODE SLOT-WAIT BOOT-TIMEOUT -> prints the serial
     pv_entry_set "$PV_REG/emulator-$port" pid "$pid"
     pv_use "emulator-$port"
     pv_log "emulator-$port (API $api, read-only, pid $pid) is booting"
-    pv_wait_boot "$4" "$pid" || exit 1
+    pv_wait_booted "$4" || exit 1
     tmp=$(pv_emulator_tmpfiles "$pid")
     pv_entry_set "$PV_REG/emulator-$port" tmpfiles "$tmp"
     if [ "$(pv_shell settings get global animator_duration_scale | tr -d '\r')" != 0 ] \
@@ -604,7 +551,7 @@ pv_provision() { # API
     PV_BOOT_PID=$pid
     pv_entry_set "$PV_REG/emulator-$port" pid "$pid"
     pv_use "emulator-$port"
-    pv_wait_boot 600 "$pid" || pv_die "the first boot failed"
+    pv_wait_booted 600 || pv_die "the first boot failed"
     build=$(pv_getprop ro.build.fingerprint)
     pv_log "booted $build"
     pv_prov_settings "$api" || pv_die "could not change the settings"

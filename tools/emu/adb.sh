@@ -4,6 +4,9 @@
 # As a command:
 #   tools/emu/adb.sh -s SERIAL ADB-ARGS...      adb ADB-ARGS on SERIAL
 #   tools/emu/adb.sh -s SERIAL --wait           wait (60 s) until SERIAL answers again
+#   tools/emu/adb.sh -s SERIAL --reboot [S]     adb reboot, then wait for the new boot (S seconds,
+#                                               default 300), unlock, launcher in front
+#   tools/emu/adb.sh -s SERIAL --wait-boot [S]  the waiting part alone
 #   tools/emu/adb.sh -s SERIAL --unlock         dismiss the keyguard with the device PIN (1111)
 #   tools/emu/adb.sh -s SERIAL --step NAME [needs-debuggable] [needs-root] -- COMMAND...
 #                                               run COMMAND as a step: prints PASS, FAIL or SKIPPED
@@ -25,8 +28,8 @@
 #                                 marker that cannot be met on this device or build, print
 #                                 "SKIPPED NAME (reason)" and do not run it
 #   pv_summary                    print the counts; returns 1 if any step failed
-#   pv_unlock, pv_keyguard_showing, pv_focus, pv_ui_nodes, pv_ui_tap REGEX, pv_ui_wait REGEX SECONDS,
-#   pv_is_debuggable [PACKAGE], pv_has_root, pv_api
+#   pv_reboot [SECONDS], pv_wait_booted [SECONDS], pv_unlock, pv_keyguard_showing, pv_focus, pv_ui_nodes,
+#   pv_ui_tap REGEX, pv_ui_wait REGEX SECONDS, pv_is_debuggable [PACKAGE], pv_has_root, pv_api
 #
 # Every adb call names its device with -s. This file never runs "adb kill-server" and never
 # talks to emulator-5554 (the user's own device). See tools/emu/README.md.
@@ -385,6 +388,77 @@ pv_unlock() { # [PIN] -> dismisses the keyguard with the device PIN
     ! pv_keyguard_showing
 }
 
+# "adb reboot", then waits until the device runs a new boot (another boot_id) and is ready. A
+# read-only device keeps its changes across a reboot of the guest; they are dropped only when
+# the emulator exits.
+pv_reboot() { # [SECONDS] (default 300) on $PV_SERIAL
+    local deadline=$((SECONDS + ${1:-300})) before now
+    before=$(pv_shell cat /proc/sys/kernel/random/boot_id 2>/dev/null | tr -d '\r')
+    [ -n "$before" ] || { pv_log "cannot read the boot id of $PV_SERIAL"; return 1; }
+    pv_adb reboot || return 1
+    while :; do
+        now=$("$PV_ADB" -s "$PV_SERIAL" shell cat /proc/sys/kernel/random/boot_id 2>/dev/null | tr -d '\r')
+        [ -n "$now" ] && [ "$now" != "$before" ] && break
+        [ $SECONDS -lt $deadline ] || { pv_log "$PV_SERIAL did not come back from the reboot"; return 1; }
+        pv_sleep 2
+    done
+    pv_wait_booted $((deadline - SECONDS))
+}
+
+# After a boot (boot.sh) or a reboot (pv_reboot): waits for sys.boot_completed and the
+# package manager, dismisses the lock screen with the PIN, and waits until the launcher has been
+# in front three times in a row, 2 s apart.
+pv_wait_booted() { # [SECONDS] (default 300) on $PV_SERIAL
+    local deadline=$((SECONDS + ${1:-300})) v focus stable=0
+    while :; do
+        pv_entry_alive "$PV_REG/$PV_SERIAL" || { pv_log "the emulator of $PV_SERIAL is not running"; return 1; }
+        v=$("$PV_ADB" -s "$PV_SERIAL" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')
+        [ "$v" = 1 ] && break
+        [ $SECONDS -lt $deadline ] || { pv_log "no sys.boot_completed on $PV_SERIAL in time"; return 1; }
+        pv_sleep 2
+    done
+    # Full-disk encryption asking for a start-up PIN (API 28 if the PIN had been set without
+    # "require_password_to_decrypt" 0, which provisioning sets first): enter the PIN.
+    if [ "$(pv_getprop vold.decrypt)" = trigger_restart_min_framework ]; then
+        pv_log "$PV_SERIAL asks for the start-up PIN; entering it"
+        pv_shell input text "$PV_DEVICE_PIN"
+        pv_shell input keyevent 66
+        pv_sleep 5
+        until [ "$(pv_getprop vold.decrypt)" = trigger_restart_framework ] && [ "$(pv_getprop sys.boot_completed)" = 1 ]; do
+            [ $SECONDS -lt $deadline ] || { pv_log "$PV_SERIAL did not decrypt"; return 1; }
+            pv_sleep 2
+        done
+    fi
+    until pv_shell pm path android 2>/dev/null | grep -q '^package:'; do
+        [ $SECONDS -lt $deadline ] || { pv_log "the package manager of $PV_SERIAL does not answer"; return 1; }
+        pv_sleep 2
+    done
+    while :; do
+        if pv_keyguard_showing; then
+            stable=0
+            pv_unlock || pv_log "the PIN did not dismiss the lock screen yet"
+        else
+            focus=$(pv_focus)
+            case "$focus" in
+                *[Ll]auncher*) stable=$((stable + 1)); [ $stable -ge 3 ] && return 0 ;;
+                *"Not Responding"*|*"isn't responding"*)
+                    stable=0
+                    pv_log "a system dialog is open ($focus); choosing Wait"
+                    pv_ui_tap '^(Wait|WAIT)[|]' || pv_shell input keyevent KEYCODE_BACK ;;
+                *)
+                    stable=0
+                    pv_shell input keyevent KEYCODE_HOME ;;
+            esac
+        fi
+        if [ $SECONDS -ge $deadline ]; then
+            if pv_keyguard_showing; then pv_log "the lock screen of $PV_SERIAL is still showing"; return 1; fi
+            pv_log "warning: the launcher never came to the front on $PV_SERIAL (focus: $(pv_focus)); going on"
+            return 0
+        fi
+        pv_sleep 2
+    done
+}
+
 # ---- connected-test results -------------------------------------------------------------------
 # AGP 9.4.1's test runner prints "AndroidTestRunner failed on emulator-N" and still ends with
 # BUILD SUCCESSFUL (exit code 0) when it cannot install the APK on one of the devices, for
@@ -478,6 +552,8 @@ if [ "${BASH_SOURCE[0]}" = "$0" ]; then
     shift 2
     case "$1" in
         --wait) pv_wait_device "$PV_SERIAL" "$PV_ADB_WAIT_S"; exit $? ;;
+        --wait-boot) pv_wait_booted "${2:-300}"; exit $? ;;
+        --reboot) pv_reboot "${2:-300}"; exit $? ;;
         --unlock) pv_unlock; exit $? ;;
         --step)
             [ $# -ge 4 ] || pv_adb_usage
