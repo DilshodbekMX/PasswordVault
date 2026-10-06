@@ -2,7 +2,9 @@
 
 Date 2026-10-06. Status: proposal for review, with working code and measurements. Scope: how the account list is filtered as the user types, so that a name is found however it is typed (Uzbek Latin with any apostrophe or with the 2026 letters, Uzbek or Russian Cyrillic, English, any other script), plus two converters between the Uzbek scripts. Builds on [ux.md](ux.md) §5.11 (what search does on screen) and [i18n.md](i18n.md) §2.4–2.7 (alphabet and spelling decisions). §8 lists where this note differs from those two documents and why.
 
-Code (pure Kotlin, no Android dependencies, JUnit 4 like the app): `scratchpad/i18n/search/` in this session's scratchpad (`/tmp/claude-1000/-home-asus-AndroidStudioProjects-PasswordVault/096e95f8-3ae0-41bf-b235-08771bb88852/scratchpad/i18n/search/`). Packages: `io.github.dilshodbekmx.passwordvault.search` and `…passwordvault.text`. The scratchpad is wiped by a reboot, so copy the code into the app before then.
+**Revised on 2026-10-06** by build-plan package 0.3 to follow [architecture.md](architecture.md) D-11: ş → s and ç → c in the second tier, and the retry of a query typed on the wrong keyboard layout (§0 items 5 and 12, §1, §2, §6 item 4, §8); and where the code now lives (§7, §9).
+
+Code (pure Kotlin, no Android dependencies, JUnit 4 like the app): committed as `prototypes/search/`, with packages `io.github.dilshodbekmx.passwordvault.search` and `…passwordvault.text`. Build-plan package 1.2 moves it into the `:core` module as `…passwordvault.core.search` and `…core.text` (architecture.md §2.1) and adds the two D-11 changes.
 
 How I know things: **[X]** measured or tested today with this code; **[V]** checked today in the named primary source; **[I]** my judgement.
 
@@ -12,13 +14,14 @@ How I know things: **[X]** measured or tested today with this code; **[V]** chec
 2. **Search works across scripts in version 1.** ux.md §11 deferred this ("Тошкент = Toshkent … next version") because ICU's `Transliterator` needs API 29; the converter here is plain Kotlin and runs on API 24 [X: every JDK call used is API 24 or lower in `android-37.0/data/api-versions.xml`].
 3. **ц follows the official rule: s at the start of a word and after a consonant, ts after a vowel** (принцип → prinsip, Конституция → Konstitutsiya). The brief and i18n.md §2.7 say ц → ts always. That would make 100 of the 569 words with ц in four laws (17.6 %) miss their official Latin spelling [X]. The cost: Russian-style "tsentr" does not find "Центр" (§6).
 4. **Ranking: the field first, then the position.** Title 300; user name and website host 200; extra fields and notes 100. Then +40 if the whole field matches, +30 at the start of the field, +20 at the start of a later word, +10 inside a word. Every query word must match somewhere (AND, any order). Equal scores keep the list order (A–Z). An empty query lists everything [X].
-5. **A second, lower tier for Russian-keyboard spellings.** у к г х for ў қ ғ ҳ, е for ё, u for oʻ, k for q, x for h. Matches in this tier score 5 less. Without it, 31 % of the Uzbek words in four laws, typed on a Russian keyboard, would not be found. With it, all but 3 of 112,262 words are found [X].
+5. **A second, lower tier for Russian-keyboard and accent-free spellings.** у к г х for ў қ ғ ҳ, е for ё, u for oʻ, k for q, x for h; and s for ş, c for ç (architecture.md D-11), so that accent-free Turkish, Azerbaijani and French typing works: "besiktas" finds "Beşiktaş", "garcon" finds "Garçon". Matches in this tier score 5 less. Without it, 31 % of the Uzbek words in four laws, typed on a Russian keyboard, would not be found. With it, all but 3 of 112,262 words are found [X].
 6. **Websites are matched on the host only**, without scheme, "www.", port or path, as the brief says. ux.md §5.11 says "hosts and paths"; see §8.
 7. **Matched text in bold**: `matchedRanges(text, query)` returns the character ranges of the original text (ux.md §5.11 "matched text is bold") [X].
 8. **Converters**: `cyrillicToLatin` writes the 1995 alphabet with oʻ/gʻ as **U+02BB** and the tutuq belgisi as **U+02BC**, as i18n.md §2.4 decides (and as lex.uz prints). An option writes the 2026 letters ö ğ ş ç. `latinToCyrillic` is a developer tool that drafts `values-b+uz+Cyrl` from `values-uz` for a human to review.
 9. **Measured accuracy** on four laws published in both scripts on lex.uz (112,262 words). I tuned the rules on the Constitution and froze them before the first run on the other three laws (99,068 words). On those three: Cyrillic → Latin 99.999 % of words exact (1 miss, which is a slip in the reference); Latin → Cyrillic 99.88 %. 82 % of the misses are a soft sign ь that the Latin spelling does not show (kalendar: календарь) [X].
 10. **Measured speed** with 5,000 entries on the JVM (JDK 25, i9-14900K): median 0.28–0.31 ms per keystroke, p95 under 0.7 ms; building the index at unlock takes 11–20 ms. Interpreted only (`-Xint`, a pessimistic stand-in for a phone before ART compiles the code): median 13–14 ms, p95 22–29 ms per keystroke; index build 1.2–1.3 s. Long notes are the main cost: with a 1,000-character note in every entry, a keystroke takes about 1 ms with the JIT and about 60 ms (median) interpreted. ux.md's budget is 50 ms per keystroke on a mid-range phone [X].
 11. **Tests**: 527 JUnit cases, all passing, run under a Turkish default locale [X].
+12. **The wrong keyboard layout** (architecture.md D-11). When a query finds nothing in either tier, it is retried once through the Russian ЙЦУКЕН ↔ Latin QWERTY key map (§2), and the list says which query it shows: "штые" gives the results of "inst", "ghbdtn" those of "привет".
 
 ## 1. The search key
 
@@ -39,7 +42,7 @@ Punctuation and symbols (emoji, +, @) stay in the key; the matcher decides how t
 
 The **Cyrillic → Latin table** used by search (from §3.1): а a, б b, в v, г g, д d, е ye/e, ё yo, ж j, з z, и i, й y, к k, л l, м m, н n, о o, п p, р r, с s, т t, у u, ф f, х x, ц s/ts, ч ch, ш sh, щ sh, ъ — (removed), ы i, ь — (removed; y before о), э e, ю yu, я ya, ў o, қ q, ғ g, ҳ h. "е" is "ye" at the start of a word and after a vowel, ъ or ь, and "e" elsewhere.
 
-**The Russian-keyboard spelling** (`SearchText.russianKeyboard`, second tier only). Cyrillic ў қ ғ ҳ ё become у к г х е. In Latin text, oʻ and ö become u, ğ becomes g, q becomes k, and h becomes x except in sh and ch. "yo" becomes what е would give in that place: ye at the start of a word or after a vowel, e after a consonant. That last rule makes ё, е and yo meet: хаёт and hayot, Королёв and Королев, Ёлка and елка [X].
+**The second tier: Russian-keyboard and accent-free spellings** (`SearchText.russianKeyboard`, second tier only). Cyrillic ў қ ғ ҳ ё become у к г х е. In Latin text, oʻ and ö become u, ğ becomes g, q becomes k, and h becomes x except in sh and ch. "yo" becomes what е would give in that place: ye at the start of a word or after a vowel, e after a consonant. That last rule makes ё, е and yo meet: хаёт and hayot, Королёв and Королев, Ёлка and елка [X]. **ş (and ș) and ç become s and c** (architecture.md D-11), where step 4 of the first tier makes them sh and ch; so this tier must start from the letters before step 4 has replaced them. "besiktas" then finds "Beşiktaş" and "garcon" finds "Garçon", 5 points below an exact spelling, while "beshiktash" and "Toshkent" still meet "Beşiktaş" and "Toşkent" in the first tier.
 
 Keys are computed in memory when the vault is unlocked and are never stored. So a change of these rules, or a newer Unicode version after an Android update, needs no migration. This is unlike the password itself, which must be stable (VERIFICATION.md V-C9).
 
@@ -61,7 +64,7 @@ File `search/SearchIndex.kt`. `SearchIndex(entries: List<SearchFields>)` folds e
 | User name | 200 | | start of the field | +30 |
 | Website host (best of all) | 200 | | start of a later word | +20 |
 | Extra fields (best of all) | 100 | | inside a word | +10 |
-| Notes | 100 | | found only in the Russian-keyboard spelling | −5 |
+| Notes | 100 | | found only in the second tier (§1) | −5 |
 
 The field decides first: any title match outranks any other field, including a title match inside a word against a user name that is matched whole. Within a field the position decides. The entry's score is the sum over its query words, plus 15 when the whole query also occurs in the title starting at a word (so "click uz" ranks "Click Uz" above "Uz … Click"). Ties keep the order of the input list, so give the index the list in display order (A–Z by the collator of i18n.md §2.7). An empty query, or one made only of spaces and apostrophes, returns every entry in list order with score 0.
 
@@ -74,6 +77,14 @@ Examples from the tests [X], with a 26-entry vault like the user's:
 | 998 | Click Uz, Payme (user name starts 998) › Telegram (user "+998 90 …") | start of field › start of a word |
 | google | Gmail, through its website accounts.google.com (score 220) | host, start of a word |
 | узбек | Узбектелеком (330) › Oʻzbekiston…, Ўзбектелеком, Özbekiston… (325) | the Russian spelling matches exactly; Uzbek spellings in the second tier |
+
+**The wrong keyboard layout** (`KeyboardLayout.otherLayout(query)`, architecture.md D-11 and §2.1). When `search(query)` returns nothing in either tier, the list tries the query once more as if it had been typed on the other layout. The direction is chosen once per query: with more Cyrillic letters than Latin ones, each Cyrillic letter of the table below becomes the QWERTY character on the same key; otherwise each QWERTY character of the table (the Latin letters and the seven keys `` [ ] ; ' , . ` ``) becomes the ЙЦУКЕН letter on the same key. Everything else (digits, spaces, other characters) is kept. If the result differs from the query and finds entries, the list shows them under "Showing results for "inst"" (ux.md §5.11) and makes bold the ranges of the retried query; otherwise it shows "No accounts match". The key map, lower case (upper case maps the same way):
+
+| QWERTY | q | w | e | r | t | y | u | i | o | p | [ | ] | a | s | d | f | g | h | j | k | l | ; | ' | z | x | c | v | b | n | m | , | . | ` |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| ЙЦУКЕН | й | ц | у | к | е | н | г | ш | щ | з | х | ъ | ф | ы | в | а | п | р | о | л | д | ж | э | я | ч | с | м | и | т | ь | б | ю | ё |
+
+So "штые" becomes "inst", and "ghbdtn" becomes "привет". The Uzbek letters ў қ ғ ҳ sit on different keys in different Uzbek layouts and are left as they are.
 
 **Website host** (`WebAddress.hostOf`, file `search/WebAddress.kt`). Steps: trim; drop "scheme://"; for Chrome's app links `android://<certificate hash>@<package>/` (formats.md) keep what follows the last "@", because the base64 hash may contain "/"; cut at the first / ? # \; drop "user:password@"; drop ":port" (IPv6 in brackets kept); trim a final dot; lower case; drop a leading "www."; show punycode labels as Unicode (`java.net.IDN`). Examples: "https://www.Google.com:443/accounts?x=1" → google.com; "androidapp://com.sberbank.online" → com.sberbank.online; "https://xn--80aswg.xn--p1ai/" → сайт.рф; "mailto:me@example.com" → example.com; text that is not an address is returned trimmed and lower-cased [X]. formats.md's duplicate check ("same website host") can use the same function.
 
@@ -173,7 +184,7 @@ So no rule can recover the ь: the tool's output always needs a reviewer for Rus
 
 ### 4.5 Against i18n.md's glossary
 
-i18n.md §3 has 129 terms with Latin and hand-checked Cyrillic columns. Its Cyrillic was made from the Latin by a script using the same rules and then checked by hand, so this is a consistency check, not an independent test. `latinToCyrillic` gives the glossary's Cyrillic for **125 of 129** rows. The 4 others are translation choices, not conversions: Email → "Эл. почта"; "(A–Z)" → "(А–Я)" in a sort label; Latin "(A–Z)" and "(a–z)" kept for the generator [X].
+i18n.md §3 had 129 terms with Latin and hand-checked Cyrillic columns when this was measured (section I, terms 130 to 149, came later and was not run). Its Cyrillic was made from the Latin by a script using the same rules and then checked by hand, so this is a consistency check, not an independent test. `latinToCyrillic` gives the glossary's Cyrillic for **125 of 129** rows. The 4 others are translation choices, not conversions: Email → "Эл. почта"; "(A–Z)" → "(А–Я)" in a sort label; Latin "(A–Z)" and "(a–z)" kept for the generator [X].
 
 ## 5. Measured speed and memory
 
@@ -207,18 +218,19 @@ Items 1, 3, 4 and 6 are pinned by tests (`SearchIndexTest.honestLimits`, `Search
 1. **Brands spelled by sound in the other script.** "Yandex" does not find "Яндекс", which folds to `yandeks`, but "yande" does. Likewise Click/Клик (klik), Beeline/Билайн (bilayn), Wildberries/Вайлдберриз, Mail.ru/Мейл.ру. A transliteration cannot know a brand's Latin spelling. A small alias list could be added later if users ask.
 2. **Russian-style Latin for Russian names.** zh, kh, shch, ts at the start of a word and ia/iu do not meet the Uzbek-rule keys: Жуков (jukov) vs "Zhukov", Михаил (mixail) vs "Mikhail", Центр (sentr) vs "tsentr", Юлия (yuliya) vs "Julia". х vs h does meet in the second tier (Хабр finds "habr"). Е vs e works one way only: "elena" finds Елена (`yelena` contains `elena`), but "Елена" does not find a Latin "Elena".
 3. **A Russian spelling without ў, searched with a plain o.** "ozbek" does not find "Узбектелеком": nothing marks the o as oʻ. "o'zbek", "ўзбек" and "uzbek" do find it.
-4. **ç and ş are Uzbek letters here.** French/Portuguese "Garçon" folds to `garchon`, so "garcon" does not find it ("garc" does). German "ue" and "oe" spellings are not merged with ü and ö (Mueller vs Müller).
+4. **ç and ş are Uzbek letters here; accent-free typing finds them one tier lower.** In the first tier French/Portuguese "Garçon" folds to `garchon` and Turkish "Beşiktaş" to `beshiktash`. Since architecture.md D-11 the second tier also turns ç into c and ş into s, so "garcon" and "besiktas" find them, 5 points below an exact spelling. *Changed on 2026-10-06:* before D-11, "garcon" did not find "Garçon" ("garc" did) and `SearchIndexTest.honestLimits` pinned that; package 1.2 changes that test with a note that names D-11. Still a limit: German "ue" and "oe" spellings are not merged with ü and ö (Mueller vs Müller).
 5. **Scripts outside these alphabets only match themselves.** That means no simplified/traditional Chinese, pinyin, Arabic letter variants (أ/ا, ي/ی) or Japanese kana folding.
 6. **Website paths are not searched** (ux.md wants them, §8), so "accounts.google.com/u/1" is found by "google", not by "u/1".
-7. **"Contains" means wide results for very short queries.** One or two letters match most entries, and the ranking puts word starts first. The second tier adds more at lower rank: "x" also finds names with h, "k" names with q, "u" names with oʻ.
+7. **"Contains" means wide results for very short queries.** One or two letters match most entries, and the ranking puts word starts first. The second tier adds more at lower rank: "x" also finds names with h, "k" names with q, "u" names with oʻ, "s" names with ş, "c" names with ç.
 8. **Highlighting is approximate** where a listed exception changes the length of a word (сентябрь), and absent for texts over 256 characters.
 9. **Old Android versions.** API 24 knows an older Unicode, so emoji or letters newer than the phone's Unicode only match exactly themselves. Keys are never stored, so this cannot corrupt anything.
 10. **`latinToCyrillic`**: see §4.3, chiefly ь in Russian loanwords, Latin words inside Cyrillic text, and unlisted ц loanwords. It also mistakes a closing single quote right after a word ending in o or g for oʻ/gʻ ('Video' → Видеў); write UI quotes as “ ” or « ». In text written in the 2026 alphabet, "sh" is still read as ш, so Ishoq would come out as Ишоқ.
 11. **`cyrillicToLatin`** knows only its listed exceptions, so a Latin query typed against a Cyrillic entry must follow the official spelling: "oktyabr" does not find "Октябрь" (key `oktabr`).
+12. **The layout retry runs only when nothing is found** (§2). A short query typed on the wrong layout that happens to match something, as one or two letters usually do, shows those matches and is not retried. Only the Russian ЙЦУКЕН and the Latin QWERTY layouts are mapped.
 
 ## 7. Putting it in the app
 
-- **Copy** `search/SearchText.kt`, `search/SearchIndex.kt`, `search/SearchHighlight.kt`, `search/WebAddress.kt` and `text/UzbekScript.kt` into `app/src/main/kotlin/io/github/dilshodbekmx/passwordvault/…`. Copy the tests (`src/test/…`, JUnit 4.13.2, already in the app's version catalog) into `app/src/test`. The evaluation, benchmark and string-drafting mains (`ConverterEval.kt`, `SearchBenchmark.kt`, `UzbekCyrillicStrings.kt`) belong in a tool module. The code compiles against the JDK 11 API (`-Xjdk-release=11`), and every JDK call is API 24 or lower; the newest are `Character.UnicodeScript` and `Integer.hashCode(int)`, both API 24 [X].
+- **Move** (architecture.md §2.1, build-plan package 1.2) `search/SearchText.kt`, `search/SearchIndex.kt`, `search/SearchHighlight.kt`, `search/WebAddress.kt` and `text/UzbekScript.kt` from `prototypes/search/` into the `:core` module as `core.search` and `core.text`, with `KeyboardLayout` (§2) beside them, and their tests (JUnit 4.13.2) into `:core`'s unit tests. The evaluation, benchmark and string-drafting mains (`ConverterEval.kt`, `SearchBenchmark.kt`, `UzbekCyrillicStrings.kt`) become tests that run only when their Gradle property is given (`-Ppv.evalArgs=…`, `-Ppv.bench`, `-Ppv.uzArgs=…`). The code compiles against the JDK 11 API (`-Xjdk-release=11`), and every JDK call is API 24 or lower; the newest are `Character.UnicodeScript` and `Integer.hashCode(int)`, both API 24 [X].
 - **Lifecycle**: build `SearchIndex` from the decrypted entries after unlock, in display order. Rebuild it after an edit; that takes about 11 ms on the JIT, or keep the list and rebuild in the background. Drop it on lock together with the entries. It is a second plaintext copy of titles, user names, hosts and notes. It cannot be zeroed, the same as the entries themselves. Never write it to disk.
 - **Never** put a password, previous password or secret field value in `SearchFields`; Proton Pass's search index also excludes them (account-based.md §3).
 - **The list screen**: show `search(query)` in its order; bold `matchedRanges(title, query)` on visible rows. For "No accounts match", use ux.md §5.11's wording.
@@ -233,6 +245,7 @@ Every test vector in both documents passes in this code (`SearchIndexTest.uxDesi
 | ц | i18n.md §2.7: ts always | Official: s / ts | 100 of 569 ц-words would otherwise miss their official spelling (§4.4) |
 | ё and е | ux.md: ё→е for all; i18n.md: try both | Second tier (−5), so the exact spelling ranks first | Uzbek ё is "yo" (ҳаёт = hayot); folding it to е everywhere would break that match |
 | Russian keyboard (у к г х) | not covered; i18n.md accepts "Хамкорбанк" ≠ "Hamkorbank" | Second tier finds both | 31 % of Uzbek words typed on a Russian keyboard would be lost (§4.4) |
+| Accent-free ş and ç; the wrong layout | ux.md §5.11 asked for both | Both, as architecture.md D-11 decides: ş → s and ç → c in the second tier; the ЙЦУКЕН ↔ QWERTY retry when nothing is found (§1, §2) | Accent-free and wrong-layout typing are common |
 | Non-letters | i18n.md: turned into spaces | Kept in the key; spaces and punctuation ignored inside a match; symbols kept | Emoji and "+" must match themselves; "clickuz" and "mailru" should match |
 | Websites | ux.md: hosts and paths | Host only | The brief; paths ("login", "index.do", ids) make short queries match everything. Add paths later as a field weighing 100 if wanted |
 | Ranking | ux.md: title start › title contains › user name or website › other fields and notes; then A–Z | The same, refined: whole field and word starts, field weights, ties in list order | The brief: a word start ranks above a match inside a word |
@@ -240,7 +253,7 @@ Every test vector in both documents passes in this code (`SearchIndexTest.uxDesi
 
 ## 9. Reproduce
 
-In the project directory, with `JAVA_HOME=/home/asus/.jdks/jdk-25`:
+In `prototypes/search/`, with `JAVA_HOME=/home/asus/.jdks/jdk-25` (after build-plan package 1.2 has moved the code: `tools/gradle.sh :core:testDebugUnitTest`, and the three programs as tests with `-Ppv.bench`, `-Ppv.evalArgs=…` and `-Ppv.uzArgs=…`):
 
 - `./gradlew test` runs the 527 tests: SearchKeyTest 112, OfficialPairsTest 108, LatinToCyrillicTest 91, FindsEntryTest 79, CyrillicToLatinTest 65, SearchIndexTest 28, WebAddressTest 23, MatchedRangesTest 20, UzbekCyrillicStringsTest 1.
 - `./gradlew bench` gives the JIT numbers; add `-PbenchJvmArgs=-Xint` for the interpreter-only numbers.

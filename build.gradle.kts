@@ -63,5 +63,14 @@ subprojects {
             systemProperty("user.country", locale.country)
             if (locale.script.isNotEmpty()) systemProperty("user.script", locale.script)
         }
+        // -Ppv.scanAudit runs the source-scan audit (arch/*SourceRulesAuditTest, build plan 0.1), which
+        // reads code that is not built: prototypes/ and docs/lab/*-artifacts/. Those files are inputs of
+        // the run then, so that a result cached before one of them changed is never reused.
+        if ("pv.scanAudit" in pv) {
+            inputs.files(
+                fileTree(rootDir.resolve("prototypes")) { include("**/*.kt", "**/*.java") },
+                fileTree(rootDir.resolve("docs/lab")) { include("*-artifacts/**/*.kt", "*-artifacts/**/*.java") },
+            ).withPathSensitivity(PathSensitivity.RELATIVE).withPropertyName("auditedSources")
+        }
     }
 }

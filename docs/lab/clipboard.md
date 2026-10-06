@@ -383,7 +383,7 @@ What the user should be told, from the measurements: a force-stop cancels the cl
 
 ## Where things are
 
-Lab directory: `/tmp/claude-1000/-home-asus-AndroidStudioProjects-PasswordVault/096e95f8-3ae0-41bf-b235-08771bb88852/scratchpad/lab/clipboard-storage/` (in the scratchpad, so it is lost at a reboot). `clipboard-lab-kit.tar.gz` there (1.1 MB) holds the complete test app sources, the driver, the analysis scripts, all run records (`results/runs-emulator-*.jsonl`), the generated tables with a one-line-per-run list (`results/report-tables.md`) and the overlay screenshots.
+Everything is in [`docs/lab/clipboard-artifacts/`](clipboard-artifacts/README.txt): the recommended `SensitiveClipboard.kt`, and the lab's kit unpacked in `kit/`: the complete test app sources (`kit/project/`), the driver and the analysis scripts, all run records (`kit/results/runs-emulator-*.jsonl`), the generated tables with a one-line-per-run list (`kit/results/report-tables.md`), the logs and the overlay screenshots (`kit/shots/`). The lab ran in a scratchpad under `/tmp`; build-plan package 0.3 moved the kit into the repository on 2026-10-06, and the paths inside the run records still name that scratchpad.
 
 ## Appendix A: how the lab called each mechanism (Lab.kt, abridged)
 
@@ -410,7 +410,7 @@ when (r.mech) {
 
 ## Appendix B: the driver (clipexp.py)
 
-Complete up to and including `run_once`. Left out here: the scripted scenarios (overlay, clear in the foreground, later copy by another app, re-copy, clear now, permission status), the plan tables that list which runs were made, and `main`; they are in the kit archive.
+Complete up to and including `run_once`. Left out here: the scripted scenarios (overlay, clear in the foreground, later copy by another app, re-copy, clear now, permission status), the plan tables that list which runs were made, and `main`; they are in `clipboard-artifacts/kit/clipexp.py`.
 
 ```python
 #!/usr/bin/env python3
@@ -1106,4 +1106,4 @@ class ProbeActivity : ComponentActivity() {
 - Doze and battery saver quotas were not stressed: one run per mechanism under forced Doze, one under battery saver with 120 s. The no-permission alarm falls under the smaller quota the device reports (allow_while_idle_compat_quota=7 per hour against 72 for the exact alarm).
 - Re-copy and manual clear were run only on Android 17 (5 scenarios), not on Android 7.0 and 9.
 - Unexplained observations: Android 17 called the listener twice for each own copy in the foreground; am kill left the process alive on Android 7.0; the Recents swipe gesture of the driver missed in 5 runs (those runs are excluded from the swipe columns).
-- The lab directory and the kit archive are in the scratchpad under /tmp and will be lost at a reboot unless copied; only the files returned here and the appendices of the report are durable.
+- (Settled 2026-10-06.) The lab directory and the kit archive lived in the scratchpad under /tmp; the kit is now in `docs/lab/clipboard-artifacts/kit/`.

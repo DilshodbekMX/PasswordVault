@@ -20,6 +20,9 @@ import org.junit.Test
  * in a comment or a string literal, after a Locale argument, or in a call on our own type
  * (`IsoTime.format`). Lines of files that no longer exist (prototypes move into the modules in
  * later waves) are dropped.
+ * The lines of `docs/lab/clipboard-artifacts/kit/` (package 0.3) were added at the wave-0
+ * integration, checked the same way. With `-Ppv.scanAudit` the audited files are inputs of the
+ * test task (root build.gradle.kts), so a cached result never stands for changed files.
  */
 class CoreSourceRulesAuditTest {
     @Test
@@ -41,6 +44,17 @@ class CoreSourceRulesAuditTest {
             "docs/lab/biometric-artifacts/LabActivity.kt | R-10 android or androidx in :core or :testing | 3-43 79",
             "docs/lab/biometric-artifacts/LabActivity.kt | R-11 String.format or .format( without a Locale in :core | 93",
             "docs/lab/clipboard-artifacts/SensitiveClipboard.kt | R-10 android or androidx in :core or :testing | 3-15",
+            "docs/lab/clipboard-artifacts/kit/project/app/src/main/java/com/example/pvlab/clip/ClearReceiver.kt | R-10 android or androidx in :core or :testing | 3-5",
+            "docs/lab/clipboard-artifacts/kit/project/app/src/main/java/com/example/pvlab/clip/ClearShortService.kt | R-10 android or androidx in :core or :testing | 3-14",
+            "docs/lab/clipboard-artifacts/kit/project/app/src/main/java/com/example/pvlab/clip/ClearWorker.kt | R-10 android or androidx in :core or :testing | 3-5",
+            "docs/lab/clipboard-artifacts/kit/project/app/src/main/java/com/example/pvlab/clip/IoTest.kt | R-10 android or androidx in :core or :testing | 3-8",
+            "docs/lab/clipboard-artifacts/kit/project/app/src/main/java/com/example/pvlab/clip/IoTest.kt | R-11 String.format or .format( without a Locale in :core | 114 119-120 124 213-214",
+            "docs/lab/clipboard-artifacts/kit/project/app/src/main/java/com/example/pvlab/clip/Lab.kt | R-10 android or androidx in :core or :testing | 3-23",
+            "docs/lab/clipboard-artifacts/kit/project/app/src/main/java/com/example/pvlab/clip/LabApp.kt | R-10 android or androidx in :core or :testing | 3-4",
+            "docs/lab/clipboard-artifacts/kit/project/app/src/main/java/com/example/pvlab/clip/MainActivity.kt | R-10 android or androidx in :core or :testing | 3-10",
+            "docs/lab/clipboard-artifacts/kit/project/app/src/main/java/com/example/pvlab/clip/ProbeActivity.kt | R-10 android or androidx in :core or :testing | 3-10",
+            "docs/lab/clipboard-artifacts/kit/project/app/src/main/java/com/example/pvlab/clip/SensitiveClipboard.kt | R-10 android or androidx in :core or :testing | 3-15",
+            "docs/lab/clipboard-artifacts/kit/snippet/SensitiveClipboard.kt | R-10 android or androidx in :core or :testing | 3-15",
             "docs/lab/old-android-artifacts/AtomicFiles.kt | R-10 android or androidx in :core or :testing | 3-4",
             "docs/lab/old-android-artifacts/BiometricKey.kt | R-10 android or androidx in :core or :testing | 3-6",
             "docs/lab/old-android-artifacts/Kdf.kt | R-11 String.format or .format( without a Locale in :core | 52",

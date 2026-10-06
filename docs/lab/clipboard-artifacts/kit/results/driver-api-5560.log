@@ -1,0 +1,28 @@
+15:44:24 [60] device sdk 37 screen: mWakefulness=Awake mWakefulness=1 installed: package:com.example.pvlab.clip package:com.example.pvlab.clip.noperm
+15:44:24 [60] ===== plan api shard 0/1: 5 runs
+15:44:24 [60] --- recopy.154424.60 app=full
+15:45:08 [60]   second copy at +10091 ms; events of the FIRST copy after that: []
+15:45:08 [60]   second copy: [[10093, 'final_sched', 'exact'], [40119, 'final_timer', None], [40120, 'final_clear', 'cleared'], [40121, 'final_alarm', -29]]; cleared 30028 ms after the second copy
+15:45:08 [60]   watcher (second value): [[12614, 'VALUE'], [40146, 'EMPTY']]; probe=EMPTY
+15:45:08 [60]   alarm after second copy: ELAPSED_WAKEUP #10: Alarm{153584 type 2 origWhen 63042 whenElapsed 63042 com.example.pvlab.clip} tag=*walarm*:com.example.pvlab.clip.action.CLEAR_SENSITIVE_CLIP type=ELAPSED_WAKEUP origWhen=+29s927ms window=0 exactAllowReason=poli
+15:45:08 [60] --- clearnow.154508.60 app=full
+15:45:48 [60]   clear(null) at +6019 ms returned True; clipboard then: EMPTY
+15:45:48 [60]   alarm before: ELAPSED_WAKEUP #4: Alarm{dc4c91c type 2 origWhen 97210 whenElapsed 97210 com.example.pvlab.clip} tag=*walarm*:com.exampl | alarm after: ''
+15:45:48 [60]   other app copied at +10146 ms; events of our app after the manual clear: []
+15:45:48 [60]   watcher (other value): [[12063, 'VALUE']]; at +37 s the other value is: VALUE
+15:45:48 [60] --- recopy.154548.60 app=noperm
+15:46:32 [60]   second copy at +10087 ms; events of the FIRST copy after that: []
+15:46:32 [60]   second copy: [[10089, 'final_sched', 'inexact'], [34381, 'final_alarm', 5707], [40091, 'final_timer', None], [40093, 'final_clear', 'cleared']]; cleared 30005 ms after the second copy
+15:46:32 [60]   watcher (second value): [[12578, 'VALUE'], [40142, 'EMPTY']]; probe=EMPTY
+15:46:32 [60]   alarm after second copy: ELAPSED_WAKEUP #6: Alarm{592652a type 2 origWhen 133850 whenElapsed 133850 com.example.pvlab.clip.noperm} tag=*walarm*:com.example.pvlab.clip.action.CLEAR_SENSITIVE_CLIP type=ELAPSED_WAKEUP origWhen=+17s70ms window=+12s856ms repea
+15:46:32 [60] --- clearnow.154632.60 app=noperm
+15:47:11 [60]   clear(null) at +6022 ms returned True; clipboard then: EMPTY
+15:47:11 [60]   alarm before: ELAPSED_WAKEUP #1: Alarm{508f359 type 2 origWhen 167885 whenElapsed 167885 com.example.pvlab.clip.noperm} tag=*walarm*:c | alarm after: ''
+15:47:11 [60]   other app copied at +10146 ms; events of our app after the manual clear: []
+15:47:11 [60]   watcher (other value): [[12082, 'VALUE']]; at +37 s the other value is: VALUE
+15:47:11 [60] --- recopy.154711.60 app=full
+15:47:55 [60]   second copy at +10082 ms; events of the FIRST copy after that: []
+15:47:55 [60]   second copy: [[10088, 'final_sched', 'exact'], [40110, 'final_timer', None], [40111, 'final_clear', 'cleared'], [40112, 'final_alarm', -27]]; cleared 30029 ms after the second copy
+15:47:55 [60]   watcher (second value): [[12550, 'VALUE'], [40128, 'EMPTY']]; probe=EMPTY
+15:47:55 [60]   alarm after second copy: ELAPSED_WAKEUP #2: Alarm{bb3e847 type 2 origWhen 230479 whenElapsed 230479 com.example.pvlab.clip} tag=*walarm*:com.example.pvlab.clip.action.CLEAR_SENSITIVE_CLIP type=ELAPSED_WAKEUP origWhen=+29s908ms window=0 exactAllowReason=po
+15:47:55 [60] ===== all plans done

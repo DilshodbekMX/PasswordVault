@@ -1,0 +1,103 @@
+14:38:00 [60] device sdk 37 screen: mWakefulness=Awake mWakefulness=1 installed: package:com.example.pvlab.clip package:com.example.pvlab.clip.noperm package:com.example.pvlab.clip.sea
+14:38:00 [60] ===== plan base shard 0/3: 16 runs
+14:38:00 [60] --- run handler.home.none.143800.60 app=full delay=30000
+14:38:34 [60]   clear=30025 ms (late +25) via=handler threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=False adjMax=700 onReturn=None pre=None
+14:38:34 [60] --- run alarm_window.home.none.143834.60 app=full delay=30000
+14:39:30 [60]   clear=52504 ms (late +22504) via=receiver threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=False adjMax=700 onReturn=None pre=None
+14:39:30 [60] --- run coroutine.home.none.143930.60 app=full delay=30000
+14:40:03 [60]   clear=30003 ms (late +3) via=coroutine threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=False adjMax=700 onReturn=None pre=None
+14:40:03 [60] --- run alarm_set.settings.none.144003.60 app=full delay=30000
+14:40:59 [60]   clear=52500 ms (late +22500) via=receiver threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=False adjMax=700 onReturn=None pre=None
+14:40:59 [60] --- run alarm_awi.settings.none.144059.60 app=full delay=30000
+14:41:55 [60]   clear=52498 ms (late +22498) via=receiver threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=False adjMax=700 onReturn=None pre=None
+14:41:55 [60] --- run final.settings.none.144155.60 app=full delay=30000
+14:42:29 [60]   clear=30020 ms (late +20) via=timer threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=False adjMax=700 onReturn=None pre=None
+14:42:29 [60] --- run alarm_exact.watch.none.144229.60 app=full delay=30000
+14:43:02 [60]   clear=30001 ms (late +1) via=receiver threw=None pidChanged=False probe=EMPTY watch=VALUE->EMPTY@30043 frozen=False adjMax=700 onReturn=None pre=None
+14:43:02 [60] --- run work.watch.none.144302.60 app=full delay=30000
+14:43:36 [60]   clear=30046 ms (late +46) via=worker attempt=0 threw=None pidChanged=False probe=EMPTY watch=VALUE->EMPTY@30063 frozen=False adjMax=700 onReturn=None pre=None
+14:43:36 [60] --- run handler.home.none.144336.60 app=full delay=30000
+14:44:11 [60]   clear=30026 ms (late +26) via=handler threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=False adjMax=700 onReturn=None pre=None
+14:44:11 [60] --- run alarm_window.home.none.144411.60 app=full delay=30000
+14:45:07 [60]   clear=52497 ms (late +22497) via=receiver threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=False adjMax=700 onReturn=None pre=None
+14:45:07 [60] --- run coroutine.home.none.144507.60 app=full delay=30000
+14:45:40 [60]   clear=30002 ms (late +2) via=coroutine threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=False adjMax=700 onReturn=None pre=None
+14:45:40 [60] --- run alarm_set.settings.none.144540.60 app=full delay=30000
+14:46:37 [60]   clear=52499 ms (late +22499) via=receiver threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=False adjMax=700 onReturn=None pre=None
+14:46:37 [60] --- run alarm_awi.settings.none.144637.60 app=full delay=30000
+14:47:33 [60]   clear=52502 ms (late +22502) via=receiver threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=False adjMax=700 onReturn=None pre=None
+14:47:33 [60] --- run final.settings.none.144733.60 app=full delay=30000
+14:48:06 [60]   clear=30027 ms (late +27) via=timer threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=False adjMax=700 onReturn=None pre=None
+14:48:06 [60] --- run alarm_exact.watch.none.144806.60 app=full delay=30000
+14:48:39 [60]   clear=30002 ms (late +2) via=receiver threw=None pidChanged=False probe=EMPTY watch=VALUE->EMPTY@30047 frozen=False adjMax=700 onReturn=None pre=None
+14:48:39 [60] --- run work.watch.none.144839.60 app=full delay=30000
+14:49:13 [60]   clear=30023 ms (late +23) via=worker attempt=0 threw=None pidChanged=False probe=EMPTY watch=VALUE->EMPTY@30028 frozen=False adjMax=700 onReturn=None pre=None
+14:49:13 [60] ===== plan controls shard 0/3: 3 runs
+14:49:13 [60] --- run handler.home.none.144913.60 app=full delay=30000
+14:50:27 [60]   clear=NONE via=None threw=None pidChanged=None probe=VALUE watch=None->None@None frozen=True adjMax=900 onReturn=71887 pre=VALUE
+14:50:27 [60] --- run alarm_window.home.none.145027.60 app=full delay=30000
+14:51:23 [60]   clear=52507 ms (late +22507) via=receiver threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=True adjMax=900 onReturn=None pre=VALUE
+14:51:23 [60] --- run final.home.none.145123.60 app=full delay=30000
+14:51:57 [60]   clear=30014 ms (late +14) via=timer threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=True adjMax=900 onReturn=None pre=VALUE
+14:51:57 [60] ===== plan extra shard 0/3: 6 runs
+14:51:57 [60] --- run alarm_listener.home.none.145157.60 app=full delay=30000
+14:52:30 [60]   clear=30001 ms (late +1) via=alarmListener threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=False adjMax=700 onReturn=None pre=None
+14:52:30 [60] --- run final.home.none.145230.60 app=noperm delay=30000
+14:53:03 [60]   clear=30003 ms (late +3) via=alarm threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=False adjMax=700 onReturn=None pre=None
+14:53:03 [60] --- run alarm_listener.watch.none.145303.60 app=full delay=30000
+14:53:36 [60]   clear=30000 ms (late +0) via=alarmListener threw=None pidChanged=False probe=EMPTY watch=VALUE->EMPTY@30046 frozen=False adjMax=700 onReturn=None pre=None
+14:53:36 [60] --- run final.watch.none.145336.60 app=noperm delay=30000
+14:54:10 [60]   clear=30027 ms (late +27) via=alarm threw=None pidChanged=False probe=EMPTY watch=VALUE->EMPTY@30044 frozen=False adjMax=700 onReturn=None pre=None
+14:54:10 [60] --- run alarm_listener.settings.none.145410.60 app=full delay=30000
+14:54:43 [60]   clear=30000 ms (late +0) via=alarmListener threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=False adjMax=700 onReturn=None pre=None
+14:54:43 [60] --- run final.settings.none.145443.60 app=noperm delay=30000
+14:55:17 [60]   clear=30027 ms (late +27) via=timer threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=False adjMax=700 onReturn=None pre=None
+14:55:17 [60] ===== plan special shard 0/1: 7 runs
+14:55:17 [60] --- status-full.145517.60
+14:55:20 [60]   canScheduleExactAlarms=True bucket=10 bgRestricted=False
+14:55:20 [60]   requested: android.permission.USE_EXACT_ALARM android.permission.USE_EXACT_ALARM: granted=true
+14:55:20 [60]   appop: No operations.
+Default mode: default
+14:55:20 [60]   exact: threw=None info=canScheduleExactAlarms=true alarm=['window=0', 'exactAllowReason=policy_permission', 'flags=0x5', 'flags=8}]']
+14:55:20 [60]   listener: threw=None info=canScheduleExactAlarms=true alarm=['window=0', 'exactAllowReason=listener', 'flags=0x1', 'flags=8}]']
+14:55:20 [60]   final: threw=None info=canScheduleExactAlarms=true alarm=['window=0', 'exactAllowReason=policy_permission', 'flags=0x5', 'flags=8}]']
+14:55:20 [60] --- status-sea.145520.60
+14:55:24 [60]   canScheduleExactAlarms=False bucket=10 bgRestricted=False
+14:55:24 [60]   requested: android.permission.SCHEDULE_EXACT_ALARM
+14:55:24 [60]   appop: No operations.
+Default mode: default
+14:55:24 [60]   exact: threw=java.lang.SecurityException: Caller com.example.pvlab.clip.sea needs to hold android.permission.SCHEDULE_EXACT_ALARM or android.permission.USE_EXACT_ALARM to set exact alarms. info=canScheduleExactAlarms=false alarm=[]
+14:55:24 [60]   listener: threw=None info=canScheduleExactAlarms=false alarm=['window=0', 'exactAllowReason=listener', 'flags=0x1', 'flags=8}]']
+14:55:24 [60]   final: threw=None info=canScheduleExactAlarms=false alarm=['window=+12s856ms', 'flags=0x20', 'flags=8}]']
+14:55:24 [60]   exactAfterGrant: threw=None info=canScheduleExactAlarms=true alarm=['window=0', 'exactAllowReason=permission', 'flags=0x5', 'flags=8}]']
+14:55:24 [60]   after grant: canScheduleExactAlarms=True
+14:55:24 [60] --- status-noperm.145524.60
+14:55:27 [60]   canScheduleExactAlarms=False bucket=10 bgRestricted=False
+14:55:27 [60]   requested: 
+14:55:27 [60]   appop: No operations.
+Default mode: default
+14:55:27 [60]   exact: threw=java.lang.SecurityException: Caller com.example.pvlab.clip.noperm needs to hold android.permission.SCHEDULE_EXACT_ALARM or android.permission.USE_EXACT_ALARM to set exact alarms. info=canScheduleExactAlarms=false alarm=[]
+14:55:27 [60]   listener: threw=None info=canScheduleExactAlarms=false alarm=['window=0', 'exactAllowReason=listener', 'flags=0x1', 'flags=8}]']
+14:55:27 [60]   final: threw=None info=canScheduleExactAlarms=false alarm=['window=+12s856ms', 'flags=0x20', 'flags=8}]']
+14:55:27 [60] --- overlay-sensitive.145527.60
+14:55:44 [60]   overlay nodes at 3.1s: []
+14:55:44 [60]   nodes at 12 s with clipboard ids: []
+14:55:44 [60] --- overlay-plain.145544.60
+14:56:00 [60]   overlay nodes at 3.1s: []
+14:56:00 [60]   nodes at 12 s with clipboard ids: []
+14:56:00 [60] --- fgclear.145600.60
+14:56:14 [60]   clear=9004 listener=[[2, True, 'pvlab:fgclear.145600.60', 'imp=100 lru=0 trim=0'], [13, True, 'pvlab:fgclear.145600.60', 'imp=100 lru=0 trim=0'], [9006, False, None, 'imp=100 lru=0 trim=0']] probe={'ev': 'probe', 'pkg': 'com.example.pvlab.clip', 'pid': 14316, 'el': 1493189, 'up': 1493189, 'run': 'fgclear.145600.60', 'has': False, 'clipNull': True, 'items': None, 'text': None, 'label': None, 'mime': None, 'sensitive': None, 'extraKeys': None, 'descTs': None, 'desc': None, '_host': 1791280574.44691}
+14:56:14 [60]   clipboard nodes after clear: []
+14:56:14 [60] --- othercopy-alarm_exact.145614.60 app=full
+14:56:48 [60]   otherCopy at 8545 ms; listener callbacks of the first app after +2 s: []; all=[[3, True, 'pvlab:othercopy-alarm_exact.145614.60', 'imp=100 lru=0 trim=0'], [9, True, 'pvlab:othercopy-alarm_exact.145614.60', 'imp=100 lru=0 trim=0']]
+14:56:48 [60]   event=('clear', None, 30003, None, None, None) watch(other value)=[[10613, 'VALUE'], [30031, 'EMPTY']] final probe=EMPTY
+14:56:48 [60] --- othercopy-alarm_peek.145648.60 app=full
+14:57:22 [60]   otherCopy at 8587 ms; listener callbacks of the first app after +2 s: []; all=[[4, True, 'pvlab:othercopy-alarm_peek.145648.60', 'imp=100 lru=0 trim=0'], [17, True, 'pvlab:othercopy-alarm_peek.145648.60', 'imp=100 lru=0 trim=0']]
+14:57:22 [60]   event=('peek', None, None, False, None, None) watch(other value)=[[10599, 'VALUE']] final probe=VALUE
+14:57:23 [60] --- othercopy-final.145723.60 app=full
+14:57:57 [60]   otherCopy at 8547 ms; listener callbacks of the first app after +2 s: []; all=[[4, True, 'pvlab:othercopy-final.145723.60', 'imp=100 lru=0 trim=0'], [14, True, 'pvlab:othercopy-final.145723.60', 'imp=100 lru=0 trim=0']]
+14:57:57 [60]   event=('clear', 'cleared', 30020, None, None, None) watch(other value)=[[10607, 'VALUE'], [30050, 'EMPTY']] final probe=EMPTY
+14:57:57 [60] --- othercopy-final-front.145757.60 app=full
+14:58:31 [60]   otherCopy at 8634 ms; listener callbacks of the first app after +2 s: []; all=[[4, True, 'pvlab:othercopy-final-front.145757.60', 'imp=100 lru=0 trim=0'], [15, True, 'pvlab:othercopy-final-front.145757.60', 'imp=100 lru=0 trim=0']]
+14:58:31 [60]   event=('clear', 'skipped', 30019, None, None, None) watch(other value)=[] final probe=VALUE
+14:58:31 [60] ===== all plans done

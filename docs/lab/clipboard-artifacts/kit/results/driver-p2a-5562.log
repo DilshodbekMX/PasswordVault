@@ -1,0 +1,53 @@
+14:57:08 [62] device sdk 37 screen: mWakefulness=Awake mWakefulness=1 installed: package:com.example.pvlab.clip package:com.example.pvlab.clip.noperm package:com.example.pvlab.clip.sea
+14:57:08 [62] ===== plan kill shard 1/3: 8 runs
+14:57:08 [62] --- run final.watch.kill.145708.62 app=full delay=30000
+14:57:41 [62]   clear=30346 ms (late +346) via=alarm threw=None pidChanged=True probe=EMPTY watch=VALUE->EMPTY@30352 frozen=False adjMax=905 onReturn=None pre=None
+14:57:41 [62] --- run final.watch.kill.145741.62 app=noperm delay=30000
+14:58:15 [62]   clear=30362 ms (late +362) via=alarm threw=None pidChanged=True probe=EMPTY watch=VALUE->EMPTY@30412 frozen=False adjMax=700 onReturn=None pre=None
+14:58:15 [62] --- run alarm_listener.watch.kill.145815.62 app=full delay=30000
+14:59:34 [62]   clear=NONE via=None threw=None pidChanged=None probe=VALUE watch=VALUE->EMPTY@71257 frozen=False adjMax=700 onReturn=None pre=None
+14:59:34 [62] --- run final.watch.kill.145934.62 app=full delay=30000
+15:00:08 [62]   clear=30318 ms (late +318) via=alarm threw=None pidChanged=True probe=EMPTY watch=VALUE->EMPTY@30352 frozen=False adjMax=700 onReturn=None pre=None
+15:00:08 [62] --- run final.watch.kill.150008.62 app=noperm delay=30000
+15:00:41 [62]   clear=30309 ms (late +309) via=alarm threw=None pidChanged=True probe=EMPTY watch=VALUE->EMPTY@30311 frozen=False adjMax=700 onReturn=None pre=None
+15:00:41 [62] --- run alarm_exact.watch.kill.150041.62 app=full delay=30000
+15:01:15 [62]   clear=30333 ms (late +333) via=receiver threw=None pidChanged=True probe=EMPTY watch=VALUE->EMPTY@30346 frozen=False adjMax=700 onReturn=None pre=None
+15:01:15 [62] --- run work.watch.kill.150115.62 app=full delay=30000
+15:02:11 [62]   clear=52822 ms (late +22822) via=worker attempt=0 threw=None pidChanged=True probe=EMPTY watch=VALUE->EMPTY@52823 frozen=False adjMax=700 onReturn=None pre=None
+15:02:11 [62] --- run alarm_exact.watch.kill.150211.62 app=full delay=30000
+15:02:44 [62]   clear=30369 ms (late +369) via=receiver threw=None pidChanged=True probe=EMPTY watch=VALUE->EMPTY@30404 frozen=False adjMax=700 onReturn=None pre=None
+15:02:44 [62] ===== plan freeze shard 1/3: 9 runs
+15:02:44 [62] --- run final.chainwatch.none.150244.62 app=full delay=30000
+15:03:17 [62]   clear=30011 ms (late +11) via=timer threw=None pidChanged=False probe=EMPTY watch=VALUE->EMPTY@30050 frozen=True adjMax=900 onReturn=None pre=None
+15:03:17 [62] --- run final.chainwatch.none.150317.62 app=noperm delay=30000
+15:03:50 [62]   clear=30006 ms (late +6) via=timer threw=None pidChanged=False probe=EMPTY watch=VALUE->EMPTY@30039 frozen=True adjMax=900 onReturn=None pre=None
+15:03:50 [62] --- run alarm_listener.chainwatch.none.150350.62 app=full delay=30000
+15:05:10 [62]   clear=NONE via=None threw=None pidChanged=None probe=VALUE watch=VALUE->EMPTY@71265 frozen=True adjMax=900 onReturn=None pre=None
+15:05:10 [62] --- run alarm_exact.chainwatch.none.150510.62 app=full delay=30000
+15:05:43 [62]   clear=30008 ms (late +8) via=receiver threw=None pidChanged=False probe=EMPTY watch=VALUE->EMPTY@30013 frozen=True adjMax=900 onReturn=None pre=None
+15:05:43 [62] --- run work.chainwatch.none.150543.62 app=full delay=30000
+15:06:39 [62]   clear=52528 ms (late +22528) via=worker attempt=0 threw=None pidChanged=False probe=EMPTY watch=VALUE->EMPTY@52546 frozen=True adjMax=900 onReturn=None pre=None
+15:06:39 [62] --- run handler.chainwatch.none.150639.62 app=full delay=30000
+15:07:54 [62]   clear=NONE via=None threw=None pidChanged=None probe=VALUE watch=VALUE->None@None frozen=True adjMax=900 onReturn=71895 pre=None
+15:07:54 [62] --- run final.chainwatch.none.150754.62 app=full delay=30000
+15:08:27 [62]   clear=30007 ms (late +7) via=timer threw=None pidChanged=False probe=EMPTY watch=VALUE->EMPTY@30016 frozen=True adjMax=900 onReturn=None pre=None
+15:08:27 [62] --- run final.chainwatch.none.150827.62 app=noperm delay=30000
+15:09:00 [62]   clear=30004 ms (late +4) via=timer threw=None pidChanged=False probe=EMPTY watch=VALUE->EMPTY@30006 frozen=True adjMax=900 onReturn=None pre=None
+15:09:00 [62] --- run alarm_exact.chainwatch.none.150900.62 app=full delay=30000
+15:09:33 [62]   clear=30004 ms (late +4) via=receiver threw=None pidChanged=False probe=EMPTY watch=VALUE->EMPTY@30035 frozen=True adjMax=900 onReturn=None pre=None
+15:09:33 [62] ===== plan screenoff shard 1/3: 7 runs
+15:09:33 [62] --- run final.home.screenoff.150933.62 app=full delay=30000
+15:10:09 [62]   clear=30026 ms (late +26) via=timer threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=False adjMax=700 onReturn=None pre=None
+15:10:09 [62] --- run final.home.screenoff.151009.62 app=noperm delay=30000
+15:10:45 [62]   clear=30028 ms (late +28) via=alarm threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=False adjMax=700 onReturn=None pre=None
+15:10:45 [62] --- run alarm_exact.home.screenoff.151045.62 app=full delay=30000
+15:11:21 [62]   clear=30002 ms (late +2) via=receiver threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=False adjMax=700 onReturn=None pre=None
+15:11:21 [62] --- run work.home.screenoff.151121.62 app=full delay=30000
+15:11:57 [62]   clear=30036 ms (late +36) via=worker attempt=0 threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=False adjMax=700 onReturn=None pre=None
+15:11:57 [62] --- run handler.home.screenoff.151157.62 app=full delay=30000
+15:12:34 [62]   clear=30026 ms (late +26) via=handler threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=False adjMax=700 onReturn=None pre=None
+15:12:34 [62] --- run alarm_awi.home.screenoff.151234.62 app=full delay=30000
+15:13:32 [62]   clear=52501 ms (late +22501) via=receiver threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=False adjMax=700 onReturn=None pre=None
+15:13:32 [62] --- run handler.home.screenoff.151332.62 app=full delay=30000
+15:14:08 [62]   clear=30027 ms (late +27) via=handler threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=False adjMax=700 onReturn=None pre=None
+15:14:08 [62] ===== all plans done

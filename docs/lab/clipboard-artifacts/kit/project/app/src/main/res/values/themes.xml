@@ -1,0 +1,3 @@
+<resources>
+    <style name="Theme.PasswordVault" parent="Theme.AppCompat.DayNight.NoActionBar" />
+</resources>

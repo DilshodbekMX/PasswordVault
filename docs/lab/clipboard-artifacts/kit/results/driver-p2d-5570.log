@@ -1,0 +1,19 @@
+15:01:13 [70] device sdk 37 screen: mWakefulness=Awake mWakefulness=1 installed: package:com.example.pvlab.clip package:com.example.pvlab.clip.noperm package:com.example.pvlab.clip.sea
+15:01:13 [70] ===== plan overlay shard 0/1: 2 runs
+15:01:13 [70] --- overlay-sensitive.150113.70
+15:01:29 [70]   overlay nodes at 3.3s: [['com.android.systemui', 'com.android.systemui:id/clipboard_ui', '', 'Clipboard', '[0,0][1080,2337]'], ['com.android.systemui', 'com.android.systemui:id/clipboard_preview', '', '', '[63,2079][273,2289]'], ['com.android.systemui', 'com.android.systemui:id/hidden_preview', '••••••', '', '[63,2079][273,2289]'], ['com.android.systemui', 'com.android.systemui:id/clipboard_announcement_live_region', '', 'Text copied', '[0,2334][3,2337]']]
+15:01:29 [70]   nodes at 12 s with clipboard ids: []
+15:01:29 [70] --- overlay-plain.150129.70
+15:01:46 [70]   overlay nodes at 3.3s: [['com.android.systemui', 'com.android.systemui:id/clipboard_ui', '', 'Clipboard', '[0,0][1080,2337]'], ['com.android.systemui', 'com.android.systemui:id/clipboard_preview', '', '', '[63,2079][273,2289]'], ['com.android.systemui', 'com.android.systemui:id/text_preview', 'PVLAB-overlay-plain.150129.70-S3CRET', '', '[63,2079][273,2289]'], ['com.android.systemui', 'com.android.systemui:id/clipboard_announcement_live_region', '', 'Text copied', '[0,2334][3,2337]']]
+15:01:46 [70]   nodes at 12 s with clipboard ids: []
+15:01:46 [70] --- fgclear.150146.70
+15:02:00 [70]   clear=9006 listener=[[4, True, 'pvlab:fgclear.150146.70', 'imp=100 lru=0 trim=0'], [15, True, 'pvlab:fgclear.150146.70', 'imp=100 lru=0 trim=0'], [9013, False, None, 'imp=100 lru=0 trim=0']] probe={'ev': 'probe', 'pkg': 'com.example.pvlab.clip', 'pid': 13245, 'el': 1191228, 'up': 1191228, 'run': 'fgclear.150146.70', 'has': False, 'clipNull': True, 'items': None, 'text': None, 'label': None, 'mime': None, 'sensitive': None, 'extraKeys': None, 'descTs': None, 'desc': None, '_host': 1791280920.5623677}
+15:02:00 [70]   clipboard nodes after clear: []
+15:02:00 [70] ===== plan workkill shard 0/1: 3 runs
+15:02:00 [70] --- run work.watch.kill.150200.70 app=full delay=30000
+15:02:34 [70]   clear=30363 ms (late +363) via=worker attempt=0 threw=None pidChanged=True probe=EMPTY watch=VALUE->EMPTY@30368 frozen=False adjMax=905 onReturn=None pre=None
+15:02:34 [70] --- run work.home.swipe.150234.70 app=full delay=30000
+15:06:39 [70]   clear=NONE via=None threw=None pidChanged=None probe=VALUE watch=VALUE->None@None frozen=False adjMax=700 onReturn=241936 pre=None
+15:06:39 [70] --- run work.watch.kill.150639.70 app=full delay=30000
+15:10:43 [70]   clear=NONE via=None threw=None pidChanged=None probe=VALUE watch=VALUE->None@None frozen=False adjMax=700 onReturn=242064 pre=None
+15:10:43 [70] ===== all plans done

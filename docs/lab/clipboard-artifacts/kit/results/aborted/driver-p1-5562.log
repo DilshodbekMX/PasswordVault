@@ -1,0 +1,3 @@
+14:36:55 [62] device sdk 37 screen: mWakefulness=Awake mWakefulness=1 installed: package:com.example.pvlab.clip package:com.example.pvlab.clip.noperm package:com.example.pvlab.clip.sea
+14:36:55 [62] ===== plan base shard 1/3: 16 runs
+14:36:55 [62] --- run alarm_set.home.none.143655.62 app=full delay=30000

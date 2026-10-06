@@ -1,0 +1,132 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.6.0/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+Reusing configuration cache.
+> Task :app:generateNopermDebugAssets UP-TO-DATE
+> Task :app:generateFullDebugAssets UP-TO-DATE
+> Task :app:preBuild UP-TO-DATE
+> Task :app:generateSeaDebugAssets UP-TO-DATE
+> Task :app:preNopermDebugBuild UP-TO-DATE
+> Task :app:preSeaDebugBuild UP-TO-DATE
+> Task :app:preFullDebugBuild UP-TO-DATE
+> Task :app:mergeFullDebugNativeDebugMetadata NO-SOURCE
+> Task :app:mergeNopermDebugNativeDebugMetadata NO-SOURCE
+> Task :app:extractDeepLinksNopermDebug UP-TO-DATE
+> Task :app:javaPreCompileFullDebug UP-TO-DATE
+> Task :app:validateSigningFullDebug UP-TO-DATE
+> Task :app:generateNopermDebugGlobalSynthetics UP-TO-DATE
+> Task :app:createNopermDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksFullDebug UP-TO-DATE
+> Task :app:writeFullDebugAppMetadata UP-TO-DATE
+> Task :app:generateNopermDebugResources UP-TO-DATE
+> Task :app:validateSigningNopermDebug UP-TO-DATE
+> Task :app:writeFullDebugSigningConfigVersions UP-TO-DATE
+> Task :app:createFullDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:generateFullDebugGlobalSynthetics UP-TO-DATE
+> Task :app:mapNopermDebugSourceSetPaths UP-TO-DATE
+> Task :app:generateFullDebugResources UP-TO-DATE
+> Task :app:desugarNopermDebugFileDependencies UP-TO-DATE
+> Task :app:javaPreCompileNopermDebug UP-TO-DATE
+> Task :app:mapFullDebugSourceSetPaths UP-TO-DATE
+> Task :app:desugarFullDebugFileDependencies UP-TO-DATE
+> Task :app:mergeFullDebugJniLibFolders UP-TO-DATE
+> Task :app:mergeNopermDebugJniLibFolders UP-TO-DATE
+> Task :app:writeNopermDebugAppMetadata UP-TO-DATE
+> Task :app:mergeSeaDebugNativeDebugMetadata NO-SOURCE
+> Task :app:javaPreCompileSeaDebug UP-TO-DATE
+> Task :app:extractDeepLinksSeaDebug UP-TO-DATE
+> Task :app:generateSeaDebugGlobalSynthetics UP-TO-DATE
+> Task :app:createSeaDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:desugarSeaDebugFileDependencies UP-TO-DATE
+> Task :app:writeNopermDebugSigningConfigVersions UP-TO-DATE
+> Task :app:mapSeaDebugSourceSetPaths UP-TO-DATE
+> Task :app:generateSeaDebugResources UP-TO-DATE
+> Task :app:mergeSeaDebugJniLibFolders UP-TO-DATE
+> Task :app:writeSeaDebugSigningConfigVersions UP-TO-DATE
+> Task :app:writeSeaDebugAppMetadata UP-TO-DATE
+> Task :app:validateSigningSeaDebug UP-TO-DATE
+> Task :app:packageNopermDebugResources UP-TO-DATE
+> Task :app:packageFullDebugResources UP-TO-DATE
+> Task :app:packageSeaDebugResources UP-TO-DATE
+> Task :app:mergeSeaDebugAssets UP-TO-DATE
+> Task :app:mergeFullDebugAssets UP-TO-DATE
+> Task :app:mergeNopermDebugAssets UP-TO-DATE
+> Task :app:compressSeaDebugAssets UP-TO-DATE
+> Task :app:compressFullDebugAssets UP-TO-DATE
+> Task :app:compressNopermDebugAssets UP-TO-DATE
+> Task :app:checkFullDebugAarMetadata UP-TO-DATE
+> Task :app:checkNopermDebugAarMetadata UP-TO-DATE
+> Task :app:checkSeaDebugAarMetadata UP-TO-DATE
+> Task :app:processFullDebugNavigationResources UP-TO-DATE
+> Task :app:processSeaDebugNavigationResources UP-TO-DATE
+> Task :app:processNopermDebugNavigationResources UP-TO-DATE
+> Task :app:compileFullDebugNavigationResources UP-TO-DATE
+> Task :app:compileNopermDebugNavigationResources UP-TO-DATE
+> Task :app:compileSeaDebugNavigationResources UP-TO-DATE
+> Task :app:mergeNopermDebugResources UP-TO-DATE
+> Task :app:checkFullDebugDuplicateClasses UP-TO-DATE
+> Task :app:parseSeaDebugLocalResources UP-TO-DATE
+> Task :app:parseFullDebugLocalResources UP-TO-DATE
+> Task :app:parseNopermDebugLocalResources UP-TO-DATE
+> Task :app:checkNopermDebugDuplicateClasses UP-TO-DATE
+> Task :app:mergeFullDebugResources UP-TO-DATE
+> Task :app:mergeSeaDebugResources UP-TO-DATE
+> Task :app:checkSeaDebugDuplicateClasses UP-TO-DATE
+> Task :app:mergeFullDebugNativeLibs UP-TO-DATE
+> Task :app:mergeSeaDebugNativeLibs UP-TO-DATE
+> Task :app:mergeNopermDebugNativeLibs UP-TO-DATE
+> Task :app:mergeLibDexFullDebug UP-TO-DATE
+> Task :app:generateNopermDebugRFile UP-TO-DATE
+> Task :app:stripFullDebugDebugSymbols UP-TO-DATE
+> Task :app:generateFullDebugRFile UP-TO-DATE
+> Task :app:generateSeaDebugRFile UP-TO-DATE
+> Task :app:processSeaDebugMainManifest UP-TO-DATE
+> Task :app:processNopermDebugMainManifest UP-TO-DATE
+> Task :app:stripNopermDebugDebugSymbols UP-TO-DATE
+> Task :app:processFullDebugMainManifest UP-TO-DATE
+> Task :app:stripSeaDebugDebugSymbols UP-TO-DATE
+> Task :app:mergeLibDexNopermDebug UP-TO-DATE
+> Task :app:processSeaDebugManifest UP-TO-DATE
+> Task :app:mergeLibDexSeaDebug UP-TO-DATE
+> Task :app:processNopermDebugManifest UP-TO-DATE
+> Task :app:processFullDebugManifest UP-TO-DATE
+> Task :app:processNopermDebugManifestForPackage UP-TO-DATE
+> Task :app:processSeaDebugManifestForPackage UP-TO-DATE
+> Task :app:processFullDebugManifestForPackage UP-TO-DATE
+> Task :app:mergeExtDexFullDebug UP-TO-DATE
+> Task :app:mergeExtDexNopermDebug UP-TO-DATE
+> Task :app:mergeExtDexSeaDebug UP-TO-DATE
+> Task :app:processSeaDebugResources UP-TO-DATE
+> Task :app:processNopermDebugResources UP-TO-DATE
+> Task :app:processFullDebugResources UP-TO-DATE
+> Task :app:compileSeaDebugKotlin
+> Task :app:compileSeaDebugJavaWithJavac NO-SOURCE
+> Task :app:processSeaDebugJavaRes UP-TO-DATE
+> Task :app:compileNopermDebugKotlin
+> Task :app:compileNopermDebugJavaWithJavac NO-SOURCE
+> Task :app:processNopermDebugJavaRes UP-TO-DATE
+> Task :app:mergeSeaDebugJavaResource UP-TO-DATE
+> Task :app:mergeNopermDebugJavaResource UP-TO-DATE
+> Task :app:compileFullDebugKotlin
+> Task :app:compileFullDebugJavaWithJavac NO-SOURCE
+> Task :app:processFullDebugJavaRes
+> Task :app:mergeFullDebugJavaResource
+> Task :app:dexBuilderNopermDebug
+> Task :app:dexBuilderFullDebug
+> Task :app:dexBuilderSeaDebug
+> Task :app:mergeProjectDexFullDebug
+> Task :app:mergeProjectDexNopermDebug
+> Task :app:mergeProjectDexSeaDebug
+> Task :app:packageFullDebug
+> Task :app:packageNopermDebug
+> Task :app:assembleFullDebug
+> Task :app:assembleNopermDebug
+> Task :app:createNopermDebugApkListingFileRedirect UP-TO-DATE
+> Task :app:createFullDebugApkListingFileRedirect UP-TO-DATE
+> Task :app:packageSeaDebug
+> Task :app:assembleSeaDebug
+> Task :app:assembleDebug
+> Task :app:createSeaDebugApkListingFileRedirect UP-TO-DATE
+
+BUILD SUCCESSFUL in 5s
+108 actionable tasks: 14 executed, 94 up-to-date
+Configuration cache entry reused.

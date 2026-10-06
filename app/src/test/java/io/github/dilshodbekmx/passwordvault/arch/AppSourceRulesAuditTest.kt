@@ -21,6 +21,9 @@ import org.junit.Test
  * nothing here: no prototype or lab file opens a connection, and `java.net.IDN` in `WebAddress.kt`
  * is allowed. Lines of files that no longer exist (prototypes move into the modules in later
  * waves) are dropped.
+ * The lines of `docs/lab/clipboard-artifacts/kit/` (package 0.3) were added at the wave-0
+ * integration, checked the same way. With `-Ppv.scanAudit` the audited files are inputs of the
+ * test task (root build.gradle.kts), so a cached result never stands for changed files.
  */
 class AppSourceRulesAuditTest {
     @Test
@@ -39,6 +42,10 @@ class AppSourceRulesAuditTest {
             "docs/lab/biometric-artifacts/LabActivity.kt | R-13 Text( with a string literal | 148 150-152 155-156",
             "docs/lab/biometric-artifacts/LabActivity.kt | R-6 Log.<level>( | 63",
             "docs/lab/biometric-artifacts/LabActivity.kt | R-6 android.util.Log | 17",
+            "docs/lab/clipboard-artifacts/kit/project/app/src/main/java/com/example/pvlab/clip/IoTest.kt | R-6 Log.<level>( | 23",
+            "docs/lab/clipboard-artifacts/kit/project/app/src/main/java/com/example/pvlab/clip/IoTest.kt | R-6 android.util.Log | 8",
+            "docs/lab/clipboard-artifacts/kit/project/app/src/main/java/com/example/pvlab/clip/Lab.kt | R-6 Log.<level>( | 71",
+            "docs/lab/clipboard-artifacts/kit/project/app/src/main/java/com/example/pvlab/clip/Lab.kt | R-6 android.util.Log | 18",
             "docs/lab/old-android-artifacts/Kdf.kt | R-11 rawHashAsByteArray | 30",
             "docs/lab/old-android-artifacts/MainActivity.kt | R-13 Text( with a string literal | 330-331 345 353 361",
             "docs/lab/old-android-artifacts/MainActivity.kt | R-13 a text field outside VaultTextField and VaultSecureField | 355",

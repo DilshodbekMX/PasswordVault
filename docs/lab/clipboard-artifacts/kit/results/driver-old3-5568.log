@@ -1,0 +1,11 @@
+15:15:28 [68] device sdk 28 screen: mWakefulness=Awake installed: package:com.example.pvlab.clip package:com.example.pvlab.clip.noperm
+15:15:28 [68] ===== plan old3 shard 0/1: 4 runs
+15:15:28 [68] --- run final.watch.kill9.151528.68 app=full delay=30000
+15:16:01 [68]   clear=30644 ms (late +644) via=alarm threw=None pidChanged=True probe=EMPTY watch=VALUE->EMPTY@30689 frozen=False adjMax=None onReturn=None pre=None
+15:16:01 [68] --- run alarm_exact.watch.kill9.151601.68 app=full delay=30000
+15:16:35 [68]   clear=30669 ms (late +669) via=receiver threw=None pidChanged=True probe=EMPTY watch=VALUE->EMPTY@30711 frozen=False adjMax=None onReturn=None pre=None
+15:16:35 [68] --- run final.watch.kill9.151635.68 app=full delay=30000
+15:17:09 [68]   clear=30904 ms (late +904) via=alarm threw=None pidChanged=True probe=EMPTY watch=VALUE->EMPTY@30948 frozen=False adjMax=None onReturn=None pre=None
+15:17:09 [68] --- run handler.watch.kill9.151709.68 app=full delay=30000
+15:18:28 [68]   clear=NONE via=None threw=None pidChanged=None probe=VALUE watch=VALUE->None@None frozen=False adjMax=None onReturn=None pre=None
+15:18:28 [68] ===== all plans done

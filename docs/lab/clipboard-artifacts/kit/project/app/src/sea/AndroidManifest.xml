@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Lab variant: no USE_EXACT_ALARM; SCHEDULE_EXACT_ALARM declared for all API levels (no maxSdkVersion),
+     to observe the default state of exact-alarm access on API 37 without USE_EXACT_ALARM. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <uses-permission
+        android:name="android.permission.USE_EXACT_ALARM"
+        tools:node="remove" />
+    <uses-permission
+        android:name="android.permission.SCHEDULE_EXACT_ALARM"
+        tools:remove="android:maxSdkVersion" />
+</manifest>
