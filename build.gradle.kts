@@ -18,23 +18,31 @@ plugins {
 }
 
 allprojects {
-    // Every configuration is locked to the versions in <project>/gradle.lockfile, and every artifact
-    // is checked against the SHA-256 sums in gradle/verification-metadata.xml (architecture.md §7.2).
-    // Whoever changes a version regenerates both in the same commit:
-    //   tools/gradle.sh resolveAndLockAll --write-locks
-    //   tools/gradle.sh --write-verification-metadata sha256 <the tasks of tools/check.sh all>
+    // Every configuration is locked to the versions in <project>/gradle.lockfile (and the plugins in
+    // buildscript-gradle.lockfile), and every artifact is checked against the SHA-256 sums in
+    // gradle/verification-metadata.xml (architecture.md §7.2). Whoever changes a version regenerates
+    // both in the same commit:
+    //   tools/gradle.sh resolveAll --write-locks
+    //   tools/gradle.sh --write-verification-metadata sha256 --rerun-tasks resolveAll \
+    //       :core:testDebugUnitTest :app:testDebugUnitTest :core:lintDebug :app:lintDebug \
+    //       :app:assembleDebug :app:assembleStaging :app:assembleRelease :app:assembleBackupCheck \
+    //       :app:assembleDebugAndroidTest
+    // and then checks that the <configuration> part of the metadata file is unchanged.
     dependencyLocking {
         lockAllConfigurations()
     }
 
-    tasks.register("resolveAndLockAll") {
-        description = "Resolves every configuration of this project, so that --write-locks records all of them."
+    tasks.register("resolveAll") {
+        description = "Resolves every configuration of this project, graph and files, for --write-locks " +
+            "and --write-verification-metadata."
         notCompatibleWithConfigurationCache("Resolves configurations while it runs")
-        doFirst {
-            require(gradle.startParameter.isWriteDependencyLocks) { "Run $path with --write-locks" }
-        }
         doLast {
-            configurations.filter { it.isCanBeResolved }.forEach { it.resolve() }
+            configurations.filter { it.isCanBeResolved }.forEach { configuration ->
+                configuration.incoming.resolutionResult.allComponents
+                // Lenient: AGP's own project variants cannot pick their files without the artifact
+                // type of a real consumer; every external file is still downloaded and checked.
+                configuration.incoming.artifactView { isLenient = true }.files.files
+            }
         }
     }
 }
