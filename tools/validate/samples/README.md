@@ -19,6 +19,8 @@ They predate architecture.md §6: the CSV note block still has the old marker `-
 | `tampered-protected.xlsx` | `export-protected.xlsx` with one bit of the encrypted package flipped (written by `prototypes/formats/validate/check_protected.py`); its integrity check must fail |
 | `fixed-*.bin` | The four fixed DataSpaces streams of a locked workbook, byte-identical to those of Excel's own reference file |
 
-The JSON export and the expected-value files of that run (`expected-csv-rows.json`, `expected-xlsx-cells.json`) were not rescued. Running the prototype again writes all of them; the plain files then come out byte for byte the same when the JVM's zone is Asia/Tashkent.
+The JSON export and the expected-value files of that run (`expected-csv-rows.json`, `expected-xlsx-cells.json`) were not rescued. Running the prototype again writes all of them; the plain files then come out byte for byte the same when the JVM's zone is Asia/Tashkent (checked on 2026-10-06).
+
+`tools/validate/run.sh --allow-missing samples/prototype/export-part1.csv samples/prototype/export-part2.csv samples/prototype/export.xlsx` passes every check except the workbook's zip time (P9), as it should for these files.
 
 The locked workbooks are checked by `prototypes/formats/validate/check_protected.py` and `lo_read.py`, which stay with `OfficeCrypto.kt` in `prototypes/formats/` (architecture.md D-16), not by `tools/validate/`. D-16's release question, whether Microsoft Excel opens a locked and a plain file without a repair prompt, is to be asked again with files from the app's own writer.
