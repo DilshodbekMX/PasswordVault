@@ -34,7 +34,7 @@ API level can run at once (each is its own read-only instance of the base).
 | `adb.sh --connected SERIAL... [-- GRADLE-ARGS]` | The connected tests (A §8.3) on exactly these devices: refuses a serial that is not this worktree's, removes the app and its test APK from each, clears the old reports, runs `:app:connectedDebugAndroidTest` with `ANDROID_SERIAL` set (through `tools/gradle.sh`; `./gradlew --no-daemon` with JAVA_HOME and ANDROID_HOME until 0.1 has made it), then checks the report of every serial. |
 | `adb.sh --connected-results DIR SERIAL...` | That last check alone: a JUnit report with at least one test and no failure for each serial, and none for any other device. |
 | `smoke.sh VARIANT SERIAL [--apk FILE]` | The smoke test (A §8.4). VARIANT is `debug` or `staging`; the APK defaults to `app/build/outputs/apk/VARIANT/app-VARIANT.apk`. Wave 0: checks the APK (package, debuggable flag, x86_64 code), removes an installed copy, installs, starts the launcher activity, checks that it is in front and still running after 5 s without a crash. Later waves add stages. |
-| `checks/` | The integrator's integration checks, `checks/<wave>.sh`. Empty in wave 0. |
+| `checks/` | The integrator's integration checks, `checks/<wave>.sh`, run from the integrator's worktree (main). `checks/0.sh [jvm] [devices]` is wave 0's: the acceptance of packages 0.1 and 0.2 on the integrator's devices (`boot.sh --integrator`). |
 
 Exit codes of all scripts: 0 success, 1 failure, 2 usage, 3 refused serial.
 

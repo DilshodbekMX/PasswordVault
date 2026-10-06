@@ -12,7 +12,8 @@
 #            --integrator: read-only, ports 5584, 5582, 5580); the debug app installs on each;
 #            one more private emulator runs meanwhile; the connected tests pass on exactly the
 #            three (adb.sh --connected: ANDROID_SERIAL and a passing report for every serial) and
-#            nothing reached the other emulator; smoke.sh staging on API 24 and 37; every device
+#            nothing reached the other emulator; smoke.sh staging on API 24 and 37, after which
+#            the staging app's debug receiver answers `adb shell am broadcast`; every device
 #            stopped; the bases unchanged (boot.sh --verify-base); in the user's AVD directory
 #            ~/.android/avd/Medium_Phone.avd nothing changed but what the user's own running
 #            emulator writes, and no emulator started here names that AVD in its log.
@@ -197,6 +198,15 @@ smoke_staging() { # SERIAL
     return $rc
 }
 
+# The debug receiver of the staging app (exported behind DUMP, architecture.md §7.2) is reached by
+# `adb shell am broadcast` and answers an unknown command with result 2 (DebugCommandReceiver).
+debug_receiver() { # SERIAL
+    local out
+    out=$("$EMU/adb.sh" -s "$1" shell am broadcast -f 32 -a "$APP_ID.debug.CMD" -p "$APP_ID" --es cmd wave0-ping 2>&1 | tr -d '\r')
+    echo "   $1: $(echo "$out" | grep -m 1 'Broadcast completed')"
+    echo "$out" | grep -q "result=2, data=\"unknown command 'wave0-ping'"
+}
+
 stop_devices() {
     local s rc=0
     for s in "$S24" "$S28" "$S37" "$SX"; do
@@ -248,6 +258,8 @@ part_devices() {
         pv_step "nothing was installed on the other emulator" -- nothing_on_other
         pv_step "smoke.sh staging on API 24" -- smoke_staging "$S24"
         pv_step "smoke.sh staging on API 37" -- smoke_staging "$S37"
+        pv_step "the staging app's debug receiver answers adb on API 24" -- debug_receiver "$S24"
+        pv_step "the staging app's debug receiver answers adb on API 37" -- debug_receiver "$S37"
     fi
     pv_step "the devices are stopped" -- stop_devices
     pv_step "the bases are unchanged" -- bases_unchanged
