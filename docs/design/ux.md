@@ -537,7 +537,9 @@ If fingerprint unlock is on and cannot be used now, the matching fingerprint lin
 - **`TopAppBar`**: title "Passwords"; action `IconButton` "Lock now" (lock icon).
 - **Search field**, directly below: `SearchBarDefaults.InputField` from the Material 3 `SearchBar` family, used as an in-place filter (the full-screen expanded mode is not used). Placeholder "Search accounts".
 - **Banners** (`OutlinedCard`), **at most two at a time**, in this priority order (the others wait):
-  1. a new-master-password request waiting for its date (§5.24; only if the lock design has a waiting time);
+  1. the lock's banner (`LockStatus`, architecture.md §3.5), one of two that never show together:
+     - a new master password waiting to start working (§5.24): who asked, when, and about how many hours are left, with "Cancel it";
+     - otherwise, when practice is past its grace period (§5.10), the standing banner of lock.md §13.4 item 6: "You have not typed your master password since 12 Sep. Without it you cannot open a backup or move to a new phone." Buttons "Type it now" and "I forgot it" (§5.24). It stays whenever the app is open, until a master password has been typed;
   2. an unprotected export not yet deleted (§5.20);
   3. backup overdue (rule below);
   4. a password change waiting for confirmation (§5.17).
@@ -585,8 +587,8 @@ Behaviour:
   A second, slightly lower tier finds Russian-keyboard spellings (у к г х for ў қ ғ ҳ, е for ё): "узбек" finds "Ўзбекистон", and "хамкор" finds "Ҳамкорбанк".
 
   Why it matters: the Senate's sponsor said Oʻ and Gʻ are written in "more than 10 variants" that software treats as different words [V: Gazeta.uz 2026-09-10], and even Android's own Uzbek strings mix U+2018 and U+02BB [V: AOSP SettingsLib `values-uz`].
-- **Two additions from the critique** (asked of the search owner, §14):
-  - **Accent-free ş and ç.** search.md maps ş and ç only to sh and ch, so "besiktas" does not find "Beşiktaş" and "garcon" does not find "Garçon" (its §6 item 4). Adding ş → s and ç → c to the second tier keeps accent-free Turkish, Azerbaijani and French queries working [E: critique m1].
+- **Two additions from the critique** (architecture.md D-11; search.md §1 and §2 specify them):
+  - **Accent-free ş and ç.** The second tier also turns ş into s and ç into c, so "besiktas" finds "Beşiktaş" and "garcon" finds "Garçon", which keeps accent-free Turkish, Azerbaijani and French queries working [E: critique m1].
   - **The wrong keyboard layout.** When a query finds nothing, it is retried through the Russian ЙЦУКЕН ↔ Latin QWERTY key map in both directions. If that finds accounts, they are shown under "Showing results for "inst"" ("штые" typed on the wrong layout).
 - **Ranking** (search.md §2):
   - the field first: title › username and website host › extra fields and notes;
@@ -680,10 +682,9 @@ Fields in order:
 - **After Save**:
   - a new account opens its detail screen with the snackbar "Saved", so its password can be copied with one tap (for example, to paste it into a sign-up form);
   - an edited account returns to its detail screen.
-- **Same as the master password.**
-  - After Save, if the password is new or changed, the app checks it against the master password in the background. This is one run of the master-password check (about 1 s); it uses the stored lock, not a copy of the master password.
-  - A match shows the banner of §5.12. If the phone lacks memory for the check, it is skipped silently; the next master-password entry repeats it (§5.10).
-  - Nothing is checked while the user types: that would need the master password, or a fast hash of it, in memory.
+- **Same as the master password** (architecture.md D-9b): Save does not compare the password with the master password, and nothing is compared while the user types.
+  - The comparison runs only at each correct master-password entry, with the typed master password in memory (§5.10). A password saved now is therefore found at the next master-password entry, and then shows the banner of §5.12.
+  - Reason: a check at Save would be one key derivation (64 MiB, about a second) per saved password with no waiting time, which is a way to test guesses at the master password outside the lock's limits (lock.md §6.8). Keeping the master password, or a fast hash of it, in memory for the purpose would be worse.
 - **Unsaved changes when the app is left** (the user goes to another app, or the screen turns off).
   - The app saves a **draft** inside the locked file: the entry id (none for a new account), every field as typed, and the time. The entry itself is not changed. A generated password counts as a change.
   - After unlock, the form reopens from the draft with the snackbar "Your unsaved changes were kept."
@@ -800,11 +801,11 @@ A `LazyColumn` of `ListItem`s grouped under headings.
 
 | Group | Item | Control | Default |
 |---|---|---|---|
-| **App lock** | Change PIN | screen | — |
-| | Fingerprint unlock | `Switch`. When unavailable, the reason: "Needs Android 9 or newer" · "Set a screen lock and add a fingerprint in your phone's settings first" · "This phone's fingerprint sensor isn't secure enough". On Android 12+ the name comes from the system (§5.7) | off |
-| | Lock the app after leaving it | dialog with `RadioButton`s: Immediately · After 30 seconds · After 1 minute · After 5 minutes. Time in a system file picker or share sheet the app opened counts as time in the app (§4) | **30 seconds** |
+| **App lock** | Change PIN (when a PIN is set) or Set a PIN (when none is) | screen. There is no switch to turn the PIN off (lock.md F6) | — |
+| | Fingerprint unlock | `Switch`, from Android 7 (lock.md §9.4). Under it: "Anyone whose fingerprint is saved in this phone's settings can open the app." When unavailable, the reason: "Set a screen lock and add a fingerprint in your phone's settings first" · "This phone has no fingerprint sensor that apps can use" · "Fingerprint can't be used in apps right now. In your phone's settings, check that fingerprint may be used to verify it's you in apps." · "Your phone needs a security update before fingerprint can be used" · "This phone can't keep a fingerprint key in protected hardware." When the phone's answer is "unknown" (Android 9 and 10), the switch stays enabled and turning it on decides. After a master-password change that did not renew it: "Fingerprint unlock: turn on again". On Android 12+ the name comes from the system (§5.7) | off |
+| | Lock the app after leaving it | dialog with `RadioButton`s: Immediately · After 30 seconds · After 1 minute · After 5 minutes. Time in a system file picker or share sheet the app opened counts as time in the app (§4) | **30 seconds**, written at setup; a setting that is missing or cannot be read counts as "Immediately" (architecture.md D-7) |
 | | (always) | Lock at once when the screen turns off; lock after 5 minutes without a touch while open | not configurable |
-| | Clear copied text after | 30 seconds · 1 minute · 2 minutes · 5 minutes (no "Never") | **1 minute** |
+| | Clear copied text after | 30 seconds · 1 minute · 2 minutes · 5 minutes (no "Never") | **1 minute**, written at setup; 30 seconds when the setting is missing (D-7) |
 | | Change master password | screen; includes "I don't remember it" (§5.24) | — |
 | Backup & transfer | Make a backup | screen; supporting text "Last backup: 3 days ago, Google Drive" | — |
 | | Backup reminders | `Switch` | on |
@@ -823,28 +824,30 @@ The group is called "App lock" (glossary term 69 in i18n.md), so that "Security"
 
 The app is stricter on locking because the user asked for a bank-like lock. It keeps a short grace period because frequent unlocking is the classic complaint. In SOUPS 2025, 72 % of improvement wishes were about convenience: entering the primary password less often, and easier import. CCS 2019 participants turned off lock-on-exit ("it is annoying to constantly have to be unlocking the app when I'm going back and forth") and clipboard clearing [E].
 
-**Change master password.**
+**Change master password** (lock.md F8, in its order).
 1. **Current master password.** Or `TextButton` "I don't remember it" → §5.24.
-2. The new one (§5.3), written down (§5.4) and typed again (§5.5), then "Saving…".
-3. **"Enter your PIN to keep using it."** The vault key changes, so the PIN must be confirmed to keep working [E: V-C5, V-S5; lock design 2 §9.7]. If there is no PIN, this step is "Choose a PIN". "Not now" leaves the app opening with the master password until a PIN is set.
-4. **"Touch the sensor to keep fingerprint unlock on."** Only when it was on.
-5. **"Make a new backup now. Your old backups still open only with your old master password."** [Back up now] [Later] [E: crypto.md §11].
+2. The new one (§5.3), written down (§5.4) and typed again (§5.5); the screen is kept on for the last two (lock.md §10.1).
+3. **"Enter your app PIN to keep using it."** Only when a PIN is usable. The vault key changes, so the PIN must be confirmed to keep working [E: V-C5, V-S5]. It is a counted PIN check (lock.md §6.3). "Not now" is allowed; if the PIN cannot be checked right now, the flow goes on as after "Not now". Whenever the vault would end up without a PIN for its new key, "Choose a PIN" (skippable) follows the save.
+4. "Saving…": the new copy is written, read back and opened with the second typing before anything else changes. If it does not prove: "Couldn't change your master password. Nothing was changed. Your old master password, PIN and fingerprint still work." If even that cannot be tidied up: "Saving may not have finished. Next time, try your new master password first, then your old one."
+5. **"Touch the sensor to keep fingerprint unlock on."** Only when it was on. "Not now" or a closed prompt leaves Settings showing "Fingerprint unlock: turn on again".
+6. **"Make a new backup now. Your old backups still open only with your old master password."** [Back up now] [Later] [E: crypto.md §11]. "Back up now" uses the master password just typed (§5.19).
    - If the change was started from the security check's card 1 (§5.16), the old password may be known to others. This screen then also lists the places where this app saved backups, with "Delete" where the place allows it, and says "Also delete copies you sent to Telegram or by email."
 
-**Change PIN.**
-- The flow: current PIN (or the master password) → new PIN → confirm.
-- Whether a fingerprint touch may stand in for the current PIN is the lock design's decision; lock design 1 requires the master password for any change that adds a way in.
+**Change PIN and Set a PIN** (lock.md F6, §8.2).
+- **Change PIN** takes the current PIN ("Enter your current PIN", a counted check) or, with "Use master password instead", the master password → new PIN → confirm. The new PIN must differ from the current one when the current one was typed.
+- **Set a PIN** (no PIN exists) needs the master password.
+- A fingerprint touch never stands in for either.
+- **There is no switch to turn the PIN off.** It can be skipped at setup and set later.
 - After "Forgot PIN?" the app goes straight to "Choose a new PIN" instead (§5.9).
 
 ### 5.19 Make a backup
 
 1. **Explanation** (first time only): "A backup is a locked copy of all your passwords. It opens only with your master password, on any phone."
-2. **Master password, only when needed.**
-   - **Proposed:** if the master password was typed correctly in the last 14 days (at an unlock, practice, backup, export or change), this step is skipped. The backup is then a copy of the locked file that was opened and checked in this session, so it still opens only with the current master password. This is what storage.md §5.4 describes, and what Aegis does for exports and automatic backups [E: crypto_code.md:10-12].
-   - **Otherwise** the screen says: "Type your master password. This checks that you still know the password this backup will need." It counts as practice.
-   - **The crypto owner must accept this** (crypto.md §10–11 gives each backup a new key, which needs the typed password). **Until then the step is always shown.**
-   - Either way, no backup is made while the user has said they forgot the master password and has not yet chosen a new one (§5.24). Such a backup would need a password nobody remembers.
-   - **Why.** The paper is kept at home, and typing a 32–35-character passphrase for every backup makes backups rarer. Yet backups are the only protection against a lost phone.
+2. **Master password, always** (lock.md F12, architecture.md D-6e).
+   - The screen says: "Type your master password. This checks that you still know the password this backup will need." It is checked against the vault's own password slot, so a typo can never make a backup that the real password does not open, and it counts as practice. Each backup gets its own key from it (crypto.md §10–11, architecture.md §4.12).
+   - **The one exception:** right after the master password was typed in the same flow (practice, a master-password unlock, a change, the end of §5.24) and a backup is due, the app offers "Make a backup now?" and uses that entry. Nothing else skips the step: a backup made by someone who has forgotten the password would be worthless and look safe.
+   - No backup is made while a new master password is pending (§5.24): "You can make a backup when your new master password has started working." Such a backup would need a password nobody remembers.
+   - The cost: the paper is kept at home, and typing a long passphrase for every backup makes backups rarer. The offer after each master-password entry is how the app makes up for it.
 3. **File picker** (`CreateDocument`, suggested name `PasswordVault-backup-2026-10-06.pvault`). Google Drive appears in the picker when its app is installed. Time in the picker counts as time in the app (§4).
 4. **"Saving…" then "Checking the saved file…"** The file is read back and opened before success is shown [E: storage.md §5.4; V-S6].
 5. **Result**: "Backup saved: PasswordVault-backup-2026-10-06.pvault (52 accounts)." The next line depends on the place, recognised by the document's provider:
@@ -888,7 +891,8 @@ Exact file layouts are in formats.md. This section covers what the user sees.
   - the file picker (`CreateDocument`; time there counts as time in the app, §4);
   - "Saving…", then the read-back check.
 - Plain exports are **not offered to the share sheet**; the user can still save and move them [I].
-- **During a pending change** the exported password is the new, unconfirmed one. formats.md decides how the old one is shown (§14).
+- **During a pending change** the exported password is the new, unconfirmed one, and the old one is kept (architecture.md D-10d, formats.md §2 rule 12): `pendingOldPassword` in the JSON, the hidden line "Old password" in the CSV block and in Excel's extra fields. Importing our own file brings both back.
+- **Deleted accounts** (Recently deleted) are in no plain export (D-10e); the backup holds them.
 
 **After export**:
 - The screen says "Saved: passwords-2026-10-06.xlsx. When you're done with it, delete it."
@@ -921,9 +925,9 @@ Exact file layouts are in formats.md. This section covers what the user sees.
 - **Layout**: formats.md §4.
   - Chrome's header and order `name,url,username,password,note` [E: Chromium `password_csv_writer.cc`].
   - One row per website, as Chrome itself exports.
-  - Extra fields go in a marked block at the end of the note (`--- PasswordVault ---`, one line per field), which this app reads back.
+  - Extra fields go in a marked block at the end of the note (`--- PasswordVault (N lines) ---`, one line per field), which this app reads back. Its grammar is fixed (architecture.md D-10a, formats.md §4.4), so that every later version reads what version 1 wrote, and a block the user pasted into a note stays part of the note.
   - UTF-8 without BOM; rows end in CRLF.
-- **The account's name.** Google ignores the `name` column and shows its own site name [E: V-A6; formats.md §4.2]. So when an account's name differs from its website's host, the block starts with a line `Title: <name>`. The formats owner adds this, and the importer turns the line back into the title. "Title" rather than "Name" avoids a clash with a user's own field called "Name".
+- **The account's name.** Google ignores the `name` column and shows its own site name [E: V-A6; formats.md §4.2]. So when an account's name differs from its website's host, the block starts with a line `Title: <name>` (formats.md §4.4), and the importer turns the line back into the title. "Title" rather than "Name" avoids a clash with a user's own field called "Name"; a user's own field called "Title" is written so that it reads back as an ordinary field.
 - **What still does not travel**: the name is visible in Google only inside the note. Favourite, dates and history are not in CSV (JSON has them).
 - **What Google will refuse.**
   - Chromium's importer rejects a row with no password, no valid website, a password, username or note longer than 1,000 characters, or a website longer than 2,048. It takes at most 3,000 rows and 1,000 KB per file [V: Chromium `password_importer.cc`, `password_manager_constants.h`; Google help gives the same 3,000].
@@ -952,14 +956,15 @@ Time in the picker counts as time in the app (§4).
 - Sources: Google's own help pages label the step "Export passwords & passkeys" or "Export passwords", and only one includes "Autofill and passwords" [E: V-A6, account-based.md §4]. The Settings route needs a check on the user's phone [I].
 
 **CSV reading** (formats.md §8.2–8.3):
-- **Text decoding.**
-  - Text that is valid UTF-8 is read as UTF-8, with or without a byte-order mark. Chrome writes UTF-8 without a BOM.
-  - A UTF-16 byte-order mark means UTF-16.
-  - Only anything else is read as Windows-1251, which Russian-language Excel writes [I].
-- The delimiter is detected among `,`, `;` and tab.
-- Header aliases cover Chrome, Bitwarden, KeePassXC and Firefox, plus Russian and Uzbek headers.
-- A column-mapping screen opens only when a needed column is missing or ambiguous. Each column is shown with its first value and an `ExposedDropdownMenuBox`: Name · Website · Username · Password · Notes · Skip.
-- Limits: 10 MB and 10,000 rows per file.
+- **Text decoding** (formats.md §8.2, formats-review P2 and P12). The app never switches a file's encoding silently.
+  - Text that is mostly UTF-8 is read as UTF-8, with or without a byte-order mark; a few damaged bytes become "�" and the preview lists those lines. Chrome writes UTF-8 without a BOM.
+  - UTF-16 is recognised by its byte-order mark, or by a NUL in every other byte.
+  - Only a file with no valid UTF-8 sequence at all is read as Windows-1251, which Russian-language Excel writes [I]. The preview says which was chosen and why.
+- The delimiter is detected among `,`, `;` and tab; Excel's first line `sep=;` is honoured and skipped.
+- Header aliases cover Chrome, Bitwarden, KeePassXC (whatever the case) and Firefox, plus Russian and Uzbek headers in both scripts; apostrophes and unusual spaces in a header are ignored, so "Oʻzgartirilgan" and "O‘zgartirilgan" are one header.
+- **The column-mapping screen** opens whenever no password column is recognised, and when a column is ambiguous. Each column is shown with its first value and an `ExposedDropdownMenuBox`: Name · Website · Username · Password · Notes · Skip.
+- **Rows with the wrong number of values** are listed on the preview ("Line 2 has 7 values; the header has 5. Is there a comma inside a password? Put that value in quotes.") and left out unless the user confirms them (formats-review P4).
+- Limits: 10 MB and 10,000 rows per file. An import that would make the vault too large for one file is refused before anything is saved: "Your passwords no longer fit in one file. Delete accounts you don't need, or shorten very long notes." (architecture.md §3.5).
 
 **Preview** (before anything is saved):
 - **Sample**: the names and usernames (never the passwords) of the first three accounts, preferring ones with non-Latin letters, so garbled text is visible. Below them, "Text looks wrong? Read as UTF-8".
@@ -968,8 +973,9 @@ Time in the picker counts as time in the app (§4).
   - "3 are already here (same website, username and password) and will be skipped."
   - "2 have the same website and username but a different password; they will be added so you can compare."
   - "1 row has no password."
-  - "1 row was skipped: password longer than 1,000 characters."
-  - "1 note was longer than 10,000 characters and was shortened."
+  - "1 row was skipped: password longer than 1,000 characters." Only a password over the limit leaves an account out (architecture.md D-10f).
+  - "1 note was longer than 10,000 characters and was shortened." Other values over a limit move into the notes or the extra fields and are listed ("Gmail: 3 websites moved to notes").
+  - Passwords are never changed: an account whose password holds a tab or another invisible character is imported as it is and listed ("Gmail: the password contains a tab") (formats-review P14).
 - **Exact repeats.** Rows that repeat exactly (same website, username and password) are imported once.
 - **Same login on related websites** [E: critique M6; V-A6]. Chrome writes one row per affiliated domain, so one login can arrive as several rows. Rows with the same username and password are kept as **one account with all its websites** only when:
   - (a) they are adjacent rows equal except the website (formats.md §8.3);
@@ -983,12 +989,12 @@ Time in the picker counts as time in the app (§4).
   - Two examples from the file are shown before and after.
 - `Button` "Import 45 accounts".
 
-**Result**: "45 accounts imported." `TextButton` "Undo this import" removes exactly those entries; it is available until the screen is left. Then:
+**Result**: "45 accounts imported." `TextButton` "Undo this import" puts the vault back exactly as it was before the import (architecture.md D-15); it is available until the screen is left. It does not remove entries by id, because an imported file can carry the id of an account that was already here (formats-review P1); such an account keeps its own id, and the imported one gets a new id and is added as "Gmail (from file)" when it differs. Then:
 - **For CSV and JSON**: "The file Chrome Passwords.csv still contains all these passwords unprotected. Delete it now?" `Button` "Delete file" (when supported) and "Keep".
 - **If many imported passwords are shared**: "Many of these accounts share a password. Open Security to fix them one by one." `TextButton` "Open Security".
 - **Master-password check.** Imported passwords are compared with the master password the next time it is typed (§5.10). Practice on day 1 usually comes soon after setup.
 
-**Backup file into an existing vault**: the user types that backup's master password. Entries with new ids are added; identical entries are skipped; an entry with the same id but different content is added as "Gmail (from backup)". Nothing is overwritten [I].
+**Backup file into an existing vault**: the user types that backup's master password (a backup file's password never waits after wrong tries, lock.md §6.8). Entries with new ids are added; identical entries are skipped; an entry with the same id but different content is added as "Gmail (from backup)". Nothing is overwritten [I]. "Old passwords" › "Open" in Settings merges a vault that was put aside the same way, but under that vault's own waits (§5.10).
 
 **Build order** (until the user says where their passwords are today, §14 question 3):
 1. our backup;
@@ -1023,34 +1029,42 @@ Short pages of plain text (the text is in §7.6):
   - Its screen lists the accounts with the date each was deleted and `TextButton` "Restore".
   - Each row's overflow has "Delete forever", with the dialog "Delete Gmail forever? This can't be undone." (Delete · Cancel).
   - The top-bar action "Empty" opens a dialog with the count.
-- **Where deleted accounts are.** They are left out of search, the list, the security check and plain exports. They stay inside the locked file, and in backups made meanwhile, until 30 days have passed; then they are removed at the next unlock.
+- **Where deleted accounts are.** They are left out of search, the list, the security check and plain exports. They stay inside the locked file, and in backups made meanwhile, until 30 days have passed.
+- **When they are removed** (architecture.md D-24), in two steps, so that one unlock with the phone's date set a year ahead cannot empty Recently deleted for good:
+  1. An unlock that finds accounts deleted 30 days or more ago (by the phone's clock) only arms the removal: it notes the time, and from then on counts the hours the phone is switched on, as the lock counts them (lock.md §6.9).
+  2. A later unlock, once 24 such hours have been counted, removes the accounts that were already due when it was armed. Switching to another vault cancels the removal.
+
+  The cost: an account is removed a day or more after its 30 days, never earlier.
 - **Reason.** A lock within the snackbar's 10 seconds dropped the only undo, and the older copies the storage keeps are not reachable from the screens. Bitwarden and Proton Pass keep a trash for the same reason [E: critique m9].
 
 ### 5.24 Set a new master password (the old one is forgotten)
 
-This is for a user who has forgotten the master password while the PIN or fingerprint still opens the app. Without this route, every backup becomes unopenable, and a later PIN lockout or a lost phone loses everything. Both lock designs provide the route. They differ only in a waiting time: none in lock design 2; 72 hours in lock design 1, measured so that changing the date does not shorten it.
+This is for a user who has forgotten the master password while the PIN or fingerprint still opens the app. Without this route, every backup becomes unopenable, and a later PIN lockout or a lost phone loses everything. lock.md F11 is the flow and its texts; this section is how it looks. In short: **choose the new master password first, then wait 24 hours with the phone switched on, then type it once more to finish.** Finishing makes a new vault and puts the old one aside, locked with the old master password, so that whoever asked cannot destroy the passwords as they were (lock.md F11 steps 15 to 18, architecture.md D-5).
 
 **Entry points**:
 - the "Forgot master password?" sheet (§5.10, the first option);
 - the hint after 2 wrong master-password tries (§5.10);
+- "I can't remember it" on a practice screen, and "I forgot it" on the banner of §5.11;
 - Settings › App lock › Change master password › "I don't remember it".
 
 **Steps**:
-1. **Explanation**: "You can choose a new master password because your PIN still opens the app on this phone. Backups you made before will still need your old master password." `Button` "Continue", `TextButton` "Cancel".
-2. **Confirm** with the PIN typed now, or the fingerprint if the lock design allows it. If the app was locked, this also unlocks it.
-3. **If the lock design has a waiting time**:
-   - The screen says "For your safety, you can choose the new master password after 9 October, 14:30. Until then your passwords open with your PIN as usual."
-   - A banner on every unlock says "A new master password was requested on 6 Oct. You can choose it after 9 Oct. Not you?" with `TextButton` "Cancel request". Cancelling needs nothing, because it is the safe direction.
-   - When the time comes, the banner becomes "Choose your new master password now." `Button` "Choose".
-4. **Choose it**: §5.3, §5.4 and §5.5, then "Saving…".
-   - The user may stop with "Later" before §5.3 starts. The banner then says: "Choose a new master password. Until you do, you can't make backups."
-   - Practice prompts are paused until a new master password exists.
-5. **Keep the other ways in.**
-   - The PIN was just typed, so it is kept without asking again (lock design 2 §9.8).
-   - When fingerprint was on: "Touch the sensor to keep fingerprint unlock on."
-6. **Back up**: "Make a new backup now. Backups you made before still need your old master password; keep them in case you remember it." [Back up now] [Later].
+1. **Explanation**: "You can choose a new master password because your PIN still opens the app on this phone. For your safety it starts working after 24 hours with the phone switched on. Until then nothing changes. Backups you made before will still need your old master password." `Button` "Continue", `TextButton` "Cancel". ("PIN" reads "fingerprint" when no PIN exists.)
+2. **Proof now**: the PIN typed now, whenever a PIN exists; it is a counted check, and on the lock screen it also opens the app. **The fingerprint only when no PIN exists** (lock.md F11 step 3): a sleeping owner's finger, or another person's saved finger, must not be enough to start a replacement. When fingerprint is usable the PIN prompt adds "Forgot your PIN as well? After 5 wrong tries the PIN is turned off, and you can then continue with your fingerprint." If the PIN cannot be checked right now: "Your PIN can't be checked right now. Try again later.", and the flow stops.
+3. **Choose it**: §5.3, §5.4 and §5.5; the screen is kept on for the last two (§5.4).
+4. **The wait.** "Your new master password starts working after about 24 hours with the phone switched on. Keep the paper. Until then, open the app with your PIN or fingerprint as usual. The countdown stops while the phone is switched off. To keep it moving, open this app in the morning and again in the evening." No date or clock time is ever promised, because only hours with the phone on count (lock.md §6.9).
+   - After every unlock (lock.md §13.4 item 2): "A new master password was chosen on 6 Oct, 14:02, using the PIN. It starts working in about 20 hours. The countdown stops while the phone is switched off; open this app in the morning and again in the evening to keep it moving. Not you? Cancel it, then change your PIN." Buttons "Cancel it" and "OK". The list shows the same as a banner (§5.11). Cancelling needs nothing, because it is the safe direction.
+   - A correct current master password typed anywhere cancels it: "You typed your master password, so the new one was cancelled."
+   - Meanwhile practice is not asked, no backup can be made ("You can make a backup when your new master password has started working."), the last PIN try carries the warning of §5.9, and the master-password field says "Your new master password starts working in about 20 hours."
+5. **Finish.** When the hours are counted, the notice and the banner become "Your new master password is ready. Type it to finish." Buttons "Finish now", "Later", "Cancel it". The lock screen's master-password field accepts it as well. No PIN and no fingerprint is asked for here, so an owner who lost both during the wait still gets in. If finishing fails: "Couldn't finish now. Nothing was changed. Try again later."
+6. **New ways in** (lock.md F11 step 19). The new vault starts without a PIN or a fingerprint key: "Choose a PIN" and the fingerprint offer of §5.6 and §5.7 follow, as after a restore. The PIN typed in step 2 is not carried over.
+7. **Back up**: "Make a new backup now. Your old backups still open only with your old master password." [Back up now] [Later].
 
-**Recommendation on the waiting time** (lock design and security owner): from the user's side, a short wait is better. During the wait no usable backup can be made, because the old master password is forgotten. Up to 24 hours is easy to accept, as long as the PIN keeps working meanwhile. The security trade-off (someone who saw the PIN could take over) belongs to the lock design.
+**After a replacement** (lock.md §13.4 item 3, F16b). Until 7 days with the phone on have been counted, every unlock shows: "Your master password was replaced on 7 Oct using the PIN. If you didn't do this, your passwords from before are still on this phone." Buttons "OK" and "It wasn't me".
+- "It wasn't me", the sheet's "Open my passwords from before 7 Oct 2026" (§5.10), and the line under a wrong master password (§5.10) all lead to the old vault's own lock screen: title "Your passwords from before 7 Oct 2026", "Type the master password you used then." Only its master-password field: it has no PIN or fingerprint, and its own waits apply.
+- Once that password opens it, the app asks: "These are your passwords as they were on 7 Oct. Passwords added or changed after that are in the newer set, which stays on this phone. Open the older set instead?" Buttons "Open my passwords from 7 Oct" and "Cancel". Cancel changes nothing.
+- After the swap: "Choose a new PIN. Someone else may know the old one.", then the fingerprint offer with its sentence about whose fingers are saved on the phone. The newer set stays on the phone, put aside, and "Open my previous passwords" brings it back (§5.1).
+
+**The wait** is lock.md's decision (§6.9, F11; architecture.md D-5): 24 hours counted while the phone is switched on, which the date setting and reboots cannot shorten. Whether 24 hours suit a phone that is switched off at night is a question for the user (lock.md §18.7, architecture.md §8.6 item 12).
 
 ## 6. The copy flow
 
