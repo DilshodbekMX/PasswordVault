@@ -3,7 +3,10 @@
 Date 2026-10-06; revised the same day after the UX critique (what changed and why: §15). Status: proposal for review. Scope: every screen of version 1, the entry model, the copy flow, onboarding text, accessibility, localisation, navigation, and what is left out.
 
 Other documents own parts of the picture, and this one points to them instead of repeating them:
-- **The lock design** owns the PIN logic: length, attempt limits, waiting times, what is stored where, and when the master password is required. Two candidates exist, `scratchpad/design/lock-designs/design-1.md` and `design-2.md` (called "lock design 1" and "lock design 2" below). This document fixes how the lock screens look and what they say. Where the experience depends on a lock decision, it gives a recommendation.
+- **The lock design, [lock.md](lock.md),** owns the PIN logic: length, attempt limits, waiting times, what is stored where, when the master password is required, and the English wording of the lock screens (its §13). It was chosen from candidates that this document calls "lock design 1" and "lock design 2" (their texts are in `docs/design/lock-work/`). This document fixes how the lock screens look; where the two differ, lock.md wins.
+- **[architecture.md](architecture.md)** §6 decides the questions this document left to other owners (§14).
+
+**Revised on 2026-10-06** by build-plan package 0.3 to follow lock.md (the twelve changes of its §16.2) and architecture.md §6 (D-6c, D-7, D-9b, D-10d, D-11, D-14, D-15, D-23, D-24, D-25), and to drop `getLastAuthenticationTime`, which lock.md §10.2 no longer uses. Where a passage is replaced, the old text is gone; §14 marks each question as answered.
 - **[formats.md](formats.md)** owns the exact layout of every exported and imported file.
 - **[i18n.md](i18n.md)** owns translation, the glossary and the sort key.
 - **[search.md](search.md)** owns the search key, matching and ranking.
@@ -17,8 +20,8 @@ How I know things:
 ## 0. Decisions in brief
 
 1. **One job comes first: open, find, copy.** After unlock the list is on screen. Every row has a one-tap "copy password" button, and search filters the list in place. Bitwarden hides copy in an overflow menu [E: `CipherListViewExtensions.kt`]. KeePassDX users called an extra step before copying "annoying" (#2321) [E].
-2. **Proposed: a bank-style lock of the app's own.** A 6-dot PIN pad drawn by the app (no system keyboard involved), fingerprint as a shortcut, and "Forgot PIN? Use master password" always one tap away. It is separate from the phone's screen lock. The user wrote "home lock like banking account", which may instead mean the phone's own lock. This must be confirmed with the user (§14 question 1); until then the lock screen is built so that either can become the main way in.
-3. **Defaults are the secure choice; settings are few.** The app locks 30 s after leaving and at once when the screen turns off; copied text is cleared after 1 minute; screenshots are always blocked. Some participants simply keep the preset settings ("these [settings] were preset and I kept what was recommended") [E: CCS 2019].
+2. **A bank-style lock of the app's own.** A 6-dot PIN pad drawn by the app (no system keyboard involved), fingerprint as a shortcut, and "Forgot PIN? Use master password" always one tap away. It is separate from the phone's screen lock. The user confirmed that "home lock like banking account" means the app's own PIN (lock.md §2.4, architecture.md D-2).
+3. **Defaults are the secure choice; settings are few.** The app locks 30 s after leaving and at once when the screen turns off; copied text is cleared after 1 minute; screenshots are always blocked. Setup writes both delays (architecture.md D-7); a delay that is missing or cannot be read counts as the strictest value, "Immediately" for the lock and 30 seconds for the clipboard. Some participants simply keep the preset settings ("these [settings] were preset and I kept what was recommended") [E: CCS 2019].
 4. **Version 1 entry**: title (required), username, password, websites (up to 10), notes, extra fields (label, value, hidden or not), favourite, three timestamps and the last 5 previous passwords. Four small fields keep the security check and deletion safe: `changePending`, `pendingOldPassword`, `checkIgnored` and `deletedAt`. **Tags are deferred**; "recently used" is not tracked.
 5. **Nothing the user types is lost, and nothing reachable from the lock screen deletes anything.**
    - An unsaved form is kept as an encrypted draft when the user leaves the app.
@@ -26,7 +29,7 @@ How I know things:
    - The guided change keeps the password the website still has until the user confirms the change.
    - A deleted account waits 30 days in "Recently deleted".
    - "Start with an empty app" keeps the old passwords on the phone, locked.
-6. **The master password is practised, and a forgotten one can be replaced.** The app asks for it now and then, and "Not now" works for a few days. If the user forgets it while the PIN still opens the app, they can choose a new one (§5.24).
+6. **The master password is practised, and a forgotten one can be replaced.** The app asks for it now and then, and "Not now" works for a few days. If the user forgets it while the PIN still opens the app, they can choose a new one, which starts working after 24 hours with the phone switched on (§5.24, lock.md F11).
 7. **The security check fixes one account at a time.** It groups reused passwords, starts with email, and walks the user through change, paste and confirm, with a pending state that survives locking. No score, no number badges, no notifications. SOUPS 2025: 78.94 % of novices had warning flags in week 4 and nobody changed a password [E].
 8. **Exports match their purpose** (layouts in formats.md):
    - an encrypted backup file (recommended; opens with the master password);
@@ -152,7 +155,7 @@ From the platform research, applied to the UI [E: platform.md §1, §3; VERIFICA
 - **Accessibility-sensitive nodes.**
   - Every node that shows or takes a secret carries `semantics { isSensitiveData = true }`: revealed values, the master-password field, the PIN dots and the keypad keys. It takes effect on API 34+ and is not inherited [E: V-P5, FACTS §8].
   - Accessibility services that are not accessibility tools then cannot read which key was pressed. That is the route the local banking malware uses (§7.6).
-  - If TalkBack cannot operate the keypad with the flag (lock design 2, test E12), the keys drop it and the dots keep it.
+  - If TalkBack cannot operate the keypad with the flag (lock.md §13.5, check E12), the keys drop it and the dots keep it.
 - **Layout.** Edge-to-edge with inset handling; both orientations; content width capped at 640 dp on large screens (Android 16+ ignores orientation locks at ≥ 600 dp) [V: Android 16 behaviour changes].
 
 ## 4. Navigation and back behaviour
@@ -162,7 +165,7 @@ There are three top-level states. The app owns one back stack per state; switchi
 ```
 Process start ──► no vault file? ──► SETUP: Welcome → (Restore | Open my previous passwords | Master password → Write down → Type again)
                                                → [vault created] → PIN → Confirm PIN → Fingerprint? → Backups → UNLOCKED
-              └─► vault file ─────► LOCKED: PIN pad ⇄ Master password (practice, PIN off, "Welcome back", damaged file…)
+              └─► vault file ─────► LOCKED: PIN pad, or fingerprint only ⇄ Master password (practice, PIN off, "Welcome back"…)
                                     after a master-password unlock without a usable PIN → Choose a PIN (skippable)
 UNLOCKED (bottom bar):  Passwords ─► Entry ─► Edit / Show in big letters / Generator sheet
                                   └─► Recently deleted
@@ -189,20 +192,19 @@ Back rules. Predictive back is on at target 36: `onBackPressed` is not called an
 | Setup, after the vault exists | Leaves the app; the next start asks for the master password and resumes at the PIN step | There is no way back to "create master password" |
 | While "Opening…" or "Saving…" runs | Ignored for those 1–2 seconds | |
 
-**Auto-lock as the user experiences it.** The numbers and mechanics belong to the lock design.
+**Auto-lock as the user experiences it.** The numbers and mechanics belong to lock.md §10.
 - The app locks:
-  - when the lock delay (default 30 s) has passed since the user left it;
+  - when the lock delay has passed since the user left it: 30 s, written at setup; a setting that is missing or cannot be read counts as "Immediately" (architecture.md D-7);
   - at once when the screen turns off;
-  - after 5 minutes without a touch while open;
+  - after 5 minutes without a touch while open (the timer stands still while the app is not in front);
   - on every process start.
 - **Screen off.** When the app stops while `PowerManager.isInteractive()` is false (API 20 [V]), it locks at once.
   - If the screen turns off while the app is already in the background, Android 14+ may hold the screen-off broadcast until the app runs again [E: platform.md §3.3]. The lock is then applied when the broadcast arrives.
-  - On API 35+, `BiometricManager.getLastAuthenticationTime()` also shows a phone unlock that happened after the app was left [E: FACTS §8; V: API 35].
-  - This background case is best effort; the lock delay still applies.
+  - This background case is best effort; the lock delay still applies. lock.md §10.2 says why the phone's own last unlock time is not used as a signal: a fingerprint prompt in another app moves it.
 
 **System screens the app opens.**
 - **The problem.** The system file picker and the share sheet stop the app's process lifecycle just as leaving the app does [E: V-P3]. Without a rule, the 30 s lock (or "Immediately") would fire in the middle of a backup, export or import.
-- **The rule.** Time spent in such a screen that the app opened itself counts as time in the app, for at most **10 minutes** (the value both lock designs use). This covers saving a backup or export, choosing an import file, and sending a backup.
+- **The rule.** Time spent in such a screen that the app opened itself counts as time in the app, for at most **10 minutes** (lock.md §10.3, architecture.md D-9e). This covers saving a backup or export, choosing an import file, and sending a backup.
 - **What still locks.** The screen turning off still locks at once. Opening a website or switching to another app is ordinary leaving: the normal delay applies.
 
 **What survives a lock.**
@@ -242,8 +244,9 @@ Back rules. Predictive back is on at target 36: `onBackPressed` is not called an
   - `OutlinedButton` "Open my previous passwords (locked on 6 Oct 2026)", only when an archived vault exists (§5.10);
   - `OutlinedButton` "Restore from a backup file".
 - **Language**: a top-right `IconButton` (globe) opens a dialog: System language · Oʻzbekcha · Ўзбекча · English · Русский. Each name is in its own language (i18n.md §1.4.5).
-- **"Open my previous passwords"**:
-  - With one archive, it asks "Type the master password you used before 6 Oct 2026." The archive is opened and checked; it becomes the app's vault again, and setup continues at the PIN step.
+- **"Open my previous passwords"** (lock.md F17 step 4):
+  - It shows **that vault's own lock screen**, with the line "Passwords locked on 6 Oct 2026": its PIN pad and fingerprint if their records and keys still work, otherwise its master-password field. Its own PIN, fingerprint or master password opens it, with its own counts and waits (lock.md §6.8); a vault marked as replaced (§5.24) shows only its master-password field.
+  - Only when it has been opened does it become the app's vault again. Back returns to Welcome and changes nothing, so a stray tap cannot swap anything. When it opened without a working PIN, the app then offers to choose one.
   - With several archives, a list by date comes first.
 - **States**: none beyond default. Back leaves the app.
 
@@ -258,10 +261,10 @@ Back rules. Predictive back is on at target 36: `onBackPressed` is not called an
 Nothing on the phone is replaced before the backup has been opened and checked. A vault already on the phone (restore from the lock screen, §5.10) is archived, never deleted.
 
 States and messages:
-- Not our file: "This is not a Password Vault backup. To bring passwords from Chrome or another app, finish setup first, then use Settings › Import."
+- Not our file: "This is not a PasswordVault backup. To bring passwords from Chrome or another app, finish setup first, then use Settings › Import."
 - Wrong password: "This password does not open this backup. Try the master password you used when you made it."
 - Damaged: "This backup file is damaged and cannot be opened. Try another backup file."
-- Made by a newer app version: "This backup was made by a newer version of the app. Install the newest version of Password Vault and try again."
+- Made by a newer app version: "This backup was made by a newer version of the app. Install the newest version of PasswordVault and try again."
 - Not enough memory: "Your phone does not have enough free memory to open the file. Close other apps and try again." [E: V-C2]
 
 ### 5.3 Create master password
@@ -280,12 +283,12 @@ States and messages:
   - **Generation.**
     - EFF short wordlist 1: 1,296 common words of 3–5 letters (mean 4.5); the one hyphenated word "yo-yo" is dropped.
     - 6 words, lower case: 62.0 bits [V: computed from the EFF list].
-    - This is recommended over 5 words from the long list (64.6 bits, words of mean 7 letters), because short common words are easier for a non-native speaker to read, write and type [I]. **The crypto owner must confirm this change** (crypto.md proposed the long list).
+    - This is chosen over 5 words from the long list (64.6 bits, words of mean 7 letters), because short common words are easier for a non-native speaker to read, write and type [I]. Confirmed by architecture.md D-6a (crypto.md had proposed the long list).
     - Re-rolling a few times costs at most log2 of the number of rolls, in bits [I].
-  - **Separator: hyphen for now.**
+  - **Separator: hyphen in version 1** (architecture.md D-6b).
     - On Gboard a hyphen costs about 3 key presses (to the symbol layer and back); a space costs 1 [E: critique m16].
-    - Proposed to the crypto owner: spaces. The strength stays at 62 bits, because no word contains a space. Runs of spaces in the master password would be folded to one and trimmed before NFC.
-    - This needs a typing test on Gboard and Samsung Keyboard in a password field first (double-space full stop, automatic spaces) (§14).
+    - The master password already folds white space from the first release, after NFC (lock.md §8.1): runs of spaces become one and the ends are trimmed. So spaces can become the suggested separator later without changing any key; the strength stays at 62 bits, because no word contains a space.
+    - Which separator to suggest is settled by the keyboard test on the user's phone (Gboard and Samsung Keyboard in a password field: double-space full stop, automatic spaces; architecture.md §8.6 item 7).
 - **Own password view.**
   - **The field**: an `OutlinedSecureTextField` with show/hide, a strength meter and a checklist.
   - **Every item of the checklist must pass.** The button stays enabled and says what is missing when pressed (no unexplained disabled buttons):
@@ -294,7 +297,7 @@ States and messages:
       - zxcvbn score **4** (its highest: 10^10 guesses or more) for the password and for a folded copy of it (the search key of §5.11, search.md §1, so "Oʻzbekiston" is also checked as "ozbekiston" and "Ташкент" as "tashkent");
       - with the bundled dictionary below, plus the app name, "password", "parol" and "пароль" as user inputs.
     - When a dictionary word, name or year is found, the hint is: "Avoid city names, people's names and years."
-    - No apostrophe-like characters, unless the crypto owner accepts the folding rule below.
+    - Apostrophes are allowed (architecture.md D-6c; see "Apostrophe-like characters" below).
   - **When the checklist passes**, a dialog asks: "Do you use this password for any other account?"
     - "Yes" → "Then choose a different one. If a website leaks it, anyone with your backup file could open it." The user goes back to the field.
     - "No, it's new" → continue.
@@ -310,8 +313,8 @@ States and messages:
   - Engineering chooses the source lists and checks their licences. The test vectors in §12 decide whether the list is good enough.
 - **Apostrophe-like characters.**
   - **The problem.** Phones type oʻ and gʻ with different characters (ʻ ‘ ’ ʼ '), and NFC does not unify them [E: FACTS §9]. A master password typed with one keyboard can fail on another phone, which happens exactly when a backup must be restored.
-  - **Recommended (crypto owner; lock design 1 asks the same).** Before NFC, map every apostrophe-like character (the list of search.md §1, step 1) to U+0027 in the master password, at creation and at every use, with test vectors.
-  - **Until that is accepted, creation refuses them:** "Your password contains ʻ or ’. Phones type these differently, so you might not be able to type it on another phone. Leave them out or choose another password."
+  - **Decided** (architecture.md D-6c, lock.md §8.1): the master password is turned into bytes by `MasterPasswordBytes`, which after NFC folds white space and then 17 apostrophe-like characters to U+0027, at creation and at every use, with test vectors. So apostrophes are allowed in the master password, and "oʻgʻlim" typed with ʻ on one phone and with ' on another is the same password.
+  - At creation the only characters refused are code points Unicode has not assigned (lock.md §8.1), which a later phone might treat differently.
   - Passwords of accounts are not affected: they stay exactly as typed.
 - **Strength meter.**
   - 4 segments plus a word: "Very weak", "Weak", "Good", "Strong" (zxcvbn 0–1, 2, 3, 4). Colour is never the only signal.
@@ -323,6 +326,7 @@ States and messages:
 - Title "Write it down on paper". Body: "Write your master password on paper now. Keep the paper at home in a safe place — not in your phone case, not in your wallet, and not as a photo on this phone."
 - The password is shown in large monospace with its words numbered as in §5.3, plus a "Show in big letters" link (§5.13).
 - `Checkbox` "I wrote it down" (optional; not enforced) and `Button` "Next". Reason: only 5 of 37 novices wrote their primary password into 1Password's Emergency Kit [E: SOUPS 2025]. The reminder matters; a forced checkbox does not.
+- **In a change or a replacement of the master password** (§5.18, §5.24) this screen and the next keep the screen on (`FLAG_KEEP_SCREEN_ON`, lock.md §10.1): a screen that timed out while six words are copied to paper would lock at once and throw the flow away. The 5 minutes without a touch still apply.
 
 ### 5.5 Type it again
 
@@ -333,29 +337,40 @@ States and messages:
   - If the attempt contains Cyrillic letters: "Your keyboard may be set to Russian. Switch to Latin letters."
 - **On match**: "Setting up…" (`CircularProgressIndicator`, about 1 s for key derivation, the file write and a read-back check) [E: crypto.md §11]. Error: "Couldn't save. Your phone's storage may be full." with "Try again".
 - Then the vault exists, and back now leaves the app (§4).
+- In a change or a replacement of the master password the screen is kept on, as on "Write it down" (§5.4).
 - **Interrupted setup.**
   - The words are never stored. If the app is closed or killed after they were shown and before the vault exists, the next start shows new words with: "Setup was interrupted. Cross out the words you wrote down before. These are your new words."
   - A non-secret flag remembers that words were shown.
 
 ### 5.6 Create the PIN
 
-- Title "Choose a 6-digit PIN". Body: "Use this PIN to open the app on this phone, like your bank app. Don't use your phone's unlock PIN or your bank card PIN." Family members often know the phone PIN [I]. The lock design adds its own rules, for example lock design 2's "Don't use birthdays or other dates…".
+- Title "Choose a 6-digit PIN". Body (lock.md §7.3):
+  - "Use this PIN to open the app on this phone, like your bank app. This is not your phone's PIN."
+  - "Don't use a date or a year, or a pattern like 123456 or 112233."
+  - "Don't use your phone's unlock PIN or your bank card PIN. Other people may know them."
+
+  Family members often know the phone PIN [I].
 - When TalkBack (or another spoken-feedback service) is on, the body adds: "TalkBack reads each key aloud. Use headphones if other people are near."
 - The keypad and dots are the same as on the lock screen (§5.9), without the fingerprint key.
-- Confirm step: "Enter the PIN again". Errors: "The PINs don't match. Try again." · "This PIN is too easy to guess. Choose another." The blocklist and its messages belong to the lock design.
-- Footer: "Forgot your PIN later? Tap 'Forgot PIN? Use master password' and choose a new one."
-- **Length**: 6 digits, submitted automatically after the sixth. Both lock designs choose exactly this.
+- **Refused PINs** (lock.md §7.2, §7.3): after the sixth digit, when a rule of the blocklist matches, the dots clear, the pad stays, and one of three messages says why:
+  - "This PIN looks like a date or a year. Choose another."
+  - "This PIN repeats digits or follows a pattern. Choose another."
+  - "This PIN is a sequence or a shape on the keypad. Choose another."
+
+  In "Change PIN", a new PIN equal to the current one gives "Choose a PIN different from your current one."
+- Confirm step: "Enter the PIN again". On a mismatch: "The PINs don't match. Try again."; after 3 mismatches the user starts again from the first entry.
+- Footer (lock.md §7.3): "After 5 wrong tries in a row the PIN turns off. Then you open the app with your fingerprint or master password and choose a new PIN."
+- Choosing a PIN is not an unlock, so nothing is counted.
+- **Length**: exactly 6 digits, submitted automatically after the sixth (lock.md §7.1).
   - If fewer digits are ever allowed, the keypad gets an "OK" key and never submits by itself. Otherwise the length would be revealed (CDD 17 C-SR-7) [E: FACTS §6.3].
 
 ### 5.7 Fingerprint offer
 
-**When it is shown.**
-- On Android 9 and newer, when `BiometricManager.canAuthenticate(BIOMETRIC_STRONG)` returns `BIOMETRIC_SUCCESS`.
-- Also on Android 9 and 10 when it returns `BIOMETRIC_STATUS_UNKNOWN`, provided the phone has a fingerprint sensor (`FEATURE_FINGERPRINT`) and a screen lock.
-  - With the androidx.core that every Compose app ships, Android 10 returns `STATUS_UNKNOWN` on almost every phone even though authentication works [E: V-P1; lock design 2 §8.4, lab].
-  - Turning it on decides: a failure says so.
-- On Android 7 and 8 the library cannot reach the sensor [E: V-P1]. The offer is skipped, and Settings says "Needs Android 9 or newer".
-- Weak (Class 2) sensors are not offered, as in Keyguard [E: keyguard docs].
+**When it is shown** (lock.md §9.4, the same rule on every Android version from 7.0): `BiometricManager.canAuthenticate(BIOMETRIC_STRONG)` is asked off the main thread when the screen opens.
+- `BIOMETRIC_SUCCESS`: offered.
+- Any other answer: not offered. Settings › App lock then shows the reason (§5.18). `BIOMETRIC_STATUS_UNKNOWN`, which only Android 9 and 10 give (a screen lock, but no enrolled fingerprint the library can see), leaves the switch in Settings enabled: turning it on decides, and a failure says so [E: V-P1].
+- There is no Android version limit: on Android 7 and 8 the library draws its own fingerprint dialog in the app's activity, which the old-Android lab ran (docs/lab/old-android.md §3, lock.md §13.5).
+- Weak (Class 2) sensors are not offered, as in Keyguard [E: keyguard docs]: only a strong sensor can unlock a key in the phone's secure hardware. A phone that cannot keep the key in secure hardware is told: "This phone can't keep a fingerprint key in protected hardware."
 
 **Names.**
 - On Android 12+ the button and setting names come from `BiometricManager.getStrings(BIOMETRIC_STRONG)` (API 31 [V]), so a phone whose only strong biometric is the face says "face".
@@ -363,6 +378,7 @@ States and messages:
 
 **The screen.**
 - Title "Use your fingerprint?" Body: "Open the app with your fingerprint instead of your PIN. Your PIN and master password still work."
+- "Anyone whose fingerprint is saved in this phone's settings can open the app." (lock.md §9.4)
 - Note: "If this phone's fingerprints or screen lock change, fingerprint unlock turns off for safety. You can turn it on again in Settings."
 - `Button` "Use fingerprint" opens `BiometricPrompt` with the crypto object (title "Turn on fingerprint unlock", negative button "Cancel"). `TextButton` "Not now".
 - Errors:
@@ -381,12 +397,16 @@ States and messages:
 
 ### 5.9 Lock screen — PIN (look and wording; behaviour from the lock design)
 
+The states, what each shows and its English wording are lock.md §13.1 to §13.3; this section is the look, and its texts are lock.md's.
+
 **Layout** (portrait):
-- app icon 64 dp; title "Password Vault"; subtitle "Enter your PIN";
+- app icon 64 dp; title "PasswordVault"; subtitle **"Enter your app PIN"**. "App" tells it apart from the phone's own PIN, which the system's fingerprint prompt asks for after several wrong fingers (lock.md §9.3);
 - a row of 6 dots, filled as digits are entered;
-- a status line for errors;
+- a status line (below). A line about a wrong PIN or about tries left stays until the visit ends: typing or deleting digits does not remove it, so that someone who is handed the phone sees it;
 - a 3 × 4 keypad `1 2 3 / 4 5 6 / 7 8 9 / [fingerprint] 0 [⌫]`;
 - below it, `TextButton` **"Forgot PIN? Use master password"**.
+
+**The fingerprint-only screen** (lock.md §13.1 row 6, §13.2), when fingerprint is usable and the PIN is not: title "PasswordVault", the status line, and the buttons "Use fingerprint" and "Use master password". No pad and no dots. The prompt opens by itself.
 
 Details:
 - **Keys.** At least **64 dp** (72 dp preferred); digits in `headlineMedium`; a ripple and `HapticFeedbackType.VirtualKey` on press (Compose 1.12 has it [V: bytecode]).
@@ -399,43 +419,55 @@ Details:
 **Behaviour.**
 - When fingerprint unlock is usable, the system fingerprint prompt opens by itself when the lock screen appears (cold start or return).
 - It does not open by itself:
-  - on a practice day;
-  - after the PIN was turned off, if the lock design blocks fingerprint then;
+  - on a practice day (after "Not now" the pad appears and the prompt opens as on any other visit);
   - again after the user cancelled it.
 
-  The fingerprint key opens it again.
-- Prompt: title "Open Password Vault", negative button "Use PIN".
+  The fingerprint key opens it again. Fingerprint stays usable after the PIN has been turned off (lock.md §6.5): the fingerprint-only screen then appears.
+- Prompt (lock.md §9.2): title "Open PasswordVault", negative button "Use PIN", or "Use master password" when no PIN is usable.
 
-**States and wording.** The triggers and numbers come from the lock design and the storage design.
+**States and wording** (lock.md §13.3; the triggers and numbers come from lock.md and the storage design). There are no waiting times for the PIN: no "Try again in 0:30" and never a message about wiping.
 
 | State | What the user sees |
 |---|---|
-| Wrong PIN | Dots shake (not when animations are off), `HapticFeedbackType.Reject`, dots clear, "Wrong PIN. 4 tries left." On the last try: "Wrong PIN. 1 try left. After that you'll need your master password." |
-| Same wrong PIN again (lock design 2) | "That's the PIN you just tried." It is not counted |
-| Waiting (only if the lock design adds waiting times; neither candidate does) | Keypad disabled, "Too many wrong tries. Try again in 0:30." |
-| PIN turned off after too many wrong tries | The §5.10 screen: "Your PIN was entered wrong too many times, so it was turned off. Type your master password, then choose a new PIN." If fingerprint is still allowed (recommended below), its prompt opens and the text starts "Use your fingerprint or type your master password…" |
+| Fresh pad, 2 or fewer tries left | "2 tries left before the PIN turns off." |
+| Wrong PIN | Dots shake (not when animations are off), `HapticFeedbackType.Reject`, dots clear, "Wrong PIN. 4 tries left." On the last try: "Wrong PIN. 1 try left. After that you'll need your fingerprint or master password." (without fingerprint: "…your master password.") |
+| The last try while a new master password is not working yet (§5.24) | "Careful: your new master password is not working yet. If the next PIN is wrong, the PIN turns off." |
+| The same wrong PIN again | "You already tried that PIN. It was not counted again." |
+| A try was counted at start (the last entry was interrupted) | "Your last PIN entry was interrupted and counted as a try. 4 tries left." |
+| PIN turned off after too many wrong tries | With fingerprint usable, the fingerprint-only screen: "PIN unlock was turned off after too many wrong tries. Nothing was deleted. Use your fingerprint or master password, then choose a new PIN." Otherwise the §5.10 screen: "Your PIN was entered wrong too many times, so it was turned off. Nothing was deleted. Type your master password, then choose a new PIN." |
 | Opening | The keypad is replaced by `CircularProgressIndicator` and "Opening…" |
-| PIN can't be checked right now (a temporary Keystore error [E: V-C6]) | The §5.10 screen: "Your PIN can't be checked right now. Use your master password this time. Restarting the phone usually fixes this." Nothing is removed |
-| Storage full | "Your phone's storage is full, so the PIN can't be checked now. Free some space or use your master password." |
-| PIN stopped working (its key is gone) | The §5.10 screen: "Your PIN stopped working on this phone. Type your master password, then choose a PIN again." |
+| PIN can't be checked right now (the Keystore is not answering, or its record cannot be read right now [E: V-C6]) | The fingerprint-only screen: "Your PIN can't be checked right now. Use your fingerprint or master password. Restarting the phone usually fixes this. If it keeps happening, set your PIN up again in Settings." Without fingerprint the §5.10 screen: "Your PIN can't be checked right now. Use your master password this time. Restarting the phone usually fixes this. If it keeps happening, set your PIN up again in Settings." Nothing is removed |
+| Storage full (the try could not be written) | "Your phone's storage is full, so the PIN can't be checked now. Free some space or use your master password." (with fingerprint: "…Free some space, or use your fingerprint or master password.") |
+| PIN stopped working (its key is gone, or its record is damaged) | "Your PIN stopped working on this phone. Use your fingerprint or master password, then choose a PIN again." Without fingerprint the §5.10 screen: "Your PIN stopped working on this phone. Type your master password, then choose a PIN again." |
+| The PIN was set up by a newer version of the app | "Your PIN was set up by a newer version of this app. Use your fingerprint or master password, and update the app." (without fingerprint: "Use your master password, and update the app.") |
 | **No PIN on this phone yet**: the vault came with "Copy apps and data", the app was installed again with its data kept, or the lock file is missing or damaged [E: V-P6; platform.md §3.4, §3.7] | The §5.10 screen with the title **"Welcome back"**: "Your PIN and fingerprint don't work here yet. This happens after you move to a new phone or install the app again. Type your master password once, then choose a PIN for this phone." Then "Choose a PIN" (skippable) and the fingerprint offer. Nothing is deleted |
 | Fingerprint turned off by the phone (only when its key is permanently invalidated) | "Fingerprint unlock was turned off because this phone's fingerprints or screen lock changed. Use your PIN. You can turn it on again in Settings." |
-| Fingerprint can't be checked right now (any other fingerprint error) | The fingerprint key is hidden until the next lock, with "Fingerprint can't be checked right now. Use your PIN." The option stays on [E: V-C6] |
 | Fingerprint locked by the system after failures | "Fingerprint is locked for now. Use your PIN." |
+| The fingerprint was accepted but did not open the app (the phone's own PIN was typed in the system prompt first, lock.md §9.3) | "Fingerprint did not open the app this time. Enter your app PIN." |
+| Fingerprint can't be used now, because the phone's setting for apps is off | "Fingerprint can't be used in apps right now. Use your PIN. In your phone's settings, check that fingerprint may be used to verify it's you in apps." |
+| Fingerprint can't be used now, because no fingerprint is saved (or there is no screen lock) | "No fingerprint is saved on this phone now. Use your PIN. To use fingerprint unlock again, add a fingerprint in your phone's settings." |
+| Fingerprint can't be used now, because the phone needs a security update | "Your phone needs a security update before fingerprint can be used. Use your PIN." |
+| Fingerprint can't be checked right now (any other fingerprint error) | The fingerprint key is hidden until the next visit, with "Fingerprint can't be checked right now. Use your PIN. If this keeps happening, turn fingerprint unlock off and on again in Settings." The option stays on [E: V-C6] |
+| Debug and staging builds only | "TEST BUILD: PIN keys are not protected" |
+
+On the fingerprint-only screen the fingerprint lines say "Use your master password" in place of "Use your PIN". A fingerprint that cannot be used now leaves its key alone: nothing is removed, and it works again when the phone allows it (lock.md §13.1).
 | **File damaged**: no saved copy opens, although the PIN or master password is right [E: V-S3] | Title "Your passwords can't be opened". Body: "The file with your passwords is damaged. Nothing was deleted. Restart your phone and try again. If that doesn't help, restore from a backup file." `Button` "Try again", `OutlinedButton` "Restore from a backup file". The backup is opened and checked before anything changes, and the damaged files are kept (§5.10) |
 
-**After unlock**, notices appear one at a time:
+**After unlock**, notices appear one at a time, in the order of lock.md §13.4:
 - **Older copy opened** (storage fell back a generation): `AlertDialog` "The newest copy of your passwords could not be read. We opened the copy from 5 October, 18:42. Changes after that time are missing." Buttons "Make a backup now" and "OK". A copy that cannot be read can be a sign of storage trouble [E: storage.md §5.4].
 - **Older than last time** (rollback [E: V-C8]): "These passwords are older than the ones this app opened on 6 October, 09:10. Changes after that time are missing. If you didn't restore anything, someone may have replaced the app's files." Button "OK".
-- **Failed tries since the last unlock**: the lock design's notice, for example "Someone typed a wrong PIN 3 times before you opened the app (last time today at 14:32)…".
+- **A new master password is pending, or was replaced**: the notices of §5.24.
+- **Wrong tries nobody has been told about** (lock.md §13.4 item 4): "A wrong PIN was typed 3 times before you opened the app (last time today at 14:32). If it wasn't you, keep your phone with you and change your PIN." Buttons "Change PIN" and "OK". It adds "One entry was interrupted and counted as a try." when that happened, and, from 6 tries that were not forgiven, "After 4 more wrong PINs that are not put right at once, the PIN turns off. Type your master password once to start the count again." with "Type master password". Wrong master passwords are reported the same way: "A wrong master password was typed 2 times before you opened the app."
+- **A shortcut needs attention:** "Choose a new PIN", "Turn fingerprint unlock on again?", or "Part of the app's storage could not be read. Make a backup now."
 - **After an unlock through "Forgot PIN?", or after the PIN was turned off**: the "Choose a new PIN" screen (§5.6) with `TextButton` "Not now". This takes 16 taps and one passphrase in all, instead of a trip to Settings with the passphrase typed twice (21 taps) [E: critique task 7].
+- **"Make a backup now?"** when the master password was just typed and a backup is due (§5.19).
 
 **Never** a "wipe after N attempts" message (no wipe exists) [E: account-based.md finding 4], and never a hint of how many accounts are stored.
 
-**Recommendations to the lock design** (from the user's side):
-1. **Keep fingerprint unlock usable after the PIN has been turned off.** Lock design 1 does; lock design 2 does not. The sensor has its own hardware lockout, so a child pressing keys cannot force the master password, and an owner who has forgotten the master password still gets in and can choose a new one (§5.24).
-2. **Allow a practice grace period of about 7 days** (§5.10).
-3. **Keep the forgotten-master-password route through the PIN** (§5.24). Both candidates have one.
+**What this document asked of the lock design, and the answers** (lock.md §16.1):
+1. Fingerprint unlock stays usable after the PIN has been turned off (lock.md §6.5). The sensor has its own hardware lockout, so a child pressing keys cannot force the master password, and an owner who has forgotten the master password still gets in and can choose a new one (§5.24).
+2. A practice grace period: 1, 2 and 4 days in the first week, then 7 days (lock.md §8.3; §5.10).
+3. The forgotten-master-password route through the PIN is kept (lock.md F11; §5.24).
 
 ### 5.10 Lock screen — master password
 
@@ -446,38 +478,48 @@ Details:
 - `TextButton` "Use PIN" when the PIN can be used now (labelled "Not now: use PIN" on a practice day);
 - `TextButton` "Forgot master password?".
 
-The **subtitle** says why the master password is needed now:
+The **subtitle** says why the master password is needed now. When several reasons apply, the one highest in lock.md §13.3's table is shown:
 - practice (below);
-- the PIN states of §5.9 ("turned off", "can't be checked right now", "stopped working", "Welcome back");
-- none when the user chose it with "Forgot PIN?".
+- **"Welcome back"** (no lock records for this vault; §5.9);
+- **a vault from before a replacement**: title "Your passwords from before 7 Oct 2026", "Type the master password you used then." (§5.24);
+- the PIN states of §5.9: turned off, stopped working (its key is gone or its record is damaged), set up by a newer version of the app, can't be checked right now, storage full;
+- "You changed your master password. Type it once, then choose a PIN again." when a change did not keep the PIN;
+- "The newest copy of your passwords can't be read. An older copy from 5 Oct opens with the master password you used then." (an older copy with another key, lock.md F16a);
+- the first time only, on a phone that cannot keep keys in secure hardware: "This phone can't keep a PIN or fingerprint key in protected hardware, so the app opens with your master password only.";
+- none when the user chose it with "Forgot PIN?", or when no PIN was ever set.
 
-**Practice** (recommendation to the lock design). Both candidates ask about 1, 3 and 7 days after the master password is created or changed, then every 14 days; they count the intervals slightly differently.
+If fingerprint unlock is on and cannot be used now, the matching fingerprint line of §5.9 is shown under the reason, with "Use your master password".
+
+**Practice** (lock.md §8.3). The app asks on days 1, 3 and 7 after the master password was set, then every 14 days.
 - **On a practice day**, the lock screen opens on this screen instead of the PIN pad, and the fingerprint prompt does not open by itself. Subtitle: "Time to practise your master password. We ask now and then so you don't forget it. You need it to open a backup and to move to a new phone."
-- **"Not now: use PIN"** opens the PIN pad with its fingerprint key. The next lock screen asks again. Aegis works the same way: when its reminder is due it focuses the password field, but its fingerprint button still unlocks after one dialog [V: Aegis 3.4.3 `ui/AuthActivity.java:180-193, 211-224`].
-- **Grace period.** Skipping works for a grace period; about **7 days** is recommended (lock design 1 allows one skip, lock design 2 three days).
-- **After the grace period**, the master password is required. "Forgot master password?" still offers the PIN route (§5.24), so nobody is locked out of their passwords because the paper is at home.
-- **Why not skippable forever.** A reminder that can always be skipped stops finding out that the password was forgotten, and only while the PIN still works can a forgotten password be replaced. crypto.md §11 step 6 ("after 14 days … require the password") should be restated as this rule (§14).
-- **What counts as practice.** Any correct master password: unlock, practice, export, backup or change.
+- **"Not now: use PIN"** (or "Not now: use fingerprint") opens the PIN pad with its fingerprint key and is not asked again for **20 hours**, so the app asks at most once a day. Aegis works the same way: when its reminder is due it focuses the password field, but its fingerprint button still unlocks after one dialog [V: Aegis 3.4.3 `ui/AuthActivity.java:180-193, 211-224`].
+- **Grace period.** "Not now" is offered for 1, 2 and 4 days at the three asks of the first week, then for 7 days: the grace is never longer than the interval, so that the early repetitions that fix a new password in memory are not all skipped.
+- **After the grace period**, the master password is required. "I can't remember it" stays and leads to §5.24, which opens the app with the PIN or fingerprint, so nobody is locked out of their passwords because the paper is at home. Until a master password has been typed, the list shows the standing banner of §5.11.
+- **Why not skippable forever.** A reminder that can always be skipped stops finding out that the password was forgotten, and only while the PIN still works can a forgotten password be replaced. lock.md §8.3 replaces crypto.md §11 step 6 (architecture.md D-6f).
+- **What counts as practice.** Any correct master password: unlock, practice, export, backup or change. Practice is not asked while a new master password is pending (§5.24), nor on a phone without a PIN or fingerprint.
 
-**Wrong master password.**
-- The message is "That's not the right master password." If the attempt contains Cyrillic letters, it adds "Your keyboard may be set to Russian."
+**Wrong master password** (lock.md §13.3).
+- One neutral hint, whatever was typed: "That's not the right master password. Check the keyboard language (Latin or Cyrillic) and capital letters."
 - After 2 wrong tries, when the PIN or fingerprint still works, it adds "Can't remember it? Open the app with your PIN, then choose a new master password." with `TextButton` "I forgot it", which opens the sheet below.
-- If the lock design pauses the field after several wrong tries: "Wait 30 seconds, then try again. Take your time and look at your paper." (lock design 2 §5.6).
+- When the passwords from before a replacement are on the phone (§5.24), a wrong master password adds "The master password was replaced on 7 Oct using the PIN. If you didn't do that, open your passwords from before." with the button "Open my passwords from before 7 Oct". If the master password was replaced more than once, the button opens the list of the sheet below.
+- While a new master password is pending and not ready, under the field: "Your new master password starts working in about 20 hours."
+- After several wrong master passwords the field waits (lock.md §6.8): it is disabled, with a countdown from 0:30 and "Wait 30 seconds, then try again. Take your time and look at your paper."
 
 **Not enough memory** (the master-password check needs about 64 MiB) [E: V-C2]: "Your phone doesn't have enough free memory to open your passwords. Close other apps or restart the phone, then try again." `Button` "Try again".
 
-**Master-password reuse check.** After every correct master-password entry (unlock, practice, backup, export, change), the app compares the typed master password with every entry's password in memory. It stores the ids of the matches inside the locked file (§2, §5.16). Nothing about the master password itself is stored [I]. A single new or changed password is also checked when it is saved (§5.14).
+**Master-password reuse check** (architecture.md D-9b). After every correct master-password entry (unlock, practice, backup, export, change), the app compares the typed master password, through `MasterPasswordBytes`, with every entry's password in memory. It stores the ids of the matches inside the locked file (§2, §5.16). Nothing about the master password itself is stored [I]. **There is no check when an account is saved**: it would cost one key derivation (64 MiB and a second) per save, and it would be a way to test guesses at the master password outside the lock's limits (lock.md §6.8). A password saved in the meantime is found at the next master-password entry.
 
-**"Forgot master password?"** opens a `ModalBottomSheet`.
+**"Forgot master password?"** opens a `ModalBottomSheet` (lock.md F17 step 1).
 - **Title**: "Forgot your master password?" Body: "Nobody can recover it: it is not stored anywhere."
 - **The options**, only those that apply, in this order:
-  1. **When the PIN or fingerprint still works**: "Your PIN still opens the app on this phone. Open the app with it, then choose a new master password." `Button` "Use my PIN" (or "Use my fingerprint") → §5.24.
+  1. **When a PIN exists**: "Your PIN still opens the app on this phone. Open the app with it, then choose a new master password." `Button` "Use my PIN" → §5.24. **When no PIN exists and fingerprint works**: the same with "fingerprint" and `Button` "Use my fingerprint". A fingerprint is not accepted where a PIN exists (lock.md F11 step 3).
   2. "If you remember the master password of an older backup, you can open that backup instead. Your current passwords stay on this phone, locked." `OutlinedButton` "Restore from a backup file". This follows §5.2 steps 1–4: the backup is opened and checked with its password, and its summary card adds "Your current passwords stay on this phone, locked." with the button "Use this backup". Only then is the current vault archived and the backup installed. Setup continues at the PIN step.
-  3. **Only when neither the PIN nor the fingerprint works**: "Start with an empty app. Your current passwords stay on this phone, locked. If you remember the master password later, you can open them again." `TextButton` "Start with an empty app…" opens a dialog:
+  3. One entry for each vault that was put aside: "Open my previous passwords (locked on 6 Oct 2026)"; for a vault put aside by a replacement, "Open my passwords from before 7 Oct 2026". Each shows that vault's own lock screen (§5.1).
+  4. **Whenever no PIN or fingerprint is usable now**: "Start with an empty app. Your current passwords stay on this phone, locked. If you remember the master password later, you can open them again." `TextButton` "Start with an empty app…" opens a dialog:
      - title "Start with an empty app?";
      - body "Your passwords stay on this phone, locked with your old master password. You can open them again from the first screen or from Settings › Backup & transfer.";
      - buttons "Start with an empty app" and "Cancel".
-  4. `TextButton` "Try again" closes the sheet.
+  5. `TextButton` "Try again" closes the sheet.
 - **No path that starts at the lock screen deletes anything, and none uses the word "Delete"** [E: V-S3: "Never offer a destructive 'reset vault' in response to a wrong password"].
 
 **Archived vaults** (owners: storage and lock designs).
@@ -486,8 +528,8 @@ The **subtitle** says why the master password is needed now:
   - on Welcome as "Open my previous passwords (locked on 6 Oct 2026)" (§5.1);
   - in Settings › Backup & transfer as "Old passwords (locked on 6 Oct 2026)", with "Open" and "Delete".
 
-  "Open" in Settings adds the archive's accounts to the current vault, like a backup import (§5.21).
-- **Deleting an archive needs that archive's master password.** Otherwise anyone holding the phone could start over and then delete the owner's passwords from the new vault's Settings. An archive whose password is forgotten simply stays; it is small.
+  "Open" in Settings adds the archive's accounts to the current vault, like a backup import (§5.21). It asks for that archive's master password, with that archive's own waits after wrong tries (lock.md §6.8), as its lock screen from Welcome or the sheet does.
+- **Deleting an archive needs that archive's master password**, and nothing else: not the current master password, not a pending one. Otherwise anyone holding the phone could start over and then delete the owner's passwords from the new vault's Settings. An archive whose password is forgotten simply stays; it is small.
 
 ### 5.11 Passwords (home list) and search
 
