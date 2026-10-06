@@ -1,0 +1,323 @@
+{
+    "encrypted": false,
+    "folders": [
+        {
+            "id": "e3b5ab63-de3f-4cf2-b982-b0c900f950c5",
+            "name": "custom folder"
+        },
+        {
+            "id": "a1c2f4d6-1b2e-4c3a-9d5f-b0c900f950d1",
+            "name": "custom folder/nested"
+        },
+        {
+            "id": "b2d3e5f7-2c3f-4d4b-8e6a-b0c900f950d2",
+            "name": "custom folder/nested/deep"
+        },
+        {
+            "id": "c3e4f608-3d4a-4e5c-9f7b-b0c900f950d3",
+            "name": "Archive/2024"
+        },
+        {
+            "id": "d4f50719-4e5b-4f6d-8a8c-b0c900f950d4",
+            "name": "Empty folder"
+        }
+    ],
+    "items": [
+        {
+            "id": "aa6874e0-c259-41fa-8a18-afa200cf3f3a",
+            "organizationId": null,
+            "folderId": null,
+            "type": 1,
+            "reprompt": 0,
+            "name": "LoginItemMultipleWebsites",
+            "notes": "login note",
+            "favorite": false,
+            "fields": [
+                {
+                    "name": "Text 1",
+                    "value": "Text 1 content",
+                    "type": 0,
+                    "linkedId": null
+                },
+                {
+                    "name": "Hidden 1",
+                    "value": "Hidden 1 content",
+                    "type": 1,
+                    "linkedId": null
+                }
+            ],
+            "login": {
+                "uris": [
+                    {
+                        "match": null,
+                        "uri": "https://test.url1/"
+                    },
+                    {
+                        "match": null,
+                        "uri": "https://test.url2"
+                    },
+                    {
+                        "match": null,
+                        "uri": "androidapp://ch.protonmail.android"
+                    }
+                ],
+                "username": "username",
+                "password": "password",
+                "totp": "otpauth://totp/test?secret=proton333&issuer=proton"
+            },
+            "collectionIds": null
+        },
+        {
+            "id": "55ddda5d-84da-4fc2-8f5d-47c6122dfa4b",
+            "organizationId": null,
+            "folderId": "e3b5ab63-de3f-4cf2-b982-b0c900f950c5",
+            "type": 3,
+            "reprompt": 0,
+            "name": "Credit Card Y",
+            "notes": "Credit Card Y AMEX note",
+            "favorite": false,
+            "card": {
+                "cardholderName": "A B",
+                "brand": "Amex",
+                "number": "374242424242424",
+                "expMonth": "1",
+                "expYear": "2025",
+                "code": "123"
+            },
+            "collectionIds": null
+        },
+        {
+            "id": "122b4201-6b60-495e-ae2d-afa200d0b79b",
+            "organizationId": null,
+            "folderId": null,
+            "type": 4,
+            "reprompt": 0,
+            "name": "IdentityItem",
+            "notes": null,
+            "favorite": false,
+            "identity": {
+                "title": null,
+                "firstName": "John",
+                "middleName": "F",
+                "lastName": "Kennedy",
+                "address1": null,
+                "address2": null,
+                "address3": null,
+                "city": null,
+                "state": null,
+                "postalCode": null,
+                "country": null,
+                "company": null,
+                "email": null,
+                "phone": null,
+                "ssn": null,
+                "username": null,
+                "passportNumber": null,
+                "licenseNumber": null
+            },
+            "collectionIds": null
+        },
+        {
+            "id": "fcecd2a9-35c6-4499-8a0f-afa200d082f6",
+            "organizationId": null,
+            "folderId": null,
+            "type": 2,
+            "reprompt": 0,
+            "name": "NoteItem",
+            "notes": "note content",
+            "favorite": false,
+            "secureNote": {
+                "type": 0
+            },
+            "collectionIds": null
+        },
+        {
+            "id": "aa6874e0-c259-41fa-8a18-afa200cf3f3a",
+            "organizationId": null,
+            "folderId": null,
+            "type": 1,
+            "reprompt": 0,
+            "name": "LoginItemEmptyFields",
+            "notes": "login note",
+            "favorite": false,
+            "login": {
+                "uris": [],
+                "username": null,
+                "password": null,
+                "totp": null
+            },
+            "collectionIds": null
+        },
+        {
+            "id": "aa6874e0-c259-41fa-8a18-afa200cf3f3b",
+            "organizationId": null,
+            "folderId": null,
+            "type": 1,
+            "reprompt": 0,
+            "name": "LoginItemBrokenUrl",
+            "notes": "",
+            "favorite": false,
+            "login": {
+                "uris": [
+                    {
+                        "match": null,
+                        "uri": "htt:/test.url1/"
+                    }
+                ],
+                "username": null,
+                "password": null,
+                "totp": null
+            },
+            "collectionIds": null
+        },
+        {
+            "id": "59a92880-bf32-4da2-83a3-b037008f99ad",
+            "organizationId": null,
+            "folderId": null,
+            "type": 3,
+            "reprompt": 0,
+            "name": "Credit Card Y",
+            "notes": "Credit Card Y AMEX note",
+            "favorite": false,
+            "card": {
+                "cardholderName": "A B",
+                "brand": "Amex",
+                "number": "374242424242424",
+                "expMonth": "1",
+                "expYear": "2025",
+                "code": "123"
+            },
+            "collectionIds": null
+        },
+        {
+            "id": "9f4c6b99-831e-4a51-abf5-b0300098555b",
+            "organizationId": null,
+            "folderId": "e3b5ab63-de3f-4cf2-b982-b0c900f950c5",
+            "type": 1,
+            "reprompt": 0,
+            "name": "LoginItemMultipleWebsites",
+            "notes": "login note",
+            "favorite": false,
+            "fields": [],
+            "login": {
+                "uris": [
+                    {
+                        "match": null,
+                        "uri": "https://test.url1/"
+                    },
+                    {
+                        "match": null,
+                        "uri": "https://test.url2"
+                    },
+                    {
+                        "match": null,
+                        "uri": "androidapp://ch.protonmail.android"
+                    }
+                ],
+                "username": "username",
+                "password": "password",
+                "totp": "otpauth://totp/test?secret=proton333&issuer=proton"
+            },
+            "collectionIds": null
+        },
+        {
+            "id": "8d4c6b99-431e-4a51-abf5-b020b098555b",
+            "organizationId": null,
+            "folderId": "e3b5ab63-de3f-4cf2-b982-b0c900f950c5",
+            "type": 1,
+            "reprompt": 0,
+            "name": "LoginWithCustomFields",
+            "notes": "login note for custom fields",
+            "favorite": false,
+            "fields": [
+                {
+                    "name": "[TEXT]",
+                    "value": "hello",
+                    "type": 0,
+                    "linkedId": null
+                },
+                {
+                    "name": "[HIDDEN]",
+                    "value": "foobar",
+                    "type": 1,
+                    "linkedId": null
+                },
+                {
+                    "name": "[CHECKBOX]",
+                    "value": "true",
+                    "type": 2,
+                    "linkedId": null
+                },
+                {
+                    "name": "[LINKED]",
+                    "value": "username",
+                    "type": 3,
+                    "linkedId": 100
+                }
+            ],
+            "login": {
+                "uris": [],
+                "username": "username",
+                "password": "password",
+                "totp": "otpauth://totp/test?secret=proton333&issuer=proton"
+            },
+            "collectionIds": null
+        },
+        {
+            "passwordHistory": null,
+            "revisionDate": "2025-02-17T09:30:27.266Z",
+            "creationDate": "2025-02-17T09:30:27.266Z",
+            "deletedDate": null,
+            "id": "c096c3ba-7aa4-4dda-832f-b287009cae16",
+            "organizationId": null,
+            "folderId": null,
+            "type": 5,
+            "reprompt": 0,
+            "name": "test ssh",
+            "notes": null,
+            "favorite": false,
+            "sshKey": {
+                "privateKey": "-----BEGIN TEST -----\n00000000000000\n-----END TEST-----\n",
+                "publicKey": "ssh-ed25519 000000000",
+                "keyFingerprint": "SHA256:000000000"
+            },
+            "collectionIds": null
+        },
+        {
+            "id": "e5061a2b-5f6c-4a7e-9b9d-b0300098556c",
+            "organizationId": null,
+            "folderId": "b2d3e5f7-2c3f-4d4b-8e6a-b0c900f950d2",
+            "type": 1,
+            "reprompt": 0,
+            "name": "DeepLogin",
+            "notes": null,
+            "favorite": false,
+            "fields": [],
+            "login": {
+                "uris": [],
+                "username": "user",
+                "password": "pass",
+                "totp": null
+            },
+            "collectionIds": null
+        },
+        {
+            "id": "f6172b3c-6a7d-4b8f-8cae-b0300098557d",
+            "organizationId": null,
+            "folderId": "c3e4f608-3d4a-4e5c-9f7b-b0c900f950d3",
+            "type": 1,
+            "reprompt": 0,
+            "name": "ArchivedLogin",
+            "notes": null,
+            "favorite": false,
+            "fields": [],
+            "login": {
+                "uris": [],
+                "username": "user",
+                "password": "pass",
+                "totp": null
+            },
+            "collectionIds": null
+        }
+    ]
+}

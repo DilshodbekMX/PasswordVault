@@ -1,0 +1,30 @@
+14:39:47 [68] device sdk 28 screen: mWakefulness=Awake installed: package:com.example.pvlab.clip package:com.example.pvlab.clip.noperm
+14:39:47 [68] ===== plan old shard 0/1: 12 runs
+14:39:47 [68] --- run final.home.none.143947.68 app=full delay=30000
+14:40:20 [68]   clear=30040 ms (late +40) via=timer threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=False adjMax=None onReturn=None pre=None
+14:40:20 [68] --- run alarm_exact.home.none.144020.68 app=full delay=30000
+14:40:52 [68]   clear=30001 ms (late +1) via=receiver threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=False adjMax=None onReturn=None pre=None
+14:40:52 [68] --- run handler.home.none.144052.68 app=full delay=30000
+14:41:25 [68]   clear=30041 ms (late +41) via=handler threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=False adjMax=None onReturn=None pre=None
+14:41:25 [68] --- run final.watch.none.144125.68 app=full delay=30000
+14:41:58 [68]   clear=30041 ms (late +41) via=alarm threw=None pidChanged=False probe=EMPTY watch=VALUE->EMPTY@30042 frozen=False adjMax=None onReturn=None pre=None
+14:41:58 [68] --- run alarm_exact.watch.none.144158.68 app=full delay=30000
+14:42:30 [68]   clear=30001 ms (late +1) via=receiver threw=None pidChanged=False probe=EMPTY watch=VALUE->EMPTY@30051 frozen=False adjMax=None onReturn=None pre=None
+14:42:30 [68] --- run handler.watch.none.144230.68 app=full delay=30000
+14:43:03 [68]   clear=30028 ms (late +28) via=handler threw=None pidChanged=False probe=EMPTY watch=VALUE->EMPTY@30038 frozen=False adjMax=None onReturn=None pre=None
+14:43:03 [68] --- run final.watch.kill.144303.68 app=full delay=30000
+14:43:36 [68]   clear=30077 ms (late +77) via=alarm threw=None pidChanged=True probe=EMPTY watch=VALUE->EMPTY@30108 frozen=False adjMax=None onReturn=None pre=None
+14:43:36 [68] --- run alarm_exact.watch.kill.144336.68 app=full delay=30000
+14:44:09 [68]   clear=30031 ms (late +31) via=receiver threw=None pidChanged=True probe=EMPTY watch=VALUE->EMPTY@30069 frozen=False adjMax=None onReturn=None pre=None
+14:44:09 [68] --- run final.home.none.144409.68 app=full delay=30000
+14:44:42 [68]   clear=30043 ms (late +43) via=timer threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=False adjMax=None onReturn=None pre=VALUE
+14:44:42 [68] --- othercopy-final.144442.68 app=full
+14:45:16 [68]   otherCopy at 8081 ms; listener callbacks of the first app after +2 s: [[8082, True, 'pvlab:othercopy-final.144442.68-o', 'imp=400 lru=700 trim=0']]; all=[[190, True, 'pvlab:othercopy-final.144442.68', 'imp=100 lru=0 trim=0'], [8082, True, 'pvlab:othercopy-final.144442.68-o', 'imp=400 lru=700 trim=0']]
+14:45:16 [68]   event=('clear', 'skipped', 30016, None, None, None) watch(other value)=[[10576, 'VALUE']] final probe=VALUE
+14:45:16 [68] --- othercopy-alarm_peek.144516.68 app=full
+14:45:49 [68]   otherCopy at 8080 ms; listener callbacks of the first app after +2 s: [[8080, True, 'pvlab:othercopy-alarm_peek.144516.68-o', 'imp=400 lru=700 trim=0']]; all=[[120, True, 'pvlab:othercopy-alarm_peek.144516.68', 'imp=100 lru=0 trim=0'], [8080, True, 'pvlab:othercopy-alarm_peek.144516.68-o', 'imp=400 lru=700 trim=0']]
+14:45:49 [68]   event=('peek', None, None, True, 'OTHER-othercopy-alarm_peek.144516.68-o-S3CRET', 'ClipDescription { text/plain "pvlab:othercopy-alarm_peek.144516.68-o" PersistableBundle[mParcelledData.dataSize=88] <10-06 14:45:25.789> }') watch(other value)=[[10587, 'VALUE']] final probe=VALUE
+14:45:49 [68] --- othercopy-alarm_exact.144549.68 app=full
+14:46:23 [68]   otherCopy at 8078 ms; listener callbacks of the first app after +2 s: [[8079, True, 'pvlab:othercopy-alarm_exact.144549.68-o', 'imp=400 lru=700 trim=0'], [30001, False, None, 'imp=400 lru=700 trim=0']]; all=[[106, True, 'pvlab:othercopy-alarm_exact.144549.68', 'imp=100 lru=0 trim=0'], [8079, True, 'pvlab:othercopy-alarm_exact.144549.68-o', 'imp=400 lru=700 trim=0'], [30001, False, None, 'imp=400 lru=700 trim=0']]
+14:46:23 [68]   event=('clear', None, 30000, None, None, None) watch(other value)=[[10581, 'VALUE'], [30027, 'EMPTY']] final probe=EMPTY
+14:46:23 [68] ===== all plans done

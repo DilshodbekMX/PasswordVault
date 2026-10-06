@@ -1,0 +1,5 @@
+13:36:54 screen: mWakefulness=Awake mHoldingDisplaySuspendBlocker=true mWakefulness=1
+13:36:54 ===== plan base
+13:36:54 --- run handler.home.none.133654
+13:37:29   clear=30026 ms (late +26)  threw=None pidChanged=False probe=EMPTY frozenSeen=False dtUp=30026
+13:37:29 --- run alarm_set.home.none.133729

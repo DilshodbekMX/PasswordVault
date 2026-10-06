@@ -1,0 +1,53 @@
+14:38:00 [64] device sdk 37 screen: mWakefulness=Awake mWakefulness=1 installed: package:com.example.pvlab.clip package:com.example.pvlab.clip.noperm package:com.example.pvlab.clip.sea
+14:38:00 [64] ===== plan base shard 2/3: 16 runs
+14:38:00 [64] --- run alarm_exact.home.none.143800.64 app=full delay=30000
+14:38:34 [64]   clear=30002 ms (late +2) via=receiver threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=False adjMax=700 onReturn=None pre=None
+14:38:34 [64] --- run work.home.none.143834.64 app=full delay=30000
+14:39:08 [64]   clear=30034 ms (late +34) via=worker attempt=0 threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=False adjMax=700 onReturn=None pre=None
+14:39:08 [64] --- run handler.settings.none.143908.64 app=full delay=30000
+14:39:41 [64]   clear=30003 ms (late +3) via=handler threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=False adjMax=700 onReturn=None pre=None
+14:39:41 [64] --- run alarm_window.settings.none.143941.64 app=full delay=30000
+14:40:37 [64]   clear=52502 ms (late +22502) via=receiver threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=False adjMax=700 onReturn=None pre=None
+14:40:37 [64] --- run coroutine.settings.none.144037.64 app=full delay=30000
+14:41:10 [64]   clear=30007 ms (late +7) via=coroutine threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=False adjMax=700 onReturn=None pre=None
+14:41:10 [64] --- run alarm_set.watch.none.144110.64 app=full delay=30000
+14:42:06 [64]   clear=52499 ms (late +22499) via=receiver threw=None pidChanged=False probe=EMPTY watch=VALUE->EMPTY@52522 frozen=False adjMax=700 onReturn=None pre=None
+14:42:06 [64] --- run alarm_awi.watch.none.144206.64 app=full delay=30000
+14:43:02 [64]   clear=52500 ms (late +22500) via=receiver threw=None pidChanged=False probe=EMPTY watch=VALUE->EMPTY@52518 frozen=False adjMax=700 onReturn=None pre=None
+14:43:02 [64] --- run final.watch.none.144302.64 app=full delay=30000
+14:43:36 [64]   clear=30028 ms (late +28) via=alarm threw=None pidChanged=False probe=EMPTY watch=VALUE->EMPTY@30078 frozen=False adjMax=700 onReturn=None pre=None
+14:43:36 [64] --- run alarm_exact.home.none.144336.64 app=full delay=30000
+14:44:09 [64]   clear=30002 ms (late +2) via=receiver threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=False adjMax=700 onReturn=None pre=None
+14:44:09 [64] --- run work.home.none.144409.64 app=full delay=30000
+14:44:43 [64]   clear=30033 ms (late +33) via=worker attempt=0 threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=False adjMax=700 onReturn=None pre=None
+14:44:43 [64] --- run handler.settings.none.144443.64 app=full delay=30000
+14:45:17 [64]   clear=30027 ms (late +27) via=handler threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=False adjMax=700 onReturn=None pre=None
+14:45:17 [64] --- run alarm_window.settings.none.144517.64 app=full delay=30000
+14:46:13 [64]   clear=52500 ms (late +22500) via=receiver threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=False adjMax=700 onReturn=None pre=None
+14:46:13 [64] --- run coroutine.settings.none.144613.64 app=full delay=30000
+14:46:46 [64]   clear=30002 ms (late +2) via=coroutine threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=False adjMax=700 onReturn=None pre=None
+14:46:46 [64] --- run alarm_set.watch.none.144646.64 app=full delay=30000
+14:47:42 [64]   clear=52502 ms (late +22502) via=receiver threw=None pidChanged=False probe=EMPTY watch=VALUE->EMPTY@52542 frozen=False adjMax=700 onReturn=None pre=None
+14:47:42 [64] --- run alarm_awi.watch.none.144742.64 app=full delay=30000
+14:48:37 [64]   clear=52500 ms (late +22500) via=receiver threw=None pidChanged=False probe=EMPTY watch=VALUE->EMPTY@52531 frozen=False adjMax=700 onReturn=None pre=None
+14:48:37 [64] --- run final.watch.none.144837.64 app=full delay=30000
+14:49:11 [64]   clear=30026 ms (late +26) via=alarm threw=None pidChanged=False probe=EMPTY watch=VALUE->EMPTY@30048 frozen=False adjMax=700 onReturn=None pre=None
+14:49:11 [64] ===== plan controls shard 2/3: 2 runs
+14:49:11 [64] --- run alarm_exact.home.none.144911.64 app=full delay=30000
+14:49:44 [64]   clear=30022 ms (late +22) via=receiver threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=True adjMax=900 onReturn=None pre=VALUE
+14:49:44 [64] --- run work.home.none.144944.64 app=full delay=30000
+14:50:31 [64]   clear=43535 ms (late +13535) via=worker attempt=0 threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=True adjMax=900 onReturn=None pre=VALUE
+14:50:31 [64] ===== plan extra shard 2/3: 6 runs
+14:50:31 [64] --- run final_notimer.home.none.145031.64 app=full delay=30000
+14:51:05 [64]   clear=30004 ms (late +4) via=alarm threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=False adjMax=700 onReturn=None pre=None
+14:51:05 [64] --- run final_notimer.home.none.145105.64 app=noperm delay=30000
+14:51:38 [64]   clear=30002 ms (late +2) via=alarm threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=False adjMax=700 onReturn=None pre=None
+14:51:38 [64] --- run final_notimer.watch.none.145138.64 app=full delay=30000
+14:52:12 [64]   clear=30008 ms (late +8) via=alarm threw=None pidChanged=False probe=EMPTY watch=VALUE->EMPTY@30029 frozen=False adjMax=700 onReturn=None pre=None
+14:52:12 [64] --- run final_notimer.watch.none.145212.64 app=noperm delay=30000
+14:52:45 [64]   clear=30001 ms (late +1) via=alarm threw=None pidChanged=False probe=EMPTY watch=VALUE->EMPTY@30052 frozen=False adjMax=700 onReturn=None pre=None
+14:52:45 [64] --- run final_notimer.settings.none.145245.64 app=full delay=30000
+14:53:18 [64]   clear=30004 ms (late +4) via=alarm threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=False adjMax=700 onReturn=None pre=None
+14:53:18 [64] --- run final_notimer.settings.none.145318.64 app=noperm delay=30000
+14:53:52 [64]   clear=30003 ms (late +3) via=alarm threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=False adjMax=700 onReturn=None pre=None
+14:53:52 [64] ===== all plans done

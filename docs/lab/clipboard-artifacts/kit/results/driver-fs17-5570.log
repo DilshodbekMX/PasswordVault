@@ -1,0 +1,9 @@
+15:33:17 [70] device sdk 37 screen: mWakefulness=Awake mWakefulness=1 installed: package:com.example.pvlab.clip package:com.example.pvlab.clip.noperm package:com.example.pvlab.clip.sea
+15:33:17 [70] ===== plan forcestop shard 0/1: 3 runs
+15:33:17 [70] --- run final.watch.forcestop.153317.70 app=full delay=30000
+15:34:37 [70]   clear=NONE via=None threw=None pidChanged=None probe=VALUE watch=VALUE->None@None frozen=False adjMax=700 onReturn=None pre=None
+15:34:37 [70] --- run alarm_exact.watch.forcestop.153437.70 app=full delay=30000
+15:35:57 [70]   clear=NONE via=None threw=None pidChanged=None probe=VALUE watch=VALUE->None@None frozen=False adjMax=700 onReturn=None pre=None
+15:35:57 [70] --- run final_notimer.watch.forcestop.153557.70 app=noperm delay=30000
+15:37:18 [70]   clear=NONE via=None threw=None pidChanged=None probe=VALUE watch=VALUE->None@None frozen=False adjMax=700 onReturn=None pre=None
+15:37:18 [70] ===== all plans done

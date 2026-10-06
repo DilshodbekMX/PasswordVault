@@ -1,0 +1,34 @@
+15:05:35 [68] device sdk 28 screen: mWakefulness=Awake installed: package:com.example.pvlab.clip package:com.example.pvlab.clip.noperm
+15:05:35 [68] ===== plan old2 shard 0/1: 14 runs
+15:05:35 [68] --- run final.home.none.150535.68 app=full delay=30000
+15:06:09 [68]   clear=30040 ms (late +40) via=alarm threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=False adjMax=None onReturn=None pre=None
+15:06:09 [68] --- run final.watch.none.150609.68 app=full delay=30000
+15:06:43 [68]   clear=30033 ms (late +33) via=timer threw=None pidChanged=False probe=EMPTY watch=VALUE->EMPTY@30063 frozen=False adjMax=None onReturn=None pre=None
+15:06:43 [68] --- run final.settings.none.150643.68 app=full delay=30000
+15:07:17 [68]   clear=30040 ms (late +40) via=alarm threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=False adjMax=None onReturn=None pre=None
+15:07:17 [68] --- run alarm_exact.watch.none.150717.68 app=full delay=30000
+15:07:50 [68]   clear=30001 ms (late +1) via=receiver threw=None pidChanged=False probe=EMPTY watch=VALUE->EMPTY@30045 frozen=False adjMax=None onReturn=None pre=None
+15:07:50 [68] --- run handler.watch.none.150750.68 app=full delay=30000
+15:08:23 [68]   clear=30041 ms (late +41) via=handler threw=None pidChanged=False probe=EMPTY watch=VALUE->EMPTY@30080 frozen=False adjMax=None onReturn=None pre=None
+15:08:23 [68] --- run final.stay.none.150823.68 app=full delay=30000
+15:08:57 [68]   clear=30022 ms (late +22) via=alarm threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=False adjMax=None onReturn=None pre=None
+15:08:57 [68] --- run final.chainwatch.kill.150857.68 app=full delay=30000
+15:09:30 [68]   clear=30632 ms (late +632) via=alarm threw=None pidChanged=True probe=EMPTY watch=VALUE->EMPTY@30663 frozen=False adjMax=None onReturn=None pre=None
+15:09:30 [68] --- run final.chainwatch.kill.150930.68 app=full delay=30000
+15:10:04 [68]   clear=30634 ms (late +634) via=alarm threw=None pidChanged=True probe=EMPTY watch=VALUE->EMPTY@30671 frozen=False adjMax=None onReturn=None pre=None
+15:10:04 [68] --- run alarm_exact.chainwatch.kill.151004.68 app=full delay=30000
+15:10:38 [68]   clear=30752 ms (late +752) via=receiver threw=None pidChanged=True probe=EMPTY watch=VALUE->EMPTY@30776 frozen=False adjMax=None onReturn=None pre=None
+15:10:38 [68] --- run handler.chainwatch.kill.151038.68 app=full delay=30000
+15:11:58 [68]   clear=NONE via=None threw=None pidChanged=None probe=VALUE watch=VALUE->None@None frozen=False adjMax=None onReturn=None pre=None
+15:11:58 [68] --- run final.home.none.151158.68 app=full delay=30000
+15:12:32 [68]   clear=30043 ms (late +43) via=timer threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=False adjMax=None onReturn=None pre=VALUE
+15:12:32 [68] --- othercopy-final.151232.68 app=full
+15:13:07 [68]   otherCopy at 8690 ms; listener callbacks of the first app after +2 s: [[8690, True, 'pvlab:othercopy-final.151232.68-o', 'imp=400 lru=700 trim=0']]; all=[[168, True, 'pvlab:othercopy-final.151232.68', 'imp=100 lru=0 trim=0'], [8690, True, 'pvlab:othercopy-final.151232.68-o', 'imp=400 lru=700 trim=0']]
+15:13:07 [68]   event=('clear', 'skipped', 30026, None, None, None) watch(other value)=[[10606, 'VALUE']] final probe=VALUE
+15:13:07 [68] --- othercopy-alarm_peek.151307.68 app=full
+15:13:41 [68]   otherCopy at 8654 ms; listener callbacks of the first app after +2 s: [[8655, True, 'pvlab:othercopy-alarm_peek.151307.68-o', 'imp=400 lru=700 trim=0']]; all=[[113, True, 'pvlab:othercopy-alarm_peek.151307.68', 'imp=100 lru=0 trim=0'], [8655, True, 'pvlab:othercopy-alarm_peek.151307.68-o', 'imp=400 lru=700 trim=0']]
+15:13:41 [68]   event=('peek', None, None, True, 'OTHER-othercopy-alarm_peek.151307.68-o-S3CRET', 'ClipDescription { text/plain "pvlab:othercopy-alarm_peek.151307.68-o" PersistableBundle[mParcelledData.dataSize=88] <10-06 15:13:18.066> }') watch(other value)=[[10632, 'VALUE']] final probe=VALUE
+15:13:41 [68] --- othercopy-alarm_exact.151341.68 app=full
+15:14:15 [68]   otherCopy at 8657 ms; listener callbacks of the first app after +2 s: [[8658, True, 'pvlab:othercopy-alarm_exact.151341.68-o', 'imp=400 lru=700 trim=0'], [30006, False, None, 'imp=400 lru=700 trim=0']]; all=[[129, True, 'pvlab:othercopy-alarm_exact.151341.68', 'imp=100 lru=0 trim=0'], [8658, True, 'pvlab:othercopy-alarm_exact.151341.68-o', 'imp=400 lru=700 trim=0'], [30006, False, None, 'imp=400 lru=700 trim=0']]
+15:14:15 [68]   event=('clear', None, 30002, None, None, None) watch(other value)=[[10569, 'VALUE'], [30022, 'EMPTY']] final probe=EMPTY
+15:14:15 [68] ===== all plans done

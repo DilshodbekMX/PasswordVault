@@ -1,0 +1,26 @@
+--------- beginning of main
+{"ev":"process_start","pid":5175,"el":1072088,"up":1072088,"proc":"com.example.pvlab.clip","state":"imp=100 lru=0 trim=0"}
+{"ev":"listener_registered","pid":5175,"el":1072278,"up":1072278}
+{"ev":"copy","pid":5175,"el":1072279,"up":1072279,"run":"handler.home.none.133550","mech":"handler","delayMs":30000,"copyEl":1072278,"copyUp":1072278,"value":"PVLAB-handler.home.none.133550-S3CRET","sensitive":true,"threw":null,"pkg":"com.example.pvlab.clip","sdk":37}
+{"ev":"scheduled","pid":5175,"el":1072279,"up":1072279,"run":"handler.home.none.133550","mech":"handler","at":1102278,"info":null,"threw":null}
+{"ev":"listener","pid":5175,"el":1072281,"up":1072281,"has":true,"label":"pvlab:handler.home.none.133550","state":"imp=100 lru=0 trim=0"}
+{"ev":"listener","pid":5175,"el":1072292,"up":1072292,"has":true,"label":"pvlab:handler.home.none.133550","state":"imp=100 lru=0 trim=0"}
+{"ev":"clear","pid":5175,"el":1102305,"up":1102305,"run":"handler.home.none.133550","mech":"handler","via":"handler","delayMs":30000,"dt":30025,"late":25,"dtUp":30025,"threw":null,"bgHas":false,"bgDesc":null,"state":"imp=400 lru=700 trim=0","thread":"main"}
+{"ev":"probe_create","pid":5175,"el":1103586,"up":1103586,"run":"handler.home.none.133550","state":"imp=100 lru=0 trim=0"}
+{"ev":"probe","pid":5175,"el":1103667,"up":1103667,"run":"handler.home.none.133550","has":false,"clipNull":true,"items":null,"text":null,"label":null,"mime":null,"sensitive":null,"descTs":null,"desc":null}
+--------- beginning of main
+{"ev":"process_start","pid":5526,"el":1135808,"up":1135808,"proc":"com.example.pvlab.clip","state":"imp=100 lru=0 trim=0"}
+{"ev":"listener_registered","pid":5526,"el":1135994,"up":1135994}
+{"ev":"copy","pid":5526,"el":1135995,"up":1135995,"run":"handler.home.none.133654","mech":"handler","delayMs":30000,"copyEl":1135994,"copyUp":1135994,"value":"PVLAB-handler.home.none.133654-S3CRET","sensitive":true,"threw":null,"pkg":"com.example.pvlab.clip","sdk":37}
+{"ev":"scheduled","pid":5526,"el":1135996,"up":1135996,"run":"handler.home.none.133654","mech":"handler","at":1165994,"info":null,"threw":null}
+{"ev":"listener","pid":5526,"el":1136004,"up":1136004,"has":true,"label":"pvlab:handler.home.none.133654","state":"imp=100 lru=0 trim=0"}
+{"ev":"listener","pid":5526,"el":1136009,"up":1136009,"has":true,"label":"pvlab:handler.home.none.133654","state":"imp=100 lru=0 trim=0"}
+{"ev":"clear","pid":5526,"el":1166022,"up":1166022,"run":"handler.home.none.133654","mech":"handler","via":"handler","delayMs":30000,"dt":30026,"late":26,"dtUp":30026,"threw":null,"bgHas":false,"bgDesc":null,"state":"imp=400 lru=700 trim=0","thread":"main"}
+{"ev":"probe_create","pid":5526,"el":1167190,"up":1167190,"run":"handler.home.none.133654","state":"imp=100 lru=0 trim=0"}
+{"ev":"probe","pid":5526,"el":1167271,"up":1167271,"run":"handler.home.none.133654","has":false,"clipNull":true,"items":null,"text":null,"label":null,"mime":null,"sensitive":null,"descTs":null,"desc":null}
+{"ev":"process_start","pid":5732,"el":1171002,"up":1171002,"proc":"com.example.pvlab.clip","state":"imp=100 lru=0 trim=0"}
+{"ev":"listener_registered","pid":5732,"el":1171183,"up":1171183}
+{"ev":"copy","pid":5732,"el":1171184,"up":1171184,"run":"alarm_set.home.none.133729","mech":"alarm_set","delayMs":30000,"copyEl":1171183,"copyUp":1171183,"value":"PVLAB-alarm_set.home.none.133729-S3CRET","sensitive":true,"threw":null,"pkg":"com.example.pvlab.clip","sdk":37}
+{"ev":"scheduled","pid":5732,"el":1171185,"up":1171185,"run":"alarm_set.home.none.133729","mech":"alarm_set","at":1201183,"info":null,"threw":null}
+{"ev":"listener","pid":5732,"el":1171186,"up":1171186,"has":true,"label":"pvlab:alarm_set.home.none.133729","state":"imp=100 lru=0 trim=0"}
+{"ev":"listener","pid":5732,"el":1171193,"up":1171193,"has":true,"label":"pvlab:alarm_set.home.none.133729","state":"imp=100 lru=0 trim=0"}

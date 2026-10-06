@@ -1,0 +1,44 @@
+15:14:59 [64] device sdk 37 screen: mWakefulness=Awake mWakefulness=1 installed: package:com.example.pvlab.clip package:com.example.pvlab.clip.noperm package:com.example.pvlab.clip.sea
+15:14:59 [64] ===== plan long shard 2/4: 2 runs
+15:14:59 [64] --- run final.home.none.151459.64 app=full delay=120000
+15:17:03 [64]   clear=120005 ms (late +5) via=timer threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=True adjMax=900 onReturn=None pre=None
+15:17:03 [64] --- run final.home.none.151703.64 app=noperm delay=120000
+15:19:06 [64]   clear=120014 ms (late +14) via=timer threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=True adjMax=900 onReturn=None pre=None
+15:19:06 [64] ===== plan power shard 2/4: 5 runs
+15:19:06 [64] --- run final_notimer.home.idle.151906.64 app=noperm delay=30000
+15:19:43 [64]   clear=30003 ms (late +3) via=alarm threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=False adjMax=700 onReturn=None pre=None
+15:19:43 [64] --- run final.home.idle.151943.64 app=full delay=30000
+15:20:19 [64]   clear=30027 ms (late +27) via=alarm threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=False adjMax=700 onReturn=None pre=None
+15:20:19 [64] --- run final_notimer.home.restricted.152019.64 app=noperm delay=120000
+15:23:08 [64]   clear=NONE via=None threw=None pidChanged=None probe=VALUE watch=None->None@None frozen=True adjMax=900 onReturn=167069 pre=None
+15:23:08 [64] --- run final.home.restricted.152308.64 app=full delay=65000
+15:24:17 [64]   clear=65009 ms (late +9) via=timer threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=False adjMax=900 onReturn=None pre=None
+15:24:17 [64] --- run final_notimer.home.batsaver.152417.64 app=noperm delay=120000
+15:26:20 [64]   clear=120006 ms (late +6) via=alarm threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=True adjMax=900 onReturn=None pre=None
+15:26:20 [64] ===== plan verify shard 2/4: 12 runs
+15:26:20 [64] --- run final.watch.none.152620.64 app=full delay=30000
+15:26:54 [64]   clear=30027 ms (late +27) via=alarm threw=None pidChanged=False probe=EMPTY watch=VALUE->EMPTY@30038 frozen=False adjMax=700 onReturn=None pre=None
+15:26:54 [64] --- run final.stay.none.152654.64 app=full delay=30000
+15:27:27 [64]   clear=30022 ms (late +22) via=timer threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=False adjMax=0 onReturn=None pre=None
+15:27:27 [64] --- run final.watch.none.152727.64 app=noperm delay=30000
+15:28:00 [64]   clear=30006 ms (late +6) via=timer threw=None pidChanged=False probe=EMPTY watch=VALUE->EMPTY@30012 frozen=False adjMax=700 onReturn=None pre=None
+15:28:00 [64] --- run final_notimer.watch.none.152800.64 app=noperm delay=30000
+15:28:34 [64]   clear=30003 ms (late +3) via=alarm threw=None pidChanged=False probe=EMPTY watch=VALUE->EMPTY@30024 frozen=False adjMax=700 onReturn=None pre=None
+15:28:34 [64] --- run final_decoy.watch.none.152834.64 app=noperm delay=30000
+15:29:07 [64]   clear=30025 ms (late +25) via=alarm threw=None pidChanged=False probe=EMPTY watch=VALUE->EMPTY@30079 frozen=False adjMax=700 onReturn=None pre=None
+15:29:07 [64] --- run final_decoy.watch.kill.152907.64 app=noperm delay=30000
+15:29:41 [64]   clear=30004 ms (late +4) via=alarm threw=None pidChanged=True probe=EMPTY watch=VALUE->EMPTY@30046 frozen=False adjMax=700 onReturn=None pre=None
+15:29:41 [64] --- run final.chainwatch.none.152941.64 app=full delay=30000
+15:30:14 [64]   clear=30005 ms (late +5) via=timer threw=None pidChanged=False probe=EMPTY watch=VALUE->EMPTY@30029 frozen=True adjMax=900 onReturn=None pre=None
+15:30:14 [64] --- run final.watch.kill.153014.64 app=noperm delay=30000
+15:30:48 [64]   clear=30447 ms (late +447) via=alarm threw=None pidChanged=True probe=EMPTY watch=VALUE->EMPTY@30458 frozen=False adjMax=700 onReturn=None pre=None
+15:30:48 [64] --- run final_notimer.watch.kill.153048.64 app=noperm delay=30000
+15:31:21 [64]   clear=30314 ms (late +314) via=alarm threw=None pidChanged=True probe=EMPTY watch=VALUE->EMPTY@30329 frozen=False adjMax=700 onReturn=None pre=None
+15:31:21 [64] --- run final.home.screenoff.153121.64 app=full delay=30000
+15:31:58 [64]   clear=30018 ms (late +18) via=alarm threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=False adjMax=700 onReturn=None pre=None
+15:31:58 [64] --- run final_notimer.home.screenoff.153158.64 app=noperm delay=30000
+15:32:34 [64]   clear=30004 ms (late +4) via=alarm threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=False adjMax=700 onReturn=None pre=None
+15:32:34 [64] --- othercopy-final-front.153234.64 app=full
+15:33:08 [64]   otherCopy at 8713 ms; listener callbacks of the first app after +2 s: []; all=[[9, True, 'pvlab:othercopy-final-front.153234.64', 'imp=100 lru=0 trim=0'], [26, True, 'pvlab:othercopy-final-front.153234.64', 'imp=100 lru=0 trim=0']]
+15:33:08 [64]   event=('clear', 'skipped', 30017, None, None, None) watch(other value)=[] final probe=VALUE
+15:33:08 [64] ===== all plans done

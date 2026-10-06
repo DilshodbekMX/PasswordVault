@@ -1,0 +1,138 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.6.0/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+Calculating task graph as no cached configuration is available for tasks: assembleDebug
+> Task :app:generateNopermDebugAssets UP-TO-DATE
+> Task :app:preBuild UP-TO-DATE
+> Task :app:generateFullDebugAssets UP-TO-DATE
+> Task :app:generateSeaDebugAssets UP-TO-DATE
+> Task :app:preNopermDebugBuild UP-TO-DATE
+> Task :app:preFullDebugBuild UP-TO-DATE
+> Task :app:preSeaDebugBuild UP-TO-DATE
+> Task :app:mergeFullDebugNativeDebugMetadata NO-SOURCE
+> Task :app:mergeNopermDebugNativeDebugMetadata NO-SOURCE
+> Task :app:javaPreCompileFullDebug UP-TO-DATE
+> Task :app:mapFullDebugSourceSetPaths UP-TO-DATE
+> Task :app:writeFullDebugSigningConfigVersions UP-TO-DATE
+> Task :app:validateSigningFullDebug UP-TO-DATE
+> Task :app:extractDeepLinksFullDebug UP-TO-DATE
+> Task :app:createFullDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:generateFullDebugGlobalSynthetics UP-TO-DATE
+> Task :app:writeFullDebugAppMetadata UP-TO-DATE
+> Task :app:generateFullDebugResources UP-TO-DATE
+> Task :app:mergeFullDebugJniLibFolders UP-TO-DATE
+> Task :app:desugarFullDebugFileDependencies UP-TO-DATE
+> Task :app:mergeSeaDebugNativeDebugMetadata NO-SOURCE
+> Task :app:packageFullDebugResources UP-TO-DATE
+> Task :app:createNopermDebugCompatibleScreenManifests
+> Task :app:writeNopermDebugAppMetadata
+> Task :app:mapNopermDebugSourceSetPaths
+> Task :app:generateNopermDebugResources
+> Task :app:generateSeaDebugResources
+> Task :app:desugarNopermDebugFileDependencies
+> Task :app:extractDeepLinksNopermDebug
+> Task :app:desugarSeaDebugFileDependencies
+> Task :app:javaPreCompileNopermDebug
+> Task :app:javaPreCompileSeaDebug
+> Task :app:mapSeaDebugSourceSetPaths
+> Task :app:writeNopermDebugSigningConfigVersions
+> Task :app:createSeaDebugCompatibleScreenManifests
+> Task :app:extractDeepLinksSeaDebug
+> Task :app:writeSeaDebugAppMetadata
+> Task :app:validateSigningSeaDebug
+> Task :app:validateSigningNopermDebug
+> Task :app:writeSeaDebugSigningConfigVersions
+> Task :app:mergeNopermDebugJniLibFolders
+> Task :app:mergeSeaDebugJniLibFolders
+> Task :app:packageNopermDebugResources
+> Task :app:packageSeaDebugResources
+> Task :app:checkFullDebugDuplicateClasses UP-TO-DATE
+> Task :app:mergeLibDexFullDebug UP-TO-DATE
+> Task :app:mergeFullDebugAssets UP-TO-DATE
+> Task :app:processFullDebugNavigationResources UP-TO-DATE
+> Task :app:compressFullDebugAssets UP-TO-DATE
+> Task :app:mergeSeaDebugAssets
+> Task :app:mergeNopermDebugAssets
+> Task :app:compileFullDebugNavigationResources UP-TO-DATE
+> Task :app:parseFullDebugLocalResources UP-TO-DATE
+> Task :app:compressSeaDebugAssets
+> Task :app:compressNopermDebugAssets
+> Task :app:generateFullDebugRFile UP-TO-DATE
+> Task :app:mergeFullDebugNativeLibs UP-TO-DATE
+> Task :app:stripFullDebugDebugSymbols UP-TO-DATE
+> Task :app:processNopermDebugNavigationResources
+> Task :app:checkFullDebugAarMetadata UP-TO-DATE
+> Task :app:mergeFullDebugResources UP-TO-DATE
+> Task :app:processSeaDebugNavigationResources
+> Task :app:compileSeaDebugNavigationResources
+> Task :app:compileNopermDebugNavigationResources
+> Task :app:checkNopermDebugDuplicateClasses
+> Task :app:checkNopermDebugAarMetadata
+> Task :app:checkSeaDebugAarMetadata
+> Task :app:mergeExtDexFullDebug UP-TO-DATE
+> Task :app:checkSeaDebugDuplicateClasses
+> Task :app:mergeNopermDebugNativeLibs
+> Task :app:mergeSeaDebugNativeLibs
+> Task :app:mergeLibDexNopermDebug
+> Task :app:mergeLibDexSeaDebug
+
+> Task :app:stripSeaDebugDebugSymbols
+Unable to strip the following libraries, packaging them as they are: libandroidx.graphics.path.so, libargon2jni.so, libargon2native.so. Run with --info option to learn more.
+
+> Task :app:stripNopermDebugDebugSymbols
+Unable to strip the following libraries, packaging them as they are: libandroidx.graphics.path.so, libargon2jni.so, libargon2native.so. Run with --info option to learn more.
+
+> Task :app:parseSeaDebugLocalResources
+> Task :app:parseNopermDebugLocalResources
+> Task :app:generateSeaDebugRFile
+> Task :app:generateNopermDebugRFile
+> Task :app:processSeaDebugMainManifest
+> Task :app:processNopermDebugMainManifest
+> Task :app:processFullDebugMainManifest
+> Task :app:processNopermDebugManifest
+> Task :app:processSeaDebugManifest
+> Task :app:processFullDebugManifest
+> Task :app:processNopermDebugManifestForPackage
+> Task :app:processSeaDebugManifestForPackage
+> Task :app:processFullDebugManifestForPackage
+> Task :app:processFullDebugResources
+> Task :app:mergeSeaDebugResources
+> Task :app:mergeNopermDebugResources
+> Task :app:processNopermDebugResources
+> Task :app:processSeaDebugResources
+> Task :app:generateSeaDebugGlobalSynthetics
+> Task :app:generateNopermDebugGlobalSynthetics
+> Task :app:mergeExtDexSeaDebug
+> Task :app:mergeExtDexNopermDebug
+> Task :app:compileFullDebugKotlin
+> Task :app:compileFullDebugJavaWithJavac NO-SOURCE
+> Task :app:processFullDebugJavaRes UP-TO-DATE
+> Task :app:mergeFullDebugJavaResource UP-TO-DATE
+> Task :app:compileNopermDebugKotlin
+> Task :app:compileNopermDebugJavaWithJavac NO-SOURCE
+> Task :app:compileSeaDebugKotlin
+> Task :app:compileSeaDebugJavaWithJavac NO-SOURCE
+> Task :app:processNopermDebugJavaRes
+> Task :app:processSeaDebugJavaRes
+> Task :app:dexBuilderSeaDebug
+> Task :app:mergeProjectDexSeaDebug
+> Task :app:dexBuilderFullDebug
+> Task :app:mergeProjectDexFullDebug
+> Task :app:dexBuilderNopermDebug
+> Task :app:mergeProjectDexNopermDebug
+> Task :app:packageFullDebug
+> Task :app:assembleFullDebug
+> Task :app:createFullDebugApkListingFileRedirect UP-TO-DATE
+> Task :app:mergeNopermDebugJavaResource
+> Task :app:mergeSeaDebugJavaResource
+> Task :app:packageNopermDebug
+> Task :app:assembleNopermDebug
+> Task :app:createNopermDebugApkListingFileRedirect
+> Task :app:packageSeaDebug
+> Task :app:createSeaDebugApkListingFileRedirect
+> Task :app:assembleSeaDebug
+> Task :app:assembleDebug
+
+BUILD SUCCESSFUL in 14s
+108 actionable tasks: 80 executed, 28 up-to-date
+Configuration cache entry stored.
+exit=0

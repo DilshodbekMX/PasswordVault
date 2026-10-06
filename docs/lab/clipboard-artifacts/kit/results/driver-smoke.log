@@ -1,0 +1,15 @@
+14:31:52 [60] device sdk 37 screen: mWakefulness=Awake mWakefulness=1 installed: package:com.example.pvlab.clip package:com.example.pvlab.clip.noperm package:com.example.pvlab.clip.sea
+14:31:52 [60] ===== plan smoke shard 0/1: 6 runs
+14:31:52 [60] --- run handler.home.none.143152.60 app=full delay=8000
+14:32:04 [60]   clear=8003 ms (late +3) via=handler threw=None pidChanged=False probe=EMPTY watch=None->None@None frozen=False adjMax=700 onReturn=None pre=None
+14:32:04 [60] --- run final.watch.none.143204.60 app=full delay=8000
+14:32:15 [60]   clear=8004 ms (late +4) via=alarm threw=None pidChanged=False probe=EMPTY watch=VALUE->EMPTY@8011 frozen=False adjMax=700 onReturn=None pre=None
+14:32:15 [60] --- run final_notimer.watch.none.143215.60 app=noperm delay=12000
+14:32:30 [60]   clear=12005 ms (late +5) via=alarm threw=None pidChanged=False probe=EMPTY watch=VALUE->EMPTY@12052 frozen=False adjMax=700 onReturn=None pre=None
+14:32:30 [60] --- run alarm_exact.chainwatch.none.143230.60 app=full delay=8000
+14:32:41 [60]   clear=8004 ms (late +4) via=receiver threw=None pidChanged=False probe=EMPTY watch=VALUE->EMPTY@8018 frozen=False adjMax=900 onReturn=None pre=None
+14:32:41 [60] --- run work.watch.kill.143241.60 app=full delay=10000
+14:33:25 [60]   clear=NONE via=None threw=None pidChanged=None probe=VALUE watch=VALUE->None@None frozen=False adjMax=700 onReturn=41851 pre=None
+14:33:25 [60] --- run handler.watch.kill.143325.60 app=full delay=10000
+14:33:48 [60]   clear=NONE via=None threw=None pidChanged=None probe=EMPTY watch=VALUE->EMPTY@8349 frozen=False adjMax=905 onReturn=None pre=None
+14:33:48 [60] ===== all plans done
