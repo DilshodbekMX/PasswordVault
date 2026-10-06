@@ -1088,7 +1088,7 @@ Version 1 has no switch to turn the PIN off. It can be skipped at setup and set 
 
 1. Settings › App lock › Change master password. Ask for the current one. "I don't remember it" leads to F11.
 2. The new master password: chosen, written down, typed again (ux.md §5.3–5.5). The screen is kept on for the last two (10.1).
-3. **PIN.** If a PIN slot is usable: "Enter your PIN to keep using it." This is a counted PIN check in a prompt (6.3); the right PIN yields `KEK_pin`, which is kept in memory until step 5. "Not now" is allowed. If the PIN cannot be checked right now, the flow goes on as after "Not now". If a limit is reached, the PIN is turned off (6.5) and the flow goes on without it. Whenever the vault would end up without a PIN for its new key: "Choose a PIN", skippable, done by F6 after step 6.
+3. **PIN.** If a PIN slot is usable: "Enter your app PIN to keep using it." This is a counted PIN check in a prompt (6.3); the right PIN yields `KEK_pin`, which is kept in memory until step 5. "Not now" is allowed. If the PIN cannot be checked right now, the flow goes on as after "Not now". If a limit is reached, the PIN is turned off (6.5) and the flow goes on without it. Whenever the vault would end up without a PIN for its new key: "Choose a PIN", skippable, done by F6 after step 6.
 4. Make VK2 and `vk_id2`.
 5. **Before the vault is written:**
    - write `state.rec` with `mp_change = {to_vk_id: vk_id2, at: now}` (5.6);
