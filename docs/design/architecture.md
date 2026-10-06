@@ -1006,7 +1006,7 @@ Not used, on purpose: Hilt or Koin, KSP, Room, SQLCipher, DataStore, WorkManager
 
 | | `debug` | `staging` | `release` | `backupCheck` |
 |---|---|---|---|---|
-| Purpose | Daily work, emulator checks | The emulator checks against the optimised code; never given to anyone | What the user installs | lock.md E15 only: a manifest overlay sets `allowBackup="true"`. Built only by that check's script |
+| Purpose | Daily work, emulator checks | The emulator checks against the optimised code; never given to anyone | What the user installs | lock.md E15 only: a manifest overlay sets `allowBackup="true"` and removes `android:fullBackupContent` and `android:dataExtractionRules` (`tools:remove`), whose rules exclude every domain, so that something is backed up. Built only by that check's script |
 | R8 (`optimization { enable = true }`) | off | on | on | off |
 | Debuggable | yes | no | no | yes |
 | ABIs (`ndk.abiFilters`) | arm64-v8a, armeabi-v7a, x86_64 | the same | **arm64-v8a, armeabi-v7a only** [V-S9] | as `debug` |

@@ -1706,7 +1706,7 @@ What the emulators cannot show: invalidation by a new finger on the Android 7 an
 **Build.**
 - `androidx.biometric:biometric:1.4.0-alpha07` in the version catalog.
 - Manifest: `HIDE_OVERLAY_WINDOWS`; `android:launchMode="singleTask"`; `android:largeHeap="true"`. Consider `android:hasFragileUserData="true"` (API 29+), which makes Android offer to keep the data on uninstall [J-R §7].
-- `BuildConfig.ALLOW_SOFTWARE_KEYSTORE`, true in `debug` and `staging` only (architecture.md §7.2); the test receiver in those two source sets; a manifest overlay with `allowBackup="true"` for check E15 and nothing else; checks R-2 to R-7.
+- `BuildConfig.ALLOW_SOFTWARE_KEYSTORE`, true in `debug` and `staging` only (architecture.md §7.2); the test receiver in those two source sets; a manifest overlay with `allowBackup="true"` for check E15 and nothing else, which also removes `android:fullBackupContent` and `android:dataExtractionRules` (`tools:remove`), because the shipped rules exclude every domain and E15 would then back up nothing; checks R-2 to R-7.
 - When `docs/lab/window-input-artifacts/VaultSecurity.kt` is copied into the app, it gets the API 26 gate of 13.5.
 
 **i18n.** New glossary terms: "app PIN"; "tries left" (term 58); the banner and notice texts of 13.4; the status lines and reasons of 13.3 that are new; the texts of F11 step 6 and of F16b. Term 59 ("Try again in N seconds") is used only for the master-password wait.
