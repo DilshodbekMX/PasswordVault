@@ -88,19 +88,20 @@ Each step prints `PASS name`, `FAIL name (exit N)` or `SKIPPED name (reason)`, a
 the command's status (0 when skipped). Scripts use `set -u`, not `set -e`: under `set -e` a
 failing command inside `pv_step` would end the script before FAIL is printed.
 
+`needs-debuggable` holds when `run-as` works for the app (`PV_PACKAGE`, default
+`io.github.dilshodbekmx.passwordvault`): the debug build, not staging. `needs-root` holds when
+the image is a userdebug build (`ro.debuggable=1`): API 24 and 28 here; the API 37 image is a
+user build without root. A step whose marker does not hold is not run and prints SKIPPED.
+Other helpers: `pv_shell`, `pv_reboot`, `pv_wait_booted`, `pv_unlock`, `pv_keyguard_showing`,
+`pv_focus`, `pv_ui_nodes`, `pv_ui_tap REGEX`, `pv_ui_wait REGEX SECONDS` (REGEX is matched
+against `text|content-desc|resource-id`; write a literal `|` as `[|]`), `pv_is_debuggable`,
+`pv_has_root`, `pv_api`.
+
 A wedged guest can leave `adb shell` waiting for ever. Set `PV_ADB_TIMEOUT=N` and every
 `pv_adb` call is killed after N seconds (exit 124); the waiting helpers (`pv_wait_booted`,
 `pv_reboot`, `pv_wait_device`) always bound their calls, and `smoke.sh` gives each call 180 s.
 Leave it unset around commands that may legitimately run long (`am instrument`, `logcat`
 without `-d`).
-`needs-debuggable` holds when `run-as` works for the app (`PV_PACKAGE`, default
-`io.github.dilshodbekmx.passwordvault`): the debug build, not staging. `needs-root` holds when
-the image is a userdebug build (`ro.debuggable=1`): API 24 and 28 here; the API 37 image is a
-user build without root. A step whose marker does not hold is not run and prints SKIPPED.
-Other helpers: `pv_shell`, `pv_reboot`, `pv_wait_booted`, `pv_unlock`, `pv_keyguard_showing`, `pv_focus`, `pv_ui_nodes`,
-`pv_ui_tap REGEX`, `pv_ui_wait REGEX SECONDS` (REGEX is matched against
-`text|content-desc|resource-id`; write a literal `|` as `[|]`), `pv_is_debuggable`,
-`pv_has_root`, `pv_api`.
 
 ## The base: `/home/asus/pvlab/`
 
@@ -173,15 +174,20 @@ says `Found systemPath /home/asus/pvlab/sysimg/...`).
 - A reboot of the guest keeps everything done on the device (an installed app, its files):
   the read-only overlay lives as long as the emulator process, so checks such as lock.md E3
   can reboot with `tools/emu/adb.sh -s SERIAL --reboot` (or `pv_reboot`), which waits for a new
-  boot id, the boot to complete and the lock screen to be dismissed. Tried on API 24, 28 and 37.
-  API 28 comes back without a start-up PIN screen.
+  boot id, the boot to complete and the lock screen to be dismissed. Tried with `--reboot` on
+  API 24 and 37, and with `adb reboot` then `--wait-boot` on API 28, which comes back without a
+  start-up PIN screen.
 - Fingerprint: `adb -s SERIAL emu finger touch 1` then `emu finger remove`; touches sent
   together are merged into one (docs/lab/biometric.md). The Android 7 and 9 images never change
   their sensor's authenticator id, so a new finger does not invalidate keys there.
 - Root: `adb root` works on API 24 and 28 (userdebug), not on API 37.
 - Lab scripts in `docs/lab/biometric-artifacts/` (`enroll_fingerprint.sh`, `uitap.py`, ...)
-  take a console PORT and work on these devices; `enroll_fingerprint.sh` knows only the API 37
-  Settings screens.
+  take a console PORT and call adb with `-s` themselves, so they skip the checks of `adb.sh`.
+  `enroll_fingerprint.sh` knows only the API 37 Settings screens (on API 28 it waits at the
+  NEXT button until it times out); `boot.sh --provision` has its own enrolment for all three.
 - Secure windows (staging and release builds) give black `screencap` output; use
   `adb -s SERIAL emu screenrecord screenshot DIR`.
-- Connected tests: `ANDROID_SERIAL=emulator-5556,emulator-5558 tools/gradle.sh :app:connectedDebugAndroidTest`.
+- Connected tests by hand: `ANDROID_SERIAL=emulator-5556,emulator-5558 tools/gradle.sh
+  :app:connectedDebugAndroidTest`, then `tools/emu/adb.sh --connected-results
+  app/build/outputs/androidTest-results/connected/debug emulator-5556 emulator-5558`
+  (remove the app from an API 24 device first). `adb.sh --connected` does all of it.
