@@ -184,7 +184,7 @@ So no rule can recover the ь: the tool's output always needs a reviewer for Rus
 
 ### 4.5 Against i18n.md's glossary
 
-i18n.md §3 has 129 terms with Latin and hand-checked Cyrillic columns. Its Cyrillic was made from the Latin by a script using the same rules and then checked by hand, so this is a consistency check, not an independent test. `latinToCyrillic` gives the glossary's Cyrillic for **125 of 129** rows. The 4 others are translation choices, not conversions: Email → "Эл. почта"; "(A–Z)" → "(А–Я)" in a sort label; Latin "(A–Z)" and "(a–z)" kept for the generator [X].
+i18n.md §3 had 129 terms with Latin and hand-checked Cyrillic columns when this was measured (section I, terms 130 to 149, came later and was not run). Its Cyrillic was made from the Latin by a script using the same rules and then checked by hand, so this is a consistency check, not an independent test. `latinToCyrillic` gives the glossary's Cyrillic for **125 of 129** rows. The 4 others are translation choices, not conversions: Email → "Эл. почта"; "(A–Z)" → "(А–Я)" in a sort label; Latin "(A–Z)" and "(a–z)" kept for the generator [X].
 
 ## 5. Measured speed and memory
 
