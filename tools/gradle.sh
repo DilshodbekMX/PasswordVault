@@ -55,8 +55,8 @@ while [[ -z "$slot" ]]; do
             echo "gradle.sh: all $count build slots are taken; waiting. Holders:" >&2
             cat "$slots"/slot-*.owner 2>/dev/null | sed 's/^/    /' >&2
         fi
-        sleep 5
-        waited=$((waited + 5))
+        sleep 2
+        waited=$((waited + 2))
     fi
 done
 echo "pid $$ since $(date '+%F %T') in $root: gradlew $*" >"$slots/slot-$slot.owner"
