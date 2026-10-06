@@ -877,7 +877,7 @@ What the library brings in: the permissions `USE_BIOMETRIC` and `USE_FINGERPRINT
 
    | Use | Title | Negative button |
    |---|---|---|
-   | Unlock | "Open Password Vault" | "Use PIN", or "Use master password" when no PIN is usable |
+   | Unlock | "Open PasswordVault" | "Use PIN", or "Use master password" when no PIN is usable |
    | Turn on (F9) | "Turn on fingerprint unlock" | "Cancel" |
    | After a master-password change (F8) | "Keep fingerprint unlock" | "Not now" |
    | Asking for a new master password when no PIN exists (F11 step 3) | "Confirm with your fingerprint" | "Cancel" |
@@ -1333,10 +1333,10 @@ The look (layout, key sizes, haptics, landscape) is in ux.md §5.9 and §5.10. T
 
 | State | Shown | Leaves to |
 |---|---|---|
-| Pad, idle | Title "Password Vault", subtitle **"Enter your app PIN"**, 6 empty dots, the status line, the keypad, the fingerprint key if usable, "Forgot PIN? Use master password" | Entering, fingerprint prompt, master password |
+| Pad, idle | Title "PasswordVault", subtitle **"Enter your app PIN"**, 6 empty dots, the status line, the keypad, the fingerprint key if usable, "Forgot PIN? Use master password" | Entering, fingerprint prompt, master password |
 | Pad, entering | Dots fill. No digit is ever shown. The status line stays | Opening, idle |
 | Opening | The keypad is replaced by a progress indicator and "Opening…" | Unlocked, wrong, cannot check |
-| Fingerprint only | Title "Password Vault", the status line, the buttons "Use fingerprint" and "Use master password". No pad and no dots | Fingerprint prompt, master password |
+| Fingerprint only | Title "PasswordVault", the status line, the buttons "Use fingerprint" and "Use master password". No pad and no dots | Fingerprint prompt, master password |
 | Fingerprint prompt | The system's prompt over the pad or over the fingerprint-only screen (9.2) | Unlocked, the screen behind it |
 | Master password, idle | Title "Type your master password", the reason as subtitle, the field, "Unlock", and the buttons of 13.3 | Opening, pad, forgot sheet |
 | Master password, opening | "Opening…" while Argon2id runs (0.3 to 1 s) | Unlocked, wrong, older password |
