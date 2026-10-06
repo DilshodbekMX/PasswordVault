@@ -121,15 +121,16 @@ marker  = "--- PasswordVault (" count " lines) ---"  ; count: the lines after th
 line    = label [ " (hidden)" ] ": " text *( LF "  " text )    ; later lines of a value are indented by two spaces
 ```
 
-- **Order of lines:** `Title: <title>` when the title differs from the host of the first website (ux.md §5.20.2: Google ignores the `name` column); one line per extra field, in order; `Old password (hidden): <pendingOldPassword>` while a change is pending (D-10d). The host is `WebAddress.hostOf` of the first website (search.md §2), compared exactly. An entry without a website has no host to differ from and gets no `Title:` line; Google refuses such a row anyway.
+- **Order of lines:** `Title: <title>` when the title differs from the host of the first website (ux.md §5.20.2: Google ignores the `name` column); one line per extra field, in order; `Old password (hidden): <pendingOldPassword>` while a change is pending (D-10d). The host is `WebAddress.hostOf` of the first website (search.md §2), compared exactly. An entry without a website has no host to differ from and gets no `Title:` line (except by the rule below that keeps the user's text out of the block); Google refuses such a row anyway.
 - **Labels.** Field names are trimmed when they are entered or imported, so a label never starts or ends with a space, and a line that starts with two spaces is always a continuation. A backslash makes the next character literal: a label is written with `\` as `\\`, `:` as `\:` and `(` as `\(`. So the first unescaped `: ` ends the label, and an unescaped ` (hidden)` at its end can only be the flag.
 - **Reserved labels:** `Title` and `Old password`, only when written with no backslash. A user's own field with one of these names is written with its first letter escaped (`\Title`), and reads back as an ordinary field.
 - **Recognised only when it is ours:** the marker must follow a blank line and `count` must equal exactly the number of lines after it, to the end of the note. Otherwise the whole note is text. A note that contains a pasted block therefore stays a note. The reader takes the last marker line that meets both conditions; if a line after it is neither a `line` nor a continuation, the whole note is text as well, so that nothing of a note is ever lost to the block.
+- **The user's text never becomes fields** (architecture.md D-10a, added at the wave-0 integration): if the user notes alone would be read as notes and a block (they end with a marker that meets both conditions, followed only by well-formed lines), the writer appends a block of its own even when it has nothing else to write: then with the `Title:` line, whatever the host, and also for an entry without a website. The reader takes the writer's marker, the last one that qualifies, and the user's lines stay in the notes (vector 8).
 - **Empty user notes:** `user-notes` may be empty, and the two LFs are written all the same, so the marker always follows a blank line: the note column of an entry with fields and no notes starts with two line feeds.
 - **Reading back:** user notes = everything before the LF LF that precedes the marker; a value's continuation lines are joined to it with LF, without their two spaces; `Title:` gives the entry's title, in place of the `name` column; `Old password` restores `pendingOldPassword` and sets `changePending` (D-10d).
 - The marker, `(hidden)` and the two reserved labels stay in English in every language, because the importer reads them.
 
-**Vectors.** The note column the writer produces (`␊` is a line feed) for a stored entry, which reading it back must give again exactly. The first four are the cases of FR P8, the last three the reserved labels and an escaped backslash.
+**Vectors.** The note column the writer produces (`␊` is a line feed) for a stored entry, which reading it back must give again exactly. The first four are the cases of FR P8, 5 to 7 the reserved labels and an escaped backslash, 8 a user's note that would read as a block.
 
 | # | Stored entry | Note column | Reads back as |
 |---|---|---|---|
@@ -140,6 +141,7 @@ line    = label [ " (hidden)" ] ": " text *( LF "  " text )    ; later lines of 
 | 5 | Title `Telegram`, website `https://web.telegram.org`, visible fields `Title` = `Mr` and `Old password` = `x` | `␊␊--- PasswordVault (3 lines) ---␊Title: Telegram␊\Title: Mr␊\Old password: x` | Title `Telegram`; two ordinary fields named `Title` and `Old password` |
 | 6 | Title `Gmail`, website `https://mail.google.com`, password `N3w!pass` with a change pending, `pendingOldPassword` `Old#2`, hidden field `PIN` = `1234`, no notes | `␊␊--- PasswordVault (3 lines) ---␊Title: Gmail␊PIN (hidden): 1234␊Old password (hidden): Old#2`; the password column holds `N3w!pass` | Password `N3w!pass`, `pendingOldPassword` `Old#2`, `changePending` set, the field `PIN` |
 | 7 | Title `Server`, website `https://srv.example`, visible field `C:\keys` = `line 1␊line 2` | `␊␊--- PasswordVault (3 lines) ---␊Title: Server␊C\:\\keys: line 1␊  line 2` | The field `C:\keys` with its two lines |
+| 8 | Title `mail.ru`, website `https://mail.ru`, notes `Old notes:␊␊--- PasswordVault (1 lines) ---␊PIN: 9999`, no fields | `Old notes:␊␊--- PasswordVault (1 lines) ---␊PIN: 9999␊␊--- PasswordVault (1 lines) ---␊Title: mail.ru`: a block of the writer's own, although the title equals the host, because the notes alone would read as one | Title `mail.ru`; the notes exactly as stored; no field |
 
 - **Splitting**: when the file would exceed 3,000 rows or 1,000 KB, write `-part1`, `-part2`, … (one "Save as" per part); an entry's rows never straddle parts [X: 5,015 entries → 3,000 + 2,017 rows].
 
@@ -397,6 +399,7 @@ Real fixtures from Proton's test suite: a Chrome CSV (4 entries), its Windows va
 | §2 rule 8, §6.2 | Unpaired surrogates refused at input, replaced and counted by one function at writing, also in `.xlsx` | FR P7 |
 | §3 | The backup is the vault file of architecture.md §4, sealed as §4.12 says; no entry count in its header; restore and merge by architecture.md §4.11 and §4.12 | architecture.md §4, D-17 |
 | §4.4 | The block's grammar with its vectors, replacing the unmarked block | D-10a, FR P8 |
+| §4.4 | The writer appends its own block when the user's notes alone would read as one (vector 8); made at the wave-0 integration, after package 0.3 | D-10a as amended (`iface-10`) |
 | §4.5 | The summary card's counts follow Chrome's checks | FR P15 |
 | §5.1 | Proton's `folders` | FR P17.2 |
 | §5.2, §8.1, §8.2, §8.4 | Ids kept only when new; "Undo" restores the vault; strict UTF-8 and a depth limit for JSON; JSON import gaps | FR P1, P2, P3, P11; D-15 |
