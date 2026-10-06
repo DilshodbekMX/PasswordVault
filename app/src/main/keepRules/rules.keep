@@ -1,12 +1,13 @@
-# Add project specific R8 rules here.
-# AGP will combine all keep rule files in src/main/keepRules to pass to R8
+# The app's own R8 rules (architecture.md §7.2). AGP passes every rule file in src/main/keepRules
+# to R8 for staging and release. argon2kt keeps its JNI members with @Keep, and
+# kotlinx-serialization ships its own rules, which keep the serializers of every kept
+# @Serializable class.
 #
-# For more details, see
-#   https://d.android.com/r/tools/r8/keep-rules
-
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# Navigation 3 ships no rules, and its saved back stack finds each route key's serializer by class
+# name. So the route keys of nav.Route (the class itself, every class nested in it and every class
+# that implements it) keep their names and members; the serialization rules then keep their
+# serializers. The staging smoke of every integration check proves it with a back stack restored
+# after the process died in the background.
+-keep class io.github.dilshodbekmx.passwordvault.nav.Route { *; }
+-keep class io.github.dilshodbekmx.passwordvault.nav.Route$** { *; }
+-keep class * implements io.github.dilshodbekmx.passwordvault.nav.Route { *; }

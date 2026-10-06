@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- What the FileProvider (authority ${applicationId}.files) can hand to another app: only files
+     under cache/shared/, where the app puts an encrypted backup it shares (architecture.md §7.2,
+     D-12). Plain exports never go there: they are written through the file picker only. -->
+<paths>
+    <cache-path
+        name="shared"
+        path="shared/" />
+</paths>

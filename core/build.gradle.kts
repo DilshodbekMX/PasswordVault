@@ -24,6 +24,20 @@ android {
 
 dependencies {
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.kotlinx.coroutines.core)
     implementation(libs.bouncycastle)
+    implementation(libs.zxcvbn)
+    // :testing depends on :core; Gradle accepts the edge because only the tests of :core use it.
+    testImplementation(project(":testing"))
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
+}
+
+// The source-rule tests (core/src/test/.../core/arch) read these files, so a change to any of them,
+// even one that compiles to the same classes, runs the tests again instead of taking a cached result.
+tasks.withType<Test>().configureEach {
+    inputs.files(
+        fileTree("src/main") { include("**/*.kt", "**/*.java") },
+        fileTree(rootDir.resolve("testing/src/main")) { include("**/*.kt", "**/*.java") },
+    ).withPathSensitivity(PathSensitivity.RELATIVE).withPropertyName("scannedSources")
 }

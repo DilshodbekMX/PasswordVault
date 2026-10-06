@@ -6,7 +6,9 @@
 !/.idea/codeStyles/
 .vscode/
 .DS_Store
-/build
+# Build output of every module (and of the root project). Build check R-12 fails the build if
+# anything under a build/ directory is ever tracked.
+build/
 /captures
 .externalNativeBuild
 .cxx

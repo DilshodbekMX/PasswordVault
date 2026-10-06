@@ -1,25 +1,66 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- architecture.md §7.2. No INTERNET permission, ever: the build fails if any library adds it (R-1),
+     and the only permissions allowed are those of build check R-9. -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- Android 12 and later hide other apps' overlay windows while ours is in front (R-7). -->
+    <uses-permission android:name="android.permission.HIDE_OVERLAY_WINDOWS" />
+
     <!-- Nothing leaves the phone through Android backup or device-to-device transfer:
-         allowBackup covers Android 11 and lower, the extraction rules cover Android 12 and later. -->
+         allowBackup covers Android 11 and lower, the extraction rules cover Android 12 and later.
+         largeHeap: the Java Argon2id fallback needs it on small phones [V-C2].
+         hasFragileUserData: an uninstall offers to keep the data, which the master password
+         opens after a reinstall (D-21). -->
     <application
+        android:name=".PasswordVaultApp"
         android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
+        android:hasFragileUserData="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
+        android:largeHeap="true"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.PasswordVault">
+
+        <!-- One task of its own, recreated on rotation and language changes (no configChanges). -->
         <activity
             android:name=".MainActivity"
-            android:exported="true">
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:taskAffinity="">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Clears our clip when its alarm fires (D-14). -->
+        <receiver
+            android:name=".clipboard.ClipboardClearReceiver"
+            android:exported="false" />
+
+        <!-- Hands an encrypted backup to the share sheet; it can reach only cache/shared/. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.files"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+        <!-- Lets AppCompat remember the in-app language itself on Android 7 to 12 (i18n.md §1.4.2). -->
+        <service
+            android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"
+            android:enabled="false"
+            android:exported="false">
+            <meta-data
+                android:name="autoStoreLocales"
+                android:value="true" />
+        </service>
     </application>
 
 </manifest>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- backupCheck: built only by lock.md check E15 ("the vault file comes back and no lock record
+     does"). It allows Android backup and drops the two rule files that exclude every domain, because
+     with them nothing at all is backed up and E15 would pass without testing anything. Everything
+     else is as in debug, the debug receiver included. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <application
+        android:allowBackup="true"
+        tools:remove="android:fullBackupContent,android:dataExtractionRules"
+        tools:replace="android:allowBackup">
+        <receiver
+            android:name=".debug.DebugCommandReceiver"
+            android:exported="true"
+            android:permission="android.permission.DUMP">
+            <intent-filter>
+                <action android:name="io.github.dilshodbekmx.passwordvault.debug.CMD" />
+            </intent-filter>
+        </receiver>
+    </application>
+
+</manifest>
