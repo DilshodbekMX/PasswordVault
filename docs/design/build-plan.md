@@ -35,7 +35,7 @@ Date 2026-10-06. The order of work for [architecture.md](architecture.md) ("A" b
 8. **Devices.** Only private emulators started by `tools/emu/boot.sh <api>` (0.2), from the persistent base under `/home/asus/pvlab/`, read-only. `boot.sh` hands out the even ports 5556 to 5578 through a lock file and lets at most six package devices run at once; 5554 is left to the user's own device, which nobody touches; 5580 (API 37), 5582 (API 28) and 5584 (API 24) are the integrator's. Every `adb` call names its device with `-s`; every connected test run sets `ANDROID_SERIAL` to the package's own serials; a script refuses a serial it did not start. Connected tests run through `tools/emu/adb.sh --connected SERIAL...` (or are followed by `tools/emu/adb.sh --connected-results app/build/outputs/androidTest-results/connected/debug SERIAL...`), which passes only when every serial has a passing report: AGP 9.4.1 ends with BUILD SUCCESSFUL when it skips a device it could not install on, so BUILD SUCCESSFUL alone does not count. Never `adb kill-server`. Android Studio sometimes restarts the adb server, so scripts wait up to 60 s for their device to come back instead of failing. Stop your devices when done.
 9. **Commits** after each working step, with a message that says what is done and what is next, so that another agent can continue a package that was cut off from its branch alone. No push unless the user asks.
 
-**The integrator.** One agent per sub-wave, working alone on `main`. It merges the branches in any order; applies interface requests during the sub-wave; owns, between sub-waves, the Gradle files, `tools/check.sh`, `tools/gradle.sh`, the shared parts of `tools/emu/` (`boot.sh`, `adb.sh`, `smoke.sh`, `checks/`), the source-rule tests and their scanner (`CORE-T/arch/`, `APP-T/arch/`, `TEST/arch/`; an allow-list there changes only through an interface request that says why), `debug/DebugCommands.kt` and the route keys; writes each integration check as `tools/emu/checks/<wave>.sh`; may change any file to make a check pass, and lists every such change in the merge commit's message; tags `wave-<id>-ok`. It regenerates the dependency locks and verification metadata whenever a version changes, flips `ResourcesTest` to failing at wave 6, and moves `APP/fake/` to `app/src/debug/` as soon as no file under `src/main` names a fake (expected after wave 7).
+**The integrator.** One agent per sub-wave, working alone on `main`. It merges the branches in any order; applies interface requests during the sub-wave; owns, between sub-waves, the Gradle files, `tools/check.sh`, `tools/gradle.sh`, the shared parts of `tools/emu/` (`boot.sh`, `adb.sh`, `smoke.sh`, `checks/`), the source-rule tests and their scanner (`CORE-T/arch/`, `APP-T/arch/`, `TEST/arch/`; an allow-list there changes only through an interface request that says why), `debug/DebugCommands.kt` and the route keys; writes each integration check as `tools/emu/checks/<wave>.sh`; may change any file to make a check pass, and lists every such change in the merge commit's message; tags `wave-<id>-ok`. It regenerates the dependency locks and verification metadata whenever a version changes, flips `ResourcesTest` to failing at wave 6 (and lint's `MissingTranslation`, a warning from the start of 6A until then), and moves `APP/fake/` to `app/src/debug/` as soon as no file under `src/main` names a fake (expected after wave 7).
 
 **Path names used below.**
 
@@ -419,6 +419,8 @@ Tag `wave-5-ok`.
 
 ### Sub-wave 6A (after `wave-5-ok`)
 
+**Before 6A starts,** the integrator sets lint's `MissingTranslation` to a warning in `app/build.gradle.kts` (I §1.1 makes it an error): as soon as one file exists under `values-uz` or `values-ru`, every English string without a translation there fails `:app:lintDebug`, and 6.1 brings `strings_language.xml` into those directories while the other translations come only in 6B. It becomes an error again at the integration check of wave 6, together with `ResourcesTest`. (Found by package 0.1: a trial `values-ru/strings_language.xml` failed lint with `MissingTranslation`.)
+
 #### 6.1 Language switch
 - **Owns:** `APP/ui/settings/LanguageDialog.kt`, the body of `LanguageNav.kt`, `strings_language.xml` in all four `values` directories, `tools/emu/i18n/`.
 - **Inputs:** I §1.4; L §11, E11; U §5.1, §5.18. Welcome's globe button already opens the `Language` route (3.3).
@@ -444,7 +446,7 @@ Tag `wave-5-ok`.
 - **Inputs:** I §3, §4 (plurals with one, few, many, other; « »; ё; lower-case "вы").
 - **Accepted when:** [JVM] `ResourcesTest` passes for the directory; lint's `MissingQuantity` is clean.
 
-**Integration check for wave 6:** merge; the integrator turns `ResourcesTest` into a failure for every language; `tools/check.sh all`; `tools/emu/i18n/` on API 24 and 37; `smoke.sh staging` with a language switch; one screenshot per screen in each of the four languages for the user to read (A §8.6 item 8). Tag `wave-6-ok`.
+**Integration check for wave 6:** merge; the integrator turns `ResourcesTest` into a failure for every language and lint's `MissingTranslation` back into an error; `tools/check.sh all`; `tools/emu/i18n/` on API 24 and 37; `smoke.sh staging` with a language switch; one screenshot per screen in each of the four languages for the user to read (A §8.6 item 8). Tag `wave-6-ok`.
 
 ---
 
