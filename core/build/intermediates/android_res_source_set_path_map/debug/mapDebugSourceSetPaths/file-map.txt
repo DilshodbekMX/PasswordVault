@@ -1,9 +1,0 @@
-io.github.dilshodbekmx.passwordvault.core-pngs-0 /home/asus/AndroidStudioProjects/PasswordVault/core/build/generated/res/pngs/debug
-io.github.dilshodbekmx.passwordvault.core-updated_navigation_xml-1 /home/asus/AndroidStudioProjects/PasswordVault/core/build/generated/updated_navigation_xml/debug
-io.github.dilshodbekmx.passwordvault.core-mergeDebugResources-2 /home/asus/AndroidStudioProjects/PasswordVault/core/build/intermediates/incremental/debug/mergeDebugResources/merged.dir
-io.github.dilshodbekmx.passwordvault.core-mergeDebugResources-3 /home/asus/AndroidStudioProjects/PasswordVault/core/build/intermediates/incremental/debug/mergeDebugResources/stripped.dir
-io.github.dilshodbekmx.passwordvault.core-debug-4 /home/asus/AndroidStudioProjects/PasswordVault/core/build/intermediates/merged_res/debug/mergeDebugResources
-io.github.dilshodbekmx.passwordvault.core-debug-5 /home/asus/AndroidStudioProjects/PasswordVault/core/build/intermediates/packaged_res/debug/packageDebugResources
-io.github.dilshodbekmx.passwordvault.core-debug-6 /home/asus/AndroidStudioProjects/PasswordVault/core/src/debug/res
-io.github.dilshodbekmx.passwordvault.core-main-7 /home/asus/AndroidStudioProjects/PasswordVault/core/src/main/res
-gradleHome-0 /home/asus/.gradle
