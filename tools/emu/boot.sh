@@ -479,7 +479,7 @@ pv_prov_pin() { # API
 # I AGREE, API 28 NEXT, API 24 "Continue" and a NEXT on "Find the sensor". Screens are found by the
 # focused activity and the UI tree, never by fixed coordinates.
 pv_prov_fingers() { # API
-    local api=$1 finger=1 deadline=$((SECONDS + 300)) focus nodes count last_pin=-100 touches=0
+    local api=$1 finger=1 deadline=$((SECONDS + 300)) focus nodes count last_pin=-100 touches=0 i
     if [ "$api" = 24 ]; then
         pv_shell am start -a android.settings.SECURITY_SETTINGS >/dev/null
         pv_ui_wait '^Fingerprint[|]' 20 && pv_ui_tap '^Fingerprint[|]' || { pv_log "no Fingerprint entry in Security"; return 1; }
@@ -504,14 +504,20 @@ pv_prov_fingers() { # API
             *FingerprintEnrollFinish*)
                 count=$(pv_finger_count)
                 pv_log "fingerprint added ($count enrolled)"
-                if [ "$count" -ge 2 ]; then
-                    pv_ui_tap '^(DONE|Done)[|]' "$nodes"
-                    pv_sleep 2
-                    return 0
-                fi
-                pv_ui_tap '^(ADD ANOTHER|Add another)[|]' "$nodes" || { pv_log "no ADD ANOTHER button"; return 1; }
-                finger=$((finger + 1))
-                pv_sleep 2 ;;
+                # The screen's buttons can be missing from a dump taken just as it opens.
+                for i in 1 2 3 4 5 6; do
+                    if [ "$count" -ge 2 ]; then
+                        pv_ui_tap '^(DONE|Done)[|]' "$nodes" && break
+                    else
+                        pv_ui_tap '^(ADD ANOTHER|Add another)[|]' "$nodes" && break
+                    fi
+                    pv_sleep 1
+                    nodes=$(pv_ui_nodes)
+                done
+                [ "$i" -lt 6 ] || { pv_log "no ADD ANOTHER or DONE button on the finish screen"; return 1; }
+                pv_sleep 2
+                [ "$count" -ge 2 ] && return 0
+                finger=$((finger + 1)) ;;
             *FingerprintEnrollEnrolling*)
                 pv_touch_finger "$finger"; touches=$((touches + 1)); pv_sleep 1.2 ;;
             *FingerprintEnrollFindSensor*)

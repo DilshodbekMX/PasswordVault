@@ -66,7 +66,7 @@ pv_entry_get() { # FILE KEY
 pv_is_emulator_pid() { # PID PORT -> 0 if PID is the emulator (qemu) serving console PORT
     local cmd
     [ -n "$1" ] && [ "$1" != 0 ] || return 1
-    cmd=$(tr '\0' ' ' < "/proc/$1/cmdline" 2>/dev/null) || return 1
+    cmd=$( { tr '\0' ' ' < "/proc/$1/cmdline"; } 2>/dev/null ) || return 1
     case "$cmd" in
         *qemu-system*" -port $2 "*) return 0 ;;
     esac
