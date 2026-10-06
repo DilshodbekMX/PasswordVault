@@ -188,14 +188,14 @@ dependencies {
     androidTestImplementation(libs.kotlinx.coroutines.test)
 }
 
-// The source-rule tests (app/src/test/.../arch) read every source set the app is built from, so a
-// change to any of them runs the tests again instead of taking a cached result.
+// The source-rule tests (app/src/test/.../arch) read every source set the app is built from, and the
+// main sources of :core and :testing, so a change to any of them runs the tests again instead of
+// taking a cached result.
 tasks.withType<Test>().configureEach {
-    inputs.files(
-        listOf("main", "debug", "staging", "backupCheck", "release").map { set ->
-            fileTree("src/$set") { include("**/*.kt", "**/*.java") }
-        },
-    ).withPathSensitivity(PathSensitivity.RELATIVE).withPropertyName("scannedSources")
+    val sets = listOf("main", "debug", "staging", "backupCheck", "release").map { "app/src/$it" } +
+        listOf("core/src/main", "testing/src/main")
+    inputs.files(sets.map { dir -> fileTree(rootDir.resolve(dir)) { include("**/*.kt", "**/*.java") } })
+        .withPathSensitivity(PathSensitivity.RELATIVE).withPropertyName("scannedSources")
 }
 
 // ---------------------------------------------------------------------------------------------
