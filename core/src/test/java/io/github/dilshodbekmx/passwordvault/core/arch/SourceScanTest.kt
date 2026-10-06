@@ -30,9 +30,11 @@ class SourceScanTest {
     @Test
     fun kotlinBlockCommentsNestButJavaOnesDoNot() {
         val text = "/* a /* java.time */ java.time */ java.time"
-        assertEquals("Kotlin: only the last one is code", 1, lines("A.kt", text).size)
+        fun seen(path: String) = Regex("""java\.time""").findAll(SourceFile(path, text).code).count()
+        assertEquals("Kotlin: only the last one is code", 1, seen("A.kt"))
         assertTrue(SourceFile("A.kt", text).code.trimEnd().endsWith("java.time"))
-        assertEquals("Java: the comment ends at the first */", 2, lines("A.java", text).size)
+        assertEquals("Java: the comment ends at the first */", 2, seen("A.java"))
+        assertEquals("one finding per line", listOf(1), lines("A.java", text))
     }
 
     @Test
