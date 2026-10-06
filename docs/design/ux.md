@@ -6,7 +6,7 @@ Other documents own parts of the picture, and this one points to them instead of
 - **The lock design, [lock.md](lock.md),** owns the PIN logic: length, attempt limits, waiting times, what is stored where, when the master password is required, and the English wording of the lock screens (its §13). It was chosen from candidates that this document calls "lock design 1" and "lock design 2" (their texts are in `docs/design/lock-work/`). This document fixes how the lock screens look; where the two differ, lock.md wins.
 - **[architecture.md](architecture.md)** §6 decides the questions this document left to other owners (§14).
 
-**Revised on 2026-10-06** by build-plan package 0.3 to follow lock.md (the twelve changes of its §16.2) and architecture.md §6 (D-6c, D-7, D-9b, D-10d, D-11, D-14, D-15, D-23, D-24, D-25), and to drop `getLastAuthenticationTime`, which lock.md §10.2 no longer uses. Where a passage is replaced, the old text is gone; §14 marks each question as answered.
+**Revised on 2026-10-06** by build-plan package 0.3 to follow lock.md (the twelve changes of its §16.2) and architecture.md §6 (D-6c, D-7, D-9b, D-10d, D-11, D-14, D-15, D-23, D-24, D-25), and to stop using the phone's last unlock time as a lock signal, which lock.md §10.2 dropped. Where a passage is replaced, the old text is gone; §14 marks each question as answered.
 - **[formats.md](formats.md)** owns the exact layout of every exported and imported file.
 - **[i18n.md](i18n.md)** owns translation, the glossary and the sort key.
 - **[search.md](search.md)** owns the search key, matching and ranking.
@@ -78,16 +78,16 @@ There is one entry type (a login). Character counts are Unicode code points. No 
 | `password` | string | no | ≤ 1,000; one line; never trimmed. An account that signs in by SMS code may have none |
 | `urls` | list of strings | no | ≤ 10 items, each ≤ 2,048; trimmed; `https://` added when no scheme is given; `android://…` values from Chrome are kept and shown as "App: com.example", never opened |
 | `notes` | string | no | ≤ 10,000; line breaks allowed |
-| `fields` | list of {`name`, `value`, `secret`} | no | ≤ 20 per entry; `name` 1–100, one line; `value` ≤ 1,000, line breaks allowed; `secret` boolean, default true for labels the app does not know |
+| `fields` | list of {`name`, `value`, `secret`} | no | ≤ 20 per entry; `name` 1–100, one line, trimmed (formats.md §4.4 relies on it); `value` ≤ 1,000, line breaks allowed; `secret` boolean, default true for labels the app does not know |
 | `favourite` | boolean | yes, default false | |
-| `createdAt` | instant (RFC 3339, UTC, ms) | yes, set by app | |
+| `createdAt` | instant, stored as an integer: milliseconds since 1970 UTC (architecture.md §4.3, D-18; ISO 8601 text only in the JSON export) | yes, set by app | |
 | `updatedAt` | instant | yes, set by app | on any saved change |
 | `passwordChangedAt` | instant or null | no | set when the password is first set and whenever its value changes |
 | `passwordHistory` | list of {`password`, `replacedAt`} | no | newest first; keep the **5** newest; an item is added when a saved password changes |
 | `changePending` | boolean | yes, default false | true from "Create new password" until "Yes, it's changed" or "No, put back the old password" in the guided change (§5.17) |
 | `pendingOldPassword` | string or null (**new**) | no | the password the website had when the guided change started. Set only while `changePending` is true. It is not one of the 5 previous passwords and is never pruned; it is cleared when the change ends (§5.17) |
 | `checkIgnored` | boolean | yes, default false | "Leave out of the security check", for PINs or passwords the user cannot change |
-| `deletedAt` | instant or null (**new**) | no | set by Delete; the account waits in Recently deleted and is removed 30 days later (§5.23) |
+| `deletedAt` | instant or null (**new**) | no | set by Delete; the account waits in Recently deleted and is removed a day or more after 30 days (§5.23, architecture.md D-24) |
 
 Rules:
 
@@ -115,7 +115,7 @@ Vault-level data the UX needs (owners: storage, lock and settings designs):
 
 - **Outside the vault** (needed before unlock, not secret):
   - lock delay, clipboard delay, theme, language and generator options;
-  - last backup time and place name, the number of changes since the last backup, and the backup-reminder snooze;
+  - the backup-reminder snooze (when and where the last backup was made is in the locked file, below);
   - one-time tips shown, and "setup words were shown" (§5.5);
   - an unfinished file task: its kind, step and file location (§4);
   - the dates of archived vaults (§5.10).
@@ -124,7 +124,7 @@ Vault-level data the UX needs (owners: storage, lock and settings designs):
 - **Inside the encrypted body**:
   - at most one unsaved-form draft (§5.14);
   - the locations of unprotected exports not yet deleted (§5.20);
-  - the locations of backups this app saved (§5.18);
+  - the locations and times of backups this app saved (§5.18). A backup is due when an account changed or was deleted after the newest of them; no counter is kept (architecture.md §4.3);
   - the ids of entries whose password equals the master password (§5.16);
   - which security-check results the user has seen (§5.16).
 
@@ -651,9 +651,9 @@ A full-screen dialog for a password, username or secret value of up to 128 chara
 - **Keeping the place.** Tapping a cell highlights it and every cell before it, to keep the user's place [V: Keyguard docs].
 - **Time limits.**
   - The screen stays on (`FLAG_KEEP_SCREEN_ON`) while it is open.
-  - It **closes after 2 minutes without a touch**; any tap restarts the time. Reason: §3's "render secrets rarely and briefly" also applies here. Showing a whole password large is an accepted exception, which the security owner records in the threat model (§14).
+  - It **closes after 2 minutes without a touch**; any tap restarts the time. Reason: §3's "render secrets rarely and briefly" also applies here. Showing a whole password large is an accepted exception (architecture.md D-9d).
 - **Closing.** It closes with back or "Close", and it is never kept after the screen stops.
-- **Font.** Recommendation: bundle one monospace font whose 0/O and 1/l/I differ clearly and which covers Latin, Cyrillic and ʻ (U+02BB), used only for secrets. Android's DroidSansMono lacks U+02BB [E: i18n.md §2.6]. Engineering checks the licence and size.
+- **Font** (architecture.md D-22): no bundled font in version 1. `FontFamily.Monospace`, the coloured digits and symbols, and one cell per character tell similar characters apart. No font was checked for U+02BB, Uzbek Cyrillic and its licence; Android's DroidSansMono lacks U+02BB [E: i18n.md §2.6].
 
 ### 5.14 Add and edit
 
@@ -1074,7 +1074,7 @@ This is for a user who has forgotten the master password while the PIN or finger
 1. **The clip.** `ClipData.newPlainText("", value)` with an empty label.
    - The `ClipDescription` extras carry `android.content.extra.IS_SENSITIVE = true` for passwords, previous passwords, secret field values and anything copied from notes, which often hold security answers. The constant exists from API 33; the string works on all versions. The extra is false for usernames, websites and non-secret fields, so the Android 13+ preview confirms the right one was copied.
    - The same extras (`setExtras`, API 24 [V]) carry **a random 128-bit token** that identifies this copy.
-2. **The clear job.** Any earlier clear job is replaced, and a new one is scheduled for the chosen delay (default 1 minute). The mechanism (WorkManager or an alarm) is chosen after the clipboard lab reports. The job clears **only the app's own clip**. It reads the clip's description, never its content:
+2. **The clear job.** Any earlier clear job is replaced, and a new one is scheduled for the chosen delay (default 1 minute). The mechanism is architecture.md D-14, measured in the clipboard lab (`docs/lab/clipboard.md`): an alarm to a receiver that is not exported, plus a timer in the process; the alarm is exact where no permission is needed, and otherwise aimed so that its delivery window ends at the deadline. No exact-alarm permission and no WorkManager. The token and the deadline are also kept in the app's settings, so that an overdue clip of the app's own is cleared when the app next comes to the front. The job clears **only the app's own clip**. It reads the clip's description, never its content:
    - **Description readable, token differs or missing**: the user has copied something else since, so nothing is cleared.
    - **Description readable, token matches**: the clip is cleared (`clearPrimaryClip()` on API 28+; an empty clip below).
    - **Description not readable**: on Android 10+ a background app can neither read the clipboard nor learn that it changed [E: V-P2], so the clip is cleared anyway, as Proton fails closed [E: platform_code.md:34]. On Android 7–9 the check always works.
@@ -1084,10 +1084,10 @@ This is for a user who has forgotten the master password while the PIN or finger
 4. **Feedback.** Android 13 and higher show their own confirmation, and Google "strongly recommend[s] removing toasts or snackbars shown after an in-app copy for Android 13 and higher" [V]. So:
    - **Android 13+**: no toast or snackbar. The **clipboard status row** (below) appears without a "copied" headline: "Password for Gmail · clears in 1:00". The system preview hides sensitive content.
    - **Android 7–12L**: the same row, with the headline "Password copied". This is the in-app feedback Google recommends for those versions [V].
-5. **One helper.** All in-app copies go through one helper. A custom `LocalClipboard` is provided at the root (Compose UI 1.12 `Clipboard`, `setClipEntry`), so text selected and copied in notes is also flagged and timed [V: ui-android 1.12.1 bytecode] [I].
+5. **One helper.** All in-app copies go through one helper. For text selected in notes (architecture.md D-25), a `SecretClipboardBridge` is provided as `LocalClipboard` at the root (Compose UI 1.12 `Clipboard` [V: ui-android 1.12.1 bytecode]): its `setClipEntry` goes to the same helper, with the sensitive flag and the timed clear, and the status row says "Copied text · clears in 0:52"; its `getClipEntry` is the platform's clipboard unchanged, so pasting into the app's own fields, such as a password into the Add form, still works.
 
 **Clipboard status row** (app-wide; part of the bottom-bar area, so the "Add" button moves above it):
-- **Content**: a `Surface` (secondary container) with a key icon, the text "Password for Gmail · clears in 0:52" (or "Username for Gmail · …"), and `TextButton` "Clear now".
+- **Content**: a `Surface` (secondary container) with a key icon, the text "Password for Gmail · clears in 0:52" (or "Username for Gmail · …", or "Copied text · clears in 0:52" for text selected in a note), and `TextButton` "Clear now".
 - **Announcements**: the countdown updates every second, visually only. TalkBack hears one polite live-region message when the row appears: "Password copied. It will be removed from the clipboard in 1 minute."
 - **When the clear runs while the app is open**: "Clipboard cleared" for 2 s, then the row hides.
 - **Late jobs**: a scheduled job may run late. If the planned time has passed and the clear has not run, the row says "Clearing…" instead of a negative countdown.
@@ -1096,10 +1096,13 @@ This is for a user who has forgotten the master password while the PIN or finger
 - when the timer ends, on "Clear now", and on "Lock now", each time only if the clip is still the app's own or cannot be checked;
 - **never when the app goes to the background or locks automatically.** That would remove the password before the user can paste it, which is PocketVault's mistake [E: offline.md §6]. The timer bounds the exposure instead.
 
-**This departs from platform.md §1 item 3 ("clear on lock"); the security owner must approve it (§14).**
+This departs from platform.md §1 item 3 ("clear on lock"), and architecture.md D-9c accepts it.
+
+**What no app can do** (architecture.md D-14, measured in the clipboard lab): after a **force-stop**, Android cancels the app's alarms, and while the app's battery use is set to **"Restricted"** neither the alarm nor the timer runs once the app has been in the background for about a minute. In both cases the copy stays until the app is opened again, which then clears it. The first-copy tip and Help say so.
 
 **First-copy tip** (once; an `AlertDialog` with "OK"):
 - The main text: "Now open the app or website, touch and hold the password box, and tap Paste. The password is removed from the clipboard after 1 minute. Anything else you copy in that minute may be removed too. Never pin a password in your keyboard's clipboard: pinned items are never removed."
+- Then: "If you force-stop this app, or set its battery use to 'Restricted', a copied password stays on the clipboard until you open the app again."
 - Reason: Gboard's pinned clips survive every clear, including Android's own one-hour clear [E: V-P2].
 - **On Samsung phones** it adds: "Samsung phones keep a list of copied text. To keep passwords out of it, turn off or clear the clipboard history in Samsung Keyboard settings." A 2025 report says One UI's clipboard history stores copied text, including passwords, in plain text with no expiry [2: cyberpress.org, 2025-04-22]. Whether it honours the sensitive flag is unknown.
 - **On other phones**: "Some keyboards keep their own list of copied text; you can turn it off in the keyboard's settings." [E: platform.md, Gboard help]
@@ -1135,18 +1138,24 @@ Rules for all text:
 **7.6 Help pages**
 - *How your passwords are protected*:
   - "Your passwords are kept in a locked file. Only your master password can unlock it. The app never connects to the internet; it does not have permission to. Screenshots of the app are blocked. Passwords you copy are removed from the clipboard after 1 minute."
+  - "If you force-stop the app, or set its battery use to 'Restricted', a copied password stays on the clipboard until you open the app again." (architecture.md D-14)
+  - "Anyone whose fingerprint is saved in this phone's settings can open the app." (lock.md §9.4)
   - "What the app cannot protect you from: a phone that has been hacked or 'rooted', a harmful keyboard app, or an app you allowed to control your phone (accessibility)."
+  - "On a rooted phone, someone can try every PIN in a few hours. Your master password still protects your passwords, so make it strong and never use it anywhere else." (lock.md §2.3)
+  - "Never use 'Clear storage' to fix a problem with your PIN: it deletes your passwords, and the ones from before a replaced master password with them." (lock.md §16.2 item 12)
   - "Never install an app file (APK) sent to you in Telegram or offered by a website, even if it seems to come from someone you know. Never let an app control your phone (accessibility) unless you need it because of a disability."
   - "The app cannot tell you if a website leaked your password, because it does not use the internet."
 
   The local threat: Group-IB's Ajina.Banker campaign spread malicious APKs through Telegram channels, mostly aimed at users in Uzbekistan, and abused accessibility services [E: critique m11, group-ib.com/blog/ajina-malware]. "Install apps only from Google Play" was dropped, because this app itself may be installed from a file.
 - *If you lose your phone or move to a new one*:
-  - "Install Password Vault on your new phone, tap 'Restore from a backup file', choose your newest backup and type your master password. Without a backup, your passwords cannot be brought back."
-  - "If you moved your apps with 'Copy apps and data', open Password Vault on the new phone and type your master password once. Then choose a PIN for the new phone."
+  - "Install PasswordVault on your new phone, tap 'Restore from a backup file', choose your newest backup and type your master password. Without a backup, your passwords cannot be brought back."
+  - "If you moved your apps with 'Copy apps and data', open PasswordVault on the new phone and type your master password once. Then choose a PIN for the new phone."
 - *If you forget your master password*:
-  - "If your PIN or fingerprint still opens the app, open it and choose a new master password: Settings › App lock › Change master password › I don't remember it. Then make a new backup."
+  - "If your PIN or fingerprint still opens the app, open it and choose a new master password: Settings › App lock › Change master password › I don't remember it."
+  - "The new master password starts working after 24 hours with the phone switched on. The countdown stops while the phone is switched off, so open the app in the morning and again in the evening. Until then, open the app with your PIN or fingerprint as usual. Then make a new backup." (lock.md F11)
+  - "If someone else replaced your master password, your own still opens your passwords as they were: 'Forgot master password?', then 'Open my passwords from before …'." (lock.md F16b)
   - "If you can't open the app at all: try the words on your paper, or restore a backup whose master password you remember. You can also start with an empty app. Your old passwords stay on the phone, locked, in case you remember the password later."
-- *If you forget your PIN*: "Tap 'Forgot PIN? Use master password', type your master password, and choose a new PIN."
+- *If you forget your PIN*: "Tap 'Forgot PIN? Use master password', type your master password, and choose a new PIN. Never use 'Clear storage' to fix a problem with your PIN: it deletes your passwords, and the ones from before a replaced master password with them."
 
 ## 8. Accessibility
 
@@ -1261,12 +1270,13 @@ Icons are Material Symbols imported as vector drawables; `material-icons-extende
 ## 12. Acceptance checks
 
 1. **Copying.** Copying from a list row takes one tap. On Android 13+ no toast or snackbar appears and the system preview hides the password; on Android 7–12L the status row says "Password copied".
-2. **Clearing.** With the app in the background, the clipboard is empty about 1 minute after the copy. Test on Android 7, 9, 13 and 17, and on one Samsung and one Xiaomi phone if available.
+2. **Clearing.** With the app in the background, the clipboard is empty about 1 minute after the copy, also after the app was swiped from Recents or its process was killed. Test on Android 7, 9, 13 and 17, and on one Samsung and one Xiaomi phone if available.
    - Leaving the app or an automatic lock never clears it early.
+   - After a force-stop, or with the app's battery use set to "Restricted", the copy stays until the app is opened, which then clears it (architecture.md D-14), as the first-copy tip and Help say.
    - A text copied after the password is not cleared on Android 7–9 (token check), nor on any version when the app is in front at clear time.
 3. **Returning.**
    - Returning within 30 s shows the last screen with secrets masked.
-   - Returning later shows the lock screen, and so does returning after the screen turned off while the app was open. When the screen turned off while the app was in the background, this holds on Android 15+ via the last phone unlock, and is best effort before.
+   - Returning later shows the lock screen, and so does returning after the screen turned off while the app was open. When the screen turned off while the app was in the background, the lock applies when Android delivers the screen-off event, which Android 14+ may hold back until the app runs again; that case is best effort, and the lock delay still applies (lock.md §10.2, §2.3).
    - Back on the lock screen leaves the app. Nothing of the vault is ever visible behind it or in Recents.
 4. **Draft.** Generating a password in "New account", leaving for the browser and coming back after the lock reopens the form with that password and "Your unsaved changes were kept". No entry is saved until Save, and Discard leaves no entry and no draft.
 5. **Guided change.** After 7 taps on "Create another password", "No, put back the old password" restores the original password. `changePending` and `pendingOldPassword` survive a lock and a process kill.
@@ -1279,12 +1289,12 @@ Icons are Material Symbols imported as vector drawables; `material-icons-extende
 12. **System screens.** A backup to Google Drive with 90 seconds spent in the picker succeeds.
 13. **Kill in the picker.** With the app killed while the picker is open, the backup either completes after the next unlock or its empty file is deleted with "No backup was made".
 14. **"Immediately".** With the lock set to "Immediately", backup, export and import all complete.
-15. **Forgotten master password.** With a working PIN, a user who forgot the master password can set a new one (§5.24) and is offered a new backup.
-16. **No deletion from the lock screen.** No path that starts at the lock screen deletes a vault file. After "Start with an empty app", the old passwords open again with their master password from Welcome and from Settings.
+15. **Forgotten master password.** With a working PIN, a user who forgot the master password can choose a new one (§5.24), which starts working after 24 hours with the phone switched on and is finished by typing it once more; then a new backup is offered.
+16. **No deletion from the lock screen.** No path that starts at the lock screen deletes a vault file. After "Start with an empty app", the old passwords open again from Welcome with their own PIN, fingerprint or master password, and from Settings with their master password.
 17. **Lock-screen states.** Every state of §5.9 and §5.10 can be produced in a debug build and shows its text. A temporary Keystore error never turns fingerprint or PIN unlock off.
 18. **Strength rules.** Toshkent2020, Tashkent2020, Ташкент2020, Mustaqillik1991, Samarqand2024!, Oʻzbekiston2024, Shahzoda2003! and "Assalomu alaykum" are refused as master passwords and score 2 or less (so they appear under "Easy to guess"). The suggested passphrase scores 4.
-19. **Practice.** "Not now: use PIN" works throughout the grace period. After it, the master password is required, but "Forgot master password?" still offers the PIN route.
-20. **Recently deleted.** A deleted account can be restored after a lock and after a restart, and it is gone 30 days later.
+19. **Practice.** "Not now: use PIN" works throughout the grace period and is not asked again for 20 hours. After it, the master password is required, but "I can't remember it" and "Forgot master password?" still offer the PIN route.
+20. **Recently deleted.** A deleted account can be restored after a lock and after a restart, and it is removed a day or more after its 30 days, by the two steps of §5.23; moving the phone's date forward does not remove it.
 
 ## 13. Evidence and checks made today
 
@@ -1313,7 +1323,7 @@ Checked for this revision:
 - **Aegis 3.4.3, `ui/AuthActivity.java:180-193, 211-224`**: when the password reminder is due, the password field is focused and the fingerprint prompt does not open by itself, but the fingerprint button still unlocks after one dialog [V].
 - **Android "Copy and paste" guide**: no toast "when your app … retrieves metadata for the clip object, such as by calling `getPrimaryClipDescription()`", nor for the app's own clip [V].
 - **API levels** (API 37 `api-versions.xml`) [V]:
-  - `BiometricManager.getStrings` 31, `getLastAuthenticationTime` 35;
+  - `BiometricManager.getStrings` 31;
   - `AlphabeticIndex` 24;
   - `ClipDescription.setExtras`/`getExtras` 24, `getPrimaryClipDescription` 11;
   - `PowerManager.isInteractive` 20;
@@ -1342,46 +1352,32 @@ Not verified:
 
 ## 14. Open questions
 
-1. **User.** Did "home lock like banking account" mean the app's own PIN (this design) or the phone's screen lock? Ask with two pictures: "Your phone's lock screen" and "The app's own PIN, like your bank app". The lock screen stays modular either way, and both lock designs describe how the phone's lock would work (lock design 1 §7, lock design 2 §7).
-2. **User.** Where are your passwords today (Google Password Manager, Chrome, Samsung Pass, Yandex Browser, an Excel file)? This sets the import build order (§5.21).
-3. **Translations.** Who reviews the Uzbek and Russian translations of the warnings? (The alphabet question is settled for now in i18n.md §2.4.)
-4. **Lock design.**
-   - PIN length and attempts.
-   - Fingerprint after the PIN is turned off: recommended to keep it (§5.9).
-   - Practice grace: about 7 days recommended (§5.10).
-   - The waiting time before a new master password can be set with the PIN: none, or up to 24 hours, recommended (§5.24).
-   - Whether a fingerprint touch may approve "Change PIN".
-5. **Clipboard lab.** Does clearing from the background work on Android 7–17 and vendor builds? If it is unreliable, the status row must say so.
-6. **Crypto owner.**
-   - (a) 6 words from the EFF short list (62 bits) instead of 5 long-list words (§5.3).
-   - (b) Spaces as the separator, with runs of spaces in the master password folded (§5.3).
-   - (c) Folding apostrophe-like characters in the master password before NFC (§5.3).
-   - (d) Score 4 with the Uzbek and Russian dictionary for own master passwords (§5.3).
-   - (e) Backups without retyping when the master password was typed in the last 14 days (§5.19).
-   - (f) Restating crypto.md §11 step 6 as the practice rule of §5.10.
-7. **Lock delay.** Is 30 s the right default, against "Immediately" (closer to a bank app, but every copy round trip then needs a new unlock)?
-8. **Storage owner.**
-   - The `draft` object in the vault body (§5.14).
-   - Archiving instead of deleting, with archives never pruned (§5.10).
-   - `pendingOldPassword` and `deletedAt` (§2).
-   - A backup as a copy of the verified generation (§5.19).
-   - The data behind the rollback notice (§5.9, V-C8).
-9. **Security owner.**
-   - The per-entry "Leave out of the security check".
-   - The master-password reuse check at each master-password entry and once at Save (§5.10, §5.14).
-   - Not clearing the clipboard on automatic lock, a deviation from platform.md §1 item 3 (§6).
-   - Show in big letters as an accepted exception to "render secrets briefly" (§5.13).
-   - The 10-minute grace for system screens the app opens (§4).
-10. **Formats owner.**
-    - The "Title:" line in the CSV block (§5.20.2).
-    - The related-website rules at import (§5.21). formats.md §8.4's "the security check later offers to combine" no longer applies (§5.16).
-    - `pendingOldPassword` and `deletedAt` in JSON.
-    - What a plain export writes during a pending change.
-    - Leaving deleted accounts out of exports.
-    - Notes cut on import instead of skipping the account (formats.md §8.4, adopted in §5.21).
-11. **Search and i18n owners.** In search.md: ş → s and ç → c in the second tier, and the wrong-layout retry (§5.11). In i18n.md: the new glossary terms (§9).
-12. **Plain exports.** Should they also be offered to the share sheet (for example Telegram), or only saved through the file picker (this design)?
-13. **Real-world checks.** Who can run the checks this design depends on?
+Every question below has been decided in architecture.md §6 (D-n) or in lock.md; the answer follows each one. Two stay with the user (2, and the checks of 13).
+
+1. **User.** Did "home lock like banking account" mean the app's own PIN or the phone's screen lock? **Answered:** the app's own PIN, settled by the user (D-2, lock.md §2.4).
+2. **User.** Where are your passwords today (Google Password Manager, Chrome, Samsung Pass, Yandex Browser, an Excel file)? This sets the import build order (§5.21). **Still open** (D-3); until answered, the build order of §5.21 stands.
+3. **Translations.** Who reviews the Uzbek and Russian translations of the warnings? **Answered:** the user reads the warning, limit and banner texts in their own languages before release (D-4, architecture.md §8.6 item 8). The alphabet question is settled for now in i18n.md §2.4.
+4. **Lock design.** **Answered** by lock.md §16.1 (D-5):
+   - PIN length and attempts: exactly 6 digits; the PIN turns off after 5 wrong in a row, or 10 that were not forgiven; no waiting times (§5.6, §5.9).
+   - Fingerprint after the PIN is turned off: it stays usable (§5.9).
+   - Practice grace: 1, 2 and 4 days in the first week, then 7 days; "Not now" lasts 20 hours (§5.10).
+   - The wait for a new master password: chosen first, then 24 hours with the phone switched on, then typed again to finish (§5.24).
+   - A fingerprint touch approves nothing except asking for a new master password when no PIN exists; "Change PIN" takes the current PIN or the master password (§5.18).
+5. **Clipboard lab.** Does clearing from the background work on Android 7–17 and vendor builds? **Answered** by the lab (`docs/lab/clipboard.md`) and D-14: an alarm plus a timer, on time in every condition tested on the emulators, never after a force-stop or under "Restricted" battery use (§6). The status row says "Clearing…" when a clear is late. Vendor builds are checked on the user's phone (architecture.md §8.6 item 3).
+6. **Crypto owner.** **Answered:**
+   - (a) 6 words from the EFF short list (62 bits): yes (D-6a; §5.3).
+   - (b) Spaces as the separator: white space is folded from the first release; the hyphen stays the suggested separator in 1.0 (D-6b; §5.3).
+   - (c) Folding apostrophe-like characters in the master password: yes, 17 code points, after NFC (D-6c, lock.md §8.1; §5.3).
+   - (d) Score 4 with the Uzbek and Russian dictionary for own master passwords: yes, for the password and for its search key (D-6d; §5.3).
+   - (e) Backups without retyping for 14 days: no; a backup may use the entry typed a moment ago in the same flow (D-6e; §5.19).
+   - (f) Restating crypto.md §11 step 6 as the practice rule: yes, lock.md §8.3 (D-6f; §5.10).
+7. **Lock delay.** Is 30 s the right default? **Answered:** 30 seconds, written at setup; a missing or unreadable setting means "Immediately"; the clipboard delay is 1 minute, 30 seconds when missing (D-7; §5.18).
+8. **Storage owner.** **Answered:** the `draft` object, at most one (D-8a); archiving, never pruned (D-8b); `pendingOldPassword` and `deletedAt` in the entry (D-8c); a backup is a new container sealed from the verified open vault, not a copy of the file (D-8d); the rollback data in the header and `state.rec` (D-8e).
+9. **Security owner.** **Answered:** "Leave out of the security check", with the count of what is left out always shown (D-9a); the master-password reuse check at each correct master-password entry only, **not at Save** (D-9b; §5.10, §5.14); not clearing the clipboard on an automatic lock (D-9c; §6); "Show in big letters" as an exception, closing after 2 minutes without a touch and never restored (D-9d); the 10-minute grace for system screens (D-9e; §4).
+10. **Formats owner.** **Answered** in architecture.md D-10a to D-10f and formats.md: the "Title:" line, in the block's grammar (D-10a; §5.20.2); the related-website rules, merging stopping at 10 websites (D-10b; §5.21); `pendingOldPassword` in JSON, `deletedAt` never exported (D-10c); during a pending change the new password with the old one kept (D-10d; §5.20); deleted accounts in no plain export (D-10e); notes cut on import instead of skipping the account, and only a password over the limit leaves an account out (D-10f; §5.21). formats.md §8.4 no longer says the security check combines accounts.
+11. **Search and i18n owners.** **Answered** (D-11): search.md has ş → s and ç → c in the second tier and the wrong-layout retry (§5.11); new terms go into the string files with the screens that use them, and the lock's new terms are in i18n.md §3, section I.
+12. **Plain exports.** Should they also be offered to the share sheet? **Answered:** no; the file picker only. The encrypted backup may be shared (D-12; §5.20).
+13. **Real-world checks.** Who runs the checks this design depends on? **Answered:** the user, with the list in architecture.md §8.6 (D-13):
     - our CSV imported into Google Password Manager on the user's phone;
     - the `.xlsx` opened in the Excel, Google Sheets or WPS Office the user actually has;
     - the Chrome export path and the Settings route on the user's phone;
@@ -1389,6 +1385,8 @@ Not verified:
     - Gboard and Samsung Keyboard typing spaces in a password field.
 
 ## 15. Review: the critique of 2026-10-06
+
+*This table records the revision made after the critique, before lock.md and architecture.md §6 were final. Where they decided otherwise (for example the wait of C2, the grace of M1, the fingerprint approval of M13), the sections above and §14 give the decision.*
 
 The UX critique (`scratchpad/design/ux-critic/CRITIQUE.md`) raised 3 critical, 16 major and 18 minor problems. I judged each one and re-checked the facts the decisions hinge on (§13, "Checked for this revision"). None was rejected outright. 34 were accepted, several with a small change that the table names, and 3 only in part (M1, m13, m15).
 
