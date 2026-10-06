@@ -74,8 +74,11 @@ run_gradle() {
     return "$status"
 }
 
-apk_of() { # the APK built for variant $1
-    find "$root/app/build/outputs/apk/$1" -maxdepth 1 -name '*.apk' 2>/dev/null | sort | head -n 1
+apk_of() { # the APK last built for variant $1, as AGP's output-metadata.json names it
+    local dir="$root/app/build/outputs/apk/$1"
+    local name
+    name="$(sed -n 's/.*"outputFile": *"\([^"]*\)".*/\1/p' "$dir/output-metadata.json" 2>/dev/null | head -n 1)"
+    if [[ -n "$name" && -f "$dir/$name" ]]; then echo "$dir/$name"; fi
 }
 
 part_unit() {
