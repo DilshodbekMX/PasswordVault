@@ -34,7 +34,7 @@ Short names: **MP** master password, **VK** vault key, **KEK** the key derived f
  :testing  the fakes of every port, shared by the tests of both modules (no Android calls)
 ```
 
-1. **Two product modules and one test module.** `:core` holds every rule and every byte format and makes no Android framework call. `:app` holds everything that needs a `Context`, the Keystore, a window or a lifecycle. `:testing` holds the fakes and is only ever a test dependency.
+1. **Two product modules and one test module.** `:core` holds every rule and every byte format and makes no Android framework call. `:app` holds everything that needs a `Context`, the Keystore, a window or a lifecycle. `:testing` holds the fakes and the source scanner of the build checks, and is only ever a test dependency.
 2. **One file format.** A vault generation and a backup file are the same container (`PVAULT01`, section 4). Nothing device-bound is ever in it.
 3. **One owner.** `DefaultVaultRepository` is the only object that holds VK and the decrypted entries, behind one mutex. Screens see immutable snapshots.
 4. **Every save is a new generation file**, written, synced, read back, proven where it carries a new password slot, and only then renamed into place and published (4.9).
@@ -74,7 +74,7 @@ It may use: the Kotlin standard library, `kotlinx-coroutines-core`, `kotlinx-ser
 | `core.generator` | Passwords and passphrases | `PasswordGenerator`, `GeneratorOptions` (declared with the contracts, 3.2), `Passphrase`, `Wordlist` (EFF short list 1, a resource file) |
 | `core.strength` | Strength and the security check | `StrengthMeter` (zxcvbn4j plus the Uzbek and Russian word list), `MasterPasswordRules` (ux.md §5.3 checklist), `SecurityCheck`, `SecurityReport` (declared with the contracts: reused groups, weak, pending, left out, same as master password) |
 
-Tests sit beside each package under `core/src/test/java/…/core/<package>/`. Every fake of a `:core` port lives in `:testing` (`FakeClock`, `FakeRandom`, `FakeFiles`, `FakeCodec`, `FakeRecordFiles`, `FakeRecordStore`, `FakeKeys`, `FakeVaultPort`), so that the tests of `:app` use the same fakes as those of `:core`. Frozen test files (the vault vectors of 4.13, the format fixtures) are under `core/src/test/resources/`.
+Tests sit beside each package under `core/src/test/java/…/core/<package>/`. Every fake of a `:core` port lives in `:testing` (`FakeClock`, `FakeRandom`, `FakeFiles`, `FakeCodec`, `FakeRecordFiles`, `FakeRecordStore`, `FakeKeys`, `FakeVaultPort`), so that the tests of `:app` use the same fakes as those of `:core`. `:testing` also holds the source scanner of the build checks, `testing/src/main/java/…/testing/arch/SourceScan.kt` (package `…testing.arch`), which the source-rule tests of both modules use (`core/src/test/java/…/core/arch/`, `app/src/test/java/…/arch/`, 8.5); it is the integrator's file. Frozen test files (the vault vectors of 4.13, the format fixtures) are under `core/src/test/resources/`.
 
 The three factory objects (`CryptoFactory`, `VaultCodecs`, `VaultStores`, 3.2 and 3.3) are how one package gets another's implementation without naming its class, so that packages can be built side by side. Their signatures are fixed in section 3; until the owning package is merged their bodies throw `NotImplementedError`.
 
