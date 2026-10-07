@@ -235,6 +235,13 @@ class SearchIndexTest {
         assertFalse(indices("клик").contains(4))
         // Russian spelling without ў, searched with plain "o": nothing marks the o as oʻ.
         assertFalse(indices("ozbek").contains(21))
+        // ç and ş (search.md §6 item 4). Changed on 2026-10-06 by architecture.md D-11: accent-free
+        // typing used to miss them ("garcon" did not find "Garçon"); now the second tier writes ç as
+        // c and ş as s, so "garcon" and "besiktas" find them 5 points lower (AccentFreeTierTest).
+        // What is still a limit: German ue and oe do not meet ü and ö.
+        fun finds(title: String, query: String) = SearchIndex(listOf(SearchFields(title))).search(query).isNotEmpty()
+        assertFalse(finds("Müller", "mueller"))
+        assertFalse(finds("Mueller", "müller"))
     }
 
     @Test

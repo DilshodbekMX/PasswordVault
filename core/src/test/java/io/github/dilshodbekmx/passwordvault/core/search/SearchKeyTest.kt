@@ -96,6 +96,8 @@ class SearchKeyTest(private val label: String, private val input: String, privat
             case("ñ and ú", "Ñandú", "nandu"),
             case("stacked marks", "Việt Nam", "viet nam"),
             case("title-case digraph ǅ", "\u01C5emal", "dzemal"),
+            // The key is the first tier, which architecture.md D-11 left as it was: since D-11 the
+            // second tier also writes ç as c, so "garcon" finds "Garçon" one tier lower (AccentFreeTierTest).
             case("ç is the Uzbek ch (French words pay for it)", "Garçon", "garchon"),
             // Compatibility forms
             case("full-width letters", "Ｔｅｌｅｇｒａｍ", "telegram"),
