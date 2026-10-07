@@ -23,12 +23,16 @@ import org.junit.Test
  * year, a wait of 0 to 90 s, the end of a visit (also while a check is running), Keystore temporary,
  * Keystore gone, a write failure; and, so that a sequence goes on after a limit, a new PIN set after
  * a master password or after the current PIN (F6). Kills and power cuts also come while a check
- * waits for the age of its charge, and a failed write sometimes lands all the same.
+ * waits for the age of its charge, right after the Keystore answered and before any record is
+ * written (lock.md §6.10), and inside any record write; a failed write sometimes lands all the
+ * same. Each sequence has its own share of wrong PINs, so that bursts of wrong PINs on one visit
+ * are frequent.
  *
- * Each sequence keeps the truth beside the guard: the wrong PINs checked since the last right PIN or
- * master password, and those since the last master password that no right PIN was allowed to
- * forgive (a right PIN may forgive only wrong PINs typed on a lock screen in the same visit, at most
- * 60 s before it, and at most two). After every step it checks:
+ * Each sequence keeps the truth beside the guard, counted at the moment the Keystore checks a PIN:
+ * the wrong PINs checked since the last right PIN or master password, and those since the last
+ * master password that no right PIN was allowed to forgive (a right PIN may forgive only wrong PINs
+ * typed on a lock screen in the same visit, at most 60 s before it, and at most two). After every
+ * step it checks:
  *
  * - (a) no HMAC without a durable charge at least 1,000 ms old (I4): at the moment of every HMAC the
  *   record a kill would leave and the record a power cut would leave are both charged;
@@ -38,7 +42,7 @@ import org.junit.Test
  *   has no slot; a limit removes the slot with `off = limit` and deletes the key at once; no key is
  *   deleted but at a limit or a GONE;
  * - (e) a refund never changes a count (giving up, the end of a visit, the same PIN again, Keystore
- *   temporary or gone);
+ *   temporary or gone), and only GONE removes the slot (I6);
  * - (f) a fingerprint success changes no count and no `unseen` (I5);
  * - (g) a check whose visit has ended opens nothing (I11).
  *
@@ -79,7 +83,8 @@ internal class Coverage {
             "outcome KeyGone", "outcome CannotCheck", "start interrupted", "start limit", "start storage full",
             "charge storage full", "ended during check", "died during check", "forgiven", "power cut lost a write",
             "new pin with master password", "new pin with current pin", "right in a prompt", "wrong in a prompt",
-            "refund", "fingerprint", "master password", "kill before flush",
+            "refund", "fingerprint", "master password", "kill before flush", "died after the check", "stopped in a write",
+            "forgiven at the cap",
         )
     }
 }
@@ -88,12 +93,19 @@ private class Sequence(private val seed: Long, private val seen: Coverage) {
     private enum class Ev(val weight: Int) {
         DIGIT(14), DELETE(3), SIXTH_WRONG(4), SIXTH_RIGHT(4), FINGERPRINT(3), MASTER_PASSWORD(2), LOCK(3), END_VISIT(3),
         KILL(2), POWER_CUT(2), REBOOT(1), CLOCK_JUMP(1), WAIT(6), KS_TEMPORARY(1), KS_GONE(1), WRITE_FAILURE(3),
+        STOP_IN_WRITE(2),
     }
 
     private class Died(val how: Ev) : Error()
 
     private val rnd = Random(seed)
     private val log = ArrayList<String>()
+
+    /** How often this sequence's sixth digit completes a wrong PIN rather than the right one. */
+    private val shareWrong = listOf(0.3, 0.5, 0.8)[rnd.nextInt(3)]
+
+    /** A calm sequence mostly types: entry after entry on one visit, the bursts that forgiving is about. */
+    private val calm = rnd.nextInt(3) == 0
 
     // Time: the truth runs on; elapsedRealtime() starts again at a reboot; the date can jump.
     private var trueMs = 50_000_000L
@@ -116,14 +128,48 @@ private class Sequence(private val seed: Long, private val seen: Coverage) {
     private val pins = HashMap<String, ByteArray>()
     private var hmacAt: Long? = null
 
-    /** The PIN key as the guard uses it, with (a) checked at the moment of every HMAC. */
+    /** What the Keystore's last check found: true right, false wrong, null no check or no result. */
+    private var checked: Boolean? = null
+
+    /**
+     * The PIN key as the guard uses it. At the moment of every HMAC it checks (a), and when the
+     * Keystore gives a result the PIN has been checked: the truth counts it here, whatever happens to
+     * the process next. Now and then the process dies right after, before the guard writes anything.
+     */
     private val pinKey = object : PinKey {
         override fun create(alias: String): KeyCreate = keys.pin.create(alias)
 
         override fun hmac(alias: String, message: ByteArray): Ks<ByteArray> {
             rule("(a) I4", store.current?.guard?.charged == true && store.durable(SETTLE_MS)?.guard?.charged == true)
             hmacAt = trueMs
-            return keys.pin.hmac(alias, message)
+            val result = keys.pin.hmac(alias, message)
+            if (result is Ks.Ok) {
+                val slotId = alias.removePrefix(PinWrap.ALIAS_PREFIX)
+                val right = message.contentEquals(PinWrap.message(VAULT, slotId, pins.getValue(slotId)))
+                checked = right
+                val p = place!!
+                if (right) {
+                    consec = 0
+                    if (p.isVisit) {
+                        val fresh = truthVisit.count { trueMs - it <= 60_000 }
+                        if (fresh > 0) seen.add("forgiven")
+                        if (fresh > 2) seen.add("forgiven at the cap")
+                        unforg -= minOf(2, fresh)
+                    } else {
+                        seen.add("right in a prompt")
+                    }
+                    truthVisit.clear()
+                } else {
+                    consec++
+                    unforg++
+                    if (p.isVisit) truthVisit += trueMs else seen.add("wrong in a prompt")
+                }
+                if (rnd.nextInt(100) < 3) {
+                    seen.add("died after the check")
+                    throw Died(listOf(Ev.KILL, Ev.POWER_CUT, Ev.REBOOT)[rnd.nextInt(3)])
+                }
+            }
+            return result
         }
     }
 
@@ -147,8 +193,11 @@ private class Sequence(private val seed: Long, private val seen: Coverage) {
     }
 
     private fun choose(): Ev {
-        if (guard != null && digits in 1..4 && rnd.nextInt(10) < 7) return Ev.DIGIT
-        if (guard != null && digits == 5 && rnd.nextInt(10) < 6) return if (rnd.nextBoolean()) Ev.SIXTH_RIGHT else Ev.SIXTH_WRONG
+        if (guard != null && digits in 1..4 && (calm || rnd.nextInt(10) < 8)) return Ev.DIGIT
+        if (guard != null && digits == 5 && (calm || rnd.nextInt(10) < 7)) {
+            return if (rnd.nextDouble() < shareWrong) Ev.SIXTH_WRONG else Ev.SIXTH_RIGHT
+        }
+        if (calm && guard != null && rnd.nextInt(100) < 85) return Ev.DIGIT
         var pick = rnd.nextInt(TOTAL_WEIGHT)
         for (e in Ev.entries) {
             pick -= e.weight
@@ -161,20 +210,27 @@ private class Sequence(private val seed: Long, private val seen: Coverage) {
         log += e.name
         val deletedBefore = keys.deleted.size
         var mayDelete = false
-        when (e) {
-            Ev.DIGIT -> digit()
-            Ev.DELETE -> delete()
-            Ev.SIXTH_WRONG, Ev.SIXTH_RIGHT -> mayDelete = sixth(e == Ev.SIXTH_RIGHT)
-            Ev.FINGERPRINT -> fingerprint()
-            Ev.MASTER_PASSWORD -> masterPassword()
-            Ev.LOCK -> lock()
-            Ev.END_VISIT -> endVisit()
-            Ev.KILL, Ev.POWER_CUT, Ev.REBOOT -> die(e)
-            Ev.CLOCK_JUMP -> wallOffset += if (rnd.nextBoolean()) YEAR else -YEAR
-            Ev.WAIT -> trueMs += rnd.nextInt(90_001)
-            Ev.KS_TEMPORARY -> keys.scriptHmac(Ks.Temporary(null))
-            Ev.KS_GONE -> keys.scriptHmac(Ks.Gone("invalidated"))
-            Ev.WRITE_FAILURE -> store.failNextWrite(landed = rnd.nextBoolean())
+        try {
+            when (e) {
+                Ev.DIGIT -> digit()
+                Ev.DELETE -> delete()
+                Ev.SIXTH_WRONG, Ev.SIXTH_RIGHT -> mayDelete = sixth(e == Ev.SIXTH_RIGHT)
+                Ev.FINGERPRINT -> fingerprint()
+                Ev.MASTER_PASSWORD -> masterPassword()
+                Ev.LOCK -> lock()
+                Ev.END_VISIT -> endVisit()
+                Ev.KILL, Ev.POWER_CUT, Ev.REBOOT -> die(e)
+                Ev.CLOCK_JUMP -> wallOffset += if (rnd.nextBoolean()) YEAR else -YEAR
+                Ev.WAIT -> trueMs += rnd.nextInt(90_001)
+                Ev.KS_TEMPORARY -> keys.scriptHmac(Ks.Temporary(null))
+                Ev.KS_GONE -> keys.scriptHmac(Ks.Gone("invalidated"))
+                Ev.WRITE_FAILURE -> store.failNextWrite(landed = rnd.nextBoolean())
+                Ev.STOP_IN_WRITE -> store.stopAtNextWrite(handedOver = false)
+            }
+        } catch (stopped: FakeRecordStore.Stopped) {
+            log += "(stopped in a write)"
+            seen.add("stopped in a write")
+            die(if (rnd.nextBoolean()) Ev.KILL else Ev.POWER_CUT)
         }
         mayDelete = mayDelete || startedWithLimit // a start-up inside this step turned the PIN off
         startedWithLimit = false
@@ -242,6 +298,7 @@ private class Sequence(private val seed: Long, private val seen: Coverage) {
         val pin = if (right) correct else wrongPin(correct)
         var endedDuringCheck = false
         hmacAt = null
+        checked = null
         duringWait = { target ->
             val r = rnd.nextInt(100)
             if (r < 8) {
@@ -256,7 +313,7 @@ private class Sequence(private val seed: Long, private val seen: Coverage) {
         val outcome = try {
             runNow { g.check(pin, setOf(VK_ID)) }
         } catch (died: Died) {
-            log += "(died: ${died.how})"
+            log += "(died: ${died.how})" + if (checked != null) " after the check" else ""
             die(died.how)
             return false
         } finally {
@@ -270,10 +327,7 @@ private class Sequence(private val seed: Long, private val seen: Coverage) {
 
         when (outcome) {
             is PinOutcome.Wrong, PinOutcome.Limit -> {
-                rule("a wrong PIN was not checked", hmacAt != null && !right)
-                consec++
-                unforg++
-                if (p.isVisit) truthVisit += hmacAt!! else seen.add("wrong in a prompt")
+                rule("a wrong PIN was not checked", checked == false && !right)
                 rule("(a) counted", after.guard.row == minOf(before.guard.row + 1, 5) && after.guard.total == minOf(before.guard.total + 1, 10))
                 if (outcome == PinOutcome.Limit) {
                     removedSlot = true
@@ -285,22 +339,15 @@ private class Sequence(private val seed: Long, private val seen: Coverage) {
             }
             is PinOutcome.Right, PinOutcome.TooLate -> {
                 rule("(g) a check whose visit ended opened something", !(endedDuringCheck && outcome is PinOutcome.Right))
-                rule("a right PIN was not checked", hmacAt != null && right)
-                consec = 0
-                if (p.isVisit) {
-                    val forgiven = minOf(2, truthVisit.count { hmacAt!! - it <= 60_000 })
-                    if (forgiven > 0) seen.add("forgiven")
-                    unforg -= forgiven
-                } else {
-                    seen.add("right in a prompt")
-                }
-                truthVisit.clear()
+                rule("a right PIN was not checked", checked == true && right)
                 rule("a right PIN gives row 0", after.guard.row == 0)
             }
             PinOutcome.SameAsBefore, PinOutcome.CannotCheck, PinOutcome.KeyGone -> {
                 seen.add("refund")
                 rule("(e) a refund changed a count", after.guard.row == before.guard.row && after.guard.total == before.guard.total && after.unseen == before.unseen)
                 rule("(e) the refund leaves no charge", !after.guard.charged)
+                rule("a refund after a result", checked == null)
+                if (outcome != PinOutcome.KeyGone) rule("I6: a refund removed something", after.slot == before.slot && after.off == before.off)
                 if (outcome == PinOutcome.SameAsBefore) rule("the same PIN was checked", hmacAt == null)
                 if (outcome == PinOutcome.KeyGone) {
                     removedSlot = true
@@ -361,13 +408,13 @@ private class Sequence(private val seed: Long, private val seen: Coverage) {
             g.placeEnded(p)
             place = null
         }
+        consec = 0 // the master password was verified before the guard hears of it
+        unforg = 0
+        truthVisit.clear()
         val unseen = g.record?.unseen
         g.masterPasswordCorrect()
         locked = false
         digits = 0
-        consec = 0
-        unforg = 0
-        truthVisit.clear()
         g.record?.let {
             rule("a master password gives 0 and 0", it.guard == PinRecord.Guard(charged = false, row = 0, total = 0))
             rule("a master password takes nothing off unseen", it.unseen == unseen)
@@ -454,10 +501,10 @@ private class Sequence(private val seed: Long, private val seen: Coverage) {
 
     private fun randomPin(): ByteArray = String.format(java.util.Locale.ROOT, "%06d", rnd.nextInt(1_000_000)).toByteArray(Charsets.US_ASCII)
 
-    /** A wrong PIN: mostly one of three, so that the same wrong PIN comes again (§6.6). */
+    /** A wrong PIN: mostly one of five, so that the same wrong PIN comes again (§6.6). */
     private fun wrongPin(right: ByteArray): ByteArray {
         while (true) {
-            val pin = if (rnd.nextInt(4) == 0) randomPin() else WRONG[rnd.nextInt(WRONG.size)]
+            val pin = if (rnd.nextInt(10) < 3) randomPin() else WRONG[rnd.nextInt(WRONG.size)]
             if (!pin.contentEquals(right)) return pin
         }
     }
@@ -467,13 +514,13 @@ private class Sequence(private val seed: Long, private val seen: Coverage) {
     }
 
     private companion object {
-        const val STEPS = 40
+        const val STEPS = 60
         const val SETTLE_MS = 1_000L
         const val YEAR = 365L * 24 * 3_600_000
         const val VAULT = PinFixture.VAULT
         const val VK_ID = PinFixture.VK_ID
         val VK = PinFixture.VK
-        val WRONG = listOf("111222", "905127", "143637").map { PinFixture.pin(it) }
+        val WRONG = listOf("111222", "905127", "143637", "368014", "321299").map { PinFixture.pin(it) }
         val TOTAL_WEIGHT = Ev.entries.sumOf { it.weight }
     }
 }
