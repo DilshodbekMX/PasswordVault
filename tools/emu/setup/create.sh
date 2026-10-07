@@ -62,9 +62,9 @@ SCREEN_H=$(pv_shell wm size 2>/dev/null | tr -d '\r' | sed -n 's/^Physical size:
 SCREEN_H=${SCREEN_H:-1920}
 SAFE_BOTTOM=$((SCREEN_H - 160)) # the gesture or button bar; setup has no bottom bar of its own
 
-# on ROUTE: the screen of ROUTE is shown.
+# on ROUTE: the screen of ROUTE is shown (fresh dumps, see fresh_nodes).
 on() {
-    pv_ui_wait "[|]pv\.route\.$1\$" 20 || { pv_log "not on $1; ids: $(pv_ui_nodes | awk -F'|' '$3 ~ /^pv[.]/ { printf "%s ", $3 }')"; return 1; }
+    present "pv.route.$1" 20 || { pv_log "not on $1; ids: $(fresh_nodes | awk -F'|' '$3 ~ /^pv[.]/ { printf "%s ", $3 }')"; return 1; }
 }
 
 # the text of the node whose resource id is ID (scrolls down to it if needed).
@@ -74,12 +74,57 @@ text_of() {
     echo "$line" | cut -d'|' -f1
 }
 
+# fresh_nodes: the screen's nodes as they are now, in pv_ui_nodes's form. `uiautomator dump` fails
+# with "ERROR: could not get idle state." (and exit status 0) while the window keeps changing; on API 28
+# a focused Compose text field does that, its blinking cursor sending TYPE_WINDOW_CONTENT_CHANGED every
+# 500 ms, and the old dump file is then still there to be read (pv_ui_nodes reads it: the positions and
+# even the screen of an earlier dump, seen on API 28). So the old file is removed first, and when the
+# dump fails the focus is moved on (Tab, which never clicks) until no field has it. A field that lost
+# the focus is tapped again before typing; the tap that follows a dump puts the device back into touch
+# mode.
+UI_XML=/sdcard/pv_setup_ui.xml
+fresh_nodes() {
+    local i out xml
+    for i in 1 2 3 4 5 6 7 8; do
+        pv_shell rm -f "$UI_XML" >/dev/null 2>&1
+        out=$(pv_shell uiautomator dump "$UI_XML" 2>&1 | tr -d '\r')
+        case "$out" in
+            *"dumped to"*)
+                xml=$(pv_shell cat "$UI_XML" 2>/dev/null)
+                case "$xml" in *"<hierarchy"*) printf '%s' "$xml" | parse_nodes; return 0 ;; esac ;;
+        esac
+        pv_shell input keyevent KEYCODE_TAB >/dev/null
+        pv_sleep 1
+    done
+    pv_log "uiautomator dump keeps failing: $out"
+    return 1
+}
+
+# parse_nodes < XML: one line per node, text|desc|id|clickable|enabled|x|y (as pv_ui_nodes prints).
+parse_nodes() {
+    python3 -c '
+import re, sys, xml.etree.ElementTree as ET
+try:
+    root = ET.fromstring(sys.stdin.read())
+except Exception:
+    sys.exit(0)
+for n in root.iter("node"):
+    a = n.attrib
+    x1, y1, x2, y2 = map(int, re.findall(r"\d+", a.get("bounds", "[0,0][0,0]")))
+    text = a.get("text", "").replace("\n", " ").replace("|", "/")
+    desc = a.get("content-desc", "").replace("\n", " ").replace("|", "/")
+    rid = a.get("resource-id", "").split("/")[-1]
+    print("|".join([text, desc, rid, a.get("clickable", ""), a.get("enabled", ""),
+                    str((x1 + x2) // 2), str((y1 + y2) // 2)]))
+'
+}
+
 # find_node ID: prints the node with that resource id, scrolling the screen up until it is above the
 # bottom band (where the system's navigation bar and the keyboard's edge are).
 find_node() {
     local id_re="[|]$(re "$1")\$" line y i
     for i in 1 2 3 4 5 6; do
-        line=$(pv_ui_nodes | pv_ui_match "$id_re")
+        line=$(fresh_nodes | pv_ui_match "$id_re")
         if [ -n "$line" ]; then
             y=$(echo "$line" | cut -d'|' -f7)
             if [ "$y" -lt "$SAFE_BOTTOM" ]; then
@@ -121,8 +166,16 @@ tap() {
     pv_shell input tap "$x" "$y" >/dev/null
 }
 
-present() { pv_ui_wait "[|]$(re "$1")\$" "${2:-10}"; }
-absent() { ! pv_ui_nodes | pv_ui_match "[|]$(re "$1")\$" | grep -q .; }
+# present ID [SECONDS]: a node with that resource id appears (fresh dumps, see fresh_nodes).
+present() {
+    local deadline=$((SECONDS + ${2:-10}))
+    while :; do
+        fresh_nodes | pv_ui_match "[|]$(re "$1")\$" | grep -q . && return 0
+        [ $SECONDS -lt $deadline ] || return 1
+        pv_sleep 1
+    done
+}
+absent() { ! fresh_nodes | pv_ui_match "[|]$(re "$1")\$" | grep -q .; }
 
 # type_into ID TEXT: taps the field and types TEXT (letters, digits and hyphens only).
 type_into() {
@@ -198,14 +251,28 @@ write_down_shows_the_words() {
     [ "$shown" = "$WORDS" ] || { pv_log "WriteDown shows '$shown', step 1 showed '$WORDS'"; return 1; }
 }
 
+# keyboard_comes [SECONDS]: the keyboard is shown within SECONDS (dumpsys, not uiautomator).
+keyboard_comes() {
+    local deadline=$((SECONDS + ${1:-10}))
+    until keyboard_shown; do
+        [ $SECONDS -lt $deadline ] || return 1
+        pv_sleep 1
+    done
+}
+
 type_again_has_the_focus() {
-    tap pv.open.TypeAgain && on TypeAgain || return 1
-    pv_sleep 2
-    # The field asks for the keyboard when the screen appears (ux.md §5.5).
-    pv_shell dumpsys input_method | tr -d '\r' | grep -q 'mInputShown=true' || { pv_log "no keyboard on TypeAgain"; return 1; }
-    # Typed without tapping the field first: the screen gave it the focus.
+    tap pv.open.TypeAgain || return 1
+    # The field takes the focus and asks for the keyboard when the screen appears (ux.md §5.5).
+    # "Write it down on paper" has no field, so a keyboard means TypeAgain's. Checked before any
+    # dump, whose Tab (fresh_nodes) would move the focus.
+    keyboard_comes 10 || { pv_log "no keyboard after Next"; return 1; }
+    # Typed without tapping the field: the screen gave it the focus.
     pv_shell input text "$WORDS" >/dev/null
     pv_sleep 1
+    on TypeAgain || return 1
+    local typed
+    typed=$(text_of pv.setup.again) || return 1
+    [ "$typed" = "$WORDS" ] || { pv_log "the field holds '$typed'"; return 1; }
 }
 
 unlocked_after() { # how: button | done
@@ -238,7 +305,7 @@ strong_own_password_asks_about_reuse() {
     type_into pv.setup.own "$OWN" || return 1
     tap pv.setup.useOwn || return 1
     present pv.setup.reuse.no 10 || { pv_log "no reuse question for the strong password"; return 1; }
-    pv_ui_tap '[|]pv\.setup\.reuse\.no$' >/dev/null || return 1
+    tap pv.setup.reuse.no || return 1
     on WriteDown || return 1
     local shown
     shown=$(text_of pv.setup.chosen) || return 1
@@ -247,13 +314,11 @@ strong_own_password_asks_about_reuse() {
 
 own_mismatch_then_match() {
     tap pv.open.TypeAgain && on TypeAgain || return 1
-    pv_sleep 2
-    pv_shell input text "$OWN_WRONG" >/dev/null
+    type_into pv.setup.again "$OWN_WRONG" || return 1
     tap pv.action.createVault || return 1
     present pv.setup.againMessage 10 || { pv_log "no mismatch message"; return 1; }
     on TypeAgain || return 1
-    pv_shell input text "$OWN" >/dev/null
-    pv_sleep 1
+    type_into pv.setup.again "$OWN"
 }
 
 no_crash() {
