@@ -1,6 +1,7 @@
 package io.github.dilshodbekmx.passwordvault.debug
 
 import android.content.Context
+import io.github.dilshodbekmx.passwordvault.debug.i18n.LocaleCommand
 
 /**
  * One test hook, run by [DebugCommandReceiver] (architecture.md §3.6, lock.md §15.3). Debug and
@@ -23,5 +24,6 @@ fun interface DebugCommand {
 /** Every debug command, by the name that `cmd` starts with. Kept by the integrator: one line each. */
 object DebugCommands {
     val all: Map<String, DebugCommand> = mapOf(
+        "locale" to LocaleCommand,
     )
 }
