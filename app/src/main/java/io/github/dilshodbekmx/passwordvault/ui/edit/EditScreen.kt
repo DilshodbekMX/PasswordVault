@@ -28,6 +28,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -162,7 +163,7 @@ fun EditScreen(vm: EditViewModel, nav: Navigator) {
                 },
             )
         },
-        snackbarHost = { SnackbarHost(snackbar) },
+        snackbarHost = { SnackbarHost(snackbar) { data -> Snackbar(data, modifier = Modifier.testTag(EditTags.MESSAGE)) } },
     ) { padding ->
         when (ui.phase) {
             Phase.LOADING -> Unit
@@ -677,6 +678,9 @@ object EditTags {
     const val ADD_WEBSITE = "pv.edit.addWebsite"
     const val NOTES = "pv.edit.notes"
     const val ADD_FIELD = "pv.edit.addField"
+
+    /** The short message at the bottom ("Your unsaved changes were kept.", "Couldn't save. …"). */
+    const val MESSAGE = "pv.edit.message"
     const val DIALOG_SAVE = "pv.edit.dialog.save"
     const val DIALOG_DISCARD = "pv.edit.dialog.discard"
     const val DIALOG_KEEP = "pv.edit.dialog.keep"
