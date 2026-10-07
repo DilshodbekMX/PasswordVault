@@ -13,6 +13,11 @@ interface RecordFiles {
     /**
      * Replaces [name] in [dir] with [bytes]: a temporary file, fsync, rename, then an fsync of the
      * directory. Any exception, a failed directory fsync included, means "not written" [V-S2].
+     *
+     * When [dir] does not exist it is made first, with any missing parent (`<noBackupFilesDir>/lock`),
+     * and each directory made is fsynced into its parent before the record is written, so that the new
+     * directory survives a power cut with its record. This is how the first record of a vault makes
+     * its lock directory (lock.md F1 step 4, F11 step 17, F13 step 5, F14 step 2).
      */
     fun replace(dir: String, name: String, bytes: ByteArray)
 

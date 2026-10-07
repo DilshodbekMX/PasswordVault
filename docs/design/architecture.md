@@ -268,7 +268,8 @@ object VaultStores {                                   // the body throws NotImp
 ```kotlin
 interface RecordFiles {                                // lock.md §5.9
     fun read(dir: String, name: String): ByteArray?    // null: no such file; other errors throw IOException
-    fun replace(dir: String, name: String, bytes: ByteArray)     // tmp, fsync, rename, directory fsync; any exception = not written
+    fun replace(dir: String, name: String, bytes: ByteArray)     // makes dir (and lock/) when missing; tmp, fsync, rename, directory fsync;
+                                                       // any exception = not written
     fun dirs(root: String): List<String>
     fun deleteDir(dir: String)
     fun deleteStaleTmp(root: String)
