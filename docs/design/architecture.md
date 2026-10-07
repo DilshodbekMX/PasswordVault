@@ -67,7 +67,7 @@ It may use: the Kotlin standard library, `kotlinx-coroutines-core`, `kotlinx-ser
 | `core.lock.record` | The three device records of lock.md §5: types and codec, not the files | `PinRecord`, `FingerprintRecord`, `StateRecord` (the fields of lock.md §5.4 to §5.6 as revised by its audit), `RecordCodec`, `RecordRead` (OK, MISSING, DAMAGED, NEWER, UNREADABLE), `RecordFiles`, `RecordStore` and `FileRecordStore` (one typed record over `RecordFiles`) |
 | `core.lock.guard` | Counting and waiting | `PinGuard` (lock.md §6.3), `MasterPasswordGuard` (§6.8), `Credit` (§6.9), `PracticeSchedule` (§8.3) |
 | `core.lock.policy` | Decisions without side effects | `EntryPolicy` (§13.1), `SessionPolicy` (delay arithmetic of §10), `KeystoreErrors` (the table of §14.3 over `KeystoreFailure`), `Ks`, `KeystoreFailure` |
-| `core.lock.flow` | The flows F1 to F18 and the start-up of lock.md §5.11 over ports | `LockEngine` (with `LockCore`, `UnlockFlows`, `ShortcutFlows`, `PasswordFlows`, `VaultFlows`, `OlderCopies`, `StartUp`, `Sweep`), `PinKey`, `FingerprintKey`, `DeviceKeys`, `KeyCreate`, `VaultPort` and its result types, `MasterProof`, `LockScreen`, `Notice`, `PinOutcome` |
+| `core.lock.flow` | The flows F1 to F18 and the start-up of lock.md §5.11 over ports | `LockEngine` (with `LockCore`, `UnlockFlows`, `ShortcutFlows`, `PasswordFlows`, `VaultFlows`, `OlderCopies`, `StartUp`, `Sweep`), `PinKey`, `FingerprintKey`, `DeviceKeys`, `KeyCreate`, `VaultPort` and its result types with the lock's own `VaultRef`, `GenerationInfo` and `AsideVault` (3.4), `MasterProof`, `LockScreen`, `Notice`, `PinOutcome` |
 | `core.search` | search.md, moved from `prototypes/search` | `searchKey`, `SearchIndex`, `SearchFields`, `SearchHit`, `matchedRanges`, `WebAddress`, `KeyboardLayout` (wrong-layout retry) |
 | `core.text` | Uzbek script converters | `UzbekScript`, `UzbekLatinAlphabet` |
 | `core.formats` | Every file besides the vault: formats.md, moved from `prototypes/formats` with the review's fixes | `Csv`, `TextDecoding`, `IsoTime`, `GoogleCsv`, `FieldsBlock` (the grammar of D-10a), `BitwardenJson` (writer and reader), `Xlsx`, `VaultXlsx`, `Importer`, `ImportPlanner`, `FileKind` (recognition by first bytes), `ExportNames` |
@@ -297,8 +297,12 @@ interface FingerprintKey {
                                                        // FingerprintResult: Ok(bytes, nonce) | Closed(code) | Gone(why) | Temporary(code) | NotShown
     fun cancel()
 }
+sealed interface VaultRef { object Current : VaultRef; class Aside(val vaultId: String) : VaultRef }
+class GenerationInfo(val number: Long, val vkId: String, val createdMs: Long)
+class AsideVault(val vaultId: String, val putAsideAtMs: Long, val newest: GenerationInfo?)    // these three: the lock's own (R-10), as in 3.3
 class VaultScan(val current: CurrentVault, val aside: List<AsideVault>)
-                                                       // CurrentVault: NoVault | Present(vaultId, newest: GenerationInfo, keptVkIds: Set<String>?) | Unreadable(why)
+                                                       // CurrentVault: NoVault | Present(vaultId, newest: GenerationInfo, keptVkIds: Set<String>?)
+                                                       //   | Unreadable(why: CurrentVault.Why), with enum class Why { IO, DAMAGED, NEWER }
 interface VaultPort {                                  // the lock's whole view of the vault; DefaultVaultRepository implements it
     fun vaults(): VaultScan                            // before anything is typed; lock.md §5.11 step 2 and §16.3 "Storage"
     suspend fun open(target: VaultRef, keys: Map<String, ByteArray>): VaultOpen        // PIN, fingerprint, the pending wrap of F11:
@@ -329,7 +333,7 @@ class MasterProof internal constructor(/* the verified MasterPasswordBytes, the 
 ```
 
 - `open` and `openWithPassword` on `VaultRef.Aside(id)` open that vault in place and keep it, still apart from the current one, until `swapIn(id)`, `mergeAside(id)` or a lock. Only one vault put aside is held at a time. The lock checks the master password of a vault put aside under *that* vault's guard and records (lock.md §6.8), so the screens never call storage for it directly.
-- `VaultScan`, `VaultOpen`, `PasswordOpen` and `VaultWrite` are declared in `core.lock.flow`; the repository maps the storage engine's results onto them, and the lock never receives VK except inside `withVaultKey`.
+- `VaultScan`, `VaultOpen`, `PasswordOpen` and `VaultWrite` are declared in `core.lock.flow`, and so are `VaultRef`, `GenerationInfo` and `AsideVault` (`lock/flow/VaultTypes.kt`): the lock's own counterparts of the storage types of the same names (3.3), because R-10 keeps `core.lock` from naming `core.storage`. `DefaultVaultRepository` maps between the two and maps the storage engine's results onto the lock's, and the lock never receives VK except inside `withVaultKey`. The screens' side uses the `core.lock.flow` types too: `LockUiState.NoVault(aside)`, `LockUiState.Unreadable(why, aside)` with `why` a `CurrentVault.Why`, and `LockStatus.aside` (3.5).
 - `LockEngine` is built from `RecordFiles`, `Clock`, `RandomSource`, `PinKey`, `FingerprintKey`, `DeviceKeys`, `VaultPort`, `MasterKdf` and `Aead`. An architecture test forbids `core.lock` from importing `core.storage` or `core.vaultfile` (lock.md T17).
 - Who deletes a lock directory: the lock, after `VaultPort.deleteAside` returned true (lock.md F17 step 5): `RecordFiles.deleteDir`, then `DeviceKeys.delete` for its two aliases. Start-up (lock.md §5.11) never deletes a directory whose vault is gone.
 
@@ -364,7 +368,7 @@ interface SecurityReports {                                                     
 sealed interface LockUiState {
     object Starting : LockUiState                      // records and files are being read (lock.md §5.11)
     class NoVault(val aside: List<AsideVault>) : LockUiState                 // Welcome, with "Open my previous passwords" for each
-    class Unreadable(val why: Why, val aside: List<AsideVault>) : LockUiState    // "Your passwords can't be opened"; never a delete offer
+    class Unreadable(val why: CurrentVault.Why, val aside: List<AsideVault>) : LockUiState    // "Your passwords can't be opened"; never a delete offer
     class Locked(val screen: LockScreen) : LockUiState                       // chosen by EntryPolicy (lock.md §13.1)
     class Unlocked(val notices: List<Notice>, val proof: MasterProof?) : LockUiState
 }
