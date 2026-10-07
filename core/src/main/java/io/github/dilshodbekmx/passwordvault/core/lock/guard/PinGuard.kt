@@ -298,7 +298,7 @@ class PinGuard(
         }
         val written = keep(next)
         startUpFailed = !written
-        if (turnOff) deviceKeys.delete(PinWrap.alias(slot!!.id))
+        if (turnOff) deviceKeys.delete(PinWrap.alias(slot.id))
         return PinStartUp(result, interrupted = true, limit = turnOff, storageFull = !written)
     }
 
@@ -349,7 +349,8 @@ class PinGuard(
      *    not in [keptVkIds] is dropped, and so is one whose tag failed. If the place has ended
      *    meanwhile, the record is written, the keys wiped and nothing opens ([PinOutcome.TooLate],
      *    I11); otherwise [PinOutcome.Right] with the VK of every wrap that opened, by `vk_id` (the
-     *    receiver wipes them), and the record waits for [flush].
+     *    receiver wipes them), and the record waits for [flush]. A slot left without a wrap is
+     *    removed (`off = master_changed`), written at once, and its key deleted.
      *
      * A wrong PIN, a limit and a right PIN count the same whether or not the place has ended
      * meanwhile (§6.7: switching the screen off during a check).
@@ -447,16 +448,21 @@ class PinGuard(
         }
         visitWrong.clear()
         checkedWrong.clear()
-        if (kept.isEmpty()) deviceKeys.delete(alias) // a slot left without a wrap is removed (§5.4)
-
-        if (place.hasEnded) {
+        val late = place.hasEnded
+        if (late || kept.isEmpty()) {
+            // At once: a result that comes too late opens nothing, and a slot left without a wrap is
+            // removed (§5.4), written before its key is deleted, as at a limit (§6.5).
             keep(next)
+            if (kept.isEmpty()) deviceKeys.delete(alias)
+        } else {
+            rec = next
+            rightUnwritten = true
+        }
+        if (late) {
             Bytes.wipe(kek)
             opened.values.forEach { Bytes.wipe(it) }
             return PinOutcome.TooLate
         }
-        rec = next
-        rightUnwritten = true
         try {
             useKek?.invoke(kek.copyOf())
         } finally {

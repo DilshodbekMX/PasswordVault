@@ -297,6 +297,7 @@ class PinGuardTest {
         assertTrue(guard.enter(RIGHT, Place.visit(1), keptVkIds = setOf(vk2Id)) is PinOutcome.Right)
         assertNull(guard.record!!.slot)
         assertEquals(PinRecord.OffReason.MASTER_CHANGED, guard.record!!.off!!.reason)
+        assertEquals(guard.record, f.store.current) // written before the key is deleted, not left for flush
         assertEquals(listOf(alias), f.keys.deleted)
     }
 
