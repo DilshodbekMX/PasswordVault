@@ -10,6 +10,7 @@ import io.github.dilshodbekmx.passwordvault.core.model.HistoryItem
 import io.github.dilshodbekmx.passwordvault.core.model.Vault
 import io.github.dilshodbekmx.passwordvault.core.model.VaultEdits
 import io.github.dilshodbekmx.passwordvault.core.storage.OpenedVault
+import io.github.dilshodbekmx.passwordvault.core.vaultfile.VaultHeader
 import io.github.dilshodbekmx.passwordvault.testing.storage.FakeFiles
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -73,6 +74,8 @@ class LockTest {
             assertEquals(VaultState.Locked, repo.state.value)
             for (key in keys) assertTrue("the key is zeroed", key.all { it == 0.toByte() })
             val reached = reachableFrom(repo)
+            // The walk goes all the way into the store: it reaches the headers the store remembers.
+            assertTrue("the walk reached the store's memory", reached.any { it is VaultHeader })
             val forbidden = reached.filter {
                 it is Vault || it is Entry || it is Draft || it is DraftEntry || it is OpenedVault || it is CustomField || it is HistoryItem
             }
