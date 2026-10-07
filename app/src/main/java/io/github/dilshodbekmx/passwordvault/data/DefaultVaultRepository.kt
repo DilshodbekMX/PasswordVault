@@ -62,10 +62,12 @@ import io.github.dilshodbekmx.passwordvault.core.storage.VaultRef as StoreVaultR
  *
  * **The vault mutex** (§5.2 item 1) is held for every use of VK and every call of [storage], except
  * [vaults], which cannot suspend: `scan` takes the store's own lock and reads nothing of the open
- * vault. Order: the lock's mutex, then this one, then the KDF gate of [kdf]; this object never calls
- * the lock. Every call that changes the session runs to its end, also when its caller is
- * cancelled, so that a write is never cut in half (§5.3); but an open whose caller was cancelled
- * while it ran opens nothing (lock.md I11).
+ * vault. Argon2id runs outside it (the KDF gate of [kdf] alone), so that a save or the draft flush
+ * never waits seconds for a derivation; the proof of a new slot still uses a KEK of the second
+ * typing over the salt read back from disk. Order: the lock's mutex, then this one, then the KDF
+ * gate; this object never calls the lock. Every call that changes the session runs to its end,
+ * also when its caller is cancelled, so that a write is never cut in half (§5.3); but an open whose
+ * caller was cancelled while it ran opens nothing (lock.md I11).
  *
  * **Publishing.** [state] shows a change only once the generation that holds it is on disk and its
  * directory synced (§4.9 step 10); a save that was not durable leaves the old vault on show with its
@@ -283,7 +285,9 @@ class DefaultVaultRepository internal constructor(
             }
             val found = ids
             if (saved != null && found != null) return found
-            // Skipped (held, or locked meanwhile): worked out on the vault as it was, and not written.
+            // Skipped. Locked or replaced meanwhile: no vault of this proof is open. Held: worked out on
+            // the open vault, and not written.
+            if (session !== s) return emptySet()
             val vault = s.opened.vault
             return withContext(dispatchers.default) { SecurityCheck.matchesMasterPassword(vault, password) }
         } finally {
@@ -319,9 +323,12 @@ class DefaultVaultRepository internal constructor(
         when (val result = storage.open(PortTypes.refOf(target), keys)) {
             is OpenResult.Opened -> {
                 val opened = result.opened
-                if (caller?.isCancelled == true) return dropLate(opened)
-                val created = take(target, opened, slot = null)
-                VaultOpen.Opened(opened.vaultId, opened.generation, opened.vkId, created, olderCopyOf(opened))
+                val created = createdOf(target, opened)
+                if (take(target, opened, slot = null, caller)) {
+                    VaultOpen.Opened(opened.vaultId, opened.generation, opened.vkId, created, olderCopyOf(opened))
+                } else {
+                    VaultOpen.Unreadable // never delivered: its caller was cancelled
+                }
             }
             is OpenResult.NeedsOtherKey -> VaultOpen.NeedsOtherKey(result.generation, result.createdMs)
             OpenResult.Damaged -> VaultOpen.Damaged
@@ -329,56 +336,50 @@ class DefaultVaultRepository internal constructor(
             OpenResult.Unreadable -> VaultOpen.Unreadable
         }
 
+    /**
+     * §4.8 "Opening with the master password": one derivation per distinct slot, newest first, and
+     * "wrong" only when none opened [V-S3]. Each derivation runs outside the vault mutex and stops
+     * when the caller is cancelled (its visit ended, lock.md I11); each slot is then tried under it.
+     */
     override suspend fun openWithPassword(target: LockVaultRef, passwordBytes: ByteArray): PasswordOpen {
         val caller = currentCoroutineContext()[Job]
-        return underMutex { openWithPasswordLocked(target, passwordBytes, caller) }
-    }
-
-    /** §4.8 "Opening with the master password": one derivation per distinct slot, newest first, and "wrong" only when none opened [V-S3]. */
-    private suspend fun openWithPasswordLocked(target: LockVaultRef, passwordBytes: ByteArray, caller: Job?): PasswordOpen {
         val ref = PortTypes.refOf(target)
-        val slots = storage.slots(ref)
-        if (slots.isEmpty()) return noSlot(ref)
+        val slots = underMutex { storage.slots(ref) }
+        if (slots.isEmpty()) return underMutex { noSlot(ref) }
         for (slot in slots) {
             val kek = try {
                 kdf.kek(passwordBytes, slot.salt)
             } catch (e: KdfUnavailable) {
                 return PasswordOpen.NoMemory
             }
-            val result = try {
-                storage.openWithSlot(ref, slot, kek)
+            val outcome = try {
+                underMutex { trySlot(target, ref, slot, kek, caller) }
             } finally {
                 Bytes.wipe(kek)
             }
-            when (result) {
-                PasswordResult.SlotClosed -> continue
-                is PasswordResult.Opened -> {
-                    val opened = result.opened
-                    if (caller?.isCancelled == true) {
-                        dropLate(opened)
-                        return PasswordOpen.Unreadable
-                    }
-                    val created = take(target, opened, slot)
-                    return PasswordOpen.Opened(opened.vaultId, opened.generation, opened.vkId, created, olderCopyOf(opened))
-                }
-                is PasswordResult.OlderPassword -> return PasswordOpen.OlderPassword(result.changedAtMs, generationOpenedBy(ref, slot))
-                PasswordResult.Damaged -> return PasswordOpen.Damaged
-                PasswordResult.Newer -> return PasswordOpen.Newer
-                PasswordResult.Unreadable -> return PasswordOpen.Unreadable
-            }
+            if (outcome != null) return outcome
         }
         return PasswordOpen.Wrong
     }
 
-    /**
-     * The caller of an open was cancelled while it ran (its visit of the lock screen ended): a result
-     * that comes after its visit opens nothing (lock.md I11). The key is zeroed and nothing is shown;
-     * the answer is never delivered, because the cancelled caller does not resume with it.
-     */
-    private fun dropLate(opened: OpenedVault): VaultOpen {
-        wipe(opened)
-        return VaultOpen.Unreadable
-    }
+    /** One slot with its KEK, under the mutex; null when this password does not open it. */
+    private fun trySlot(target: LockVaultRef, ref: StoreVaultRef, slot: SlotRef, kek: ByteArray, caller: Job?): PasswordOpen? =
+        when (val result = storage.openWithSlot(ref, slot, kek)) {
+            PasswordResult.SlotClosed -> null
+            is PasswordResult.Opened -> {
+                val opened = result.opened
+                val created = createdOf(target, opened)
+                if (take(target, opened, slot, caller)) {
+                    PasswordOpen.Opened(opened.vaultId, opened.generation, opened.vkId, created, olderCopyOf(opened))
+                } else {
+                    PasswordOpen.Unreadable // never delivered: its caller was cancelled
+                }
+            }
+            is PasswordResult.OlderPassword -> PasswordOpen.OlderPassword(result.changedAtMs, generationOpenedBy(ref, slot))
+            PasswordResult.Damaged -> PasswordOpen.Damaged
+            PasswordResult.Newer -> PasswordOpen.Newer
+            PasswordResult.Unreadable -> PasswordOpen.Unreadable
+        }
 
     /** No slot to try: why no generation can be used, which is never "wrong". */
     private fun noSlot(ref: StoreVaultRef): PasswordOpen = when (storage.open(ref, emptyMap())) {
@@ -401,10 +402,11 @@ class DefaultVaultRepository internal constructor(
      * dropped. Null: not enough memory, or the slot cannot be read now (never "wrong").
      */
     override suspend fun checkPassword(passwordBytes: ByteArray): Boolean? {
-        val slot = underMutex {
+        val (s, slot) = underMutex {
             val s = session ?: throw IllegalStateException("no vault is open")
-            s.slot ?: slotOf(StoreVaultRef.Current, s.opened).also { s.slot = it }
-        } ?: return null
+            s to (s.slot ?: slotOf(StoreVaultRef.Current, s.opened).also { s.slot = it })
+        }
+        if (slot == null) return null
         val kek = try {
             kdf.kek(passwordBytes, slot.salt)
         } catch (e: KdfUnavailable) {
@@ -412,13 +414,17 @@ class DefaultVaultRepository internal constructor(
         }
         try {
             return underMutex {
-                when (val result = storage.openWithSlot(StoreVaultRef.Current, slot, kek)) {
-                    PasswordResult.SlotClosed -> false
-                    is PasswordResult.Opened -> {
-                        wipe(result.opened)
-                        true
+                if (session !== s || s.slot !== slot) {
+                    null // the open vault or its key changed meanwhile (a lock, a swap, a change): no answer for it
+                } else {
+                    when (val result = storage.openWithSlot(StoreVaultRef.Current, slot, kek)) {
+                        PasswordResult.SlotClosed -> false
+                        is PasswordResult.Opened -> {
+                            wipe(result.opened)
+                            true
+                        }
+                        else -> true // the slot opened: the password is right
                     }
-                    else -> true // the slot opened: the password is right
                 }
             }
         } finally {
@@ -443,34 +449,40 @@ class DefaultVaultRepository internal constructor(
         if (wasOpen) countPurgeTime()
     }
 
-    override suspend fun createVault(vaultId: String, first: ByteArray, again: ByteArray, from: Vault?, putCurrentAside: Boolean): VaultWrite =
-        underMutex {
-            val vault = from?.let(VaultEdits::forRestore) ?: Vault()
-            writeNewVault(vault, vaultId, first, again, putCurrentAside, keepDraft = false)
-        }
+    override suspend fun createVault(vaultId: String, first: ByteArray, again: ByteArray, from: Vault?, putCurrentAside: Boolean): VaultWrite {
+        val vault = from?.let(VaultEdits::forRestore) ?: Vault()
+        return withContext(NonCancellable) { writeNewVault({ vault }, vaultId, first, again, putCurrentAside, keepDraft = false) }
+    }
 
-    override suspend fun replaceVault(newVaultId: String, passwordBytes: ByteArray): VaultWrite = underMutex {
-        val s = session
-        if (s == null) {
+    /** F11 step 16: vault N from the accounts open when it is written (not when it was asked for), and the open vault put aside. */
+    override suspend fun replaceVault(newVaultId: String, passwordBytes: ByteArray): VaultWrite = withContext(NonCancellable) {
+        if (session == null) {
             VaultWrite.NothingChanged
         } else {
-            writeNewVault(s.opened.vault, newVaultId, passwordBytes, passwordBytes, putCurrentAside = true, keepDraft = true)
+            writeNewVault({ session?.opened?.vault }, newVaultId, passwordBytes, passwordBytes, putCurrentAside = true, keepDraft = true)
         }
     }
 
     override suspend fun newKey(): Pair<String, ByteArray> = random.uuid() to random.bytes(KEY_SIZE)
 
     override suspend fun changePassword(first: ByteArray, again: ByteArray, vkId: String, vk: ByteArray): VaultWrite =
-        underMutex { changePasswordLocked(first, again, vkId, vk) }
+        withContext(NonCancellable) {
+            if (session == null) return@withContext VaultWrite.NothingChanged
+            val made = newSlot(vk, first, again)
+            try {
+                underMutex { changePasswordLocked(again, vkId, vk, made) }
+            } finally {
+                made.wipe()
+            }
+        }
 
-    private suspend fun changePasswordLocked(first: ByteArray, again: ByteArray, vkId: String, vk: ByteArray): VaultWrite {
+    private suspend fun changePasswordLocked(again: ByteArray, vkId: String, vk: ByteArray, made: NewSlot): VaultWrite {
         val s = session ?: return VaultWrite.NothingChanged
-        val slot = newSlot(vk, first, random.bytes(SALT_SIZE))
-        val staged = when (val result = storage.stageRekey(s.opened, s.opened.vault, vk, vkId, slot)) {
+        val staged = when (val result = storage.stageRekey(s.opened, s.opened.vault, vk, vkId, made.slot)) {
             is StageResult.Staged -> result.staged
             StageResult.Failed, StageResult.TooLarge -> return VaultWrite.NothingChanged
         }
-        if (!prove(staged, again)) return VaultWrite.Quarantined
+        if (!prove(staged, again, made)) return VaultWrite.Quarantined
         return when (val result = storage.publish(staged, putCurrentAside = false)) {
             is CommitResult.Saved -> {
                 val old = s.opened
@@ -485,6 +497,7 @@ class DefaultVaultRepository internal constructor(
                 // In place, but perhaps not durable: "Saving may not have finished" (lock.md F8 step 6).
                 // The store hands back nothing for it, so the session goes on under the new key,
                 // opened again with it: saves made now must not bury the change under the old key.
+                // When even that fails, the session ends rather than save under the old key.
                 val reopened = storage.open(StoreVaultRef.Current, mapOf(vkId to vk))
                 if (reopened is OpenResult.Opened && reopened.opened.vkId == vkId) {
                     val old = s.opened
@@ -492,6 +505,9 @@ class DefaultVaultRepository internal constructor(
                     s.slot = slotOf(StoreVaultRef.Current, reopened.opened)
                     wipe(old)
                     publish(s, null)
+                } else {
+                    if (reopened is OpenResult.Opened) wipe(reopened.opened)
+                    endCurrent()
                 }
                 VaultWrite.Unclear
             }
@@ -564,12 +580,21 @@ class DefaultVaultRepository internal constructor(
 
     private fun olderCopyOf(opened: OpenedVault): Boolean = opened.newestOnDisk > opened.generation
 
+    /** The `created` of the generation [opened] holds, read before the session starts (it reads the file). */
+    private fun createdOf(target: LockVaultRef, opened: OpenedVault): Long =
+        headers.createdMs(PortTypes.refOf(target), opened.vaultId, opened.vkId, opened.generation) ?: UNKNOWN_CREATED
+
     /**
-     * A vault opened from disk: the current one becomes the session (and the vault is shown), one
-     * put aside is kept apart. Returns the `created` time of the generation that opened.
+     * A vault opened from disk for [caller]: the current one becomes the session (and is shown), one
+     * put aside is kept apart. False, with its key zeroed and nothing open, when the caller was
+     * cancelled meanwhile (its visit ended, lock.md I11): checked before the session starts and once
+     * more after, and a session started for a caller cancelled in between is ended at once.
      */
-    private fun take(target: LockVaultRef, opened: OpenedVault, slot: SlotRef?): Long {
-        val created = headers.createdMs(PortTypes.refOf(target), opened.vaultId, opened.vkId, opened.generation) ?: UNKNOWN_CREATED
+    private fun take(target: LockVaultRef, opened: OpenedVault, slot: SlotRef?, caller: Job?): Boolean {
+        if (caller?.isCancelled == true) {
+            wipe(opened)
+            return false
+        }
         when (target) {
             LockVaultRef.Current -> startCurrent(opened, olderCopyOf(opened), slot ?: slotOf(StoreVaultRef.Current, opened), keepDraft = false)
             is LockVaultRef.Aside -> {
@@ -577,7 +602,17 @@ class DefaultVaultRepository internal constructor(
                 aside = AsideOpen(target.vaultId, opened, olderCopyOf(opened))
             }
         }
-        return created
+        if (caller?.isCancelled == true) {
+            when (target) {
+                LockVaultRef.Current -> endCurrent()
+                is LockVaultRef.Aside -> {
+                    aside = null
+                    wipe(opened)
+                }
+            }
+            return false
+        }
+        return true
     }
 
     /**
@@ -686,13 +721,13 @@ class DefaultVaultRepository internal constructor(
     private fun liveSession(sessionId: Long): Session? = session?.takeIf { it.id == sessionId && !it.held }
 
     /**
-     * A new vault [vaultId] holding [vault] (lock.md F1, F11 step 16, F13, F17 step 3; §4.9): a new
-     * VK, `vk_id`, salt and slot from [first]; staged in `new-<vaultId>/`, proven from disk with
-     * [again], published (with the current vault put aside when [putCurrentAside]); then it is the
-     * open vault.
+     * A new vault [vaultId] holding the vault [vaultOf] gives under the mutex (lock.md F1, F11 step
+     * 16, F13, F17 step 3; §4.9): a new VK, `vk_id`, salt and slot from [first], derived before the
+     * mutex is taken; staged in `new-<vaultId>/`, proven from disk with [again], published (with the
+     * current vault put aside when [putCurrentAside]); then it is the open vault.
      */
     private suspend fun writeNewVault(
-        vault: Vault,
+        vaultOf: () -> Vault?,
         vaultId: String,
         first: ByteArray,
         again: ByteArray,
@@ -700,53 +735,88 @@ class DefaultVaultRepository internal constructor(
         keepDraft: Boolean,
     ): VaultWrite {
         val vk = random.bytes(KEY_SIZE)
+        var made: NewSlot? = null
         try {
             val vkId = random.uuid()
-            val slot = newSlot(vk, first, random.bytes(SALT_SIZE))
-            val staged = when (val result = storage.stageVault(vault, vaultId, vk, vkId, slot)) {
-                is StageResult.Staged -> result.staged
-                StageResult.Failed, StageResult.TooLarge -> return VaultWrite.NothingChanged
-            }
-            if (!prove(staged, again)) return VaultWrite.Quarantined
-            return when (val result = storage.publish(staged, putCurrentAside)) {
-                is CommitResult.Saved -> {
-                    startCurrent(result.opened, olderCopy = false, slot = slotOf(StoreVaultRef.Current, result.opened), keepDraft = keepDraft)
-                    session?.let(::housekeepingLocked)
-                    done(result.opened)
-                }
-                CommitResult.NotDurable -> {
-                    // The new vault is in place but perhaps not durable; the one that was open went aside.
-                    if (putCurrentAside) endCurrent()
-                    VaultWrite.Unclear
-                }
-                else -> VaultWrite.NothingChanged
+            val slot = newSlot(vk, first, again).also { made = it }
+            return underMutex {
+                val vault = vaultOf()
+                if (vault == null) VaultWrite.NothingChanged else writeNewVaultLocked(vault, vaultId, vk, vkId, again, slot, putCurrentAside, keepDraft)
             }
         } finally {
             Bytes.wipe(vk)
+            made?.wipe()
         }
     }
 
-    /** A password slot for [vk] from [passwordBytes] and [salt] (§4.6). Throws `KdfUnavailable` before anything is written. */
-    private suspend fun newSlot(vk: ByteArray, passwordBytes: ByteArray, salt: ByteArray): PasswordSlot {
-        val kek = kdf.kek(passwordBytes, salt)
-        try {
-            return codec.wrap(vk, kek, salt)
-        } finally {
-            Bytes.wipe(kek)
+    private suspend fun writeNewVaultLocked(
+        vault: Vault,
+        vaultId: String,
+        vk: ByteArray,
+        vkId: String,
+        again: ByteArray,
+        made: NewSlot,
+        putCurrentAside: Boolean,
+        keepDraft: Boolean,
+    ): VaultWrite {
+        val staged = when (val result = storage.stageVault(vault, vaultId, vk, vkId, made.slot)) {
+            is StageResult.Staged -> result.staged
+            StageResult.Failed, StageResult.TooLarge -> return VaultWrite.NothingChanged
+        }
+        if (!prove(staged, again, made)) return VaultWrite.Quarantined
+        return when (val result = storage.publish(staged, putCurrentAside)) {
+            is CommitResult.Saved -> {
+                startCurrent(result.opened, olderCopy = false, slot = slotOf(StoreVaultRef.Current, result.opened), keepDraft = keepDraft)
+                session?.let(::housekeepingLocked)
+                done(result.opened)
+            }
+            CommitResult.NotDurable -> {
+                // The new vault is in place but perhaps not durable; the one that was open went aside.
+                if (putCurrentAside) endCurrent()
+                VaultWrite.Unclear
+            }
+            else -> VaultWrite.NothingChanged
         }
     }
 
     /**
-     * §4.9 step 7: a KEK derived afresh from [again] and the salt read back from disk opens the
-     * staged file. When it does not, the store has quarantined it, and the staged work is released;
-     * when Argon2id cannot run, the staged work is discarded and `KdfUnavailable` goes on.
+     * A new password slot for [vk] (§4.6), and the KEK for its proof: a fresh salt, the KEK of [first]
+     * over it to wrap VK, and the KEK of [again] over the same salt. Both derivations run before the
+     * vault mutex is taken. Throws `KdfUnavailable` before anything is written.
      */
-    private suspend fun prove(staged: Staged, again: ByteArray): Boolean {
-        val kek = try {
-            kdf.kek(again, staged.slotSalt)
-        } catch (e: KdfUnavailable) {
-            storage.discard(staged)
-            throw e
+    private suspend fun newSlot(vk: ByteArray, first: ByteArray, again: ByteArray): NewSlot {
+        val salt = random.bytes(SALT_SIZE)
+        val kek = kdf.kek(first, salt)
+        val slot = try {
+            codec.wrap(vk, kek, salt)
+        } finally {
+            Bytes.wipe(kek)
+        }
+        return NewSlot(slot, salt, kdf.kek(again, salt))
+    }
+
+    /** A slot made by [newSlot]: the slot, its salt, and the KEK of the second typing over that salt. */
+    private class NewSlot(val slot: PasswordSlot, val salt: ByteArray, val proofKek: ByteArray) {
+        fun wipe() = Bytes.wipe(proofKek)
+    }
+
+    /**
+     * §4.9 step 7: the staged file is opened with a KEK of the second typing [again] over the salt
+     * read back from disk. When that salt is the one written, the KEK is [NewSlot.proofKek], derived
+     * from the same bytes and salt; otherwise it is derived afresh here. When the proof fails the
+     * store has quarantined the file and the staged work is released; when Argon2id cannot run it is
+     * discarded and `KdfUnavailable` goes on.
+     */
+    private suspend fun prove(staged: Staged, again: ByteArray, made: NewSlot): Boolean {
+        val kek = if (staged.slotSalt.contentEquals(made.salt)) {
+            made.proofKek.copyOf()
+        } else {
+            try {
+                kdf.kek(again, staged.slotSalt)
+            } catch (e: KdfUnavailable) {
+                storage.discard(staged)
+                throw e
+            }
         }
         val proven = try {
             storage.prove(staged, kek)

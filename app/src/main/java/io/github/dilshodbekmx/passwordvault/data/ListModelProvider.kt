@@ -29,7 +29,8 @@ import java.util.Locale
  *   made in the thread that publishes `VaultState.Locked`, before that publication returns, and a
  *   build still running for the vault that went is never published.
  * - **Off the main thread.** Sorting and the index are built on [dispatcher] (`Dispatchers.Default`,
- *   architecture.md §5.3); the newest vault and language win, and an older build is cancelled.
+ *   architecture.md §5.3); the newest vault and language win: an older build is cancelled and stops
+ *   at its next step, and one already running for the same entries and language is not started again.
  * - **Never a secret in the index:** a password, a previous password or the value of a hidden field
  *   is not put into `SearchFields` (search.md §7). The name of a hidden field is.
  *
@@ -47,6 +48,8 @@ class ListModelProvider(
     override val model: StateFlow<ListModel?> = current.asStateFlow()
 
     private var build: Job? = null // guarded by lock
+    private var buildFrom: List<Entry>? = null // guarded by lock: the entries of the build running
+    private var buildFor: Locale? = null // guarded by lock: its locale
     private var builtFrom: List<Entry>? = null // guarded by lock: the entries of the model shown
     private var builtFor: Locale? = null // guarded by lock: its locale
     private var collation: Pair<Locale, Collation>? = null // guarded by lock: the last one made
@@ -66,6 +69,8 @@ class ListModelProvider(
             if (state !is VaultState.Unlocked) {
                 build?.cancel()
                 build = null
+                buildFrom = null
+                buildFor = null
                 builtFrom = null
                 builtFor = null
                 current.value = null
@@ -74,10 +79,14 @@ class ListModelProvider(
             val entries = state.vault.entries
             val locale = locales.value
             if (current.value != null && builtFrom === entries && builtFor == locale) return
+            if (build?.isActive == true && buildFrom === entries && buildFor == locale) return // already on its way
             build?.cancel()
+            buildFrom = entries
+            buildFor = locale
             build = scope.launch(dispatcher) {
                 val made = collationFor(locale)
-                val list = buildList(entries, made)
+                ensureActive()
+                val list = buildList(entries, made) { ensureActive() }
                 ensureActive()
                 synchronized(lock) {
                     val now = vaults.value
@@ -103,14 +112,16 @@ class ListModelProvider(
          * The list of [entries] in display order (ux.md §5.11): Recently deleted left out, A to Z by
          * [collation] (by collation keys when it is `SortKeys`), entries that sort alike in the order
          * of the vault, a section for each run of one header, and the index over the same order.
+         * [checkpoint] runs between the steps: a build that is no longer wanted stops there.
          */
-        fun buildList(entries: List<Entry>, collation: Collation): ListModel {
+        fun buildList(entries: List<Entry>, collation: Collation, checkpoint: () -> Unit = {}): ListModel {
             val shown = entries.filter { it.deletedAt == null }
             val sorted = if (collation is SortKeys) {
                 shown.map { it to collation.key(it.title) }.sortedWith { a, b -> a.second.compareTo(b.second) }.map { it.first }
             } else {
                 shown.sortedWith { a, b -> collation.compare(a.title, b.title) }
             }
+            checkpoint()
             val sections = ArrayList<Section>()
             var header: String? = null
             var run = ArrayList<Entry>()
@@ -124,6 +135,7 @@ class ListModelProvider(
                 run += entry
             }
             if (run.isNotEmpty()) sections += Section(header!!, run)
+            checkpoint()
             val index = SearchIndex(sorted.map(::searchFieldsOf))
             return ListModel(sorted.filter { it.favourite }, sections, index)
         }

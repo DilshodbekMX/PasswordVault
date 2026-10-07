@@ -7,12 +7,16 @@ import io.github.dilshodbekmx.passwordvault.core.model.Vault
 import io.github.dilshodbekmx.passwordvault.fake.FakeCollation
 import io.github.dilshodbekmx.passwordvault.i18n.Collation
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withTimeout
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -20,6 +24,9 @@ import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.util.Locale
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Build plan 3.1, [JVM]: `ListModelProvider` (architecture.md §3.5, §5.1; ux.md §5.11; search.md
@@ -146,6 +153,31 @@ class ListModelProviderTest {
             vaults.value = VaultState.Locked
             testScheduler.advanceUntilIdle()
             assertNull(provider.model.value)
+        } finally {
+            scope.cancel()
+        }
+    }
+
+    @Test
+    fun aBuildAlreadyRunningForTheSameListIsNotStartedAgain() = runBlocking {
+        val started = AtomicInteger()
+        val gate = CountDownLatch(1)
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        try {
+            val provider = ListModelProvider(vaults, locales, { _ ->
+                started.incrementAndGet()
+                gate.await(20, TimeUnit.SECONDS)
+                FakeCollation
+            }, scope, Dispatchers.Default).also { it.start() }
+            open(e(1, "one"), e(2, "two"))
+            withTimeout(20_000) { while (started.get() == 0) delay(10) }
+            // A save that changed only vault-level data while the build runs.
+            val state = vaults.value as VaultState.Unlocked
+            vaults.value = VaultState.Unlocked(state.vault.copy(securitySeenAt = 1L), 2L, null, false)
+            gate.countDown()
+            withTimeout(20_000) { while (provider.model.value == null) delay(10) }
+            assertEquals(listOf("one", "two"), provider.model.value!!.entries.map { it.title })
+            assertEquals("one build, not a second for the same entries", 1, started.get())
         } finally {
             scope.cancel()
         }

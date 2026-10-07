@@ -350,7 +350,7 @@ internal class Phone(
             clock = clock,
             settings = { settings },
             texts = TestTexts,
-            headers = GenerationHeaders(files, codec, vaultsDir),
+            headers = GenerationHeaders(files, vaultsDir),
             scope = scope,
             dispatchers = AppDispatchers.single(dispatcher),
         )

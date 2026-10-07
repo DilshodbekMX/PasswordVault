@@ -57,6 +57,29 @@ class GenerationHeadersTest(private val kind: DiskKind) {
     }
 
     @Test
+    fun onlyTheCanonicalHeaderThatNamesTheGenerationCounts() {
+        val vid = vaultId(1)
+        val vk = id(2)
+        fun file(header: String, magic: String = "PVAULT01", length: Int = header.length): ByteArray =
+            magic.encodeToByteArray() + byteArrayOf((length ushr 24).toByte(), (length ushr 16).toByte(), (length ushr 8).toByte(), length.toByte()) +
+                header.encodeToByteArray() + ByteArray(40)
+        fun header(created: String, generation: Long = 7L, vault: String = vid, key: String = vk) =
+            "{\"format\":\"passwordvault\",\"version\":1,\"cipher\":\"AES-256-GCM\",\"vault_id\":\"$vault\",\"vk_id\":\"$key\"," +
+                "\"generation\":$generation,\"created\":$created,\"generator\":\"PasswordVault 1.0\",\"writer_version\":1}"
+        assertEquals(1_791_244_800_000L, GenerationHeaders.createdIn(file(header("1791244800000")), vid, vk, 7L))
+        assertEquals(0L, GenerationHeaders.createdIn(file(header("0")), vid, vk, 7L))
+        assertNull("another generation", GenerationHeaders.createdIn(file(header("5", generation = 8L)), vid, vk, 7L))
+        assertNull("another vault", GenerationHeaders.createdIn(file(header("5", vault = vaultId(2))), vid, vk, 7L))
+        assertNull("another key", GenerationHeaders.createdIn(file(header("5", key = id(3))), vid, vk, 7L))
+        assertNull("a leading zero", GenerationHeaders.createdIn(file(header("05")), vid, vk, 7L))
+        assertNull("17 digits", GenerationHeaders.createdIn(file(header("12345678901234567")), vid, vk, 7L))
+        assertNull("not a number", GenerationHeaders.createdIn(file(header("1e3")), vid, vk, 7L))
+        assertNull("a newer framing", GenerationHeaders.createdIn(file(header("5"), magic = "PVAULT02"), vid, vk, 7L))
+        assertNull("a header longer than the bytes read", GenerationHeaders.createdIn(file(header("5"), length = 5_000), vid, vk, 7L))
+        assertNull("too short", GenerationHeaders.createdIn(ByteArray(11), vid, vk, 7L))
+    }
+
+    @Test
     fun theCreatedTimeOfTheGenerationThatOpened() = runTest {
         val dispatcher = StandardTestDispatcher(testScheduler)
         val scope = CoroutineScope(SupervisorJob() + dispatcher)
@@ -66,7 +89,7 @@ class GenerationHeadersTest(private val kind: DiskKind) {
             val first = repo.create(vaultId(1))
             phone.clock.advance(1_000L)
             repo.add(form("later"), phone.random)
-            val headers = GenerationHeaders(phone.files, phone.codec, phone.vaultsDir)
+            val headers = GenerationHeaders(phone.files, phone.vaultsDir)
             assertEquals(first.createdMs, headers.createdMs(StoreVaultRef.Current, first.vaultId, first.vkId, 1L))
             assertEquals(first.createdMs + 1_000L, headers.createdMs(StoreVaultRef.Current, first.vaultId, first.vkId, 2L))
             assertNull("another vault", headers.createdMs(StoreVaultRef.Current, vaultId(2), first.vkId, 2L))

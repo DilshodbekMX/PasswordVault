@@ -8,6 +8,7 @@ import io.github.dilshodbekmx.passwordvault.core.lock.flow.VaultWrite
 import io.github.dilshodbekmx.passwordvault.core.model.Draft
 import io.github.dilshodbekmx.passwordvault.core.model.DraftEntry
 import io.github.dilshodbekmx.passwordvault.core.model.Edited
+import io.github.dilshodbekmx.passwordvault.core.model.VaultEdits
 import io.github.dilshodbekmx.passwordvault.testing.storage.FakeFiles
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
@@ -337,6 +338,25 @@ class VaultsTest(private val kind: DiskKind) {
             assertEquals(listOf("before", "after"), titles(again))
             again.lock()
             assertTrue(newProcess(scope).openWithPassword(VaultRef.Current, bytesOf(PASSWORD)) is PasswordOpen.OlderPassword)
+        } finally {
+            scope.cancel()
+        }
+    }
+
+    @Test
+    fun aChangeThatWasNotSyncedAndCannotBeOpenedAgainEndsTheSession() = runTest {
+        val (repo, scope) = started()
+        try {
+            repo.create()
+            val (vkId2, vk2) = repo.newKey()
+            disk.fail(FakeFiles.Op.SYNC_DIR) { it == phone.liveDir }
+            disk.fail(FakeFiles.Op.READ) { it == phone.pathOf(2) } // the new-key file cannot be read again now
+            assertEquals(VaultWrite.Unclear, repo.changePassword(bytesOf(OTHER_PASSWORD), bytesOf(OTHER_PASSWORD), vkId2, vk2))
+            // Nothing more is saved under the old key: the session ended.
+            assertEquals(VaultState.Locked, repo.state.value)
+            assertEquals(SaveResult.NotSaved(SaveProblem.FAILED), repo.edit(VaultEdits.add(form("x"), TestTexts, phone.random)))
+            disk.clearFaults()
+            newProcess(scope).unlock(OTHER_PASSWORD)
         } finally {
             scope.cancel()
         }

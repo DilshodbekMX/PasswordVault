@@ -30,7 +30,7 @@ object DataModule {
             clock = platform.clock,
             settings = { graph.settings },
             texts = StoredTexts,
-            headers = GenerationHeaders(platform.files, codec, platform.vaultsDir),
+            headers = GenerationHeaders(platform.files, platform.vaultsDir),
             scope = graph.appScope,
             dispatchers = graph.dispatchers,
         )
