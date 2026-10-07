@@ -114,6 +114,22 @@ class ContractsTest {
     }
 
     @Test
+    fun aProofForFakesIsMadeLikeTheLocksOwn() {
+        // architecture.md §3.4: the fakes, previews and tests outside :core make one this way (R-15).
+        val typed = byteArrayOf(1, 2, 3)
+        val proof = MasterProof.forFakes(typed, "00000000-0000-4000-8000-000000000002")
+        typed.fill(0)
+        proof.useBytes { assertArrayEquals(byteArrayOf(1, 2, 3), it) }
+        assertEquals("00000000-0000-4000-8000-000000000002", proof.vaultId)
+        proof.drop()
+        try {
+            proof.useBytes { it }
+            fail("a dropped proof lent its bytes")
+        } catch (_: IllegalStateException) {
+        }
+    }
+
+    @Test
     fun aDropDuringAUseLeavesTheBytesOfThatUseAlone() {
         val proof = MasterProof(ByteArray(32) { 5 }, "00000000-0000-4000-8000-000000000001")
         val inUse = CountDownLatch(1)

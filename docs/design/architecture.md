@@ -102,7 +102,7 @@ The three factory objects (`CryptoFactory`, `VaultCodecs`, `VaultStores`, 3.2 an
 | `ui.security` | ux.md §5.16–5.17 | SecurityScreen, GroupList, GuidedChange, SecurityBadge |
 | `ui.transfer` | ux.md §5.2, §5.19–5.21, the vaults put aside | RestoreScreens, BackupScreen, ExportScreens, ImportScreens, ColumnMapping, OldPasswords |
 | `ui.settings` | ux.md §5.18, §5.22, §5.24 | SettingsScreen, ChangePin, AppLockPages, ChangeMasterPassword, NewMasterPassword, LanguageDialog, Help, Licences |
-| `fake` | In-memory stand-ins for the interfaces of 3.5, for the shell of the first waves, previews and ViewModel tests | `FakeVaultRepository`, `FakeLockManager`, `FakeAppSettings`, `FakeSecretClipboard`, `FakeDocumentIo`, `FakeListModelSource`, `FakeSecurityReports`. Also `FakeLauncher` for `BiometricLauncher`. In `src/main` while a module file still returns one; the integrator moves the package to `src/debug` once no file under `src/main` names it (expected after wave 7) |
+| `fake` | In-memory stand-ins for the interfaces of 3.5, for the shell of the first waves, previews and ViewModel tests; a proof they hand out comes from `MasterProof.forFakes` (3.4, R-15) | `FakeVaultRepository`, `FakeLockManager`, `FakeAppSettings`, `FakeSecretClipboard`, `FakeDocumentIo`, `FakeListModelSource`, `FakeSecurityReports`. Also `FakeLauncher` for `BiometricLauncher`. In `src/main` while a module file still returns one; the integrator moves the package to `src/debug` once no file under `src/main` names it (expected after wave 7) |
 | `debug` (source sets `debug` and `staging` only) | Test hooks | `DebugCommandReceiver` (exported, guarded by `android.permission.DUMP`; dispatches to the commands listed in `DebugCommands`), the lock commands of lock.md §15.3, a language command. Every `@Preview` lives in `src/debug` too, so that release code never names a fake |
 
 Resources: one string file per screen area (`res/values/strings_lock.xml`, `strings_list.xml`, …) with the same file names in `values-uz`, `values-b+uz+Cyrl` and `values-ru`, so that two packages never edit the same file. **Every string name starts with its area** (`lock_…`, `list_…`); shared words live only in `strings_common.xml`. Drawables follow the same rule (`ic_<area>_…`). The app's name is one resource, `app_name` = "PasswordVault", used wherever a text names the app (D-23).
@@ -337,15 +337,20 @@ interface VaultPort {                                  // the lock's whole view 
     suspend fun deleteAside(vaultId: String): Boolean                                // F17 step 5, after the lock has checked that vault's master password
     suspend fun retireOldKeys(): Set<String>                                         // F8 step 10
 }
-class MasterProof internal constructor(/* the verified MasterPasswordBytes, the vault it opened */) {
-    fun <T> useBytes(use: (ByteArray) -> T): T         // made only by LockEngine after a correct master password (lock.md §5.8, §8.2)
+class MasterProof internal constructor(bytes: ByteArray, val vaultId: String) {   // the verified MasterPasswordBytes (copied), the vault they opened
+    fun <T> useBytes(use: (ByteArray) -> T): T         // made only by LockEngine after a correct master password (lock.md §5.8, §8.2);
+                                                       // lends a copy that is wiped when `use` returns
     fun drop()                                         // zeroes; also when its flow ends, at ON_STOP and on lock
+    companion object {
+        fun forFakes(bytes: ByteArray, vaultId: String): MasterProof   // no master password behind it: fakes, previews and tests only (R-15)
+    }
 }
 ```
 
 - `open` and `openWithPassword` on `VaultRef.Aside(id)` open that vault in place and keep it, still apart from the current one, until `swapIn(id)`, `mergeAside(id)` or a lock. Only one vault put aside is held at a time. The lock checks the master password of a vault put aside under *that* vault's guard and records (lock.md §6.8), so the screens never call storage for it directly.
 - `VaultScan`, `VaultOpen`, `PasswordOpen` and `VaultWrite` are declared in `core.lock.flow`, and so are `VaultRef`, `GenerationInfo` and `AsideVault` (`lock/flow/VaultTypes.kt`): the lock's own counterparts of the storage types of the same names (3.3), because R-10 keeps `core.lock` from naming `core.storage`. `DefaultVaultRepository` maps between the two and maps the storage engine's results onto the lock's, and the lock never receives VK except inside `withVaultKey`. The screens' side uses the `core.lock.flow` types too: `LockUiState.NoVault(aside)`, `LockUiState.Unreadable(why, aside)` with `why` a `CurrentVault.Why`, and `LockStatus.aside` (3.5).
 - `LockEngine` is built from `RecordFiles`, `Clock`, `RandomSource`, `PinKey`, `FingerprintKey`, `DeviceKeys`, `VaultPort`, `MasterKdf` and `Aead`. An architecture test forbids `core.lock` from importing `core.storage` or `core.vaultfile` (lock.md T17).
+- **A proof for fakes.** Code outside `:core` cannot call `MasterProof`'s internal constructor, so `MasterProof.forFakes` is how the fakes of `APP/fake/` script `MpResult.Right(proof)` and `LockUiState.Unlocked(notices, proof)`, and how previews in `app/src/debug/` and tests make one. Build check R-15 (8.5) allows the name only there, in `:testing` and in `MasterProof.kt`, so release code only ever holds proofs that `LockEngine` made after a correct master password.
 - Who deletes a lock directory: the lock, after `VaultPort.deleteAside` returned true (lock.md F17 step 5): `RecordFiles.deleteDir`, then `DeviceKeys.delete` for its two aliases. Start-up (lock.md §5.11) never deletes a directory whose vault is gone.
 
 ### 3.5 What the screens talk to (`:app`)
@@ -1144,10 +1149,11 @@ R-1 to R-7 of lock.md §15.5 (R-6 as widened in 5.6), and:
 | R-12 | No build output is tracked by git (`git ls-files` shows nothing under a `build/` directory) |
 | R-13 | `TextField`, `OutlinedTextField`, `BasicTextField`, `SecureTextField`, `OutlinedSecureTextField` and `BasicSecureTextField` are called only inside `ui/common`'s `VaultTextField` and `VaultSecureField`, which apply `vaultTextField()`; `Dialog`, `AlertDialog`, `BasicAlertDialog` and `ModalBottomSheet` only inside `VaultDialog` and `VaultSheet`, which apply `VaultWindow`. Under `APP/ui/`, `Text(` and `contentDescription =` take no string literal |
 | R-14 | The merged manifest's package is `io.github.dilshodbekmx.passwordvault`; the generator string `PasswordVault ` + `versionName` matches `[A-Za-z0-9 ._()-]{1,64}` |
+| R-15 | `MasterProof.forFakes` (3.4) is named only in `MasterProof.kt`, under `APP/fake/`, in the `debug` source set and in `:testing`; the test source sets are not scanned. `LockEngine` makes the real proofs with the internal constructor |
 
 **Offline** (a part of `tools/check.sh`): no `INTERNET` in any merged manifest, `aapt2 dump permissions` on the APKs, and a source scan for the classes that open connections: `java.net.URL`, `URLConnection`, `HttpURLConnection`, `HttpsURLConnection`, `Socket`, `ServerSocket`, `DatagramSocket`, `InetAddress`, `java.nio.channels.SocketChannel`, `DatagramChannel`, `WebView`. `java.net.IDN` and `java.net.URI` stay allowed: `WebAddress` uses `IDN` for punycode.
 
-**How the checks are run** (package 0.1). R-4, R-6, R-10, R-11, R-13 and the offline class scan are unit tests (`core/src/test/java/…/core/arch/`, `app/src/test/java/…/arch/`) over the scanner of `:testing` (2.1). They read code this way:
+**How the checks are run** (package 0.1). R-4, R-6, R-10, R-11, R-13, R-15 and the offline class scan are unit tests (`core/src/test/java/…/core/arch/`, `app/src/test/java/…/arch/`) over the scanner of `:testing` (2.1). They read code this way:
 1. Comments, and the text inside string and character literals, are ignored; the code of a template expression (`${…}`) is code again. So `Text("Toast")` breaks R-13 and not R-11.
 2. R-11's "`.format(` without a `Locale`" does not flag a call on one of our own types or objects, written in UpperCamelCase, other than `String` and `MessageFormat`: `IsoTime.format(ms)` is not flagged, and whatever such a function formats inside is checked where it does. `String.format`, `MessageFormat.format`, `"…".format(…)`, variables and constants are always checked.
 3. R-13's "only inside `VaultTextField`, `VaultSecureField`, `VaultDialog` and `VaultSheet`" is checked per file: a call is allowed in a file of `ui/common` that declares the wrapper.

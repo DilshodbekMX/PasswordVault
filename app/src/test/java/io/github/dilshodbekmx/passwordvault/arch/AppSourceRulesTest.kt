@@ -7,7 +7,7 @@ import io.github.dilshodbekmx.passwordvault.testing.arch.scan
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Build checks R-4, R-6, R-11 and R-13 of architecture.md §8.5 on the real sources. */
+/** Build checks R-4, R-6, R-11, R-13 and R-15 of architecture.md §8.5 on the real sources. */
 class AppSourceRulesTest {
     private val root = SourceTree.root()
 
@@ -33,6 +33,9 @@ class AppSourceRulesTest {
 
     @Test
     fun r13_noLiteralTextOnTheScreens() = assertClean(listOf(AppSourceRules.UI_DIR), AppSourceRules.r13Literals)
+
+    @Test
+    fun r15_aProofForFakesOnlyInTheFakesPreviewsAndTests() = assertClean(AppSourceRules.allSources, AppSourceRules.r15)
 
     @Test
     fun theScansSeeTheSources() {

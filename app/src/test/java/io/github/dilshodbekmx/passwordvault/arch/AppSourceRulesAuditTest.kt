@@ -30,7 +30,7 @@ class AppSourceRulesAuditTest {
     fun theScansReportWhatTheyShouldAndNothingElse() {
         assumeTrue("run with -Ppv.scanAudit", System.getProperty("pv.scanAudit") != null)
         val root = SourceTree.root()
-        val rules = with(AppSourceRules) { r4 + r6 + r11Apis + r11SavedState + r13Calls + r13Literals + offline }
+        val rules = with(AppSourceRules) { r4 + r6 + r11Apis + r11SavedState + r13Calls + r13Literals + r15 + offline }
         val actual = summarize(scan(SourceTree.files(root, SourceTree.auditDirs(root)), rules))
         println(actual.joinToString("\n"))
         val expected = EXPECTED.filter { File(root, it.substringBefore(" | ")).isFile }

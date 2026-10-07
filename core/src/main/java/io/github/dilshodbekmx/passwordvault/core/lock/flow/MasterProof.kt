@@ -38,4 +38,16 @@ class MasterProof internal constructor(bytes: ByteArray, val vaultId: String) {
     }
 
     override fun toString(): String = "MasterProof(vaultId=$vaultId)"
+
+    companion object {
+        /**
+         * A proof that no master password stands behind, for the fakes of `APP/fake/` (a scripted
+         * `MpResult.Right(proof)` or `LockUiState.Unlocked(notices, proof)`), the previews of
+         * `app/src/debug/` and tests, which cannot call the internal constructor (architecture.md
+         * §3.4). Like the constructor it takes its own copy of [bytes]. Build check R-15 keeps every
+         * other source from naming it, so release code only ever holds the proofs `LockEngine` makes
+         * after a correct master password.
+         */
+        fun forFakes(bytes: ByteArray, vaultId: String): MasterProof = MasterProof(bytes, vaultId)
+    }
 }

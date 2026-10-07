@@ -71,6 +71,39 @@ class AppSourceRulesSamplesTest {
     }
 
     @Test
+    fun r15_aProofForFakesOnlyInTheFakesPreviewsAndTests() {
+        val text = """
+            import io.github.dilshodbekmx.passwordvault.core.lock.flow.MasterProof
+            val proof = MasterProof.forFakes(ByteArray(4), "00000000-0000-4000-8000-000000000001")
+            // MasterProof.forFakes in a comment
+            val s = "forFakes"
+            val real = MasterProof(bytes, vaultId)
+        """
+        val app = "app/src/main/java/io/github/dilshodbekmx/passwordvault"
+        val core = "core/src/main/java/io/github/dilshodbekmx/passwordvault/core"
+        for (path in listOf(
+            "$app/lock/DefaultLockManager.kt",
+            "$app/fakes/Fakes.kt",
+            "app/src/release/java/io/github/dilshodbekmx/passwordvault/Release.kt",
+            "app/src/staging/java/io/github/dilshodbekmx/passwordvault/Staging.kt",
+            "$core/lock/flow/LockEngine.kt",
+        )) {
+            assertEquals(path, listOf(2), lines(AppSourceRules.r15, text, path))
+        }
+        val importLine = "import io.github.dilshodbekmx.passwordvault.core.lock.flow.MasterProof.Companion.forFakes"
+        assertEquals(listOf(1), lines(AppSourceRules.r15, importLine, "$app/lock/DefaultLockManager.kt"))
+        for (path in listOf(
+            "$app/fake/FakeLockManager.kt",
+            "app/src/debug/java/io/github/dilshodbekmx/passwordvault/ui/lock/LockPreviews.kt",
+            "testing/src/main/java/io/github/dilshodbekmx/passwordvault/testing/lock/FakeKeys.kt",
+        )) {
+            assertEquals(path, emptyList<Int>(), lines(AppSourceRules.r15, text, path))
+        }
+        val declaration = "fun forFakes(bytes: ByteArray, vaultId: String): MasterProof = MasterProof(bytes, vaultId)"
+        assertEquals(emptyList<Int>(), lines(AppSourceRules.r15, declaration, "$core/lock/flow/MasterProof.kt"))
+    }
+
+    @Test
     fun r11_savedStateOnlyInNav() {
         val list = "package io.github.dilshodbekmx.passwordvault.ui.list\nval x = rememberSaveable { 0 }\n"
         val nav = "package io.github.dilshodbekmx.passwordvault.nav\nval x = rememberSaveable { 0 }\nclass V(h: SavedStateHandle)\n"
