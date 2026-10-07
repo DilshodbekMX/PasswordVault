@@ -185,7 +185,7 @@ class VaultVectorsTest {
      */
     @Test
     fun vectorA_opensWithItsMasterPassword() {
-        val typed = " correct  horse battery staple ".toCharArray()
+        val typed = " correct  horse\u00A0battery staple ".toCharArray()
         val passwordBytes = MasterPasswordBytes.of(typed)
         assertEquals("636f727265637420686f727365206261747465727920737461706c65", Bytes.hex(passwordBytes))
         val params = Argon2Parameters.Builder(Argon2Parameters.ARGON2_id)
