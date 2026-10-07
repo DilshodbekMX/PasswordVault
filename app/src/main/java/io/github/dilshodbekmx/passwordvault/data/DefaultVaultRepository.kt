@@ -652,6 +652,7 @@ class DefaultVaultRepository internal constructor(
             return when (val result = storage.publish(staged, putCurrentAside)) {
                 is CommitResult.Saved -> {
                     startCurrent(result.opened, olderCopy = false, slot = slotOf(StoreVaultRef.Current, result.opened), keepDraft = keepDraft)
+                    session?.let(::housekeepingLocked)
                     done(result.opened)
                 }
                 CommitResult.NotDurable -> {
