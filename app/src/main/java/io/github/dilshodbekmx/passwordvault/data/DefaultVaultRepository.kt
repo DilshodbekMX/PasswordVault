@@ -106,8 +106,12 @@ class DefaultVaultRepository internal constructor(
     private val dispatchers: AppDispatchers,
 ) : VaultRepository, VaultPort {
 
-    /** The open current vault. Its fields change under [mutex]. */
-    private class Session(opened: OpenedVault, val olderCopy: Boolean, slot: SlotRef?) {
+    /**
+     * The open current vault. Its fields change under [mutex]. [id] tells one session from the next:
+     * work that runs later in the background holds the id, never the session, so that after a lock
+     * nothing of the vault is reachable from it.
+     */
+    private class Session(val id: Long, opened: OpenedVault, val olderCopy: Boolean, slot: SlotRef?) {
         @Volatile var opened: OpenedVault = opened
 
         /** Automatic writes wait for the older-copy notice (architecture.md §5.5). */
@@ -128,6 +132,8 @@ class DefaultVaultRepository internal constructor(
     override val state: StateFlow<VaultState> = published.asStateFlow()
 
     @Volatile private var session: Session? = null
+
+    private var sessions = 0L // under mutex: the id of the last session
 
     @Volatile private var aside: AsideOpen? = null
 
@@ -262,7 +268,7 @@ class DefaultVaultRepository internal constructor(
         val s = session ?: return emptySet()
         if (s.opened.vaultId != proof.vaultId) return emptySet()
         var ids: Set<String>? = null
-        val saved = automaticEdit(s) { vault, nowMs ->
+        val saved = automaticEdit(s.id) { vault, nowMs ->
             val found = proof.useBytes { SecurityCheck.matchesMasterPassword(vault, it) }
             ids = found
             VaultEdits.setMasterPasswordMatches(found)(vault, nowMs)
@@ -540,7 +546,7 @@ class DefaultVaultRepository internal constructor(
         cancelAutomatic()
         session?.let { wipe(it.opened) }
         if (!keepDraft) synchronized(draftLock) { heldDraft = null }
-        val s = Session(opened, olderCopy, slot)
+        val s = Session(++sessions, opened, olderCopy, slot)
         session = s
         publish(s, null)
         startAutomatic(s)
@@ -615,9 +621,10 @@ class DefaultVaultRepository internal constructor(
         }
     }
 
-    /** An automatic write (§5.5) on the session [s]: null when it was skipped (locked since, or held). */
-    private suspend fun <T> automaticEdit(s: Session, change: (Vault, Long) -> Edited<T>): SaveResult<T>? = underMutex {
-        if (session !== s || s.held) {
+    /** An automatic write (§5.5) on the session [sessionId]: null when it was skipped (locked since, or held). */
+    private suspend fun <T> automaticEdit(sessionId: Long, change: (Vault, Long) -> Edited<T>): SaveResult<T>? = underMutex {
+        val s = liveSession(sessionId)
+        if (s == null) {
             null
         } else {
             val committed = commitLocked(s, change, quiet = true)
@@ -625,6 +632,9 @@ class DefaultVaultRepository internal constructor(
             committed.result
         }
     }
+
+    /** Under the mutex: the session [sessionId] while it is open and its automatic writes are not held. */
+    private fun liveSession(sessionId: Long): Session? = session?.takeIf { it.id == sessionId && !it.held }
 
     /**
      * A new vault [vaultId] holding [vault] (lock.md F1, F11 step 16, F13, F17 step 3; §4.9): a new
@@ -710,7 +720,8 @@ class DefaultVaultRepository internal constructor(
 
     private fun startAutomatic(s: Session) {
         if (s.held) return
-        val job = scope.launch(dispatchers.io) { purgeAtUnlock(s) }
+        val sessionId = s.id
+        val job = scope.launch(dispatchers.io) { purgeAtUnlock(sessionId) }
         synchronized(jobsLock) {
             automatic?.cancel()
             automatic = job
@@ -724,18 +735,17 @@ class DefaultVaultRepository internal constructor(
         }
     }
 
-    private suspend fun purgeAtUnlock(s: Session) {
+    private suspend fun purgeAtUnlock(sessionId: Long) {
         val settings = settings()
-        val vaultId = s.opened.vaultId
+        val vaultId = underMutex { liveSession(sessionId)?.opened?.vaultId } ?: return
         var arm = settings.purgeArm.value
-        if (session !== s) return
         if (arm != null && arm.vaultId != vaultId) {
             val other = arm
             settings.update { if (it.purgeArm == other) it.purgeArm = null } // a switch of vault disarms
             arm = null
         }
         if (arm == null) {
-            armWhenDue(settings, s, expected = null)
+            armWhenDue(settings, sessionId, vaultId, expected = null)
             return
         }
         val credit = arm.credit.observe(clock.elapsedMs())
@@ -744,8 +754,8 @@ class DefaultVaultRepository internal constructor(
             settings.update { if (it.purgeArm == seen) it.purgeArm = seen.copy(credit = credit) }
             return
         }
-        when (automaticEdit(s, VaultEdits.purge(arm.armedAtMs))) {
-            is SaveResult.Saved -> armWhenDue(settings, s, expected = arm)
+        when (automaticEdit(sessionId, VaultEdits.purge(arm.armedAtMs))) {
+            is SaveResult.Saved -> armWhenDue(settings, sessionId, vaultId, expected = arm)
             else -> {
                 val seen = arm
                 settings.update { if (it.purgeArm == seen) it.purgeArm = seen.copy(credit = credit) }
@@ -753,13 +763,15 @@ class DefaultVaultRepository internal constructor(
         }
     }
 
-    /** Arms the purge when entries of the open vault are due now, else leaves it disarmed; [expected] is the arm it replaces. */
-    private fun armWhenDue(settings: AppSettings, s: Session, expected: PurgeArm?) {
-        if (session !== s) return
+    /**
+     * Arms the purge when entries of the open vault are due now, else leaves it disarmed; [expected]
+     * is the arm it replaces. Nothing when the session ended or is held meanwhile.
+     */
+    private suspend fun armWhenDue(settings: AppSettings, sessionId: Long, vaultId: String, expected: PurgeArm?) {
         val now = clock.wallMs()
-        val next = if (VaultEdits.dueCount(s.opened.vault, now) > 0) PurgeArm(s.opened.vaultId, now, Credit.start(clock.elapsedMs())) else null
-        if (next == expected) return
-        settings.update { if (it.purgeArm == expected) it.purgeArm = next }
+        val due = underMutex { liveSession(sessionId)?.let { VaultEdits.dueCount(it.opened.vault, now) > 0 } } ?: return
+        val next = if (due) PurgeArm(vaultId, now, Credit.start(clock.elapsedMs())) else null
+        if (next != expected) settings.update { if (it.purgeArm == expected) it.purgeArm = next }
     }
 
     /** At a lock: the arm counts the phone-on time since it was last seen (lock.md §6.9). Best effort. */
