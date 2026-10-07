@@ -55,7 +55,7 @@ fun EntryProviderScope<Route>.lockNav(graph: AppGraph, nav: Navigator) {
 fun LockNotices(graph: AppGraph, nav: Navigator) {
     val state by graph.lock.state.collectAsStateWithLifecycle()
     val notice = (state as? LockUiState.Unlocked)?.notices?.firstOrNull() ?: return
-    Box(Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.BottomCenter) {
+    Box(Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.Center) {
         Surface(
             tonalElevation = 6.dp,
             shadowElevation = 6.dp,

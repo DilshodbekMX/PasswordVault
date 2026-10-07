@@ -3,8 +3,8 @@ package io.github.dilshodbekmx.passwordvault.ui.shell
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.rememberScrollState
@@ -67,9 +67,11 @@ fun RoutePlaceholder(route: Route, nav: Navigator, actions: List<PlaceholderActi
         )
         Text(text = stringResource(R.string.shell_placeholder_body), style = MaterialTheme.typography.bodyMedium)
         if (detail != null) Text(text = stringResource(R.string.shell_placeholder_state, detail), style = MaterialTheme.typography.bodySmall)
-        for (action in actions) {
-            OutlinedButton(onClick = action.onClick, modifier = Modifier.fillMaxWidth().testTag(action.tag)) {
-                Text(if (action.arg == null) stringResource(action.label) else stringResource(action.label, action.arg))
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            for (action in actions) {
+                OutlinedButton(onClick = action.onClick, modifier = Modifier.testTag(action.tag)) {
+                    Text(if (action.arg == null) stringResource(action.label) else stringResource(action.label, action.arg))
+                }
             }
         }
         TextButton(onClick = { nav.back() }, modifier = Modifier.testTag("pv.back")) {
