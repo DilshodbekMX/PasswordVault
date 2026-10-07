@@ -23,6 +23,10 @@
 #               once), then with the staging build on API 24 and 37 (the two at once); the
 #               screenshots of steps 1, 2 and 4 on API 37 with the debug build go to --shots DIR
 #               (default /home/asus/pvwork/skeleton-shots);
+#             - beyond the plan's list, with the debug build on each of the three devices (at
+#               once): the [script] lines of packages 3.2 and 3.3, which need the merged app
+#               (session/autolock.sh; setup/create.sh --vault-file), and package 2.5's
+#               shell/walk.sh over the real screens;
 #             - the devices are stopped.
 #   skeleton  the steps on one device of this worktree, with the VARIANT build (default APK
 #             app/build/outputs/apk/VARIANT/app-VARIANT.apk); --shots DIR saves the screenshots of
@@ -487,6 +491,32 @@ skeleton_on() {
     return $rc
 }
 
+# extras_on API...: the packages' own scripts with the debug build on those devices at once.
+extras_on() {
+    local api rc=0 status
+    declare -A pids=()
+    for api in "$@"; do
+        (
+            bad=0
+            "$EMU/session/autolock.sh" "${SER[$api]}" > "$LOGS/autolock-$api.log" 2>&1 || bad=1
+            "$EMU/setup/create.sh" "${SER[$api]}" --vault-file > "$LOGS/create-$api.log" 2>&1 || bad=1
+            "$EMU/shell/walk.sh" "${SER[$api]}" > "$LOGS/walk-$api.log" 2>&1 || bad=1
+            exit $bad
+        ) &
+        pids[$api]=$!
+    done
+    for api in "$@"; do
+        wait "${pids[$api]}"
+        status=$?
+        for script in autolock create walk; do
+            echo "   API $api, $script.sh: $(grep -E '^SUMMARY' "$LOGS/$script-$api.log" | tail -n 1)"
+            grep -E '^(FAIL|SKIPPED)' "$LOGS/$script-$api.log" | sed 's/^/     /'
+        done
+        [ $status -eq 0 ] || rc=1
+    done
+    return $rc
+}
+
 stop_devices() {
     local api rc=0
     for api in "${APIS[@]}"; do
@@ -558,12 +588,13 @@ if wants device; then
     if pv_step "build the debug and staging APKs" -- build_apks && pv_step "boot.sh --integrator 24, 28 and 37" -- boot_devices; then
         pv_step "connectedDebugAndroidTest on API 24, 28 and 37 (adb.sh --connected)" -- connected_tests
         pv_step "every device-test class of 2.5, 2.7 to 2.9 and 3.3 to 3.6 passed on each device" -- device_classes
-        rm -rf "$SHOTS"
+        rm -f "$SHOTS"/step*.png
         pv_step "the skeleton steps 1 to 9, debug build, on API 24, 28 and 37" -- skeleton_on debug 24 28 37
         pv_step "the skeleton steps 1 to 9, staging build, on API 24 and 37" -- skeleton_on staging 24 37
-        if ls "$SHOTS"/*.png > /dev/null 2>&1; then
-            echo "   screenshots (API 37, debug): $(cd "$SHOTS" && ls *.png | tr '\n' ' ')"
+        if ls "$SHOTS"/step*.png > /dev/null 2>&1; then
+            echo "   screenshots (API 37, debug) in $SHOTS: $(cd "$SHOTS" && ls step*.png | tr '\n' ' ')"
         fi
+        pv_step "extra: autolock.sh (3.2), create.sh --vault-file (3.3) and walk.sh (2.5), debug build, on API 24, 28 and 37" -- extras_on 24 28 37
     fi
     pv_step "the devices are stopped" -- stop_devices
 fi
