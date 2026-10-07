@@ -292,10 +292,11 @@ class OsFiles : FilePrimitives, RecordFiles {
         }
     }
 
+    /** `<dir>/<name>`; a name that is not a plain file name throws `IOException`, as in `FakeRecordFiles`. */
     private fun recordPath(dir: String, name: String): String {
         checkPath(dir)
-        require(name.isNotEmpty() && !name.contains('/') && !name.contains('\u0000') && name != "." && name != "..") {
-            "not a plain file name"
+        if (name.isEmpty() || name.contains('/') || name.contains('\u0000') || name == "." || name == "..") {
+            throw IOException("not a plain file name")
         }
         return "$dir/$name"
     }

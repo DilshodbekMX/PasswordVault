@@ -154,13 +154,17 @@ class OsRecordFilesTest {
 
     @Test
     fun aRecordNameIsAPlainName() {
+        // IOException, as `FakeRecordFiles` of :testing throws it, so the lock behaves alike on both.
         for (bad in listOf("", ".", "..", "a/b", "../pin.rec")) {
-            try {
-                records.replace(vault, bad, record(1, 1))
-                fail("'$bad'")
-            } catch (e: IllegalArgumentException) {
-                // a programming error, never a path
+            for (call in listOf<() -> Unit>({ records.replace(vault, bad, record(1, 1)) }, { records.read(vault, bad) })) {
+                try {
+                    call()
+                    fail("'$bad'")
+                } catch (e: IOException) {
+                    // never a path outside the directory
+                }
             }
         }
+        assertFalse(File(root).exists())
     }
 }
