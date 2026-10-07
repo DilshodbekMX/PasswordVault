@@ -206,6 +206,28 @@ class NavStateTest {
     }
 
     @Test
+    fun theRouteShownNowIsNotOpenedOrPutInPlaceAgain() {
+        val nav = NavState()
+        nav.follow(LockUiState.NoVault(emptyList()))
+        assertTrue(nav.go(Route.CreateMasterPassword))
+        assertTrue(nav.go(Route.WriteDown))
+        assertFalse("a second tap while the first move runs", nav.go(Route.WriteDown))
+        assertFalse(nav.replace(Route.WriteDown))
+        assertEquals(listOf(Route.Welcome, Route.CreateMasterPassword, Route.WriteDown), nav.shown())
+        assertTrue(nav.back())
+        assertTrue("the same route again once it has been left", nav.go(Route.WriteDown))
+
+        nav.follow(LockUiState.Unlocked(emptyList(), null))
+        assertTrue(nav.go(Route.Edit()))
+        assertFalse(nav.go(Route.Edit()))
+        assertTrue(nav.replace(e1))
+        assertFalse(nav.replace(e1))
+        assertFalse(nav.go(e1))
+        assertTrue("another entry", nav.go(e2))
+        assertEquals(listOf(Route.Passwords, e1, e2), nav.shown())
+    }
+
+    @Test
     fun eachRouteBelongsToItsStacks() {
         for (route in ALL_ROUTES) {
             val expected: Set<Top> = when (route) {

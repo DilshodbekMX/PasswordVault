@@ -114,7 +114,7 @@ class NavState(setup: List<Route> = emptyList(), locked: List<Route> = emptyList
 
     override fun go(route: Route): Boolean {
         val stack = current() ?: return false
-        if (!allowedIn(route, top)) return false
+        if (!allowedIn(route, top) || stack.lastOrNull() == route) return false
         stack.add(route)
         return true
     }
@@ -128,7 +128,7 @@ class NavState(setup: List<Route> = emptyList(), locked: List<Route> = emptyList
 
     override fun replace(route: Route): Boolean {
         val stack = current() ?: return false
-        if (!allowedIn(route, top)) return false
+        if (!allowedIn(route, top) || stack.lastOrNull() == route) return false
         if (stack.size <= 1) {
             reset(stack, route)
         } else {

@@ -7,7 +7,11 @@ package io.github.dilshodbekmx.passwordvault.nav
  * work finishes after a lock can never put an unlocked screen in front of the lock screen.
  */
 interface Navigator {
-    /** Opens [route] on top of the screen shown now. False: [route] does not belong to the stack shown now; nothing changed. */
+    /**
+     * Opens [route] on top of the screen shown now. False: [route] does not belong to the stack shown
+     * now, or it is the screen shown now (a second tap while the first move's animation runs); nothing
+     * changed.
+     */
     fun go(route: Route): Boolean
 
     /** Closes the screen shown now. False at the root of its stack, where Back leaves the app (ux.md §4). */
