@@ -218,7 +218,7 @@ fun PinKeys(
                 Row(horizontalArrangement = Arrangement.spacedBy(KEY_GAP)) {
                     if (onFingerprint != null) {
                         Key(keySize, enabled, sensitiveKeys, PinPadTags.FINGERPRINT, onClick = onFingerprint) {
-                            Icon(painterResource(R.drawable.ic_common_fingerprint), contentDescription = stringResource(R.string.common_pin_fingerprint))
+                            Icon(painterResource(R.drawable.ic_common_fingerprint), contentDescription = stringResource(R.string.common_pin_fingerprint), modifier = Modifier.size(KEY_ICON))
                         }
                     } else {
                         Spacer(Modifier.size(keySize))
@@ -235,7 +235,7 @@ fun PinKeys(
                             delete()
                         },
                     ) {
-                        Icon(painterResource(R.drawable.ic_common_backspace), contentDescription = stringResource(R.string.common_pin_delete))
+                        Icon(painterResource(R.drawable.ic_common_backspace), contentDescription = stringResource(R.string.common_pin_delete), modifier = Modifier.size(KEY_ICON))
                     }
                 }
             }
@@ -319,5 +319,6 @@ private val KEY_SIZE = 72.dp
 private val MIN_KEY_SIZE = 64.dp
 private const val MAX_KEY_GROWTH = 1.5f
 private val KEY_GAP = 16.dp
+private val KEY_ICON = 32.dp
 private val DOT_SIZE = 14.dp
 private val SHAKE_STEP = 10.dp
