@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The bottom bar's Settings tab: a gear. Drawn for this app (build plan 2.5); tinted by the navigation bar. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FF000000"
+        android:fillType="evenOdd"
+        android:pathData="M18.99,10.26L21.88,10.44L21.88,13.56L18.99,13.74L18.17,15.71L20.09,17.88L17.88,20.09L15.71,18.17L13.74,18.99L13.56,21.88L10.44,21.88L10.26,18.99L8.29,18.17L6.12,20.09L3.91,17.88L5.83,15.71L5.01,13.74L2.12,13.56L2.12,10.44L5.01,10.26L5.83,8.29L3.91,6.12L6.12,3.91L8.29,5.83L10.26,5.01L10.44,2.12L13.56,2.12L13.74,5.01L15.71,5.83L17.88,3.91L20.09,6.12L18.17,8.29ZM9.00,12.00A3.0,3.0 0,1 1,15.00,12.00A3.0,3.0 0,1 1,9.00,12.00Z" />
+</vector>

@@ -1,0 +1,84 @@
+package io.github.dilshodbekmx.passwordvault.lock
+
+import io.github.dilshodbekmx.passwordvault.core.lock.flow.NoticeAnswer
+
+/**
+ * Everything the lock screens, Welcome and the notices tell the lock (architecture.md §3.5),
+ * through `LockManager.send` on the main thread. The lock answers through `LockManager.state`.
+ */
+sealed interface LockIntent {
+    /**
+     * A digit key of the pad, 0 to 9. The lock appends it to the PIN it holds as ASCII bytes (lock.md
+     * §5.8); the first digit takes the charge (§6.3 C), the sixth starts the check (§6.3 E).
+     * [toString] never shows the digit.
+     */
+    data class Digit(val digit: Int) : LockIntent {
+        override fun toString(): String = "Digit"
+    }
+
+    /** ⌫: removes the last digit. */
+    data object DeleteDigit : LockIntent
+
+    /** Clears every digit typed so far. */
+    data object ClearDigits : LockIntent
+
+    /** "Use PIN", or "Not now: use PIN" on a practice screen within its grace (lock.md §8.3). */
+    data object UsePin : LockIntent
+
+    /** "Forgot PIN? Use master password", "Use master password" (lock.md F7, §13.2). */
+    data object UseMasterPassword : LockIntent
+
+    /** The fingerprint key, or "Use fingerprint" on the fingerprint-only screen: opens the prompt again (lock.md §9.2 rule 7). */
+    data object UseFingerprint : LockIntent
+
+    /** "Not now: use fingerprint" on a practice screen within its grace. */
+    data object NotNow : LockIntent
+
+    /** "I can't remember it" on a practice screen (lock.md F10 step 4, F11). */
+    data object CantRemember : LockIntent
+
+    /** "Forgot master password?" (ux.md §5.10, lock.md F17 step 1), or "I forgot it". */
+    data object OpenForgotSheet : LockIntent
+
+    /** The sheet's "Try again", or the sheet dismissed. */
+    data object CloseSheet : LockIntent
+
+    /** "Open my previous passwords (locked on …)" for the vault [vaultId] put aside: its own lock screen (lock.md F17 step 4). */
+    data class OpenAside(val vaultId: String) : LockIntent
+
+    /** "Start with an empty app" confirmed (lock.md F17 step 2). */
+    data object StartEmpty : LockIntent
+
+    /** "Restore from a backup file" on the sheet (lock.md F17 step 3); the restore screens follow. */
+    data object RestoreFromFile : LockIntent
+
+    /** An answer on "This is an older master password" (lock.md F16b). */
+    data class OlderPasswordAnswer(val choice: OlderPasswordChoice) : LockIntent
+
+    /** The answer [answer] to the notice [id] (lock.md §13.4); [answer] is one the notice offers. */
+    data class NoticeAnswered(val id: Long, val answer: NoticeAnswer) : LockIntent
+
+    /** "Cancel it" on the banner of a pending new master password (lock.md F11 step 9). */
+    data object CancelPending : LockIntent
+
+    /** "Finish now" when the new master password is ready (lock.md F11 step 13). */
+    data object FinishPending : LockIntent
+
+    /** "It wasn't me" on the "replaced" notice (lock.md F16b). */
+    data object ItWasntMe : LockIntent
+
+    /** Back on the lock screen of a vault put aside: returns to the current vault and changes nothing (lock.md F17 step 4). */
+    data object GoBack : LockIntent
+}
+
+/** The buttons of "This is an older master password" (lock.md F16b, `LockScreen.OlderPassword`). */
+enum class OlderPasswordChoice {
+    /** The change did not finish: "Try again" with the new master password. */
+    TRY_AGAIN,
+
+    /** The change did not finish: "Open my passwords from before the change" (asked once more, then F16b steps 1 to 3). */
+    OPEN_FROM_BEFORE,
+
+    /** The change was proven: "OK", back to the field. */
+    OK,
+}

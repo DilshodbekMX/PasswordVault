@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The bottom bar's Security tab: a shield. Drawn for this app (build plan 2.5); tinted by the navigation bar. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FF000000"
+        android:fillType="evenOdd"
+        android:pathData="M12,2L20,5L20,11C20,16 16.6,20.4 12,22C7.4,20.4 4,16 4,11L4,5ZM12,4.2L6,6.4L6,11C6,14.9 8.5,18.4 12,19.9C15.5,18.4 18,14.9 18,11L18,6.4Z" />
+</vector>
