@@ -95,6 +95,9 @@ class OlderCopyTest {
             assertEquals(listOf(1L, 2L, 4L, 5L, 6L), phone.liveNumbers())
             assertTrue("housekeeping put the damaged copy in quarantine", "vault-0000000003.bad" in phone.names(phone.liveDir))
             assertTrue("still shown as an older copy", repo.shown().olderCopy)
+            // A proof that was dropped (its flow ended) matches nothing and writes nothing.
+            assertEquals(emptySet<String>(), repo.matchesMasterPassword(MasterProof.forFakes(bytesOf(PASSWORD), created.vaultId).also { it.drop() }))
+            assertEquals(listOf(1L, 2L, 4L, 5L, 6L), phone.liveNumbers())
         } finally {
             scope.cancel()
         }

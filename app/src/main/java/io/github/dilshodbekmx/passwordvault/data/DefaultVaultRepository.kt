@@ -261,24 +261,33 @@ class DefaultVaultRepository internal constructor(
 
     /**
      * The entries whose password is the master password of [proof] (D-9b), stored in the vault with
-     * `VaultEdits.setMasterPasswordMatches`, an automatic write. Empty when no vault is open or the
-     * proof is for another vault. While automatic writes are held the ids are worked out and nothing
-     * is written.
+     * `VaultEdits.setMasterPasswordMatches`, an automatic write. Empty when no vault is open, the
+     * proof is for another vault, or it was dropped (its flow ended). While automatic writes are held
+     * the ids are worked out and nothing is written.
      */
     override suspend fun matchesMasterPassword(proof: MasterProof): Set<String> {
         val s = session ?: return emptySet()
         if (s.opened.vaultId != proof.vaultId) return emptySet()
-        var ids: Set<String>? = null
-        val saved = automaticEdit(s.id) { vault, nowMs ->
-            val found = proof.useBytes { SecurityCheck.matchesMasterPassword(vault, it) }
-            ids = found
-            VaultEdits.setMasterPasswordMatches(found)(vault, nowMs)
+        val password = try {
+            proof.useBytes { it.copyOf() }
+        } catch (e: IllegalStateException) {
+            return emptySet()
         }
-        val found = ids
-        if (saved != null && found != null) return found
-        // Skipped (held, or locked meanwhile): worked out on the vault as it was, and not written.
-        val vault = s.opened.vault
-        return withContext(dispatchers.default) { proof.useBytes { SecurityCheck.matchesMasterPassword(vault, it) } }
+        try {
+            var ids: Set<String>? = null
+            val saved = automaticEdit(s.id) { vault, nowMs ->
+                val found = SecurityCheck.matchesMasterPassword(vault, password)
+                ids = found
+                VaultEdits.setMasterPasswordMatches(found)(vault, nowMs)
+            }
+            val found = ids
+            if (saved != null && found != null) return found
+            // Skipped (held, or locked meanwhile): worked out on the vault as it was, and not written.
+            val vault = s.opened.vault
+            return withContext(dispatchers.default) { SecurityCheck.matchesMasterPassword(vault, password) }
+        } finally {
+            Bytes.wipe(password)
+        }
     }
 
     /**
