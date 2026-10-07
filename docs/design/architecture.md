@@ -996,7 +996,7 @@ Order: lock mutex, then vault mutex, then KDF gate. The repository never calls t
 
 - `AppDispatchers` wraps the three so that tests pass one test dispatcher.
 - `AppGraph.appScope` = `SupervisorJob() + Dispatchers.Main.immediate`. A save or a record write that has started always finishes: `edit` runs its commit in `appScope` under `NonCancellable`, so leaving a screen cannot cut a write in half.
-- Nothing blocks the main thread: no `runBlocking`, no file or Keystore call there.
+- Nothing blocks the main thread: no `runBlocking`, no file or Keystore call there. Two small reads, once per process, are the exceptions: `PrefsAppSettings` is made at the first use of `AppGraph.settings`, which can be on the main thread (the theme in `AppRoot`, the lock delay at start-up), and `Context.getSharedPreferences` then waits once for its few hundred bytes, so that no screen starts from a value that is not the stored one; and AppCompat's own record of the app's language on Android 7 to 12 (i18n.md §1.4.3). Every settings write (`commit()`) is on `IO`.
 - A search runs on `Default` with "latest query wins" in the ViewModel (`collectLatest`); `matchedRanges` only for visible rows (search.md §5).
 
 ### 5.4 How screens see state
