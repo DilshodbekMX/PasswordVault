@@ -19,7 +19,7 @@
 #   - a rotation recreates the activity (dumpsys shows another activity object) and does not lock;
 #   - away for 10 s (Home, then the launcher's intent) does not lock;
 #   - away for 31 s locks; the master password opens it again;
-#   - the screen off for 3 s locks at once (the keyguard proves it was off);
+#   - the screen off for 3 s locks at once (dumpsys power proves it was off);
 #   - with the lock delay set to "Immediately" in pv_settings (run-as and a restart of the app;
 #     SKIPPED on staging), a rotation still does not lock, while leaving does, at once;
 #   - the app did not crash.
@@ -89,10 +89,14 @@ relaunch() {
     echo "$out" | grep -q '^Status: ok' || { pv_log "am start: $out"; return 1; }
 }
 
-# The identity of the activity object in front ("Local Activity <hash>"): another one after a recreation.
+# The identity of the app's activity object ("Local Activity <hash>" in its part of dumpsys): another
+# one after a recreation.
 activity_object() {
-    pv_shell dumpsys activity top 2>/dev/null | tr -d '\r' | grep -m 1 -o 'Local Activity [0-9a-f]*' | awk '{ print $3 }'
+    pv_shell dumpsys activity top 2>/dev/null | tr -d '\r' \
+        | awk -v a="ACTIVITY $PV_PACKAGE/" 'index($0, a) { f = 1 } f && /Local Activity/ { print $3; exit }'
 }
+
+in_front() { case "$(pv_focus)" in *"$PV_PACKAGE"/*) return 0 ;; *) return 1 ;; esac; }
 
 rotate() { # 0 portrait, 1 landscape
     pv_shell settings put system accelerometer_rotation 0 >/dev/null
@@ -170,9 +174,15 @@ rotation_does_not_lock() {
     return $rc
 }
 
-# away SECONDS: Home, SECONDS, then the launcher's intent brings the task back.
+# away SECONDS: Home; SECONDS from the moment the app is no longer in front; then the launcher's
+# intent brings the task back. The app counts from its ON_STOP, 0.7 s after it was left (lock.md
+# §10.2), to its ON_START after the relaunch: away 31 s is at least 30.3 s for it, 10 s at most
+# about 10 s.
 away() {
+    local i
     pv_shell input keyevent KEYCODE_HOME >/dev/null || return 1
+    for i in 1 2 3 4 5 6 7 8 9 10; do in_front || break; pv_sleep 0.5; done
+    in_front && { pv_log "the app is still in front after Home: $(pv_focus)"; return 1; }
     pv_sleep "$1"
     relaunch
 }
@@ -181,14 +191,17 @@ away_10_s_does_not_lock() { away 10 && still_open; }
 
 away_31_s_locks() { away 31 && on Locked; }
 
+# The screen off for 3 s, far less than the 30-second delay: only the screen-off rule can lock.
 screen_off_locks_at_once() {
+    local power
     pv_shell input keyevent KEYCODE_SLEEP >/dev/null || return 1
     pv_sleep 3
+    power=$(pv_shell dumpsys power 2>/dev/null | tr -d '\r' | grep -m 1 -o 'mWakefulness=[A-Za-z]*')
     pv_shell input keyevent KEYCODE_WAKEUP >/dev/null
+    case "$power" in mWakefulness=Asleep | mWakefulness=Dozing) ;; *) pv_log "the screen did not go off: $power"; return 1 ;; esac
     pv_sleep 1
-    pv_keyguard_showing || { pv_log "no keyguard after KEYCODE_SLEEP: the screen did not go off"; return 1; }
     pv_unlock || return 1
-    case "$(pv_focus)" in *"$PV_PACKAGE"/*) ;; *) relaunch || return 1 ;; esac
+    in_front || relaunch || return 1
     on Locked
 }
 
