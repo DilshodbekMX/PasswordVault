@@ -194,6 +194,37 @@ class FileRecordStoreTest {
         }
     }
 
+    @Test
+    fun everyRecordOfEveryLockDirectoryCanBeReadAsStartUpDoes() {
+        // lock.md §5.11 step 2 and the sweep of §5.7: every record in every lock/*/ directory, and
+        // the aliases they name.
+        pin.write(pinRecord(0))
+        state.write(stateRecord(3))
+        FileRecordStore.fingerprint(files, ROOT, OTHER_VAULT).write(
+            FingerprintRecord(OTHER_VAULT, ShortcutSlot(SLOT, 0L, listOf(KeyWrap(VK, ByteArray(12), ByteArray(48)))), null),
+        )
+        files.put("$ROOT/$OTHER_VAULT", "pin.rec", byteArrayOf(1, 2, 3))
+        val results = HashMap<String, RecordRead<*>>()
+        val named = HashSet<String>()
+        for (dir in files.dirs(ROOT)) {
+            for (format in RecordCodec.FORMATS) {
+                val read = FileRecordStore(files, dir, format).read()
+                results["${dir.substringAfterLast('/')}/${format.fileName}"] = read
+                when (val record = (read as? RecordRead.Ok)?.record) {
+                    is PinRecord -> record.slot?.let { named += RecordCodec.PIN_ALIAS_PREFIX + it.id }
+                    is FingerprintRecord -> record.slot?.let { named += RecordCodec.FINGERPRINT_ALIAS_PREFIX + it.id }
+                }
+            }
+        }
+        assertEquals(RecordRead.Ok(pinRecord(0)), results["$VAULT/pin.rec"])
+        assertEquals(RecordRead.Missing, results["$VAULT/fingerprint.rec"])
+        assertEquals(RecordRead.Ok(stateRecord(3)), results["$VAULT/state.rec"])
+        assertTrue(results["$OTHER_VAULT/fingerprint.rec"] is RecordRead.Ok)
+        assertEquals(RecordRead.Damaged(ParseError(0, "magic")), results["$OTHER_VAULT/pin.rec"]) // which stops the sweep
+        assertEquals(RecordRead.Missing, results["$OTHER_VAULT/state.rec"])
+        assertEquals(setOf("pv_pin_$SLOT", "pv_fp_$SLOT"), named)
+    }
+
     private fun reframeWithVersion(bytes: ByteArray, version: Int): ByteArray {
         val json = String(bytes, 12, bytes.size - 44, Charsets.US_ASCII).replace("\"v\":1", "\"v\":$version").toByteArray()
         val len = json.size

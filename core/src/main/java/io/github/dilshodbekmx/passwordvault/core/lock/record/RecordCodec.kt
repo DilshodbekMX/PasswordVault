@@ -78,6 +78,16 @@ object RecordCodec {
     const val CT_LENGTH = 48
     const val SALT_LENGTH = 16
 
+    /**
+     * The Keystore alias of a PIN slot is always this + `slot.id` (§5.4). It is not stored, so it
+     * cannot disagree with the record; the key sweep deletes only aliases with this prefix or
+     * [FINGERPRINT_ALIAS_PREFIX] that no record names (§5.7).
+     */
+    const val PIN_ALIAS_PREFIX = "pv_pin_"
+
+    /** The Keystore alias of a fingerprint slot is always this + `slot.id` (§5.5). */
+    const val FINGERPRINT_ALIAS_PREFIX = "pv_fp_"
+
     private val MAGIC_BYTES = MAGIC.toByteArray(Charsets.US_ASCII)
     private const val LENGTH_FIELD = 4
     private const val HASH_LENGTH = 32
