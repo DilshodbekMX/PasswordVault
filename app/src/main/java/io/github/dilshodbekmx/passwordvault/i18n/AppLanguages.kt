@@ -60,10 +60,11 @@ object AppLanguages {
 
     /**
      * The choice that an app locale stands for (i18n.md §1.4.5 `currentAppLanguage`, §5 item 3):
-     * "uz", "uz-UZ" and "uz-Latn" are Oʻzbekcha, "uz-Cyrl" Ўзбекча, any "ru" Русский, any "en"
-     * English; null, the empty locale and every other language are [AppLanguage.SYSTEM]. A locale
-     * whose script is not ours ("uz-Arab", or "uz-AF", whose likely script is Arabic) is not one of
-     * ours either: Android would show it the default English texts.
+     * "uz", "uz-UZ" and "uz-Latn" are Oʻzbekcha, "uz-Cyrl" Ўзбекча, "ru" of any region Русский, "en"
+     * of any region English; null, the empty locale and every other language are
+     * [AppLanguage.SYSTEM]. Languages and scripts are compared as Android does (i18n.md §1.2): a
+     * locale written in a script that is not ours ("uz-Arab", or "uz-AF", whose likely script is
+     * Arabic) is not one of ours either, and Android would show it the default English texts.
      */
     fun of(locale: Locale?): AppLanguage {
         if (locale == null) return AppLanguage.SYSTEM

@@ -65,7 +65,8 @@ class Formatters(val locale: Locale, private val hour24: Boolean) {
         val direction = if (thenMs <= nowMs) RelativeDateTimeFormatter.Direction.LAST else RelativeDateTimeFormatter.Direction.NEXT
         val spanMs = if (thenMs <= nowMs) nowMs - thenMs else thenMs - nowMs
         fun count(n: Long, unit: RelativeDateTimeFormatter.RelativeUnit) = format.format(n.toDouble(), direction, unit)
-        if (spanMs < 0 || spanMs < MINUTE_MS) {
+        // A negative span is an overflow between two times no clock gives; it reads as "now".
+        if (spanMs < MINUTE_MS) {
             return format.format(RelativeDateTimeFormatter.Direction.PLAIN, RelativeDateTimeFormatter.AbsoluteUnit.NOW)
         }
         if (spanMs < HOUR_MS) return count(spanMs / MINUTE_MS, RelativeDateTimeFormatter.RelativeUnit.MINUTES)
