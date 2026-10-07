@@ -1,5 +1,8 @@
 package io.github.dilshodbekmx.passwordvault.ui.edit
 
+import android.os.Build
+import android.view.View
+import android.view.WindowInsets
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -39,6 +42,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -46,8 +50,8 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.LocalWindowInfo
-import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
@@ -61,6 +65,8 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -214,7 +220,7 @@ private fun Form(vm: EditViewModel, ui: EditUiState, padding: PaddingValues, foc
         ) {
             VaultTextField(
                 state = form.title,
-                modifier = focus.field(FieldKey.Title, EditTags.NAME),
+                modifier = Modifier.formField(focus, FieldKey.Title, EditTags.NAME),
                 label = { Text(text = stringResource(R.string.edit_name)) },
                 placeholder = { Text(text = stringResource(R.string.edit_name_example)) },
                 supportingText = support(form.title, EntryRules.TITLE_MAX, problemsOf(ui, vm, FieldKey.Title), formatters),
@@ -225,7 +231,7 @@ private fun Form(vm: EditViewModel, ui: EditUiState, padding: PaddingValues, foc
             )
             VaultTextField(
                 state = form.username,
-                modifier = focus.field(FieldKey.Username, EditTags.USERNAME),
+                modifier = Modifier.formField(focus, FieldKey.Username, EditTags.USERNAME),
                 label = { Text(text = stringResource(R.string.edit_username)) },
                 supportingText = support(form.username, EntryRules.USERNAME_MAX, problemsOf(ui, vm, FieldKey.Username), formatters),
                 isError = problemsOf(ui, vm, FieldKey.Username).isNotEmpty(),
@@ -241,7 +247,7 @@ private fun Form(vm: EditViewModel, ui: EditUiState, padding: PaddingValues, foc
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         VaultTextField(
                             state = row.state,
-                            modifier = focus.field(rowKey, EditTags.website(index), Modifier.weight(1f)),
+                            modifier = Modifier.weight(1f).formField(focus, rowKey, EditTags.website(index)),
                             label = { Text(text = stringResource(R.string.edit_website)) },
                             supportingText = support(row.state, EntryRules.URL_MAX, problemsOf(ui, vm, rowKey), formatters),
                             isError = problemsOf(ui, vm, rowKey).isNotEmpty(),
@@ -259,7 +265,7 @@ private fun Form(vm: EditViewModel, ui: EditUiState, padding: PaddingValues, foc
                 }
             }
             if (ui.problems.any { it.field == EntryField.WEBSITES }) {
-                ErrorLine(stringResource(R.string.edit_error_too_many_websites, EntryRules.URLS_MAX))
+                ErrorLine(pluralStringResource(R.plurals.edit_error_too_many_websites, EntryRules.URLS_MAX, EntryRules.URLS_MAX))
             }
             if (form.websites.size < EntryRules.URLS_MAX) {
                 TextButton(onClick = vm::addWebsite, modifier = Modifier.testTag(EditTags.ADD_WEBSITE)) {
@@ -268,7 +274,7 @@ private fun Form(vm: EditViewModel, ui: EditUiState, padding: PaddingValues, foc
             }
             VaultTextField(
                 state = form.notes,
-                modifier = focus.field(FieldKey.Notes, EditTags.NOTES),
+                modifier = Modifier.formField(focus, FieldKey.Notes, EditTags.NOTES),
                 label = { Text(text = stringResource(R.string.edit_notes)) },
                 supportingText = support(form.notes, EntryRules.NOTES_MAX, problemsOf(ui, vm, FieldKey.Notes), formatters),
                 isError = problemsOf(ui, vm, FieldKey.Notes).isNotEmpty(),
@@ -284,7 +290,7 @@ private fun Form(vm: EditViewModel, ui: EditUiState, padding: PaddingValues, foc
                         if (row.secret) {
                             VaultSecureField(
                                 state = row.value,
-                                modifier = focus.field(rowKey, EditTags.field(index), Modifier.weight(1f)),
+                                modifier = Modifier.weight(1f).formField(focus, rowKey, EditTags.field(index)),
                                 label = { Text(text = row.name) },
                                 supportingText = support(row.value, EntryRules.FIELD_VALUE_MAX, problems, formatters),
                                 isError = problems.isNotEmpty(),
@@ -294,7 +300,7 @@ private fun Form(vm: EditViewModel, ui: EditUiState, padding: PaddingValues, foc
                         } else {
                             VaultTextField(
                                 state = row.value,
-                                modifier = focus.field(rowKey, EditTags.field(index), Modifier.weight(1f)),
+                                modifier = Modifier.weight(1f).formField(focus, rowKey, EditTags.field(index)),
                                 label = { Text(text = row.name) },
                                 supportingText = support(row.value, EntryRules.FIELD_VALUE_MAX, problems, formatters),
                                 isError = problems.isNotEmpty(),
@@ -310,7 +316,7 @@ private fun Form(vm: EditViewModel, ui: EditUiState, padding: PaddingValues, foc
                 }
             }
             if (ui.problems.any { it.field == EntryField.FIELDS }) {
-                ErrorLine(stringResource(R.string.edit_error_too_many_fields, EntryRules.FIELDS_MAX))
+                ErrorLine(pluralStringResource(R.plurals.edit_error_too_many_fields, EntryRules.FIELDS_MAX, EntryRules.FIELDS_MAX))
             }
             if (form.fields.size < EntryRules.FIELDS_MAX) {
                 TextButton(onClick = vm::openAddField, modifier = Modifier.testTag(EditTags.ADD_FIELD)) {
@@ -329,7 +335,7 @@ private fun PasswordPart(vm: EditViewModel, ui: EditUiState, focus: FieldFocus, 
     val generate = stringResource(R.string.edit_generate)
     VaultSecureField(
         state = form.password,
-        modifier = focus.field(FieldKey.Password, EditTags.PASSWORD),
+        modifier = Modifier.formField(focus, FieldKey.Password, EditTags.PASSWORD),
         label = { Text(text = stringResource(R.string.edit_password)) },
         trailingIcon = {
             IconButton(onClick = vm::openGenerator, modifier = Modifier.testTag(EditTags.GENERATE)) {
@@ -389,8 +395,9 @@ private fun problemText(problem: EntryProblem, formatters: Formatters): String =
     EntryProblem.Kind.CONTROL_CHARACTER -> stringResource(R.string.edit_error_control)
     EntryProblem.Kind.UNPAIRED_SURROGATE -> stringResource(R.string.edit_error_broken)
     EntryProblem.Kind.BLANK -> stringResource(R.string.edit_error_label)
-    EntryProblem.Kind.TOO_MANY -> stringResource(
-        if (problem.field == EntryField.WEBSITES) R.string.edit_error_too_many_websites else R.string.edit_error_too_many_fields,
+    EntryProblem.Kind.TOO_MANY -> pluralStringResource(
+        if (problem.field == EntryField.WEBSITES) R.plurals.edit_error_too_many_websites else R.plurals.edit_error_too_many_fields,
+        problem.limit,
         problem.limit,
     )
 }
@@ -499,7 +506,7 @@ private fun AddFieldDialog(vm: EditViewModel, focus: FieldFocus, formatters: For
                 if (add.label == FieldLabel.OTHER) {
                     VaultTextField(
                         state = add.name,
-                        modifier = focus.field(FieldKey.AddFieldName, EditTags.FIELD_LABEL),
+                        modifier = Modifier.formField(focus, FieldKey.AddFieldName, EditTags.FIELD_LABEL),
                         label = { Text(text = stringResource(R.string.edit_field_label)) },
                         supportingText = labelSupport(add, formatters),
                         isError = add.labelMissing,
@@ -513,7 +520,7 @@ private fun AddFieldDialog(vm: EditViewModel, focus: FieldFocus, formatters: For
                 if (add.secret) {
                     VaultSecureField(
                         state = add.value,
-                        modifier = focus.field(FieldKey.AddFieldValue, EditTags.FIELD_VALUE),
+                        modifier = Modifier.formField(focus, FieldKey.AddFieldValue, EditTags.FIELD_VALUE),
                         label = { Text(text = stringResource(R.string.edit_field_value)) },
                         supportingText = support(add.value, EntryRules.FIELD_VALUE_MAX, emptyList(), formatters),
                         inputTransformation = vm.inputOf(FieldKey.AddFieldValue),
@@ -521,7 +528,7 @@ private fun AddFieldDialog(vm: EditViewModel, focus: FieldFocus, formatters: For
                 } else {
                     VaultTextField(
                         state = add.value,
-                        modifier = focus.field(FieldKey.AddFieldValue, EditTags.FIELD_VALUE),
+                        modifier = Modifier.formField(focus, FieldKey.AddFieldValue, EditTags.FIELD_VALUE),
                         label = { Text(text = stringResource(R.string.edit_field_value)) },
                         supportingText = support(add.value, EntryRules.FIELD_VALUE_MAX, emptyList(), formatters),
                         inputTransformation = vm.inputOf(FieldKey.AddFieldValue),
@@ -571,34 +578,36 @@ private class FieldFocus(private val vm: EditViewModel, private val lifecycle: L
 
     fun requester(key: FieldKey): FocusRequester = requesters.getOrPut(key) { FocusRequester() }
 
-    /** The modifier of the field [key]: its focus, its test tag [tag], after [then]. */
-    fun field(key: FieldKey, tag: String, then: Modifier = Modifier): Modifier = then
-        .fillMaxWidth()
-        .focusRequester(requester(key))
-        .onFocusChanged { state ->
-            if (state.isFocused) {
-                focusedHere = key
-                vm.focused(key)
-            } else if (focusedHere == key && lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) {
-                focusedHere = null
-                vm.unfocused(key)
-            }
+    /** The field [key] got or lost the focus. */
+    fun changed(key: FieldKey, focused: Boolean) {
+        if (focused) {
+            focusedHere = key
+            vm.focused(key)
+        } else if (focusedHere == key && lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) {
+            focusedHere = null
+            vm.unfocused(key)
         }
-        .testTag(tag)
+    }
 
     /** Gives [key] the focus, which also opens the keyboard; false when no such field is shown. */
-    fun request(key: FieldKey, keyboard: SoftwareKeyboardController? = null): Boolean = try {
+    fun request(key: FieldKey): Boolean = try {
         requester(key).requestFocus()
-        keyboard?.show()
         true
     } catch (_: IllegalStateException) {
-        false // the field is not in this composition (a row that is gone, or a dialog's)
+        false // the field is not in this composition (yet, or any more: a row that is gone, or a dialog's)
     }
 
     /**
-     * After a recreation: once the window has the focus, gives the field that had it the focus and
-     * the keyboard again. [inDialog] picks the fields of the "Add field" dialog, which lives in a
-     * window of its own, or those of the form.
+     * After a recreation: gives the field that had the focus the focus and the keyboard again.
+     * [inDialog] picks the fields of the "Add field" dialog, which lives in a window of its own, or
+     * those of the form.
+     *
+     * The keyboard is asked for at once, before the new window has the focus, as Android 17's
+     * behaviour change says to ("request the keyboard in onCreate()"): when a window that asks for
+     * nothing gets the focus, Android 17 hides the keyboard (`HIDE_UNSPECIFIED_WINDOW`), and a
+     * request that comes while it does so is dropped (`PHASE_SERVER_ABORT_SHOW_IME_POST_LAYOUT`,
+     * seen on the emulator). Once the window has the focus the keyboard is asked for once more if
+     * it is not seen, for the versions that act only on a request from a focused window.
      */
     @Composable
     fun RestoreAfterRecreation(inDialog: Boolean) {
@@ -607,12 +616,37 @@ private class FieldFocus(private val vm: EditViewModel, private val lifecycle: L
         if (dialogKey != inDialog) return
         val window = LocalWindowInfo.current
         val keyboard = LocalSoftwareKeyboardController.current
+        val view = LocalView.current
         LaunchedEffect(Unit) {
+            // The field may be laid out a frame later (the Scaffold places its content while measuring).
+            var focused = request(key)
+            var frames = 0
+            while (!focused && frames++ < FOCUS_FRAMES) {
+                withFrameNanos { }
+                focused = request(key)
+            }
+            if (!focused) return@LaunchedEffect
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) view.windowInsetsController?.show(WindowInsets.Type.ime())
             snapshotFlow { window.isWindowFocused }.first { it }
-            request(key, keyboard)
+            if (focusedHere == key && !keyboardShown(view)) keyboard?.show()
         }
     }
+
+    /** Whether the keyboard is on screen, as far as Android tells an app (API 30 and later); false below. */
+    private fun keyboardShown(view: View): Boolean =
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
+            ViewCompat.getRootWindowInsets(view)?.isVisible(WindowInsetsCompat.Type.ime()) == true
 }
+
+/** A field of the form: full width, its focus told to [focus] as [key], and its test tag [tag]. */
+private fun Modifier.formField(focus: FieldFocus, key: FieldKey, tag: String): Modifier = this
+    .fillMaxWidth()
+    .focusRequester(focus.requester(key))
+    .onFocusChanged { focus.changed(key, it.isFocused) }
+    .testTag(tag)
+
+/** How many frames a field to give the focus back to may take to be laid out. */
+private const val FOCUS_FRAMES = 5
 
 @Composable
 private fun rememberFieldFocus(vm: EditViewModel): FieldFocus {

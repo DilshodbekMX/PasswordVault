@@ -62,10 +62,16 @@
     <string name="edit_error_control">This has a hidden character that can\'t be saved, such as a tab. Type it again without it.</string>
     <!-- The text holds a broken character (half of an emoji, for example). -->
     <string name="edit_error_broken">This has a broken character. Type it again.</string>
-    <!-- More website fields than allowed. %1$d is the most allowed (10). -->
-    <string name="edit_error_too_many_websites">An account can have at most %1$d websites.</string>
-    <!-- More extra fields than allowed. %1$d is the most allowed (20). -->
-    <string name="edit_error_too_many_fields">An account can have at most %1$d extra fields.</string>
+    <!-- More website fields than allowed. %1$d is the most allowed (10 today). -->
+    <plurals name="edit_error_too_many_websites">
+        <item quantity="one">An account can have at most %1$d website.</item>
+        <item quantity="other">An account can have at most %1$d websites.</item>
+    </plurals>
+    <!-- More extra fields than allowed. %1$d is the most allowed (20 today). -->
+    <plurals name="edit_error_too_many_fields">
+        <item quantity="one">An account can have at most %1$d extra field.</item>
+        <item quantity="other">An account can have at most %1$d extra fields.</item>
+    </plurals>
     <!-- An extra field has a value but no label. -->
     <string name="edit_error_label">Give this field a label.</string>
 
