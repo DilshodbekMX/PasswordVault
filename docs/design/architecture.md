@@ -155,7 +155,8 @@ interface Aead {                                                  // AES-256-GCM
 object MasterPasswordBytes {                                      // package 1.3; frozen before the first release (4.6)
     fun of(chars: CharArray): ByteArray
     fun same(first: CharArray, again: CharArray): Boolean         // of(first) and of(again) compared in constant time, both wiped
-    fun firstUnassigned(chars: CharArray): Int?                   // creation only [V-C9]
+    fun firstUnassigned(chars: CharArray): Int?                   // creation only [V-C9]: the first unassigned code point or unpaired
+                                                                  // surrogate, as its value (not its index); null: none
 }
 interface MasterKdf {                                             // one derivation at a time in the process (lock.md §6.8)
     suspend fun kek(passwordBytes: ByteArray, salt: ByteArray): ByteArray     // throws KdfUnavailable
@@ -706,12 +707,12 @@ Result: OK with the header values and `trailerOk`. Until the body has opened, th
 1. **NFC** (`java.text.Normalizer`, `Form.NFC`).
 2. **White space.** Each of these 25 code points becomes U+0020: U+0009–U+000D, U+0020, U+0085, U+00A0, U+1680, U+2000–U+200A, U+2028, U+2029, U+202F, U+205F, U+3000. Then runs of U+0020 become one, and leading and trailing ones are removed (decision D-6b).
 3. **Apostrophes.** The 17 code points of lock.md §8.1 become U+0027.
-4. **UTF-8.** Case is kept.
+4. **UTF-8.** Case is kept. An unpaired surrogate, which is not a Unicode character, is written as the UTF-8 of U+FFFD (EF BF BD).
 
 Why this order: NFC turns U+0374, U+1FEF and U+1FFD into members of the apostrophe list, so folding before NFC left three equivalent spellings with different keys. With NFC first, every canonically equivalent spelling gives the same bytes and applying the function twice changes nothing. I checked every code point with Python's `unicodedata` 15.0, alone and between letters: this order gives the same bytes for every code point as the coverage review's alternative (white space, apostrophes, NFC, apostrophes again), and none of the existing vectors changes [X].
 
 - **Typed twice.** At creation, restore and change, both typings go through `MasterPasswordBytes.same` before anything is derived or written; a mismatch stops there.
-- **At creation only:** a password with a code point whose `Character.getType` is `UNASSIGNED` is refused [V-C9], and the checklist of ux.md §5.3 (length, strength) is applied to the characters as they are after steps 1 to 3, so that spaces cannot pad a password. A password of white space only gives zero bytes and fails the length rule.
+- **At creation only:** a password with a code point whose `Character.getType` is `UNASSIGNED`, or with an unpaired surrogate, is refused [V-C9], and the checklist of ux.md §5.3 (length, strength) is applied to the characters as they are after steps 1 to 3, so that spaces cannot pad a password. A password of white space only gives zero bytes and fails the length rule.
 
 ### 4.7 Directories and names
 

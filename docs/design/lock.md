@@ -796,11 +796,11 @@ One function, `MasterPasswordBytes.of(chars)`, is used wherever a master passwor
 1. **NFC** (`java.text.Normalizer`, `Form.NFC`).
 2. **White space,** as architecture.md §4.6 decided it (decision D-6b): each of its 25 white-space code points becomes U+0020, runs of U+0020 become one, and those at the start and the end are removed.
 3. **Fold apostrophe-like characters to U+0027.** These 17 code points become `'`: U+0027, U+0060, U+00B4, U+2018, U+2019, U+201B, U+2032, U+2035, U+02B9, U+02BB, U+02BC, U+02BD, U+02BE, U+02BF, U+A78B, U+A78C, U+FF07.
-4. **UTF-8.** Case is kept.
+4. **UTF-8.** Case is kept. An unpaired surrogate, which is not a Unicode character, is written as the UTF-8 of U+FFFD (EF BF BD).
 
 - **Why NFC comes first** [A]. NFC turns three characters into members of the apostrophe list: U+0374 into U+02B9, U+1FEF into U+0060, U+1FFD into U+00B4. With the folds first, as this document and architecture.md had it, those three were left unfolded, and two spellings that Unicode treats as the same text gave different keys. With NFC first, every canonically equivalent spelling gives the same bytes; the result is itself NFC, because U+0020 and U+0027 take part in no composition; and applying the function twice changes nothing [X: every code point, and 200,000 random strings over both lists and a set of combining marks, in Python; the vectors again in JDK 25]. The three characters are Greek and no Uzbek, Russian or English keyboard types them, and no existing vector changes. But this function can never be changed after release, so its order is settled now.
 - **Why step 3.** Uzbek oʻ and gʻ are typed with different characters on different keyboards, and Uzbek text in use mixes at least U+02BB, U+2018 and U+0027 [J-R claim 11]. NFC does not unify them [F §9]. Without folding, a password such as "Toshkentdagi oʻgʻlim" typed on a new phone gives another key, and the backup does not open, exactly when it is needed [J-R D3-2]. The list is the one search.md §1 uses today; for the master password it never changes, even if search later does.
-- **At creation only:** refuse a password that contains a code point whose `Character.getType` is `UNASSIGNED` [V-C9]. The refusal of apostrophes in ux.md §5.3 is no longer needed.
+- **At creation only:** refuse a password that contains a code point whose `Character.getType` is `UNASSIGNED`, or an unpaired surrogate [V-C9]. The refusal of apostrophes in ux.md §5.3 is no longer needed.
 - This changes crypto.md §1 ("Password bytes") and the order of the steps in architecture.md §4.6; both are asked of the crypto owner in 16.3.
 
 ### 8.2 When it is required, and what each action needs
