@@ -449,6 +449,13 @@ class BitwardenJsonTest {
         assertEquals(mapOf("good" to "{\"a\":1}", "alsoGood" to "\"x\""), back.entries.single().extras)
         assertEquals(mapOf("keptTop" to "1"), back.vaultExtras)
         assertFalse(text.contains("evil.example"))
+
+        // Two unknown keys that would be one name in the file (an unpaired surrogate is written as
+        // U+FFFD): the first is written, and the file has no key twice.
+        val twins = entry(1, "Twins", extras = linkedMapOf("k\uD800" to "1", "k\uFFFD" to "2", "k\uDC00" to "3", "other" to "4"))
+        val twinsBack = ok(exportText(listOf(twins), linkedMapOf("t\uD800" to "true", "t\uFFFD" to "false")))
+        assertEquals(mapOf("k\uFFFD" to "1", "other" to "4"), twinsBack.entries.single().extras)
+        assertEquals(mapOf("t\uFFFD" to "true"), twinsBack.vaultExtras)
     }
 
     // ------------------------------------------------------------------ foreign files

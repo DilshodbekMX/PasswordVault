@@ -243,16 +243,21 @@ object BitwardenJson {
     }
 
     /**
-     * The kept unknown keys of an entry or of the vault, after our own keys of the same object. A key
-     * that has the name of one in [taken], or whose text is not JSON that fits a vault file, is left
-     * out: the vault's reader never makes one, and an export must not fail over it.
+     * The kept unknown keys of an entry or of the vault, after our own keys of the same object. Left
+     * out: a key that has the name of one in [taken] or of one already written (no key twice in an
+     * object, or our own reader would refuse the file), and one whose text is not JSON that fits a
+     * vault file. The vault's reader never makes such a key, and an export must not fail over one.
      */
     private fun writeExtras(w: Pretty, extras: Map<String, String>, taken: Set<String>, maxDepth: Int) {
+        if (extras.isEmpty()) return
+        val written = HashSet<String>()
         for ((key, text) in extras) {
-            if (key in taken) continue
+            val name = TextHygiene.replaceUnpairedSurrogates(key) // as it will stand in the file
+            if (name in taken || !written.add(name)) continue
             val value = try {
                 StrictJson.parse(text, maxDepth)
             } catch (_: StrictJson.Failure) {
+                written.remove(name)
                 continue
             }
             w.key(key).element(value)
