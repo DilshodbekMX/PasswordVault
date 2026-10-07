@@ -11,10 +11,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -100,10 +100,17 @@ class ListPseudoLocaleTest {
         plainExports = listOf(FileRef("content://docs/1", "passwords-2026-10-05.csv", now - 2 * 3_600_000L)),
     )
 
+    /** Keeps a picture of every window shown now (a dialog is a window of its own) in `cache/pv-screens/`. */
     private fun save(name: String) {
-        val bitmap = compose.onRoot().captureToImage().asAndroidBitmap()
+        compose.waitForIdle()
         val dir = File(compose.activity.cacheDir, "pv-screens").apply { mkdirs() }
-        File(dir, "list-$name.png").outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        val roots = compose.onAllNodes(isRoot())
+        val count = roots.fetchSemanticsNodes().size
+        for (i in 0 until count) {
+            val bitmap = roots[i].captureToImage().asAndroidBitmap()
+            val suffix = if (count == 1) "" else "-window$i"
+            File(dir, "list-$name$suffix.png").outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        }
     }
 
     @Test
