@@ -335,7 +335,8 @@ object EntryPolicy {
         if (pinUsable) {
             val record = (input.pin as RecordRead.Ok).record
             val status = padStatus(record, pendingNotReady, visit, fingerprint.line)
-            return locked(Row.PIN_PAD, LockScreen.Pad(digits = 0, status = status, fingerprintKey = fingerprint.usable, opening = false, aside = aside))
+            val pad = LockScreen.Pad(digits = 0, status = status, fingerprintKey = fingerprint.usable, opening = false, aside = aside)
+            return locked(Row.PIN_PAD, pad)
         }
 
         // Row 6: only fingerprint.

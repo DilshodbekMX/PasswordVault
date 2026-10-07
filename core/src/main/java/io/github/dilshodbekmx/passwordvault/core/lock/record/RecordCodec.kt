@@ -32,18 +32,19 @@ import kotlinx.serialization.json.JsonPrimitive
  *    anything but 1 is DAMAGED;
  * 4. `"kind"` must be this record's, and `"vault_id"` the name of its directory;
  * 5. every key of the record must be there with its type, and no other key, at every level;
- * 6. the field rules of §5.4 to §5.6 ([Format.brokenRule]): ids are lower-case UUIDs of version 4; `row` 0 to 5,
- *    `total` 0 to 10, `step` 0 to 3; a slot holds one or two wraps with different `vk_id`s, each
- *    nonce 12 bytes and each `ct` 48; a salt is 16 bytes; counts, credits and elapsed times are not
- *    negative; `off` is null while a slot is set. Wall-clock times may be any whole number of
- *    milliseconds.
+ * 6. the field rules of §5.4 to §5.6 ([Format.brokenRule]): ids are lower-case UUIDs of version
+ *    4; `row` 0 to 5, `total` 0 to 10, `step` 0 to 3; a slot holds one or two wraps with different
+ *    `vk_id`s, each nonce 12 bytes and each `ct` 48; a salt is 16 bytes; counts, credits and
+ *    elapsed times are not negative; `off` is null while a slot is set. Wall-clock times may be
+ *    any whole number of milliseconds.
  *
  * A record that breaks any of these is DAMAGED with a [ParseError] that names the rule and an
  * offset, never a piece of the record (architecture.md §5.6). [Format.decode] never throws.
  *
  * **Writing** refuses a record that its own reader would refuse: [Format.encode] runs the same
- * [Format.brokenRule] and throws `IllegalArgumentException` (whose message names the rule, never a value), so
- * a damaged record is never written. That is a bug of the caller; nothing has been written then.
+ * [Format.brokenRule] and throws `IllegalArgumentException` (whose message names the rule, never a
+ * value), so a damaged record is never written. That is a bug of the caller; nothing has been
+ * written then.
  */
 object RecordCodec {
     /** The 8 bytes every record starts with. */

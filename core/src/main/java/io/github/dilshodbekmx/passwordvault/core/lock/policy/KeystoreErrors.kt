@@ -117,15 +117,21 @@ object KeystoreErrors {
                 if (!makeCanary()) return Ks.Temporary(null)
                 when (val made = getKey(CANARY_ALIAS)) {
                     is Lookup.Found -> Unit
-                    is Lookup.Failed ->
-                        return if (made.failure == KeystoreFailure.NullKey) Ks.Temporary(null) else classify(Place.GET_KEY_AGAIN, made.failure, made.cause)
+                    is Lookup.Failed -> return if (made.failure == KeystoreFailure.NullKey) {
+                        Ks.Temporary(null)
+                    } else {
+                        classify(Place.GET_KEY_AGAIN, made.failure, made.cause)
+                    }
                 }
             }
         }
         return when (val again = getKey(alias)) {
             is Lookup.Found -> Ks.Ok(again.key)
-            is Lookup.Failed ->
-                if (again.failure == KeystoreFailure.NullKey) Ks.Gone(GONE_NOT_FOUND) else classify(Place.GET_KEY_AGAIN, again.failure, again.cause)
+            is Lookup.Failed -> if (again.failure == KeystoreFailure.NullKey) {
+                Ks.Gone(GONE_NOT_FOUND)
+            } else {
+                classify(Place.GET_KEY_AGAIN, again.failure, again.cause)
+            }
         }
     }
 
