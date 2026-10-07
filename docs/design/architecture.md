@@ -383,15 +383,40 @@ sealed interface LockUiState {
     class Locked(val screen: LockScreen) : LockUiState                       // chosen by EntryPolicy (lock.md §13.1)
     class Unlocked(val notices: List<Notice>, val proof: MasterProof?) : LockUiState
 }
-sealed interface LockScreen {                          // lock.md §13.2; declared in core.lock.flow, chosen by EntryPolicy
+sealed interface LockScreen {                          // lock.md §13.2; declared in core.lock.flow (LockScreen.kt), chosen by EntryPolicy
     val aside: AsideLine?                              // the screen of a vault put aside: "Passwords locked on 6 Oct 2026",
                                                        // or "Your passwords from before 7 Oct 2026" for one marked replaced
     class Pad(val digits: Int, val status: PadStatus?, val fingerprintKey: Boolean, val opening: Boolean, override val aside: AsideLine?) : LockScreen
     class FingerprintOnly(val status: PadStatus?, val pinReason: PinReason?, override val aside: AsideLine?) : LockScreen
     class MasterPassword(val reason: MpReason?, val canUsePin: Boolean, val practice: Practice?, val waitUntilElapsedMs: Long?,
-                         val error: MpError?, val pendingReadyInMs: Long?, val opening: Boolean, override val aside: AsideLine?) : LockScreen
-    class OlderPassword(val changedAtMs: Long, val unfinishedChange: Boolean) : LockScreen   // F16b, the change that did or did not finish
+                         val error: MpError?, val pendingReadyInMs: Long?, val opening: Boolean, override val aside: AsideLine?,
+                         val fingerprintLine: FingerprintLine? = null) : LockScreen
+                                                       // fingerprintLine: fingerprint unlock is on and cannot be used now; its line
+                                                       // under the reason (lock.md §13.3, ux.md §5.10)
+    class OlderPassword(val changedAtMs: Long, val unfinishedChange: Boolean, override val aside: AsideLine? = null) : LockScreen
+                                                       // F16b, the change that did or did not finish
 }
+// The parts of LockScreen and Notice, declared in core.lock.flow (LockScreen.kt, Notice.kt). They hold facts and numbers, never a
+// sentence: the screens pick the texts of lock.md §13.3 and §13.4 from them, so that the language can change under them.
+// AsideLine: LockedOn(atMs) | FromBefore(atMs)
+// PadStatus: TriesLeft(left) | WrongPin(left) | LastTry | LastTryWhilePending | SameAgain | Interrupted(left) | StorageFull | FingerprintLine
+// FingerprintLine, a PadStatus: TurnedOff | Locked | DidNotOpen | NotForApps | NoneSaved | UpdateNeeded | CannotCheck
+//                                (also FingerprintOnly's status and MasterPassword's fingerprintLine)
+// enum class PinReason { LIMIT, CANNOT_CHECK, STOPPED_WORKING, STORAGE_FULL, NEWER_APP }
+// MpReason, highest first: PracticeDue | WelcomeBack | FromBefore(atMs) | Pin(reason: PinReason) | MasterChanged | OlderCopy(createdMs)
+//                          | NoSecureHardware
+// class Practice(val notNow: Shortcut?)              // "Not now" uses this shortcut; null past the grace. Shortcut { PIN, FINGERPRINT }
+//                                                    // is core.lock.record's (StateRecord.kt)
+// MpError: Wrong(offerForgot: Boolean, replaced: ReplacedLine?) | NoMemory
+// class ReplacedLine(val atMs: Long, val by: Shortcut, val oldVaultId: String?)   // oldVaultId null: replaced more than once; the
+//                                                                                  // button opens the "Forgot master password?" sheet
+// Notice, each with val id: Long, in the order of lock.md §13.4: OlderCopy(openedCreatedMs) | OlderThanLastTime(lastOpenedAtMs)
+//   | Pending(requestedAtMs, by, remainingMs) | PendingReady(requestedAtMs, by) | PendingCancelled | Replaced(atMs, by, oldVaultId)
+//   | WrongTries(wrongPins, lastWrongPinAtMs, interrupted, pinsBeforeOff, offerNewMasterPassword, wrongMasterPasswords)
+//   | ChoosePin(reason: ChoosePinReason, needsMasterPassword) | FingerprintAgain | StorageUnreadable | BackupNow
+// enum class ChoosePinReason { TURNED_OFF, FORGOTTEN, STOPPED_WORKING, MASTER_CHANGED, NONE_HERE, SOMEONE_MAY_KNOW }
+// enum class NoticeAnswer { OK, LATER, CANCEL_IT, FINISH_NOW, IT_WASNT_ME, CHANGE_PIN, TYPE_MASTER_PASSWORD, NEW_MASTER_PASSWORD,
+//                           CHOOSE_PIN, TURN_ON_FINGERPRINT, SET_UP_AGAIN, BACK_UP_NOW }   // each Notice's KDoc lists the ones it offers
 class LockStatus(                                      // Settings › App lock, the list's banners, Welcome and the sheet
     val pin: PinStatus,                                // On | NotSet | Off(reason) | CannotCheck | NoSecureHardware
     val fingerprint: FingerprintStatus,                // On | Off | TurnOnAgain | Unavailable(canAuthenticate) | NoSecureHardware
