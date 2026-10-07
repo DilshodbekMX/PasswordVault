@@ -24,12 +24,15 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.PasswordVault">
 
-        <!-- One task of its own, recreated on rotation and language changes (no configChanges). -->
+        <!-- One task of its own, recreated on rotation and language changes (no configChanges).
+             adjustResize: on Android 7 to 10 an edge-to-edge window gets the keyboard's insets only
+             so; without it the window pans and the keyboard covers what is below a field. -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTask"
-            android:taskAffinity="">
+            android:taskAffinity=""
+            android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
