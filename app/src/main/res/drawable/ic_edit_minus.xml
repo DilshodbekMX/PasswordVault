@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The - button next to a slider of the generator sheet (ux.md §5.15). The path data of Google's Material Icons "remove"
+     (Apache License 2.0, as for ic_common_*). Tinted by Compose's Icon. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M19,13H5v-2h14v2z" />
+</vector>
