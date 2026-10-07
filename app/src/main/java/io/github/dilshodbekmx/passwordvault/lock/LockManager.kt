@@ -1,0 +1,286 @@
+package io.github.dilshodbekmx.passwordvault.lock
+
+import io.github.dilshodbekmx.passwordvault.core.lock.flow.MasterProof
+import io.github.dilshodbekmx.passwordvault.core.lock.pin.PinBlocklist
+import io.github.dilshodbekmx.passwordvault.core.model.Vault
+import kotlinx.coroutines.flow.StateFlow
+
+/**
+ * The lock as the app sees it (architecture.md §3.5; lock.md): `DefaultLockManager` (build plan 4.1)
+ * over `LockEngine`, before it the master-password gate of package 3.2, and `FakeLockManager` until
+ * then. It owns the PIN digits, the charge, the visit, the outstanding fingerprint launch,
+ * `MasterProof` and the in-memory lock records, behind the lock mutex (§5.1, §5.2). Nothing of it
+ * lives in the activity, so a rotation or a language change neither locks nor loses digits (lock.md
+ * §11).
+ *
+ * Arrays passed in belong to the caller, which wipes them after the call.
+ */
+interface LockManager {
+    /** The top-level state: `NavState` shows its back stack, the lock route shows its screen. */
+    val state: StateFlow<LockUiState>
+
+    /** The lock's facts for Settings, the list's banners, Welcome and the sheet. */
+    val status: StateFlow<LockStatus>
+
+    /** An intent of the lock screens, Welcome or a notice. Main thread; never blocks. */
+    fun send(intent: LockIntent)
+
+    /**
+     * Locks: drops the proof, cancels an open prompt, and asks the vault to drop its session
+     * (architecture.md §5.5 steps 3 and 4). Called only by `AutoLock`, after the draft flush of §5.5;
+     * never writes vault data.
+     */
+    suspend fun lock(reason: LockReason)
+
+    /**
+     * Checks a typed master password under the guard of lock.md §6.8, for the lock screen and every
+     * prompt of the open app ([purpose]). A right one counts as practice (§8.3) and, on the lock
+     * screen, unlocks.
+     */
+    suspend fun submitMasterPassword(chars: CharArray, purpose: MpPurpose): MpResult
+
+    // The flows started from setup and Settings. Each suspends until its flow ends; the prompts and
+    // pads it needs on the way appear through `state`.
+
+    /**
+     * Creates the vault (lock.md F1; F13 and F17 step 3 with [restoreFrom]): the two typings are
+     * compared before anything is derived ([CreateResult.Mismatch]), then the vault is written and
+     * proven with [again], and `AppSettings.writeDefaults` runs (lock.md §10.1).
+     */
+    suspend fun createVault(first: CharArray, again: CharArray, restoreFrom: Vault?): CreateResult
+
+    /** Why [pin] (six ASCII digits) is refused, or null (lock.md §7.2): `PinBlocklist.reason`. */
+    fun pinProblem(pin: ByteArray): PinBlocklist.Reason?
+
+    /** Sets a PIN where none is usable, with the master password of this flow (lock.md F6). False: not set; the old state stays. */
+    suspend fun setPin(pin: ByteArray, proof: MasterProof): Boolean
+
+    /** "Change PIN": [current] is a counted check in a prompt (lock.md §6.3, F6 step 2), then [new]. */
+    suspend fun changePin(current: ByteArray, new: ByteArray): PinChange
+
+    /** Turns fingerprint unlock on with the master password of this flow (lock.md F9): makes the key, shows the prompt. */
+    suspend fun fingerprintOn(proof: MasterProof): FingerprintOnResult
+
+    /** Turns fingerprint unlock off; no proof (lock.md F9 "Off"). */
+    suspend fun fingerprintOff()
+
+    /**
+     * Changes the master password (lock.md F8): the typings compared first ([ChangeResult.Mismatch]
+     * before anything is derived); [pin] is the PIN typed at step 3 to keep it, or null for "Not now"
+     * or when no PIN is usable.
+     */
+    suspend fun changeMasterPassword(proof: MasterProof, first: CharArray, again: CharArray, pin: ByteArray?): ChangeResult
+
+    /** Asks for a new master password while the old one is forgotten (lock.md F11 steps 3 to 5); the PIN or fingerprint prompt appears through `state`. */
+    suspend fun requestNewMasterPassword(first: CharArray, again: CharArray): RequestResult
+
+    /** "Cancel it": the pending new master password is dropped (lock.md F11 step 9). */
+    fun cancelNewMasterPassword()
+
+    /** Settings › Old passwords › Open (lock.md F17 step 5): that vault's master password, under its own guard; its accounts join the current vault. */
+    suspend fun openAside(vaultId: String, chars: CharArray): AsideResult
+
+    /** Settings › Old passwords › Delete (lock.md F17 step 5): that vault's master password only; then its files, its lock directory and its keys. */
+    suspend fun deleteAside(vaultId: String, chars: CharArray): AsideResult
+}
+
+/** Why [LockManager.lock] is called (lock.md §10; architecture.md §5.5 step 1). */
+enum class LockReason {
+    /** The lock delay passed since the app was left, or "Immediately" at `ON_STOP`. */
+    LEFT,
+
+    /** The screen turned off. */
+    SCREEN_OFF,
+
+    /** 5 minutes without a touch while the app was in front. */
+    NO_TOUCH,
+
+    /** More than 10 minutes in a file picker or share sheet that the app opened (lock.md §10.3). */
+    EXTERNAL_TIMEOUT,
+
+    /** Settings › "Lock now" (`Session.lockNow`). */
+    LOCK_NOW,
+}
+
+/** What a typed master password is for (lock.md §8.2): it picks what a right one leads to. */
+enum class MpPurpose {
+    /** The lock screen, practice screens included: a right one unlocks. */
+    UNLOCK,
+
+    /** In the open app: "Type it now" on the practice banner, "Type master password" on the wrong-tries notice (lock.md §13.4). */
+    PRACTICE,
+
+    /** Before an encrypted backup (lock.md F12). */
+    BACKUP,
+
+    /** Before a plain export, every time (lock.md F12). */
+    EXPORT,
+
+    /** The current master password before a change (lock.md F8 step 1). */
+    CHANGE_MASTER_PASSWORD,
+
+    /** "Set a PIN" when none exists, and "Choose a new PIN" after a shortcut unlock (lock.md F6). */
+    SET_PIN,
+
+    /** "Change PIN" › "Use master password instead" (lock.md F6 step 2). */
+    CHANGE_PIN,
+
+    /** Turning fingerprint on (lock.md F9 step 2). */
+    FINGERPRINT_ON,
+}
+
+/** What [LockManager.submitMasterPassword] came to (architecture.md §3.5; lock.md §6.8, §13.3). */
+sealed interface MpResult {
+    /** Right: [proof] is the verified password for the next step of the same flow (lock.md §5.8). */
+    class Right(val proof: MasterProof) : MpResult {
+        override fun toString(): String = "MpResult.Right"
+    }
+
+    /** No slot opened (lock.md §6.8 step 7). */
+    data object Wrong : MpResult
+
+    /** The field waits until `elapsedRealtime()` reaches [untilElapsedMs] (lock.md §6.8 step 1). */
+    data class Wait(val untilElapsedMs: Long) : MpResult
+
+    /** Argon2id could not run: not counted, not wrong (lock.md §6.8 step 3). */
+    data object NoMemory : MpResult
+
+    /**
+     * It opens only a copy from before a change (lock.md F16b): [changedAtMs] is the date of the
+     * change; [unfinishedChange] when `mp_change` is set ("Try again" and "Open my passwords from
+     * before the change"), otherwise "OK" only.
+     */
+    data class OlderPassword(val changedAtMs: Long, val unfinishedChange: Boolean) : MpResult
+
+    /** Right, but the visit that asked has ended: nothing opens (lock.md §6.8 step 8, I11). */
+    data object TooLate : MpResult
+}
+
+/** What [LockManager.createVault] came to (lock.md F1 steps 2 and 3, F13, F17 step 3). */
+sealed interface CreateResult {
+    /** The vault [vaultId] was written, proven and opened; the state is unlocked and setup continues at the PIN (F1 step 5). */
+    data class Created(val vaultId: String) : CreateResult
+
+    /** The two typings differ: "This doesn't match. …" Nothing was derived. */
+    data object Mismatch : CreateResult
+
+    /** The password holds [codePoint], which Unicode has not assigned or is an unpaired surrogate (lock.md §8.1, [V-C9]). */
+    data class Unassigned(val codePoint: Int) : CreateResult
+
+    /** Argon2id could not run. Nothing was written. */
+    data object NoMemory : CreateResult
+
+    /** Writing or proving failed: "Couldn't save. Your phone's storage may be full." with "Try again". Nothing exists yet. */
+    data object NotSaved : CreateResult
+}
+
+/** What [LockManager.changePin] came to (lock.md F6). */
+sealed interface PinChange {
+    /** "Your PIN was changed." */
+    data object Changed : PinChange
+
+    /** The current PIN was wrong and counted: "Wrong PIN. [left] tries left." */
+    data class Wrong(val left: Int) : PinChange
+
+    /** The same wrong PIN as before: not counted again (lock.md §6.6). */
+    data object SameWrongAgain : PinChange
+
+    /** A limit was reached and the PIN was turned off (lock.md §6.5): "Type master password" or "Later". */
+    data object Limit : PinChange
+
+    /** The PIN cannot be checked right now; the try was refunded. */
+    data object CannotCheck : PinChange
+
+    /** The new PIN equals the current one: "Choose a PIN different from your current one." */
+    data object SameAsCurrent : PinChange
+
+    /** The new key or record could not be made (lock.md F6 step 8): "Couldn't save the new PIN. Your old PIN still works." */
+    data object NotSaved : PinChange
+}
+
+/** What [LockManager.fingerprintOn] came to (lock.md F9 steps 4 to 9, ux.md §5.7). */
+sealed interface FingerprintOnResult {
+    /** The key, the prompt and `fingerprint.rec` all succeeded. */
+    data object On : FingerprintOnResult
+
+    /** The prompt was closed (codes 10, 13, 5): stay on the screen. */
+    data object Cancelled : FingerprintOnResult
+
+    /** No finger is enrolled: "Add a fingerprint in your phone's settings first." */
+    data object NoneEnrolled : FingerprintOnResult
+
+    /** "This phone can't keep a fingerprint key in protected hardware." */
+    data object NoSecureHardware : FingerprintOnResult
+
+    /** Anything else: "Fingerprint unlock could not be turned on. You can try again later in Settings." */
+    data object Failed : FingerprintOnResult
+
+    /** The prompt could not be shown now (the activity is not resumed, lock.md §9.2 rule 3). */
+    data object NotShown : FingerprintOnResult
+}
+
+/** What [LockManager.changeMasterPassword] came to (lock.md F8). */
+sealed interface ChangeResult {
+    /** Changed and proven. [pinKept]: the PIN works with the new key; otherwise "Choose a PIN" follows. [fingerprintKept]: likewise. */
+    data class Changed(val pinKept: Boolean, val fingerprintKept: Boolean) : ChangeResult
+
+    /** The two typings differ. Nothing was derived. */
+    data object Mismatch : ChangeResult
+
+    /** As [CreateResult.Unassigned]. */
+    data class Unassigned(val codePoint: Int) : ChangeResult
+
+    /** The PIN typed to keep it was wrong and counted; nothing changed yet. */
+    data class PinWrong(val left: Int) : ChangeResult
+
+    /** Argon2id could not run. Nothing changed. */
+    data object NoMemory : ChangeResult
+
+    /** "Couldn't change your master password. Nothing was changed. Your old master password, PIN and fingerprint still work." */
+    data object NothingChanged : ChangeResult
+
+    /** "Saving may not have finished. Next time, try your new master password first, then your old one." */
+    data object Unclear : ChangeResult
+}
+
+/** What [LockManager.requestNewMasterPassword] came to (lock.md F11 steps 3 to 5). */
+sealed interface RequestResult {
+    /** Asked for: it starts working once [remainingMs] more are credited (24 hours in all, lock.md §6.9). */
+    data class Requested(val remainingMs: Long) : RequestResult
+
+    /** The two typings differ. Nothing was derived. */
+    data object Mismatch : RequestResult
+
+    /** As [CreateResult.Unassigned]. */
+    data class Unassigned(val codePoint: Int) : RequestResult
+
+    /** The PIN or fingerprint confirmation was closed. */
+    data object Cancelled : RequestResult
+
+    /** No proof is accepted now: a fingerprint while a PIN exists, the PIN turned off or not checkable (lock.md T16). */
+    data object NotAllowed : RequestResult
+
+    /** Argon2id could not run. */
+    data object NoMemory : RequestResult
+
+    /** The record could not be written. Nothing is pending. */
+    data object NotSaved : RequestResult
+}
+
+/** What [LockManager.openAside] and [LockManager.deleteAside] came to (lock.md F17 step 5). */
+sealed interface AsideResult {
+    /** Opened and its accounts added, or deleted with its lock directory and keys. */
+    data object Done : AsideResult
+
+    /** Not that vault's master password. */
+    data object Wrong : AsideResult
+
+    /** That vault's guard makes the field wait until [untilElapsedMs] (lock.md §6.8). */
+    data class Wait(val untilElapsedMs: Long) : AsideResult
+
+    /** Argon2id could not run. */
+    data object NoMemory : AsideResult
+
+    /** The merge or the delete failed; nothing changed. */
+    data object NotSaved : AsideResult
+}
