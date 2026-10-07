@@ -179,7 +179,8 @@ Four packages, side by side. None of them names a type of another.
 ### Sub-wave 2B (after `wave-2A-ok`)
 
 #### 2.7 Android adapters
-- **Owns:** `APP/platform/{OsFiles,AndroidClock,SystemRandom,NativeArgon2id}.kt`, the body of `PlatformModule.kt`, `APP-AT/platform/`, `APP-AT/vectors/`.
+- **Owns:** `APP/platform/{OsFiles,AndroidClock,SystemRandom,NativeArgon2id}.kt`, the body of `PlatformModule.kt`, `APP-AT/platform/`, `APP-AT/vectors/`, `TEST/storage/VaultRoundTrip.kt` (the steps of `VaultRoundTripTest.roundTrip` moved there unchanged, with Kotlin's `check` and `error` in place of `org.junit.Assert`, because `:testing` has no JUnit; it already takes `FilePrimitives`, the vaults directory, `Argon2id`, `Aead`, `RandomSource` and `Clock`).
+- **May also edit:** `CORE-T/integration/VaultRoundTripTest.kt` (2.3's), so that it calls `VaultRoundTrip` and still passes on the JVM. Nobody else in 2B owns it.
 - **Inputs:** A §3.2 table, §3.3 `FilePrimitives`, §3.4 `RecordFiles`, §8.3; L §5.9; `docs/lab/old-android-artifacts/{AtomicFiles,Kdf}.kt`; [V-C1], [V-C2], [V-S7], [V-P7].
 - **Accepted when,** on API 24, 28 and 37 [device]: the file tests of A §8.3; the vault directory is under `filesDir` and the lock directory under `noBackupFilesDir` (R-3); `NativeArgon2id` gives the two vectors and equals `CryptoFactory.bouncyCastleArgon2id()` for a 3-byte and a 200-byte non-ASCII password (the exact-size buffer rule); a forced load failure selects the fallback; the body of `VaultRoundTripTest` on `OsFiles` and `NativeArgon2id`; the vectors of A §4.13 and L §4.3 on the device (L A5). On API 37 only: a derivation under `adb shell am memory-limiter manual <pid> <MB>` succeeds or gives `KdfUnavailable`, and the result is written into the test report [V-P7].
 
