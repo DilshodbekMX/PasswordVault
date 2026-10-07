@@ -5,8 +5,11 @@
 #   tools/emu/shell/walk.sh SERIAL [--apk FILE] [--locale TAG]
 #       SERIAL comes from tools/emu/boot.sh. The APK defaults to this worktree's
 #       app/build/outputs/apk/debug/app-debug.apk (tools/gradle.sh :app:assembleDebug).
-#       --locale TAG sets the app's language first (for example en-XA, the pseudo-locale of
-#       build plan rule 5); it needs Android 13 or newer (cmd locale) and is SKIPPED below.
+#       --locale TAG sets the app's language once the app is open on Welcome (for example en-XA,
+#       the pseudo-locale of build plan rule 5): the activity is recreated on the same route, and
+#       the shell's own texts must then not be English. It needs Android 13 or newer (cmd locale)
+#       and is SKIPPED below. (Set before the first start, the language is reset: AppCompat copies
+#       its own empty record into the system once, at the first start, i18n.md §1.4.3.)
 #
 # The walk finds screens by the resource ids the shell gives them (architecture.md §3.6):
 # pv.route.<Route> on each screen, pv.open.<Route> on a placeholder's buttons, pv.action.* and
@@ -109,8 +112,20 @@ install_fresh() {
 }
 
 set_locale() {
-    if [ -z "$LOCALE" ]; then return 0; fi
-    pv_shell cmd locale set-app-locales "$PV_PACKAGE" --locales "$LOCALE" >/dev/null
+    on Welcome || return 1
+    pv_shell cmd locale set-app-locales "$PV_PACKAGE" --locales "$LOCALE" >/dev/null || return 1
+    pv_sleep 3
+    pv_shell cmd locale get-app-locales "$PV_PACKAGE" | tr -d '\r' | grep -q "\[$LOCALE\]" \
+        || { pv_log "the app's locales are not [$LOCALE]: $(pv_shell cmd locale get-app-locales "$PV_PACKAGE")"; return 1; }
+    on Welcome
+}
+
+# The shell's own texts (the bottom bar's labels) are not English under --locale.
+shell_texts_localized() {
+    local english
+    english=$(pv_ui_nodes | awk -F'|' '$1 == "Passwords" || $1 == "Security" || $1 == "Settings"')
+    [ -z "$english" ] || { pv_log "English labels under $LOCALE: $english"; return 1; }
+    present pv.tab.Passwords
 }
 
 start() {
@@ -225,15 +240,18 @@ no_crash() {
 }
 
 pv_step "install the debug app afresh" -- install_fresh || { pv_summary; exit 1; }
-if [ -n "$LOCALE" ] && [ "$API" -lt 33 ]; then
-    pv_report SKIPPED "set the app's language to $LOCALE" "cmd locale needs Android 13 or newer"
-    LOCALE=""
-else
-    pv_step "set the app's language${LOCALE:+ to $LOCALE}" -- set_locale
-fi
 pv_step "start the app" -- start || { pv_summary; exit 1; }
+if [ -n "$LOCALE" ]; then
+    if [ "$API" -lt 33 ]; then
+        pv_report SKIPPED "set the app's language to $LOCALE on Welcome" "cmd locale needs Android 13 or newer"
+        LOCALE=""
+    else
+        pv_step "set the app's language to $LOCALE on Welcome: the same route after the recreation" -- set_locale
+    fi
+fi
 pv_step "setup: Welcome, Language, Restore, the three steps, the vault made" -- setup_routes
 pv_step "after setup: the notice and the PIN setup steps" -- pin_setup_routes
+if [ -n "$LOCALE" ]; then pv_step "the bottom bar's labels are in $LOCALE, not English" -- shell_texts_localized; fi
 pv_step "Passwords and the routes below it" -- passwords_routes
 pv_step "Security and the routes below it" -- security_routes
 pv_step "Settings and every route it opens" -- settings_routes
