@@ -239,25 +239,25 @@ class EntryViewModel(
     /** The star: "Add to favourites" or "Remove from favourites". */
     fun setFavourite(favourite: Boolean) {
         touched()
-        if (liveEntry() != null) save(VaultEdits.setFavourite(entryId, favourite))
+        if (liveEntry() != null) save(VaultEdits.setFavourite(entryId, favourite), again = { setFavourite(favourite) })
     }
 
     /** "Leave out of the security check" ([ignored] true) and the banner's "Check it again" (architecture.md D-9a). */
     fun setCheckIgnored(ignored: Boolean) {
         touched()
-        if (liveEntry() != null) save(VaultEdits.setCheckIgnored(entryId, ignored))
+        if (liveEntry() != null) save(VaultEdits.setCheckIgnored(entryId, ignored), again = { setCheckIgnored(ignored) })
     }
 
     /** "Yes, it's changed" on the banner of a pending change: the old password joins the previous ones (ux.md §5.17). */
     fun confirmChange() {
         touched()
-        if (liveEntry()?.changePending == true) save(VaultEdits.confirmChange(entryId))
+        if (liveEntry()?.changePending == true) save(VaultEdits.confirmChange(entryId), again = ::confirmChange)
     }
 
     /** "No, put back the old password": it is the account's password again, and the new one joins the previous ones. */
     fun revertChange() {
         touched()
-        if (liveEntry()?.changePending == true) save(VaultEdits.revertChange(entryId))
+        if (liveEntry()?.changePending == true) save(VaultEdits.revertChange(entryId), again = ::revertChange)
     }
 
     // ---- Notes and previous passwords --------------------------------------------------------
@@ -291,6 +291,7 @@ class EntryViewModel(
         deletedHere = true
         save(
             change = VaultEdits.delete(entryId),
+            again = ::delete,
             notSaved = {
                 deletedHere = false
                 render()
@@ -308,6 +309,7 @@ class EntryViewModel(
     fun undoDelete() {
         save(
             change = VaultEdits.restore(entryId),
+            again = ::undoDelete,
             saved = { result ->
                 if (result is EntryResult.Done) {
                     deletedHere = false
@@ -322,15 +324,19 @@ class EntryViewModel(
 
     // ---- Inside ------------------------------------------------------------------------------
 
-    private fun <T> save(change: VaultChange<T>, notSaved: () -> Unit = {}, saved: (T) -> Unit = {}) {
+    /**
+     * Saves [change]. When it is not saved, [notSaved] runs and the screen is told, with [again] as
+     * its "Try again": the same action from its start, so that it checks and marks what it did the
+     * first time.
+     */
+    private fun <T> save(change: VaultChange<T>, again: () -> Unit, notSaved: () -> Unit = {}, saved: (T) -> Unit = {}) {
         viewModelScope.launch {
             when (val result = repository.edit(change)) {
                 is SaveResult.Saved -> saved(result.value)
                 is SaveResult.NotSaved -> {
                     notSaved()
                     // Another try cannot make a vault that is too large fit.
-                    val retry: (() -> Unit)? = if (result.problem == SaveProblem.TOO_LARGE) null else ({ save(change, notSaved, saved) })
-                    eventChannel.send(EntryEvent.NotSaved(result.problem, retry))
+                    eventChannel.send(EntryEvent.NotSaved(result.problem, again.takeIf { result.problem != SaveProblem.TOO_LARGE }))
                 }
             }
         }
