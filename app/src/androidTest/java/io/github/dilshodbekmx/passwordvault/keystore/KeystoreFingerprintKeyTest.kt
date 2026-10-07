@@ -386,6 +386,30 @@ class KeystoreFingerprintKeyTest {
     }
 
     @Test
+    fun probesAndPromptsThatAreClosedDoNotUseUpTheKeystoresOperations() = runBlocking {
+        // Every probe, and every prompt that is closed or not shown, leaves a Keystore operation that
+        // was begun (Cipher.init) and never finished. The Keystore has few of them at a time; it
+        // must take them back, or the shortcut would stop working after some visits.
+        val alias = kit.fingerprintAlias()
+        assertEquals(KeyCreate.Ok, key.create(alias))
+        val pinAlias = kit.pinAlias()
+        val pin = KeystorePinKey(access)
+        assertEquals(KeyCreate.Ok, pin.create(pinAlias))
+        val message = ByteArray(56) { 1 }
+        val kek = (pin.hmac(pinAlias, message) as Ks.Ok).value
+        val nonce = ByteArray(12) { 6 }
+        repeat(300) { visit ->
+            assertEquals("probe on visit $visit", Ks.Ok(Unit), key.probe(alias, nonce))
+            launcher.error(10)
+            assertEquals("visit $visit", FingerprintResult.Closed(10), key.open(alias, nonce, ByteArray(48), PromptUse.UNLOCK, visit))
+            assertEquals("visit $visit", FingerprintResult.NotShown, key.seal(alias, vk, PromptUse.TURN_ON, visit))
+            if (visit % 50 == 0) assertArrayEquals("the PIN key on visit $visit", kek, (pin.hmac(pinAlias, message) as Ks.Ok).value)
+        }
+        assertEquals(Ks.Ok(Unit), key.probe(alias, nonce))
+        assertArrayEquals(kek, (pin.hmac(pinAlias, message) as Ks.Ok).value)
+    }
+
+    @Test
     fun cancelReachesTheLauncher() {
         key.cancel()
         key.cancel()
