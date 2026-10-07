@@ -77,9 +77,23 @@ SCREEN_H=$(pv_shell wm size 2>/dev/null | tr -d '\r' | sed -n 's/^Physical size:
 SCREEN_H=${SCREEN_H:-1920}
 SAFE_BOTTOM=$((SCREEN_H - 160))
 
-# tap ID: taps the node whose resource id is ID, after scrolling it above the bottom band.
+scroll_down() { pv_shell input swipe 540 $((SCREEN_H * 6 / 10)) 540 $((SCREEN_H * 3 / 10)) 400 >/dev/null; pv_sleep 1; }
+
+# reveal ID: ID is on the screen, scrolling down for it (on a short screen it may be below the fold).
+reveal() {
+    local i
+    for i in 1 2 3 4; do
+        present "$1" 2 && return 0
+        scroll_down
+    done
+    present "$1" 2
+}
+
+# tap ID: taps the node whose resource id is ID, after scrolling it onto the screen and above the
+# bottom band.
 tap() {
     local id_re="[|]$(re "$1")\$" nodes line y i
+    reveal "$1" || { pv_log "no node with id $1; ids: $(ids)"; return 1; }
     for i in 1 2 3 4 5; do
         nodes=$(pv_ui_nodes)
         line=$(printf '%s\n' "$nodes" | pv_ui_match "$id_re")
@@ -89,8 +103,7 @@ tap() {
             pv_ui_tap "$id_re" "$nodes"
             return
         fi
-        pv_shell input swipe 540 $((SCREEN_H * 6 / 10)) 540 $((SCREEN_H * 3 / 10)) 400 >/dev/null
-        pv_sleep 1
+        scroll_down
     done
     pv_log "the node $1 stays in the bottom band (y $y of $SCREEN_H)"
     return 1
@@ -161,14 +174,14 @@ start() {
 # Setup (lock.md F1 steps 1 to 3) through whichever screens the APK has.
 set_up() {
     tap pv.open.CreateMasterPassword && on CreateMasterPassword || return 1
-    if present pv.setup.typeOwn 3; then
+    if reveal pv.setup.typeOwn; then
         tap pv.setup.typeOwn && need pv.setup.own && type_into pv.setup.own "$PASSWORD" || return 1
         submit pv.setup.useOwn pv.setup.reuse.no && tap pv.setup.reuse.no || return 1 # "No, it's new"
     else
         tap pv.open.WriteDown || return 1
     fi
     on WriteDown && tap pv.open.TypeAgain && on TypeAgain || return 1
-    if present pv.setup.again 3; then
+    if reveal pv.setup.again; then
         type_into pv.setup.again "$PASSWORD" && submit pv.action.createVault pv.route.Passwords 60
     else
         tap pv.action.createVault && on Passwords 60
@@ -178,7 +191,7 @@ set_up() {
 # The master password on the lock screen.
 unlock() {
     on Locked || return 1
-    if present pv.lock.password 3; then
+    if reveal pv.lock.password; then
         type_into pv.lock.password "$PASSWORD" && submit pv.lock.unlock pv.route.Passwords 60
     else
         tap pv.action.unlock && on Passwords 60
