@@ -133,7 +133,7 @@ class DefaultVaultRepository internal constructor(
     private val published = MutableStateFlow<VaultState>(VaultState.Locked)
     override val state: StateFlow<VaultState> = published.asStateFlow()
 
-    @Volatile private var session: Session? = null
+    @Volatile private var session: Session? = null // written under mutex and draftLock
 
     private var sessions = 0L // under mutex: the id of the last session
 
@@ -481,8 +481,20 @@ class DefaultVaultRepository internal constructor(
                 housekeepingLocked(s)
                 done(result.opened)
             }
-            // In place, but perhaps not durable: "Saving may not have finished" (lock.md F8 step 6).
-            CommitResult.NotDurable -> VaultWrite.Unclear
+            CommitResult.NotDurable -> {
+                // In place, but perhaps not durable: "Saving may not have finished" (lock.md F8 step 6).
+                // The store hands back nothing for it, so the session goes on under the new key,
+                // opened again with it: saves made now must not bury the change under the old key.
+                val reopened = storage.open(StoreVaultRef.Current, mapOf(vkId to vk))
+                if (reopened is OpenResult.Opened && reopened.opened.vkId == vkId) {
+                    val old = s.opened
+                    s.opened = reopened.opened
+                    s.slot = slotOf(StoreVaultRef.Current, reopened.opened)
+                    wipe(old)
+                    publish(s, null)
+                }
+                VaultWrite.Unclear
+            }
             else -> VaultWrite.NothingChanged
         }
     }
@@ -575,10 +587,14 @@ class DefaultVaultRepository internal constructor(
      */
     private fun startCurrent(opened: OpenedVault, olderCopy: Boolean, slot: SlotRef?, keepDraft: Boolean) {
         cancelAutomatic()
-        session?.let { wipe(it.opened) }
-        if (!keepDraft) synchronized(draftLock) { heldDraft = null }
+        val previous = session
         val s = Session(++sessions, opened, olderCopy, slot)
-        session = s
+        // One step for holdDraft: a draft held for the session before is dropped with it, never kept for this one.
+        synchronized(draftLock) {
+            session = s
+            if (!keepDraft) heldDraft = null
+        }
+        previous?.let { wipe(it.opened) }
         publish(s, null)
         startAutomatic(s)
     }
@@ -594,8 +610,10 @@ class DefaultVaultRepository internal constructor(
     private fun endCurrent(): Boolean {
         cancelAutomatic()
         val s = session
-        session = null
-        synchronized(draftLock) { heldDraft = null }
+        synchronized(draftLock) {
+            session = null
+            heldDraft = null
+        }
         s?.let { wipe(it.opened) }
         published.value = VaultState.Locked
         return s != null

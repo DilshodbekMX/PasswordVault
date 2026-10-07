@@ -317,6 +317,51 @@ class VaultsTest(private val kind: DiskKind) {
     }
 
     @Test
+    fun aChangeThatWasNotSyncedGoesOnUnderTheNewKey() = runTest {
+        val (repo, scope) = started()
+        try {
+            repo.create()
+            repo.add(form("before"), phone.random) // generation 2
+            val (vkId2, vk2) = repo.newKey()
+            // The new-key file is renamed into place, and the sync of live/ after it fails (lock.md F8 step 6).
+            disk.fail(FakeFiles.Op.SYNC_DIR) { it == phone.liveDir }
+            assertEquals(VaultWrite.Unclear, repo.changePassword(bytesOf(OTHER_PASSWORD), bytesOf(OTHER_PASSWORD), vkId2, vk2))
+            assertEquals("the session goes on under the new key", vkId2, repo.withVaultKey { id, _ -> id })
+            assertEquals(true, repo.checkPassword(bytesOf(OTHER_PASSWORD)))
+            repo.add(form("after"), phone.random)
+            assertEquals("a later save is under the new key", vkId2, phone.header(phone.pathOf(4)).vkId)
+            repo.lock()
+            // "Next time, try your new master password first": it opens what was saved since.
+            val again = newProcess(scope)
+            again.unlock(OTHER_PASSWORD)
+            assertEquals(listOf("before", "after"), titles(again))
+            again.lock()
+            assertTrue(newProcess(scope).openWithPassword(VaultRef.Current, bytesOf(PASSWORD)) is PasswordOpen.OlderPassword)
+        } finally {
+            scope.cancel()
+        }
+    }
+
+    @Test
+    fun aDraftHeldInOneVaultNeverReachesTheVaultSwappedIn() = runTest {
+        val (repo, scope) = started()
+        try {
+            val a = repo.create(vaultId(1), password = OTHER_PASSWORD)
+            repo.lock()
+            assertTrue(repo.putAside())
+            repo.create(vaultId(2))
+            repo.holdDraft(Draft(null, 1L, DraftEntry(title = "typed in B")))
+            repo.unlock(OTHER_PASSWORD, VaultRef.Aside(a.vaultId))
+            assertTrue(repo.swapIn(a.vaultId))
+            repo.flushDraft()
+            assertEquals(null, repo.shown().vault.draft)
+            assertEquals(listOf(1L), phone.liveNumbers())
+        } finally {
+            scope.cancel()
+        }
+    }
+
+    @Test
     fun retireOldKeysNeedsAnOpenVault() = runTest {
         val (repo, scope) = started()
         try {
