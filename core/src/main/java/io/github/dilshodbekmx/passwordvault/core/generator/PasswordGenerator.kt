@@ -14,11 +14,11 @@ import kotlin.math.log2
  *
  * **Random.** [GeneratorOptions.length] characters, each drawn from [alphabet]: the chosen kinds of
  * A–Z, a–z, 0–9 and the twelve [SYMBOLS], in that order, without the [LOOK_ALIKE] characters
- * I l 1 O 0 when look-alikes are avoided. A draw that misses one of the chosen kinds is thrown away
- * whole and made again from the start, so every password of that length over the alphabet that has
- * at least one character of each chosen kind is equally likely, and no other one can come out. With
- * the defaults (16 characters out of 69, all four kinds) that is 97.4 bits ([bits]). Each try makes
- * `length` draws `int(alphabet.length)`, one per character in order.
+ * I l 1 O 0 when look-alikes are avoided. Each try makes `length` draws `int(alphabet.length)`, one
+ * per character in order; a try that misses one of the chosen kinds is thrown away whole and made
+ * again from the start. So every password of that length over the alphabet that has at least one
+ * character of each chosen kind is equally likely, and no other one can come out. With the
+ * defaults (16 characters out of 69, all four kinds) that is 97.4 bits ([bits]).
  *
  * **Words.** [GeneratorOptions.words] words of [Wordlist.effShort], joined by the separator.
  * "Capital letters" makes the first letter of every word upper case; "Add a number" puts one digit
@@ -163,9 +163,10 @@ class PasswordGenerator(private val random: RandomSource) {
         }
 
         /**
-         * The passwords of [GeneratorOptions.length] characters over the alphabet that have every
-         * chosen kind: for each set of kinds left out, the passwords that use none of them, added
-         * or taken away by the size of the set.
+         * How many passwords of [GeneratorOptions.length] characters over the alphabet have every
+         * chosen kind. For each set of kinds left out, the passwords that use none of those kinds
+         * are counted: added when the set has an even number of kinds (none, two, four), taken
+         * away when it has an odd number.
          */
         private fun possiblePasswords(options: GeneratorOptions): BigInteger {
             val sizes = kinds(options).map { it.length }

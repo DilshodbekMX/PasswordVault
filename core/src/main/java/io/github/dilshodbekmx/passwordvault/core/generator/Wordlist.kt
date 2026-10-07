@@ -10,9 +10,9 @@ import java.util.Arrays
  *
  * The list is the resource [RESOURCE]: EFF's file with that one line removed. `SOURCES.md` beside it
  * names the origin, the licence (CC BY 4.0) and the change, for the licences screen
- * (VERIFICATION.md V-C13).
- * [effShort] reads and checks the file once, on first use, and refuses one that is not exactly such
- * a list, so that a damaged or edited file fails loudly instead of making weaker passphrases.
+ * (VERIFICATION.md V-C13). [effShort] reads and checks the file once, on first use, and refuses one
+ * that is not exactly such a list, so that a damaged or edited file fails loudly instead of making
+ * weaker passphrases.
  *
  * The words are not secret; which of them were drawn is, and that never passes through this class.
  */
