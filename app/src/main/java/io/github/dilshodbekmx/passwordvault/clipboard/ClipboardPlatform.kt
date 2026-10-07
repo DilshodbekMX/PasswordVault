@@ -1,5 +1,6 @@
 package io.github.dilshodbekmx.passwordvault.clipboard
 
+import android.annotation.SuppressLint
 import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.ClipData
@@ -14,15 +15,16 @@ import android.os.SystemClock
  * [SystemClip] over the phone's `ClipboardManager`: the clip and its two extras as ux.md §6 item 1
  * gives them, the description check of item 2, and the clear of [V-P2].
  *
- * @param sdk the API level, a parameter so that both forms of [clear] can be tested on one device.
+ * @param emptyClipClears the clear is an empty clip, which is all Android 7 and 8 offer; a parameter
+ *   so that this form can be tested on a newer phone too.
  */
 internal class AndroidSystemClip(
     private val manager: ClipboardManager,
-    private val sdk: Int = Build.VERSION.SDK_INT,
+    private val emptyClipClears: Boolean = Build.VERSION.SDK_INT < 28,
 ) : SystemClip {
 
     /** From Android 10 on a read is answered only for the app whose window has the focus [V-P2]. */
-    override val needsFocusToRead: Boolean get() = sdk >= 29
+    override val needsFocusToRead: Boolean get() = Build.VERSION.SDK_INT >= 29
 
     override fun set(text: CharSequence, sensitive: Boolean, token: String) {
         val clip = ClipData.newPlainText("", text)
@@ -55,7 +57,11 @@ internal class AndroidSystemClip(
 
     /** `clearPrimaryClip()` from API 28; below it an empty clip, which is all Android 7 and 8 offer [V-P2]. */
     override fun clear() {
-        if (sdk >= 28) manager.clearPrimaryClip() else manager.setPrimaryClip(ClipData.newPlainText("", ""))
+        if (!emptyClipClears && Build.VERSION.SDK_INT >= 28) {
+            manager.clearPrimaryClip()
+        } else {
+            manager.setPrimaryClip(ClipData.newPlainText("", ""))
+        }
     }
 
     companion object {
@@ -89,6 +95,9 @@ internal class AlarmManagerClearAlarm(context: Context) : ClearAlarm {
     private val app: Context = context.applicationContext
     private val alarms: AlarmManager = app.getSystemService(AlarmManager::class.java)
 
+    // MissingPermission: the exact alarm is set only where it needs no permission, and a refusal is
+    // caught; the app declares none on purpose (D-14, R-9).
+    @SuppressLint("MissingPermission")
     override fun schedule(token: String, clearAtElapsedMs: Long) {
         val operation = PendingIntent.getBroadcast(
             app,

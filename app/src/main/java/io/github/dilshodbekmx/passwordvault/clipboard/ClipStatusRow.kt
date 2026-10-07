@@ -14,11 +14,13 @@ import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.findRootCoordinates
@@ -95,14 +97,7 @@ internal fun ClipStatusSlot(status: ClipStatus?, elapsedMs: () -> Long, onClear:
 
 /**
  * The clipboard status row for [status] at [nowElapsedMs] (ux.md §6): the look is `ClipboardRow`'s
- * (ui/common), the texts are these.
- *  - The text: what was copied and the time left, "Clearing…" when the time is up and the clear has
- *    not run, "Clipboard cleared" after it.
- *  - On Android 7 to 12, which show no confirmation of their own, a line above it: "Password
- *    copied" for a secret of an account, "Copied" for anything else, selected text included.
- *  - What TalkBack hears once: that line and when the copy will be removed, "Password copied. It
- *    will be removed from the clipboard in 1 minute."; it does not change while the row counts.
- *  - "Clear now", until the clear has run.
+ * (ui/common), the texts are [clipRowTexts]'s.
  */
 @Composable
 internal fun ClipStatusRow(
@@ -112,6 +107,43 @@ internal fun ClipStatusRow(
     modifier: Modifier = Modifier,
     sdk: Int = Build.VERSION.SDK_INT,
 ) {
+    val texts = clipRowTexts(status, nowElapsedMs, sdk)
+    ClipboardRow(
+        text = texts.text,
+        announcement = texts.announcement,
+        modifier = modifier,
+        headline = texts.headline,
+        actionLabel = texts.action,
+        onAction = onClear,
+        cleared = texts.cleared,
+    )
+}
+
+/**
+ * What the row shows and says.
+ *
+ * @property text what was copied and the time left; "Clearing…" when the time is up and the clear
+ *   has not run; "Clipboard cleared" after it.
+ * @property announcement what TalkBack hears once when the row appears, and again only when it
+ *   changes: "Password copied. It will be removed from the clipboard in 1 minute.", then "Clipboard
+ *   cleared". It does not change while the row counts down.
+ * @property headline on Android 7 to 12, which show no confirmation of their own, a line above
+ *   [text]: "Password copied" for a secret of an account, "Copied" for anything else, selected text
+ *   included. Null on Android 13 and later, and once the clear has run.
+ * @property action "Clear now", until the clear has run.
+ * @property cleared the clear has run: a check mark in place of the key.
+ */
+internal data class ClipRowTexts(
+    val text: String,
+    val announcement: String,
+    val headline: String?,
+    val action: String?,
+    val cleared: Boolean,
+)
+
+/** The texts of the row for [status] at [nowElapsedMs], in the composition's language, on API level [sdk]. */
+@Composable
+internal fun clipRowTexts(status: ClipStatus, nowElapsedMs: Long, sdk: Int = Build.VERSION.SDK_INT): ClipRowTexts {
     val state = clipRowState(status, nowElapsedMs)
     val text = when (state) {
         is ClipRowState.Counting ->
@@ -119,20 +151,17 @@ internal fun ClipStatusRow(
         ClipRowState.Clearing -> stringResource(R.string.clipboard_row_clearing)
         ClipRowState.Cleared -> stringResource(R.string.clipboard_row_cleared)
     }
+    val cleared = state == ClipRowState.Cleared
+    // The sensitive flag is all the row knows of what was copied; selected text has it too, and is not a password.
     val secretOfAnAccount = status.sensitive && status.what != AndroidSecretClipboard.COPIED_TEXT
     val copied = stringResource(if (secretOfAnAccount) R.string.clipboard_copied_password else R.string.clipboard_copied_other)
-    val announcement = when {
-        state == ClipRowState.Cleared || status.delayMs <= 0L -> text
-        else -> stringResource(R.string.clipboard_announcement, copied, removedIn(status.delayMs))
-    }
-    ClipboardRow(
+    return ClipRowTexts(
         text = text,
-        announcement = announcement,
-        modifier = modifier,
-        headline = copied.takeIf { sdk < 33 && state != ClipRowState.Cleared },
-        actionLabel = stringResource(R.string.clipboard_clear_now).takeIf { state != ClipRowState.Cleared },
-        onAction = onClear,
-        cleared = state == ClipRowState.Cleared,
+        // A clip that was already overdue when it was found (a new process) has no time left to announce.
+        announcement = if (cleared || status.delayMs <= 0L) text else stringResource(R.string.clipboard_announcement, copied, removedIn(status.delayMs)),
+        headline = copied.takeIf { sdk < 33 && !cleared },
+        action = stringResource(R.string.clipboard_clear_now).takeIf { !cleared },
+        cleared = cleared,
     )
 }
 
@@ -148,23 +177,27 @@ private fun removedIn(delayMs: Long): String {
 }
 
 /**
- * The elapsed clock for the row of [status], read again each time the shown second changes, while
- * the screen is started; it stops at the planned clear, after which the row no longer counts.
+ * The elapsed clock for the row of [status]: read when the row appears, and again each time the
+ * shown second changes, while the screen is started (a screen that comes back reads it at once). It
+ * stops at the planned clear, after which the row no longer counts.
  */
 @Composable
-private fun elapsedNow(status: ClipStatus, elapsedMs: () -> Long): State<Long> {
+internal fun elapsedNow(status: ClipStatus, elapsedMs: () -> Long): State<Long> {
     val lifecycle = LocalLifecycleOwner.current.lifecycle
-    return produceState(initialValue = elapsedMs(), status, lifecycle) {
+    val clock by rememberUpdatedState(elapsedMs)
+    val now = remember(status) { mutableLongStateOf(elapsedMs()) }
+    LaunchedEffect(status, lifecycle) {
         lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
             while (true) {
-                val now = elapsedMs()
-                value = now
-                val leftMs = status.clearsAtElapsedMs - now
+                val read = clock()
+                now.longValue = read
+                val leftMs = status.clearsAtElapsedMs - read
                 if (status.cleared || leftMs <= 0L) break
                 delay((leftMs - 1L) % SECOND_MS + 1L)
             }
         }
     }
+    return now
 }
 
 private const val SECOND_MS = 1_000L

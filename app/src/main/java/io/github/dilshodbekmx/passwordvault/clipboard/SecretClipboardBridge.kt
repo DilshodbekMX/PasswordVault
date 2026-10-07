@@ -23,7 +23,7 @@ import androidx.compose.ui.platform.nativeClipboardManager
  *
  * @param platform the clipboard that the window's own ComposeView provides.
  */
-@SuppressLint("VisibleForTests")
+@SuppressLint("VisibleForTests") // AndroidClipboard: see above
 internal class SecretClipboardBridge(
     private val platform: Clipboard,
     private val secret: SecretClipboard,
