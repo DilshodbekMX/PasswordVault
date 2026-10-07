@@ -64,7 +64,7 @@ It may use: the Kotlin standard library, `kotlinx-coroutines-core`, `kotlinx-ser
 | `core.vaultfile` | The container of section 4: bytes in, bytes out | `VaultCodec`, `DefaultVaultCodec`, `VaultHeader`, `PasswordSlot`, `VaultFile`, `FileCheck`, `BodyResult`, `HeaderCodec` (canonical form), `BodyCodec` (JSON ↔ `Vault` in the writer's canonical form, unknown keys kept), `BuildInfo`, `VaultCodecs` (factory) |
 | `core.storage` | The generation store, on injected file primitives | `FilePrimitives`, `VaultStorage` (interface), `VaultStore` (implementation), `VaultStores` (factory), `VaultRef`, `Scan`, `VaultFacts`, `FileState`, `OpenedVault`, `Staged`, `OpenResult`, `PasswordResult`, `CommitResult`, `Housekeeping` |
 | `core.lock.pin` | PIN rules | `PinBlocklist` (lock.md appendix A, ported to a `ByteArray` of six ASCII digits) |
-| `core.lock.record` | The three device records of lock.md §5: types and codec, not the files | `PinRecord`, `FingerprintRecord`, `StateRecord` (the fields of lock.md §5.4 to §5.6 as revised by its audit), `RecordCodec`, `RecordRead` (OK, MISSING, DAMAGED, NEWER, UNREADABLE), `RecordFiles`, `RecordStore` and `FileRecordStore` (one typed record over `RecordFiles`) |
+| `core.lock.record` | The three device records of lock.md §5: types and codec, not the files | `PinRecord`, `FingerprintRecord`, `StateRecord` (the fields of lock.md §5.4 to §5.6 as revised by its audit), `RecordCodec`, `RecordRead` (`Ok(record)`, `Missing`, `Damaged(error: ParseError)`, `Newer`, `Unreadable`), `RecordFiles`, `RecordStore` and `FileRecordStore` (one typed record over `RecordFiles`) |
 | `core.lock.guard` | Counting and waiting | `PinGuard` (lock.md §6.3), `MasterPasswordGuard` (§6.8), `Credit` (§6.9), `PracticeSchedule` (§8.3) |
 | `core.lock.policy` | Decisions without side effects | `EntryPolicy` (§13.1), `SessionPolicy` (delay arithmetic of §10), `KeystoreErrors` (the table of §14.3 over `KeystoreFailure`), `Ks`, `KeystoreFailure` |
 | `core.lock.flow` | The flows F1 to F18 and the start-up of lock.md §5.11 over ports | `LockEngine` (with `LockCore`, `UnlockFlows`, `ShortcutFlows`, `PasswordFlows`, `VaultFlows`, `OlderCopies`, `StartUp`, `Sweep`), `PinKey`, `FingerprintKey`, `DeviceKeys`, `KeyCreate`, `VaultPort` and its result types with the lock's own `VaultRef`, `GenerationInfo` and `AsideVault` (3.4), `MasterProof`, `LockScreen`, `Notice`, `PinOutcome` |
@@ -302,7 +302,9 @@ interface FingerprintKey {
     fun probe(alias: String, nonce: ByteArray): Ks<Unit>            // Cipher.init for decryption, before any prompt (F3 step 2)
     suspend fun seal(alias: String, vk: ByteArray, use: PromptUse, launch: Int): FingerprintResult
     suspend fun open(alias: String, nonce: ByteArray, ct: ByteArray, use: PromptUse, launch: Int): FingerprintResult
-                                                       // FingerprintResult: Ok(bytes, nonce) | Closed(code) | Gone(why) | Temporary(code) | NotShown
+                                                       // FingerprintResult: Ok(bytes, nonce) | Closed(code) | Gone(why) | Temporary(code: Int?) | NotShown;
+                                                       // Temporary(null): the prompt succeeded, then the key operation failed or the
+                                                       // prompt's cipher was missing (lock.md §9.2 rule 6, §9.3)
     fun cancel()
 }
 sealed interface VaultRef { object Current : VaultRef; class Aside(val vaultId: String) : VaultRef }
@@ -316,7 +318,8 @@ interface VaultPort {                                  // the lock's whole view 
     suspend fun open(target: VaultRef, keys: Map<String, ByteArray>): VaultOpen        // PIN, fingerprint, the pending wrap of F11:
                                                        // Opened(vaultId, generation, vkId, createdMs, olderCopy) | NeedsOtherKey(generation, createdMs) | Damaged | Newer | Unreadable
     suspend fun openWithPassword(target: VaultRef, passwordBytes: ByteArray): PasswordOpen   // every distinct slot before "wrong" [V-S3]:
-                                                       // Opened(…) | OlderPassword(changedAtMs) | Wrong | NoMemory | Damaged | Newer | Unreadable
+                                                       // Opened(…) | OlderPassword(changedAtMs, generation) | Wrong | NoMemory | Damaged | Newer | Unreadable;
+                                                       // generation: the newest generation the typed password opens (lock.md F16b step 2)
     suspend fun checkPassword(passwordBytes: ByteArray): Boolean?        // the open vault's own slot; null: not enough memory
     suspend fun <T> withVaultKey(use: (vkId: String, vk: ByteArray) -> T): T   // to wrap VK for a PIN or a fingerprint
     suspend fun lock()                                 // waits for a save that is running, then drops the session; never writes
@@ -528,7 +531,7 @@ Declared by the contracts package (build plan 1.1) so that earlier waves can nam
 | `Entry`, `CustomField`, `HistoryItem`, `Vault`, `Draft`, `FileRef` | `core.model` | 4.3, one field per key |
 | `GeneratorOptions` (kind, length, character sets, words, separator) | `core.generator` | the generator package |
 | `SecurityReport` (groups of reused passwords, weak, pending, left out, same as the master password) | `core.strength` | the strength package |
-| `PinRecord`, `FingerprintRecord`, `StateRecord`, `RecordRead` | `core.lock.record` | lock.md §5.3 to §5.6 as revised by its audit: no `trouble_boots`, no `udr`; `unseen` with `count`, `last_at`, `interrupted`; `mp_guard.unseen`; `mp_change`; `pending_mp` and `replaced` with `credited_ms` and `seen_elapsed_ms` |
+| `PinRecord`, `FingerprintRecord`, `StateRecord`, `RecordRead` | `core.lock.record` | lock.md §5.3 to §5.6 as revised by its audit: no `trouble_boots`, no `udr`; `unseen` with `count`, `last_at`, `interrupted`; `mp_guard.unseen`; `mp_change`; `pending_mp` and `replaced` with `credited_ms` and `seen_elapsed_ms`. `RecordRead.Damaged` carries the `ParseError` of the rule that failed (5.6) |
 | `EditTexts` (`untitled(nowMs)`, `fromBackup(title)`) | `core.model` | `:app` passes the resource texts in, so that stored titles are in the user's language |
 
 ---
