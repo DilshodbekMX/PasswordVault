@@ -110,8 +110,8 @@ toolbar() {
                 read -r x1 y1 x2 y2 <<<"$(printf '%s' "$box" | sed 's/[][,]/ /g')"
                 TOOLBAR_AUTOFILL="$(((x1 + x2) / 2)) $(((y1 + y2) / 2))"
             fi
-        done < <(printf '%s\n' "$dump" | awk -F'\t' '$5 == "android:id/floating_toolbar_menu_item_text" { sub(/^text=/, "", $9); sub(/^bounds=/, "", $16); print $9 "\t" $16 }')
-        box=$(printf '%s\n' "$dump" | awk -F'\t' '$5 == "android:id/overflow" { sub(/^bounds=/, "", $16); print $16; exit }')
+        done < <(printf '%s\n' "$dump" | awk -F'\t' "$WIN_AWK_VAL"' $5 == "android:id/floating_toolbar_menu_item_text" { print val("text") "\t" val("bounds") }')
+        box=$(printf '%s\n' "$dump" | awk -F'\t' "$WIN_AWK_VAL"' $5 == "android:id/overflow" { print val("bounds"); exit }')
         [ "$round" = 1 ] && [ -n "$box" ] || break
         read -r x1 y1 x2 y2 <<<"$(printf '%s' "$box" | sed 's/[][,]/ /g')"
         pv_shell input tap $(((x1 + x2) / 2)) $(((y1 + y2) / 2)) >/dev/null

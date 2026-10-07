@@ -307,12 +307,24 @@ win_a11y_wait() {
     done
 }
 
-# win_a11y_dump KIND: what the service KIND can reach now (LabA11yService.dump's lines).
+# win_a11y_dump KIND: what the service KIND can reach now (LabA11yService.dump's lines). One adb call:
+# the command, then the record it wrote, which must carry this call's number.
 win_a11y_dump() {
-    win_a11y_wait 10 || return 1
-    win_cmd a11y-dump --es kind "$1" --es nonce "n$RANDOM" >/dev/null || return 1
-    win_file "a11y-$1-dump.txt"
+    local nonce out try
+    for try in 1 2 3; do
+        nonce="n$RANDOM$RANDOM"
+        out=$(pv_shell "am broadcast -n $WIN_HELPER/.LabCommandReceiver --es cmd a11y-dump --es kind $1 --es nonce $nonce >/dev/null 2>&1; run-as $WIN_HELPER cat files/a11y-$1-dump.txt" 2>/dev/null | tr -d '\r')
+        case "$(printf '%s\n' "$out" | head -n 1)|$(printf '%s\n' "$out" | tail -n 1)" in
+            "DUMP $nonce|END $nonce "*) printf '%s\n' "$out"; return 0 ;;
+        esac
+        win_a11y_wait 10 || return 1
+    done
+    pv_log "no node dump from the accessibility service '$1'"
+    return 1
 }
+
+# For awk over a dump's NODE lines (tab-separated): val("text") is the field that starts with "text=".
+WIN_AWK_VAL='function val(k,   i) { for (i = 6; i <= NF; i++) if (index($i, k "=") == 1) return substr($i, length(k) + 2); return "" }'
 
 # win_front: the app in front again and on the list: after a while away it has locked itself (the
 # lock delay, 30 s), and the master password opens it.
@@ -320,4 +332,17 @@ win_front() {
     pva_relaunch || return 1
     pv_ui_wait '[|]pv\.route\.(Locked|Passwords)$' 20 || { pv_log "neither the list nor the lock screen; ids: $(pva_ids)"; return 1; }
     if pva_absent pv.route.Locked; then pva_on Passwords; else win_unlock; fi
+}
+
+# win_app_string NAME: the app's own text string/NAME as the APK has it for the default language
+# (English, which the emulators are set to): for the few nodes that have no test tag.
+win_app_string() {
+    local aapt2
+    aapt2=$(ls -d "$PV_SDK"/build-tools/*/aapt2 2>/dev/null | sort -V | tail -n 1)
+    [ -n "$aapt2" ] || return 1
+    "$aapt2" dump resources "$APK" 2>/dev/null | awk -v name="string/$1" '
+        $NF == name { f = 1; next }
+        f && /^ *\(\) "/ { sub(/^ *\(\) "/, ""); sub(/"$/, ""); print; found = 1; exit }
+        f && /resource 0x/ { exit }
+        END { exit found ? 0 : 1 }'
 }

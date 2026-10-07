@@ -25,7 +25,8 @@ import java.util.concurrent.ConcurrentHashMap;
  *      DUMP nonce
  *      WINDOW TAB index TAB type TAB active=B TAB focused=B TAB title TAB root-package
  *      NODE TAB depth TAB package TAB class TAB id TAB password=B TAB editable=B TAB focused=B
- *           TAB text=... TAB desc=... TAB hint=... TAB state=... TAB error=... TAB pane=... TAB tooltip=...
+ *           TAB clickable=B TAB enabled=B TAB visible=B TAB text=... TAB desc=... TAB hint=...
+ *           TAB state=... TAB error=... TAB pane=... TAB tooltip=... TAB bounds=[l,t][r,b]
  *      FOCUS TAB ... (the node that has the input focus, asked for directly; the fields of NODE)
  *      END nonce nodes=N windows=W
  * A text is written on one line: a line break in it as \n, a tab as \t.
@@ -178,6 +179,9 @@ public class LabA11yService extends AccessibilityService {
         out.append('\t').append("password=").append(node.isPassword());
         out.append('\t').append("editable=").append(node.isEditable());
         out.append('\t').append("focused=").append(node.isFocused());
+        out.append('\t').append("clickable=").append(node.isClickable());
+        out.append('\t').append("enabled=").append(node.isEnabled());
+        out.append('\t').append("visible=").append(node.isVisibleToUser());
         out.append('\t').append("text=").append(LabFiles.oneLine(node.getText()));
         out.append('\t').append("desc=").append(LabFiles.oneLine(node.getContentDescription()));
         out.append('\t').append("hint=").append(LabFiles.oneLine(node.getHintText()));

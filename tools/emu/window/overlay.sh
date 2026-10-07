@@ -137,16 +137,11 @@ dropped() {
 # The app's sentence about the overlay (ux.md §3) is on the screen: found by its tag, or, as long as
 # the tag is not given out as a resource id, by its text, read from the APK (the devices are set to
 # English, the language of the app's default texts).
-AAPT2=$(ls -d "$PV_SDK"/build-tools/*/aapt2 2>/dev/null | sort -V | tail -n 1)
 notice_shown() {
     local text nodes
     nodes=$(pv_ui_nodes)
     [ -z "$(pva_node pv.window.obscuredNotice "$nodes")" ] || return 0
-    text=$("$AAPT2" dump resources "$APK" 2>/dev/null | awk '
-        $NF == "string/common_obscured_touch" { f = 1; next }
-        f && /^ *\(\) "/ { sub(/^ *\(\) "/, ""); sub(/"$/, ""); print; exit }
-        f && /resource 0x/ { exit }')
-    [ -n "$text" ] || { pv_log "the APK has no string common_obscured_touch"; return 1; }
+    text=$(win_app_string common_obscured_touch) || { pv_log "the APK has no string common_obscured_touch"; return 1; }
     printf '%s\n' "$nodes" | cut -d'|' -f1 | grep -qxF -- "$text" || { pv_log "neither pv.window.obscuredNotice nor its text is on the screen"; return 1; }
     echo "  the notice is shown, found by its text: its tag pv.window.obscuredNotice is not a resource id"
 }
