@@ -314,8 +314,11 @@ sealed interface VaultRef { object Current : VaultRef; class Aside(val vaultId: 
 class GenerationInfo(val number: Long, val vkId: String, val createdMs: Long)
 class AsideVault(val vaultId: String, val putAsideAtMs: Long, val newest: GenerationInfo?)    // these three: the lock's own (R-10), as in 3.3
 class VaultScan(val current: CurrentVault, val aside: List<AsideVault>)
-                                                       // CurrentVault: NoVault | Present(vaultId, newest: GenerationInfo, keptVkIds: Set<String>?)
-                                                       //   | Unreadable(why: CurrentVault.Why), with enum class Why { IO, DAMAGED, NEWER }
+                                                       // CurrentVault: NoVault | Present(vaultId, newest: GenerationInfo, keptVkIds: Set<String>?,
+                                                       //   olderCopyFirst: Boolean = false) | Unreadable(why: CurrentVault.Why),
+                                                       //   with enum class Why { IO, DAMAGED, NEWER }; olderCopyFirst is storage's
+                                                       //   VaultFacts.olderCopyFirst (4.8): a newer generation is damaged and `newest`
+                                                       //   is an older copy (the "older copy" reason of lock.md §13.3, F16a)
 interface VaultPort {                                  // the lock's whole view of the vault; DefaultVaultRepository implements it
     fun vaults(): VaultScan                            // before anything is typed; lock.md §5.11 step 2 and §16.3 "Storage"
     suspend fun open(target: VaultRef, keys: Map<String, ByteArray>): VaultOpen        // PIN, fingerprint, the pending wrap of F11:

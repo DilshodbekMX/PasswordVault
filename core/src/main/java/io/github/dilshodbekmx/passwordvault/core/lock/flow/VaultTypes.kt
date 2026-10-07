@@ -36,8 +36,17 @@ sealed interface CurrentVault {
      * The newest readable generation's `vault_id` and facts, and the `vk_id`s among the kept
      * generations ([keptVkIds] null when some live file could not be read; the lock then trims no
      * wrap at that unlock, lock.md §5.4).
+     *
+     * [olderCopyFirst]: a newer generation on disk is damaged and [newest] is an older copy: storage's
+     * `VaultFacts.olderCopyFirst` (architecture.md §4.8), which DefaultVaultRepository (3.1) maps here.
+     * The lock needs it before anything is typed, for the "older copy" reason of lock.md §13.3 (F16a).
      */
-    data class Present(val vaultId: String, val newest: GenerationInfo, val keptVkIds: Set<String>?) : CurrentVault
+    data class Present(
+        val vaultId: String,
+        val newest: GenerationInfo,
+        val keptVkIds: Set<String>?,
+        val olderCopyFirst: Boolean = false,
+    ) : CurrentVault
 
     /** No generation can be read: "Your passwords can't be opened" (lock.md §13.1 row 2), never an offer to delete. */
     data class Unreadable(val why: Why) : CurrentVault
