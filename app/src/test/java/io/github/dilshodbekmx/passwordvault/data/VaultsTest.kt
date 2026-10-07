@@ -259,6 +259,64 @@ class VaultsTest(private val kind: DiskKind) {
     }
 
     @Test
+    fun aNewVaultNeverReplacesTheCurrentOneUnlessItIsPutAside() = runTest {
+        val (repo, scope) = started()
+        try {
+            val current = repo.create(vaultId(1))
+            repo.add(form("kept"), phone.random)
+            assertEquals(
+                VaultWrite.NothingChanged,
+                repo.createVault(vaultId(2), bytesOf(OTHER_PASSWORD), bytesOf(OTHER_PASSWORD), null, putCurrentAside = false),
+            )
+            assertEquals(listOf("kept"), titles(repo))
+            val scan = repo.vaults()
+            assertEquals(current.vaultId, (scan.current as CurrentVault.Present).vaultId)
+            assertEquals(emptyList<String>(), scan.aside.map { it.vaultId })
+            assertEquals("nothing of the attempt is left", listOf("live"), phone.names(phone.vaultsDir))
+        } finally {
+            scope.cancel()
+        }
+    }
+
+    @Test
+    fun startingWithAnEmptyAppEndsAnOpenSession() = runTest {
+        val (repo, scope) = started()
+        try {
+            val a = repo.create(vaultId(1))
+            repo.holdDraft(Draft(null, 1L, DraftEntry(title = "typed")))
+            assertTrue(repo.putAside())
+            assertEquals(VaultState.Locked, repo.state.value)
+            repo.flushDraft()
+            assertEquals(CurrentVault.NoVault, repo.vaults().current)
+            assertEquals(listOf(a.vaultId), repo.vaults().aside.map { it.vaultId })
+            assertFalse("nothing left to put aside", repo.putAside())
+        } finally {
+            scope.cancel()
+        }
+    }
+
+    @Test
+    fun aMergeThatCannotBeSavedKeepsTheVaultPutAsideOpen() = runTest {
+        val (repo, scope) = started()
+        try {
+            val a = repo.create(vaultId(1), password = OTHER_PASSWORD)
+            repo.edit { vault, _ -> Edited(vault.copy(entries = listOf(entry(7))), Unit) }
+            repo.lock()
+            assertTrue(repo.putAside())
+            repo.create(vaultId(2))
+            repo.unlock(OTHER_PASSWORD, VaultRef.Aside(a.vaultId))
+            disk.fail(FakeFiles.Op.WRITE_NEW)
+            assertEquals(VaultWrite.NothingChanged, repo.mergeAside(a.vaultId))
+            assertEquals(SaveProblem.FAILED, repo.shown().saveProblem)
+            // Still held: "Try again" merges it.
+            assertTrue(repo.mergeAside(a.vaultId) is VaultWrite.Done)
+            assertEquals(listOf(id(7)), repo.shown().vault.entries.map { it.id })
+        } finally {
+            scope.cancel()
+        }
+    }
+
+    @Test
     fun retireOldKeysNeedsAnOpenVault() = runTest {
         val (repo, scope) = started()
         try {
