@@ -68,6 +68,7 @@ class TitleTest {
         val wordy = object : EditTexts {
             override fun untitled(nowMs: Long) = " \tUntitled ${KEY.repeat(250)}\n"
             override fun fromBackup(title: String) = "$title (from backup)"
+            override fun fromFile(title: String) = "$title (from file)"
         }
         val untitled = savedTitle(DraftEntry(), wordy)
         assertEquals(200, EntryRules.length(untitled))
@@ -86,6 +87,7 @@ class TitleTest {
         val russian = object : EditTexts {
             override fun untitled(nowMs: Long) = "Без названия $nowMs"
             override fun fromBackup(title: String) = "$title (из резервной копии)"
+            override fun fromFile(title: String) = "$title (из файла)"
         }
         // Add and edit.
         assertEquals("Без названия $T0", savedTitle(DraftEntry(), russian))
@@ -96,9 +98,11 @@ class TitleTest {
         assertEquals(listOf("Gmail", "Gmail (из резервной копии)"), merged.vault.entries.map { it.title })
         val mergedUz = VaultEdits.mergeEntries(listOf(other), Texts, random())(vault(here), T0)
         assertEquals("Gmail (zaxiradan)", mergedUz.vault.entries.last().title)
-        // An import: the same, with the "(from file)" text the caller passes.
+        // An import: the same, with EditTexts.fromFile passed in.
         val imported = VaultEdits.addImported(listOf(other), random(), Texts::fromFile)(vault(here), T0)
         assertEquals("Gmail (fayldan)", imported.vault.entries.last().title)
+        val importedRu = VaultEdits.addImported(listOf(other), random(), russian::fromFile)(vault(here), T0)
+        assertEquals("Gmail (из файла)", importedRu.vault.entries.last().title)
     }
 
     @Test

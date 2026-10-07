@@ -564,7 +564,7 @@ Declared by the contracts package (build plan 1.1) so that earlier waves can nam
 | `GeneratorOptions` (kind, length, character sets, words, separator) | `core.generator` | the generator package |
 | `SecurityReport` (groups of reused passwords, weak, pending, left out, same as the master password) | `core.strength` | the strength package |
 | `PinRecord`, `FingerprintRecord`, `StateRecord`, `RecordRead` | `core.lock.record` | lock.md §5.3 to §5.6 as revised by its audit: no `trouble_boots`, no `udr`; `unseen` with `count`, `last_at`, `interrupted`; `mp_guard.unseen`; `mp_change`; `pending_mp` and `replaced` with `credited_ms` and `seen_elapsed_ms`. `RecordRead.Damaged` carries the `ParseError` of the rule that failed (5.6) |
-| `EditTexts` (`untitled(nowMs)`, `fromBackup(title)`) | `core.model` | `:app` passes the resource texts in, so that stored titles are in the user's language |
+| `EditTexts` (`untitled(nowMs)`, `fromBackup(title)`, `fromFile(title)`) | `core.model` | `:app` passes the resource texts in, so that stored titles are in the user's language |
 
 ---
 
@@ -927,7 +927,7 @@ Order: lock mutex, then vault mutex, then KDF gate. The repository never calls t
 
 - `VaultRepository.state`, `LockManager.state`, `LockManager.status`, `SecretClipboard.status`, `SecurityReports` and `AppSettings` are `StateFlow`s of immutable values. `Vault` is immutable; an edit builds a new one.
 - A ViewModel maps them to one `StateFlow<UiState>` with `stateIn(viewModelScope, WhileSubscribed(5_000), …)`; a composable reads it with `collectAsStateWithLifecycle()`.
-- UI state carries `UiText` (a resource id and arguments), never a finished sentence, so the language can change under it (i18n.md §1.4.4 rule 2). Nothing resolves a string with the application context. The few texts that are stored in the vault ("Untitled" and the time, "… (from backup)") are resolved in `:app` and passed to `VaultEdits` through `EditTexts`.
+- UI state carries `UiText` (a resource id and arguments), never a finished sentence, so the language can change under it (i18n.md §1.4.4 rule 2). Nothing resolves a string with the application context. The few texts that are stored in the vault ("Untitled" and the time, "… (from backup)", "… (from file)") are resolved in `:app` and passed to `VaultEdits` through `EditTexts`.
 - Every change to the vault is one call of `VaultRepository.edit` with a pure function from `core.model.VaultEdits`. A screen never holds a mutable entry.
 - The top-level state (setup, locked, unlocked) is `LockManager.state`. `NavState` shows the matching back stack and keeps the unlocked one, as ids, while the app is locked (ux.md §4).
 - After a rotation the screen asks for the keyboard again on the field that had focus, because Android 17 no longer restores it [V-P7].

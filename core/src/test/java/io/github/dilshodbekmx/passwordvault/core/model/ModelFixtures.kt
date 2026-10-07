@@ -53,8 +53,7 @@ internal object ModelFixtures {
 
         override fun fromBackup(title: String): String = "$title (zaxiradan)"
 
-        /** What :app would pass to `addImported` as the "(from file)" text. */
-        fun fromFile(title: String): String = "$title (fayldan)"
+        override fun fromFile(title: String): String = "$title (fayldan)"
     }
 
     fun EntryResult.id(): String = (this as EntryResult.Done).entryId

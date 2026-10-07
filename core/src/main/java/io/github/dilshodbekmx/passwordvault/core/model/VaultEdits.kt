@@ -230,8 +230,7 @@ object VaultEdits {
      * skipped here (the plan has done that) and nothing in the vault changes; the entries keep their
      * times.
      *
-     * [fromFile] is `EditTexts.fromFile` once that member exists (an interface request of package
-     * 2.4); until then the caller passes the same text from its resources.
+     * [fromFile] is [EditTexts.fromFile]: the caller passes `texts::fromFile`.
      *
      * Value: [Imported], whose [Imported.before] is the vault this import was applied to, for
      * "Undo this import" ([replaceVault]).

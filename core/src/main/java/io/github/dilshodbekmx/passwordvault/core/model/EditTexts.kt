@@ -14,4 +14,10 @@ interface EditTexts {
      * entry with other content: [title] with "(from backup)" (architecture.md §4.11, ux.md §5.21).
      */
     fun fromBackup(title: String): String
+
+    /**
+     * The title of an imported entry whose id is held by an entry with other content: [title] with
+     * "(from file)" (formats.md §5.2, ux.md §5.21). `VaultEdits.addImported` takes it as `texts::fromFile`.
+     */
+    fun fromFile(title: String): String
 }
