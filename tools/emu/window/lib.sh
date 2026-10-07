@@ -30,16 +30,17 @@ WIN_HELPER_DIR=$WIN_DIR/helper
 WIN_HELPER_APK=${PV_WINDOW_HELPER_APK:-$WIN_HELPER_DIR/build/outputs/apk/debug/pv-window-helper-debug.apk}
 
 # What the scripts type. Letters and digits only, which adb's "input text" takes as they are; the
-# master password passes the rules of ux.md §5.3 (12 code points, hard to guess).
+# master password passes the rules of ux.md §5.3 (12 code points, hard to guess). A text for a field
+# that starts sentences with a capital begins with one, so that the keyboard leaves it as typed.
 WIN_MASTER=${PV_MASTER_PASSWORD:-Kv7Qx2mZp9Lw4Rt8Hb}
 WIN_TITLE=WinTitleAAA
 WIN_USER=winUserBBB
 WIN_PASS=WinEntryPwCCC9
 WIN_SITE=winsiteDDD.example
-WIN_NOTE=winNoteEEE
+WIN_NOTE=WinNoteEEE
 WIN_LABEL=WinLabelFFF
 WIN_VALUE=WinValueGGG7
-WIN_QUERY=winQueryHHH
+WIN_QUERY=WinQueryHHH
 
 win_usage() { pv_usage "$WIN_SCRIPT"; }
 
