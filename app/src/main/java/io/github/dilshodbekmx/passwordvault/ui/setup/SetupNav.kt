@@ -182,7 +182,7 @@ private fun TypeAgainRoute(graph: AppGraph, nav: Navigator) {
  * to the composition's owner.
  */
 @Composable
-fun setupViewModel(graph: AppGraph): SetupViewModel {
+internal fun setupViewModel(graph: AppGraph): SetupViewModel {
     val owner = LocalActivity.current as? ViewModelStoreOwner ?: checkNotNull(LocalViewModelStoreOwner.current)
     return viewModel(viewModelStoreOwner = owner, key = SETUP_VIEW_MODEL_KEY) {
         SetupViewModel(graph.lock, graph.settings, graph.platform.random, graph.dispatchers)
@@ -195,12 +195,12 @@ fun setupViewModel(graph: AppGraph): SetupViewModel {
  * being previewed), and [SetupViewModel.stepLeft] then drops what the step held.
  */
 @Composable
-fun SetupStepScope(step: SetupStep, setup: SetupViewModel) {
+internal fun SetupStepScope(step: SetupStep, setup: SetupViewModel) {
     viewModel(key = SETUP_STEP_KEY) { SetupStepViewModel(step, setup) }
 }
 
 /** The entry's own view model of [SetupStepScope]. */
-class SetupStepViewModel(private val step: SetupStep, private val setup: SetupViewModel) : ViewModel() {
+internal class SetupStepViewModel(private val step: SetupStep, private val setup: SetupViewModel) : ViewModel() {
     override fun onCleared() {
         setup.stepLeft(step)
     }
