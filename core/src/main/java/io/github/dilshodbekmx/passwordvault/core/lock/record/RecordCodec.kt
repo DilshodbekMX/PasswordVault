@@ -191,10 +191,13 @@ object RecordCodec {
          * The first rule of §5.4 to §5.6 that [record] breaks, or null. The writer refuses such a
          * record and the reader calls it DAMAGED, so the two always agree.
          */
-        fun brokenRule(record: T): Reason? = try {
-            rule(record)
-        } catch (r: Refused) {
-            r.reason
+        fun brokenRule(record: T): Reason? {
+            try {
+                rule(record)
+            } catch (r: Refused) {
+                return r.reason
+            }
+            return null
         }
 
         /** The `vault_id` of [record]. */
