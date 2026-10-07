@@ -4,6 +4,7 @@ import android.os.SystemClock
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.test.ComposeTimeoutException
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -11,7 +12,6 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performScrollToKey
 import androidx.compose.ui.test.performTextClearance
-import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.test.swipeUp
@@ -39,16 +39,19 @@ import org.junit.runner.RunWith
  * from the top to the end and back, on every API level; and on API 37 a keystroke in the search
  * field answers within 50 ms (ux.md §5.11: in memory, on every keystroke, no debounce).
  *
- * **What is timed.** From just before the keystroke is sent to the search field
- * (`performTextInput`) until the frame whose composition shows that query's results is applied
- * (a `SideEffect` beside the screen, reading the same state). That is the whole path: the text
- * field, the ViewModel's query, the search on `Dispatchers.Default` over the index of 5,000
- * entries, the new state, and the list composed again. Frames are paced by the test's clock, which
- * advances one frame about every 10 ms while the test waits, much as a 60 Hz display would (16.7 ms).
- * The queries are those of search.md §5's benchmark, typed one letter at a time, after a warm-up
- * round, so that ART has compiled the search code as it will have after a few uses (a baseline
- * profile is left out of version 1, architecture.md §7.3). The debug build is measured, which runs
- * slower than staging or release.
+ * **What is timed.** From the keystroke, applied to the focused search field's state on the main
+ * thread as the field's input session applies it, until the frame whose composition shows that
+ * query's results is applied (a `SideEffect` beside the screen, reading the same state). That is
+ * the app's whole path: the field's text, the ViewModel's query, the search on
+ * `Dispatchers.Default` over the index of 5,000 entries, the new state, and the list composed
+ * again. Frames are paced by the test's clock, which advances one frame about every 10 ms while
+ * the test waits, much as a 60 Hz display would (16.7 ms). `performTextInput` is not used for the
+ * timed keystrokes: it first syncs with the test's clock, and that wait would be timed too (about
+ * 100 ms per keystroke, seen on API 37, while the search itself took 2.8 ms). The time at which the
+ * ViewModel published each answer is reported as well. The queries are those of search.md §5's
+ * benchmark, typed one letter at a time, after a warm-up round, so that ART has compiled the search
+ * code as it will have after a few uses (a baseline profile is left out of version 1,
+ * architecture.md §7.3). The debug build is measured, which runs slower than staging or release.
  */
 @RunWith(AndroidJUnit4::class)
 class ListPerformanceTest {
@@ -75,9 +78,12 @@ class ListPerformanceTest {
                 vm = viewModel { rig.passwordsViewModel() }
                 PasswordsScreen(vm, rig.nav)
                 val state by vm.state.collectAsStateWithLifecycle()
+                // Read during composition, so that this scope is composed again with every new state;
+                // the SideEffect runs when that composition is applied, in the frame that shows it.
+                val shownQuery = queryOf(state.body)
                 SideEffect {
                     val now = SystemClock.elapsedRealtimeNanos()
-                    queryOf(state.body)?.let { composed.putIfAbsent(it, now) }
+                    shownQuery?.let { composed.putIfAbsent(it, now) }
                 }
             }
         }
@@ -100,9 +106,11 @@ class ListPerformanceTest {
         assertEquals(ENTRIES, body.total)
         val rows = body.sections.flatMap { it.rows }
         assertEquals(ENTRIES, rows.size)
-        compose.onNodeWithTag(ListTags.ALL_ACCOUNTS).assertExists()
 
         val list = compose.onNodeWithTag(ListTags.LIST)
+        // Below the banner and the first ten favourites: a lazy list composes only what is on screen.
+        list.performScrollToKey("all")
+        compose.onNodeWithTag(ListTags.ALL_ACCOUNTS).assertIsDisplayed()
         for (row in listOf(rows[ENTRIES / 4], rows[ENTRIES / 2], rows[ENTRIES * 3 / 4], rows.last())) {
             list.performScrollToKey(ENTRY_KEY + row.id)
             compose.onNodeWithTag(ListTags.row(row.id)).assertIsDisplayed()
@@ -131,9 +139,23 @@ class ListPerformanceTest {
                 composed.remove(typed)
                 published.remove(typed)
                 compose.waitForIdle()
-                val start = SystemClock.elapsedRealtimeNanos()
-                field.performTextInput(query.substring(end - 1, end))
-                compose.waitUntil(ANSWER_TIMEOUT_MS) { composed.containsKey(typed) }
+                // The keystroke as the field's input session applies it: an edit of the field's state
+                // on the main thread. (performTextInput first syncs with the test's clock, which
+                // would be timed too.)
+                var start = 0L
+                compose.runOnUiThread {
+                    start = SystemClock.elapsedRealtimeNanos()
+                    vm.query.edit { append(query.substring(end - 1, end)) }
+                }
+                try {
+                    compose.waitUntil(ANSWER_TIMEOUT_MS) { composed.containsKey(typed) }
+                } catch (e: ComposeTimeoutException) {
+                    throw AssertionError(
+                        "\"$typed\" was not shown: the field holds \"${vm.query.text}\", the ViewModel shows " +
+                            "${queryOf(vm.state.value.body)} (${vm.state.value.body}), shown so far ${composed.keys}",
+                        e,
+                    )
+                }
                 shown?.add(composed.getValue(typed) - start)
                 answered?.add(published.getValue(typed) - start)
             }

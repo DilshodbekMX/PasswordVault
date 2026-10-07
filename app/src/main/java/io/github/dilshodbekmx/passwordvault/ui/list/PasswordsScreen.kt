@@ -37,7 +37,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -292,16 +294,33 @@ private fun ListContent(
     modifier: Modifier = Modifier,
 ) {
     val body = state.body
+    // A new query, or the list after the results, starts at the top: the best results first. The
+    // list keeps its place by the key of its first row otherwise, which would leave an older row
+    // there. Not at the first composition, so that a position restored after a rotation, or on
+    // coming back from an account, is kept (ux.md §5.11 "Focus").
+    val identity = identityOf(body)
+    val shownIdentity = remember { arrayOfNulls<String>(1) }
+    SideEffect {
+        val before = shownIdentity[0]
+        if (before != null && before != identity) listState.requestScrollToItem(0)
+        shownIdentity[0] = identity
+    }
     LazyColumn(
         state = listState,
         modifier = modifier.fillMaxSize().testTag(ListTags.LIST),
         // Room for the "Add" button, so it never covers the last row's copy button (ux.md §5.11, §8).
         contentPadding = PaddingValues(bottom = LIST_BOTTOM_PADDING),
     ) {
-        // While searching only the results show; the banners wait (ux.md §5.11).
+        // While searching only the results show; the banners wait (ux.md §5.11). The banners are one
+        // item with a key of its own that is always first, even with no banner: so a banner that
+        // comes later shows at the top for someone who is at the top, rather than above the screen.
         if (body !is ListBody.Results && body !is ListBody.NoResults) {
-            items(state.banners, key = { ListTags.banner(it) }, contentType = { "banner" }) { banner ->
-                ListBannerItem(banner, bannerActions)
+            item(key = BANNERS_KEY, contentType = "banners") {
+                Column(Modifier.fillMaxWidth().padding(top = 4.dp)) {
+                    for (banner in state.banners) {
+                        key(ListTags.banner(banner)) { ListBannerItem(banner, bannerActions) }
+                    }
+                }
             }
         }
         when (body) {
@@ -458,6 +477,13 @@ private fun Loading() {
     }
 }
 
+/** Which list is shown: the list itself, or the results of one query. A change of it starts the list at the top. */
+private fun identityOf(body: ListBody): String = when (body) {
+    ListBody.Loading, ListBody.Empty, is ListBody.Browse -> "list"
+    is ListBody.Results -> "results:" + body.typed
+    is ListBody.NoResults -> "none:" + body.typed
+}
+
 /** The text of a save that did not happen (architecture.md §3.5). */
 private fun saveProblemText(problem: SaveProblem): Int =
     if (problem == SaveProblem.TOO_LARGE) R.string.list_too_large else R.string.list_save_failed
@@ -474,6 +500,7 @@ private const val LOADING_SPINNER_DELAY_MS = 400L
 private val LIST_BOTTOM_PADDING = 96.dp
 
 /** The keys of the list's rows (`LazyColumn` keys): an account is listed among the favourites and A to Z, so the key says where. */
+internal const val BANNERS_KEY = "banners"
 internal const val FAVOURITE_KEY = "f."
 internal const val ENTRY_KEY = "e."
 internal const val RESULT_KEY = "r."
