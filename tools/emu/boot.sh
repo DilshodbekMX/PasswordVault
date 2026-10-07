@@ -293,16 +293,26 @@ pv_wait_pid() { # PORT -> prints the emulator's pid once it exists (60 s)
 }
 
 pv_boot_abort() { # EXIT trap while a boot or a provisioning is under way
-    local i
+    local i f started
     [ "${PV_BOOT_DONE:-0}" = 1 ] && return
     [ -n "${PV_BOOT_PORT:-}" ] || return
     pv_log "stopping emulator-$PV_BOOT_PORT: the boot failed or was interrupted"
-    if [ -z "${PV_BOOT_PID:-}" ]; then
-        # The launcher may still be starting qemu; give it a moment so that nothing is orphaned.
-        for i in 1 2 3 4 5; do PV_BOOT_PID=$(pv_find_emulator_pid "$PV_BOOT_PORT") && break; pv_sleep 1; done
+    f=$PV_REG/emulator-$PV_BOOT_PORT
+    if [ "$(pv_entry_get "$f" booter)" = "$$" ]; then
+        started=$(pv_entry_get "$f" started)
+        # Held by this boot.sh (pid 0) while its emulator exits, so that no other boot.sh takes the
+        # port before the entry is removed.
+        pv_locked pv_entry_reserve "$f"
+        if [ -z "${PV_BOOT_PID:-}" ]; then
+            # The launcher may still be starting qemu; give it a moment so that nothing is orphaned.
+            for i in 1 2 3 4 5; do PV_BOOT_PID=$(pv_find_emulator_pid "$PV_BOOT_PORT") && break; pv_sleep 1; done
+        fi
+        pv_kill_emulator "$PV_BOOT_PORT" "${PV_BOOT_PID:-}"
+        pv_locked pv_entry_remove_if "$f" "$started" "$$"
+    elif [ -n "${PV_BOOT_PID:-}" ] && pv_is_emulator_pid "$PV_BOOT_PID" "$PV_BOOT_PORT"; then
+        # The entry is not this boot's any more: stop this boot's own emulator, by its pid only.
+        pv_kill_emulator "$PV_BOOT_PORT" "$PV_BOOT_PID"
     fi
-    pv_kill_emulator "$PV_BOOT_PORT" "${PV_BOOT_PID:-}"
-    rm -f "$PV_REG/emulator-$PV_BOOT_PORT"
     if [ -n "${PV_BOOT_LOG:-}" ] && [ -f "$PV_BOOT_LOG" ]; then
         pv_log "last lines of $PV_BOOT_LOG:"
         tail -n 15 "$PV_BOOT_LOG" >&2
@@ -349,21 +359,22 @@ pv_boot() { # API MODE SLOT-WAIT BOOT-TIMEOUT -> prints the serial
         pv_launch "$api" "$port" "$PV_BOOT_LOG" 1
         pid=$(pv_wait_pid "$port") || { pv_log "the emulator did not start"; exit 1; }
         PV_BOOT_PID=$pid
-        pv_entry_set "$PV_REG/emulator-$port" pid "$pid"
+        pv_locked pv_entry_set "$PV_REG/emulator-$port" pid "$pid" || exit 1
         pv_use "emulator-$port"
         pv_log "emulator-$port (API $api, read-only, pid $pid) is booting"
         pv_wait_booted "$4" && break
         [ $attempt = 1 ] || exit 1
         pv_log "emulator-$port did not get ready in $4 s; stopping it and booting once more"
+        # Held by this boot.sh (pid 0) while the emulator exits, as at reservation, so that no other
+        # boot.sh forgets the entry and takes the port in between.
+        pv_locked pv_entry_reserve "$PV_REG/emulator-$port" || exit 1
         pv_kill_emulator "$port" "$pid"
         PV_BOOT_PID=""
         PV_BOOT_LOG=$PV_LOGS/emulator-$port-$(date +%Y%m%d-%H%M%S)-retry.log
-        pv_entry_set "$PV_REG/emulator-$port" pid 0
-        pv_entry_set "$PV_REG/emulator-$port" epoch "$(date +%s)"
-        pv_entry_set "$PV_REG/emulator-$port" log "$PV_BOOT_LOG"
+        pv_locked pv_entry_set "$PV_REG/emulator-$port" log "$PV_BOOT_LOG" || exit 1
     done
     tmp=$(pv_emulator_tmpfiles "$pid")
-    pv_entry_set "$PV_REG/emulator-$port" tmpfiles "$tmp"
+    pv_locked pv_entry_set "$PV_REG/emulator-$port" tmpfiles "$tmp" || exit 1
     if [ "$(pv_shell settings get global animator_duration_scale | tr -d '\r')" != 0 ] \
         && [ "$(pv_shell settings get global animator_duration_scale | tr -d '\r')" != 0.0 ]; then
         pv_log "warning: animations are on; the base does not look provisioned"
@@ -561,7 +572,7 @@ pv_provision() { # API
     pv_launch "$api" "$port" "$PV_BOOT_LOG" 0 -wipe-data
     pid=$(pv_wait_pid "$port") || pv_die "the emulator did not start"
     PV_BOOT_PID=$pid
-    pv_entry_set "$PV_REG/emulator-$port" pid "$pid"
+    pv_locked pv_entry_set "$PV_REG/emulator-$port" pid "$pid" || exit 1
     pv_use "emulator-$port"
     pv_wait_booted 600 || pv_die "the first boot failed"
     build=$(pv_getprop ro.build.fingerprint)
@@ -576,6 +587,8 @@ pv_provision() { # API
     printf '%s\n' "$checks" >&2
     printf '%s\n' "$checks" | grep -q '=FAIL' && pv_die "provisioning checks failed"
     pv_log "powering off"
+    # Held by this boot.sh (pid 0) while the device powers off and the record is written.
+    pv_locked pv_entry_reserve "$PV_REG/emulator-$port" || exit 1
     pv_shell reboot -p >/dev/null 2>&1
     for i in $(seq 1 120); do pv_is_emulator_pid "$pid" "$port" || break; pv_sleep 1; done
     if pv_is_emulator_pid "$pid" "$port"; then
@@ -599,7 +612,7 @@ pv_provision() { # API
             echo "disk=$rel|$(stat -c '%s|%Y' "$PV_AVD_HOME/$rel")|$(sha1sum "$PV_AVD_HOME/$rel" | cut -d' ' -f1)"
         done
     } > "$marker.part" && mv -f "$marker.part" "$marker"
-    rm -f "$PV_REG/emulator-$port"
+    pv_locked pv_entry_remove_if "$PV_REG/emulator-$port" "$(pv_entry_get "$PV_REG/emulator-$port" started)" "$$"
     PV_BOOT_DONE=1
     trap - EXIT INT TERM HUP
     pv_log "pvlab_api$api is provisioned ($marker)"

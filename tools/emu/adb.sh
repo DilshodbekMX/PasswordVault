@@ -67,7 +67,13 @@ pv_sleep() { sleep "$1" 2>/dev/null || python3 -c "import time; time.sleep($1)";
 # ---- the device registry (written by boot.sh, read by every script) ------------------------
 # One file per device, $PV_REG/emulator-PORT, with key=value lines:
 #   serial port api avd owner mode(package|integrator|provision) pid (the qemu process, 0 while
-#   starting) booter (the boot.sh process) epoch started log tmpfiles (its overlays in /tmp)
+#   starting) booter (the boot.sh process) epoch started log tmpfiles (its overlays in /tmp),
+#   and while stop.sh stops it: stopper (the stop.sh process) stopepoch.
+# An entry holds its port until its emulator is gone and neither its boot.sh nor a stop.sh that is
+# stopping it still runs (pv_entry_held). Every change to an entry is made under pv_locked, and an
+# entry is removed only by the process that made it or is stopping it, after checking that it is
+# still the same entry (started and booter): a port is never handed to a second boot.sh while the
+# first owner's scripts still act on it.
 
 pv_entry_get() { # FILE KEY
     sed -n "s/^$2=//p" "$1" 2>/dev/null | head -n 1
@@ -158,21 +164,50 @@ pv_kill_emulator() { # PORT [PID] -> stops that emulator: console "kill", then T
     ! pv_is_emulator_pid "$pid" "$port"
 }
 
-pv_forget_stale() { # (under pv_locked) drops entries whose emulator and boot.sh are both gone
+pv_entry_held() { # FILE -> 0 while the entry holds its port: pv_entry_alive, or a stop.sh is stopping it
+    local f=$1 stopper epoch cmd
+    pv_entry_alive "$f" && return 0
+    # The stop.sh that is stopping this device keeps its port until it has forgotten the entry (at
+    # most 5 minutes): otherwise another boot.sh could take the port the moment the old emulator
+    # exits, and that stop.sh would then forget the new entry (seen on 2026-10-07).
+    stopper=$(pv_entry_get "$f" stopper); epoch=$(pv_entry_get "$f" stopepoch)
+    [ -n "$stopper" ] && [ -n "$epoch" ] && [ $(( $(date +%s) - epoch )) -lt 300 ] || return 1
+    cmd=$( { tr '\0' ' ' < "/proc/$stopper/cmdline"; } 2>/dev/null ) || return 1
+    case "$cmd" in *stop.sh*) return 0 ;; esac
+    return 1
+}
+
+pv_forget_stale() { # (under pv_locked) drops entries that no longer hold their port (pv_entry_held)
     local f
     for f in "$PV_REG"/emulator-*; do
         [ -f "$f" ] || continue
-        pv_entry_alive "$f" && continue
+        pv_entry_held "$f" && continue
         pv_log "forgetting $(basename "$f") (started for $(pv_entry_get "$f" owner)): its emulator is gone"
         pv_remove_tmpfiles "$(pv_entry_get "$f" tmpfiles)"
         rm -f "$f"
     done
 }
 
-pv_entry_set() { # FILE KEY VALUE -> rewrites one key atomically
+pv_entry_set() { # FILE KEY VALUE -> (under pv_locked) rewrites one key atomically
     local tmp
+    # Never make a new file: an entry that is gone stays gone, rather than coming back with one key
+    # and no owner.
+    [ -f "$1" ] || { pv_log "$(basename "$1") is no longer registered; not setting $2"; return 1; }
     tmp=$(mktemp "$(dirname "$1")/.entry.XXXXXX") || return 1
     { grep -v "^$2=" "$1" 2>/dev/null; echo "$2=$3"; } > "$tmp" && mv -f "$tmp" "$1"
+}
+
+pv_entry_reserve() { # FILE -> (under pv_locked) held by its boot.sh again (pid 0, epoch now), as at reservation
+    pv_entry_set "$1" epoch "$(date +%s)" && pv_entry_set "$1" pid 0
+}
+
+pv_entry_remove_if() { # FILE STARTED BOOTER -> (under pv_locked) removes the entry if it is still that one
+    [ -f "$1" ] || return 0
+    if [ "$(pv_entry_get "$1" started)" != "$2" ] || [ "$(pv_entry_get "$1" booter)" != "$3" ]; then
+        pv_log "$(basename "$1") was registered again meanwhile (for $(pv_entry_get "$1" owner)); leaving that entry"
+        return 0
+    fi
+    rm -f "$1"
 }
 
 pv_refuse() { echo "pv-emu: refusing $1: $2" >&2; exit 3; }

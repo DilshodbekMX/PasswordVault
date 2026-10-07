@@ -73,6 +73,14 @@ Exit codes of all scripts: 0 success, 1 failure, 2 usage, 3 refused serial.
 - **Crashes and reboots.** An entry whose emulator is gone is forgotten at the next
   `boot.sh` (or `stop.sh --stale`), and the overlays a killed emulator left in
   `/tmp/android-$USER/` are deleted then.
+- **A port is held until its scripts are done with it.** An entry keeps its port while its
+  emulator runs, while its `boot.sh` runs (also while a failed or retried boot stops its own
+  emulator), and while a `stop.sh` that is stopping it runs (the `stopper` key, at most 5
+  minutes); every change to an entry is made under the lock file, an entry is never written back
+  once it is gone, and a script removes an entry only after checking that it is still the one it
+  started or stopped. Before this (seen on 2026-10-07), a `boot.sh` could take a port the moment
+  the old emulator exited, the old owner's `stop.sh` then removed the new entry, and the new boot
+  failed with "it was started for , not for ...".
 
 ## Steps in scripts: `needs-debuggable`, `needs-root`, SKIPPED
 
