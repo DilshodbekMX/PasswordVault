@@ -51,6 +51,8 @@ class EditScreenTest {
         compose.onNodeWithTag(EditTags.PASSWORD).performTextInput("Toshkent-2020-qiyin")
         compose.onNodeWithTag(EditTags.website(0)).performScrollTo().performTextInput("click.uz")
         compose.onNodeWithTag(EditTags.NOTES).performScrollTo().performTextInput("PIN on the card")
+        // The meter shows once zxcvbn's word lists are read, which takes a while the first time on a slow phone.
+        compose.waitUntil(METER_MS) { compose.onAllNodesWithTag(EditTags.STRENGTH).fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag(EditTags.STRENGTH).performScrollTo().assertIsDisplayed()
         compose.onNodeWithTag(EditTags.SAVE).performClick()
         compose.waitUntil(WAIT_MS) { host.nav.calls.isNotEmpty() }
@@ -114,5 +116,6 @@ class EditScreenTest {
     private companion object {
         const val GMAIL = "11111111-1111-4111-8111-111111111111"
         const val WAIT_MS = 10_000L
+        const val METER_MS = 30_000L
     }
 }

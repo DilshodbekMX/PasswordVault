@@ -86,7 +86,7 @@ class EditForm {
         favourite = false
     }
 
-    /** Adds an empty website row; false at [EntryRules.URLS_MAX]. */
+    /** Adds an empty website row and returns it; null at [EntryRules.URLS_MAX]. */
     fun addWebsite(): WebsiteRow? {
         if (websites.size >= EntryRules.URLS_MAX) return null
         return WebsiteRow(nextId()).also { websites += it }

@@ -10,6 +10,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SdkSuppress
 import io.github.dilshodbekmx.passwordvault.core.model.Entry
 import io.github.dilshodbekmx.passwordvault.core.model.Vault
 import org.junit.After
@@ -26,7 +27,8 @@ import org.junit.runner.RunWith
  * through the activity's requested orientation, which recreates the activity as turning the phone
  * does; then the same field has the focus, the keyboard is shown, and what was typed is still
  * there. The control: with no field focused, the keyboard stays hidden after the same rotation, so
- * the check of the keyboard cannot pass on its own. Runs on API 24, 28 and 37.
+ * the check of the keyboard cannot pass on its own (API 28 and 37). The three checks run on API 24,
+ * 28 and 37; without the form's restore they fail on API 37 (tried).
  */
 @RunWith(AndroidJUnit4::class)
 class EditKeyboardRotationTest {
@@ -54,16 +56,18 @@ class EditKeyboardRotationTest {
         keyboardBackAfterRotation(EditTags.NOTES, "work mail", Vault(entries = listOf(gmail)), GMAIL) { it.form.notes.text.toString() }
     }
 
+    /**
+     * From API 28: on Android 7 the window gives its first field the focus by itself after a
+     * rotation (seen on the API 24 emulator: the form had nothing to give back, and the name field
+     * still got the focus), so there the control cannot hold, whatever the form does. No field is
+     * focused here at all; the ViewModel's side (a loss of focus forgets the field) is a JVM test.
+     */
+    @SdkSuppress(minSdkVersion = 28)
     @Test
     fun withNoFieldFocusedTheKeyboardStaysHiddenAfterARotation() {
         host = EditHost(compose).also { it.start() }
-        compose.onNodeWithTag(EditTags.NAME).performClick()
-        assertTrue("a tap on the field shows the keyboard", Keyboard.waitFor(shown = true))
-        // Back hides the keyboard but keeps the focus; clear the focus as a tap elsewhere would.
-        compose.runOnUiThread { compose.activity.currentFocus?.clearFocus() }
-        compose.runOnUiThread { host.vm!!.unfocused(FieldKey.Title) }
-        hideKeyboard()
-        assertTrue("the keyboard is hidden before the rotation", Keyboard.waitFor(shown = false))
+        compose.onNodeWithTag(EditTags.NAME).assertIsNotFocused()
+        assertTrue("no keyboard before the rotation", Keyboard.waitFor(shown = false))
 
         host.rotate(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE)
 
@@ -101,14 +105,6 @@ class EditKeyboardRotationTest {
         assertTrue("the keyboard is still shown", Keyboard.shown())
         assertTrue("what was typed is still there", text(host.vm!!).endsWith(typed))
         assertEquals("nothing moved the screen", emptyList<String>(), host.nav.calls)
-    }
-
-    private fun hideKeyboard() {
-        compose.runOnUiThread {
-            val activity = compose.activity
-            val imm = activity.getSystemService(android.view.inputmethod.InputMethodManager::class.java)
-            imm.hideSoftInputFromWindow(activity.window.decorView.windowToken, 0)
-        }
     }
 
     private companion object {
