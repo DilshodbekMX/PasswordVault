@@ -17,7 +17,9 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -74,12 +76,18 @@ fun RecentlyDeletedScreen(viewModel: RecentlyDeletedViewModel, nav: Navigator) {
     LaunchedEffect(viewModel, snackbar) {
         viewModel.events.collect { event ->
             launch {
-                val text = when (event) {
-                    is DeletedEvent.Restored -> resources.getString(R.string.list_restored_message, event.title)
-                    is DeletedEvent.NotSaved ->
-                        resources.getString(if (event.problem == SaveProblem.TOO_LARGE) R.string.list_too_large else R.string.list_save_failed)
+                when (event) {
+                    is DeletedEvent.Restored -> snackbar.showSnackbar(resources.getString(R.string.list_restored_message, event.title))
+                    is DeletedEvent.NotSaved -> {
+                        val retry = event.retry
+                        val result = snackbar.showSnackbar(
+                            message = resources.getString(if (event.problem == SaveProblem.TOO_LARGE) R.string.list_too_large else R.string.list_save_failed),
+                            actionLabel = if (retry != null) resources.getString(R.string.common_try_again) else null,
+                            duration = SnackbarDuration.Long,
+                        )
+                        if (result == SnackbarResult.ActionPerformed) retry?.invoke()
+                    }
                 }
-                snackbar.showSnackbar(text)
             }
         }
     }

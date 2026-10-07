@@ -137,8 +137,19 @@ class RecentlyDeletedViewModelTest {
         repository.failures += SaveProblem.TOO_LARGE
         vm.restore("fb")
         advanceUntilIdle()
-        assertEquals(listOf<DeletedEvent>(DeletedEvent.NotSaved(SaveProblem.TOO_LARGE)), events)
+        val tooLarge = events.single() as DeletedEvent.NotSaved
+        assertEquals(SaveProblem.TOO_LARGE, tooLarge.problem)
+        assertNull("another try cannot help", tooLarge.retry)
         assertEquals(now - day, repository.stored.entries.first { it.id == "fb" }.deletedAt)
+
+        repository.failures += SaveProblem.FAILED
+        vm.restore("fb")
+        advanceUntilIdle()
+        val failed = events.last() as DeletedEvent.NotSaved
+        assertEquals(SaveProblem.FAILED, failed.problem)
+        failed.retry!!.invoke()
+        advanceUntilIdle()
+        assertNull("Try again restored it", repository.stored.entries.first { it.id == "fb" }.deletedAt)
     }
 
     @Test

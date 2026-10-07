@@ -129,7 +129,15 @@ fun PasswordsScreen(viewModel: PasswordsViewModel, nav: Navigator) {
                         )
                         if (result == SnackbarResult.ActionPerformed) viewModel.undoDelete(event.id)
                     }
-                    is ListEvent.NotSaved -> snackbar.showSnackbar(resources.getString(saveProblemText(event.problem)), duration = SnackbarDuration.Long)
+                    is ListEvent.NotSaved -> {
+                        val retry = event.retry
+                        val result = snackbar.showSnackbar(
+                            message = resources.getString(saveProblemText(event.problem)),
+                            actionLabel = if (retry != null) resources.getString(R.string.common_try_again) else null,
+                            duration = SnackbarDuration.Long,
+                        )
+                        if (result == SnackbarResult.ActionPerformed) retry?.invoke()
+                    }
                     ListEvent.CopyBlocked -> snackbar.showSnackbar(resources.getString(R.string.list_copy_blocked), duration = SnackbarDuration.Long)
                     ListEvent.CannotDeleteExport ->
                         snackbar.showSnackbar(resources.getString(R.string.list_banner_cannot_delete), duration = SnackbarDuration.Long)

@@ -268,7 +268,7 @@ class PasswordsViewModel(
             val written = withContext(dispatchers.io) {
                 settings.update { it.backupReminder = it.backupReminder.copy(snoozedUntilMs = until) }
             }
-            if (!written) eventChannel.send(ListEvent.NotSaved(SaveProblem.FAILED))
+            if (!written) eventChannel.send(ListEvent.NotSaved(SaveProblem.FAILED, ::backupLater))
         }
     }
 
@@ -362,10 +362,13 @@ class PasswordsViewModel(
         viewModelScope.launch {
             when (val result = repository.edit(change)) {
                 is SaveResult.Saved -> done(result.value)
-                is SaveResult.NotSaved -> eventChannel.send(ListEvent.NotSaved(result.problem))
+                is SaveResult.NotSaved -> eventChannel.send(ListEvent.NotSaved(result.problem, retryUnless(result.problem) { save(change, done) }))
             }
         }
     }
+
+    /** "Try again" for a save that failed for [problem]; none when the vault is too large, which another try cannot change. */
+    private fun retryUnless(problem: SaveProblem, again: () -> Unit): (() -> Unit)? = if (problem == SaveProblem.TOO_LARGE) null else again
 
     /** The vault locked: drop the query, the dialog and its field, and what was put off until the next unlock. */
     private fun forgetAll() {
@@ -454,8 +457,14 @@ sealed interface ListEvent {
         override fun toString(): String = "Deleted(id=$id)"
     }
 
-    /** A change was not saved, for [problem]. */
-    data class NotSaved(val problem: SaveProblem) : ListEvent
+    /**
+     * A change was not saved, for [problem]: "Couldn't save. Your phone's storage may be full." with
+     * "Try again" ([retry]), or the sentence of [SaveProblem.TOO_LARGE], which trying again cannot
+     * help ([retry] null) (ux.md §5.11 "Error").
+     */
+    class NotSaved(val problem: SaveProblem, val retry: (() -> Unit)?) : ListEvent {
+        override fun toString(): String = "NotSaved($problem, retry=${retry != null})"
+    }
 
     /** The phone refused to copy (ux.md §6, "Failures"). */
     data object CopyBlocked : ListEvent

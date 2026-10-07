@@ -97,7 +97,10 @@ class RecentlyDeletedViewModel(private val repository: VaultRepository, dispatch
         viewModelScope.launch {
             when (val result = repository.edit(change)) {
                 is SaveResult.Saved -> done(result.value)
-                is SaveResult.NotSaved -> eventChannel.send(DeletedEvent.NotSaved(result.problem))
+                is SaveResult.NotSaved -> {
+                    val retry = if (result.problem == SaveProblem.TOO_LARGE) null else ({ save(change, done) })
+                    eventChannel.send(DeletedEvent.NotSaved(result.problem, retry))
+                }
             }
         }
     }
@@ -137,6 +140,8 @@ sealed interface DeletedEvent {
         override fun toString(): String = "Restored"
     }
 
-    /** A change was not saved, for [problem]. */
-    data class NotSaved(val problem: SaveProblem) : DeletedEvent
+    /** A change was not saved, for [problem]; [retry] is "Try again", null when another try cannot help. */
+    class NotSaved(val problem: SaveProblem, val retry: (() -> Unit)?) : DeletedEvent {
+        override fun toString(): String = "NotSaved($problem, retry=${retry != null})"
+    }
 }

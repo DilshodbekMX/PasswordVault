@@ -553,8 +553,22 @@ class PasswordsViewModelTest {
         rig.repository.failures += SaveProblem.FAILED
         vm.setFavourite("gm", false)
         advanceUntilIdle()
-        assertEquals(listOf<ListEvent>(ListEvent.NotSaved(SaveProblem.FAILED)), events)
+        val failed = events.single() as ListEvent.NotSaved
+        assertEquals(SaveProblem.FAILED, failed.problem)
         assertTrue("nothing changed", rig.repository.stored.entries.single().favourite)
+
+        // "Try again" makes the same change.
+        failed.retry!!.invoke()
+        advanceUntilIdle()
+        assertFalse(rig.repository.stored.entries.single().favourite)
+
+        // A vault that no longer fits gets its sentence and no "Try again" (architecture.md §3.5).
+        rig.repository.failures += SaveProblem.TOO_LARGE
+        vm.setFavourite("gm", true)
+        advanceUntilIdle()
+        val tooLarge = events.last() as ListEvent.NotSaved
+        assertEquals(SaveProblem.TOO_LARGE, tooLarge.problem)
+        assertNull(tooLarge.retry)
     }
 
     @Test
