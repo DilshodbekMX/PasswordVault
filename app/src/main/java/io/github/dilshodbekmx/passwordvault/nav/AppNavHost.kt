@@ -95,7 +95,8 @@ fun rememberNavState(lock: LockManager): NavState = viewModel { NavViewModel(loc
  *
  * - Each screen gets its own ViewModel store and saved state (the two entry decorators). When the
  *   app locks, the unlocked screens leave the display and Navigation 3 clears both
- *   (architecture.md §5.5 step 5); the ids stay in [nav].
+ *   (architecture.md §5.5 step 5); the ids stay in [nav]. After a lock in the background that
+ *   happens when the activity starts again ([NavState] says why).
  * - Each screen's root carries the test tag `pv.route.<name>` ([Route.name]), exposed as its
  *   resource id, so that tests and the emulator scripts find the route whatever the language.
  * - A switch between the setup, locked and unlocked stacks is not animated, so the lock screen
