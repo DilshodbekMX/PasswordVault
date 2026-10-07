@@ -21,9 +21,11 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.runtime.EntryProviderScope
 import io.github.dilshodbekmx.passwordvault.AppGraph
 import io.github.dilshodbekmx.passwordvault.R
+import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockScreen
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.Notice
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.NoticeAnswer
 import io.github.dilshodbekmx.passwordvault.lock.LockIntent
@@ -38,11 +40,12 @@ import kotlinx.coroutines.launch
 
 /**
  * The lock's one route, [Route.Locked], whose screen `LockUiState` decides (lock.md §13.1, §13.2):
- * the master-password screen (build plan 3.4), then every lock screen (4.2). A placeholder until
- * then, which shows the state and unlocks through `submitMasterPassword`.
+ * the master-password screen (build plan 3.4) while the lock shows `LockScreen.MasterPassword`.
+ * The other lock screens, and "Your passwords can't be opened", come with the lock screens package
+ * (4.2); until then a placeholder shows the state and unlocks through `submitMasterPassword`.
  */
 fun EntryProviderScope<Route>.lockNav(graph: AppGraph, nav: Navigator) {
-    entry<Route.Locked> { route -> LockedPlaceholder(graph, nav, route) }
+    entry<Route.Locked> { route -> LockRoute(graph, nav, route) }
 }
 
 /**
@@ -80,6 +83,27 @@ fun LockNotices(graph: AppGraph, nav: Navigator) {
     }
 }
 
+/**
+ * What the lock route shows: the master-password screen while the lock shows it, and also for the
+ * moment between an unlock and the route leaving, so that nothing flashes; a placeholder for the
+ * other lock screens. Its [LockViewModel] belongs to the route's entry, so a rotation keeps it and
+ * an unlock clears it (architecture.md §5.5 step 5).
+ */
+@Composable
+private fun LockRoute(graph: AppGraph, nav: Navigator, route: Route) {
+    val state by graph.lock.state.collectAsStateWithLifecycle()
+    val vm = viewModel { LockViewModel(graph.lock, graph.platform.clock, graph.appScope) }
+    val masterPassword by vm.masterPassword.collectAsStateWithLifecycle()
+    val ui = masterPassword
+    val anotherScreen = when (val now = state) {
+        is LockUiState.Locked -> now.screen !is LockScreen.MasterPassword
+        is LockUiState.Unreadable -> true
+        else -> false
+    }
+    if (ui != null && !anotherScreen) MasterPasswordScreen(vm, ui) else LockedPlaceholder(graph, nav, route)
+}
+
+/** The lock screens of package 4.2 until it is built: the state, an unlock, and Restore. */
 @Composable
 private fun LockedPlaceholder(graph: AppGraph, nav: Navigator, route: Route) {
     val state by graph.lock.state.collectAsStateWithLifecycle()
