@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The ids of ControlActivity's views; the scripts find them as resource ids, as they find the
+     app's pv.* test tags. -->
+<resources>
+    <item name="control_text" type="id" />
+    <item name="control_password" type="id" />
+    <item name="control_button" type="id" />
+    <item name="control_status" type="id" />
+</resources>
