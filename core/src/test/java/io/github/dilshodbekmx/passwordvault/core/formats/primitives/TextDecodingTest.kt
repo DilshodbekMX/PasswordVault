@@ -43,7 +43,7 @@ class TextDecodingTest {
         assertEquals("{}", two.text)
         assertEquals(2, two.byteOrderMarks)
         // A U+FEFF after the start is text.
-        assertEquals("a﻿", TextDecoding.decode("a﻿".toByteArray()).text)
+        assertEquals("a\uFEFF", TextDecoding.decode("a\uFEFF".toByteArray()).text)
     }
 
     @Test
@@ -87,13 +87,13 @@ class TextDecodingTest {
         val good = "a🔑b".toByteArray(Charsets.UTF_16LE) // 61 00 3D D8 11 DD 62 00
         val loneHigh = bytes(0xFF, 0xFE) + bytes(0x61, 0x00, 0x3D, 0xD8, 0x62, 0x00)
         val d = TextDecoding.decode(loneHigh)
-        assertEquals("a�b", d.text)
+        assertEquals("a\uFFFDb", d.text)
         assertEquals(2, d.replacedBytes)
         assertEquals(4L, d.firstReplacedByte)
         val loneLow = TextDecoding.decode(bytes(0xFE, 0xFF) + bytes(0xDD, 0x11, 0x00, 0x61))
-        assertEquals("�a", loneLow.text)
+        assertEquals("\uFFFDa", loneLow.text)
         val odd = TextDecoding.decode(bytes(0xFF, 0xFE) + good + bytes(0x41))
-        assertEquals("a🔑b�", odd.text)
+        assertEquals("a🔑b\uFFFD", odd.text)
         assertEquals(1, odd.replacedBytes)
     }
 
@@ -103,7 +103,7 @@ class TextDecodingTest {
         val d = TextDecoding.decode(bad)
         assertEquals(Encoding.UTF_8, d.encoding)
         assertEquals(Why.UTF8_SEQUENCES, d.why)
-        assertEquals(sample + "Last,https://x.example,u,p,trailing �", d.text)
+        assertEquals(sample + "Last,https://x.example,u,p,trailing \uFFFD", d.text)
         assertEquals(1, d.replacedBytes)
         assertEquals(listOf(4), d.replacedLines)
         assertEquals(1, d.replacedLineCount)
@@ -127,7 +127,7 @@ class TextDecodingTest {
         val jdk = String(all, cp1251) // 0x98 is unassigned; the JDK gives U+FFFD for it
         val ours = TextDecoding.decode(all, Encoding.WINDOWS_1251)
         assertEquals(jdk, ours.text)
-        assertEquals('�', ours.text[0x98])
+        assertEquals('\uFFFD', ours.text[0x98])
         assertEquals(1, ours.replacedBytes)
         assertEquals(0x98L, ours.firstReplacedByte)
     }
@@ -254,8 +254,8 @@ class TextDecodingTest {
         val rows = Csv.read(d.text).rows
         assertEquals(listOf(2, 4, 5), rows.map { it.line })
         // The row of line 3 is the one that started on line 2 and runs over two lines.
-        assertTrue(rows[0].values[1].contains('�'))
-        assertTrue(rows[2].values[1].contains('�'))
+        assertTrue(rows[0].values[1].contains('\uFFFD'))
+        assertTrue(rows[2].values[1].contains('\uFFFD'))
     }
 
     @Test

@@ -56,7 +56,7 @@ class CsvTest {
         val counter = TextHygiene.Counter()
         val text = Csv.write(listOf("name", "note"), listOf(listOf("T\uD800x", "n\uDE00\uD83Dz 🔑")), replaced = counter)
         assertEquals(3, counter.count)
-        assertEquals("name,note\r\nT�x,n��z 🔑\r\n", text)
+        assertEquals("name,note\r\nT\uFFFDx,n\uFFFD\uFFFDz 🔑\r\n", text)
         assertFalse(TextHygiene.hasUnpairedSurrogate(text))
     }
 
@@ -146,12 +146,12 @@ class CsvTest {
         assertEquals(Csv.DelimiterFrom.DETECTED, Csv.read("sep=;x,y\n1,2\n").delimiterFrom)
         assertEquals(listOf("sepa=;", "b"), Csv.read("sepa=;,b\n").header!!.values)
         // A byte-order mark before it does not hide it.
-        assertEquals(';', Csv.read("﻿sep=;\na;b\n").delimiter)
+        assertEquals(';', Csv.read("\uFEFFsep=;\na;b\n").delimiter)
     }
 
     @Test
     fun aByteOrderMarkIsNotPartOfTheFirstValue() {
-        assertEquals(listOf("name", "url"), Csv.read("﻿﻿name,url\n").header!!.values)
+        assertEquals(listOf("name", "url"), Csv.read("\uFEFF\uFEFFname,url\n").header!!.values)
     }
 
     @Test

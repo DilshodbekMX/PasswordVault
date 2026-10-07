@@ -56,7 +56,7 @@ object Xlsx {
 
     /** The default note at the end of a cut cell; the app passes its own, in the user's language. */
     val DEFAULT_TRUNCATION_NOTE: (Int) -> String =
-        { n -> "\n[… $n more characters: Excel shows at most 32,767 in one cell]" }
+        { n -> "\n[\u2026 $n more characters: Excel shows at most 32,767 in one cell]" }
 
     /**
      * Excel's rules for a sheet name: 1 to 31 characters, none of `[ ] : * ? / \`, not starting or
@@ -212,7 +212,7 @@ object Xlsx {
         val sb = StringBuilder(s.length + 2 * (total - MAX_LINE_FEEDS))
         var count = 0
         for (c in s) {
-            if (c == '\n' && ++count > MAX_LINE_FEEDS) sb.append(" ↵ ") else sb.append(c)
+            if (c == '\n' && ++count > MAX_LINE_FEEDS) sb.append(" \u21B5 ") else sb.append(c)
         }
         return sb.toString()
     }
@@ -246,7 +246,7 @@ object Xlsx {
 
     /** XML 1.0 cannot carry these, even as character references. */
     private fun isXmlForbidden(c: Char) =
-        (c < ' ' && c != '\t' && c != '\n' && c != '\r') || c == '￾' || c == '￿'
+        (c < ' ' && c != '\t' && c != '\n' && c != '\r') || c == '\uFFFE' || c == '\uFFFF'
 
     /** Whether [c] is written as an `_xHHHH_` escape by [text]. */
     private fun isEscaped(c: Char) = isXmlForbidden(c) || c == '\r'

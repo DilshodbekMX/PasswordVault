@@ -219,7 +219,7 @@ object StrictJson {
         }
 
         fun run(): JsonElement {
-            if (s.isNotEmpty() && s[0] == '﻿') fail(Reason.BYTE_ORDER_MARK, 0)
+            if (s.isNotEmpty() && s[0] == '\uFEFF') fail(Reason.BYTE_ORDER_MARK, 0)
             val value = readValue()
             skipSpace()
             if (pos < s.length) fail(Reason.TRAILING_CHARACTERS)

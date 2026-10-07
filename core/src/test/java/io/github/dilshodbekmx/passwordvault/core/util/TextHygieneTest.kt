@@ -25,7 +25,7 @@ class TextHygieneTest {
         assertEquals(1, TextHygiene.firstControl("a\u007Fb", lineBreaks = true))
         assertEquals(0, TextHygiene.firstControl("\u0000", lineBreaks = true))
         // Not control characters by ux.md §2: C1 controls, NEL, the Unicode line separators, NBSP.
-        assertEquals(-1, TextHygiene.firstControl("\u0080\u0085\u009F   ", lineBreaks = false))
+        assertEquals(-1, TextHygiene.firstControl("\u0080\u0085\u009F\u2028\u2029\u00A0", lineBreaks = false))
     }
 
     @Test
@@ -61,11 +61,11 @@ class TextHygieneTest {
     @Test
     fun replaceUnpairedSurrogatesReplacesEachOneAndCountsIt() {
         val counter = TextHygiene.Counter()
-        assertEquals("T�x", TextHygiene.replaceUnpairedSurrogates("T\uD800x", counter))
-        assertEquals("n��z", TextHygiene.replaceUnpairedSurrogates("n\uDE00\uD83Dz", counter))
-        assertEquals("p🔑�", TextHygiene.replaceUnpairedSurrogates("p🔑\uD83D", counter))
+        assertEquals("T\uFFFDx", TextHygiene.replaceUnpairedSurrogates("T\uD800x", counter))
+        assertEquals("n\uFFFD\uFFFDz", TextHygiene.replaceUnpairedSurrogates("n\uDE00\uD83Dz", counter))
+        assertEquals("p🔑\uFFFD", TextHygiene.replaceUnpairedSurrogates("p🔑\uD83D", counter))
         assertEquals(4, counter.count)
-        assertEquals("�🙂�", TextHygiene.replaceUnpairedSurrogates("\uDC00🙂\uD800", counter))
+        assertEquals("\uFFFD🙂\uFFFD", TextHygiene.replaceUnpairedSurrogates("\uDC00🙂\uD800", counter))
         assertEquals(6, counter.count)
     }
 
@@ -101,7 +101,7 @@ class TextHygieneTest {
     @Test
     fun randomTextAgreesWithAModelOfEachRule() {
         val random = Random(20261007)
-        val alphabet = charArrayOf('a', 'ʻ', 'Ж', ' ', '\t', '\n', '\r', '\u0000', '\u001F', '\u007F', '\u0080', '\uD83D', '\uDE00', '\uD800', '\uDFFF', '�')
+        val alphabet = charArrayOf('a', 'ʻ', 'Ж', ' ', '\t', '\n', '\r', '\u0000', '\u001F', '\u007F', '\u0080', '\uD83D', '\uDE00', '\uD800', '\uDFFF', '\uFFFD')
         repeat(20_000) {
             val s = String(CharArray(random.nextInt(12)) { alphabet[random.nextInt(alphabet.size)] })
             // A low surrogate is paired exactly when a high one precedes it; a high one, when a low one follows.
@@ -115,7 +115,7 @@ class TextHygieneTest {
             val counter = TextHygiene.Counter()
             val replaced = TextHygiene.replaceUnpairedSurrogates(s, counter)
             assertEquals(escape(s), lone.size, counter.count)
-            assertEquals(escape(s), String(CharArray(s.length) { if (it in lone) '�' else s[it] }), replaced)
+            assertEquals(escape(s), String(CharArray(s.length) { if (it in lone) '\uFFFD' else s[it] }), replaced)
             assertFalse(TextHygiene.hasUnpairedSurrogate(replaced))
             for (lineBreaks in listOf(false, true)) {
                 val expected = s.indices.firstOrNull { s[it].code < 0x20 && !(lineBreaks && s[it] == '\n') || s[it].code == 0x7F } ?: -1

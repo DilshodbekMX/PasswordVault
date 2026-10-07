@@ -18,7 +18,7 @@ package io.github.dilshodbekmx.passwordvault.core.util
  */
 object TextHygiene {
     /** What an unpaired surrogate becomes in a writer's output. */
-    const val REPLACEMENT_CHARACTER = '�'
+    const val REPLACEMENT_CHARACTER = '\uFFFD'
 
     /** Counts what the functions below replaced or removed, summed over every call it is given to. */
     class Counter {

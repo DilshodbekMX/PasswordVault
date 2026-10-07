@@ -47,7 +47,7 @@ class ReviewFindingsTest {
         assertEquals(listOf(4), decoded.replacedLines)
         val rows = Csv.read(decoded.text).rows
         assertEquals(listOf("Пароль2026", "Oʻzbek‘1", "p"), rows.map { it.values[3] })
-        assertEquals("trailing �", rows[2].values[4])
+        assertEquals("trailing \uFFFD", rows[2].values[4])
         // What the prototype did instead (its decoder fell back to Windows-1251):
         assertEquals("РџР°СЂРѕР»СЊ2026", String("Пароль2026".toByteArray(), cp1251))
 
@@ -126,7 +126,7 @@ class ReviewFindingsTest {
     fun p7_unpairedSurrogatesBecomeU_FFFDAndAreCountedByEveryWriter() {
         // The trigger: title, username, password, notes, website, field name and field value.
         val values = listOf("T\uD800x", "u\uDC00", "p\uD83D", "n\uDE00\uD83Dz", "https://x.example/\uD800", "F\uD800", "v\uDFFF")
-        val expected = listOf("T�x", "u�", "p�", "n��z", "https://x.example/�", "F�", "v�")
+        val expected = listOf("T\uFFFDx", "u\uFFFD", "p\uFFFD", "n\uFFFD\uFFFDz", "https://x.example/\uFFFD", "F\uFFFD", "v\uFFFD")
 
         val hygiene = TextHygiene.Counter()
         assertEquals(expected, values.map { TextHygiene.replaceUnpairedSurrogates(it, hygiene) })
@@ -193,8 +193,9 @@ class ReviewFindingsTest {
 
     /**
      * P12: the byte-order-mark branches decoded leniently and hid damaged bytes (a UTF-8 mark in
-     * front of a Windows-1251 body gave `������1` and no problem), and UTF-16 without a mark was
-     * refused as binary. Now every branch reports what it replaced, and UTF-16 without a mark is read.
+     * front of a Windows-1251 body gave six U+FFFD and a `1` for `Пароль1`, and no problem), and
+     * UTF-16 without a mark was refused as binary. Now every branch reports what it replaced, and
+     * UTF-16 without a mark is read.
      */
     @Test
     fun p12_theMarkBranchesReportDamageAndUtf16WithoutAMarkIsRead() {
@@ -205,7 +206,7 @@ class ReviewFindingsTest {
         assertEquals(Why.BYTE_ORDER_MARK, d.why)
         assertEquals(6, d.replacedBytes) // reported, with its line
         assertEquals(listOf(2), d.replacedLines)
-        assertEquals("�".repeat(6) + "1", Csv.read(d.text).rows.single().values[3])
+        assertEquals("\uFFFD".repeat(6) + "1", Csv.read(d.text).rows.single().values[3])
         // The preview's "Read as Windows-1251" then gives the right text.
         assertEquals("Пароль1", Csv.read(TextDecoding.decode(trigger, Encoding.WINDOWS_1251).text).rows.single().values[3])
         // A damaged UTF-16 file with a mark is reported too.

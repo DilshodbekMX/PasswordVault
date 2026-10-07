@@ -134,7 +134,7 @@ object Csv {
     fun read(text: String, maxRows: Int = Int.MAX_VALUE): Table {
         require(maxRows >= 0) { "maxRows must not be negative" }
         var start = 0
-        while (start < text.length && text[start] == '﻿') start++
+        while (start < text.length && text[start] == '\uFEFF') start++
         val sep = sepLine(text, start)
         val delimiter = sep?.delimiter ?: detectDelimiter(text, start)
         val from = if (sep != null) sep.next else start

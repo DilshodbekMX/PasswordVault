@@ -80,7 +80,7 @@ class XlsxTest {
     fun charactersXmlCannotCarryAreEscapedAndLiteralEscapesSurvive() {
         val values = listOf(
             "bell\u0007 unit\u001F nul\u0000",
-            "nonchars ￾￿",
+            "nonchars \uFFFE\uFFFF",
             "literal _x0041_ and _x005F_ and _X0041_",
             "_x0041\u0001", // an underscore that an escape after it would turn into one
             "x005F_ _x004 _xZZZZ_ tab\there",
@@ -100,12 +100,12 @@ class XlsxTest {
         val (bytes, stats) = write(listOf(listOf("T\uD800x", "p\uD83D", "n\uDE00\uD83Dz 🔑")))
         assertEquals(4, stats.replacedSurrogates)
         val book = Book.read(bytes)
-        assertEquals(listOf("T�x", "p�", "n��z 🔑"), book.rows()[1].map { it.value })
+        assertEquals(listOf("T\uFFFDx", "p\uFFFD", "n\uFFFD\uFFFDz 🔑"), book.rows()[1].map { it.value })
         val sst = String(book.parts.getValue("xl/sharedStrings.xml"), Charsets.UTF_8)
         assertFalse(sst.contains("_xD800_"))
         assertFalse(sst.substringAfter("?>").contains("?")) // no '?' where a surrogate was (after the XML declaration)
         // The escape function on its own, for text that did not go through TextHygiene.
-        assertEquals("a�b🔑", Xlsx.text("a\uDC00b🔑"))
+        assertEquals("a\uFFFDb🔑", Xlsx.text("a\uDC00b🔑"))
     }
 
     @Test
