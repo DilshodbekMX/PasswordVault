@@ -39,8 +39,10 @@ class NavRecreationTest {
             decided
         }
         // One step on the stack shown: a setup step, Restore over the lock screen, or a Settings page.
+        // In setup only the first step: WriteDown and TypeAgain show the password chosen on
+        // CreateMasterPassword, and one reached without it goes back to step 1 (ux.md §5.5).
         val (first, second) = when (nav.top) {
-            NavState.Top.SETUP -> Route.CreateMasterPassword to Route.WriteDown
+            NavState.Top.SETUP -> Route.CreateMasterPassword to null
             NavState.Top.LOCKED -> Route.Restore to null
             else -> Route.Settings to Route.AppLock
         }
