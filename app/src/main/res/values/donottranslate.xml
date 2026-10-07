@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Texts that are the same in every language (i18n.md §1.1), so they are never translated.
+     Owned by build plan 2.9 (APP/i18n); a name here starts with i18n_. -->
+<resources>
+    <!-- The language dialog (i18n.md §1.4.5, ux.md §5.18): each language named in its own language,
+         in the dialog's fixed order after "System language", which is translated. Oʻzbekcha is
+         written with U+02BB. AppLanguage.ownName points here. -->
+    <string name="i18n_language_uz" translatable="false">Oʻzbekcha</string>
+    <string name="i18n_language_uz_cyrl" translatable="false">Ўзбекча</string>
+    <string name="i18n_language_en" translatable="false">English</string>
+    <string name="i18n_language_ru" translatable="false">Русский</string>
+
+    <!-- The globe button's label on the first screen and in Settings (i18n.md §1.4.5): the word
+         "language" in the four languages, so that a reader of any of them finds the switch. -->
+    <string name="i18n_language_switch" translatable="false">Til · Тил · Язык · Language</string>
+</resources>
