@@ -34,6 +34,7 @@ API level can run at once (each is its own read-only instance of the base).
 | `adb.sh --connected SERIAL... [-- GRADLE-ARGS]` | The connected tests (A §8.3) on exactly these devices: refuses a serial that is not this worktree's, removes the app and its test APK from each, clears the old reports, runs `:app:connectedDebugAndroidTest` with `ANDROID_SERIAL` set (through `tools/gradle.sh`; `./gradlew --no-daemon` with JAVA_HOME and ANDROID_HOME until 0.1 has made it), then checks the report of every serial. |
 | `adb.sh --connected-results DIR SERIAL...` | That last check alone: a JUnit report with at least one test and no failure for each serial, and none for any other device. |
 | `smoke.sh VARIANT SERIAL [--apk FILE]` | The smoke test (A §8.4). VARIANT is `debug` or `staging`; the APK defaults to `app/build/outputs/apk/VARIANT/app-VARIANT.apk`. Wave 0: checks the APK (package, debuggable flag, x86_64 code), removes an installed copy, installs, starts the launcher activity, checks that it is in front and still running after 5 s without a crash. Later waves add stages. |
+| `shell/walk.sh SERIAL [--apk FILE] [--locale TAG]` | Build plan 2.5's [script] line: installs the APK afresh (default `app/build/outputs/apk/debug/app-debug.apk`) and walks every placeholder route of the app's shell by resource id (`pv.route.<Route>`, `pv.open.<Route>`, `pv.tab.*`), so it does not depend on the language: a setup step kept in a new process, setup, the PIN steps, the three tabs and everything below them, Lock now and Unlock to the same route, a rotation, Back out of the app. Every route key of `nav/Route.kt` but `Starting` must be shown and the app must not crash. `--apk app-staging.apk` also checks a back stack restored in a new process under R8 (A §7.2); `--locale TAG` (API 33 and newer) sets the app's language once on Welcome and checks that the shell's own texts change. Exit 0 when no step failed. |
 | `checks/` | The integrator's integration checks, `checks/<wave>.sh`, run from the integrator's worktree (main). `checks/0.sh [jvm] [devices]` is wave 0's: the acceptance of packages 0.1 and 0.2 on the integrator's devices (`boot.sh --integrator`). `checks/1.sh` is wave 1's, with no device: the four package branches merged, `tools/check.sh all`, and a passing report for every test class of packages 1.1 to 1.4. |
 
 Exit codes of all scripts: 0 success, 1 failure, 2 usage, 3 refused serial.
@@ -156,7 +157,7 @@ S24=$(tools/emu/boot.sh 24); S28=$(tools/emu/boot.sh 28); S37=$(tools/emu/boot.s
 tools/emu/boot.sh --list                          # three ports from 5556..5578, -read-only
 for s in $S24 $S28 $S37; do tools/emu/adb.sh -s $s install -r app/build/outputs/apk/debug/app-debug.apk; done
 SX=$(tools/emu/boot.sh 37)                        # another emulator running
-tools/emu/adb.sh --connected $S24 $S28 $S37       # ExampleInstrumentedTest on exactly those three
+tools/emu/adb.sh --connected $S24 $S28 $S37       # the connected tests (now nav.NavLockTest, nav.NavRecreationTest) on exactly those three
 tools/emu/adb.sh -s $SX shell pm list packages | grep -c passwordvault   # 0
 tools/emu/smoke.sh staging $S24; tools/emu/smoke.sh staging $S37
 tools/emu/stop.sh --mine; tools/emu/boot.sh --verify-base
