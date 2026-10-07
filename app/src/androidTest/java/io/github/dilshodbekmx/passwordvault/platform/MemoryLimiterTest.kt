@@ -73,11 +73,15 @@ class MemoryLimiterTest {
         record("limiter status: ${shell("am memory-limiter status").replace('\n', ' ')}")
         val totalKb = procKb("/proc/meminfo", "MemTotal")
         val anonKb = procKb("/proc/self/status", "RssAnon") + procKb("/proc/self/status", "VmSwap")
-        // One derivation adds argon2kt's 64 MiB work area and four lanes' threads to what the process holds.
+        // One derivation adds argon2kt's 64 MiB work area and four lanes' threads to what the process
+        // holds. "Just above": that and 16 MiB more. "Just below": above what the process holds now,
+        // halfway into the work area, so that the derivation, not the process as it is, meets the limit.
+        // A limit is a whole percentage of the total RAM, so both are rounded outwards.
         val needKb = anonKb + 65_536 + 8_192
-        val above = percent(needKb * 3 / 2, totalKb, roundUp = true)
-        val below = percent(anonKb + 8_192, totalKb, roundUp = false)
+        val above = percent(needKb + 16_384, totalKb, roundUp = true)
+        val below = percent(anonKb + 32_768, totalKb, roundUp = false)
         record("total RAM $totalKb kB; this process holds $anonKb kB (RssAnon + VmSwap); a derivation needs about $needKb kB")
+        if (totalKb * below / 100 <= anonKb) record("note: 1 % of the RAM is coarser than the gap, so the lower limit is under what the process holds already")
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) exitsByTheLimiter().forEach { record("an earlier exit of this app: $it") }
 
         val outcomes = mutableListOf<String>()
