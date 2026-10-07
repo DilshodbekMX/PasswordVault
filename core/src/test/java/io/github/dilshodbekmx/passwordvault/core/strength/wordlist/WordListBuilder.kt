@@ -229,7 +229,7 @@ class WordListBuilder {
         return ranked.mapNotNull { name ->
             val display = capitalise(name)
             val kept = distinctSpellings(listOf(display, uzbekCyrillic(display)), taken)
-            if (kept.isEmpty()) null else Entry(kept, sources.getValue(name))
+            if (kept.size != 2) null else Entry(kept, sources.getValue(name)) // both scripts, or none
         }
     }
 
@@ -366,8 +366,8 @@ class WordListBuilder {
         const val SEED = "core/src/test/java/io/github/dilshodbekmx/passwordvault/core/strength/wordlist/common-seed.txt"
         const val MIN_LENGTH = 3
         const val MIN_TOWN = 10_000L
-        const val UZ_WORDS = 6_000
-        const val RU_WORDS = 8_000
+        const val UZ_WORDS = 20_000
+        const val RU_WORDS = 10_000
         const val ENGLISH_TOP = 3_000
 
         val ADMIN_WORDS = setOf(

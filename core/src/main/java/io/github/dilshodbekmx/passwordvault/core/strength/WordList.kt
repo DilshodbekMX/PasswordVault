@@ -22,8 +22,8 @@ import io.github.dilshodbekmx.passwordvault.core.search.searchKey
  * each spelling the way a password may contain it: in lower case; as its search key ([searchKey]:
  * Cyrillic in Latin letters by the Uzbek rules, apostrophes removed), which [StrengthMeter] also
  * scores; for Cyrillic, with у к г х for ў қ ғ ҳ as a Russian keyboard types them, and as typed with
- * the keyboard on the wrong layout (ЙЦУКЕН ↔ QWERTY, "gfhjkm" for "пароль"); and a phrase without
- * its spaces.
+ * the keyboard on the wrong layout (ЙЦУКЕН ↔ QWERTY, "gfhjkm" for "пароль"; for the files of
+ * [LAYOUT_FILES]); and a phrase without its spaces.
  *
  * [load] reads and checks every file and refuses one that breaks the format, naming the file and the
  * line by its number, never by its text, so that a damaged file fails loudly instead of making the
@@ -41,18 +41,26 @@ internal object WordList {
      */
     val FILES = listOf("common.txt", "places.txt", "names-uz.txt", "names-ru.txt", "words-uz.txt", "words-ru.txt")
 
+    /**
+     * The files whose Cyrillic is also listed as typed on the wrong keyboard layout: Russian, which a
+     * phone's Russian keyboard writes, and the short common list. Uzbek Cyrillic is rarely typed on
+     * a Russian layout by mistake, and its forms would take more memory than they are worth.
+     */
+    val LAYOUT_FILES = setOf("common.txt", "names-ru.txt", "words-ru.txt")
+
     /** The fewest code points a spelling, and a form, may have: shorter words are cheaper to guess one by one. */
     const val MIN_LENGTH = 3
 
     /** Every form of every spelling of every file, with its rank (see the class comment). */
     fun load(): HashMap<String, Int> {
-        val ranks = HashMap<String, Int>(200_000)
+        val ranks = HashMap<String, Int>(1 shl 17)
         for (file in FILES) {
             val entries = parse(file, read(file))
+            val layouts = file in LAYOUT_FILES
             for ((index, spellings) in entries.withIndex()) {
                 val rank = index + 1
                 for (spelling in spellings) {
-                    for (form in forms(spelling)) {
+                    for (form in forms(spelling, layouts)) {
                         val known = ranks[form]
                         if (known == null || rank < known) ranks[form] = rank
                     }
@@ -100,8 +108,11 @@ internal object WordList {
         return true
     }
 
-    /** The forms of [spelling] that the password matcher looks for (see the class comment). */
-    fun forms(spelling: String): Set<String> {
+    /**
+     * The forms of [spelling] that the password matcher looks for (see the class comment), with
+     * [layouts] the Cyrillic typed on the QWERTY keys too.
+     */
+    fun forms(spelling: String, layouts: Boolean = true): Set<String> {
         val bases = LinkedHashSet<String>()
         val lower = lowerCase(spelling)
         bases.add(lower)
@@ -111,7 +122,7 @@ internal object WordList {
         for (base in bases) {
             out.add(base)
             out.add(searchKey(base))
-            if (cyrillic) {
+            if (cyrillic && layouts) {
                 val swapped = KeyboardLayout.otherLayout(base)
                 out.add(swapped)
                 out.add(searchKey(swapped))

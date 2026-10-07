@@ -13,6 +13,7 @@ import com.nulabinc.zxcvbn.matchers.Match
 import com.nulabinc.zxcvbn.matchers.SpatialMatcher
 import io.github.dilshodbekmx.passwordvault.core.search.KeyboardLayout
 import io.github.dilshodbekmx.passwordvault.core.search.searchKey
+import java.lang.ref.SoftReference
 
 /**
  * The strength meter (ux.md §5.3): zxcvbn4j 1.9.0 with its English lists and the bundled Uzbek and
@@ -32,9 +33,10 @@ import io.github.dilshodbekmx.passwordvault.core.search.searchKey
  * zxcvbn wipe the copies it made of its parts. zxcvbn also makes `String`s of the parts it looks up,
  * and the search key is a `String`; those can only be dropped. Nothing is kept or logged.
  *
- * **Threads.** Building a meter ([create]) reads about 1.7 MB of word lists: do it off the main
- * thread (a ViewModel's `Dispatchers.Default`), once ([shared]). After that, [measure] keeps no state
- * between calls and may be called from several threads at once.
+ * **Threads and memory.** Building a meter ([create]) reads zxcvbn's lists and the bundled one,
+ * about 1.6 MB of text that take about 20 MB of memory: do it off the main thread (a ViewModel's
+ * `Dispatchers.Default`), and share one ([shared]). After that, [measure] keeps no state between
+ * calls and may be called from several threads at once.
  */
 class StrengthMeter private constructor(private val zxcvbn: Zxcvbn, keyboards: List<Keyboard>) {
 
@@ -207,11 +209,20 @@ class StrengthMeter private constructor(private val zxcvbn: Zxcvbn, keyboards: L
             StandardDictionaries.SURNAMES,
         )
 
+        private val sharedLock = Any()
+        private var sharedMeter: SoftReference<StrengthMeter>? = null
+
         /**
-         * The meter of the app, made on first use by [create]. That first use reads the word lists:
-         * make it from a background thread. If it fails, it is tried again on the next use.
+         * The meter of the app: built by [create] on first use, then kept while memory allows. It
+         * holds about 20 MB of word lists, so it is held through a soft reference, which the runtime
+         * may clear when memory runs short; the next use then builds it again. The first use, and a
+         * use after a clear, read the word lists: call this from a background thread, and keep the
+         * meter for the length of one task (a security check) rather than calling this per password.
+         * If building fails, the next call tries again.
          */
-        val shared: StrengthMeter by lazy { create() }
+        fun shared(): StrengthMeter = synchronized(sharedLock) {
+            sharedMeter?.get() ?: create().also { sharedMeter = SoftReference(it) }
+        }
 
         /**
          * A new meter: zxcvbn's English dictionaries and keyboards, and the bundled list.

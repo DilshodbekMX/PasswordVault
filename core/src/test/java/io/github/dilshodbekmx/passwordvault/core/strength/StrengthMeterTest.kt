@@ -170,6 +170,13 @@ class StrengthMeterTest {
     }
 
     @Test
+    fun theSharedMeterIsBuiltOnceWhileMemoryAllows() {
+        val first = StrengthMeter.shared()
+        org.junit.Assert.assertSame(first, StrengthMeter.shared())
+        assertEquals(meter.measure("Toshkent2020"), first.measure("Toshkent2020"))
+    }
+
+    @Test
     fun theMeterIsSharedAndSafeAcrossThreads() {
         val results = java.util.concurrent.ConcurrentHashMap<String, Int>()
         val threads = (CHECK_18 + listOf("vowel-shiny-shell-crisp-shaft-cadet", "x7#Qm2!pL9@vRt")).map { password ->

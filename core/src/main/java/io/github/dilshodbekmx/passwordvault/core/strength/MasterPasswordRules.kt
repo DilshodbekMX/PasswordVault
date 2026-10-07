@@ -36,7 +36,7 @@ object MasterPasswordRules {
      * makes is wiped before it returns (the search key, a `String`, can only be dropped). Runs zxcvbn
      * twice: call it from a background thread.
      */
-    fun check(password: CharArray, meter: StrengthMeter = StrengthMeter.shared): MasterPasswordCheck {
+    fun check(password: CharArray, meter: StrengthMeter = StrengthMeter.shared()): MasterPasswordCheck {
         val unassigned = MasterPasswordBytes.firstUnassigned(password) != null
         val folded = folded(password)
         try {

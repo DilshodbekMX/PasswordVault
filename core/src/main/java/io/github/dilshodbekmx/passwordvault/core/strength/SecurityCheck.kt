@@ -37,8 +37,9 @@ object SecurityCheck {
      * group list ([listOrder]): accounts that look like email first, then favourites, then A–Z.
      *
      * - [easyToGuess] decides card 3 for one account; by default [isEasyToGuess] with the shared
-     *   meter. A runner may pass its own, for example one that remembers the answer for an entry's
-     *   id and `updatedAt` for the session, so that a check after a save scores only what changed.
+     *   meter, taken once for the whole run. A runner may pass its own, for example one that
+     *   remembers the answer for an entry's id and `updatedAt` for the session, so that a check
+     *   after a save scores only what changed.
      * - [titleOrder] is the A–Z of the app's language (`Collation.compare`); by default the titles'
      *   search keys in code point order.
      * - [progress] is told how many of the accounts that are scored have been ("Checking 120 of
@@ -49,7 +50,7 @@ object SecurityCheck {
      */
     fun run(
         vault: Vault,
-        easyToGuess: (Entry) -> Boolean = { isEasyToGuess(it) },
+        easyToGuess: (Entry) -> Boolean = StrengthMeter.shared().let { meter -> { entry: Entry -> isEasyToGuess(entry, meter) } },
         titleOrder: Comparator<String>? = null,
         progress: (checked: Int, total: Int) -> Unit = { _, _ -> },
     ): SecurityReport {
@@ -83,7 +84,7 @@ object SecurityCheck {
      * inputs ([userInputs], as Bitwarden's weak-password report does), scores
      * [StrengthMeter.EASY_TO_GUESS] or less. An empty password is not easy to guess.
      */
-    fun isEasyToGuess(entry: Entry, meter: StrengthMeter = StrengthMeter.shared): Boolean {
+    fun isEasyToGuess(entry: Entry, meter: StrengthMeter = StrengthMeter.shared()): Boolean {
         val password = websitePassword(entry)
         return password.isNotEmpty() && meter.isEasyToGuess(password, userInputs(entry))
     }
