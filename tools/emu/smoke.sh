@@ -9,10 +9,18 @@
 #
 # The stages grow with the waves (architecture.md 8.4); each wave adds a stage function below.
 #   wave 0: install and start.
+#   sub-wave 3A (the skeleton): set up with the suggested words; add an account, whose screen is
+#     shown after Save; a rotation there neither locks nor changes the screen; the app killed in the
+#     background (am kill; kill -9 through run-as on debug builds or su on the userdebug images where
+#     am kill is refused, API 24; SKIPPED when nothing can end it) and started again: locked, and the
+#     master password brings the same account's screen back (the saved back stack, under R8 in
+#     staging); Back to the list, Lock now: locked; the master password: the list with the account.
+#     Driven by resource id through tools/emu/app.sh.
 # Prints PASS, FAIL or SKIPPED per step and a summary line. Exit codes: 0 every step passed or
 # was skipped; 1 a step failed; 2 usage; 3 SERIAL refused.
 set -u
 source "$(dirname "${BASH_SOURCE[0]}")/adb.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/app.sh"
 
 usage() { pv_usage "$0"; }
 
@@ -136,5 +144,61 @@ stage_install_and_start() {
     pv_step "app still running after 5 s, no crash" -- app_still_running
 }
 
-stage_install_and_start
+# ---- stage: the skeleton (sub-wave 3A) ---------------------------------------------------------
+SMOKE_ENTRY=""
+
+smoke_set_up() { pva_set_up && pva_need pv.list.empty 10; }
+
+# An account; Save shows its screen, whose placeholder title names the route with the entry's id.
+smoke_add() {
+    pva_add_account Smoketest smoke.user@example.uz Hv4Nc8Rt2Wq6Yz3 https://smoke.example/login "Smoke note" || return 1
+    SMOKE_ENTRY=$(pva_text pv.title.Entry) && [ -n "$SMOKE_ENTRY" ] || return 1
+    pv_log "the account's screen: $SMOKE_ENTRY"
+}
+
+same_entry() {
+    local title
+    pva_on Entry 20 || return 1
+    title=$(pva_text pv.title.Entry) || return 1
+    [ "$title" = "$SMOKE_ENTRY" ] || { pv_log "the screen shows '$title', not '$SMOKE_ENTRY'"; return 1; }
+}
+
+smoke_rotate() {
+    local o
+    for o in 1 0; do
+        pva_rotate "$o"
+        same_entry && pva_absent pv.route.Locked || return 1
+    done
+}
+
+smoke_back_after_kill() { pva_relaunch && pva_unlock Entry && same_entry; }
+
+smoke_lock_now() {
+    pv_shell input keyevent KEYCODE_BACK >/dev/null
+    pva_on Passwords && pva_tap pv.list.lockNow && pva_on Locked
+}
+
+smoke_unlock() { pva_unlock Passwords && pva_row_with Smoketest 10; }
+
+stage_skeleton() {
+    local same="a new process: locked; the master password brings the same screen back"
+    pva_init
+    pva_rotate 0
+    pv_step "set up with the suggested words: the list, empty" -- smoke_set_up || return 1
+    pv_step "add an account: its screen after Save" -- smoke_add || return 1
+    pv_step "a rotation keeps the account's screen and does not lock" -- smoke_rotate
+    if pva_kill_in_background; then
+        pv_report PASS "the app is killed in the background"
+        pv_step "$same" -- smoke_back_after_kill
+    else
+        pv_report SKIPPED "the app is killed in the background" "nothing here could end the app's process on API $API"
+        pv_report SKIPPED "$same" "the process was not killed"
+        pv_step "back in front: the same screen" -- eval 'pva_relaunch && same_entry'
+    fi
+    pv_step "Back to the list, Lock now: locked" -- smoke_lock_now
+    pv_step "the master password opens the list with the account" -- smoke_unlock
+    pv_step "no crash" -- pva_no_crash
+}
+
+stage_install_and_start && stage_skeleton
 pv_summary

@@ -363,9 +363,9 @@ pv_focus() { # prints the focused window, e.g. "com.android.settings/com.android
 # text field does so for as long as it has the focus (its blinking cursor sends
 # TYPE_WINDOW_CONTENT_CHANGED every 500 ms), and the previous dump's file would then be read as if it
 # were the screen now. So the file is removed before each try and a try counts only when the dump
-# printed "dumped to". After three failed tries the focus is moved on with Tab (which never clicks)
-# before each further try, unless PV_UI_NO_TAB=1: a script that checks the keyboard or the focus does
-# so before it dumps.
+# printed "dumped to". A failed try takes about 10 s there (uiautomator waits that long for an idle
+# window), so after each one the focus is moved on with Tab (which never clicks) before the next,
+# unless PV_UI_NO_TAB=1: a script that checks the keyboard or the focus does so before it dumps.
 pv_ui_nodes() {
     local i out xml=""
     for i in 1 2 3 4 5 6 7 8; do
@@ -378,7 +378,7 @@ pv_ui_nodes() {
         esac
         xml=""
         [ "$i" -lt 8 ] || break
-        if [ "$i" -ge 3 ] && [ "${PV_UI_NO_TAB:-0}" != 1 ]; then
+        if [ "${PV_UI_NO_TAB:-0}" != 1 ]; then
             pv_adb shell input keyevent KEYCODE_TAB >/dev/null 2>&1
         fi
         pv_sleep 1
