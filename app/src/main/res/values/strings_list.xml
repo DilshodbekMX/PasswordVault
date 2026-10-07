@@ -25,11 +25,12 @@
     <string name="list_favourites">Favourites</string>
     <!-- Button under the first 10 favourites when there are more of them. -->
     <string name="list_show_all_favourites">Show all favourites</string>
-    <!-- The heading above all accounts, A to Z; %1$d is how many there are (always 1 or more), for
-         example “All accounts · 48”. -->
-    <string name="list_all_accounts">All accounts · %1$d</string>
-    <!-- The last row of the list, which opens the deleted accounts; %1$d is how many (1 or more). -->
-    <string name="list_recently_deleted_row">Recently deleted (%1$d)</string>
+    <!-- The heading above all accounts, A to Z; %1$s is how many there are (always 1 or more),
+         written with the language's digit grouping, for example “All accounts · 1,250”. -->
+    <string name="list_all_accounts">All accounts · %1$s</string>
+    <!-- The last row of the list, which opens the deleted accounts; %1$s is how many (1 or more),
+         written with the language's digit grouping. -->
+    <string name="list_recently_deleted_row">Recently deleted (%1$s)</string>
 
     <!-- A row's copy button, read by TalkBack; %1$s is the account's name, for example “Gmail”. -->
     <string name="list_copy_password_for">Copy password for %1$s</string>
@@ -213,10 +214,11 @@
     <string name="list_deleted_delete_forever">Delete forever</string>
     <!-- The question before “Delete forever”; %1$s is the account's name. -->
     <string name="list_deleted_forever_question">Delete %1$s forever? This can\'t be undone.</string>
-    <!-- The question before “Empty”; %1$d is how many accounts are deleted (1 or more). -->
+    <!-- The question before “Empty”; %1$s is how many accounts are deleted (1 or more), written
+         with the language's digit grouping; the plural follows that number. -->
     <plurals name="list_deleted_empty_question">
-        <item quantity="one">Delete %1$d&#160;account forever? This can\'t be undone.</item>
-        <item quantity="other">Delete all %1$d&#160;accounts forever? This can\'t be undone.</item>
+        <item quantity="one">Delete %1$s&#160;account forever? This can\'t be undone.</item>
+        <item quantity="other">Delete all %1$s&#160;accounts forever? This can\'t be undone.</item>
     </plurals>
     <!-- Short message after an account was brought back; %1$s is its name. -->
     <string name="list_restored_message">%1$s restored</string>

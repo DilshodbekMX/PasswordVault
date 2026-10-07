@@ -2,7 +2,6 @@ package io.github.dilshodbekmx.passwordvault.ui.list
 
 import android.content.ActivityNotFoundException
 import android.content.Intent
-import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -62,11 +61,13 @@ import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.dilshodbekmx.passwordvault.AppGraph
 import io.github.dilshodbekmx.passwordvault.R
 import io.github.dilshodbekmx.passwordvault.data.SaveProblem
+import io.github.dilshodbekmx.passwordvault.i18n.rememberFormatters
 import io.github.dilshodbekmx.passwordvault.nav.Navigator
 import io.github.dilshodbekmx.passwordvault.nav.Route
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultSearchField
@@ -154,7 +155,7 @@ fun PasswordsScreen(viewModel: PasswordsViewModel, nav: Navigator) {
                 val address = row.website
                 if (address != null) {
                     try {
-                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(address)).addCategory(Intent.CATEGORY_BROWSABLE))
+                        context.startActivity(Intent(Intent.ACTION_VIEW, address.toUri()).addCategory(Intent.CATEGORY_BROWSABLE))
                     } catch (e: ActivityNotFoundException) {
                         scope.launch { snackbar.showSnackbar(resources.getString(R.string.list_no_browser)) }
                     }
@@ -330,7 +331,8 @@ private fun LazyListScope.browse(body: ListBody.Browse, copiedKey: String?, acti
         }
     }
     item(key = "all", contentType = "heading") {
-        Heading(stringResource(R.string.list_all_accounts, body.total), Modifier.testTag(ListTags.ALL_ACCOUNTS))
+        val total = rememberFormatters().number(body.total.toLong())
+        Heading(stringResource(R.string.list_all_accounts, total), Modifier.testTag(ListTags.ALL_ACCOUNTS))
     }
     body.sections.forEachIndexed { index, section ->
         // Keyed by place, not by letter: a header comes from a title, and keys can reach saved state.
@@ -389,7 +391,7 @@ private fun LetterHeader(letter: String, modifier: Modifier = Modifier) {
 @Composable
 private fun RecentlyDeletedRow(count: Int, onClick: () -> Unit) {
     ListItem(
-        headlineContent = { Text(stringResource(R.string.list_recently_deleted_row, count)) },
+        headlineContent = { Text(stringResource(R.string.list_recently_deleted_row, rememberFormatters().number(count.toLong()))) },
         leadingContent = { Icon(painterResource(R.drawable.ic_list_deleted), contentDescription = null) },
         trailingContent = { Icon(painterResource(R.drawable.ic_list_chevron), contentDescription = null) },
         modifier = Modifier.testTag(ListTags.RECENTLY_DELETED).clickable(onClick = onClick),
@@ -463,6 +465,7 @@ private const val LOADING_SPINNER_DELAY_MS = 400L
 /** The "Add" button's height (56 dp) and its margin (16 dp), and 24 dp more: the list's bottom padding (ux.md §5.11). */
 private val LIST_BOTTOM_PADDING = 96.dp
 
-private const val FAVOURITE_KEY = "f."
-private const val ENTRY_KEY = "e."
-private const val RESULT_KEY = "r."
+/** The keys of the list's rows (`LazyColumn` keys): an account is listed among the favourites and A to Z, so the key says where. */
+internal const val FAVOURITE_KEY = "f."
+internal const val ENTRY_KEY = "e."
+internal const val RESULT_KEY = "r."

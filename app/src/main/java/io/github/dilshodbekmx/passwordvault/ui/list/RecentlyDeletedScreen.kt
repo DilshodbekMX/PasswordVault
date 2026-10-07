@@ -142,7 +142,7 @@ fun RecentlyDeletedScreen(viewModel: RecentlyDeletedViewModel, nav: Navigator) {
             onDismiss = viewModel::dismiss,
         )
         is DeletedDialog.Empty -> Question(
-            text = pluralStringResource(R.plurals.list_deleted_empty_question, asked.count, asked.count),
+            text = pluralStringResource(R.plurals.list_deleted_empty_question, asked.count, formatters.number(asked.count.toLong())),
             onConfirm = viewModel::confirm,
             onDismiss = viewModel::dismiss,
         )

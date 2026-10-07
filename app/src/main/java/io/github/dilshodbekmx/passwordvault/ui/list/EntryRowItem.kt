@@ -74,6 +74,7 @@ internal class RowActions(
  *   here, so only for the rows on screen (search.md §5).
  *
  * @param key the row's key in the list, which the copy button's tag and [copied] refer to.
+ * @param modifier for the row itself, the merged node that TalkBack reads.
  */
 @Composable
 internal fun EntryRowItem(row: EntryRow, searched: String?, copied: Boolean, key: String, actions: RowActions, modifier: Modifier = Modifier) {
@@ -91,7 +92,7 @@ internal fun EntryRowItem(row: EntryRow, searched: String?, copied: Boolean, key
         edit = stringResource(R.string.list_menu_edit),
         delete = stringResource(R.string.common_delete),
     )
-    Box(modifier) {
+    Box {
         ListItem(
             headlineContent = { Text(title, maxLines = 2, overflow = TextOverflow.Ellipsis) },
             supportingContent = if (row.detail.isEmpty()) {
@@ -108,7 +109,8 @@ internal fun EntryRowItem(row: EntryRow, searched: String?, copied: Boolean, key
             },
             leadingContent = { InitialBadge(row) },
             trailingContent = { RowEnd(row, copied, key, actions) },
-            modifier = Modifier
+            // The merged node that TalkBack reads ("Gmail, aziz@gmail.com"), with the row's actions.
+            modifier = modifier
                 .combinedClickable(onLongClick = { menu = true }, onClick = { actions.open(row) })
                 .semantics { customActions = rowActionsFor(row, key, actions, labels) },
         )
