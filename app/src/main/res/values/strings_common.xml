@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Shared words and the texts of the shared parts of the screens (build plan 2.8; architecture.md
+     §2.2 ui.common). Every name starts with common_; a text used by one screen area lives in that
+     area's own file. -->
+<resources>
+
+    <!-- Buttons that many screens and dialogs use. Short: a button may hold two lines at most. -->
+
+    <!-- Button: accepts a message or a notice and closes it. -->
+    <string name="common_ok">OK</string>
+    <!-- Button: closes a dialog or stops a step without changing anything. -->
+    <string name="common_cancel">Cancel</string>
+    <!-- Button: closes a screen, a sheet or a dialog. -->
+    <string name="common_close">Close</string>
+    <!-- Button: skips an offer for now; it may come back later (for example the PIN or fingerprint offer). -->
+    <string name="common_not_now">Not now</string>
+    <!-- Button: puts a reminder or a notice off until later. -->
+    <string name="common_later">Later</string>
+    <!-- Button: tries the same action once more after it failed. -->
+    <string name="common_try_again">Try again</string>
+    <!-- Button: deletes the thing it is next to. -->
+    <string name="common_delete">Delete</string>
+    <!-- Button in a short message: takes back what was just done (for example a deletion). -->
+    <string name="common_undo">Undo</string>
+    <!-- Button: ends a task that has finished. -->
+    <string name="common_done">Done</string>
+
+    <!-- The button at the end of every password field and next to every stored password
+         (ux.md §3, §8), read by TalkBack. Shown while the password is hidden. -->
+    <string name="common_show_password">Show password</string>
+    <!-- The same button while the password is shown. -->
+    <string name="common_hide_password">Hide password</string>
+
+    <!-- The PIN pad of the lock screen and of the PIN steps (ux.md §5.9, §8). Read by TalkBack only.
+         The key that deletes the last digit typed. -->
+    <string name="common_pin_delete">Delete last digit</string>
+    <!-- The PIN pad's fingerprint key, which opens the phone's fingerprint prompt. Read by TalkBack only. -->
+    <string name="common_pin_fingerprint">Unlock with fingerprint</string>
+    <!-- The row of dots above the PIN pad, read by TalkBack. Never names the digits, only how many
+         were typed: %1$d digits typed out of %2$d (always 6). The plural follows %1$d. -->
+    <plurals name="common_pin_dots">
+        <item quantity="one">PIN, %1$d of %2$d digits entered</item>
+        <item quantity="other">PIN, %1$d of %2$d digits entered</item>
+    </plurals>
+
+    <!-- The password strength meter under a password field (ux.md §5.3): one word under the bar.
+         The weakest of four levels. -->
+    <string name="common_strength_very_weak">Very weak</string>
+    <!-- Strength meter: the second level of four. -->
+    <string name="common_strength_weak">Weak</string>
+    <!-- Strength meter: the third level of four. -->
+    <string name="common_strength_good">Good</string>
+    <!-- Strength meter: the strongest level. -->
+    <string name="common_strength_strong">Strong</string>
+    <!-- The strength meter as TalkBack reads it; %1$s is one of the four words above. -->
+    <string name="common_strength_description">Password strength: %1$s</string>
+
+    <!-- Shown for a few seconds at the bottom of any screen, once, when the app ignored a tap
+         because another app's window (a screen filter, a chat bubble) covered it (ux.md §3). -->
+    <string name="common_obscured_touch">Another app is drawing over this screen, so taps are blocked for safety. Turn off screen filters or chat bubbles and try again.</string>
+
+</resources>
