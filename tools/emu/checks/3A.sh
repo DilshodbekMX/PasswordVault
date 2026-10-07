@@ -115,8 +115,7 @@ step3() {
 step4() {
     pva_screen_off 3 && pva_on Locked 20 && pva_need pv.lock.password || return 1
     pva_type pv.lock.password Notthemasterpassword1 || return 1
-    pv_shell input keyevent KEYCODE_ENTER >/dev/null
-    pva_need pv.lock.line.0 30 || return 1
+    pva_submit pv.lock.unlock pv.lock.line.0 30 || return 1
     pv_log "the message: $(pva_text pv.lock.line.0)"
     pva_on Locked 5 || return 1
     shot step4-wrong-master-password
@@ -176,8 +175,9 @@ discard_form() {
 
 step7() {
     local generated shown message deadline
-    pva_tap pv.list.add && pva_on Edit && pva_tap pv.edit.generateButton && pva_need pv.gen.use || return 1
+    pva_tap pv.list.add && pva_on Edit && pva_tap pv.edit.generateButton && pva_need pv.gen.preview || return 1
     generated=$(pva_text pv.gen.preview) || return 1
+    # "Use this password" is below the fold of the sheet on a 1920-pixel screen: pva_tap scrolls to it.
     pva_tap pv.gen.use && pva_need pv.edit.strength || return 1
     shown=$(pva_text pv.edit.password) || return 1
     [ -n "$generated" ] && [ "$shown" = "$generated" ] || { pv_log "the form's password is not the generated one"; return 1; }

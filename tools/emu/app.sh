@@ -83,23 +83,32 @@ pva_height() {
 
 # pva_tap ID: taps the node whose id is ID, after scrolling it into view and above the bottom band
 # where the system's navigation bar is (at most 160 px: 48 dp at 420 dpi is 126), up to five swipes.
-# The window is resized for the keyboard (adjustResize), so a node under the keyboard is not shown.
+# A screen that is not laid out around the keyboard (the list: its Add button stays where it is) has
+# nodes behind the keyboard that are still reported as visible, and a tap there would type a letter:
+# so with the keyboard open, it is closed before a node in the lower two thirds is tapped, and before
+# every swipe.
 pva_tap() {
-    local line y i bottom
-    bottom=$(($(pva_height) - 160))
-    for i in 1 2 3 4 5 6; do
+    local line y i bottom height
+    height=$(pva_height)
+    bottom=$((height - 160))
+    for i in 1 2 3 4 5 6 7; do
         line=$(pva_node "$1")
         if [ -n "$line" ]; then
             y=$(printf '%s\n' "$line" | cut -d'|' -f7)
             if [ "$y" -gt 0 ] && [ "$y" -lt "$bottom" ]; then
+                if [ "$y" -gt $((height * 30 / 100)) ] && pva_keyboard_shown; then
+                    pva_hide_keyboard || return 1
+                    continue
+                fi
                 pv_shell input tap "$(printf '%s\n' "$line" | cut -d'|' -f6)" "$y" >/dev/null
                 return
             fi
         fi
-        [ "$i" -lt 6 ] || break
+        [ "$i" -lt 7 ] || break
+        pva_hide_keyboard
         pva_scroll_down
     done
-    pv_log "cannot tap $1 (${line:+at y $y of $(pva_height)}${line:-not on the screen}); ids: $(pva_ids)"
+    pv_log "cannot tap $1 (${line:+at y $y of $height}${line:-not on the screen}); ids: $(pva_ids)"
     return 1
 }
 
@@ -139,14 +148,13 @@ pva_hide_keyboard() {
     return 1
 }
 
-# pva_submit BUTTON-ID THEN-ID [SECONDS]: the keyboard's Enter (the field's action); if THEN-ID has not
-# appeared within 10 s, the button itself.
+# pva_submit BUTTON-ID THEN-ID [SECONDS]: the keyboard closed (Back, which the keyboard takes) and the
+# button tapped, as a finger would; then THEN-ID appears within SECONDS (default 30). Not the Enter
+# key: a key event ends touch mode, and the first field of the next screen (the list's search field)
+# would then take the focus and keep the keyboard open over the screen.
 pva_submit() {
-    pv_shell input keyevent KEYCODE_ENTER >/dev/null
-    pva_present "$2" 10 && return 0
-    pva_absent "$1" && pva_present "$2" "${3:-30}" && return 0
     pva_hide_keyboard
-    pva_tap "$1" || { pva_present "$2" 5 && return 0; return 1; }
+    pva_tap "$1" || return 1
     pva_need "$2" "${3:-30}"
 }
 
@@ -173,13 +181,20 @@ pva_relaunch() {
     echo "$out" | grep -q '^Status: ok' || { pv_log "am start: $out"; return 1; }
 }
 
-# pva_install APK: removes an installed copy and installs APK.
+# pva_install APK: removes an installed copy and installs APK. `adb install` now and then never
+# answers on the API 24 device (seen on 2026-10-07, also by package 3.6): each try gets 90 s, and up
+# to three tries are made.
 pva_install() {
     [ -f "$1" ] || { pv_log "no APK at $1"; return 1; }
+    local out i
     pv_adb uninstall "$PV_PACKAGE" >/dev/null 2>&1
-    local out
-    out=$(pv_adb install -r "$1" 2>&1)
-    echo "$out" | grep -q '^Success' || { pv_log "adb install: $out"; return 1; }
+    for i in 1 2 3; do
+        out=$(PV_ADB_TIMEOUT=90 pv_adb install -r "$1" 2>&1)
+        echo "$out" | grep -q '^Success' && return 0
+        pv_log "adb install, try $i: ${out:-no answer within 90 s}"
+        pv_sleep 5
+    done
+    return 1
 }
 
 # pva_start: the keyguard dismissed, portrait, the logs cleared, the app started.

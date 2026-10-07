@@ -357,16 +357,86 @@ pv_focus() { # prints the focused window, e.g. "com.android.settings/com.android
     pv_adb shell dumpsys window 2>/dev/null | tr -d '\r' | grep -m 1 'mCurrentFocus' | sed 's/.* u[0-9]* //; s/}$//'
 }
 
-# One line per node: text|content-desc|resource-id|clickable|enabled|x|y (x, y = centre), from a
-# fresh dump; nothing and status 1 when no dump succeeded. `uiautomator dump` prints "ERROR: could not
-# get idle state." with exit status 0 while the window keeps changing: on API 28 a focused Compose
-# text field does so for as long as it has the focus (its blinking cursor sends
-# TYPE_WINDOW_CONTENT_CHANGED every 500 ms), and the previous dump's file would then be read as if it
-# were the screen now. So the file is removed before each try and a try counts only when the dump
-# printed "dumped to". A failed try takes about 10 s there (uiautomator waits that long for an idle
-# window), so after each one the focus is moved on with Tab (which never clicks) before the next,
-# unless PV_UI_NO_TAB=1: a script that checks the keyboard or the focus does so before it dumps.
+# One line per node of the active window: text|content-desc|resource-id|clickable|enabled|x|y (x, y =
+# centre); nothing and status 1 when no dump succeeded.
+#
+# The nodes come from tools/emu/uidump (PvUiDump.java), which reads them as `uiautomator dump` does
+# but does not wait for an idle window first, and takes about 0.1 s. `uiautomator dump` waits up to
+# 10 s for one second without an accessibility event and then prints "ERROR: could not get idle
+# state." with exit status 0; on API 28 a focused Compose text field sends TYPE_WINDOW_CONTENT_CHANGED
+# every 500 ms (its blinking cursor), so there no dump succeeds for as long as a field has the focus,
+# and the previous dump's file would be read as if it were the screen now. In place of the idle wait,
+# the nodes are read again 0.3 s later until two readings are the same (at most seven readings).
+#
+# Should the dumper not run (no JDK or d8 to build it, or a device it cannot run on), or with
+# PV_UI_STOCK=1, `uiautomator dump` is used: its file is removed before each try, a try counts only
+# when the dump printed "dumped to", and after each failed try the focus is moved on with Tab (which
+# never clicks) unless PV_UI_NO_TAB=1.
 pv_ui_nodes() {
+    local a b i
+    if [ "${PV_UI_STOCK:-0}" != 1 ] && a=$(pv_uidump); then
+        for i in 1 2 3 4 5 6; do
+            pv_sleep 0.3
+            b=$(pv_uidump_once) || break
+            [ "$a" != "$b" ] || break
+            a=$b
+        done
+        printf '%s\n' "$a"
+        return 0
+    fi
+    pv_ui_nodes_stock
+}
+
+PV_UIDUMP_SRC=$PV_EMU_DIR/uidump/PvUiDump.java
+PV_UIDUMP_JAR=${PV_UIDUMP_JAR:-$PV_EMU_DIR/../../build/emu/pv-uidump.jar}
+PV_UIDUMP_ON_DEVICE=/data/local/tmp/pv-uidump.jar
+
+# Builds the dumper's jar (javac of the JDK, d8 of the SDK's build tools) when it is missing or older
+# than its source; into a directory of its own first, so that scripts running at once do not collide.
+pv_uidump_build() {
+    [ -f "$PV_UIDUMP_JAR" ] && [ ! "$PV_UIDUMP_SRC" -nt "$PV_UIDUMP_JAR" ] && return 0
+    local java_home=${PV_JAVA_HOME:-/home/asus/.jdks/jdk-25} d8 android_jar tmp
+    d8=$(ls -d "$PV_SDK"/build-tools/*/d8 2>/dev/null | sort -V | tail -n 1)
+    android_jar=$(ls -d "$PV_SDK"/platforms/android-*/android.jar 2>/dev/null | sort -V | tail -n 1)
+    [ -x "$java_home/bin/javac" ] && [ -n "$d8" ] && [ -n "$android_jar" ] || return 1
+    mkdir -p "$(dirname "$PV_UIDUMP_JAR")" || return 1
+    tmp=$(mktemp -d "$(dirname "$PV_UIDUMP_JAR")/uidump.XXXXXX") || return 1
+    if "$java_home/bin/javac" -nowarn -Xlint:-options -source 8 -target 8 -cp "$android_jar" -d "$tmp" "$PV_UIDUMP_SRC" > "$tmp/javac.log" 2>&1 \
+        && JAVA_HOME=$java_home PATH=$java_home/bin:$PATH "$d8" --min-api 24 --output "$tmp/pv-uidump.jar" "$tmp/PvUiDump.class" > "$tmp/d8.log" 2>&1; then
+        mv -f "$tmp/pv-uidump.jar" "$PV_UIDUMP_JAR"
+        rm -rf "$tmp"
+        return 0
+    fi
+    pv_log "could not build ${PV_UIDUMP_JAR##*/}: $(cat "$tmp/javac.log" "$tmp/d8.log" 2>/dev/null | tail -n 3)"
+    rm -rf "$tmp"
+    return 1
+}
+
+# One reading with the dumper on the device: the nodes, or status 1.
+pv_uidump_once() {
+    local out
+    out=$(pv_adb shell "CLASSPATH=$PV_UIDUMP_ON_DEVICE:/system/framework/uiautomator.jar app_process /system/bin PvUiDump" 2>/dev/null | tr -d '\r')
+    case "$(printf '%s\n' "$out" | tail -n 1)" in
+        "PVUIDUMP OK "*) printf '%s\n' "$out" | sed '$d'; return 0 ;;
+    esac
+    return 1
+}
+
+# One reading; the jar is built when its source changed and pushed when the device has not got this
+# build of it (a marker per serial under $PV_RUN/uidump/; a device restarted since has no jar, and the
+# failed reading pushes it again).
+pv_uidump() {
+    local marker=$PV_RUN/uidump/$PV_SERIAL
+    if [ -f "$PV_UIDUMP_JAR" ] && [ ! "$PV_UIDUMP_SRC" -nt "$PV_UIDUMP_JAR" ] && [ -f "$marker" ] && [ ! "$PV_UIDUMP_JAR" -nt "$marker" ]; then
+        pv_uidump_once && return 0
+    fi
+    pv_uidump_build || return 1
+    pv_adb push "$PV_UIDUMP_JAR" "$PV_UIDUMP_ON_DEVICE" > /dev/null 2>&1 || return 1
+    mkdir -p "$PV_RUN/uidump" && touch "$marker"
+    pv_uidump_once
+}
+
+pv_ui_nodes_stock() {
     local i out xml=""
     for i in 1 2 3 4 5 6 7 8; do
         pv_adb shell rm -f /sdcard/pv_ui.xml >/dev/null 2>&1

@@ -76,10 +76,16 @@ remove_old_copy() {
     ! pv_shell pm path "$PV_PACKAGE" 2>/dev/null | grep -q '^package:'
 }
 
+# `adb install` now and then never answers on the API 24 device: 90 s per try, up to three tries.
 install_apk() {
-    local out
-    out=$(pv_adb install -r "$APK" 2>&1)
-    echo "$out" | grep -q '^Success' || { pv_log "adb install: $out"; return 1; }
+    local out i
+    for i in 1 2 3; do
+        out=$(PV_ADB_TIMEOUT=90 pv_adb install -r "$APK" 2>&1)
+        echo "$out" | grep -q '^Success' && return 0
+        pv_log "adb install, try $i: ${out:-no answer within 90 s}"
+        pv_sleep 5
+    done
+    return 1
 }
 
 installed_matches_variant() {
