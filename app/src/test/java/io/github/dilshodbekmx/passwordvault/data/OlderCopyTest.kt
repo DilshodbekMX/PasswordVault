@@ -138,6 +138,7 @@ class OlderCopyTest(private val kind: DiskKind) {
             assertEquals(listOf(1L, 2L, 3L), phone.liveNumbers())
             // The answer ends the hold; a lock ends the session, and an unlock that opens the newest copy has none.
             repo.olderCopyAnswered()
+            testScheduler.advanceUntilIdle()
             repo.flushDraft()
             // Written, and housekeeping, due after the first durable save, put the damaged copy in quarantine.
             assertEquals(listOf(1L, 2L, 4L), phone.liveNumbers())

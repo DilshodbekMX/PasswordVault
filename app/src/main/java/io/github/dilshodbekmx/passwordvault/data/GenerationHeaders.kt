@@ -53,9 +53,6 @@ internal class GenerationHeaders(private val files: FilePrimitives, vaultsDir: S
     }
 
     internal companion object {
-        /** The largest vault file, 16,777,216 bytes (§4.1, [V-C4]). */
-        const val CAP = 16_777_216
-
         private const val LIVE = "live"
         private const val ASIDE = "aside-"
         private const val MS_DIGITS = 13

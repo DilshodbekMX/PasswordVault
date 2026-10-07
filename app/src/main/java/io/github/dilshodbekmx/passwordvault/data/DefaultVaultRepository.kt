@@ -33,6 +33,7 @@ import io.github.dilshodbekmx.passwordvault.core.vaultfile.VaultCodec
 import io.github.dilshodbekmx.passwordvault.platform.AppDispatchers
 import io.github.dilshodbekmx.passwordvault.settings.AppSettings
 import io.github.dilshodbekmx.passwordvault.settings.PurgeArm
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -219,7 +220,7 @@ class DefaultVaultRepository internal constructor(
                 val sealed = codec.seal(opened.vault, vk, opened.vaultId, vkId, opened.generation, slot)
                 // The check in memory of §4.9 step 4, for a file that leaves the phone.
                 val file = (codec.check(sealed) as? FileCheck.Ok)?.file
-                check(sealed.size <= GenerationHeaders.CAP && file != null && file.header.vkId == vkId) { "the backup did not check" }
+                check(sealed.size <= FILE_CAP && file != null && file.header.vkId == vkId) { "the backup did not check" }
                 val body = codec.open(file, vk)
                 check(body is BodyResult.Opened && body.vault == opened.vault) { "the backup did not check" }
                 sealed
@@ -298,14 +299,20 @@ class DefaultVaultRepository internal constructor(
     /**
      * The older-copy notice was answered (lock.md §13.4 item 1): automatic writes and housekeeping
      * may run again for this session, and the work of its unlock (the purge) runs now. It does
-     * nothing when no older copy is open. Not part of `VaultRepository` yet: package 3.1 asked for it
-     * (interface request), so that the lock manager can call it when it receives the answer.
+     * nothing when no older copy is open. It returns at once and does its work under the vault
+     * mutex, in turn with every other call. Not part of `VaultRepository` yet: package 3.1 asked for
+     * it (interface request), so that the lock manager can call it when it receives the answer.
      */
     fun olderCopyAnswered() {
-        val s = session ?: return
-        if (!s.held) return
-        s.held = false
-        startAutomatic(s)
+        scope.launch(dispatchers.io) {
+            underMutex {
+                val s = session
+                if (s != null && s.held) {
+                    s.held = false
+                    startAutomatic(s)
+                }
+            }
+        }
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -316,15 +323,16 @@ class DefaultVaultRepository internal constructor(
 
     override suspend fun open(target: LockVaultRef, keys: Map<String, ByteArray>): VaultOpen {
         val caller = currentCoroutineContext()[Job]
-        return underMutex { openLocked(target, keys, caller) }
+        val taken = Taken()
+        return deliver(taken) { underMutex { openLocked(target, keys, caller, taken) } }
     }
 
-    private fun openLocked(target: LockVaultRef, keys: Map<String, ByteArray>, caller: Job?): VaultOpen =
+    private fun openLocked(target: LockVaultRef, keys: Map<String, ByteArray>, caller: Job?, taken: Taken): VaultOpen =
         when (val result = storage.open(PortTypes.refOf(target), keys)) {
             is OpenResult.Opened -> {
                 val opened = result.opened
                 val created = createdOf(target, opened)
-                if (take(target, opened, slot = null, caller)) {
+                if (take(target, opened, slot = null, caller, taken)) {
                     VaultOpen.Opened(opened.vaultId, opened.generation, opened.vkId, created, olderCopyOf(opened))
                 } else {
                     VaultOpen.Unreadable // never delivered: its caller was cancelled
@@ -343,6 +351,11 @@ class DefaultVaultRepository internal constructor(
      */
     override suspend fun openWithPassword(target: LockVaultRef, passwordBytes: ByteArray): PasswordOpen {
         val caller = currentCoroutineContext()[Job]
+        val taken = Taken()
+        return deliver(taken) { openWithPasswordFor(target, passwordBytes, caller, taken) }
+    }
+
+    private suspend fun openWithPasswordFor(target: LockVaultRef, passwordBytes: ByteArray, caller: Job?, taken: Taken): PasswordOpen {
         val ref = PortTypes.refOf(target)
         val slots = underMutex { storage.slots(ref) }
         if (slots.isEmpty()) return underMutex { noSlot(ref) }
@@ -353,7 +366,7 @@ class DefaultVaultRepository internal constructor(
                 return PasswordOpen.NoMemory
             }
             val outcome = try {
-                underMutex { trySlot(target, ref, slot, kek, caller) }
+                underMutex { trySlot(target, ref, slot, kek, caller, taken) }
             } finally {
                 Bytes.wipe(kek)
             }
@@ -363,13 +376,13 @@ class DefaultVaultRepository internal constructor(
     }
 
     /** One slot with its KEK, under the mutex; null when this password does not open it. */
-    private fun trySlot(target: LockVaultRef, ref: StoreVaultRef, slot: SlotRef, kek: ByteArray, caller: Job?): PasswordOpen? =
+    private fun trySlot(target: LockVaultRef, ref: StoreVaultRef, slot: SlotRef, kek: ByteArray, caller: Job?, taken: Taken): PasswordOpen? =
         when (val result = storage.openWithSlot(ref, slot, kek)) {
             PasswordResult.SlotClosed -> null
             is PasswordResult.Opened -> {
                 val opened = result.opened
                 val created = createdOf(target, opened)
-                if (take(target, opened, slot, caller)) {
+                if (take(target, opened, slot, caller, taken)) {
                     PasswordOpen.Opened(opened.vaultId, opened.generation, opened.vkId, created, olderCopyOf(opened))
                 } else {
                     PasswordOpen.Unreadable // never delivered: its caller was cancelled
@@ -432,15 +445,17 @@ class DefaultVaultRepository internal constructor(
         }
     }
 
+    /**
+     * Runs [use] with a copy of the open vault's VK, wiped when it returns, under the vault mutex but
+     * outside the store's own lock: a Keystore wrap (a binder call) does not hold up `vaults()`.
+     */
     override suspend fun <T> withVaultKey(use: (vkId: String, vk: ByteArray) -> T): T = underMutex {
         val opened = session?.opened ?: throw IllegalStateException("no vault is open")
-        storage.useKey(opened) { vk ->
-            val copy = vk.copyOf()
-            try {
-                use(opened.vkId, copy)
-            } finally {
-                Bytes.wipe(copy)
-            }
+        val copy = storage.useKey(opened) { it.copyOf() }
+        try {
+            use(opened.vkId, copy)
+        } finally {
+            Bytes.wipe(copy)
         }
     }
 
@@ -555,17 +570,21 @@ class DefaultVaultRepository internal constructor(
 
     override suspend fun putNewerAside(generation: Long): Boolean = underMutex { storage.putNewerAside(generation) }
 
+    /** F17 step 5: that vault's files. The vault stays open in place until they are gone, so a failure can be tried again. */
     override suspend fun deleteAside(vaultId: String): Boolean = underMutex {
-        aside?.takeIf { it.vaultId == vaultId }?.let { held ->
-            aside = null
-            wipe(held.opened)
-        }
-        try {
+        val deleted = try {
             storage.deleteAside(vaultId)
             true
         } catch (e: IOException) {
             false
         }
+        if (deleted) {
+            aside?.takeIf { it.vaultId == vaultId }?.let { held ->
+                aside = null
+                wipe(held.opened)
+            }
+        }
+        deleted
     }
 
     override suspend fun retireOldKeys(): Set<String> = underMutex {
@@ -586,33 +605,65 @@ class DefaultVaultRepository internal constructor(
 
     /**
      * A vault opened from disk for [caller]: the current one becomes the session (and is shown), one
-     * put aside is kept apart. False, with its key zeroed and nothing open, when the caller was
-     * cancelled meanwhile (its visit ended, lock.md I11): checked before the session starts and once
-     * more after, and a session started for a caller cancelled in between is ended at once.
+     * put aside is kept apart; [taken] notes which, for [deliver]. False, with its key zeroed and
+     * nothing open, when the caller was cancelled meanwhile (its visit ended, lock.md I11): checked
+     * before the session starts and once more after, and a session started for a caller cancelled
+     * in between is ended at once.
      */
-    private fun take(target: LockVaultRef, opened: OpenedVault, slot: SlotRef?, caller: Job?): Boolean {
+    private fun take(target: LockVaultRef, opened: OpenedVault, slot: SlotRef?, caller: Job?, taken: Taken): Boolean {
         if (caller?.isCancelled == true) {
             wipe(opened)
             return false
         }
         when (target) {
-            LockVaultRef.Current -> startCurrent(opened, olderCopyOf(opened), slot ?: slotOf(StoreVaultRef.Current, opened), keepDraft = false)
+            LockVaultRef.Current -> {
+                startCurrent(opened, olderCopyOf(opened), slot ?: slotOf(StoreVaultRef.Current, opened), keepDraft = false)
+                taken.sessionId = session?.id
+            }
             is LockVaultRef.Aside -> {
                 aside?.let { wipe(it.opened) }
-                aside = AsideOpen(target.vaultId, opened, olderCopyOf(opened))
+                aside = AsideOpen(target.vaultId, opened, olderCopyOf(opened)).also { taken.aside = it }
             }
         }
         if (caller?.isCancelled == true) {
-            when (target) {
-                LockVaultRef.Current -> endCurrent()
-                is LockVaultRef.Aside -> {
-                    aside = null
-                    wipe(opened)
-                }
-            }
+            undo(taken)
             return false
         }
         return true
+    }
+
+    /** What one open started: the session, or the vault put aside held in place. */
+    private class Taken {
+        @Volatile var sessionId: Long? = null
+
+        @Volatile var aside: AsideOpen? = null
+    }
+
+    /**
+     * Runs an open and hands its answer back. `withContext` drops the answer of a block that ended
+     * after its caller was cancelled, and throws `CancellationException` in its place: then whatever
+     * the open started is ended here, so that no vault stays open that nobody was told of (lock.md I11).
+     */
+    private suspend fun <R> deliver(taken: Taken, open: suspend () -> R): R {
+        try {
+            return open()
+        } catch (e: CancellationException) {
+            if (taken.sessionId != null || taken.aside != null) withContext(NonCancellable) { underMutex { undo(taken) } }
+            throw e
+        }
+    }
+
+    /** Under the mutex: ends what [taken] started, if it is still the one open. */
+    private fun undo(taken: Taken) {
+        taken.sessionId?.let { id -> if (session?.id == id) endCurrent() }
+        taken.aside?.let { held ->
+            if (aside === held) {
+                aside = null
+                wipe(held.opened)
+            }
+        }
+        taken.sessionId = null
+        taken.aside = null
     }
 
     /**
@@ -909,6 +960,9 @@ class DefaultVaultRepository internal constructor(
 
         /** `created` when the header of a generation that was just opened or written cannot be read again now. */
         const val UNKNOWN_CREATED = 0L
+
+        /** The largest vault file and backup, 16,777,216 bytes (§4.1, [V-C4]). */
+        const val FILE_CAP = 16_777_216
 
         private const val KEY_SIZE = 32
         private const val SALT_SIZE = 16

@@ -147,6 +147,27 @@ class VaultsTest(private val kind: DiskKind) {
     }
 
     @Test
+    fun aDeleteThatFailsKeepsTheVaultPutAsideOpenForAnotherTry() = runTest {
+        val (repo, scope) = started()
+        try {
+            val a = repo.create(vaultId(1), password = OTHER_PASSWORD)
+            repo.edit { vault, _ -> Edited(vault.copy(entries = listOf(entry(5))), Unit) }
+            repo.lock()
+            assertTrue(repo.putAside())
+            repo.create(vaultId(2))
+            repo.unlock(OTHER_PASSWORD, VaultRef.Aside(a.vaultId))
+            disk.fail(FakeFiles.Op.DELETE_TREE)
+            assertFalse(repo.deleteAside(a.vaultId))
+            assertEquals(listOf(a.vaultId), repo.vaults().aside.map { it.vaultId })
+            // Still open in place: its accounts can be added without typing its password again.
+            assertTrue(repo.mergeAside(a.vaultId) is VaultWrite.Done)
+            assertEquals(listOf(id(5)), repo.shown().vault.entries.map { it.id })
+        } finally {
+            scope.cancel()
+        }
+    }
+
+    @Test
     fun replaceVaultMakesANewVaultFromTheOpenOneAndPutsTheOldOneAside() = runTest {
         val (repo, scope) = started()
         try {

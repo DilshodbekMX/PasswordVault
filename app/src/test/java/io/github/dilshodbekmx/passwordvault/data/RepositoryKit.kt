@@ -365,11 +365,11 @@ internal class Phone(
     fun pathOf(generation: Long, dir: String = liveDir): String = "$dir/" + GenerationHeaders.fileName(generation)
 
     /** The header of the generation file at [path]. */
-    fun header(path: String): VaultHeader = (codec.check(files.read(path, GenerationHeaders.CAP)) as FileCheck.Ok).file.header
+    fun header(path: String): VaultHeader = (codec.check(files.read(path, DefaultVaultRepository.FILE_CAP)) as FileCheck.Ok).file.header
 
     /** The vault in the generation file at [path], opened with [vk]. */
     fun vaultIn(path: String, vk: ByteArray): Vault {
-        val file = (codec.check(files.read(path, GenerationHeaders.CAP)) as FileCheck.Ok).file
+        val file = (codec.check(files.read(path, DefaultVaultRepository.FILE_CAP)) as FileCheck.Ok).file
         return (codec.open(file, vk) as BodyResult.Opened).vault
     }
 

@@ -133,6 +133,39 @@ class ConcurrencyTest(private val kind: DiskKind) {
     }
 
     @Test
+    fun anOpenWhoseAnswerIsLostToACancelledCallerIsUndone() = runTest {
+        val (repo, scope) = started()
+        try {
+            repo.create()
+            val (vkId, vk) = repo.withVaultKey { id, key -> id to key.copyOf() }
+            repo.lock()
+            // The open finishes and starts its session; then, before its caller resumes with the
+            // answer, the caller is cancelled (a save queued for the mutex runs in between and ends
+            // the visit). withContext drops the answer; the session must not stay open.
+            var visit: Job? = null
+            visit = launch { repo.open(VaultRef.Current, mapOf(vkId to vk)) }
+            val between = launch {
+                repo.edit { vault, _ ->
+                    visit.cancel()
+                    Edited(vault, Unit)
+                }
+            }
+            visit.join()
+            between.join()
+            assertTrue(visit.isCancelled)
+            assertEquals("nothing left open for a visit that ended", VaultState.Locked, repo.state.value)
+            try {
+                repo.withVaultKey { _, _ -> Unit }
+                fail("a session is open")
+            } catch (e: IllegalStateException) {
+                // No vault is open.
+            }
+        } finally {
+            scope.cancel()
+        }
+    }
+
+    @Test
     fun checkPasswordGivesNothingForASessionThatEndedMeanwhile() = runTest {
         val (repo, scope) = started()
         try {
