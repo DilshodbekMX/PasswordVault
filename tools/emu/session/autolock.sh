@@ -1,0 +1,233 @@
+#!/usr/bin/env bash
+# tools/emu/session/autolock.sh - build plan 3.2, [script]: the auto-lock on an emulator. With the
+# lock delay that setup writes (30 seconds, lock.md §10.1): away for 31 s locks, away for 10 s does
+# not, screen-off locks at once, a rotation does not.
+#
+#   tools/emu/session/autolock.sh SERIAL [--apk FILE]
+#       SERIAL comes from tools/emu/boot.sh. The APK defaults to this worktree's
+#       app/build/outputs/apk/debug/app-debug.apk (tools/gradle.sh :app:assembleDebug); a staging
+#       APK works too, and its steps that need run-as print SKIPPED.
+#
+# It installs the APK afresh and sets up a vault through the app's own screens, found by their
+# resource ids so that the language does not matter: the shell's placeholders (pv.open.<Route>,
+# pv.action.createVault, pv.action.unlock) or the real setup and lock screens of build plan 3.3 and
+# 3.4 (pv.setup.typeOwn, pv.setup.own, pv.setup.useOwn, pv.setup.reuse.no, pv.setup.again,
+# pv.lock.password, pv.lock.unlock), whichever the APK has. With the placeholders the vault's master
+# password is empty; with the real screens it is $PASSWORD. The checks then read the route the app
+# shows (pv.route.Passwords or pv.route.Locked):
+#   - setup wrote the 30-second default into pv_settings (run-as; SKIPPED on staging);
+#   - a rotation recreates the activity (dumpsys shows another activity object) and does not lock;
+#   - away for 10 s (Home, then the launcher's intent) does not lock;
+#   - away for 31 s locks; the master password opens it again;
+#   - the screen off for 3 s locks at once (the keyguard proves it was off);
+#   - with the lock delay set to "Immediately" in pv_settings (run-as and a restart of the app;
+#     SKIPPED on staging), a rotation still does not lock, while leaving does, at once;
+#   - the app did not crash.
+# Prints PASS, FAIL or SKIPPED per step and a summary; exit 0 when no step failed, 1 otherwise, 2 for
+# a usage error, 3 for a refused serial.
+set -u
+EMU="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+REPO="$(cd "$EMU/../.." && pwd)"
+source "$EMU/adb.sh"
+
+SERIAL=${1:-}
+[ -n "$SERIAL" ] || pv_usage "${BASH_SOURCE[0]}"
+shift
+APK=$REPO/app/build/outputs/apk/debug/app-debug.apk
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --apk) [ $# -ge 2 ] || pv_usage "${BASH_SOURCE[0]}"; APK=$2; shift ;;
+        *) pv_usage "${BASH_SOURCE[0]}" ;;
+    esac
+    shift
+done
+
+pv_use "$SERIAL"
+PV_ADB_TIMEOUT=${PV_ADB_TIMEOUT:-120}
+API=$(pv_api)
+# Letters and digits only (adb's "input text" takes them as they are); 18 random characters pass
+# the master-password rules of ux.md §5.3 (12 code points, zxcvbn score 4).
+PASSWORD=${PV_MASTER_PASSWORD:-Kv7Qx2mZp9Lw4Rt8Hb}
+PREFS=shared_prefs/pv_settings.xml
+echo "autolock.sh on $SERIAL (API $API): $APK"
+
+# ---- helpers (as in shell/walk.sh) ------------------------------------------------------------
+re() { printf '%s' "$1" | sed 's/[.]/\\./g'; }
+
+# on ROUTE [SECONDS]: the screen of ROUTE is shown.
+on() {
+    pv_ui_wait "[|]pv\.route\.$1\$" "${2:-20}" || { pv_log "not on $1; ids: $(ids)"; return 1; }
+}
+
+ids() { pv_ui_nodes | awk -F'|' '$3 ~ /^pv[.]/ { printf "%s ", $3 }'; }
+
+present() { pv_ui_wait "[|]$(re "$1")\$" "${2:-5}"; }
+
+absent() { ! pv_ui_nodes | pv_ui_match "[|]$(re "$1")\$" | grep -q .; }
+
+tap() { pv_ui_tap "[|]$(re "$1")\$" || { pv_log "no node with id $1; ids: $(ids)"; return 1; }; }
+
+# type_into ID TEXT: focuses the field ID and types TEXT.
+type_into() {
+    tap "$1" || return 1
+    pv_sleep 1
+    pv_shell input text "$2" >/dev/null
+}
+
+relaunch() {
+    local out
+    out=$(pv_shell am start -W -n "$PV_PACKAGE/.MainActivity" 2>&1 | tr -d '\r')
+    echo "$out" | grep -q '^Status: ok' || { pv_log "am start: $out"; return 1; }
+}
+
+# The identity of the activity object in front ("Local Activity <hash>"): another one after a recreation.
+activity_object() {
+    pv_shell dumpsys activity top 2>/dev/null | tr -d '\r' | grep -m 1 -o 'Local Activity [0-9a-f]*' | awk '{ print $3 }'
+}
+
+rotate() { # 0 portrait, 1 landscape
+    pv_shell settings put system accelerometer_rotation 0 >/dev/null
+    pv_shell settings put system user_rotation "$1" >/dev/null
+    pv_sleep 3
+}
+
+# still_open: Passwords is shown, the lock route is not, and three seconds later that still holds.
+still_open() {
+    on Passwords 10 || return 1
+    pv_sleep 3
+    absent pv.route.Locked || { pv_log "the app locked"; return 1; }
+    on Passwords 5
+}
+
+# ---- the app ----------------------------------------------------------------------------------
+install_fresh() {
+    [ -f "$APK" ] || { pv_log "no APK at $APK; build it with tools/gradle.sh :app:assembleDebug"; return 1; }
+    pv_adb uninstall "$PV_PACKAGE" >/dev/null 2>&1
+    local out
+    out=$(pv_adb install -r "$APK" 2>&1)
+    echo "$out" | grep -q '^Success' || { pv_log "adb install: $out"; return 1; }
+}
+
+start() {
+    pv_unlock >/dev/null 2>&1
+    rotate 0
+    pv_shell logcat -b crash -c >/dev/null 2>&1
+    pv_shell logcat -c >/dev/null 2>&1
+    relaunch && on Welcome 30
+}
+
+# Setup (lock.md F1 steps 1 to 3) through whichever screens the APK has.
+set_up() {
+    tap pv.open.CreateMasterPassword && on CreateMasterPassword || return 1
+    if present pv.setup.typeOwn 3; then
+        tap pv.setup.typeOwn && present pv.setup.own && type_into pv.setup.own "$PASSWORD" || return 1
+        pv_shell input keyevent KEYCODE_BACK >/dev/null # close the keyboard
+        tap pv.setup.useOwn || return 1
+        present pv.setup.reuse.no 10 && tap pv.setup.reuse.no || return 1
+    else
+        tap pv.open.WriteDown || return 1
+    fi
+    on WriteDown && tap pv.open.TypeAgain && on TypeAgain || return 1
+    if present pv.setup.again 3; then
+        type_into pv.setup.again "$PASSWORD" || return 1
+        pv_shell input keyevent KEYCODE_BACK >/dev/null
+    fi
+    tap pv.action.createVault && on Passwords 60
+}
+
+# The master password on the lock screen.
+unlock() {
+    on Locked || return 1
+    if present pv.lock.password 3; then
+        type_into pv.lock.password "$PASSWORD" || return 1
+        pv_shell input keyevent KEYCODE_BACK >/dev/null
+        tap pv.lock.unlock || return 1
+    else
+        tap pv.action.unlock || return 1
+    fi
+    on Passwords 60
+}
+
+default_written() {
+    local xml
+    xml=$(pv_shell run-as "$PV_PACKAGE" cat "$PREFS" 2>/dev/null | tr -d '\r')
+    echo "$xml" | grep -q '<string name="lock_delay">30s</string>' || { pv_log "$PREFS: $xml"; return 1; }
+}
+
+rotation_does_not_lock() {
+    local before after rc=0
+    before=$(activity_object)
+    rotate 1
+    after=$(activity_object)
+    [ -n "$before" ] && [ "$before" != "$after" ] || { pv_log "the activity was not recreated: $before -> $after"; rc=1; }
+    still_open || rc=1
+    rotate 0
+    still_open || rc=1
+    return $rc
+}
+
+# away SECONDS: Home, SECONDS, then the launcher's intent brings the task back.
+away() {
+    pv_shell input keyevent KEYCODE_HOME >/dev/null || return 1
+    pv_sleep "$1"
+    relaunch
+}
+
+away_10_s_does_not_lock() { away 10 && still_open; }
+
+away_31_s_locks() { away 31 && on Locked; }
+
+screen_off_locks_at_once() {
+    pv_shell input keyevent KEYCODE_SLEEP >/dev/null || return 1
+    pv_sleep 3
+    pv_shell input keyevent KEYCODE_WAKEUP >/dev/null
+    pv_sleep 1
+    pv_keyguard_showing || { pv_log "no keyguard after KEYCODE_SLEEP: the screen did not go off"; return 1; }
+    pv_unlock || return 1
+    case "$(pv_focus)" in *"$PV_PACKAGE"/*) ;; *) relaunch || return 1 ;; esac
+    on Locked
+}
+
+# "Immediately" through the settings file (the Settings screen comes with build plan 4.3): the app
+# reads it once per process, so it is stopped, edited, started and unlocked again.
+set_immediately() {
+    pv_shell am force-stop "$PV_PACKAGE" >/dev/null
+    # One string, so that the device's shell gets the single quotes around the expression.
+    pv_shell "run-as $PV_PACKAGE sed -i 's#<string name=\"lock_delay\">[^<]*</string>#<string name=\"lock_delay\">immediately</string>#' $PREFS" || return 1
+    pv_shell run-as "$PV_PACKAGE" cat "$PREFS" 2>/dev/null | tr -d '\r' | grep -q '<string name="lock_delay">immediately</string>' || return 1
+    relaunch && unlock
+}
+
+immediately_rotation_does_not_lock() { rotation_does_not_lock; }
+
+immediately_leaving_locks() { away 2 && on Locked; }
+
+no_crash() {
+    local crash
+    crash=$( { pv_shell logcat -b crash -d 2>/dev/null; pv_shell logcat -d -s AndroidRuntime:E 2>/dev/null; } \
+        | tr -d '\r' | grep -A 3 'FATAL EXCEPTION' | grep -m 1 -B 1 -A 2 "$PV_PACKAGE")
+    [ -z "$crash" ] || { pv_log "the app crashed: $crash"; return 1; }
+}
+
+pv_step "install the app afresh" -- install_fresh || { pv_summary; exit 1; }
+pv_step "start the app: Welcome" -- start || { pv_summary; exit 1; }
+pv_step "set up a vault: the list is shown" -- set_up || { pv_summary; exit 1; }
+pv_step "setup wrote the 30-second lock delay" needs-debuggable -- default_written
+pv_step "a rotation recreates the activity and does not lock" -- rotation_does_not_lock
+pv_step "away for 10 s does not lock" -- away_10_s_does_not_lock
+pv_step "away for 31 s locks" -- away_31_s_locks
+pv_step "the master password opens it again" -- unlock
+pv_step "the screen off for 3 s locks at once" -- screen_off_locks_at_once
+pv_step "the master password opens it again" -- unlock
+if ! pv_is_debuggable; then
+    for name in "the lock delay set to Immediately (pv_settings, a new process, unlocked)" \
+        "with Immediately, a rotation still does not lock" "with Immediately, leaving locks at once"; do
+        pv_report SKIPPED "$name" "needs-debuggable: $PV_PACKAGE on $PV_SERIAL is not debuggable"
+    done
+elif pv_step "the lock delay set to Immediately (pv_settings, a new process, unlocked)" -- set_immediately; then
+    pv_step "with Immediately, a rotation still does not lock" -- immediately_rotation_does_not_lock
+    pv_step "with Immediately, leaving locks at once" -- immediately_leaving_locks
+fi
+rotate 0
+pv_step "no crash" -- no_crash
+pv_summary
