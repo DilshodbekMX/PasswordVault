@@ -210,6 +210,86 @@ class ChromeUrlTest {
         }
     }
 
+    /**
+     * A selection of the vectors of Chromium's own unit tests (`url/url_canon_unittest.cc`, read on
+     * 2026-10-07), each through a whole address. All of its vectors for hosts, IPv4, IPv6, paths,
+     * queries, fragments and whole `http` addresses were run once against this code; it differed
+     * only where UTS #46 and the JDK's IDNA 2003 do.
+     */
+    @Test
+    fun theseAreWhatChromiumsOwnUnitTestsExpect() {
+        fun host(h: String) = spec("http://$h/")?.removePrefix("http://")?.removeSuffix("/")
+        assertEquals("google.com", host("GoOgLe.CoM"))
+        assertEquals("goo%2A%2Agoo.com", host("Goo%2a*goo.com"))
+        assertNull(host("Goo%20 goo.com"))
+        assertEquals("192.168.0.1", host("0300.0250.00.01"))
+        assertEquals("192.168.0.1", host("0xC0.0Xa8.0x0.0x1"))
+        assertEquals("0.0.0.192", host("192"))
+        assertEquals("192.168.0.1", host("0xC0a80001"))
+        assertEquals("192.168.0.1", host("000030052000001"))
+        assertEquals("192.0.0.168", host("192.168"))
+        assertEquals("192.168.0.1", host("192.0x00A80001"))
+        assertEquals("192.168.0.1", host("192.168.0.1."))
+        assertEquals("192.255.0.1", host("0000000000000300.0x00000000000000fF.00000000000000001"))
+        assertEquals("0.0.0.1", host("00000000000000000001"))
+        assertEquals("0.0.0.0", host("0.00.0x.0x0"))
+        assertEquals("0.0.255.255", host("0.0.0xFFFF"))
+        for (broken in listOf("19a.168.0.1", "0308.0250.00.01.", "0xCG.0xA8.0x0.0x1", "1.2.3.08", "192.168.0.0.1", "192.168..1",
+            "0x100.0.0.0", "0.0.0x10000", "276.1.2", "192.168.0.257", "0000000000000000100000000000000001", "1.2.💩.4")) {
+            assertNull(broken, host(broken))
+        }
+        assertEquals("192.168.9.com", host("192.168.9.com"))
+        assertEquals("19.168.0.1a", host("19.168.0.1a"))
+        assertEquals("1.2.3.xn--ls8h", host("1.2.3.💩"))
+        assertEquals("[0:1:2:3:4:5:6:7]", host("[000:01:02:003:004:5:6:007]"))
+        assertEquals("[a:b:c:de:ff:0:1:ac]", host("[A:b:c:DE:fF:0:1:aC]"))
+        assertEquals("[1::2:0:0:3:0]", host("[1:0:0:2::3:0]"))
+        assertEquals("[::c0a8:1]", host("[::192.168.0.1]"))
+        assertEquals("[2001::c0a8:1]", host("[2001::192.168.0.1]"))
+        assertEquals("[::ffff:c0a8:1]", host("[::ffff:0xC0.0Xa8.0x0.0x1]"))
+        assertEquals("[::8]", host("[0:0::0:0:8]"))
+        assertEquals("[1:2:3:4:5:6:0:8]", host("[1:2:3:4:5:6::8]"))
+        for (broken in listOf("[1:2:192.168.0.1:5:6]", "[::ffff:192.1.2]", "[::ffff:192.1.2.3.4]", "[2001::db8::1]", "[2001:db8:::1]",
+            "[:::]", "[2001::.com]", "[0:0:0:0:0:0:0:192.168.0.1]", "[1:2:3:4:5:6::192.168.0.1]", "[1:2:3:4:5:6:7:8:]", "[-1:2:3:4:5:6:7:8]",
+            "[1::%1]", "[1::%eth0]", "[:0:0::0:0:8]", "[0:0::0:0:8:]", "[::192.168..1]", "[::1 hello]")) {
+            assertNull(broken, host(broken))
+        }
+
+        fun path(p: String) = spec("http://h$p")!!.removePrefix("http://h")
+        assertEquals("/foo", path("/././foo"))
+        assertEquals("/.foo", path("/./.foo"))
+        assertEquals("/foo/", path("/foo/./"))
+        assertEquals("/foo/..bar", path("/foo/..bar"))
+        assertEquals("/a", path("/foo/bar/../ton/../../a"))
+        assertEquals("/", path("/foo/../../.."))
+        assertEquals("/foo/", path("/foo/%2e"))
+        assertEquals("/foo/%2e%2", path("/foo/%2e%2"))
+        assertEquals("/%2e.bar", path("/foo/%2e./%2e%2e/.%2e/%2e.bar"))
+        assertEquals("/foo%2Ebar", path("/foo%2Ebar"))
+        assertEquals("//", path("////../.."))
+        assertEquals("/foo%2zbar", path("/foo%2zbar"))
+        assertEquals("/foo%2%C2%A9zbar", path("/foo%2©zbar"))
+        assertEquals("/(%28:%3A%29)", path("/(%28:%3A%29)"))
+        assertEquals("/%%41%C4%B0", path("/%%41İ"))
+        assertEquals("/%E4%BD%A0%E5%A5%BD%E4%BD%A0%E5%A5%BD", path("/你好你好"))
+        assertEquals("/%EF%B7%90zyx", path("/\uFDD0zyx"))
+
+        assertEquals("http://h/?%02hello%7F%20bye", spec("http://h/?\u0002hello\u007F bye"))
+        assertEquals("http://h/?q=%EF%BF%BD%EF%BF%BD", spec("http://h/?q=\uD800\uD800"))
+        assertEquals("http://h/#%F0%90%8C%80ss", spec("http://h/#𐌀ss"))
+        assertEquals("http://h/#%41%a", spec("http://h/#%41%a"))
+        assertEquals("http://h/##asdf", spec("http://h/##asdf"))
+
+        assertEquals("http://www.google.com/foo?bar=baz#", spec("http://www.google.com/foo?bar=baz#"))
+        assertEquals("http://www.google.com/foo", spec("http:\\\\www.google.com\\foo"))
+        assertEquals("http://s/%3E%41", spec("HTTP:S/5%\\../>%41"))
+        assertEquals("http://foo:81/", spec("http://foo:81/"))
+        assertEquals("https://foo:80/", spec("https://foo:80/"))
+        assertNull(spec("http://foo:-80/"))
+        assertEquals("http://%5E%20:$@host.com/", spec("http://^ :$@host.com/"))
+        assertEquals("http://%2540:bar@domain.com/", spec("http://%2540:bar@domain.com/"))
+    }
+
     // ------------------------------------------------------------------ Android app links
 
     @Test

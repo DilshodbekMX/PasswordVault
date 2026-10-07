@@ -263,16 +263,27 @@ object GoogleCsv {
  * `credential_utils.cc`, `affiliation_utils.cc`, and `url/url_canon_*.cc`, `url_parse.cc` for the
  * canonical form), closely enough for the summary card:
  * - the scheme is compared without regard to case, and any number of slashes may follow it;
- * - the host is unescaped, turned into punycode (`java.net.IDN`; Chrome uses UTS #46, which differs
- *   only for rare letters), lower-cased, and refused when it is empty or holds a character Chrome
- *   refuses there (a space, `#`, `%`, `/`, `<`, `>`, `?`, `@`, `\`, `^`, `|`, a control character);
- *   a host that ends in a number must be an IPv4 address, and brackets must hold an IPv6 address;
+ * - the host is unescaped, turned into punycode, lower-cased, and refused when it is empty or holds
+ *   a character Chrome refuses there (`#`, `%`, `/`, `<`, `>`, `?`, `@`, `\`, `^`, `|`, a control
+ *   character, a space); a host that ends in a number must be an IPv4 address, and brackets must
+ *   hold an IPv6 address;
  * - a port must be a number up to 65535; the scheme's own port is left out;
  * - in the path, the query and the fragment every character outside ASCII counts as its
  *   percent-encoded UTF-8 (six characters for a Cyrillic letter), and so do the ASCII characters
  *   Chrome escapes there; `.` and `..` segments are resolved;
  * - an Android app address needs a base64 hash before the `@`, a package name after it, and nothing
  *   else but a final `/`.
+ *
+ * Checked against the vectors of Chromium's own unit tests (`url/url_canon_unittest.cc`: hosts, IPv4,
+ * IPv6, paths, queries, fragments, whole addresses). Where it knowingly differs:
+ * - **A space in a host.** formats-review P15 counts `https://exa mple.com/` as refused, and so does
+ *   this. Chromium refuses it only with its feature `DisallowSpaceCharacterInURLHostParsing`, which
+ *   its code had off by default on that day (it then writes the space as `%20`); the URL Standard
+ *   refuses it.
+ * - **Punycode.** `java.net.IDN` is IDNA 2003 where Chrome uses UTS #46. For Latin and Cyrillic names
+ *   the two agree. They differ for `ß` and the Greek final sigma, for letters newer than Unicode 3.2,
+ *   and for right-to-left names that end in a digit or a vowel sign, which IDNA 2003 refuses: such a
+ *   website is counted as invalid here although Chrome takes it.
  *
  * It decides nothing in this app: our own importer takes every website (formats.md §8.4).
  */
