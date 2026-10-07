@@ -15,11 +15,13 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -31,6 +33,7 @@ import io.github.dilshodbekmx.passwordvault.R
 import io.github.dilshodbekmx.passwordvault.i18n.resolve
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultFieldDefaults
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultSecureField
+import kotlinx.coroutines.flow.first
 
 /**
  * "Type your master password again" (ux.md §5.5; lock.md F1 steps 2 and 3): the field has the focus
@@ -57,9 +60,15 @@ fun TypeAgainScreen(
     if (keepScreenOn) KeepScreenOn()
     BackHandler(enabled = state.settingUp) { /* ignored while the vault is made (ux.md §4) */ }
     val focus = remember { FocusRequester() }
+    val window = LocalWindowInfo.current
     val keyboard = LocalSoftwareKeyboardController.current
-    // Every new composition, the first and the one after a rotation, gives the field the focus and asks for the keyboard.
-    LaunchedEffect(focus) {
+    // Every new composition, the first and the one after a rotation, gives the field the focus and asks for the
+    // keyboard, once the window has the window focus: a keyboard asked for before that is dropped. After a
+    // rotation the new window gets the window focus a moment after its first layout, and on Android 7 that layout
+    // already gave the field the focus, so the request for focus alone would not bring the keyboard (seen on
+    // API 24); Android 17 no longer restores it by itself [V-P7].
+    LaunchedEffect(focus, window) {
+        snapshotFlow { window.isWindowFocused }.first { it }
         focus.requestFocus()
         keyboard?.show()
     }
