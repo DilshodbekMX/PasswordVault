@@ -94,11 +94,17 @@ object SecurityCheck {
      * apostrophes of three characters or more in its username (before an `@`, so not the mail
      * provider) and in its name, in lower case, in that order.
      */
-    fun userInputs(entry: Entry): List<String> {
+    fun userInputs(entry: Entry): List<String> = userInputs(entry.title, entry.username)
+
+    /**
+     * [userInputs] of an account being typed (ux.md §5.14): its name [title] and its [username] as
+     * they are in the form, so that the meter under the password judges it as the check will.
+     */
+    fun userInputs(title: String, username: String): List<String> {
         val parts = LinkedHashSet<String>()
-        val at = entry.username.indexOf('@')
-        addParts(if (at > 0) entry.username.substring(0, at) else entry.username, parts)
-        addParts(entry.title, parts)
+        val at = username.indexOf('@')
+        addParts(if (at > 0) username.substring(0, at) else username, parts)
+        addParts(title, parts)
         return parts.toList()
     }
 

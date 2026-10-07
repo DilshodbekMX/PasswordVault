@@ -135,6 +135,9 @@ class SecurityCheckTest {
         // 4 and 5 lean on their own name and username; 6 is the same text without that knowledge.
         assertEquals(listOf("1", "4", "5"), report.weak.sorted())
         assertEquals(listOf("qwzrtplm", "xvbnkj", "telegram"), SecurityCheck.userInputs(vault.entries[4]))
+        // The edit form passes what is typed; apostrophes stay inside a word, short parts are left out.
+        assertEquals(listOf("oʻgʻlim", "sevgi", "gmail"), SecurityCheck.userInputs("Gmail", "Oʻgʻlim.Sevgi@gmail.com"))
+        assertEquals(listOf("998", "901234567", "click"), SecurityCheck.userInputs("Click uz", "+998 901234567"))
         assertFalse(SecurityCheck.userInputs(vault.entries[4]).contains("mail"))
     }
 

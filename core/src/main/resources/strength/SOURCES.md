@@ -50,6 +50,20 @@ The places, first names, words and phrases that people in Uzbekistan most often 
 - **What was taken:** the 10,000 most frequent Russian words of three letters or more of `content/2018/ru/ru_50k.txt` (SHA-256 `6095f507cc167488ec66ada5a85ac50433503a08ad24a07c6eabdf54352c4e7f`) in Hermit Dave's FrequencyWords, `https://github.com/hermitdave/FrequencyWords`, commit `525f9b560de45753a5ea01069454e72e9aa541c6`, made from the OpenSubtitles 2018 corpus (`http://opus.nlpl.eu/OpenSubtitles2018.php`; P. Lison and J. Tiedemann, 2016); first names were left out (they are in `names-ru.txt`) and each word got its usual Latin spelling.
 - **Licence:** Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0), `https://creativecommons.org/licenses/by-sa/4.0/` ("MIT License for code. CC-by-sa-4.0 for content."). `words-ru.txt` is shared under the same licence.
 
+## Inputs of this build
+
+To build the same list again, `WordListBuilder` needs these files (see its comment); the wiki lists change as the wikis are edited, so a later download gives a slightly different list.
+
+| Input | SHA-256 |
+|---|---|
+| `geonames-UZ.zip` | `2b6ac0765256ce26b1ce558927b6a7618aa78a59c210a037b05150ead2d43937` |
+| `geonames-alternatenames-UZ.zip` | `322bac9d2bd167bcae781c902eb789578974314d69061439391a434d5012a2c2` |
+| `frequencywords-ru_50k.txt` | `6095f507cc167488ec66ada5a85ac50433503a08ad24a07c6eabdf54352c4e7f` |
+| `enwiktionary-given-names.tsv` (`fetch_lists.py`) | `8204ad4bb1015adb9f716a90e20b2e948ddb11542c156e56267255ce055e1dae` |
+| `uzwiki-given-names.tsv` (`fetch_lists.py`) | `6d428e6fe922be97403bb88766a3650cd726021f9e6dfa5d8ba8f5f58f25b418` |
+| `uzwiki-words.tsv` (`uzwiki_counts.py`) | `8645f0c9ace14c619940466b98a8126774c2ac6ea64c94e4b3b5331958620072` |
+| `uzwiki-bio-names.tsv` (`uzwiki_counts.py`) | `178766dd3312818ca7d2493815cd9594ebf6eb0adc8363d8fbb08b2141c321b6` |
+
 ## Credit in the app
 
 The licences screen (build plan 7.3) shows this file, so that it names every source, its licence with its link, and the changes made. `core/src/test/java/…/core/strength/WordListTest.kt` checks the table above against the files.
