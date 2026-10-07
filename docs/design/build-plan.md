@@ -186,8 +186,9 @@ Four packages, side by side. None of them names a type of another.
 
 #### 2.8 Window and UI kit
 - **Owns:** `APP/window/` (the body of `WindowPolicy.kt` included), `APP/ui/theme/`, `APP/ui/common/`, `RES/values/{strings_common,themes}.xml`, `RES/drawable/ic_common_*`, `APP-AT/window/`, `APP-AT/ui/common/`.
+- **May also edit:** `APP/ui/shell/AppRoot.kt` (2.5's), only its one call of the theme and the KDoc sentence about it: the call becomes `PasswordVaultTheme(graph.settings) { … }` as A §3.6 writes it, in the same commit that gives `PasswordVaultTheme` its `settings` parameter, so that the branch always builds. Nobody else in 2B owns it.
 - **Inputs:** `docs/lab/window-input-artifacts/VaultSecurity.kt` (copy, with the API 26 gate of L §13.5) and `WindowSafety.kt`; L §13.5; U §3, §5.9 (the pad's look), §8, §10; [V-P4], [V-P5], [V-C11].
-- **Implements:** `VaultSecurity`, `VaultWindow`, `Modifier.vaultTextField()`, `NoPersonalizedLearning`, `ObscuredTouchNotice`, the theme, the wrappers of R-13 (`VaultTextField`, `VaultSecureField`, `VaultDialog`, `VaultSheet`), and the shared parts of A §2.2 (`PinPad` draws keys and dots and reports key presses; it holds no digits).
+- **Implements:** `VaultSecurity`, `VaultWindow`, `Modifier.vaultTextField()`, `NoPersonalizedLearning`, `ObscuredTouchNotice`, the theme (`@Composable fun PasswordVaultTheme(settings: AppSettings, content: @Composable () -> Unit)`, which applies `settings.theme`: `ThemeChoice` SYSTEM, LIGHT or DARK), the wrappers of R-13 (`VaultTextField`, `VaultSecureField`, `VaultDialog`, `VaultSheet`), and the shared parts of A §2.2 (`PinPad` draws keys and dots and reports key presses; it holds no digits).
 - **Accepted when,** on API 24, 28 and 37 [device]: no node of the pad or of a masked value exposes a digit or a secret; a `VaultSecureField` leaves nothing in the saved bundle (the method of `e5_state.py`); each wrapper sets the content type, the sensitive flag and the window policy; the activity starts on API 24 (no autofill call there). The checks against a real autofill service and accessibility service run on the real screens in 3.12.
 
 #### 2.9 Settings and formatting
