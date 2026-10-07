@@ -106,12 +106,18 @@ class PasswordsScreenTest {
 
     private fun text(id: Int, vararg args: Any): String = compose.activity.getString(id, *args)
 
+    /** Scrolls the list to the row with [key] (an `f.`, `e.` or `r.` key): a short screen (API 24) shows only the first rows. */
+    private fun scrollTo(key: String) {
+        compose.onNodeWithTag(ListTags.LIST).performScrollToKey(key)
+    }
+
     @Test
     fun rowsShowTitleAndDetailAndTheirCopyButtonsCopy() {
         val (rig, _) = passwords()
-        compose.onNodeWithTag(ListTags.row("gm")).assertTextContains("Gmail").assertTextContains("aziz@gmail.com")
         compose.onNodeWithTag(ListTags.favourite("gm")).assertIsDisplayed()
         compose.onNodeWithTag(ListTags.FAVOURITES).assertIsDisplayed()
+        scrollTo(ENTRY_KEY + "gm")
+        compose.onNodeWithTag(ListTags.row("gm")).assertTextContains("Gmail").assertTextContains("aziz@gmail.com")
 
         // One tap copies, with the sensitive flag (ux.md §6).
         compose.onNodeWithTag(ListTags.copy(ENTRY_KEY + "gm")).performClick()
@@ -120,7 +126,10 @@ class PasswordsScreenTest {
         assertTrue(rig.clipboard.copies.last().sensitive)
 
         // An account without a password has no copy button; one with a change pending asks which (ux.md §5.17).
+        scrollTo(ENTRY_KEY + "sms")
+        compose.onNodeWithTag(ListTags.row("sms")).assertExists()
         compose.onNodeWithTag(ListTags.copy(ENTRY_KEY + "sms")).assertDoesNotExist()
+        scrollTo(ENTRY_KEY + "fb")
         compose.onNodeWithContentDescription(text(R.string.list_change_pending), useUnmergedTree = true).assertExists()
         compose.onNodeWithContentDescription(text(R.string.list_copy_password_choose, "Facebook")).performClick()
         compose.onNodeWithText(text(R.string.list_menu_copy_old_password)).performClick()
@@ -132,6 +141,7 @@ class PasswordsScreenTest {
         assertEquals("new-fb", rig.clipboard.copies.last().value)
 
         // A tap on the row opens the account.
+        scrollTo(ENTRY_KEY + "in")
         compose.onNodeWithTag(ListTags.row("in")).performClick()
         assertEquals(Route.Entry("in"), rig.nav.routes.last())
     }
@@ -139,6 +149,7 @@ class PasswordsScreenTest {
     @Test
     fun theLongPressMenuAndTalkBackHaveTheSameActions() {
         val (rig, _) = passwords()
+        scrollTo(ENTRY_KEY + "gm")
         val row = compose.onNodeWithTag(ListTags.row("gm"))
         val expected = listOf(
             text(R.string.list_menu_copy_username),

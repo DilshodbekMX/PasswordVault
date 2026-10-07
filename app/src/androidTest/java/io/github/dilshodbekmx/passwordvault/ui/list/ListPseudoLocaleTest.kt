@@ -24,6 +24,7 @@ import io.github.dilshodbekmx.passwordvault.R
 import io.github.dilshodbekmx.passwordvault.core.model.Entry
 import io.github.dilshodbekmx.passwordvault.core.model.FileRef
 import io.github.dilshodbekmx.passwordvault.core.model.Vault
+import io.github.dilshodbekmx.passwordvault.i18n.Formatters
 import io.github.dilshodbekmx.passwordvault.lock.LockStatus
 import io.github.dilshodbekmx.passwordvault.settings.ThemeChoice
 import io.github.dilshodbekmx.passwordvault.ui.theme.PasswordVaultTheme
@@ -209,7 +210,9 @@ class ListPseudoLocaleTest {
         compose.onNodeWithText(res.getString(R.string.list_deleted_restore)).assertExists()
         save("recently-deleted-$tag")
         compose.onNodeWithTag(ListTags.DELETED_EMPTY).performClick()
-        compose.onNodeWithText(res.getQuantityString(R.plurals.list_deleted_empty_question, 1, "1")).assertExists()
+        // The count as the screen writes it in this language (ar-XB has Arabic-Indic digits on API 24).
+        val one = Formatters(res.configuration.locales[0], hour24 = true).number(1)
+        compose.onNodeWithText(res.getQuantityString(R.plurals.list_deleted_empty_question, 1, one)).assertExists()
         save("recently-deleted-question-$tag")
     }
 
