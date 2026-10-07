@@ -24,6 +24,8 @@ import io.github.dilshodbekmx.passwordvault.settings.ThemeChoice
 import io.github.dilshodbekmx.passwordvault.ui.theme.PasswordVaultTheme
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -61,6 +63,9 @@ class ListPerformanceTest {
     /** The query each applied composition showed, with the time it was applied, by query. */
     private val composed = ConcurrentHashMap<String, Long>()
 
+    /** The query of each state the ViewModel published, with the time it was published, by query. */
+    private val published = ConcurrentHashMap<String, Long>()
+
     private lateinit var vm: PasswordsViewModel
 
     private fun showScreen() {
@@ -77,6 +82,9 @@ class ListPerformanceTest {
             }
         }
         compose.waitUntil(LIST_TIMEOUT_MS) { vm.state.value.body is ListBody.Browse }
+        rig.scope.launch(Dispatchers.Default) {
+            vm.state.collect { state -> queryOf(state.body)?.let { published.putIfAbsent(it, SystemClock.elapsedRealtimeNanos()) } }
+        }
     }
 
     private fun queryOf(body: ListBody): String? = when (body) {
@@ -115,30 +123,38 @@ class ListPerformanceTest {
         val field = compose.onNodeWithTag(ListTags.SEARCH)
         field.performClick()
 
-        fun typeOneByOne(query: String, times: MutableList<Long>?) {
+        fun typeOneByOne(query: String, shown: MutableList<Long>?, answered: MutableList<Long>?) {
             field.performTextClearance()
             compose.waitUntil(ANSWER_TIMEOUT_MS) { vm.state.value.body is ListBody.Browse }
             for (end in 1..query.length) {
                 val typed = query.substring(0, end)
                 composed.remove(typed)
+                published.remove(typed)
                 compose.waitForIdle()
                 val start = SystemClock.elapsedRealtimeNanos()
                 field.performTextInput(query.substring(end - 1, end))
                 compose.waitUntil(ANSWER_TIMEOUT_MS) { composed.containsKey(typed) }
-                times?.add(composed.getValue(typed) - start)
+                shown?.add(composed.getValue(typed) - start)
+                answered?.add(published.getValue(typed) - start)
             }
         }
 
-        for (query in QUERIES) typeOneByOne(query, null) // warm-up: ART compiles the hot code
-        val times = mutableListOf<Long>()
-        for (query in QUERIES) typeOneByOne(query, times)
+        for (query in QUERIES) typeOneByOne(query, null, null) // warm-up: ART compiles the hot code
+        val shown = mutableListOf<Long>()
+        val answered = mutableListOf<Long>()
+        for (query in QUERIES) typeOneByOne(query, shown, answered)
 
-        val sorted = times.sorted()
-        val report = String.format(
-            Locale.ROOT,
-            "%d keystrokes over %d accounts: median %.1f ms, p90 %.1f ms, max %.1f ms",
-            sorted.size, ENTRIES, ms(sorted[sorted.size / 2]), ms(sorted[(sorted.size - 1) * 9 / 10]), ms(sorted.last()),
-        )
+        fun summary(times: List<Long>): String {
+            val sorted = times.sorted()
+            return String.format(
+                Locale.ROOT,
+                "median %.1f ms, p90 %.1f ms, max %.1f ms",
+                ms(sorted[sorted.size / 2]), ms(sorted[(sorted.size - 1) * 9 / 10]), ms(sorted.last()),
+            )
+        }
+        val sorted = shown.sorted()
+        val report = "${shown.size} keystrokes over $ENTRIES accounts: on screen ${summary(shown)}; " +
+            "results published by the ViewModel ${summary(answered)}"
         println("ListPerformanceTest: $report")
         assertTrue("$report; budget 50 ms (ux.md §12 check 10)", ms(sorted[sorted.size / 2]) < BUDGET_MS)
         assertTrue("$report; no keystroke took 100 ms or more", ms(sorted.last()) < 2 * BUDGET_MS)
