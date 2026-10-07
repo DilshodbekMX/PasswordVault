@@ -1,20 +1,38 @@
 package io.github.dilshodbekmx.passwordvault.core.tools
 
 import io.github.dilshodbekmx.passwordvault.core.search.SearchText
+import io.github.dilshodbekmx.passwordvault.core.search.Spelling
 import io.github.dilshodbekmx.passwordvault.core.search.searchKey
 import io.github.dilshodbekmx.passwordvault.core.text.UzbekScript
 import java.io.File
 import java.util.Locale
+import org.junit.Test
 
 /**
- * Word-by-word accuracy of [UzbekScript] on parallel texts.
+ * Word-by-word accuracy of [UzbekScript] on parallel texts (search.md §4). A program that runs as a
+ * test only when asked (build plan 1.2):
  *
- * Input: pairs of TSV files (paragraph id, text) made by tools/extract_lex.py from the
- * Cyrillic and Latin editions of the same law on lex.uz. Paragraphs pair by id; words
- * pair by position when a paragraph has the same number of words in both editions.
+ *     tools/gradle.sh :core:testDebugUnitTest --tests '*ConverterEval*' \
+ *         -Ppv.evalArgs="build/eval const:const_cyr.tsv:const_lat.tsv labour-code:labour_cyr.tsv:labour_lat.tsv"
+ *     tools/gradle.sh :core:testDebugUnitTest --tests '*ConverterEval*' -Ppv.evalArgs="--glossary glossary.tsv"
  *
- * Usage: ConverterEval outDir name:cyr.tsv:lat.tsv [name:cyr.tsv:lat.tsv ...]
+ * The first form takes an output directory and one or more texts, each a name and two TSV files
+ * (paragraph id, text) made by extract_lex.py (beside this file) from the Cyrillic and the Latin
+ * edition of the same law on lex.uz. Paragraphs pair by id; words pair by position when a
+ * paragraph has the same number of words in both editions. It prints the report, writes it to
+ * summary.txt in the output directory and each text's word errors to <name>-c2l-errors.tsv and
+ * <name>-l2c-errors.tsv. The second form checks the Cyrillic column of i18n.md §3's glossary,
+ * given as TSV rows (number, English, Uzbek Latin, Uzbek Cyrillic). Paths are absolute or
+ * relative to the project root.
  */
+class ConverterEval {
+    @Test
+    fun wordByWordAccuracy() = evaluate(ProgramRun.arguments("pv.evalArgs"))
+}
+
+private const val USAGE = "usage: -Ppv.evalArgs=\"outDir name:cyr.tsv:lat.tsv [name:cyr.tsv:lat.tsv ...]\" " +
+    "or -Ppv.evalArgs=\"--glossary glossary.tsv\""
+
 private val WORD = Regex("[\\p{L}\\p{M}]+(?:['’‘`´][\\p{L}\\p{M}]+)*")
 
 private class Pair2(val cyr: String, val lat: String)
@@ -58,9 +76,9 @@ private fun diffPattern(ours: String, ref: String): String {
     return "${a.substring(p, a.length - s)}→${b.substring(p, b.length - s)}"
 }
 
-private fun readTsv(path: String): Map<String, String> {
+private fun readTsv(file: File): Map<String, String> {
     val m = LinkedHashMap<String, String>()
-    File(path).forEachLine(Charsets.UTF_8) { line ->
+    file.forEachLine(Charsets.UTF_8) { line ->
         val tab = line.indexOf('\t')
         if (tab > 0) m[line.substring(0, tab)] = line.substring(tab + 1)
     }
@@ -81,38 +99,44 @@ private fun russianKeyboard(s: String): String {
     return sb.toString()
 }
 
-/** The Russian-keyboard spelling's key, as the second search tier computes it. */
-private fun altKey(text: String): String = SearchText.foldPrepared(SearchText.russianKeyboard(SearchText.prepare(text))).key
+/**
+ * The key of the Russian-keyboard spelling, the one of the second search tier's two spellings that
+ * these texts exercise (they have no ş or ç).
+ */
+private fun altKey(text: String): String =
+    SearchText.foldPrepared(SearchText.spell(SearchText.prepare(text), Spelling.RUSSIAN)).key
 
 private fun pct(n: Int, d: Int): String = if (d == 0) "n/a" else String.format(Locale.ROOT, "%.2f%%", 100.0 * n / d)
 
 /** Glossary rows (number, English, Uzbek Latin, Uzbek Cyrillic) from docs/design/i18n.md §3. */
-private fun glossary(path: String) {
+private fun glossary(file: File) {
     var exact = 0
     var total = 0
-    for (line in File(path).readLines(Charsets.UTF_8)) {
+    for (line in file.readLines(Charsets.UTF_8)) {
         val c = line.split('\t')
         if (c.size < 4) continue
         total++
         val ours = UzbekScript.latinToCyrillic(c[2])
-        if (ours == c[3]) exact++ else println("  #${c[0]} ${c[2]} → $ours (glossary ${c[3]})")
+        if (ours == c[3]) exact++ else ProgramRun.say("  #${c[0]} ${c[2]} → $ours (glossary ${c[3]})")
     }
-    println("glossary: $exact/$total rows exact = ${pct(exact, total)}")
+    ProgramRun.say("glossary: $exact/$total rows exact = ${pct(exact, total)}")
 }
 
-fun main(args: Array<String>) {
-    if (args.size == 2 && args[0] == "--glossary") return glossary(args[1])
-    require(args.size >= 2) { "usage: ConverterEval outDir name:cyr.tsv:lat.tsv ..." }
-    val outDir = File(args[0]).apply { mkdirs() }
+private fun evaluate(args: List<String>) {
+    if (args.size == 2 && args[0] == "--glossary") return glossary(ProgramRun.file(args[1]))
+    require(args.size >= 2) { USAGE }
+    val outDir = ProgramRun.file(args[0]).apply { mkdirs() }
     val report = StringBuilder()
     fun say(s: String) {
-        println(s); report.append(s).append('\n')
+        ProgramRun.say(s); report.append(s).append('\n')
     }
 
     for (spec in args.drop(1)) {
-        val (name, cyrPath, latPath) = spec.split(":")
-        val cyr = readTsv(cyrPath)
-        val lat = readTsv(latPath)
+        val parts = spec.split(":")
+        require(parts.size == 3) { "not name:cyr.tsv:lat.tsv: $spec; $USAGE" }
+        val (name, cyrPath, latPath) = parts
+        val cyr = readTsv(ProgramRun.file(cyrPath))
+        val lat = readTsv(ProgramRun.file(latPath))
         val pairs = ArrayList<Pair2>()
         var paragraphs = 0
         var skippedParagraphs = 0
