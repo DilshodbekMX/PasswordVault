@@ -189,7 +189,8 @@ private fun Stepper(@StringRes label: Int, value: Int, range: IntRange, shown: S
                 value = value.toFloat(),
                 onValueChange = { onValue(it.roundToInt()) },
                 valueRange = range.first.toFloat()..range.last.toFloat(),
-                steps = range.last - range.first - 1,
+                // A mark per value only where they are few (words); 61 lengths would make a dotted line.
+                steps = if (range.last - range.first <= MAX_MARKED_STEPS) range.last - range.first - 1 else 0,
                 modifier = Modifier.weight(1f).semantics { contentDescription = labelText },
             )
             StepButton(plus, R.drawable.ic_edit_add, enabled = value < range.last)
@@ -219,6 +220,9 @@ internal fun SwitchRow(@StringRes text: Int, checked: Boolean, tag: String, onCh
         Switch(checked = checked, onCheckedChange = null)
     }
 }
+
+/** A slider with more values than this has no marks: the value is rounded to a whole number instead. */
+private const val MAX_MARKED_STEPS = 12
 
 /** A separator choice: what its button shows and the name TalkBack reads. */
 private class SeparatorChoice(val separator: GeneratorOptions.Separator, @StringRes val shown: Int, @StringRes val name: Int)

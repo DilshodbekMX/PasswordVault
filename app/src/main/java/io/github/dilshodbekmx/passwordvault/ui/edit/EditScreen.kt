@@ -409,6 +409,7 @@ private fun Dialogs(vm: EditViewModel, ui: EditUiState, texts: FormTexts, format
         null -> Unit
         EditDialog.SaveChanges -> VaultDialog(
             onDismissRequest = vm::dismissDialog,
+            modifier = DIALOG_TAGS,
             title = { Text(text = stringResource(R.string.edit_unsaved_title)) },
             confirmButton = {
                 TextButton(onClick = { vm.save(texts) }, modifier = Modifier.testTag(EditTags.DIALOG_SAVE)) {
@@ -465,13 +466,10 @@ private fun Dialogs(vm: EditViewModel, ui: EditUiState, texts: FormTexts, format
 private fun Question(text: String, yes: String, yesTag: String, onYes: () -> Unit, no: String, onNo: () -> Unit, onDismiss: () -> Unit) {
     VaultDialog(
         onDismissRequest = onDismiss,
-        text = { Text(text = text, modifier = Modifier.semantics { testTagsAsResourceId = true }) },
-        confirmButton = {
-            TextButton(onClick = onYes, modifier = Modifier.semantics { testTagsAsResourceId = true }.testTag(yesTag)) { Text(text = yes) }
-        },
-        dismissButton = {
-            TextButton(onClick = onNo, modifier = Modifier.semantics { testTagsAsResourceId = true }.testTag(EditTags.DIALOG_NO)) { Text(text = no) }
-        },
+        modifier = DIALOG_TAGS,
+        text = { Text(text = text) },
+        confirmButton = { TextButton(onClick = onYes, modifier = Modifier.testTag(yesTag)) { Text(text = yes) } },
+        dismissButton = { TextButton(onClick = onNo, modifier = Modifier.testTag(EditTags.DIALOG_NO)) { Text(text = no) } },
     )
 }
 
@@ -486,11 +484,12 @@ private fun AddFieldDialog(vm: EditViewModel, focus: FieldFocus, formatters: For
     val chosen = add.label?.let { stringResource(it.text) }
     VaultDialog(
         onDismissRequest = vm::dismissDialog,
+        modifier = DIALOG_TAGS,
         title = { Text(text = stringResource(R.string.edit_field_title)) },
         text = {
             focus.RestoreAfterRecreation(inDialog = true)
             Column(
-                modifier = Modifier.semantics { testTagsAsResourceId = true }.verticalScroll(rememberScrollState()),
+                modifier = Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -539,15 +538,12 @@ private fun AddFieldDialog(vm: EditViewModel, focus: FieldFocus, formatters: For
             }
         },
         confirmButton = {
-            TextButton(
-                onClick = { vm.confirmAddField(chosen.orEmpty()) },
-                modifier = Modifier.semantics { testTagsAsResourceId = true }.testTag(EditTags.FIELD_ADD),
-            ) {
+            TextButton(onClick = { vm.confirmAddField(chosen.orEmpty()) }, modifier = Modifier.testTag(EditTags.FIELD_ADD)) {
                 Text(text = stringResource(R.string.edit_field_add))
             }
         },
         dismissButton = {
-            TextButton(onClick = vm::dismissDialog, modifier = Modifier.semantics { testTagsAsResourceId = true }.testTag(EditTags.DIALOG_NO)) {
+            TextButton(onClick = vm::dismissDialog, modifier = Modifier.testTag(EditTags.DIALOG_NO)) {
                 Text(text = stringResource(R.string.common_cancel))
             }
         },
@@ -644,6 +640,12 @@ private fun Modifier.formField(focus: FieldFocus, key: FieldKey, tag: String): M
     .focusRequester(focus.requester(key))
     .onFocusChanged { focus.changed(key, it.isFocused) }
     .testTag(tag)
+
+/**
+ * A dialog is a window of its own: its test tags are exposed as resource ids from its root, as the
+ * screen's are (the emulator scripts find the buttons by them).
+ */
+private val DIALOG_TAGS = Modifier.semantics { testTagsAsResourceId = true }
 
 /** How many frames a field to give the focus back to may take to be laid out. */
 private const val FOCUS_FRAMES = 5
