@@ -41,7 +41,8 @@ import io.github.dilshodbekmx.passwordvault.BuildConfig
  *   Activity.onCreate, before setContent:   VaultSecurity.applyToActivity(activity)
  *   around the activity's content:          NoPersonalizedLearning { VaultWindow { ... } }
  *   the content of every dialog and sheet:  VaultWindow { ... }  (VaultDialog, VaultSheet)
- *   every text field:                       Modifier.vaultTextField()  (VaultTextField, VaultSecureField)
+ *   every text field:                       Modifier.vaultTextField()  (VaultTextField, VaultSecureField,
+ *                                           VaultSearchField)
  * Manifest: <uses-permission android:name="android.permission.HIDE_OVERLAY_WINDOWS" /> (R-7).
  */
 
@@ -118,7 +119,8 @@ fun VaultWindow(content: @Composable () -> Unit) {
 }
 
 /**
- * For every text field, plain and secure; `VaultTextField` and `VaultSecureField` apply it (R-13).
+ * For every text field, plain and secure; `VaultTextField`, `VaultSecureField` and `VaultSearchField`
+ * apply it (R-13).
  *  - `ContentDataType.None`: Compose never starts an autofill session for the field, so no fill
  *    request and no save request is made for it [V-P4, L-win Experiment 2].
  *  - `isSensitiveData`: the field and its text-change events are hidden from accessibility services

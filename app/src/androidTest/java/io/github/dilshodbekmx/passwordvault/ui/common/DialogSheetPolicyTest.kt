@@ -5,6 +5,8 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.os.Build
 import android.view.Window
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputConnection
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.text.contextmenu.data.TextContextMenuKeys
@@ -22,8 +24,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.autofill.ContentDataType
+import androidx.compose.ui.platform.InterceptPlatformTextInput
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithTag
@@ -36,7 +43,9 @@ import io.github.dilshodbekmx.passwordvault.window.VaultSecurity
 import io.github.dilshodbekmx.passwordvault.window.WindowPolicy
 import io.github.dilshodbekmx.passwordvault.window.protections
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CopyOnWriteArrayList
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -49,7 +58,8 @@ import org.junit.runner.RunWith
  * their own windows, which the activity's policy does not reach (lock.md §13.5; [L-win] Experiments
  * 2 and 4): the touch filter, the autofill opt-out (API 26+), the accessibility opt-out (34+), the
  * hidden overlays (31+), and FLAG_SECURE whenever the activity has it (staging and release; off in
- * this debug build). In each of those windows the text toolbar has no "Autofill" item. The control
+ * this debug build). In each of those windows the text toolbar has no "Autofill" item, and the
+ * fields keep their content type, sensitive flag and keyboard flag. The control
  * is compose's own `Dialog` without the wrapper: no touch filter, and "Autofill" offered (API 26+).
  */
 @RunWith(AndroidJUnit4::class)
@@ -62,6 +72,7 @@ class DialogSheetPolicyTest {
     private var shown by mutableStateOf(Shown.NONE)
     private val windows = ConcurrentHashMap<Shown, Window>()
     private val menu = MenuRecorder()
+    private val imeOptions = CopyOnWriteArrayList<Pair<Shown, Int>>()
 
     @Before
     fun content() {
@@ -70,38 +81,55 @@ class DialogSheetPolicyTest {
             clipboard.setPrimaryClip(ClipData.newPlainText("", "pasteable"))
         }
         compose.setContent {
-            CompositionLocalProvider(LocalTextContextMenuToolbarProvider provides menu) {
-                WindowPolicy.Root {
-                    when (shown) {
-                        Shown.NONE -> Unit
-                        Shown.ALERT -> VaultDialog(
-                            onDismissRequest = {},
-                            confirmButton = { TextButton(onClick = {}) { Text("OK") } },
-                            title = { Text("Alert") },
-                            text = {
-                                Column {
-                                    CaptureWindow(Shown.ALERT)
-                                    VaultTextField(state = remember { TextFieldState() }, modifier = Modifier.testTag(FIELD))
-                                }
-                            },
-                        )
-                        Shown.CONTENT -> VaultDialog(onDismissRequest = {}) {
-                            Surface {
-                                Column {
-                                    CaptureWindow(Shown.CONTENT)
-                                    VaultSecureField(state = remember { TextFieldState() }, modifier = Modifier.testTag(FIELD))
+            // Records the keyboard options that each window's field asks for, after the app's own
+            // interceptor (NoPersonalizedLearning, inside WindowPolicy.Root) added its flag.
+            InterceptPlatformTextInput(
+                interceptor = { request, nextHandler ->
+                    val which = shown
+                    nextHandler.startInputMethod(
+                        object : PlatformTextInputMethodRequest {
+                            override fun createInputConnection(outAttributes: EditorInfo): InputConnection {
+                                val connection = request.createInputConnection(outAttributes)
+                                imeOptions += which to outAttributes.imeOptions
+                                return connection
+                            }
+                        },
+                    )
+                },
+            ) {
+                CompositionLocalProvider(LocalTextContextMenuToolbarProvider provides menu) {
+                    WindowPolicy.Root {
+                        when (shown) {
+                            Shown.NONE -> Unit
+                            Shown.ALERT -> VaultDialog(
+                                onDismissRequest = {},
+                                confirmButton = { TextButton(onClick = {}) { Text("OK") } },
+                                title = { Text("Alert") },
+                                text = {
+                                    Column {
+                                        CaptureWindow(Shown.ALERT)
+                                        VaultTextField(state = remember { TextFieldState() }, modifier = Modifier.testTag(FIELD))
+                                    }
+                                },
+                            )
+                            Shown.CONTENT -> VaultDialog(onDismissRequest = {}) {
+                                Surface {
+                                    Column {
+                                        CaptureWindow(Shown.CONTENT)
+                                        VaultSecureField(state = remember { TextFieldState() }, modifier = Modifier.testTag(FIELD))
+                                    }
                                 }
                             }
-                        }
-                        Shown.SHEET -> VaultSheet(onDismissRequest = {}) {
-                            CaptureWindow(Shown.SHEET)
-                            VaultTextField(state = remember { TextFieldState() }, modifier = Modifier.testTag(FIELD))
-                        }
-                        Shown.RAW -> Dialog(onDismissRequest = {}) {
-                            Surface {
-                                Column {
-                                    CaptureWindow(Shown.RAW)
-                                    OutlinedTextField(state = remember { TextFieldState() }, modifier = Modifier.testTag(FIELD))
+                            Shown.SHEET -> VaultSheet(onDismissRequest = {}) {
+                                CaptureWindow(Shown.SHEET)
+                                VaultTextField(state = remember { TextFieldState() }, modifier = Modifier.testTag(FIELD))
+                            }
+                            Shown.RAW -> Dialog(onDismissRequest = {}) {
+                                Surface {
+                                    Column {
+                                        CaptureWindow(Shown.RAW)
+                                        OutlinedTextField(state = remember { TextFieldState() }, modifier = Modifier.testTag(FIELD))
+                                    }
                                 }
                             }
                         }
@@ -125,6 +153,9 @@ class DialogSheetPolicyTest {
         for (which in listOf(Shown.ALERT, Shown.CONTENT, Shown.SHEET)) {
             val window = show(which)
             compose.runOnUiThread { window.protections().assertVaultPolicy("the window of $which", secure = false) }
+            val field = compose.onNodeWithTag(FIELD, useUnmergedTree = true).fetchSemanticsNode().config
+            assertEquals("the field in $which: content type", ContentDataType.None, field.getOrNull(SemanticsProperties.ContentDataType))
+            assertEquals("the field in $which: sensitive", true, field.getOrNull(SemanticsProperties.IsSensitiveData))
             hide()
         }
         val raw = show(Shown.RAW)
@@ -161,6 +192,18 @@ class DialogSheetPolicyTest {
             assertTrue("the control offers Autofill: ${menu.names(control)}", TextContextMenuKeys.AutofillKey in control)
         }
         hide()
+    }
+
+    @Test
+    fun theFieldsOfADialogOrSheetGetTheKeyboardFlag() {
+        for (which in listOf(Shown.ALERT, Shown.CONTENT, Shown.SHEET)) {
+            show(which)
+            compose.onNodeWithTag(FIELD).performClick()
+            compose.waitUntil(IME_MS) { imeOptions.any { it.first == which } }
+            val options = imeOptions.filter { it.first == which }
+            assertTrue("$which: imeOptions $options", options.all { it.second and EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING != 0 })
+            hide()
+        }
     }
 
     /** Learns the window of the dialog or sheet it is composed in. */
@@ -201,5 +244,6 @@ class DialogSheetPolicyTest {
     private companion object {
         const val FIELD = "field"
         const val SHOW_MS = 5_000L
+        const val IME_MS = 10_000L
     }
 }
