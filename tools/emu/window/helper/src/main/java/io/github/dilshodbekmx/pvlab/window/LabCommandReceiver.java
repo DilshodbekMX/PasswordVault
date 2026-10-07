@@ -22,13 +22,14 @@ import android.widget.TextView;
  * `am broadcast` prints "result=1, data=..." when the command was done and "result=2" with the reason
  * when it was not. The commands:
  *
- *   overlay-add --ei x X --ei y Y --ei w W --ei h H [--ef alpha A] [--ez touchable B]
+ *   overlay-add [--ei x X --ei y Y --ei w W --ei h H] [--ef alpha A] [--ez touchable B]
  *       Draws a TYPE_APPLICATION_OVERLAY window from this app, another uid than the app under test,
- *       so that the app sees an untrusted overlay (the window lab's OverlayReceiver.kt). Without
- *       "touchable" it has FLAG_NOT_TOUCHABLE: taps pass through to the window below, the classic
- *       tapjacking set-up. Android 12 and newer themselves block taps through an overlay whose alpha
- *       is above 0.8, so the default alpha is 0.5, which reaches the app's own filter.
- *       Needs "appops set io.github.dilshodbekmx.pvlab.window SYSTEM_ALERT_WINDOW allow".
+ *       so that the app sees an untrusted overlay (the window lab's OverlayReceiver.kt): over the
+ *       whole screen, as a screen filter does, or with x, y, w and h over that rectangle of the
+ *       screen. Without "touchable" it has FLAG_NOT_TOUCHABLE: taps pass through to the window
+ *       below, the classic tapjacking set-up. Android 12 and newer themselves block taps through an
+ *       overlay whose alpha is above 0.8, so the default alpha is 0.5, which reaches the app's own
+ *       filter. Needs "appops set io.github.dilshodbekmx.pvlab.window SYSTEM_ALERT_WINDOW allow".
  *   overlay-remove
  *   a11y-status
  *       Which of the two accessibility services are connected: "plain=true tool=false".
@@ -122,17 +123,20 @@ public class LabCommandReceiver extends BroadcastReceiver {
         view.setTextColor(Color.WHITE);
         view.setBackgroundColor(Color.argb(255, 220, 0, 0));
         view.setGravity(Gravity.CENTER);
-        int flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS;
+        // In the screen's own coordinates, the status bar included, as the nodes' bounds are.
+        int flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
+                | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN;
         if (!touchable) flags |= WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE;
+        boolean whole = !intent.hasExtra("w");
         WindowManager.LayoutParams lp = new WindowManager.LayoutParams(
-                intent.getIntExtra("w", 600),
-                intent.getIntExtra("h", 250),
+                whole ? WindowManager.LayoutParams.MATCH_PARENT : intent.getIntExtra("w", 0),
+                whole ? WindowManager.LayoutParams.MATCH_PARENT : intent.getIntExtra("h", 0),
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
                 flags,
                 PixelFormat.TRANSLUCENT);
         lp.gravity = Gravity.TOP | Gravity.START;
-        lp.x = intent.getIntExtra("x", 100);
-        lp.y = intent.getIntExtra("y", 900);
+        lp.x = whole ? 0 : intent.getIntExtra("x", 0);
+        lp.y = whole ? 0 : intent.getIntExtra("y", 0);
         lp.alpha = alpha;
         lp.setTitle("PvWinOverlay");
         WindowManager wm = (WindowManager) app.getSystemService(Context.WINDOW_SERVICE);
@@ -144,8 +148,8 @@ public class LabCommandReceiver extends BroadcastReceiver {
             return;
         }
         overlay = view;
-        answer(DONE, "added x=" + lp.x + " y=" + lp.y + " w=" + lp.width + " h=" + lp.height + " alpha=" + alpha
-                + " touchable=" + touchable);
+        answer(DONE, "added " + (whole ? "whole screen" : "x=" + lp.x + " y=" + lp.y + " w=" + lp.width + " h=" + lp.height)
+                + " alpha=" + alpha + " touchable=" + touchable);
     }
 
     private static boolean removeOverlay(Context app) {

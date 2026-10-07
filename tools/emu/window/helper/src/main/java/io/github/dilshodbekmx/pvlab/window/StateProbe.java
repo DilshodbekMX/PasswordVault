@@ -100,6 +100,10 @@ public class StateProbe extends Instrumentation {
                 }
                 leavesOf(path + "/" + key, item, out, count, depth + 1);
             }
+        } else if (value instanceof java.util.Map) {
+            for (java.util.Map.Entry<?, ?> entry : ((java.util.Map<?, ?>) value).entrySet()) {
+                leavesOf(path + "/" + entry.getKey(), entry.getValue(), out, count, depth + 1);
+            }
         } else if (value instanceof List) {
             List<?> list = (List<?>) value;
             for (int i = 0; i < list.size(); i++) leavesOf(path + "[" + i + "]", list.get(i), out, count, depth + 1);
