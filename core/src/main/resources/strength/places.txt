@@ -1,0 +1,266 @@
+# PasswordVault strength word list: regions, cities and districts of Uzbekistan, biggest first.
+# One entry per line, its spellings separated by tabs; see SOURCES.md.
+Samarqand	Самарқанд	Samarkand
+Fargʻona	Фарғона	Farghona	Fergana	Farg ona
+Qashqadaryo	Қашқадарё	Kashkadarya
+Andijon	Андижон	Andijan
+Toshkent	Тошкент	Ташкент	Tashkent
+Namangan	Наманган
+Surxondaryo	Сурхондарё	Sukhan-Darya	Surkhondaryo
+Qoraqalpogʻiston	Қорақалпоғистон	Каракалпакстан	Karakalpakstan	Qoraqalpoghiston	Karakalpakiya	Karakalpakski	Kara-Kalpak	Qoraqalpog iston
+Buxoro	Бухоро	Бухара	Bukhara
+Xorazm	Хоразм	Khorazm	Khorem
+Jizzax	Жиззах	Jizzakh
+Navoiy	Навоий	Nawoiy
+Sirdaryo	Сирдарё
+Андижан	Andizhan	Andidzhan
+Urgut	Ургут
+Denov	Денов	Denow
+Pastdargom	Пастдаргом	Pastdargʻom
+Asaka	Асака
+Nukus	Нукус
+Gʻijduvon	Ғиждувон	Gizhduvan	Ghijduwon
+Фергана	Novyy Margelan
+Qarshi	Қарши	Карши	Bek Budi	Karaki	Karshi
+Kamashi	Камаши
+Chust	Чуст
+Kitob	Китоб
+Yakkabogʻ	Яккабоғ	Yakkabogh
+Qoʻqon	Қўқон	Коканд	Kokand
+Ishtixon	Иштихон	Ishtikhon	Ishtihon
+Payariq	Паяриқ	Payarig
+Margʻilon	Марғилон	Маргилан	Margilan	Margelan	Marghilon
+Izboskan	Избоскан
+Uchkoʻprik	Учкўприк	Leningrad
+Beshariq	Бешариқ
+Pap	Пап
+Uychi	Уйчи
+Sariosiyo	Сариосиё
+Shoʻrchi	Шўрчи
+Rishton	Риштон
+Guzar	Гузар
+Baliqchi	Балиқчи
+Toyloq	Тойлоқ	Taylak
+Amudaryo	Амударё
+Qibray	Қибрай
+Urganch	Урганч
+Beruniy	Беруний	Biruniy
+Sherobod	Шеробод
+Angren	Ангрен	Turn	Angrenshakhtstroy	Turk
+Tirmiz	Тирмиз	Термез	Termez
+Oltinsoy	Олтинсой
+Jondor	Жондор	Swerdlow
+Джизак	Dzhizak	Dishsak	Jizak
+Marhamat	Марҳамат
+Jomboy	Жомбой
+Uzun	Узун
+Shovot	Шовот	Showot
+Ellikqalʼa	Элликқалъа	Ellikqala	Ellikqala rayoniʼ
+Chirchiq	Чирчиқ	Чирчик	Chirchik	Tschirtschik
+Baxmal	Бахмал	Bakhmal
+Parkent	Паркент
+Nishon	Нишон
+Nurobod	Нуробод
+Buloqboshi	Булоқбоши
+Romiton	Ромитон	Romitan
+Paxtachi	Пахтачи	Pakhtachi
+Narpay	Нарпай
+Ургенч	Novo-Urgench	Yrgench	Urgench
+Навои	Kermine	Kermene	Nava	Navoi	Nazoy	Navoy
+Vobkent	Вобкент	Wobkent
+Shahrisabz	Шаҳрисабз	Шахрисабз	Shakhrisabzs	Shakhrisabz	Shakhrisyabz	Schachrissjabs
+Angor	Ангор
+Olmaliq	Олмалиқ	Алмалык	Almalyk
+Qoʻngʻirot	Қўнғирот
+Peshku	Пешку
+Xoʻjayli	Хўжайли	Xojeli
+Furqat	Фурқат
+Mirishkar	Миришкар	Myrishkor	Mirishkor
+Boysun	Бойсун
+Yangiariq	Янгиариқ
+Xiva	Хива	Khorezm	Chiwa
+Navbahor	Навбаҳор
+Chimboy	Чимбой	Shimbay
+Quyi Chirchiq	Қуйи Чирчиқ
+Piskent	Пискент
+Olot	Олот	Alat
+Bekobod	Бекобод	Бекабад	Begovat	Bekabad	Begowat	Bagevat
+Quvasoy	Қувасой	Kuwassai	Quwasoy	Kubasay	Kuvasa	Kuvasay
+Бешарыкского	Kirowo	Besharyk	Imeni Kirova	Kirovo
+Forish	Фориш
+Kattaqoʻrgʻon	Каттақўрғон	Каттакурган	Kattakurgan
+Guliston	Гулистон	Гулистан	Golodnaya Stepʼ	Mirzachulʼ	Gulistan
+Muborak	Муборак
+Yangibozor	Янгибозор
+Kogon	Когон	Kagan
+Paxtakor	Пахтакор	Pakhtakor
+Shahrixon	Шаҳрихон	Imeni Stalina	Shakhrikhan	Stalino	Shahrikhon
+Koson	Косон	Касан	Kassan	Kasan
+Ходжейли	Khodzheyli	Khojeili	Khodzheili
+Каган	Novaya Bukhara
+Янгиюль	Янгийўл	Kaunchi	Yangiyul	Yangiyoʻl
+Oltinkoʻl	Олтинкўл	Altynkulʼ
+Shumanay	Шуманай	Shomanay
+Qoraoʻzak	Қораўзак
+Chortoq	Чортоқ	Chartak	Chertak
+Qanlikoʻl	Қанликўл	Leninobod
+Nurafshon	Нурафшон	Тойтепа	Toi-Tjube	Toytepa	Toy-Tyube	Toi-Tyube
+Kosonsoy	Косонсой	Kassan-Sai	Kasansay	Kassansay
+Gurlan	Гурлан	Gurlen	Gurlek
+Zafarobod	Зафаробод
+Quva	Қува	Кува	Kuva	Quwa
+Yangiyer	Янгиер	Ungi-Yere	Yangier
+Xonobod	Хонобод	Советабад	Sovetabad	Khanabad	Karabagish	Khonobod
+Китаб	Kitab
+Taxtakoʻpir	Тахтакўпир
+Учкурган	Уч-Курган	Uchkurgan
+Oqtosh	Оқтош	Акташ	Aktash
+Ohangaron	Оҳангарон	Ахангаран	Kurama	Akhangaran	Okhangaron	Akhangaron
+Uchquduq	Учқудуқ	Uchkuduk
+Dashtobod	Даштобод	Даштабад	Ulʼyanovo
+Пскент	Pskent
+Риштан	Kuybyshevo	Rishtan	Imeni Kuybysheva	Kuybyshe	Kuybishewo	Kuybyshev	Kuibyshev
+Paxtaobod	Пахтаобод	Kokankishlak	Pakhtaabad	Koran-Kishlak	Pakhtaobod
+Manghit	Мангҳит	Манғит	Мангит	Manga	Mangyt	Mangit
+Moʻynoq	Мўйноқ
+Qorasuv	Қорасув	Карасу	Voroshilovo	Ilʼichevsk	Imeni Voroshilovo	Kara-Su	Imeni Ilʼicha	Qorasuw	Korasuv	Karasu	Kara-Soo	Kara-Sui
+Oyim	Ойим	Аим	Aim
+Nurota	Нурота	Nurata
+Bektemir	Бектемир
+Toʻrqaoʻrgʻon	Тўрқаўрғон	Тўрақўрғон	Tyurya-Kurgan	Turakurgan
+Bulungʻur	Булунғур	Krasnogvardeysk	Bulunghur	Rostovtsevo
+Сырдарья	Syr-Novorossliski	Syr-Darjinskaja	Syrdarʼya	Sidare	Ssyr-Darja	Syrdarya
+Toshbuloq	Тошбулоқ	Tashbulak
+Yangiqoʻrgʻon	Янгиқўрғон	Yangikurgan
+Pop	Поп
+Кибрай	Kibrai	Kibray
+Iskandar	Искандар	Iskander
+Zomin	Зомин	Saamin	Zaamin
+Shofirkon	Шофиркон	Khodzha-arif	Baumana	Shafrikent	Shafirkan	Shafrikan
+Salor	Салор	Salar
+Xaqqulobod	Хаққулобод	Khakkulabad	Khakulabad	Naron	Naryn	Haqqulobod
+Dardoq	Дардоқ	Дардак	Dardak	Dartak
+Poytugʻ	Пойтуғ	Пайтуг	Baytok	Paytok	Paytug	Poytugh
+Qoʻrgʻontepa	Қўрғонтепа	Kurgantepa	Kurgan Tyube	Kyzyl-Tepa	Kurgan-Tepe
+Oltiariq	Олтиариқ	Altyaryk
+Yangiobod	Янгиобод	Янгиабад	Yangiabad
+Yaypan	Яйпан	Bazar-Yaypan	Yaipan
+Gagarin	Гагарин	Yerzhar	Erjar
+Zafar	Зафар	Almazar	Olmazor
+Payshamba	Пайшамба	Пайшанба	Payshmba	Payshanba
+Gʻallaorol	Ғаллаорол	Gallyaaral	Gallia-Aral	Ghallaorol
+Gʻuzor	Ғузор	Ghuzor	Gusar
+Jalolquduq	Жалолқудуқ	Джалалкудук	Жалақудуқ	Dzhalyalʼ-Kuduk	Dzhalya-Kuduk	Dzhalakunduk	Dzhalakuduk
+Chinobod	Чинобод	Chinovat	Tschinabad	Chinabad
+Chinoz	Чиноз	Чиназ	Chinaz	Cinaz	Tschin
+Karakulʼ	Каракулъ	Каракуль	Kara Kal	Stantslya-Karakul
+Gʻazalkent	Ғазалкент	Газалкент	Ghazalkent	Gazalkent
+Juma	Жума	Dzhuma
+Kirguli	Киргули	Kirgili
+Xoʻjaobod	Хўжаобод	Khodzhiabad	Khodzhaabad	Khoji-Abad	Khodzhavat
+Sultonobod	Султонобод	Султанабад	Sultanabad
+Бўка	Buka
+Chiroqchi	Чироқчи	Chirakchya	Chirakchi
+Qorovulbozor	Қоровулбозор	Qorowulbozor
+Beshkent	Бешкент	Bish-Kent
+Toshloq	Тошлоқ	Tashlak
+Doʻstlik	Дўстлик	Dustlik
+Qoʻshkoʻpir	Қўшкўпир	Koshkupyr	Kosh Kunir
+Hazorasp	Ҳазорасп	Khazarasp
+Yangirabot	Янгиработ	Yangirabad	Yangirabod
+Питнак	Druzhba	Drujba	Sharlauk	Pitnak
+Chelak	Челак	Chelek	Payaryk
+Мархамат	Markhamat Pervyy	Markhamat
+Yangi Margʻilon	Янги Марғилон	Stantsiya Gorchakovo	Gorchakovo
+Ўртаовул	Уртааул	Urtaaul	Oʻrtaovul
+Charxin	Чархин	Charkhin
+Муйнак	Muynak	Muinak	Moynaq
+Tinchlik	Тинчлик	Vodkhoz
+Hamza	Ҳамза	Khamza	Khamzy Khakimzade	Khamza Khakimzada
+Ромитан	Kalʼty-Mauri	Ramitan	Rometan
+Galaosiyo	Галаосиё	Galaasiya	Galaassiya	Gallya-Asiya	Gallya-Assiya
+Kegeyli	Кегейли	Kegayli
+Gʻoliblar Qishlogʻi	Ғолиблар Қишлоғи	Yuliusa Fuchika	Gholiblar	Gʻoliblar
+Qiziltepa	Қизилтепа	Кызылтепа	Kyzyltepa	Kyzyl Tepe	Kizil-Tepe
+Oqqoʻrgʻon	Оққўрғон	Аккурга	Akkurgan
+Usmon Yusupov	Усмон Юсупов
+Kasbi	Касби
+Termiz	Термиз
+Пастдарғом	Pastdarghom	Past Dargomski
+Qiziriq	Қизириқ
+Qamashi	Қамаши
+Muzrabod	Музрабод
+Jarqoʻrgʻon	Жарқўрғон
+Dehqonobod	Деҳқонобод
+Oqdaryo	Оқдарё
+Goʻzalkent	Гўзалкент
+Миришкор	Bahoriston
+Zarbdor	Зарбдор
+Mingbuloq	Мингбулоқ	Zadaryo
+Yozyovon	Ёзёвон	Yozyowon
+Sayhunobod	Сайҳунобод	Sayhun
+Oʻzbekiston	Ўзбекистон
+Toʻrtkoʻl	Тўрткўл
+Tomdi	Томди
+Sirgʻali	Сирғали	Sergeli
+Олмазор	Sobir Rahimow	Sobir Rahimov
+Shayxontohur	Шайхонтоҳур	Shaykhontohur
+Karmana	Кармана
+Norin	Норин
+Mirobod	Миробод	Lenin
+Mirzo Ulugʻbek	Мирзо Улуғбек	Mirzo Ulughbek	Kuybishew
+Qoʻshrabot	Қўшработ
+Mirzaobod	Мирзаобод
+Ulugʻnor	Улуғнор	Komsomolobod	Ulughnor
+Yuqori Chirchiq	Юқори Чирчиқ
+Yunusobod	Юнусобод	Kirov
+Xatirchi	Хатирчи	Khatirchi
+Xonqa	Хонқа	Khonqa
+Yashnobod	Яшнобод
+Konimex	Конимех	Konimekh
+Zangiota	Зангиота
+Dangʻara	Данғара	Danghara
+Jalolkuduk	Жалолкудук
+Chilonzor	Чилонзор
+Buvayda	Бувайда	Buwayda
+Boʻz	Бўз
+Bagʻdod	Бағдод	Baghdod
+Boghot	Богҳот
+Arnasoy	Арнасой
+Uchtepa	Учтепа	Akmal Ikromow
+Oxunboboyev	Охунбобоев	Okhunboboyew
+Oqoltin	Оқолтин
+Yakkasaroy	Яккасарой
+Mehnatobod	Меҳнатобод
+Shirin	Ширин
+Soʻx	Сўх
+Boʻzatov	Бўзатов
+Altyarik	Алтярик
+Bagdad	Багдад
+Ulugnar	Улугнар
+Yazyavan	Язяван
+Amir Temur	Амир Темур	Амир Тимур	Eski Toshkent	Eski-Tashkent	Iski-Tashkent	Amir Timur
+Qoʻshrabod	Қўшрабод
+Usmat	Усмат	Usmet
+Mugʻlon	Муғлон	Mughlon	Ulʼyanovsk	Muglon
+Toyloq Qishlogʻi	Тойлоқ Қишлоғи	Komsomolʼsk	Taylyak	Taylyak-poyon	Taylak-Payon
+Yangi Mirishkor	Янги Миришкор	Mirichkar
+Loyish	Лойиш	Akdarʼya	Laish
+Қоракўл	Stantsiya Karakulʼ
+Qorashina	Қорашина	Karashina
+Ravon	Равон	Rawon	Ravan
+Ziyodin	Зиёдин	Kala-ziadin	Ziadin	Ziyautdin	Ziatdin	Ziaeddin	Zradin
+Bogʻdon	Боғдон	Yangikishlak	Yangiqishloq
+Yangibozor Qishlogʻi	Янгибозор Қишлоғи
+Vodil	Водил	Wodil
+Uchtepa Qishlogʻi	Учтепа Қишлоғи	Uch-Tyube
+Tomdibuloq	Томдибулоқ	Tamdy	Tomdibulog	Tamdybulak
+Kuyganyor	Куйганёр	Куйганяр	Куйган-Яр	Kuyganyar	Kuygan-Yar
+Buloqbashi	Булоқбаши	Bulakbashi
+Beshrabot	Бешработ	Beshravat	Besh-Rabad
+Bogʻot	Боғот	Bagat
+Boʻston	Бўстон	Bustan
+Qorovul	Қоровул	Karaul	Qorowul
+Langar	Лангар	Karakushchi
+Qozonketkan	Қозонкеткан	Kazanketken
+Oqmangʻit	Оқманғит	Akmangit	Oqmanghit
