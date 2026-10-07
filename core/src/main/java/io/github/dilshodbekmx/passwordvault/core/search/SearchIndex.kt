@@ -25,6 +25,15 @@ enum class MatchField { TITLE, USERNAME, WEBSITE, EXTRA, NOTES }
 data class SearchHit(val index: Int, val score: Int, val field: MatchField?)
 
 /**
+ * What the list shows for what was typed ([SearchIndex.searchOrRetry]): [hits], best first, and
+ * the [query] they were found for. When [retried] is true, what was typed found nothing and
+ * [query] is the same keys on the other keyboard layout ([KeyboardLayout.otherLayout]): the list
+ * then says "Showing results for "[query]"" (ux.md §5.11) and makes bold the ranges of [query]
+ * ([matchedRanges]), not those of what was typed.
+ */
+data class SearchOutcome(val query: String, val hits: List<SearchHit>, val retried: Boolean)
+
+/**
  * An in-memory search index over the entry list, built when the vault is unlocked and
  * dropped when it locks. It holds only search keys of titles, user names, website hosts,
  * extra fields that are not secret and notes; never passwords.
@@ -40,12 +49,13 @@ data class SearchHit(val index: Int, val score: Int, val field: MatchField?)
  * - position: the whole field 40, start of the field 30, start of a later word 20,
  *   inside a word 10.
  * The field decides first (any title match outranks any user-name match), then the position.
- * A word found only when both sides are spelled as on a Russian keyboard
- * ([SearchText.russianKeyboard]: у for ў and oʻ, к for қ and q, х for ҳ and h, е for ё)
- * scores 5 less. The entry's score is the sum over query words, plus 15 when the whole
- * query also appears in the title starting at a word. Equal scores keep the order of the
- * input list, so pass the list in its display order (A to Z). An empty query (or one of
- * only spaces and apostrophes) returns every entry in order.
+ * A word found only in the second tier scores 5 less: there both sides are spelled as on a
+ * Russian keyboard (у for ў and oʻ, к for қ and q, х for ҳ and h, е for ё), and also, in a
+ * second spelling, with s for ş and c for ç (architecture.md D-11: "besiktas" finds
+ * "Beşiktaş", "garcon" finds "Garçon"); see [Spelling]. The entry's score is the sum over
+ * query words, plus 15 when the whole query also appears in the title starting at a word.
+ * Equal scores keep the order of the input list, so pass the list in its display order
+ * (A to Z). An empty query (or one of only spaces and apostrophes) returns every entry in order.
  */
 class SearchIndex(entries: List<SearchFields>) {
 
@@ -63,19 +73,8 @@ class SearchIndex(entries: List<SearchFields>) {
 
     /** Entries matching [query], best first. */
     fun search(query: String): List<SearchHit> {
-        val prepared = SearchText.prepare(query)
-        val q = SearchText.foldPrepared(prepared)
-        if (q.key.isEmpty()) return List(size) { SearchHit(it, 0, null) }
-
-        val rawWords = q.key.split(' ')
-        val words = Array(rawWords.size) { FoldedField.compactOf(rawWords[it]) }
-        val russian = SearchText.russianKeyboard(prepared)
-        val altKey = if (russian === prepared) q.key else SearchText.foldPrepared(russian).key
-        val altSplit = altKey.split(' ')
-        val altWords = Array(rawWords.size) { w ->
-            if (altSplit.size == rawWords.size) FoldedField.compactOf(altSplit[w]) else words[w]
-        }
-        val phrase = if (rawWords.size > 1) FoldedField.compactOf(q.key) else ""
+        val q = QueryWords.of(query) ?: return List(size) { SearchHit(it, 0, null) }
+        val phrase = if (q.size > 1) FoldedField.compactOf(q.key) else ""
 
         val packed = LongArray(size)
         val bestField = ByteArray(size)
@@ -83,13 +82,13 @@ class SearchIndex(entries: List<SearchFields>) {
         entries@ for (e in 0 until size) {
             var total = 0
             var best = -1
-            for (w in words.indices) {
-                val s = scoreWord(e, words[w], altWords[w], rawWords[w])
+            for (w in 0 until q.size) {
+                val s = scoreWord(e, q, w)
                 if (s < 0) continue@entries
                 total += s shr FIELD_BITS
                 if (s > best) best = s
             }
-            if (phrase.isNotEmpty() && titles[e].matchClass(phrase, alt = false) >= WORD) total += PHRASE_BONUS
+            if (phrase.isNotEmpty() && titles[e].matchClass(phrase, Spelling.PRIMARY) >= WORD) total += PHRASE_BONUS
             bestField[e] = (best and FIELD_MASK).toByte()
             packed[count++] = (total.toLong() shl 32) or (Int.MAX_VALUE - e).toLong()
         }
@@ -102,6 +101,24 @@ class SearchIndex(entries: List<SearchFields>) {
         }
     }
 
+    /**
+     * [search], with the retry of a query typed on the wrong keyboard layout (search.md §2,
+     * architecture.md D-11): when [query] finds nothing in either tier, it is searched once more
+     * as typed on the other layout ([KeyboardLayout.otherLayout]), so "штые" gives the hits of
+     * "inst" and "ghbdtn" those of "привет". The retry is shown only when it differs from
+     * [query] and finds something; otherwise the outcome is [query] with no hits.
+     */
+    fun searchOrRetry(query: String): SearchOutcome {
+        val hits = search(query)
+        if (hits.isNotEmpty()) return SearchOutcome(query, hits, retried = false)
+        val other = KeyboardLayout.otherLayout(query)
+        if (other != query) {
+            val otherHits = search(other)
+            if (otherHits.isNotEmpty()) return SearchOutcome(other, otherHits, retried = true)
+        }
+        return SearchOutcome(query, hits, retried = false)
+    }
+
     /** Positions of the matching entries, best first. */
     fun searchIndices(query: String): IntArray {
         val hits = search(query)
@@ -109,25 +126,24 @@ class SearchIndex(entries: List<SearchFields>) {
     }
 
     /**
-     * Best (score shl FIELD_BITS or field ordinal) of one query word over the entry's
+     * Best (score shl FIELD_BITS or field ordinal) of query word [w] over entry [e]'s
      * fields, or -1 when no field has it.
      */
-    private fun scoreWord(e: Int, word: String, altWord: String, rawWord: String): Int {
-        if (word.isEmpty()) return scorePunctuation(e, rawWord)
-        val t = fieldScore(titles[e], word, altWord, TITLE_WEIGHT, MatchField.TITLE)
+    private fun scoreWord(e: Int, q: QueryWords, w: Int): Int {
+        if (q.word(w, Spelling.PRIMARY).isEmpty()) return scorePunctuation(e, q.raw[w])
+        val t = fieldScore(titles[e], q, w, TITLE_WEIGHT, MatchField.TITLE)
         if (t >= 0) return t // a title match beats any other field
-        var best = fieldScore(usernames[e], word, altWord, USERNAME_WEIGHT, MatchField.USERNAME)
-        for (site in websites[e]) best = maxOf(best, fieldScore(site, word, altWord, WEBSITE_WEIGHT, MatchField.WEBSITE))
+        var best = fieldScore(usernames[e], q, w, USERNAME_WEIGHT, MatchField.USERNAME)
+        for (site in websites[e]) best = maxOf(best, fieldScore(site, q, w, WEBSITE_WEIGHT, MatchField.WEBSITE))
         if (best >= 0) return best
-        for (x in extras[e]) best = maxOf(best, fieldScore(x, word, altWord, EXTRA_WEIGHT, MatchField.EXTRA))
-        return maxOf(best, fieldScore(notes[e], word, altWord, NOTES_WEIGHT, MatchField.NOTES))
+        for (x in extras[e]) best = maxOf(best, fieldScore(x, q, w, EXTRA_WEIGHT, MatchField.EXTRA))
+        return maxOf(best, fieldScore(notes[e], q, w, NOTES_WEIGHT, MatchField.NOTES))
     }
 
-    private fun fieldScore(field: FoldedField, word: String, altWord: String, weight: Int, f: MatchField): Int {
-        val cls = field.matchClass(word, alt = false)
+    private fun fieldScore(field: FoldedField, q: QueryWords, w: Int, weight: Int, f: MatchField): Int {
+        val cls = field.matchClass(q.word(w, Spelling.PRIMARY), Spelling.PRIMARY)
         if (cls > NONE) return pack(weight + cls * POSITION_STEP, f)
-        if (!field.hasAlt && altWord == word) return -1 // the second tier would repeat the first
-        val altCls = field.matchClass(altWord, alt = true)
+        val altCls = secondTierClass(field, q, w)
         if (altCls > NONE) return pack(weight + altCls * POSITION_STEP - ALT_PENALTY, f)
         return -1
     }
@@ -165,34 +181,136 @@ class SearchIndex(entries: List<SearchFields>) {
 
         private const val FIELD_BITS = 3
         private const val FIELD_MASK = 7
+
+        /**
+         * The best match class of query word [w] in the second-tier spellings of [field]:
+         * each spelling of the word against the same spelling of the field. A comparison that
+         * would repeat an earlier one (both sides spelled the same as in it) is skipped.
+         */
+        internal fun secondTierClass(field: FoldedField, q: QueryWords, w: Int): Int {
+            var best = NONE
+            if (!repeatsEarlier(field, q, w, Spelling.RUSSIAN)) {
+                best = field.matchClass(q.word(w, Spelling.RUSSIAN), Spelling.RUSSIAN)
+            }
+            if (!repeatsEarlier(field, q, w, Spelling.ACCENT_FREE)) {
+                best = maxOf(best, field.matchClass(q.word(w, Spelling.ACCENT_FREE), Spelling.ACCENT_FREE))
+            }
+            return best
+        }
+
+        /**
+         * True when comparing query word [w] with [field] in [spelling] repeats the comparison
+         * of an earlier spelling: the field and the word are both spelled as there.
+         */
+        internal fun repeatsEarlier(field: FoldedField, q: QueryWords, w: Int, spelling: Spelling): Boolean =
+            when (spelling) {
+                Spelling.PRIMARY -> false
+                Spelling.RUSSIAN -> repeats(field, q, w, spelling, Spelling.PRIMARY)
+                Spelling.ACCENT_FREE ->
+                    repeats(field, q, w, spelling, Spelling.PRIMARY) || repeats(field, q, w, spelling, Spelling.RUSSIAN)
+            }
+
+        private fun repeats(field: FoldedField, q: QueryWords, w: Int, spelling: Spelling, earlier: Spelling): Boolean =
+            field.sameCompact(spelling, earlier) && q.word(w, spelling) == q.word(w, earlier)
     }
 }
 
 /**
- * A field ready for matching: its search key; the key without spaces and punctuation
- * ([compact]) with a bit set marking where words start; and the same pair for the
- * Russian-keyboard spelling when it differs.
+ * A query's search key split at spaces into words, each word in every [Spelling], compact
+ * (without spaces and punctuation, [FoldedField.compactOf]). Built once per query.
+ */
+internal class QueryWords private constructor(
+    /** The query's search key. */
+    val key: String,
+    /** The words of [key], before compaction (a word of punctuation only is looked up as it is). */
+    val raw: List<String>,
+    private val primary: Array<String>,
+    private val russian: Array<String>,
+    private val accentFree: Array<String>,
+) {
+    val size: Int get() = raw.size
+
+    /** Word [w] in [spelling]. */
+    fun word(w: Int, spelling: Spelling): String = when (spelling) {
+        Spelling.PRIMARY -> primary[w]
+        Spelling.RUSSIAN -> russian[w]
+        Spelling.ACCENT_FREE -> accentFree[w]
+    }
+
+    companion object {
+        /** The words of [query]; null when its key is empty (only spaces and apostrophes). */
+        fun of(query: String): QueryWords? {
+            val prepared = SearchText.prepare(query)
+            val key = SearchText.foldPrepared(prepared).key
+            if (key.isEmpty()) return null
+            val raw = key.split(' ')
+            val primary = Array(raw.size) { FoldedField.compactOf(raw[it]) }
+            val russian = wordsOf(SearchText.russianKeyboard(prepared), prepared, raw.size, primary)
+            val accentPrepared = SearchText.accentFree(prepared)
+            val accentFree = if (accentPrepared === prepared) {
+                russian // no ş, ș or ç: the same as the Russian-keyboard spelling
+            } else {
+                wordsOf(SearchText.russianKeyboard(accentPrepared), prepared, raw.size, primary)
+            }
+            return QueryWords(key, raw, primary, russian, accentFree)
+        }
+
+        /**
+         * The compact words of [spelled], a spelling of [prepared]; [primary] when it is
+         * [prepared] itself or does not split into the same number of words.
+         */
+        private fun wordsOf(spelled: String, prepared: String, count: Int, primary: Array<String>): Array<String> {
+            if (spelled === prepared) return primary
+            val split = SearchText.foldPrepared(spelled).key.split(' ')
+            if (split.size != count) return primary
+            return Array(count) { FoldedField.compactOf(split[it]) }
+        }
+    }
+}
+
+/**
+ * A field ready for matching: its search key, and for each [Spelling] the key without spaces
+ * and punctuation (compact) with a bit set marking where words start. Spellings with the same
+ * compact form share one instance.
  */
 internal class FoldedField private constructor(
     val key: String,
     private val compact: String,
     private val starts: LongArray,
-    private val altCompact: String,
-    private val altStarts: LongArray,
+    private val russianCompact: String,
+    private val russianStarts: LongArray,
+    private val accentCompact: String,
+    private val accentStarts: LongArray,
 ) {
-    /** True when the Russian-keyboard spelling of this field differs from the key. */
-    val hasAlt: Boolean get() = altCompact !== compact
+    /** True when [spelling] of this field has the same compact form as [other]. */
+    fun sameCompact(spelling: Spelling, other: Spelling): Boolean = compactIn(spelling) === compactIn(other)
+
+    private fun compactIn(spelling: Spelling): String = when (spelling) {
+        Spelling.PRIMARY -> compact
+        Spelling.RUSSIAN -> russianCompact
+        Spelling.ACCENT_FREE -> accentCompact
+    }
+
+    private fun startsIn(spelling: Spelling): LongArray = when (spelling) {
+        Spelling.PRIMARY -> starts
+        Spelling.RUSSIAN -> russianStarts
+        Spelling.ACCENT_FREE -> accentStarts
+    }
 
     /**
-     * How [word] (already compact) matches this field: [SearchIndex.WHOLE], PREFIX, WORD,
-     * INSIDE or NONE. A match that runs on into the next word must begin at a word start.
+     * How [word] (already compact, in [spelling]) matches this field in [spelling]:
+     * [SearchIndex.WHOLE], PREFIX, WORD, INSIDE or NONE. A match that runs on into the next
+     * word must begin at a word start.
      */
-    fun matchClass(word: String, alt: Boolean): Int = (bestMatch(word, alt) ushr 32).toInt()
+    fun matchClass(word: String, spelling: Spelling): Int = classOf(bestMatch(word, spelling))
 
-    /** Where [word] matches best in the compact form: (class shl 32) or position; class NONE if absent. */
-    fun bestMatch(word: String, alt: Boolean): Long {
-        val c = if (alt) altCompact else compact
-        val bits = if (alt) altStarts else starts
+    /**
+     * Where [word] matches best in the compact form of [spelling]: (class shl 32) or
+     * position; [NO_MATCH] (class NONE) if absent.
+     */
+    fun bestMatch(word: String, spelling: Spelling): Long {
+        val c = compactIn(spelling)
+        val bits = startsIn(spelling)
         if (word.isEmpty() || word.length > c.length) return NO_MATCH
         var best = NO_MATCH
         var from = 0
@@ -216,9 +334,17 @@ internal class FoldedField private constructor(
     }
 
     companion object {
-        private const val NO_MATCH = 0L // class NONE
+        /** [bestMatch] of no match. */
+        const val NO_MATCH = 0L // class NONE
+
+        /** The match class of a [bestMatch] result. */
+        fun classOf(match: Long): Int = (match ushr 32).toInt()
+
+        /** The position in the compact form of a [bestMatch] result. */
+        fun positionOf(match: Long): Int = (match and 0xFFFFFFFFL).toInt()
+
         private val NO_STARTS = LongArray(0)
-        private val EMPTY = FoldedField("", "", NO_STARTS, "", NO_STARTS)
+        private val EMPTY = FoldedField("", "", NO_STARTS, "", NO_STARTS, "", NO_STARTS)
 
         private fun isSet(bits: LongArray, i: Int): Boolean = (bits[i ushr 6] ushr (i and 63)) and 1L != 0L
 
@@ -231,12 +357,31 @@ internal class FoldedField private constructor(
             if (text.isEmpty()) return EMPTY
             val prepared = SearchText.prepare(text)
             val folded = SearchText.foldPrepared(prepared)
-            val (compact, starts) = compactWithStarts(folded)
-            val russian = SearchText.russianKeyboard(prepared)
-            if (russian === prepared) return FoldedField(folded.key, compact, starts, compact, starts)
-            val (altCompact, altStarts) = compactWithStarts(SearchText.foldPrepared(russian))
-            if (altCompact == compact) return FoldedField(folded.key, compact, starts, compact, starts)
-            return FoldedField(folded.key, compact, starts, altCompact, altStarts)
+            val primary = compactWithStarts(folded)
+            val russian = spelled(SearchText.russianKeyboard(prepared), prepared, primary)
+            val accentPrepared = SearchText.accentFree(prepared)
+            val accent = if (accentPrepared === prepared) {
+                russian // no ş, ș or ç: the same as the Russian-keyboard spelling
+            } else {
+                spelled(SearchText.russianKeyboard(accentPrepared), prepared, primary, russian)
+            }
+            return FoldedField(
+                folded.key, primary.first, primary.second, russian.first, russian.second, accent.first, accent.second,
+            )
+        }
+
+        /**
+         * The compact form of [spelledText], a spelling of [prepared]; one of [earlier] (the
+         * same instance) when it is [prepared] itself or has the same compact form.
+         */
+        private fun spelled(
+            spelledText: String,
+            prepared: String,
+            vararg earlier: Pair<String, LongArray>,
+        ): Pair<String, LongArray> {
+            if (spelledText === prepared) return earlier[0]
+            val result = compactWithStarts(SearchText.foldPrepared(spelledText))
+            return earlier.firstOrNull { it.first == result.first } ?: result
         }
 
         private fun compactWithStarts(folded: SearchText.Folded): Pair<String, LongArray> {

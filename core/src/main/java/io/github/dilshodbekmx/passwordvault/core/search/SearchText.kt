@@ -31,6 +31,26 @@ import java.text.Normalizer
  */
 fun searchKey(text: String): String = SearchText.fold(text).key
 
+/**
+ * The spellings search compares (search.md §1). A word found only in a second-tier spelling
+ * scores 5 less. Each spelling of a query is compared with the same spelling of a field.
+ *
+ * The second tier has two spellings because each covers what the other loses. The accent-free
+ * one writes ş as s, so "besiktas" finds "Beşiktaş" (architecture.md D-11). The
+ * Russian-keyboard one keeps ş equal to sh, as the first tier does, so that "кушик", typed on
+ * a Russian keyboard (with ш), still finds "Qöşiq", the 2026 spelling of қўшиқ.
+ */
+internal enum class Spelling {
+    /** The first tier: the search key. */
+    PRIMARY,
+
+    /** [SearchText.russianKeyboard]: у к г х е for ў қ ғ ҳ ё; u, g, k, x for oʻ and ö, ğ, q, h. */
+    RUSSIAN,
+
+    /** [SearchText.russianKeyboard] after [SearchText.accentFree]: also s and c for ş and ç. */
+    ACCENT_FREE,
+}
+
 internal object SearchText {
 
     /**
@@ -61,6 +81,38 @@ internal object SearchText {
             s = sb.toString()
         }
         return foldLatin(s)
+    }
+
+    /**
+     * [spelling] of a string that went through [prepare], ready for [foldPrepared];
+     * [prepared] itself when that spelling changes nothing.
+     */
+    fun spell(prepared: String, spelling: Spelling): String = when (spelling) {
+        Spelling.PRIMARY -> prepared
+        Spelling.RUSSIAN -> russianKeyboard(prepared)
+        Spelling.ACCENT_FREE -> russianKeyboard(accentFree(prepared))
+    }
+
+    /**
+     * [prepared] with ş (and Romanian ș) written s and ç written c, as on a keyboard without
+     * those letters: accent-free Turkish, Azerbaijani and French typing (architecture.md D-11).
+     * The first tier writes them sh and ch (step 4 of [searchKey]), so this works on [prepared],
+     * before that step. Returns [prepared] itself when it has none of these letters.
+     */
+    fun accentFree(prepared: String): String {
+        var chars: CharArray? = null
+        for (i in prepared.indices) {
+            val r = when (prepared[i]) {
+                'ş', 'ș' -> 's'
+                'Ş', 'Ș' -> 'S'
+                'ç' -> 'c'
+                'Ç' -> 'C'
+                else -> continue
+            }
+            val out = chars ?: prepared.toCharArray().also { chars = it }
+            out[i] = r
+        }
+        return chars?.let { String(it) } ?: prepared
     }
 
     /**
@@ -111,12 +163,16 @@ internal object SearchText {
         return sb?.toString() ?: prepared
     }
 
-    /** True when a Latin consonant letter comes right before [i] (oʻ counts as a vowel). */
+    /**
+     * True when a Latin consonant letter comes right before [i] (oʻ counts as a vowel). The
+     * consonants of the 2026 alphabet count too, so that "Şyotka" meets щётка and щетка.
+     */
     private fun isLatinConsonantBefore(s: String, i: Int): Boolean {
         if (i == 0) return false
         val p = s[i - 1]
         if (p == APOSTROPHE) return !(i >= 2 && (s[i - 2] == 'o' || s[i - 2] == 'O'))
         val l = Character.toLowerCase(p)
+        if (l == 'ş' || l == 'ș' || l == 'ç' || l == 'ğ') return true
         if (l !in 'a'..'z') return false
         return "aeiou".indexOf(l) < 0
     }
