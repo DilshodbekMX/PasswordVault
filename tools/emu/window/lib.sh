@@ -232,10 +232,11 @@ win_field_add() {
     pva_tap pv.edit.addField.add && pva_reveal pv.edit.field.0
 }
 
-# In the form: the generator's sheet (pv.gen.preview, pv.gen.use).
+# In the form: the generator's sheet (pv.gen.preview at its top, pv.gen.use at its bottom, which a
+# short screen shows only after scrolling: pva_tap does that).
 win_generator() {
     pva_hide_keyboard
-    pva_tap pv.edit.generate && pva_need pv.gen.use 15
+    pva_tap pv.edit.generate && pva_need pv.gen.preview 15
 }
 
 # Save: the account's own screen.
@@ -269,4 +270,53 @@ win_close_form() {
     pva_tap pv.edit.close || return 1
     if pva_present pv.edit.dialog.discard 3; then pva_tap pv.edit.dialog.discard || return 1; fi
     pva_on Passwords
+}
+
+# ---- the helper's accessibility services ---------------------------------------------------------
+# win_a11y_enable KIND...: turns on the helper's accessibility services (plain: not an accessibility
+# tool; tool: declared as one) and waits until they are connected. The settings are put back at the
+# end (win_cleanup).
+win_a11y_enable() {
+    local kind list=""
+    WIN_A11Y_KINDS=("$@")
+    for kind in "$@"; do
+        case "$kind" in
+            plain) list="$list:$WIN_HELPER/.LabA11yService" ;;
+            tool) list="$list:$WIN_HELPER/.LabA11yToolService" ;;
+        esac
+    done
+    win_setting_set secure enabled_accessibility_services "${list#:}" || return 1
+    win_setting_set secure accessibility_enabled 1 || return 1
+    win_a11y_wait 20
+}
+
+# win_a11y_wait [SECONDS]: the services of win_a11y_enable are connected. Each reading of the screen
+# by pv_ui_nodes (UiAutomation) disconnects every accessibility service for a moment.
+win_a11y_wait() {
+    local deadline=$((SECONDS + ${1:-10})) status kind ok
+    while :; do
+        status=$(win_cmd a11y-status 2>/dev/null)
+        ok=1
+        for kind in "${WIN_A11Y_KINDS[@]}"; do
+            case " $status " in *" $kind=true "*) ;; *) ok=0 ;; esac
+        done
+        [ $ok -eq 0 ] || return 0
+        [ $SECONDS -lt $deadline ] || { pv_log "the accessibility services are not connected: ${status:-no answer}"; return 1; }
+        pv_sleep 0.5
+    done
+}
+
+# win_a11y_dump KIND: what the service KIND can reach now (LabA11yService.dump's lines).
+win_a11y_dump() {
+    win_a11y_wait 10 || return 1
+    win_cmd a11y-dump --es kind "$1" --es nonce "n$RANDOM" >/dev/null || return 1
+    win_file "a11y-$1-dump.txt"
+}
+
+# win_front: the app in front again and on the list: after a while away it has locked itself (the
+# lock delay, 30 s), and the master password opens it.
+win_front() {
+    pva_relaunch || return 1
+    pv_ui_wait '[|]pv\.route\.(Locked|Passwords)$' 20 || { pv_log "neither the list nor the lock screen; ids: $(pva_ids)"; return 1; }
+    if pva_absent pv.route.Locked; then pva_on Passwords; else win_unlock; fi
 }

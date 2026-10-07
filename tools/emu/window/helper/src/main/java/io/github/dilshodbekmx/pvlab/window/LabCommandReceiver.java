@@ -5,6 +5,7 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.PixelFormat;
 import android.provider.Settings;
@@ -40,6 +41,9 @@ import android.widget.TextView;
  *       Puts TEXT on the clipboard, so that a text toolbar has "Paste" to show.
  *   control
  *       The control screen's taps: "clicks=N obscured=M" ([ControlActivity]).
+ *   string --es name NAME
+ *       The platform's own text android:string/NAME in the device's language, such as "autofill",
+ *       the label of the text toolbar's Autofill item.
  */
 public class LabCommandReceiver extends BroadcastReceiver {
     private static final String TAG = "PvWinLab";
@@ -73,6 +77,11 @@ public class LabCommandReceiver extends BroadcastReceiver {
                 break;
             case "control":
                 answer(DONE, "clicks=" + ControlActivity.clicks + " obscured=" + ControlActivity.obscuredTouches);
+                break;
+            case "string":
+                int id = Resources.getSystem().getIdentifier(String.valueOf(intent.getStringExtra("name")), "string", "android");
+                if (id == 0) answer(FAILED, "no such platform string");
+                else answer(DONE, Resources.getSystem().getString(id));
                 break;
             default:
                 answer(FAILED, "unknown command '" + cmd + "'");
