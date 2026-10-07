@@ -230,13 +230,13 @@ Six packages that together make an app a person can use with the master password
 - **Accepted when:** [JVM] against a real `VaultStore` on a temporary directory and on `FakeFiles`: create, lock, reopen with the password and with the key; an edit is visible to observers only after the file is on disk; a failing `syncDir` gives `NotSaved` and the old state; two edits at once are applied one after the other; `flushDraft` writes only a changed draft; nothing automatic is written before the older-copy notice is answered; a restore keeps and resets the keys of A §4.12; `TOO_LARGE` gives its sentence; after `lock()` no reference to the vault remains in the repository.
 
 #### 3.2 Master-password gate and auto-lock
-- **Owns:** `APP/lock/MasterPasswordGate.kt` (temporary: 4.1 removes it), the body of `LockModule.kt`, `APP/session/` (the body of `SessionModule.kt` included), `APP-T/session/`, `APP-T/lock/gate/`.
+- **Owns:** `APP/lock/MasterPasswordGate.kt` (temporary: 4.1 removes it), the body of `LockModule.kt`, `APP/session/` (the body of `SessionModule.kt` included), `APP-T/session/`, `APP-T/lock/gate/`, `tools/emu/session/` (its [script] line).
 - **Inputs:** L §10, §11; A §5.5, §3.5 `Session` and `LockManager`; `SessionPolicy` from 1.3.
 - **Implements:** a `LockManager` that knows only "no vault", "locked: master password" and "unlocked", with `createVault` (both typings compared before anything is derived, then `AppSettings.writeDefaults`) and `lock(reason)`; `AutoLock` in full (process lifecycle, screen-off, the no-touch timer, the external grace, `lockNow`, and the order of A §5.5 for every trigger).
 - **Accepted when:** [JVM] L T19 through the real `AutoLock` with a fake lifecycle and clock; for each trigger (delay, screen-off, no-touch timer, "Lock now") a dirty form's draft is written before `VaultPort.lock()`; [script] on the emulator, with the default written by setup, away for 31 s locks, away for 10 s does not, screen-off locks at once, a rotation does not.
 
 #### 3.3 Setup screens
-- **Owns:** `APP/ui/setup/{Welcome,CreateMasterPassword,WriteDown,TypeAgain,SetupViewModel}.kt`, the body of `SetupNav.kt`, `RES/values/strings_setup.xml`, `RES/drawable/ic_setup_*`, `APP-T/ui/setup/`, `APP-AT/ui/setup/`.
+- **Owns:** `APP/ui/setup/{Welcome,CreateMasterPassword,WriteDown,TypeAgain,SetupViewModel}.kt`, the body of `SetupNav.kt`, `RES/values/strings_setup.xml`, `RES/drawable/ic_setup_*`, `APP-T/ui/setup/`, `APP-AT/ui/setup/`, `tools/emu/setup/` (its [script] line).
 - **Inputs:** U §5.1, §5.3 to §5.5, §7.1, §7.2; L F1 steps 1 to 4, §10.1 (the screen kept on in a change or replacement); A §4.6; `Passphrase`, `MasterPasswordRules`.
 - **Uses:** `LockManager.createVault`, `LockStatus.aside`, `AppSettings.oneTime` (words shown).
 - **Implements:** the four screens. Welcome has from the start its globe button (to the `Language` route, a placeholder until 6.1), "Restore from a backup file" (to the `Restore` route, 5.2's) and one "Open my previous passwords (locked on …)" per vault put aside (`LockIntent.OpenAside`, which 4.2's screens answer).
