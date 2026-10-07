@@ -30,7 +30,9 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.Timeout
 
 /**
  * A scripted run of process start, lock.md §5.11, step by step, and of the screen it ends on
@@ -38,6 +40,9 @@ import org.junit.Test
  * lock records.
  */
 class StartUpFlowTest {
+    @get:Rule
+    val timeout: Timeout = Timeout.seconds(60)
+
     private val f = LockFixture()
 
     private fun pending(vkId: String, creditedMs: Long = 0L, seenElapsedMs: Long = f.clock.elapsedMs()) = StateRecord.PendingMp(

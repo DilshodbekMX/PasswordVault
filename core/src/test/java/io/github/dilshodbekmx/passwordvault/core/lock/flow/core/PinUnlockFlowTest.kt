@@ -33,7 +33,9 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.Timeout
 
 /**
  * Scripted runs of F2, the daily unlock with the PIN, F4, a wrong PIN, and F5, the PIN limit
@@ -41,6 +43,9 @@ import org.junit.Test
  * port was asked, and the screen after every step; with the visit bookkeeping of §6.3 (I4, I11).
  */
 class PinUnlockFlowTest {
+    @get:Rule
+    val timeout: Timeout = Timeout.seconds(60)
+
     private val f = LockFixture()
     private val pinFile = "replace " + f.dirOf(VAULT) + "/pin.rec"
 

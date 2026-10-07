@@ -19,13 +19,18 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.Timeout
 
 /**
  * A scripted run of F1, first setup (lock.md §12): steps 1 to 5 and 9, the ways step 3 can fail, a
  * phone that cannot keep keys in secure hardware (F18), and the kill after step 3.
  */
 class SetupFlowTest {
+    @get:Rule
+    val timeout: Timeout = Timeout.seconds(60)
+
     private val f = LockFixture()
 
     private fun create(first: String = PASSWORD, again: String = first, created: suspend () -> Unit = {}): CreateOutcome {

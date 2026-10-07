@@ -1,6 +1,8 @@
 package io.github.dilshodbekmx.passwordvault.core.lock.flow.core
 
 import io.github.dilshodbekmx.passwordvault.core.crypto.CryptoFactory
+import io.github.dilshodbekmx.passwordvault.core.lock.flow.DeviceKeys
+import io.github.dilshodbekmx.passwordvault.core.lock.flow.FingerprintKey
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.KeyCreate
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockEngine
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockScreen
@@ -50,14 +52,22 @@ internal class LockFixture(val clock: FakeClock = FakeClock(elapsedMs = 3_600_00
     val aead = CryptoFactory.aead()
     private val random = FakeRandom(seed + 21)
 
-    /** What the engine is given for its record files; a crash test wraps [files] here. */
+    /** What the engine is given for its ports; a test that wraps one sets it here and calls [rebuild]. */
     var recordFiles: RecordFiles = files
+    var fingerprintKey: FingerprintKey = keys.fingerprint
+    var deviceKeys: DeviceKeys = keys.device
 
     var engine: LockEngine = newEngine()
         private set
 
     private fun newEngine(): LockEngine =
-        LockEngine(recordFiles, ROOT, clock, random, keys.pin, keys.fingerprint, keys.device, port, kdf, aead, Dispatchers.Unconfined)
+        LockEngine(recordFiles, ROOT, clock, random, keys.pin, fingerprintKey, deviceKeys, port, kdf, aead, Dispatchers.Unconfined)
+
+    /** A new engine over the ports as they are set now, before anything has run. */
+    fun rebuild(): LockEngine {
+        engine = newEngine()
+        return engine
+    }
 
     /** A new process over the same phone: nothing in memory survives; what was handed over to the files does. */
     fun restart(): LockEngine {
