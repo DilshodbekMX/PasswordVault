@@ -21,6 +21,8 @@ Date 2026-10-06. The order of work for [architecture.md](architecture.md) ("A" b
 | 7 | 7.1 to 7.3 | The security check, the guided change, help |
 | 8A, 8B | 8.1 to 8.4 | Release |
 
+**Schedule.** From sub-wave 3B on, section 12 says when each package is built and how a sub-wave is integrated: packages run in *rounds*, and the integration is split into a merge and a device check. What a package owns, its inputs and its acceptance lines stay as sections 5 to 10 give them; where section 12 differs from them on order, tags or the branch a package starts from, section 12 wins.
+
 **Which document wins.** VERIFICATION.md over the research. lock.md for the lock. A for everything else it covers; A §6 decides the cross-document questions. ux.md, formats.md, i18n.md and search.md give screens, wording and plain formats except where A §6 or lock.md overrule them. Package 0.3 brings those four documents, and the app's name in lock.md, in line before wave 1; until it is merged, its list of edits says which input is stale.
 
 **Rules for every package.**
@@ -520,3 +522,42 @@ After `wave-6-ok`. From here every package ships its strings in all four languag
 | The machine resets or a JVM crashes | At most six agents and two Gradle builds at once; `tools/gradle.sh` retries once; worktrees and device bases live outside `/tmp` |
 | A test lands on someone else's emulator, or on the user's own | Rule 8: `-s` and `ANDROID_SERIAL` everywhere, ports from a lock file, 5554 left alone |
 | R8 breaks something that only release builds run | `staging` on API 24 and 37 at every integration check, with `smoke.sh` growing each wave |
+
+---
+
+## 12. Schedule from sub-wave 3B on
+
+Decided on 2026-10-07, after sub-wave 3A took 2 h 3 min to build and 2 h 19 min to integrate. Nothing about what a package owns or must pass changes. Two things change: an integration is split in two, so that device checks no longer hold up the next packages, and packages that depend only on merged code are built earlier than their wave.
+
+**The integration in two steps,** each one agent working alone on `main`:
+
+1. **Merge.** Merge the round's branches; apply the interface requests (`iface-<n>`); `tools/check.sh all`; tag `wave-<id>-merged`; create the next round's worktrees from that tag; remove the merged worktrees.
+2. **Device check.** Starts after the merge and runs while the next round's packages are built: everything else the sub-wave's integration check lists (connected tests, the scripts under `tools/emu/`, the staging build), written as `tools/emu/checks/<id>.sh`. It fixes what it finds on `main` and tags `wave-<id>-ok`.
+
+Only one agent works on `main` at a time: the next merge starts when the device check before it has ended. In rule 1, "from the tag `wave-<previous sub-wave>-ok`" now reads "from the tag the round names", which is a `-merged` tag. A package whose branch is older than `main` is merged as it is; it never rebases.
+
+**Rounds.** At most six packages are built at once, as before.
+
+| Round | Built | Starts from | Merged when the round ends | Device check during the next round |
+|---|---|---|---|---|
+| R1 | 3.7 to 3.12, and `w3B-carry` (below) | `wave-3A-ok` | all, as `wave-3B-merged` | 3B's |
+| R2 | 3.13, 3.14, 3.15, 4.2, 4.3, 5.1 | `wave-3B-merged` | 3.13 to 3.15 and 5.1, as `wave-3C-merged`. 4.2 and 4.3 stay on their branches: their screens need the lock manager of 4.1 | the skeleton check again, and 5.1's device tests |
+| R3 | 4.1, 4.4, 5.2, 5.3, 5.4 | `wave-3C-merged` | 4.1 to 4.4 and 5.2 to 5.4, as `wave-4A-merged` | 4A's |
+| R4 | 4.5, 5.5, 6.1, 7.1, 7.2, 7.3 | `wave-4A-merged` | all, as `wave-5-merged` | wave 4's, wave 5's and wave 7's |
+| R5 | 6.2, 8.3, 8.4 | `wave-5-merged` | all, as `wave-6A-merged`; the string freeze starts | none of its own |
+| R6 | 6.3 (in two parts), 6.4, 8.2 | `wave-6A-merged` | all, as `wave-6-merged` | wave 6's and 8A's |
+| R7 | 8.1 | `wave-6-merged` | as `wave-8-merged` | wave 8's |
+
+R1 to R3 are fixed. R4 to R7 are the intention and are confirmed when R3 is merged.
+
+**What follows from the order.**
+- 4.2, 4.3 and 5.1 need only the contracts and fakes of wave 2 and the screens of 3A, so they are built in R2. 5.2 to 5.4 are built next to 4.1 and test against the fakes, as the plan already has 4.2 and 4.3 do.
+- Wave 7's packages are built in R4, before the translations, so they bring English strings only; 6.3 and 6.4 translate their files with all the others. The sentence "from wave 7 every new string comes in all four languages" (rule 5, section 9) then applies only to 8.1.
+- Before R4 starts, the integrator sets lint's `MissingTranslation` to a warning (section 8, "Before 6A starts").
+
+**`w3B-carry`: what 3A left open.** One more branch in R1, built after 3.11 has ended so that no more than six agents run at once. It owns nothing of its own; it may edit the files named here, which belong to packages that are merged:
+1. `OpenedVault.createdMs` in `:core` storage (A §3.3, `StoreTypes.kt`, `VaultStore.kt`, with their tests), used by `DefaultVaultRepository`; `APP/data/GenerationHeaders.kt` goes.
+2. 'Add "gmal" as a new account' opens the form with the name filled in (U §5.11). The name is handed over in memory only, like `SavedNotice`; it is the form's starting value, so a form in which nothing else was typed is left without a question and without a draft. A line in A §3.6 names the holder.
+3. `RES/values/strings_data.xml` with `data_from_backup`; `StoredTexts` reads it.
+4. On Android 7 the search field takes the focus after an unlock and the keyboard covers the Add button: the list opens without the focus in a field.
+
