@@ -1,6 +1,8 @@
 package io.github.dilshodbekmx.passwordvault.debug.i18n
 
 import android.content.Context
+import android.content.res.Configuration
+import android.os.LocaleList
 import io.github.dilshodbekmx.passwordvault.debug.DebugCommand
 import io.github.dilshodbekmx.passwordvault.i18n.AppLanguages
 import kotlinx.coroutines.delay
@@ -24,9 +26,10 @@ import java.util.Locale
  * - `locale`: changes nothing and says what is set.
  *
  * It answers `locale: <tags> (was <tags>); shown: <language>` once Android reports the new choice,
- * where "shown" is the language the screens are in (the four of i18n.md §1.1). Android 13 and later
- * keep the choice in the system; Android 7 to 12 in AppCompat's record file, and there it needs the
- * app's activity to have started once in this process, as the dialog does.
+ * where "shown" is the language the app's texts are in: Android's choice among the languages the APK
+ * has, so English for a language whose translations do not exist yet (Uzbek Cyrillic until wave 6).
+ * Android 13 and later keep the choice in the system; Android 7 to 12 in AppCompat's record file, and
+ * there it needs the app's activity to have started once in this process, as the dialog does.
  */
 object LocaleCommand : DebugCommand {
     override suspend fun run(context: Context, args: List<String>): String {
@@ -63,10 +66,17 @@ object LocaleCommand : DebugCommand {
 
     private fun describe(tags: String): String = tags.ifEmpty { "system" }
 
+    /**
+     * The language the app's texts are in now: Android's own choice among the languages the APK has,
+     * read from a configuration with the app's locales in front of the phone's. Until a language's
+     * translations exist (wave 6), Android picks English for it and so does this.
+     */
     private fun shown(context: Context): String {
-        val app = AppLanguages.appLocales(context)
-        val locales = if (app.isEmpty()) AppLanguages.systemLocales(context) else app + AppLanguages.systemLocales(context)
-        return AppLanguages.shown(locales).name
+        val locales = (AppLanguages.appLocales(context) + AppLanguages.systemLocales(context)).distinct()
+        val configuration = Configuration(context.resources.configuration)
+        configuration.setLocales(LocaleList(*locales.toTypedArray()))
+        val resolved = context.createConfigurationContext(configuration).resources.configuration
+        return AppLanguages.shown(AppLanguages.localesOf(resolved)).name
     }
 
     private const val WAIT_MS = 5_000L

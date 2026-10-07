@@ -10,10 +10,11 @@ import java.util.Locale
 /**
  * The A-to-Z order and the letter headers of the list in one language (ux.md §5.11, i18n.md §2.7;
  * build plan 2.9): ICU's collator for [locale] and an `AlphabeticIndex` over the same collator, with
- * the labels of [locale], English and Russian, both fed the sort text of [sortTextOf]. Android's ICU
- * decides the order: Android 17 (ICU 78) sorts Uzbek Oʻ, Gʻ, Sh and Ch after Z and heads them so;
- * Android 7 (ICU 56) has no Uzbek order and puts them under O, G, S and C, which again matches its
- * sort; Russian puts Cyrillic before Latin. Tested on a device (architecture.md §8.3).
+ * the labels of [locale], English and Russian (and of both Uzbek alphabets for Uzbek), both fed the
+ * sort text of [sortTextOf]. Android's ICU decides the order: Android 9 and 17 (ICU 60 and 78) sort
+ * Uzbek Oʻ, Gʻ, Sh and Ch after Z and head them so, in both Uzbek scripts; Android 7 (ICU 56) has no
+ * Uzbek order and puts them under O, G, S and C, which again matches its sort; Russian puts Cyrillic
+ * before Latin, the others Latin before Cyrillic. Tested on a device (architecture.md §8.3).
  *
  * Headers agree with [compare]: the collator and the index are the same, so titles in [compare]
  * order have their headers in the index's order, each header one run of titles. The catch-alls:
@@ -31,7 +32,7 @@ class SortKeys(val locale: Locale) : Collation {
         (Collator.getInstance(ULocale.forLocale(locale)) as RuleBasedCollator).apply { freeze() }
 
     private val index: AlphabeticIndex.ImmutableIndex<Any> = AlphabeticIndex<Any>(collator)
-        .addLabels(ULocale.forLocale(locale), ULocale.ENGLISH, RUSSIAN)
+        .addLabels(*labelLocales(locale))
         .setUnderflowLabel(UNDERFLOW_LABEL)
         .setOverflowLabel(OVERFLOW_LABEL)
         .buildImmutableIndex()
@@ -70,6 +71,21 @@ class SortKeys(val locale: Locale) : Collation {
         const val OVERFLOW_LABEL = "…"
 
         private val RUSSIAN = ULocale("ru")
+        private val UZBEK_LATIN = ULocale("uz")
+        private val UZBEK_CYRILLIC = ULocale("uz_Cyrl")
+
+        /**
+         * The locales whose letters head the index: [locale]'s, English and Russian (ux.md §5.11),
+         * and for Uzbek in either script both Uzbek alphabets. ICU's Uzbek Cyrillic collator sorts
+         * Latin Oʻ, Gʻ, Sh and Ch after Z as the Latin one does (seen with ICU 60 and 78), so without
+         * the Latin labels "Shahar" would be headed "Z"; and the Cyrillic labels give Ғ, Қ and Ҳ their
+         * own headers under the Latin collator.
+         */
+        private fun labelLocales(locale: Locale): Array<ULocale> {
+            val own = ULocale.forLocale(locale)
+            val uzbek = if (locale.language == "uz") listOf(UZBEK_LATIN, UZBEK_CYRILLIC) else emptyList()
+            return (listOf(own) + uzbek + listOf(ULocale.ENGLISH, RUSSIAN)).distinct().toTypedArray()
+        }
 
         /** For the app's language as the screens show it ([AppLanguages.shown]). */
         fun of(language: AppLanguage): SortKeys =

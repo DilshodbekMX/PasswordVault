@@ -73,13 +73,18 @@ object AppLanguages {
     }
 
     /**
-     * The language the screens show for [locales], a configuration's list (the user's languages, or
-     * the app's choice put in front of them): never [AppLanguage.SYSTEM]. Android's two steps of
+     * The language the screens show for [locales]: never [AppLanguage.SYSTEM]. Android's two steps of
      * i18n.md §1.2 over our four languages: with more than one locale, the first whose language and
      * likely script are one of ours, English always counting as supported
      * (`LocaleList.getFirstMatchWithEnglishSupported`); with one, or when none matches, the first;
      * and a locale that is not one of ours gets the default resources, which are English. A
      * pseudo-locale of the debug build (en-XA, ar-XB) counts as English.
+     *
+     * Given the list of a context's configuration ([localesOf]) it is exact: Android has already put
+     * the locale its resources use in front (`ResourcesImpl` does), seen on API 24 and 37 as
+     * `[en_US, uz-Cyrl]` while the APK had no Uzbek Cyrillic texts. Given the phone's own list, or
+     * the app's choice in front of it, it says what a build with all four translations shows, which
+     * every build has from wave 6 on.
      */
     fun shown(locales: List<Locale>): AppLanguage {
         val first = locales.firstOrNull() ?: return AppLanguage.EN
