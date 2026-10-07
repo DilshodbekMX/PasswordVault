@@ -357,15 +357,33 @@ pv_focus() { # prints the focused window, e.g. "com.android.settings/com.android
     pv_adb shell dumpsys window 2>/dev/null | tr -d '\r' | grep -m 1 'mCurrentFocus' | sed 's/.* u[0-9]* //; s/}$//'
 }
 
-# One line per node: text|content-desc|resource-id|clickable|enabled|x|y (x, y = centre).
+# One line per node: text|content-desc|resource-id|clickable|enabled|x|y (x, y = centre), from a
+# fresh dump; nothing and status 1 when no dump succeeded. `uiautomator dump` prints "ERROR: could not
+# get idle state." with exit status 0 while the window keeps changing: on API 28 a focused Compose
+# text field does so for as long as it has the focus (its blinking cursor sends
+# TYPE_WINDOW_CONTENT_CHANGED every 500 ms), and the previous dump's file would then be read as if it
+# were the screen now. So the file is removed before each try and a try counts only when the dump
+# printed "dumped to". After three failed tries the focus is moved on with Tab (which never clicks)
+# before each further try, unless PV_UI_NO_TAB=1: a script that checks the keyboard or the focus does
+# so before it dumps.
 pv_ui_nodes() {
-    local i xml
-    for i in 1 2 3; do
-        pv_adb shell uiautomator dump /sdcard/pv_ui.xml >/dev/null 2>&1
-        xml=$(pv_adb shell cat /sdcard/pv_ui.xml 2>/dev/null)
-        case "$xml" in *"<hierarchy"*) break ;; esac
+    local i out xml=""
+    for i in 1 2 3 4 5 6 7 8; do
+        pv_adb shell rm -f /sdcard/pv_ui.xml >/dev/null 2>&1
+        out=$(pv_adb shell uiautomator dump /sdcard/pv_ui.xml 2>&1 | tr -d '\r')
+        case "$out" in
+            *"dumped to"*)
+                xml=$(pv_adb shell cat /sdcard/pv_ui.xml 2>/dev/null)
+                case "$xml" in *"<hierarchy"*) break ;; esac ;;
+        esac
+        xml=""
+        [ "$i" -lt 8 ] || break
+        if [ "$i" -ge 3 ] && [ "${PV_UI_NO_TAB:-0}" != 1 ]; then
+            pv_adb shell input keyevent KEYCODE_TAB >/dev/null 2>&1
+        fi
         pv_sleep 1
     done
+    [ -n "$xml" ] || { pv_log "uiautomator dump failed $i times: ${out:-no output}"; return 1; }
     printf '%s' "$xml" | python3 -c '
 import re, sys, xml.etree.ElementTree as ET
 try:

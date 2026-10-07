@@ -106,7 +106,10 @@ user build without root. A step whose marker does not hold is not run and prints
 Other helpers: `pv_shell`, `pv_reboot`, `pv_wait_booted`, `pv_unlock`, `pv_keyguard_showing`,
 `pv_focus`, `pv_ui_nodes`, `pv_ui_tap REGEX`, `pv_ui_wait REGEX SECONDS` (REGEX is matched
 against `text|content-desc|resource-id`; write a literal `|` as `[|]`), `pv_is_debuggable`,
-`pv_has_root`, `pv_api`.
+`pv_has_root`, `pv_api`. `pv_ui_nodes` reads only a fresh dump: on API 28 `uiautomator dump`
+fails ("could not get idle state", exit status 0) for as long as a Compose text field has the focus,
+so it removes the old file before each try, retries, moves the focus on with Tab after three failed
+tries (not with `PV_UI_NO_TAB=1`), and prints nothing (status 1) when no dump succeeded.
 
 A wedged guest can leave `adb shell` waiting for ever. Set `PV_ADB_TIMEOUT=N` and every
 `pv_adb` call is killed after N seconds (exit 124); the waiting helpers (`pv_wait_booted`,
