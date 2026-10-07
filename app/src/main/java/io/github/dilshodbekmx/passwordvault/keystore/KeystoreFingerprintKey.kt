@@ -123,9 +123,9 @@ class KeystoreFingerprintKey(
      */
     override suspend fun seal(alias: String, vk: ByteArray, use: PromptUse, launch: Int): FingerprintResult =
         behindPrompt(alias, { key -> init(Cipher.ENCRYPT_MODE, key) }, use, launch) { authorised ->
-            val wrap = authorised.doFinal(vk)
-            val iv = authorised.iv
-            if (wrap.size != RecordCodec.CT_LENGTH || iv == null || iv.size != RecordCodec.NONCE_LENGTH) {
+            val wrap: ByteArray? = authorised.doFinal(vk)
+            val iv: ByteArray? = authorised.iv
+            if (wrap == null || wrap.size != RecordCodec.CT_LENGTH || iv == null || iv.size != RecordCodec.NONCE_LENGTH) {
                 FingerprintResult.Temporary(null) // not a wrap a record can hold: the key operation failed
             } else {
                 FingerprintResult.Ok(wrap, iv)
@@ -140,7 +140,9 @@ class KeystoreFingerprintKey(
      */
     override suspend fun open(alias: String, nonce: ByteArray, ct: ByteArray, use: PromptUse, launch: Int): FingerprintResult =
         behindPrompt(alias, decryptWith(nonce), use, launch) { authorised ->
-            var plain = authorised.doFinal(ct)
+            // A cipher may answer an empty result with null: that, too, is "not 32 bytes".
+            val result: ByteArray? = authorised.doFinal(ct)
+            var plain: ByteArray = result ?: ByteArray(0)
             if (access.faults.take(Row.FINGERPRINT_WRONG_SIZE)) {
                 plain.fill(0)
                 plain = ByteArray(KeystoreErrors.VK_LENGTH / 2)

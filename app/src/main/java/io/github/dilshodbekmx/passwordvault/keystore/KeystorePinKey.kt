@@ -56,15 +56,15 @@ class KeystorePinKey(private val access: KeystoreAccess) : PinKey {
         } catch (e: Exception) {
             return KeystoreFailureAdapter.classify(KeystoreErrors.Place.INIT, e)
         }
-        val kek = try {
+        val kek: ByteArray? = try {
             access.faults.throwIf(Row.MAC_DO_FINAL) { IllegalStateException(KeystoreFaults.INJECTED) }
             mac.doFinal(message)
         } catch (e: Exception) {
             return KeystoreFailureAdapter.classify(KeystoreErrors.Place.MAC_DO_FINAL, e)
         }
-        if (kek.size != KEK_BYTES) {
+        if (kek == null || kek.size != KEK_BYTES) {
             // Not an HMAC-SHA256 result: nothing to open a wrap with, and nothing the platform said about the key.
-            kek.fill(0)
+            kek?.fill(0)
             return Ks.Temporary(null)
         }
         return Ks.Ok(kek)
