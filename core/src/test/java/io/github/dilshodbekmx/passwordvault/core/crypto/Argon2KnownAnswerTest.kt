@@ -1,32 +1,31 @@
-package io.github.dilshodbekmx.passwordvault.core
+package io.github.dilshodbekmx.passwordvault.core.crypto
 
-import org.bouncycastle.crypto.generators.Argon2BytesGenerator
-import org.bouncycastle.crypto.params.Argon2Parameters
+import io.github.dilshodbekmx.passwordvault.core.util.Bytes
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
 /**
  * Pins the Argon2id implementation to known answers, so that a library upgrade can never
- * silently change the key derived from a master password.
+ * silently change the key derived from a master password (architecture.md §8.7, "Argon2id, two
+ * cases"). Both run through [CryptoFactory.bouncyCastleArgon2id], the implementation of the JVM
+ * tests and of the fallback on a phone; package 2.7 runs the same two through argon2kt on the
+ * devices.
  */
 class Argon2KnownAnswerTest {
 
-    private fun argon2id(password: ByteArray, salt: ByteArray, memoryKiB: Int, passes: Int, lanes: Int): String {
-        val parameters = Argon2Parameters.Builder(Argon2Parameters.ARGON2_id)
-            .withVersion(Argon2Parameters.ARGON2_VERSION_13)
-            .withSalt(salt)
-            .withMemoryAsKB(memoryKiB)
-            .withIterations(passes)
-            .withParallelism(lanes)
-            .build()
-        val out = ByteArray(32)
-        Argon2BytesGenerator().apply { init(parameters) }.generateBytes(password, out)
-        return out.joinToString("") { "%02x".format(it) }
-    }
+    private val argon2 = CryptoFactory.bouncyCastleArgon2id()
 
-    /** The vault's own parameters: 64 MiB, 3 passes, 4 lanes. Reproduced by argon2kt on Android 7, 9 and 17. */
+    private fun argon2id(password: ByteArray, salt: ByteArray, memoryKiB: Int, passes: Int, lanes: Int): String =
+        Bytes.hex(argon2.derive(password, salt, Argon2Params(memoryKiB, passes, lanes, 32)))
+
+    /**
+     * The vault's own parameters, [Argon2Params.V1]: 64 MiB, 3 passes, 4 lanes. Reproduced by
+     * argon2kt on Android 7, 9 and 17. It is also the KEK of the vault file vectors
+     * (architecture.md §4.13).
+     */
     @Test
     fun vaultParameters() {
+        assertEquals(Argon2Params(memoryKiB = 65536, passes = 3, lanes = 4, outLen = 32), Argon2Params.V1)
         assertEquals(
             "853b272a44db1421c02962669a55eb0994f3cab385ed1c4c79253eee19bab49e",
             argon2id(
