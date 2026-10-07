@@ -711,7 +711,7 @@ internal class VaultStore(
         } catch (e: IOException) {
             null
         }
-        if (survey == null || survey.vaultId != opened.vaultId) return keptVkIds(survey, opened)
+        if (survey == null || survey.vaultId != opened.vaultId) return keptVkIds(asideSurveyOf(opened.vaultId), opened)
         // Only once the current key's master password, typed, has opened a generation from disk that an
         // earlier process wrote [V-C5, V-S5]; only while the newest live generation is OK under that key;
         // only OK generations of other keys below the one opened. Nothing that failed is deleted.
@@ -742,12 +742,22 @@ internal class VaultStore(
         keptVkIds(after, opened)
     }
 
-    /** The `vk_id`s of the OK live generations, and always the opened one's. */
+    /** The `vk_id`s of the OK generations in [survey], the directory of [opened]'s vault, and always [opened]'s own. */
     private fun keptVkIds(survey: Survey?, opened: OpenedVault): Set<String> {
         val kept = LinkedHashSet<String>()
         survey?.gens?.forEach { if (it.state == FileState.OK) it.header?.vkId?.let(kept::add) }
-        if (survey == null || survey.vaultId == opened.vaultId) kept += opened.vkId
+        kept += opened.vkId
         return kept
+    }
+
+    /** The generations of the vault put aside with [vaultId], or null when there is none or it cannot be listed. */
+    private fun asideSurveyOf(vaultId: String): Survey? {
+        val dir = asideDirOf(vaultId) ?: return null
+        return try {
+            survey(dir, vaultId, fresh = false)
+        } catch (e: IOException) {
+            null
+        }
     }
 
     // ---------------------------------------------------------------------------------------------
