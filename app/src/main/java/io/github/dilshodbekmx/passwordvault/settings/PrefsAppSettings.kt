@@ -1,5 +1,6 @@
 package io.github.dilshodbekmx.passwordvault.settings
 
+import android.annotation.SuppressLint
 import android.content.SharedPreferences
 import io.github.dilshodbekmx.passwordvault.core.generator.GeneratorOptions
 import io.github.dilshodbekmx.passwordvault.core.lock.guard.Credit
@@ -76,6 +77,8 @@ class PrefsAppSettings(private val prefs: SharedPreferences) : AppSettings {
         it.clipDelay = ClipDelay.SETUP
     }
 
+    // commit(), not the KTX edit {}, which uses apply(): the result decides what is published (D-19).
+    @SuppressLint("UseKtx")
     override fun update(change: (SettingsEditor) -> Unit): Boolean = synchronized(writing) {
         val before = current
         val editor = Editor(before)
@@ -95,7 +98,12 @@ class PrefsAppSettings(private val prefs: SharedPreferences) : AppSettings {
         true
     }
 
-    /** Puts the in-memory entries of [keys] back as they were in [entries], after a failed commit. */
+    /**
+     * Puts the in-memory entries of [keys] back as they were in [entries], after a failed commit. A
+     * `commit()` like every write here (D-19), whose result does not matter: the file still holds the
+     * old entries if this one fails too.
+     */
+    @SuppressLint("ApplySharedPref", "UseKtx")
     private fun restore(keys: Set<String>, entries: Map<String, *>) {
         val edit = prefs.edit()
         for (key in keys) {
@@ -110,7 +118,7 @@ class PrefsAppSettings(private val prefs: SharedPreferences) : AppSettings {
                 else -> edit.remove(key)
             }
         }
-        edit.commit() // best effort: the file still holds the old entries if this fails too
+        edit.commit()
     }
 
     private fun publish(values: Values) {

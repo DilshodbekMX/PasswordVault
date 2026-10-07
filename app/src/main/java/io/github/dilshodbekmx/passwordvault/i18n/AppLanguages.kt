@@ -52,6 +52,13 @@ object AppLanguages {
     val choices: List<AppLanguage> = AppLanguage.entries.toList()
 
     /**
+     * The globe button's label, the same in every language so that a reader of any of the four finds
+     * the switch: "Til · Тил · Язык · Language" (i18n.md §1.4.5; Welcome and Settings).
+     */
+    @StringRes
+    val switchLabel: Int = R.string.i18n_language_switch
+
+    /**
      * The choice that an app locale stands for (i18n.md §1.4.5 `currentAppLanguage`, §5 item 3):
      * "uz", "uz-UZ" and "uz-Latn" are Oʻzbekcha, "uz-Cyrl" Ўзбекча, any "ru" Русский, any "en"
      * English; null, the empty locale and every other language are [AppLanguage.SYSTEM]. A locale
