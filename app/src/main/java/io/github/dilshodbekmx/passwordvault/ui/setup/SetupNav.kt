@@ -17,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.heading
@@ -108,12 +109,13 @@ object SetupTags {
 private fun WelcomeRoute(graph: AppGraph, nav: Navigator) {
     val state by graph.lock.state.collectAsStateWithLifecycle()
     val status by graph.lock.status.collectAsStateWithLifecycle()
+    val move = rememberMoveOnce(nav)
     WelcomeScreen(
         aside = asideVaults(state, status),
-        onStart = { nav.go(Route.CreateMasterPassword) },
+        onStart = { move.go(Route.CreateMasterPassword) },
         onOpenAside = { vaultId -> graph.lock.send(LockIntent.OpenAside(vaultId)) },
-        onRestore = { nav.go(Route.Restore) },
-        onLanguage = { nav.go(Route.Language) },
+        onRestore = { move.go(Route.Restore) },
+        onLanguage = { move.go(Route.Language) },
     )
 }
 
@@ -123,15 +125,16 @@ private fun CreateMasterPasswordRoute(graph: AppGraph, nav: Navigator) {
     SetupStepScope(SetupStep.CREATE, setup)
     LaunchedEffect(setup) { setup.showWords() }
     val state by setup.state.collectAsStateWithLifecycle()
+    val move = rememberMoveOnce(nav)
     CreateMasterPasswordScreen(
         state = state,
         own = setup.own,
-        onUseWords = { if (setup.useTheseWords()) nav.go(Route.WriteDown) },
+        onUseWords = { if (setup.useTheseWords()) move.go(Route.WriteDown) },
         onOtherWords = setup::showOtherWords,
         onTypeOwn = setup::typeOwn,
         onShowWords = setup::showSuggested,
         onUseOwn = setup::submitOwn,
-        onReuseAnswer = { usedElsewhere -> if (setup.answerReuse(usedElsewhere)) nav.go(Route.WriteDown) },
+        onReuseAnswer = { usedElsewhere -> if (setup.answerReuse(usedElsewhere)) move.go(Route.WriteDown) },
         onReuseDismiss = setup::dismissReuse,
     )
 }
@@ -146,11 +149,12 @@ private fun WriteDownRoute(graph: AppGraph, nav: Navigator) {
         BackToTheFirstStep(graph.lock, nav)
         return
     }
+    val move = rememberMoveOnce(nav)
     WriteDownScreen(
         chosen = chosen,
         wroteItDown = state.wroteItDown,
         onWroteItDown = setup::setWroteItDown,
-        onNext = { nav.go(Route.TypeAgain) },
+        onNext = { move.go(Route.TypeAgain) },
     )
 }
 
@@ -163,11 +167,12 @@ private fun TypeAgainRoute(graph: AppGraph, nav: Navigator) {
         BackToTheFirstStep(graph.lock, nav)
         return
     }
+    val move = rememberMoveOnce(nav)
     TypeAgainScreen(
         state = state,
         field = setup.again,
         onNext = setup::submitAgain,
-        onShowAgain = { nav.back() },
+        onShowAgain = { move.back() },
     )
 }
 
@@ -198,6 +203,28 @@ fun SetupStepScope(step: SetupStep, setup: SetupViewModel) {
 class SetupStepViewModel(private val step: SetupStep, private val setup: SetupViewModel) : ViewModel() {
     override fun onCleared() {
         setup.stepLeft(step)
+    }
+}
+
+/**
+ * Moves with [nav] at most once while this screen is shown: a quick double tap on a button that opens
+ * a route would otherwise push it twice (or go back two steps), because the screen still takes taps
+ * while the move's animation runs (seen on API 37: two taps on "Use these words" left two "Write it
+ * down on paper" screens, and Back showed the second). A screen that is shown again starts afresh.
+ */
+@Composable
+private fun rememberMoveOnce(nav: Navigator): MoveOnce = remember(nav) { MoveOnce(nav) }
+
+/** See [rememberMoveOnce]. */
+private class MoveOnce(private val nav: Navigator) {
+    private var moved = false
+
+    fun go(route: Route) {
+        if (!moved) moved = nav.go(route)
+    }
+
+    fun back() {
+        if (!moved) moved = nav.back()
     }
 }
 
