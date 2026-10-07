@@ -17,15 +17,38 @@ import io.github.dilshodbekmx.passwordvault.window.VaultWindow
  * [VaultWindow]. The sheet is a window of its own: `VaultWindow` applies the window policy to it
  * and removes the text toolbar's "Autofill" item from the fields in it (lock.md §13.5).
  *
- * @param sheetState pass one only to hide the sheet with its animation (`sheetState.hide()`), which
- *   needs `@OptIn(ExperimentalMaterial3Api::class)` where it is made.
+ * This form needs no opt-in from the caller: the sheet goes when the caller stops composing it.
+ * To slide it away first, use the form that takes a `SheetState`.
+ *
+ * @param skipPartiallyExpanded true: the sheet opens fully, never half way.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun VaultSheet(
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
-    sheetState: SheetState = rememberModalBottomSheetState(),
+    skipPartiallyExpanded: Boolean = false,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    VaultSheet(
+        onDismissRequest = onDismissRequest,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = skipPartiallyExpanded),
+        modifier = modifier,
+        content = content,
+    )
+}
+
+/**
+ * [VaultSheet] with a [sheetState] of the caller's, which can hide the sheet with its animation
+ * (`sheetState.hide()`, then stop composing it). `SheetState` is experimental in material3 1.4.0,
+ * so the caller opts in.
+ */
+@ExperimentalMaterial3Api
+@Composable
+fun VaultSheet(
+    onDismissRequest: () -> Unit,
+    sheetState: SheetState,
+    modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     ModalBottomSheet(onDismissRequest = onDismissRequest, modifier = modifier, sheetState = sheetState) {
