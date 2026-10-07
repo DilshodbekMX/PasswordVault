@@ -129,6 +129,11 @@ class SessionPolicyTest {
         val sharing = open().beginExternal(T + MINUTE).stays()
         assertTrue(sharing.inFront)
         assertNull(sharing.checkTimer(T + MINUTE + 6 * MINUTE).lockedFor()) // 6 minutes: nothing
+        // A touch meanwhile does not start the timer either.
+        val touchedEarly = sharing.touched(T + MINUTE + MINUTE).stays()
+        assertEquals(sharing.noTouchDeadlineMs, touchedEarly.noTouchDeadlineMs)
+        assertNull(touchedEarly.checkTimer(T + MINUTE + 7 * MINUTE).lockedFor())
+        assertNull(touchedEarly.stopped(T + MINUTE + 7 * MINUTE, true, 0).lockedFor())
         assertNull(sharing.touched(T + MINUTE + 9 * MINUTE).stays().checkTimer(T + MINUTE + 14 * MINUTE).lockedFor())
         // The grace ends after 10 minutes and the timer starts afresh then.
         assertEquals(T + MINUTE + 15 * MINUTE, sharing.noTouchDeadlineMs)
