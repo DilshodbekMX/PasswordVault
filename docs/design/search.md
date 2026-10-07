@@ -2,9 +2,9 @@
 
 Date 2026-10-06. Status: proposal for review, with working code and measurements. Scope: how the account list is filtered as the user types, so that a name is found however it is typed (Uzbek Latin with any apostrophe or with the 2026 letters, Uzbek or Russian Cyrillic, English, any other script), plus two converters between the Uzbek scripts. Builds on [ux.md](ux.md) §5.11 (what search does on screen) and [i18n.md](i18n.md) §2.4–2.7 (alphabet and spelling decisions). §8 lists where this note differs from those two documents and why.
 
-**Revised on 2026-10-06** by build-plan package 0.3 to follow [architecture.md](architecture.md) D-11: ş → s and ç → c in the second tier, and the retry of a query typed on the wrong keyboard layout (§0 items 5 and 12, §1, §2, §6 item 4, §8); and where the code now lives (§7, §9).
+**Revised on 2026-10-06** by build-plan package 0.3 to follow [architecture.md](architecture.md) D-11: ş → s and ç → c in the second tier, and the retry of a query typed on the wrong keyboard layout (§0 items 5 and 12, §1, §2, §6 item 4, §8); and where the code now lives (§7, §9). **Revised again on 2026-10-07** at the wave-1 integration, after package 1.2 moved the code: the two spellings of the second tier (§1), the tests behind §6 item 4, `searchOrRetry` on the list screen (§7), the numbers after D-11 (§5) and the commands (§9).
 
-Code (pure Kotlin, no Android dependencies, JUnit 4 like the app): committed as `prototypes/search/`, with packages `io.github.dilshodbekmx.passwordvault.search` and `…passwordvault.text`. Build-plan package 1.2 moves it into the `:core` module as `…passwordvault.core.search` and `…core.text` (architecture.md §2.1) and adds the two D-11 changes.
+Code (pure Kotlin, no Android dependencies, JUnit 4 like the app): in the `:core` module as `…passwordvault.core.search` and `…core.text` (architecture.md §2.1). Build-plan package 1.2 moved it there from `prototypes/search/` (packages `io.github.dilshodbekmx.passwordvault.search` and `…passwordvault.text`, now removed) and added the two D-11 changes.
 
 How I know things: **[X]** measured or tested today with this code; **[V]** checked today in the named primary source; **[I]** my judgement.
 
@@ -204,6 +204,8 @@ Method (`SearchBenchmark.kt`, `./gradlew bench`):
 | Folding every field on every keystroke instead (no index) | 11.8–12.8 ms | 1.24–1.43 s |
 | Index size | about 4.4 MiB | same |
 
+**After D-11**, in `:core` (build-plan package 1.2, 2026-10-07, the same harness; its measurements): JIT median 0.24–0.28 ms per keystroke, p95 0.33–0.36 ms on an otherwise idle machine (median 0.26 ms, p95 0.56 ms at a load average of about 4); interpreter only, median 12.5 ms and p95 19.4 ms, and 54 ms (median) with a 1,000-character note in every entry; building the index 1.24 s interpreted; the index about 4.6–4.7 MiB (4,676–4,784 KiB), up from 4.4 MiB, because a field now keeps a third spelling (the accent-free one) where it differs.
+
 No phone was measured: the emulators were in use by other work and off limits. A mid-range phone running ART-compiled code is probably 3–10 times slower than this desktop's JIT, which means about 1–3 ms per keystroke and 50–200 ms to build the index [I]. That is well inside ux.md's 50 ms budget. The interpreter column is the worst case before ART compiles the code. There, keystrokes stay mostly under 50 ms, but the index build takes over a second, and long notes push a keystroke past the budget, since a query that matches no title still scans every note. So:
 
 - build the index on `Dispatchers.Default` right after unlock, and show the list at once (the unfiltered list needs no index);
@@ -253,13 +255,13 @@ Every test vector in both documents passes in this code (`SearchIndexTest.uxDesi
 
 ## 9. Reproduce
 
-In `prototypes/search/`, with `JAVA_HOME=/home/asus/.jdks/jdk-25` (after build-plan package 1.2 has moved the code: `tools/gradle.sh :core:testDebugUnitTest`, and the three programs as tests with `-Ppv.bench`, `-Ppv.evalArgs=…` and `-Ppv.uzArgs=…`):
+From the project root, through `tools/gradle.sh` (it sets `JAVA_HOME` and the SDK). The three programs run as tests that are skipped unless their property is given; such a run is never up to date or taken from the build cache.
 
-- `./gradlew test` runs the 527 tests: SearchKeyTest 112, OfficialPairsTest 108, LatinToCyrillicTest 91, FindsEntryTest 79, CyrillicToLatinTest 65, SearchIndexTest 28, WebAddressTest 23, MatchedRangesTest 20, UzbekCyrillicStringsTest 1.
-- `./gradlew bench` gives the JIT numbers; add `-PbenchJvmArgs=-Xint` for the interpreter-only numbers.
-- `./gradlew evalConverters -PevalArgs="build/eval const:corpus/const_cyr.tsv:corpus/const_lat.tsv personal-data:corpus/pd_cyr.tsv:corpus/pd_lat.tsv cybersecurity:corpus/cyber_cyr.tsv:corpus/cyber_lat.tsv labour-code:corpus/labour_cyr.tsv:corpus/labour_lat.tsv"` gives §4. The word errors are written to `build/eval/*-errors.tsv`. Corpus files are made by `tools/extract_lex.py page.html out.tsv` from `https://lex.uz/docs/N` and `https://lex.uz/docs/-N`.
-- `./gradlew evalConverters -PevalArgs="--glossary corpus/glossary/glossary.tsv"` gives §4.5.
-- `./gradlew uzCyrl -PuzArgs="values-uz/strings.xml values-b+uz+Cyrl/strings.xml"` drafts the Cyrillic file.
+- `tools/gradle.sh :core:testDebugUnitTest` runs the 527 moved tests (SearchKeyTest 112, OfficialPairsTest 108, LatinToCyrillicTest 91, FindsEntryTest 79, CyrillicToLatinTest 65, SearchIndexTest 28, WebAddressTest 23, MatchedRangesTest 20, UzbekCyrillicStringsTest 1), plus AccentFreeTierTest, KeyboardLayoutTest, LayoutRetryTest and SearchRobustnessTest, with the rest of `:core`'s tests. `tools/check.sh unit` runs them under a Turkish and under a Persian default locale.
+- `tools/gradle.sh :core:testDebugUnitTest --tests '*SearchBenchmark*' -Ppv.bench` gives the JIT numbers of §5 and fails when the median keystroke takes 1 ms or more; `-Ppv.bench=-Xint` gives the interpreter-only numbers, in a JVM of its own. Both also write `core/build/bench/result-jit.txt` or `result-Xint.txt`.
+- `tools/gradle.sh :core:testDebugUnitTest --tests '*ConverterEval*' -Ppv.evalArgs="build/eval const:corpus/const_cyr.tsv:corpus/const_lat.tsv personal-data:corpus/pd_cyr.tsv:corpus/pd_lat.tsv cybersecurity:corpus/cyber_cyr.tsv:corpus/cyber_lat.tsv labour-code:corpus/labour_cyr.tsv:corpus/labour_lat.tsv"` gives §4: the report in `build/eval/summary.txt`, each text's word errors in `build/eval/<name>-c2l-errors.tsv` and `<name>-l2c-errors.tsv`. Paths are absolute or relative to the project root. The corpus is not in the repository; `core/src/test/java/io/github/dilshodbekmx/passwordvault/core/tools/extract_lex.py page.html out.tsv` makes each file from `https://lex.uz/docs/N` and `https://lex.uz/docs/-N`.
+- The same test with `-Ppv.evalArgs="--glossary corpus/glossary/glossary.tsv"` gives §4.5 (the glossary TSV is not in the repository either).
+- `tools/gradle.sh :core:testDebugUnitTest --tests '*UzbekCyrillicStrings*' -Ppv.uzArgs="in.xml out.xml"`, with one or more such pairs, drafts the Cyrillic files (build-plan package 6.3); an output file is written over.
 
 ## Sources
 
