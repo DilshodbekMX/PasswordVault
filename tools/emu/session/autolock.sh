@@ -20,6 +20,8 @@
 #   - away for 10 s (Home, then the launcher's intent) does not lock;
 #   - away for 31 s locks; the master password opens it again;
 #   - the screen off for 3 s locks at once (dumpsys power proves it was off);
+#   - the screen off for 3 s while the app is away (8 s away in all) locks: only the screen-off
+#     receiver sees it, since no ON_STOP comes with it;
 #   - with the lock delay set to "Immediately" in pv_settings (run-as and a restart of the app;
 #     SKIPPED on staging), a rotation still does not lock, while leaving does, at once;
 #   - the app did not crash.
@@ -232,6 +234,24 @@ screen_off_locks_at_once() {
     on Locked
 }
 
+# The screen off for 3 s while the app is already away, within the delay: no ON_STOP comes with it,
+# so only the ACTION_SCREEN_OFF receiver can lock (lock.md §10.2 rule 2). From Android 14 the
+# broadcast may be held while the app is cached and arrive when it comes back; it locks then.
+screen_off_while_away_locks() {
+    local i power
+    pv_shell input keyevent KEYCODE_HOME >/dev/null || return 1
+    for i in 1 2 3 4 5 6 7 8 9 10; do in_front || break; pv_sleep 0.5; done
+    pv_sleep 3
+    pv_shell input keyevent KEYCODE_SLEEP >/dev/null || return 1
+    pv_sleep 3
+    power=$(pv_shell dumpsys power 2>/dev/null | tr -d '\r' | grep -m 1 -o 'mWakefulness=[A-Za-z]*')
+    pv_shell input keyevent KEYCODE_WAKEUP >/dev/null
+    case "$power" in mWakefulness=Asleep | mWakefulness=Dozing) ;; *) pv_log "the screen did not go off: $power"; return 1 ;; esac
+    pv_sleep 1
+    pv_unlock || return 1
+    relaunch && on Locked
+}
+
 # "Immediately" through the settings file (the Settings screen comes with build plan 4.3): the app
 # reads it once per process, so it is stopped, edited, started and unlocked again.
 set_immediately() {
@@ -262,6 +282,8 @@ pv_step "away for 10 s does not lock" -- away_10_s_does_not_lock
 pv_step "away for 31 s locks" -- away_31_s_locks
 pv_step "the master password opens it again" -- unlock
 pv_step "the screen off for 3 s locks at once" -- screen_off_locks_at_once
+pv_step "the master password opens it again" -- unlock
+pv_step "the screen off while the app is away (8 s in all) locks" -- screen_off_while_away_locks
 pv_step "the master password opens it again" -- unlock
 if ! pv_is_debuggable; then
     for name in "the lock delay set to Immediately (pv_settings, a new process, unlocked)" \
