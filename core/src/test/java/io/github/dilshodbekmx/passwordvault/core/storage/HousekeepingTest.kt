@@ -252,6 +252,17 @@ class HousekeepingTest {
     }
 
     @Test
+    fun aFileThatReadsAgainOnTheWalkCountsAsVerified() {
+        val phone = Phone()
+        earlier(phone, 12)
+        phone.files.fail(FakeFiles.Op.READ, times = 1) { it == live(9) } // only the read of the scan fails
+        val store = phone.process()
+        assertEquals(null, (store.scan().current as Current.Present).facts.keptVkIds)
+        store.housekeeping(phone.save(store, phone.unlockOpened(store, password), vaultOf(13)))
+        assertEquals((8L..13L).toList(), phone.liveNumbers())
+    }
+
+    @Test
     fun theLastCopyOfEachEarlierAppVersionStays() {
         val phone = Phone(build = BuildInfo("PasswordVault 1.0", 1))
         earlier(phone, 4)

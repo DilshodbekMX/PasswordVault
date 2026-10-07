@@ -162,6 +162,17 @@ class CommitTest {
     }
 
     @Test
+    fun aKeyThatWasWipedIsNeverSealedUnder() {
+        // At a lock the repository zeroes VK through useKey; a save that came after it must not write a generation sealed under zeros.
+        val (store, opened) = openedVault()
+        store.useKey(opened) { it.fill(0) }
+        val before = phone.files.log.size
+        assertEquals(CommitResult.Failed, store.commit(opened, vaultOf(3)))
+        assertEquals(StageResult.Failed, store.stageRekey(opened, vaultOf(3), ByteArray(32), id(9), phone.keys("x").slot))
+        assertEquals(emptyList<String>(), writes(before))
+    }
+
+    @Test
     fun onlyTheCurrentVaultIsSavedInto() {
         val store = phone.process()
         val (keys, _) = phone.create(store, vaultOf(1))

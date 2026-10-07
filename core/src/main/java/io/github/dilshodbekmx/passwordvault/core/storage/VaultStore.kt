@@ -493,6 +493,8 @@ internal class VaultStore(
         vkId: String,
         slot: PasswordSlot,
     ): Written {
+        // A key of zeros is a key that was wiped (at a lock): nothing is ever sealed under it.
+        if (vk.size != KEY_SIZE || vk.all { it == 0.toByte() }) return Written.Failed
         if (!WriteRules.hold(vault)) return Written.Failed
         val sealed = try {
             codec.seal(vault, vk, vaultId, vkId, number, slot)
@@ -601,6 +603,7 @@ internal class VaultStore(
         val gens = LinkedHashMap<Long, Housekeeping.Gen>()
         for (gen in survey.gens) gens[gen.number] = Housekeeping.Gen(gen.number, gen.state, gen.header?.vkId, gen.header?.writerVersion)
         var changed = false
+        val verified = verifiedOf(survey, memory, current)
         try {
             if (first != null) {
                 // Step 1: what lies above L, was not written here and did not open goes to quarantine.
@@ -620,7 +623,7 @@ internal class VaultStore(
                     }
                 }
                 // Step 2: verify below L, highest first, until five of the current key are verified.
-                val verified = verifiedOf(survey, memory, current)
+                verified += verifiedOf(survey, memory, current)
                 for (gen in survey.gens) {
                     if (verified.size >= Housekeeping.VERIFIED) break
                     if (gen.number >= first) continue
@@ -643,13 +646,7 @@ internal class VaultStore(
                 }
             }
             // Steps 3 and 4.
-            val doomed = Housekeeping.deletions(
-                gens.values.toList(),
-                current,
-                verifiedOf(survey, memory, current).filter { it in gens },
-                memory.written.keys,
-                build.writerVersion,
-            )
+            val doomed = Housekeeping.deletions(gens.values.toList(), current, verified.filter { it in gens }, memory.written.keys, build.writerVersion)
             for (number in doomed) {
                 val path = Names.child(liveDir, Names.generation(number, Names.PVAULT))
                 files.delete(path)
@@ -1000,7 +997,7 @@ internal class VaultStore(
         val result = try {
             codec.open(file, vk)
         } catch (e: RuntimeException) {
-            BodyResult.TagFailed
+            return BodyResult.TagFailed // a key of the wrong size, say: it says nothing about the file
         }
         known[path]?.body = when (result) {
             is BodyResult.Opened -> Body.OPENED
@@ -1199,6 +1196,9 @@ internal class VaultStore(
     internal companion object {
         /** The largest vault file: 16,777,216 bytes [V-C4]. A read takes at most one byte more. */
         const val CAP = 16_777_216
+
+        /** VK: 32 bytes (§4.6). */
+        private const val KEY_SIZE = 32
 
         private fun Body?.isUsable(): Boolean = this != Body.DAMAGED && this != Body.NEWER
     }
