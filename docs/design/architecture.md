@@ -689,7 +689,7 @@ Result: OK with the header values and `trailerOk`. Until the body has opened, th
 
 1. Only version 1, only the constants of 4.2, only the canonical header, only the canonical body of 4.3.
 2. Every seal uses a fresh 12-byte nonce from `RandomSource`: one for the body, one for a new slot.
-3. `created` is `Clock.wallMs()` at sealing; `generator` and `writer_version` come from `BuildInfo`.
+3. `created` is `Clock.wallMs()` at sealing, held within 0 to 9,999,999,999,999,999 (the header's form of 4.2): a wall clock outside that range must not make a file that R7 refuses; `generator` and `writer_version` come from `BuildInfo`.
 4. On an ordinary save the slot is copied **byte for byte** from the generation that was opened: VK and the password have not changed.
 5. A file longer than the cap is never written (`TooLarge`).
 
