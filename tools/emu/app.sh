@@ -81,6 +81,20 @@ pva_height() {
     esac
 }
 
+# pva_reveal ID: ID is on the screen, after scrolling down for it (up to five swipes): on a short
+# screen a node can be below the fold, and only nodes that are shown are reported.
+pva_reveal() {
+    local i
+    for i in 1 2 3 4 5 6; do
+        pva_present "$1" 2 && return 0
+        [ "$i" -lt 6 ] || break
+        pva_hide_keyboard
+        pva_scroll_down
+    done
+    pv_log "no $1 after scrolling; ids: $(pva_ids)"
+    return 1
+}
+
 # pva_tap ID: taps the node whose id is ID, after scrolling it into view and above the bottom band
 # where the system's navigation bar is (at most 160 px: 48 dp at 420 dpi is 126), up to five swipes.
 # A screen that is not laid out around the keyboard (the list: its Add button stays where it is) has
@@ -263,7 +277,7 @@ pva_kill_in_background() {
 pva_set_up() {
     pva_on Welcome 30 || return 1
     pva_tap pv.open.CreateMasterPassword && pva_on CreateMasterPassword || return 1
-    pva_need pv.setup.passphrase 20 || return 1
+    pva_reveal pv.setup.passphrase || return 1
     PVA_PASSWORD=$(pva_text pv.setup.passphrase) || return 1
     printf '%s\n' "$PVA_PASSWORD" | grep -Eq '^[a-z]{3,9}(-[a-z]{3,9}){5}$' \
         || { pv_log "not six words: '$PVA_PASSWORD'"; return 1; }
