@@ -46,6 +46,9 @@ import kotlinx.coroutines.flow.asStateFlow
  * It is not a dialog: a dialog's buttons would be blocked by the same overlay. A card at the bottom,
  * read once by TalkBack (a polite live region), that goes at the next touch that is not obscured,
  * or after 10 seconds (longer when the user asked Android for more time to read).
+ *
+ * Only the activity's window is watched, as ux.md §3 says: a dialog or sheet drops obscured touches
+ * too (`VaultWindow`), but without the notice.
  */
 @Composable
 fun ObscuredTouchNotice(content: @Composable () -> Unit) {

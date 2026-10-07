@@ -2,28 +2,29 @@
 <!-- Shared words and the texts of the shared parts of the screens (build plan 2.8; architecture.md
      §2.2 ui.common). Every name starts with common_; a text used by one screen area lives in that
      area's own file. -->
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Buttons that many screens and dialogs use. Short: a button may hold two lines at most. -->
+    <!-- Buttons that many screens and dialogs use. Short: a button may hold two lines at most.
+         (tools:ignore: the screens of later packages use them.) -->
 
     <!-- Button: accepts a message or a notice and closes it. -->
-    <string name="common_ok">OK</string>
+    <string name="common_ok" tools:ignore="UnusedResources">OK</string>
     <!-- Button: closes a dialog or stops a step without changing anything. -->
-    <string name="common_cancel">Cancel</string>
+    <string name="common_cancel" tools:ignore="UnusedResources">Cancel</string>
     <!-- Button: closes a screen, a sheet or a dialog. -->
-    <string name="common_close">Close</string>
+    <string name="common_close" tools:ignore="UnusedResources">Close</string>
     <!-- Button: skips an offer for now; it may come back later (for example the PIN or fingerprint offer). -->
-    <string name="common_not_now">Not now</string>
+    <string name="common_not_now" tools:ignore="UnusedResources">Not now</string>
     <!-- Button: puts a reminder or a notice off until later. -->
-    <string name="common_later">Later</string>
+    <string name="common_later" tools:ignore="UnusedResources">Later</string>
     <!-- Button: tries the same action once more after it failed. -->
-    <string name="common_try_again">Try again</string>
+    <string name="common_try_again" tools:ignore="UnusedResources">Try again</string>
     <!-- Button: deletes the thing it is next to. -->
-    <string name="common_delete">Delete</string>
+    <string name="common_delete" tools:ignore="UnusedResources">Delete</string>
     <!-- Button in a short message: takes back what was just done (for example a deletion). -->
-    <string name="common_undo">Undo</string>
+    <string name="common_undo" tools:ignore="UnusedResources">Undo</string>
     <!-- Button: ends a task that has finished. -->
-    <string name="common_done">Done</string>
+    <string name="common_done" tools:ignore="UnusedResources">Done</string>
 
     <!-- The button at the end of every password field and next to every stored password
          (ux.md §3, §8), read by TalkBack. Shown while the password is hidden. -->

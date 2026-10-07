@@ -1,6 +1,7 @@
 package io.github.dilshodbekmx.passwordvault.window
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.pm.PackageManager
 import android.os.Build
@@ -133,7 +134,11 @@ fun Modifier.vaultTextField(): Modifier = this.semantics {
  * including the fields of dialogs and bottom sheets, which inherit composition locals; Compose's
  * `KeyboardOptions` has no switch for it [L-win Experiment 3]. Once, around the activity's content
  * ([WindowPolicy.Root]). A keyboard may ignore the flag (ux.md §3).
+ *
+ * The flag's constant is from API 26; it is only a bit in `imeOptions`, which a keyboard that does
+ * not know it ignores, so it is set on Android 7 too (an updated keyboard there may honour it).
  */
+@SuppressLint("InlinedApi")
 @Composable
 fun NoPersonalizedLearning(content: @Composable () -> Unit) {
     InterceptPlatformTextInput(

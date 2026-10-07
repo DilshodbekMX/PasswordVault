@@ -12,6 +12,7 @@ import androidx.compose.foundation.text.contextmenu.data.TextContextMenuKeys
 import androidx.compose.foundation.text.contextmenu.provider.LocalTextContextMenuToolbarProvider
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -42,8 +43,9 @@ import org.junit.runner.RunWith
 /**
  * Build plan 2.8, [device]: each field wrapper sets the content type, the sensitive flag and the
  * window policy (R-13; lock.md §13.5; ux.md §3).
- *  - `VaultTextField` and `VaultSecureField`: `ContentDataType.None` (no autofill session, so no
- *    fill or save request [V-P4]) and `isSensitiveData` [V-P5] on the editable node itself.
+ *  - `VaultTextField`, `VaultSecureField` and `VaultSearchField`: `ContentDataType.None` (no
+ *    autofill session, so no fill or save request [V-P4]) and `isSensitiveData` [V-P5] on the
+ *    editable node itself.
  *  - The window's part, inside `WindowPolicy.Root`: the text toolbar has no "Autofill" item, which
  *    would send a manual autofill request [L-win Experiment 2]; and the keyboard gets
  *    `IME_FLAG_NO_PERSONALIZED_LEARNING` [L-win Experiment 3].
@@ -66,16 +68,15 @@ class FieldPolicyTest {
     }
 
     @Test
-    fun bothFieldsOptOutOfAutofillAndAreSensitive() {
+    fun everyFieldWrapperOptsOutOfAutofillAndIsSensitive() {
         compose.setContent {
             WindowPolicy.Root {
                 Column {
-                    VaultTextField(state = remember { TextFieldState() }, modifier = Modifier.testTag(PLAIN))
-                    VaultSecureField(state = remember { TextFieldState() }, modifier = Modifier.testTag(SECURE))
+                    VaultFields()
                 }
             }
         }
-        for (tag in listOf(PLAIN, SECURE)) {
+        for (tag in WRAPPERS) {
             val config = compose.onNodeWithTag(tag, useUnmergedTree = true).fetchSemanticsNode().config
             assertNotNull("$tag is the editable node", config.getOrNull(SemanticsActions.SetText))
             assertEquals("$tag content type", ContentDataType.None, config.getOrNull(SemanticsProperties.ContentDataType))
@@ -92,8 +93,7 @@ class FieldPolicyTest {
                 Column {
                     WindowPolicy.Root {
                         Column {
-                            VaultTextField(state = remember { TextFieldState() }, modifier = Modifier.testTag(PLAIN))
-                            VaultSecureField(state = remember { TextFieldState() }, modifier = Modifier.testTag(SECURE))
+                            VaultFields()
                         }
                     }
                     OutlinedTextField(state = remember { TextFieldState() }, modifier = Modifier.testTag(CONTROL))
@@ -104,7 +104,7 @@ class FieldPolicyTest {
         if (Build.VERSION.SDK_INT >= 26) {
             assertTrue("a plain field offers Autofill: ${menu.names(control)}", TextContextMenuKeys.AutofillKey in control)
         }
-        for (tag in listOf(PLAIN, SECURE)) {
+        for (tag in WRAPPERS) {
             val items = longPressAndRecord(menu, tag)
             assertTrue("$tag offers Paste, so the toolbar was asked for: ${menu.names(items)}", TextContextMenuKeys.PasteKey in items)
             assertFalse("$tag offers Autofill: ${menu.names(items)}", TextContextMenuKeys.AutofillKey in items)
@@ -133,24 +133,31 @@ class FieldPolicyTest {
                 Column {
                     WindowPolicy.Root {
                         Column {
-                            VaultTextField(state = remember { TextFieldState() }, modifier = Modifier.testTag(PLAIN))
-                            VaultSecureField(state = remember { TextFieldState() }, modifier = Modifier.testTag(SECURE))
+                            VaultFields()
                         }
                     }
                     OutlinedTextField(state = remember { TextFieldState() }, modifier = Modifier.testTag(CONTROL))
                 }
             }
         }
-        for (tag in listOf(PLAIN, SECURE, CONTROL)) {
+        for (tag in WRAPPERS + CONTROL) {
             focusing = tag
             compose.onNodeWithTag(tag).performClick()
             compose.waitUntil(IME_MS) { imeOptions.any { it.first == tag } }
         }
         val flag = EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING
-        for (tag in listOf(PLAIN, SECURE)) {
+        for (tag in WRAPPERS) {
             assertTrue("$tag: imeOptions ${imeOptions.filter { it.first == tag }}", imeOptions.filter { it.first == tag }.all { it.second and flag != 0 })
         }
         assertTrue("the control has no flag: $imeOptions", imeOptions.filter { it.first == CONTROL }.all { it.second and flag == 0 })
+    }
+
+    /** One field of each wrapper: `VaultTextField`, `VaultSecureField`, `VaultSearchField`. */
+    @Composable
+    private fun VaultFields() {
+        VaultTextField(state = remember { TextFieldState() }, modifier = Modifier.testTag(PLAIN))
+        VaultSecureField(state = remember { TextFieldState() }, modifier = Modifier.testTag(SECURE))
+        VaultSearchField(state = remember { TextFieldState() }, onSearch = {}, modifier = Modifier.testTag(SEARCH))
     }
 
     /** Long-presses the empty field [tag] and returns the items its toolbar was asked to show. */
@@ -177,8 +184,10 @@ class FieldPolicyTest {
 
     private companion object {
         const val PLAIN = "plain"
+        const val SEARCH = "search"
         const val SECURE = "secure"
         const val CONTROL = "control"
+        val WRAPPERS = listOf(PLAIN, SECURE, SEARCH)
         const val TOOLBAR_MS = 5_000L
         const val IME_MS = 10_000L
     }
