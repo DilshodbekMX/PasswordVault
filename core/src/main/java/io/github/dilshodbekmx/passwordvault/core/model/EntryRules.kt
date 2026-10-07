@@ -150,13 +150,12 @@ object EntryRules {
     /**
      * The name taken from the websites when none was typed: `WebAddress.hostOf` of the first website
      * that is not blank (after [normalizeUrl]), such as `mail.google.com` for
-     * `https://mail.google.com/mail/u/0`, cut to [TITLE_MAX]. Null when there is no website or its
-     * host is empty.
+     * `https://mail.google.com/mail/u/0`, stored as any name this app writes (trimmed, cut to
+     * [TITLE_MAX]). Null when there is no website or its host is empty.
      */
     fun fromWebsites(urls: List<String>): String? {
         val first = urls.asSequence().map(::normalizeUrl).firstOrNull { it.isNotEmpty() } ?: return null
-        val host = WebAddress.hostOf(first).trim()
-        return if (host.isEmpty()) null else cut(host, TITLE_MAX)
+        return storedTitle(WebAddress.hostOf(first)).ifEmpty { null }
     }
 
     /**

@@ -75,6 +75,13 @@ class TitleTest {
     }
 
     @Test
+    fun aNameFromAnUncheckedWebsiteIsCleanedLikeAnyStoredName() {
+        // A screen may ask before the form is checked: the name it gets is still one the vault can hold.
+        assertEquals("ab.example", EntryRules.fromWebsites(listOf("https://a\u0001b.example/x")))
+        assertEquals("a�.example", EntryRules.fromWebsites(listOf("https://a\uD800.example")))
+    }
+
+    @Test
     fun storedNamesComeFromEditTexts() {
         val russian = object : EditTexts {
             override fun untitled(nowMs: Long) = "Без названия $nowMs"

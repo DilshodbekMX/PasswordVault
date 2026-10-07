@@ -23,7 +23,7 @@ internal object VaultData {
     }
 
     fun forgetPlainExport(vault: Vault, uri: String): Edited<Boolean> {
-        val kept = vault.plainExports.filter { it.uri != uri }
+        val kept = without(vault.plainExports, uri)
         if (kept.size == vault.plainExports.size) return Edited(vault, false)
         return Edited(vault.copy(plainExports = kept), true)
     }
@@ -34,7 +34,7 @@ internal object VaultData {
     }
 
     fun forgetBackup(vault: Vault, uri: String): Edited<Boolean> {
-        val kept = vault.backups.filter { it.uri != uri }
+        val kept = without(vault.backups, uri)
         if (kept.size == vault.backups.size) return Edited(vault, false)
         return Edited(vault.copy(backups = kept), true)
     }
@@ -61,6 +61,12 @@ internal object VaultData {
     /** [list] without a note of the same document, then the new note last. */
     private fun noted(list: List<FileRef>, nowMs: Long, uri: String, name: String): List<FileRef> {
         val ref = FileRef(Entries.fix(uri), Entries.fix(name), nowMs)
-        return list.filter { it.uri != ref.uri } + ref
+        return without(list, ref.uri) + ref
+    }
+
+    /** [list] without the notes of the document [uri], compared as it is stored. */
+    private fun without(list: List<FileRef>, uri: String): List<FileRef> {
+        val stored = Entries.fix(uri)
+        return list.filter { it.uri != stored }
     }
 }
