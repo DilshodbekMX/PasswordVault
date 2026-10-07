@@ -30,6 +30,12 @@ import kotlinx.serialization.json.Json
  * while the ids stay here. All of it is snapshot state, read by Compose, and changed on the main
  * thread only. [encode] and [decode] keep the three stacks across a new process; the top-level state
  * is not kept, because a new process starts at [Top.STARTING] and the lock decides again.
+ *
+ * **A lock while the activity is stopped** (the lock delay, a screen-off) switches the stack at
+ * once, but Compose does not recompose a stopped activity, so the unlocked screens leave the display,
+ * and their ViewModels are cleared, only when the activity starts again (measured on API 37). So a
+ * ViewModel that holds account data or a secret also drops it itself when `VaultRepository.state`
+ * becomes `VaultState.Locked`.
  */
 class NavState(setup: List<Route> = emptyList(), locked: List<Route> = emptyList(), unlocked: List<Route> = emptyList()) :
     Navigator {
