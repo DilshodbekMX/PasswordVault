@@ -63,9 +63,36 @@ ids() { pv_ui_nodes | awk -F'|' '$3 ~ /^pv[.]/ { printf "%s ", $3 }'; }
 
 present() { pv_ui_wait "[|]$(re "$1")\$" "${2:-5}"; }
 
+# need ID [SECONDS]: like present, but says what is shown when ID is not.
+need() { present "$@" || { pv_log "no $1; ids: $(ids)"; return 1; }; }
+
 absent() { ! pv_ui_nodes | pv_ui_match "[|]$(re "$1")\$" | grep -q .; }
 
-tap() { pv_ui_tap "[|]$(re "$1")\$" || { pv_log "no node with id $1; ids: $(ids)"; return 1; }; }
+# The screen's height, and the bottom band where the system's navigation bar is (about 48 dp, 126 px
+# at 420 dpi): a node whose centre is there is scrolled up before it is tapped, as shell/walk.sh
+# does. The screens tapped here have no bottom bar of the app's own, so the band is narrower.
+SCREEN_H=$(pv_shell wm size 2>/dev/null | tr -d '\r' | sed -n 's/^Physical size: *[0-9]*x\([0-9]*\)$/\1/p' | head -n 1)
+SCREEN_H=${SCREEN_H:-1920}
+SAFE_BOTTOM=$((SCREEN_H - 160))
+
+# tap ID: taps the node whose resource id is ID, after scrolling it above the bottom band.
+tap() {
+    local id_re="[|]$(re "$1")\$" nodes line y i
+    for i in 1 2 3 4 5; do
+        nodes=$(pv_ui_nodes)
+        line=$(printf '%s\n' "$nodes" | pv_ui_match "$id_re")
+        [ -n "$line" ] || { pv_log "no node with id $1; ids: $(ids)"; return 1; }
+        y=$(echo "$line" | cut -d'|' -f7)
+        if [ "$y" -lt "$SAFE_BOTTOM" ]; then
+            pv_ui_tap "$id_re" "$nodes"
+            return
+        fi
+        pv_shell input swipe 540 $((SCREEN_H * 6 / 10)) 540 $((SCREEN_H * 3 / 10)) 400 >/dev/null
+        pv_sleep 1
+    done
+    pv_log "the node $1 stays in the bottom band (y $y of $SCREEN_H)"
+    return 1
+}
 
 # type_into ID TEXT: focuses the field ID and types TEXT.
 type_into() {
@@ -80,7 +107,7 @@ submit() {
     pv_shell input keyevent KEYCODE_ENTER >/dev/null
     present "$2" "${3:-15}" && return 0
     pv_log "Enter did not reach $2; tapping $1"
-    tap "$1" && present "$2" "${3:-15}"
+    tap "$1" && need "$2" "${3:-15}"
 }
 
 relaunch() {
@@ -133,7 +160,7 @@ start() {
 set_up() {
     tap pv.open.CreateMasterPassword && on CreateMasterPassword || return 1
     if present pv.setup.typeOwn 3; then
-        tap pv.setup.typeOwn && present pv.setup.own && type_into pv.setup.own "$PASSWORD" || return 1
+        tap pv.setup.typeOwn && need pv.setup.own && type_into pv.setup.own "$PASSWORD" || return 1
         submit pv.setup.useOwn pv.setup.reuse.no && tap pv.setup.reuse.no || return 1 # "No, it's new"
     else
         tap pv.open.WriteDown || return 1
