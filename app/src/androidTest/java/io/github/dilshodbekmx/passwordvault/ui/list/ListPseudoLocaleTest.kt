@@ -3,22 +3,23 @@ package io.github.dilshodbekmx.passwordvault.ui.list
 import android.content.Context
 import android.content.res.Configuration
 import android.graphics.Bitmap
+import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalResources
-import androidx.compose.ui.graphics.asAndroidBitmap
-import androidx.compose.ui.test.captureToImage
-import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import io.github.dilshodbekmx.passwordvault.R
 import io.github.dilshodbekmx.passwordvault.core.model.Entry
 import io.github.dilshodbekmx.passwordvault.core.model.FileRef
@@ -66,10 +67,13 @@ class ListPseudoLocaleTest {
 
     @Composable
     private fun InLocale(context: Context, content: @Composable () -> Unit) {
+        val configuration = context.resources.configuration
         CompositionLocalProvider(
             LocalContext provides context,
-            LocalConfiguration provides context.resources.configuration,
+            LocalConfiguration provides configuration,
             LocalResources provides context.resources,
+            // The direction comes from the window, not from these resources: ar-XB is laid out right to left.
+            LocalLayoutDirection provides if (configuration.layoutDirection == View.LAYOUT_DIRECTION_RTL) LayoutDirection.Rtl else LayoutDirection.Ltr,
         ) {
             PasswordVaultTheme(ThemeChoice.LIGHT, content)
         }
@@ -100,17 +104,16 @@ class ListPseudoLocaleTest {
         plainExports = listOf(FileRef("content://docs/1", "passwords-2026-10-05.csv", now - 2 * 3_600_000L)),
     )
 
-    /** Keeps a picture of every window shown now (a dialog is a window of its own) in `cache/pv-screens/`. */
+    /**
+     * Keeps a picture of the whole screen in `cache/pv-screens/`: dialogs included, which are windows
+     * of their own (`captureToImage` of a dialog's root gave the activity behind it). The debug build
+     * does not set FLAG_SECURE, so the screen can be read.
+     */
     private fun save(name: String) {
         compose.waitForIdle()
         val dir = File(compose.activity.cacheDir, "pv-screens").apply { mkdirs() }
-        val roots = compose.onAllNodes(isRoot())
-        val count = roots.fetchSemanticsNodes().size
-        for (i in 0 until count) {
-            val bitmap = roots[i].captureToImage().asAndroidBitmap()
-            val suffix = if (count == 1) "" else "-window$i"
-            File(dir, "list-$name$suffix.png").outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
-        }
+        val bitmap = InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot() ?: return
+        File(dir, "list-$name.png").outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
     }
 
     @Test
