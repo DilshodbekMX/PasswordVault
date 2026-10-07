@@ -266,7 +266,7 @@ Six packages that together make an app a person can use with the master password
 5. `am force-stop`, start again: locked; unlock; the account is there.
 6. Leave for 31 s: locked. Rotate on the lock screen and on the edit form: nothing is lost, nothing locks, and the keyboard comes back.
 7. U §12 check 4: generate a password in a new form, turn the screen off, unlock: the form reopens with it and "Your unsaved changes were kept".
-8. Switch the language with the debug `locale` command (to `b+uz+Cyrl` and back): the app stays open on the same screen and the list re-sorts.
+8. Switch the language with the debug `locale` command (to `ru` and back; `b+uz+Cyrl` shows English until wave 6 brings its texts, because Android chooses among the languages the APK has): the app stays open on the same screen and the list re-sorts.
 9. `smoke.sh staging`: set up, add, rotate, kill in the background and come back to the same screen, lock, unlock.
 
 Tag `wave-3A-ok`.
