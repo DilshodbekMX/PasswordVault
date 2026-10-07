@@ -1,5 +1,6 @@
 package io.github.dilshodbekmx.passwordvault.platform
 
+import android.os.Build
 import android.os.Process
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.lambdapioneer.argon2kt.Argon2Exception
@@ -127,10 +128,27 @@ class NativeArgon2idTest {
     }
 
     @Test
-    fun argon2ktFailingToAllocateIsKdfUnavailable() {
-        // 2 TiB cannot be allocated; on a 64-bit process argon2 accepts the size and its malloc fails
-        // (ARGON2_MEMORY_ALLOCATION_ERROR). A 32-bit one refuses the size first, which is no test.
-        assumeTrue("a 64-bit process", Process.is64Bit())
+    fun argon2ktsOutOfMemoryErrorsAreKdfUnavailable() {
+        // argon2kt's own exceptions, made from the codes its native layer returns.
+        for (code in listOf(-22, -33, 1003)) { // ARGON2_MEMORY_ALLOCATION_ERROR, ARGON2_THREAD_FAIL, ARGON2JNI_MALLOC_FAILED
+            val error = Argon2Exception.fromErrorCode(code)
+            val mapped = NativeArgon2id.failure(error)
+            assertTrue("$code: $mapped", mapped is KdfUnavailable && mapped.cause === error)
+        }
+        for (code in listOf(-6, -14, -15, -35, 1000)) { // salt too short, memory too little or too much, …
+            val error = Argon2Exception.fromErrorCode(code)
+            assertTrue("$code passes unchanged", NativeArgon2id.failure(error) === error)
+        }
+    }
+
+    @Test
+    fun aWorkAreaThatCannotBeAllocatedIsKdfUnavailable() {
+        // 2 TiB: argon2 accepts the size in a 64-bit process, and scudo, the allocator from Android
+        // 11 on, refuses any request above 1 TiB, so argon2's malloc returns null. The Android 7 and
+        // 9 images allocate with jemalloc over a kernel that promises any amount
+        // (vm.overcommit_memory 1): there the request succeeds and the low-memory killer ends the
+        // process while Argon2 fills it, which no code can catch (seen on both on 2026-10-07).
+        assumeTrue("a 64-bit process on Android 11 or later", Process.is64Bit() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
         try {
             native.derive("x".toByteArray(), ByteArray(16), Argon2Params(Int.MAX_VALUE, 1, 4, 32))
             fail("2 TiB were allocated")

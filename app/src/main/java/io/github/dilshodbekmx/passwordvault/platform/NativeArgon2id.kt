@@ -59,8 +59,7 @@ class NativeArgon2id private constructor(private val argon2: Argon2Kt) : Argon2i
                         version = Argon2Version.V13,
                     )
                 } catch (e: Argon2Exception) {
-                    if (errorCodeOf(e) in OUT_OF_RESOURCES) throw KdfUnavailable(e)
-                    throw e
+                    throw failure(e)
                 }
                 return takeKey(result.rawHash, result.encodedOutput, params.outLen)
             } finally {
@@ -140,6 +139,19 @@ class NativeArgon2id private constructor(private val argon2: Argon2Kt) : Argon2i
                 wipe(encoded)
             }
         }
+
+        /**
+         * What an argon2kt error becomes: `KdfUnavailable` when the memory or the threads could not
+         * be had, otherwise the error itself.
+         *
+         * Only a failure that the allocator reports arrives here. Android 11 and later allocate with
+         * scudo, which refuses a request it cannot meet; the Android 7 and 9 emulator images let the
+         * kernel promise any amount (`vm.overcommit_memory` 1), and a work area larger than the free
+         * memory is then found out only while Argon2 fills it, by the low-memory killer. No code can
+         * catch that; `GuardedArgon2id`'s heap check protects the Java fallback, and argon2kt's 64 MiB
+         * fit on every phone the app supports.
+         */
+        internal fun failure(e: Argon2Exception): Exception = if (errorCodeOf(e) in OUT_OF_RESOURCES) KdfUnavailable(e) else e
 
         /** A direct buffer whose capacity is exactly [bytes]: argon2kt hashes the whole capacity [V-C1]. */
         private fun exactly(bytes: ByteArray): ByteBuffer = ByteBuffer.allocateDirect(bytes.size).put(bytes)
