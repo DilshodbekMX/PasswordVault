@@ -10,12 +10,12 @@ import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.ExecutorCoroutineDispatcher
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.asCoroutineDispatcher
 import org.junit.After
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
@@ -35,14 +35,15 @@ import org.junit.Test
  */
 class GatedMasterKdfTest {
 
+    /** The callers' threads, and the derivations' own: four, so that a gate that let two through would show it. */
     private val callers: ExecutorCoroutineDispatcher = Executors.newFixedThreadPool(8).asCoroutineDispatcher()
-    private val kdfThread: ExecutorCoroutineDispatcher =
+    private val kdfThreads: ExecutorCoroutineDispatcher =
         Executors.newFixedThreadPool(4) { task -> Thread(task, "pv-kdf-test") }.asCoroutineDispatcher()
 
     @After
     fun stopThreads() {
         callers.close()
-        kdfThread.close()
+        kdfThreads.close()
     }
 
     private val salt = FakeRandom.sequence(0, 16)
@@ -74,7 +75,7 @@ class GatedMasterKdfTest {
         }
     }
 
-    private fun kdf(argon2: Argon2id, dispatcher: CoroutineDispatcher = kdfThread) = CryptoFactory.masterKdf(argon2, dispatcher)
+    private fun kdf(argon2: Argon2id, dispatcher: CoroutineDispatcher = kdfThreads) = CryptoFactory.masterKdf(argon2, dispatcher)
 
     /**
      * Whether [original] is [caught] or among its causes. In the tests kotlinx.coroutines runs in its
@@ -145,7 +146,7 @@ class GatedMasterKdfTest {
                 overlap.leave()
             }
         }
-        val kdfs = listOf(kdf(counting()), kdf(counting(), callers), kdf(counting(), kdfThread))
+        val kdfs = listOf(kdf(counting()), kdf(counting(), callers), kdf(counting(), kdfThreads))
         (1..24).map { n -> async(callers) { kdfs[n % 3].kek(password(n), salt) } }.awaitAll()
         assertEquals(24, overlap.done.get())
         assertEquals("derivations at the same time", 1, overlap.most.get())

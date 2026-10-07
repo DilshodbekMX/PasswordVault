@@ -31,27 +31,29 @@ class DerivedKeysTest {
     }
 
     @Test
-    fun lockMd43_theUzbekWord() {
-        // "oʻgʻlim-Toʻra" with U+02BB, whose bytes are 6f2767276c696d2d546f277261 (MasterPasswordBytesTest).
-        assertEquals(UZBEK_WORD_KEY, keyOf("oʻgʻlim-Toʻra"))
-    }
-
-    @Test
-    fun lockMd43_theUzbekWordTypedWithTheGreekSigns_givesTheSameKey() {
-        // U+0374, U+1FEF and U+1FFD, which NFC turns into members of the apostrophe list.
-        assertEquals(UZBEK_WORD_KEY, keyOf("oʹg`lim-To´ra"))
+    fun lockMd43_everySpellingOfTheUzbekWordGivesTheListedKey() {
+        // "oʻgʻlim-Toʻra"; every spelling gives the bytes 6f2767276c696d2d546f277261 (MasterPasswordBytesTest).
+        val spellings = listOf(
+            "o\u02BBg\u02BBlim-To\u02BBra", // U+02BB, the Uzbek letter
+            "o\u2018g\u2018lim-To\u2018ra", // U+2018
+            "o\u0027g\u0027lim-To\u0027ra", // U+0027
+            "o\u2019g\u02BClim-To\u0060ra", // U+2019, U+02BC, U+0060
+            "o\u00B4g\uFF07lim-To\u2032ra", // U+00B4, U+FF07, U+2032
+            "o\u0374g\u1FEFlim-To\u1FFDra", // the Greek signs, which NFC turns into U+02B9, U+0060, U+00B4
+        )
+        for (spelling in spellings) assertEquals(spelling, UZBEK_WORD_KEY, keyOf(spelling))
     }
 
     @Test
     fun lockMd43_theDecomposedSpelling() {
-        // "Köz-Ўzbek" typed decomposed: o + U+0308, У + U+0306.
-        assertEquals("9f05463cb3a665fb4e22120cdad867630f76f12dc5ffdf4efaaa589f5baad5fa", keyOf("Köz-Ўzbek"))
+        // "Köz-Ўzbek" typed decomposed: o + U+0308, U+0423 + U+0306.
+        assertEquals("9f05463cb3a665fb4e22120cdad867630f76f12dc5ffdf4efaaa589f5baad5fa", keyOf("Ko\u0308z-\u0423\u0306zbek"))
     }
 
     @Test
     fun a413_fromTheTypedCharactersToTheVaultKey_withoutArgon2kt() = runBlocking {
         // A leading space, two spaces, a no-break space and a trailing space (architecture.md §4.13).
-        val typed = " correct  horse battery staple ".toCharArray()
+        val typed = " correct  horse\u00A0battery staple ".toCharArray()
         val kdf = CryptoFactory.masterKdf(
             CryptoFactory.guardedArgon2id(
                 native = null,
