@@ -283,7 +283,7 @@ Sources screen → file picker (`OpenDocument("*/*")`; providers label CSV as `t
 
 **Text decoding** (FR P2, P12), one `TextDecoding` for every file, which never switches a file silently:
 - JSON: strict UTF-8 only, refused on a bad byte (§5.2).
-- A UTF-8 BOM is removed; UTF-16 LE/BE is recognised by its BOM (Excel's "Unicode text") and, without one, by a NUL in every other byte. Every branch uses a reporting decoder and counts replaced bytes; a BOM in front of bytes that are not valid in its encoding is reported, not decoded leniently.
+- A UTF-8 BOM is removed; UTF-16 LE/BE is recognised by its BOM (Excel's "Unicode text") and, without one, by NUL bytes at one parity only: at least two of them, in at least one of every 16 characters of the first 8 KB, with at most one at the other parity for every 16 at that one (little-endian when the NULs are the odd bytes); a UTF-8 or Windows-1251 text has no NUL byte. Every branch uses a reporting decoder and counts replaced bytes; a BOM in front of bytes that are not valid in its encoding is reported, not decoded leniently.
 - CSV without a BOM: UTF-8 when the bytes are mostly UTF-8, that is when valid multi-byte UTF-8 sequences occur; a few bad bytes then become U+FFFD and the preview lists the affected lines. Windows-1251, what Russian-language Excel writes for "CSV (comma delimited)" [I], only when no valid multi-byte UTF-8 sequence occurs at all. One stray byte in a UTF-8 file must never turn every Cyrillic password into mojibake, as it did in the prototype.
 - The preview says which encoding was chosen and why, with "Text looks wrong? Read as UTF-8" (or "… as Windows-1251").
 
@@ -407,6 +407,7 @@ Real fixtures from Proton's test suite: a Chrome CSV (4 entries), its Windows va
 | §6.2 | The citation of the `_x005F_` rule; what openpyxl does with it; hidden fields in clear | FR P17.4, P17.5; D-17 |
 | §7.2 | The 64-byte HMAC key stated as a departure; the `<keyEncryptors>` element | FR P17.1, P17.6 |
 | §8.2 | Text decoding that never switches silently; the `sep=` line; rows with the wrong number of values | FR P2, P4, P12, P13 |
+| §8.2 | UTF-16 without a mark is recognised by NUL bytes at one parity, not "a NUL in every other byte", which holds only for Latin text: Cyrillic letters in UTF-16 have no NUL byte. Made at the wave-1 integration, after package 1.4 | build-plan 1.4 (`iface-26`) |
 | §8.3 | Merging stops at 10 websites; Firefox CSV; KeePassXC in any case; Uzbek Cyrillic aliases and header normalisation; the mapping screen whenever no password column is found | FR P5, P6, P13; D-10b |
 | §8.4 | Passwords never altered; over-limit values never drop an entry; `normalizeUrl` on import; the planner's speed | FR P5, P10, P14, P16; D-10f, D-15 |
 | §8.5, §9, the introduction | Where the fixtures, the prototype and the checks now are | build-plan 0.3 |
