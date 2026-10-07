@@ -14,12 +14,14 @@ import java.util.concurrent.atomic.AtomicReference
  * is thrown, or answered, at the place where the platform would have done it, so it takes the same
  * way through [KeystoreFailureAdapter] and the table of `KeystoreErrors` as a real one.
  *
- * Nothing in a release build arms a fault. The only caller is `LockDebug.ksFault` behind the debug
- * commands of the `debug` and `staging` source sets (build check R-2); and the app's own faults are
- * made with [testBuild] false in a release build, where [arm] then refuses every name. While nothing
- * is armed, each place costs one read of a field.
+ * Nothing in a release build arms a fault. The app's only caller will be `LockDebug.ksFault` (build
+ * plan 4.1), behind the debug commands of the `debug` and `staging` source sets (build check R-2);
+ * and the app's own faults are made with [testBuild] false in a release build, where [arm] refuses
+ * every name. While nothing is armed, each place costs one read of a field.
  *
- * `KeystoreAccess.faults` is the one object that the three Keystore classes of the app share.
+ * `KeystoreAccess.faults` is the one object that the three Keystore classes of the app share:
+ * `(graph.keys.device as KeystoreAccess).faults`. No fault makes anything open: each one fails a
+ * call, or (`getkey-null-once`) leaves it as it was.
  *
  * @param testBuild whether faults can be armed at all, and whether `KeystoreAccess.dropAllKeys`
  *   works: true in the builds that carry the debug commands, which are the builds that allow
