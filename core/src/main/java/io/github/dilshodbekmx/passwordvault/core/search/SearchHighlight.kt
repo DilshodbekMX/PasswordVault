@@ -30,7 +30,7 @@ fun matchedRanges(text: String, query: String): List<IntRange> {
         if (match == FoldedField.NO_MATCH) {
             // The second-tier spelling in which the word scores best (the first on a tie).
             for (s in arrayOf(Spelling.RUSSIAN, Spelling.ACCENT_FREE)) {
-                if (SearchIndex.repeatsEarlier(field, q, w, s)) continue
+                if (field.repeatsEarlier(q, w, s)) continue
                 val m = field.bestMatch(q.word(w, s), s)
                 if (FoldedField.classOf(m) > FoldedField.classOf(match)) {
                     match = m

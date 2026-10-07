@@ -88,7 +88,7 @@ class SearchIndex(entries: List<SearchFields>) {
                 total += s shr FIELD_BITS
                 if (s > best) best = s
             }
-            if (phrase.isNotEmpty() && titles[e].matchClass(phrase, Spelling.PRIMARY) >= WORD) total += PHRASE_BONUS
+            if (phrase.isNotEmpty() && titles[e].firstTierClass(phrase) >= WORD) total += PHRASE_BONUS
             bestField[e] = (best and FIELD_MASK).toByte()
             packed[count++] = (total.toLong() shl 32) or (Int.MAX_VALUE - e).toLong()
         }
@@ -130,20 +130,23 @@ class SearchIndex(entries: List<SearchFields>) {
      * fields, or -1 when no field has it.
      */
     private fun scoreWord(e: Int, q: QueryWords, w: Int): Int {
-        if (q.word(w, Spelling.PRIMARY).isEmpty()) return scorePunctuation(e, q.raw[w])
-        val t = fieldScore(titles[e], q, w, TITLE_WEIGHT, MatchField.TITLE)
+        val word = q.word(w, Spelling.PRIMARY)
+        if (word.isEmpty()) return scorePunctuation(e, q.raw[w])
+        val t = fieldScore(titles[e], word, q, w, TITLE_WEIGHT, MatchField.TITLE)
         if (t >= 0) return t // a title match beats any other field
-        var best = fieldScore(usernames[e], q, w, USERNAME_WEIGHT, MatchField.USERNAME)
-        for (site in websites[e]) best = maxOf(best, fieldScore(site, q, w, WEBSITE_WEIGHT, MatchField.WEBSITE))
+        var best = fieldScore(usernames[e], word, q, w, USERNAME_WEIGHT, MatchField.USERNAME)
+        for (site in websites[e]) best = maxOf(best, fieldScore(site, word, q, w, WEBSITE_WEIGHT, MatchField.WEBSITE))
         if (best >= 0) return best
-        for (x in extras[e]) best = maxOf(best, fieldScore(x, q, w, EXTRA_WEIGHT, MatchField.EXTRA))
-        return maxOf(best, fieldScore(notes[e], q, w, NOTES_WEIGHT, MatchField.NOTES))
+        for (x in extras[e]) best = maxOf(best, fieldScore(x, word, q, w, EXTRA_WEIGHT, MatchField.EXTRA))
+        return maxOf(best, fieldScore(notes[e], word, q, w, NOTES_WEIGHT, MatchField.NOTES))
     }
 
-    private fun fieldScore(field: FoldedField, q: QueryWords, w: Int, weight: Int, f: MatchField): Int {
-        val cls = field.matchClass(q.word(w, Spelling.PRIMARY), Spelling.PRIMARY)
+    /** [scoreWord] in one [field]; [word] is query word [w] in the first tier. */
+    private fun fieldScore(field: FoldedField, word: String, q: QueryWords, w: Int, weight: Int, f: MatchField): Int {
+        val cls = field.firstTierClass(word)
         if (cls > NONE) return pack(weight + cls * POSITION_STEP, f)
-        val altCls = secondTierClass(field, q, w)
+        if (field.plain && q.plain(w)) return -1 // the second tier would only repeat the first
+        val altCls = field.secondTierClass(q, w)
         if (altCls > NONE) return pack(weight + altCls * POSITION_STEP - ALT_PENALTY, f)
         return -1
     }
@@ -181,54 +184,34 @@ class SearchIndex(entries: List<SearchFields>) {
 
         private const val FIELD_BITS = 3
         private const val FIELD_MASK = 7
-
-        /**
-         * The best match class of query word [w] in the second-tier spellings of [field]:
-         * each spelling of the word against the same spelling of the field. A comparison that
-         * would repeat an earlier one (both sides spelled the same as in it) is skipped.
-         */
-        internal fun secondTierClass(field: FoldedField, q: QueryWords, w: Int): Int {
-            var best = NONE
-            if (!repeatsEarlier(field, q, w, Spelling.RUSSIAN)) {
-                best = field.matchClass(q.word(w, Spelling.RUSSIAN), Spelling.RUSSIAN)
-            }
-            if (!repeatsEarlier(field, q, w, Spelling.ACCENT_FREE)) {
-                best = maxOf(best, field.matchClass(q.word(w, Spelling.ACCENT_FREE), Spelling.ACCENT_FREE))
-            }
-            return best
-        }
-
-        /**
-         * True when comparing query word [w] with [field] in [spelling] repeats the comparison
-         * of an earlier spelling: the field and the word are both spelled as there.
-         */
-        internal fun repeatsEarlier(field: FoldedField, q: QueryWords, w: Int, spelling: Spelling): Boolean =
-            when (spelling) {
-                Spelling.PRIMARY -> false
-                Spelling.RUSSIAN -> repeats(field, q, w, spelling, Spelling.PRIMARY)
-                Spelling.ACCENT_FREE ->
-                    repeats(field, q, w, spelling, Spelling.PRIMARY) || repeats(field, q, w, spelling, Spelling.RUSSIAN)
-            }
-
-        private fun repeats(field: FoldedField, q: QueryWords, w: Int, spelling: Spelling, earlier: Spelling): Boolean =
-            field.sameCompact(spelling, earlier) && q.word(w, spelling) == q.word(w, earlier)
     }
 }
 
 /**
  * A query's search key split at spaces into words, each word in every [Spelling], compact
- * (without spaces and punctuation, [FoldedField.compactOf]). Built once per query.
+ * (without spaces and punctuation, [FoldedField.compactOf]). Built once per query. A word that is
+ * the same in two spellings is one instance in both, so `===` tells whether comparing it in one
+ * spelling would repeat another ([FoldedField.secondTierClass]).
  */
 internal class QueryWords private constructor(
     /** The query's search key. */
     val key: String,
     /** The words of [key], before compaction (a word of punctuation only is looked up as it is). */
     val raw: List<String>,
-    private val primary: Array<String>,
-    private val russian: Array<String>,
-    private val accentFree: Array<String>,
+    /** The words in the first tier, [Spelling.PRIMARY]. */
+    val primary: Array<String>,
+    /** The words in [Spelling.RUSSIAN]. */
+    val russian: Array<String>,
+    /** The words in [Spelling.ACCENT_FREE]. */
+    val accentFree: Array<String>,
 ) {
     val size: Int get() = raw.size
+
+    /** For each word, true when it is the same in every spelling. */
+    private val plainWords = BooleanArray(raw.size) { w -> russian[w] === primary[w] && accentFree[w] === primary[w] }
+
+    /** True when word [w] is the same in every spelling: the second tier has nothing new to compare. */
+    fun plain(w: Int): Boolean = plainWords[w]
 
     /** Word [w] in [spelling]. */
     fun word(w: Int, spelling: Spelling): String = when (spelling) {
@@ -245,25 +228,34 @@ internal class QueryWords private constructor(
             if (key.isEmpty()) return null
             val raw = key.split(' ')
             val primary = Array(raw.size) { FoldedField.compactOf(raw[it]) }
-            val russian = wordsOf(SearchText.russianKeyboard(prepared), prepared, raw.size, primary)
+            val russian = wordsOf(SearchText.russianKeyboard(prepared), prepared, primary)
             val accentPrepared = SearchText.accentFree(prepared)
             val accentFree = if (accentPrepared === prepared) {
                 russian // no ş, ș or ç: the same as the Russian-keyboard spelling
             } else {
-                wordsOf(SearchText.russianKeyboard(accentPrepared), prepared, raw.size, primary)
+                wordsOf(SearchText.russianKeyboard(accentPrepared), prepared, primary, russian)
             }
             return QueryWords(key, raw, primary, russian, accentFree)
         }
 
         /**
-         * The compact words of [spelled], a spelling of [prepared]; [primary] when it is
-         * [prepared] itself or does not split into the same number of words.
+         * The compact words of [spelled], a spelling of [prepared]: [primary] when it is
+         * [prepared] itself or does not split into as many words; otherwise each word is the
+         * instance of [primary] or of an [earlier] spelling when it equals that one.
          */
-        private fun wordsOf(spelled: String, prepared: String, count: Int, primary: Array<String>): Array<String> {
+        private fun wordsOf(
+            spelled: String,
+            prepared: String,
+            primary: Array<String>,
+            vararg earlier: Array<String>,
+        ): Array<String> {
             if (spelled === prepared) return primary
             val split = SearchText.foldPrepared(spelled).key.split(' ')
-            if (split.size != count) return primary
-            return Array(count) { FoldedField.compactOf(split[it]) }
+            if (split.size != primary.size) return primary
+            return Array(primary.size) { w ->
+                val word = FoldedField.compactOf(split[w])
+                if (word == primary[w]) primary[w] else earlier.firstOrNull { it[w] == word }?.get(w) ?: word
+            }
         }
     }
 }
@@ -282,20 +274,8 @@ internal class FoldedField private constructor(
     private val accentCompact: String,
     private val accentStarts: LongArray,
 ) {
-    /** True when [spelling] of this field has the same compact form as [other]. */
-    fun sameCompact(spelling: Spelling, other: Spelling): Boolean = compactIn(spelling) === compactIn(other)
-
-    private fun compactIn(spelling: Spelling): String = when (spelling) {
-        Spelling.PRIMARY -> compact
-        Spelling.RUSSIAN -> russianCompact
-        Spelling.ACCENT_FREE -> accentCompact
-    }
-
-    private fun startsIn(spelling: Spelling): LongArray = when (spelling) {
-        Spelling.PRIMARY -> starts
-        Spelling.RUSSIAN -> russianStarts
-        Spelling.ACCENT_FREE -> accentStarts
-    }
+    /** True when this field reads the same in every spelling: the second tier has nothing new to compare. */
+    val plain: Boolean = russianCompact === compact && accentCompact === compact
 
     /**
      * How [word] (already compact, in [spelling]) matches this field in [spelling]:
@@ -304,13 +284,56 @@ internal class FoldedField private constructor(
      */
     fun matchClass(word: String, spelling: Spelling): Int = classOf(bestMatch(word, spelling))
 
+    /** [matchClass] in the first tier. */
+    fun firstTierClass(word: String): Int = classOf(bestMatchIn(compact, starts, word))
+
+    /**
+     * The best [matchClass] of query word [w] in the second tier: each second-tier spelling of the
+     * word against the same spelling of this field, without the comparisons that would repeat an
+     * earlier one ([repeatsEarlier]). Written out per spelling, as it runs for every field that
+     * the first tier misses.
+     */
+    fun secondTierClass(q: QueryWords, w: Int): Int {
+        val word = q.primary[w]
+        val russianWord = q.russian[w]
+        val accentWord = q.accentFree[w]
+        var best = SearchIndex.NONE
+        if (russianCompact !== compact || russianWord !== word) {
+            best = classOf(bestMatchIn(russianCompact, russianStarts, russianWord))
+        }
+        if ((accentCompact !== compact || accentWord !== word) &&
+            (accentCompact !== russianCompact || accentWord !== russianWord)
+        ) {
+            best = maxOf(best, classOf(bestMatchIn(accentCompact, accentStarts, accentWord)))
+        }
+        return best
+    }
+
+    /**
+     * True when comparing query word [w] with this field in [spelling] repeats the comparison of an
+     * earlier spelling: the field and the word are both spelled as there. The rule of
+     * [secondTierClass], for one spelling.
+     */
+    fun repeatsEarlier(q: QueryWords, w: Int, spelling: Spelling): Boolean = when (spelling) {
+        Spelling.PRIMARY -> false
+        Spelling.RUSSIAN -> russianCompact === compact && q.russian[w] === q.primary[w]
+        Spelling.ACCENT_FREE ->
+            (accentCompact === compact && q.accentFree[w] === q.primary[w]) ||
+                (accentCompact === russianCompact && q.accentFree[w] === q.russian[w])
+    }
+
     /**
      * Where [word] matches best in the compact form of [spelling]: (class shl 32) or
      * position; [NO_MATCH] (class NONE) if absent.
      */
-    fun bestMatch(word: String, spelling: Spelling): Long {
-        val c = compactIn(spelling)
-        val bits = startsIn(spelling)
+    fun bestMatch(word: String, spelling: Spelling): Long = when (spelling) {
+        Spelling.PRIMARY -> bestMatchIn(compact, starts, word)
+        Spelling.RUSSIAN -> bestMatchIn(russianCompact, russianStarts, word)
+        Spelling.ACCENT_FREE -> bestMatchIn(accentCompact, accentStarts, word)
+    }
+
+    /** [bestMatch] in the compact form [c] whose word starts are [bits]. */
+    private fun bestMatchIn(c: String, bits: LongArray, word: String): Long {
         if (word.isEmpty() || word.length > c.length) return NO_MATCH
         var best = NO_MATCH
         var from = 0
