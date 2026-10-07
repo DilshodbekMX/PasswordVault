@@ -23,6 +23,11 @@ import java.security.MessageDigest
  * writer rules of §4.5. [HeaderCodec] holds the header's text and [BodyCodec] the body's JSON. Every
  * nonce comes from [random] and the `created` time from [clock]; the AES-256-GCM is [aead].
  * `VaultCodecs.create` makes the one instance; nothing else names this class.
+ *
+ * Nothing a file holds makes [check] or [open] throw: every refusal is a [FileCheck] or a
+ * [BodyResult]. A key, salt or id of the wrong form handed in by the app is a programming error and is
+ * refused with `IllegalArgumentException`, whose message holds no value; it is never reported as a
+ * damaged file, because storage would then put a good generation in quarantine.
  */
 internal class DefaultVaultCodec(
     private val aead: Aead,
