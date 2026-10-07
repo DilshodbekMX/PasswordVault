@@ -196,6 +196,11 @@ tasks.withType<Test>().configureEach {
         listOf("core/src/main", "testing/src/main")
     inputs.files(sets.map { dir -> fileTree(rootDir.resolve(dir)) { include("**/*.kt", "**/*.java") } })
         .withPathSensitivity(PathSensitivity.RELATIVE).withPropertyName("scannedSources")
+    // ResourcesTest (build plan 2.9) reads the string files themselves. A change to a text alone leaves
+    // R unchanged, so without these inputs the test task would stay up to date (or come from the build
+    // cache) and pass on a stale result.
+    inputs.files(fileTree(rootDir.resolve("app/src/main/res")) { include("values*/*.xml") })
+        .withPathSensitivity(PathSensitivity.RELATIVE).withPropertyName("stringResources")
 }
 
 // ---------------------------------------------------------------------------------------------
