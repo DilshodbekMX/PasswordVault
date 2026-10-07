@@ -1,5 +1,7 @@
 package io.github.dilshodbekmx.passwordvault.ui.setup
 
+import android.os.Build
+import android.view.View
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -21,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -29,10 +32,13 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import io.github.dilshodbekmx.passwordvault.R
 import io.github.dilshodbekmx.passwordvault.i18n.resolve
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultFieldDefaults
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultSecureField
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 
 /**
@@ -62,15 +68,26 @@ fun TypeAgainScreen(
     val focus = remember { FocusRequester() }
     val window = LocalWindowInfo.current
     val keyboard = LocalSoftwareKeyboardController.current
+    val view = LocalView.current
     // Every new composition, the first and the one after a rotation, gives the field the focus and asks for the
-    // keyboard, once the window has the window focus: a keyboard asked for before that is dropped. After a
-    // rotation the new window gets the window focus a moment after its first layout, and on Android 7 that layout
-    // already gave the field the focus, so the request for focus alone would not bring the keyboard (seen on
-    // API 24); Android 17 no longer restores it by itself [V-P7].
+    // keyboard, which Android 17 no longer brings back by itself [V-P7]:
+    //  - once the window has the window focus, because a keyboard asked for before that is dropped. After a
+    //    rotation the new window gets it a moment after its first layout, and on Android 7 that layout has
+    //    already given the field the focus, so asking for the focus alone brings no keyboard (seen on API 24);
+    //  - again for a moment while it is not shown, where the screen can see that (Android 11 and newer): a
+    //    keyboard asked for while the field's input connection is still being made can close again (seen on
+    //    API 37 in landscape, where Gboard opened full screen for the editor before the field's and then closed).
     LaunchedEffect(focus, window) {
         snapshotFlow { window.isWindowFocused }.first { it }
         focus.requestFocus()
         keyboard?.show()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            repeat(KEYBOARD_RETRIES) {
+                delay(KEYBOARD_RETRY_MS)
+                if (keyboardShown(view)) return@LaunchedEffect
+                keyboard?.show()
+            }
+        }
     }
     val message = state.againMessage
     SetupPage(title = stringResource(R.string.setup_again_title)) {
@@ -111,3 +128,10 @@ fun TypeAgainScreen(
         }
     }
 }
+
+/** Whether the keyboard is shown over [view]'s window: its insets say so from Android 11 on. */
+private fun keyboardShown(view: View): Boolean = ViewCompat.getRootWindowInsets(view)?.isVisible(WindowInsetsCompat.Type.ime()) == true
+
+/** How many more times, and how often, the keyboard is asked for while it is not shown. */
+private const val KEYBOARD_RETRIES = 6
+private const val KEYBOARD_RETRY_MS = 250L
