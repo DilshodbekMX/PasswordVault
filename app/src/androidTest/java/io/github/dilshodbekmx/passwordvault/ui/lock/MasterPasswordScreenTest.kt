@@ -13,6 +13,11 @@ import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performImeAction
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.isRoot
+import androidx.compose.ui.semantics.SemanticsNode
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.performTextInput
 import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -35,7 +40,6 @@ import io.github.dilshodbekmx.passwordvault.lock.LockUiState
 import io.github.dilshodbekmx.passwordvault.lock.MpPurpose
 import io.github.dilshodbekmx.passwordvault.lock.MpResult
 import io.github.dilshodbekmx.passwordvault.lock.PinStatus
-import io.github.dilshodbekmx.passwordvault.ui.common.allSemanticsLines
 import java.util.concurrent.atomic.AtomicReference
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -97,18 +101,30 @@ class MasterPasswordScreenTest {
         assertEquals("", vm.password.text.toString())
     }
 
+    /**
+     * The field's own node holds what was typed (its editable text), marked as a password and as
+     * sensitive data, which is what keeps it from accessibility services (lock.md §13.5); no other
+     * text or label of the screen repeats any of it.
+     */
     @Test
-    fun noNodeHoldsTheTypedPassword() {
-        show(FakeLockManager(initial = LockUiState.Locked(PLAIN_SCREEN)))
+    fun noTextOrLabelHoldsTheTypedPasswordAndTheFieldIsMarked() {
+        show(FakeLockManager(initial = LockUiState.Locked(PLAIN_SCREEN.copy(error = MpError.Wrong(true, null)))))
         compose.onNodeWithTag(LockTags.FIELD).performTextInput(SECRET)
         compose.waitForIdle()
-        // RevealLastTyped shows the last character for a moment; wait until it is masked too.
-        SystemClock.sleep(2_000)
-        compose.waitForIdle()
-        val lines = compose.allSemanticsLines()
-        assertTrue("the field is in the tree", lines.any { LockTags.FIELD in it })
-        for (line in lines) {
-            for (part in SECRET.windowed(4)) assertFalse("a node shows \"$part\" of the typed password: $line", part in line)
+        val field = compose.onNodeWithTag(LockTags.FIELD).fetchSemanticsNode().config
+        assertTrue("the field is a password field", SemanticsProperties.Password in field)
+        assertEquals(true, field.getOrNull(SemanticsProperties.IsSensitiveData))
+        val shown = mutableListOf<String>()
+        fun walk(node: SemanticsNode) {
+            node.config.getOrNull(SemanticsProperties.Text)?.forEach { shown += it.text }
+            node.config.getOrNull(SemanticsProperties.ContentDescription)?.let { shown += it }
+            node.config.getOrNull(SemanticsProperties.StateDescription)?.let { shown += it }
+            node.children.forEach(::walk)
+        }
+        compose.onAllNodes(isRoot(), useUnmergedTree = true).fetchSemanticsNodes().forEach(::walk)
+        assertTrue("the screen's texts are read", shown.size >= 5)
+        for (text in shown) {
+            for (part in SECRET.windowed(4)) assertFalse("\"$text\" shows \"$part\" of the typed password", part in text)
         }
     }
 
@@ -150,8 +166,8 @@ class MasterPasswordScreenTest {
         compose.onNodeWithTag(LockTags.CANT_REMEMBER).assertTextEquals(text(R.string.lock_mp_cant_remember))
         compose.onNodeWithTag(LockTags.FORGOT).assertTextEquals(text(R.string.lock_mp_forgot))
 
-        compose.onNodeWithTag(LockTags.FROM_BEFORE).performClick()
-        compose.onNodeWithTag(LockTags.USE_PIN).performClick()
+        compose.onNodeWithTag(LockTags.FROM_BEFORE).performScrollTo().performClick()
+        compose.onNodeWithTag(LockTags.USE_PIN).performScrollTo().performClick()
         compose.waitForIdle()
         assertEquals(listOf(LockIntent.OpenAside(OLD_VAULT), LockIntent.UsePin), lock.sent)
     }

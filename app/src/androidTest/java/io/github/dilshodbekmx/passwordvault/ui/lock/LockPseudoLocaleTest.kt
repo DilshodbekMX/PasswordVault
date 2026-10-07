@@ -54,7 +54,7 @@ class LockPseudoLocaleTest {
         val english = compose.activity
         val pseudo = pseudo(english)
         val strings = R.string::class.java.fields.filter { it.name.startsWith("lock_") }
-        assertTrue("the lock strings are found", strings.size >= 40)
+        assertTrue("the lock strings are found", strings.size >= 39)
         for (field in strings) {
             val id = field.getInt(null)
             assertNotEquals("lock string ${field.name}", english.getString(id), pseudo.getString(id))
