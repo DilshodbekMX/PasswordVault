@@ -11,7 +11,6 @@
     <string name="shell_placeholder_state" translatable="false">State: %1$s</string>
     <string name="shell_placeholder_open" translatable="false">Open %1$s</string>
     <string name="shell_placeholder_back" translatable="false">Back</string>
-    <string name="shell_placeholder_create_vault" translatable="false">Create the vault</string>
     <string name="shell_placeholder_unlock" translatable="false">Unlock</string>
     <string name="shell_placeholder_lock_now" translatable="false">Lock now</string>
     <string name="shell_placeholder_finish" translatable="false">Finish setup</string>
