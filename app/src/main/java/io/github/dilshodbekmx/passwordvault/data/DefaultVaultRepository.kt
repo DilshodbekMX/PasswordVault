@@ -64,7 +64,8 @@ import io.github.dilshodbekmx.passwordvault.core.storage.VaultRef as StoreVaultR
  * [vaults], which cannot suspend: `scan` takes the store's own lock and reads nothing of the open
  * vault. Order: the lock's mutex, then this one, then the KDF gate of [kdf]; this object never calls
  * the lock. Every call that changes the session runs to its end, also when its caller is
- * cancelled, so that a write is never cut in half (§5.3).
+ * cancelled, so that a write is never cut in half (§5.3); but an open whose caller was cancelled
+ * while it ran opens nothing (lock.md I11).
  *
  * **Publishing.** [state] shows a change only once the generation that holds it is on disk and its
  * directory synced (§4.9 step 10); a save that was not durable leaves the old vault on show with its
