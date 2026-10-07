@@ -33,8 +33,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
  * "openWithPassword" and "checkPassword".
  *
  * Scripted with [scanFails], [current] and [aside] (before a vault is made here), [opens] and
- * [checks] (the next answers, in place of the comparison), [createAnswer] and [createFails], and
- * [hold]: while it is set and not complete, [openWithPassword] waits for it, as if Argon2id were
+ * [checks] (the next answers, in place of the comparison), [createAnswer] and [createFails],
+ * [flushFails], and the holds: while [hold], [createHold] or [flushHold] is set and not complete,
+ * [openWithPassword], [createVault] or [flushDraft] waits for it, as if Argon2id or a save were
  * still running. Single-threaded, like the main thread it stands for.
  */
 class InMemoryVault(private val clock: Clock) : VaultPort, VaultRepository {
@@ -64,6 +65,15 @@ class InMemoryVault(private val clock: Clock) : VaultPort, VaultRepository {
 
     /** While set and not complete, [openWithPassword] waits for it (Argon2id is running). */
     var hold: CompletableDeferred<Unit>? = null
+
+    /** While set and not complete, [createVault] waits for it (the vault is being written and proven). */
+    var createHold: CompletableDeferred<Unit>? = null
+
+    /** While set and not complete, [flushDraft] waits for it (the draft's save is running). */
+    var flushHold: CompletableDeferred<Unit>? = null
+
+    /** When set, [flushDraft] throws it after logging the call: the draft could not be written. */
+    var flushFails: Exception? = null
 
     /** The next unlock opens an older copy (architecture.md §4.8). */
     var olderCopy = false
@@ -144,6 +154,7 @@ class InMemoryVault(private val clock: Clock) : VaultPort, VaultRepository {
         log += "createVault"
         created += first.copyOf() to again.copyOf()
         createdId = vaultId
+        createHold?.await()
         createFails?.let { throw it }
         createAnswer?.let { return it }
         if (!first.contentEquals(again)) return VaultWrite.Quarantined // the proof with the second typing failed
@@ -190,6 +201,8 @@ class InMemoryVault(private val clock: Clock) : VaultPort, VaultRepository {
 
     override suspend fun flushDraft() {
         log += "flushDraft"
+        flushHold?.await()
+        flushFails?.let { throw it }
         val draft = heldDraft ?: return
         val open = state.value as? VaultState.Unlocked ?: return
         if (open.vault.draft != draft) edit { vault, _ -> Edited(vault.copy(draft = draft), Unit) }
