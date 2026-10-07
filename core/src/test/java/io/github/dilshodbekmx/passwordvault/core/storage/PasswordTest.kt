@@ -4,7 +4,6 @@ import io.github.dilshodbekmx.passwordvault.core.model.Vault
 import io.github.dilshodbekmx.passwordvault.testing.storage.FakeCodec
 import io.github.dilshodbekmx.passwordvault.testing.storage.FakeFiles
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -110,9 +109,8 @@ class PasswordTest {
         val slot = later.slots(VaultRef.Current).single()
         val kek = FakeCodec.kek(first, slot.salt)
         assertEquals(VaultStore.SlotOutcome.Damaged, later.slotOutcome(VaultRef.Current, slot, kek))
-        // The public result has no case for this yet (interface request); it never claims an open.
-        val result = later.openWithSlot(VaultRef.Current, slot, kek)
-        assertFalse(result is PasswordResult.Opened || result is PasswordResult.OlderPassword)
+        // The password is right: never SlotClosed, which the repository would report as wrong.
+        assertEquals(PasswordResult.Damaged, later.openWithSlot(VaultRef.Current, slot, kek))
     }
 
     @Test
@@ -125,6 +123,7 @@ class PasswordTest {
         phone.breakBody(live(2))
         phone.files.fail(FakeFiles.Op.READ, times = -1) { it == live(2) }
         assertEquals(VaultStore.SlotOutcome.Unreadable, later.slotOutcome(VaultRef.Current, slot, FakeCodec.kek(first, slot.salt)))
+        assertEquals(PasswordResult.Unreadable, later.openWithSlot(VaultRef.Current, slot, FakeCodec.kek(first, slot.salt)))
     }
 
     @Test
@@ -135,6 +134,7 @@ class PasswordTest {
         val later = phone.process()
         val slot = later.slots(VaultRef.Current).single()
         assertEquals(VaultStore.SlotOutcome.Newer, later.slotOutcome(VaultRef.Current, slot, FakeCodec.kek(first, slot.salt)))
+        assertEquals(PasswordResult.Newer, later.openWithSlot(VaultRef.Current, slot, FakeCodec.kek(first, slot.salt)))
     }
 
     @Test

@@ -97,10 +97,10 @@ internal class VaultStore(
             is SlotOutcome.Opened -> PasswordResult.Opened(outcome.opened)
             is SlotOutcome.OlderPassword -> PasswordResult.OlderPassword(outcome.changedAtMs)
             SlotOutcome.SlotClosed -> PasswordResult.SlotClosed
-            // The slot opened, so the password is right, and still no generation could be used. The contract of
-            // architecture.md §3.3 has no case for this yet (an interface request asks for Damaged, Newer and
-            // Unreadable, as OpenResult has them); until then the store reports what it can.
-            SlotOutcome.Damaged, SlotOutcome.Newer, SlotOutcome.Unreadable -> PasswordResult.SlotClosed
+            // The slot opened, so the password is right, and still no generation could be used (§4.8 step 3).
+            SlotOutcome.Damaged -> PasswordResult.Damaged
+            SlotOutcome.Newer -> PasswordResult.Newer
+            SlotOutcome.Unreadable -> PasswordResult.Unreadable
         }
 
     /**
@@ -1178,7 +1178,7 @@ internal class VaultStore(
         class Done(val durable: Boolean) : Placed
     }
 
-    /** What one password slot came to; the last three have no case in [PasswordResult] yet. */
+    /** What one password slot came to; `openWithSlot` gives each case as the [PasswordResult] of the same name. */
     internal sealed interface SlotOutcome {
         class Opened(val opened: OpenedVault) : SlotOutcome
 

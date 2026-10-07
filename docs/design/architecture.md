@@ -226,6 +226,7 @@ interface VaultStorage {                               // VaultStore; callers ho
     fun scan(): Scan                                                     // 4.8; safe before unlock; reads every vault directory
     fun slots(target: VaultRef): List<SlotRef>                           // distinct password slots among the kept generations, newest first [V-S3]
     fun openWithSlot(target: VaultRef, slot: SlotRef, kek: ByteArray): PasswordResult   // Opened(OpenedVault) | OlderPassword(changedAtMs) | SlotClosed
+                                                                         //   | Damaged | Newer | Unreadable (the slot opened, no generation could be used)
     fun open(target: VaultRef, keys: Map<String, ByteArray>): OpenResult              // vk_id -> VK: Opened(OpenedVault) | NeedsOtherKey(generation, createdMs) | Damaged | Newer | Unreadable
     fun commit(opened: OpenedVault, vault: Vault): CommitResult          // an ordinary save, 4.9: Saved(OpenedVault) | NotDurable | Failed | ReadOnly | TooLarge
     fun stageVault(vault: Vault, vaultId: String, vk: ByteArray, vkId: String, slot: PasswordSlot): StageResult   // creation, restore, F11: new-<vaultId>/
@@ -769,7 +770,7 @@ Only DAMAGED files are ever renamed to `.bad`. An UNREADABLE file is never renam
 Opening with the master password (`VaultPort.openWithPassword`):
 1. `slots()`: the distinct slots (by their three byte strings) among OK live generations, newest first. In practice one, two for a while after a change.
 2. For each slot in turn: one `MasterKdf.kek`, then `openWithSlot`. `SlotClosed` → next slot.
-3. The slot opened and gave VK for its `vk_id`: open the newest generation with that `vk_id`, walking down on failure as above.
+3. The slot opened and gave VK for its `vk_id`: open the newest generation with that `vk_id`, walking down on failure as above. A NEWER file stops the walk with `Newer`, a file that cannot be read now stops it with `Unreadable` (never past it), and none left gives `Damaged`. The password was right in all three, so none of them is "wrong" or counted.
    - If a generation with **another** `vk_id` and a **higher** number is OK with `trailerOk`: `OlderPassword(changedAtMs)` (lock.md F16b), where `changedAtMs` is the `created` of the lowest-numbered generation with that newer `vk_id`. Nothing is opened.
    - Otherwise `Opened`.
 4. No slot opened: wrong password.

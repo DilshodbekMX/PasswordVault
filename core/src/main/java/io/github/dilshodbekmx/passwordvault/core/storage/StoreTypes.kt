@@ -94,7 +94,11 @@ class Staged internal constructor(
     internal val path: String,
 )
 
-/** What `VaultStorage.openWithSlot` found. */
+/**
+ * What `VaultStorage.openWithSlot` found (architecture.md §4.8 "Opening with the master password").
+ * Only [SlotClosed] says the password does not open this slot; in [Damaged], [Newer] and
+ * [Unreadable] the slot opened, so the password was right and is never reported as wrong.
+ */
 sealed interface PasswordResult {
     class Opened(val opened: OpenedVault) : PasswordResult
 
@@ -107,6 +111,15 @@ sealed interface PasswordResult {
 
     /** This KEK does not open this slot. */
     data object SlotClosed : PasswordResult
+
+    /** The slot opened, but no generation under its key opens: every one is DAMAGED. */
+    data object Damaged : PasswordResult
+
+    /** The slot opened, and a newer app wrote a generation (R1, R6, R9): it is never opened or overwritten. */
+    data object Newer : PasswordResult
+
+    /** The slot opened, and a file above the one that would open cannot be read now: never past it. */
+    data object Unreadable : PasswordResult
 }
 
 /** What `VaultStorage.open` found with the keys it was given (architecture.md §4.8). */

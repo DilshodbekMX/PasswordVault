@@ -15,7 +15,7 @@ interface VaultStorage {
     /** The distinct password slots among the kept generations of [target], newest first [V-S3]. */
     fun slots(target: VaultRef): List<SlotRef>
 
-    /** §4.8 "Opening with the master password", for one slot: Opened | OlderPassword | SlotClosed. */
+    /** §4.8 "Opening with the master password", for one slot: Opened | OlderPassword | SlotClosed | Damaged | Newer | Unreadable. */
     fun openWithSlot(target: VaultRef, slot: SlotRef, kek: ByteArray): PasswordResult
 
     /** §4.8: with a VK per `vk_id` (PIN, fingerprint, the pending wrap of lock.md F11): Opened | NeedsOtherKey | Damaged | Newer | Unreadable. */
