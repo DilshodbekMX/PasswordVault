@@ -31,7 +31,7 @@ API level can run at once (each is its own read-only instance of the base).
 | `boot.sh --provision API` | Makes the base again from its system image and provisions it (below). Refuses while any device of that base runs. Only needed after `/home/asus/pvlab/` is lost or a base is damaged. |
 | `stop.sh SERIAL...` | Stops the devices (`emu kill`, then TERM, then KILL), removes overlays a killed emulator left in `/tmp/android-$USER/`, forgets them. `--mine`: every device of this worktree. `--stale`: forget entries whose emulator is gone. |
 | `adb.sh -s SERIAL ARGS...` | `adb -s SERIAL ARGS...` for a device of this worktree; waits up to 60 s for the device to come back when adb lost it. Also `--reboot [S]` (adb reboot, then wait for the new boot, unlock, launcher in front), `--wait-boot [S]`, `--wait`, `--unlock`, and `--step NAME [needs-debuggable] [needs-root] -- COMMAND...` for scripts in other languages. |
-| `adb.sh --connected SERIAL... [-- GRADLE-ARGS]` | The connected tests (A §8.3) on exactly these devices: refuses a serial that is not this worktree's, removes the app and its test APK from each, clears the old reports, runs `:app:connectedDebugAndroidTest` with `ANDROID_SERIAL` set (through `tools/gradle.sh`; `./gradlew --no-daemon` with JAVA_HOME and ANDROID_HOME until 0.1 has made it), then checks the report of every serial. |
+| `adb.sh --connected SERIAL... [-- GRADLE-ARGS]` | The connected tests (A §8.3) on exactly these devices: refuses a serial that is not this worktree's, removes the app and its test APK from each, clears the old reports, runs `:app:connectedDebugAndroidTest` with `ANDROID_SERIAL` set (through `tools/gradle.sh`; `./gradlew --no-daemon` with JAVA_HOME and ANDROID_HOME until 0.1 has made it), then checks the report of every serial. An install of AGP's that never ends (API 24, below) is stopped after 120 s and the tests are run again, up to three times. |
 | `adb.sh --connected-results DIR SERIAL...` | That last check alone: a JUnit report with at least one test and no failure for each serial, and none for any other device. |
 | `app.sh` (a library) | Helpers that drive the app's own screens by resource id, for `smoke.sh`, `checks/` and `shell/walk.sh`: `source tools/emu/adb.sh; source tools/emu/app.sh; pv_use SERIAL; pva_init`. `pva_on ROUTE`, `pva_present ID`, `pva_need ID`, `pva_absent ID`, `pva_text ID`, `pva_reveal ID` and `pva_tap ID` (both scroll to a node below the fold; `pva_tap` closes the keyboard before a tap in the lower two thirds of the screen), `pva_type ID TEXT`, `pva_submit BUTTON THEN` (keyboard closed, button tapped), `pva_keyboard_shown`, `pva_wait_keyboard`, `pva_hide_keyboard`, `pva_rotate 0\|1`, `pva_screen_off`, `pva_away SECONDS`, `pva_kill_in_background`, `pva_install APK` (three tries), `pva_start`, `pva_relaunch`, `pva_set_up` (setup with the suggested words, which become `PVA_PASSWORD`), `pva_unlock [ROUTE]`, `pva_add_account NAME LOGIN PASSWORD WEBSITE NOTE`, `pva_row_titles`, `pva_row_with TEXT`, `pva_debug COMMAND` (a debug command through `am broadcast`), `pva_screenshot FILE`, `pva_no_crash`. |
 | `uidump/PvUiDump.java` | The dumper behind `pv_ui_nodes`: the active window's nodes as `uiautomator dump` reads them, without its wait for an idle window (below, "Device facts"). `adb.sh` builds it once per worktree into `build/emu/pv-uidump.jar` (the JDK's javac, the SDK's d8) and pushes it to `/data/local/tmp/` on a device when needed. |
@@ -220,8 +220,14 @@ says `Found systemPath /home/asus/pvlab/sysimg/...`).
 - A key event (`input keyevent`, `input text`) ends touch mode: when the screen then changes, its
   first text field takes the focus and the keyboard stays up. Scripts submit a form by tapping its
   button (`pva_submit`). On API 24 the list's search field takes the focus after an unlock even so.
-- `adb install` now and then never answers on the API 24 device (seen on 2026-10-07 by package 3.6
-  and at the 3A integration); the next try works. `pva_install` and `smoke.sh` try three times.
+- A streamed `adb install` (adb's default) never ends about one time in six on the API 24 device
+  (measured on 2026-10-07; seen by package 3.6 too): the package manager reads until the end of its
+  input, and now and then that end does not arrive (`dumpsys package installs` shows the session with
+  all its bytes, not sealed). `pv_adb install` therefore adds `--no-streaming` (ten of ten went
+  through), and `pva_install` and `smoke.sh` still try three times. AGP's own install for the
+  connected tests is streamed and has no time limit: `adb.sh --connected` ends an adb client of its
+  serials that has been installing for 120 s (`PV_INSTALL_STUCK_S`; never the server) and runs the
+  tests again, up to three times.
 - Connected tests by hand: `ANDROID_SERIAL=emulator-5556,emulator-5558 tools/gradle.sh
   :app:connectedDebugAndroidTest`, then `tools/emu/adb.sh --connected-results
   app/build/outputs/androidTest-results/connected/debug emulator-5556 emulator-5558`

@@ -265,9 +265,21 @@ pv_wait_device() { # SERIAL [SECONDS] -> 0 once "adb get-state" says device
 
 # With PV_ADB_TIMEOUT=N set, each call is killed after N seconds (exit 124): a wedged device can
 # leave "adb shell" hanging for ever, so every polling loop sets it.
+# An install is made without streaming (the APK pushed, then the package manager called), unless the
+# caller chose with --streaming or --no-streaming. A streamed install, adb's default, never ends about
+# one time in six on the API 24 device (measured on 2026-10-07): the package manager's `install -S`
+# reads until the end of its input, and now and then that end does not arrive (`dumpsys package
+# installs` then shows the session with all its bytes and not sealed). Ten of ten installs without
+# streaming went through.
 pv_adb() { # ADB-ARGS... on $PV_SERIAL
     [ -n "${PV_SERIAL:-}" ] || pv_die "pv_adb: no device chosen; call pv_use SERIAL first" 2
-    local errf rc deadline tmo=()
+    local errf rc deadline tmo=() pushed=0
+    if [ "${1:-}" = install ]; then
+        case " $* " in
+            *" --no-streaming "* | *" --streaming "*) ;;
+            *) shift; set -- install --no-streaming "$@"; pushed=1 ;;
+        esac
+    fi
     [ -z "${PV_ADB_TIMEOUT:-}" ] || tmo=(timeout -k 5 "$PV_ADB_TIMEOUT")
     errf=$(mktemp "${TMPDIR:-/tmp}/pv-adb.XXXXXX")
     deadline=$((SECONDS + PV_ADB_WAIT_S))
@@ -280,7 +292,9 @@ pv_adb() { # ADB-ARGS... on $PV_SERIAL
         fi
         break
     done
-    cat "$errf" >&2
+    # The push's own line ("1 file pushed, 0 skipped. ...") is left out, so that the last line of an
+    # install is still its answer ("Success"), as with a streamed install.
+    if [ $pushed -eq 1 ]; then grep -v ' pushed, ' "$errf" >&2; else cat "$errf" >&2; fi
     rm -f "$errf"
     return $rc
 }
@@ -632,25 +646,62 @@ pv_gradle() { # GRADLE-ARGS... -> through tools/gradle.sh once it exists (packag
     fi
 }
 
+# AGP installs with `adb -s SERIAL install -t --user 0 APK`, a streamed install, and gives it no time
+# limit; on the API 24 device such an install now and then never ends (see pv_adb), and the whole
+# run then waits for ever (seen by package 3.6 and at the 3A integration). pv_install_watch ends an
+# adb client of ours (never the server) that has been installing on one of the serials for
+# PV_INSTALL_STUCK_S seconds (default 120; an install takes a few seconds) and notes it in FILE.
+pv_install_watch() { # FILE SERIAL... -> runs until it is killed or the calling script is gone
+    local file=$1 s pid age
+    shift
+    while kill -0 $$ 2>/dev/null; do
+        for s in "$@"; do
+            # Anchored: only a process whose command line starts with adb itself, not a shell or
+            # an editor that merely has these words in its arguments.
+            for pid in $(pgrep -f -- "^$PV_ADB -s $s install " 2>/dev/null); do
+                age=$(ps -o etimes= -p "$pid" 2>/dev/null | tr -d ' ')
+                if [ -n "$age" ] && [ "$age" -ge "${PV_INSTALL_STUCK_S:-120}" ]; then
+                    kill "$pid" 2>/dev/null && echo "$s (adb client $pid, after $age s)" >> "$file"
+                fi
+            done
+        done
+        sleep 5
+    done
+}
+
 # Runs :app:connectedDebugAndroidTest on exactly the given devices of this worktree and checks
-# that each of them reported passing tests.
+# that each of them reported passing tests. When an install of that run had to be ended
+# (pv_install_watch), the tests are run again, up to three times in all.
 pv_connected() { # SERIAL... [-- GRADLE-ARGS...]
-    local serials=() s repo results rc
+    local serials=() s repo results rc stuck watch attempt
     while [ $# -gt 0 ] && [ "$1" != "--" ]; do serials+=("$1"); shift; done
     [ "${1:-}" = "--" ] && shift
     [ ${#serials[@]} -gt 0 ] || pv_die "--connected: no serial given" 2
     for s in "${serials[@]}"; do pv_require_serial "$s"; done
-    # AGP 9.4.1 installs without -r on API 24 and then skips a device where the app exists.
-    for s in "${serials[@]}"; do
-        PV_SERIAL=$s pv_adb uninstall "$PV_PACKAGE.test" >/dev/null 2>&1
-        PV_SERIAL=$s pv_adb uninstall "$PV_PACKAGE" >/dev/null 2>&1
-    done
     repo=$(cd "$PV_EMU_DIR/../.." && pwd)
     results=$repo/app/build/outputs/androidTest-results/connected/debug
-    rm -rf "$results"
-    pv_log "connectedDebugAndroidTest with ANDROID_SERIAL=$(IFS=,; echo "${serials[*]}")"
-    ANDROID_SERIAL=$(IFS=,; echo "${serials[*]}") pv_gradle :app:connectedDebugAndroidTest "$@"
-    rc=$?
+    stuck=$(mktemp "${TMPDIR:-/tmp}/pv-stuck-install.XXXXXX")
+    for attempt in 1 2 3; do
+        # AGP 9.4.1 installs without -r on API 24 and then skips a device where the app exists.
+        for s in "${serials[@]}"; do
+            PV_SERIAL=$s pv_adb uninstall "$PV_PACKAGE.test" >/dev/null 2>&1
+            PV_SERIAL=$s pv_adb uninstall "$PV_PACKAGE" >/dev/null 2>&1
+        done
+        rm -rf "$results"
+        : > "$stuck"
+        pv_install_watch "$stuck" "${serials[@]}" &
+        watch=$!
+        pv_log "connectedDebugAndroidTest with ANDROID_SERIAL=$(IFS=,; echo "${serials[*]}")"
+        ANDROID_SERIAL=$(IFS=,; echo "${serials[*]}") pv_gradle :app:connectedDebugAndroidTest "$@"
+        rc=$?
+        kill "$watch" 2>/dev/null
+        wait "$watch" 2>/dev/null
+        [ -s "$stuck" ] || break
+        pv_log "an adb install never ended and was stopped: $(tr '\n' ';' < "$stuck")"
+        [ "$attempt" -lt 3 ] || break
+        pv_log "running the connected tests again (try $((attempt + 1)) of 3)"
+    done
+    rm -f "$stuck"
     pv_connected_results "$results" "${serials[@]}" || rc=1
     return $rc
 }

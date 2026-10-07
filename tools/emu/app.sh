@@ -195,9 +195,8 @@ pva_relaunch() {
     echo "$out" | grep -q '^Status: ok' || { pv_log "am start: $out"; return 1; }
 }
 
-# pva_install APK: removes an installed copy and installs APK. `adb install` now and then never
-# answers on the API 24 device (seen on 2026-10-07, also by package 3.6): each try gets 90 s, and up
-# to three tries are made.
+# pva_install APK: removes an installed copy and installs APK (without streaming: pv_adb). Each try
+# gets 90 s, and up to three tries are made, should an install still not answer.
 pva_install() {
     [ -f "$1" ] || { pv_log "no APK at $1"; return 1; }
     local out i

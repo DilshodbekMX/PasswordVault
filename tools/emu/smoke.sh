@@ -76,7 +76,7 @@ remove_old_copy() {
     ! pv_shell pm path "$PV_PACKAGE" 2>/dev/null | grep -q '^package:'
 }
 
-# `adb install` now and then never answers on the API 24 device: 90 s per try, up to three tries.
+# Without streaming (pv_adb); 90 s per try and up to three tries, should an install still not answer.
 install_apk() {
     local out i
     for i in 1 2 3; do
