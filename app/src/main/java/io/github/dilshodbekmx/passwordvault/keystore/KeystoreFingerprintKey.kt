@@ -119,10 +119,11 @@ class KeystoreFingerprintKey(
      * lock.md F9 steps 5 to 7: `Cipher.init(ENCRYPT_MODE, key)` with no IV (a caller's IV is refused
      * [L-bio case 3, V-C7]), the prompt for [use], then `doFinal(vk)` on the cipher of the result:
      * [FingerprintResult.Ok] with the 48-byte wrap and `cipher.iv` (12 bytes). No AAD: this is the
-     * call sequence the labs ran.
+     * call sequence the labs ran. A `doFinal` that fails, or gives anything but such a wrap, is
+     * TEMPORARY: nothing was stored yet that could be gone.
      */
     override suspend fun seal(alias: String, vk: ByteArray, use: PromptUse, launch: Int): FingerprintResult =
-        behindPrompt(alias, { key -> init(Cipher.ENCRYPT_MODE, key) }, use, launch) { authorised ->
+        behindPrompt(alias, { key -> init(Cipher.ENCRYPT_MODE, key) }, use, launch, opening = false) { authorised ->
             val wrap: ByteArray? = authorised.doFinal(vk)
             val iv: ByteArray? = authorised.iv
             if (wrap == null || wrap.size != RecordCodec.CT_LENGTH || iv == null || iv.size != RecordCodec.NONCE_LENGTH) {
@@ -139,7 +140,7 @@ class KeystoreFingerprintKey(
      * GONE ("bad_wrap"): the stored wrap does not match the key.
      */
     override suspend fun open(alias: String, nonce: ByteArray, ct: ByteArray, use: PromptUse, launch: Int): FingerprintResult =
-        behindPrompt(alias, decryptWith(nonce), use, launch) { authorised ->
+        behindPrompt(alias, decryptWith(nonce), use, launch, opening = true) { authorised ->
             // A cipher may answer an empty result with null: that, too, is "not 32 bytes".
             val result: ByteArray? = authorised.doFinal(ct)
             var plain: ByteArray = result ?: ByteArray(0)
@@ -196,6 +197,7 @@ class KeystoreFingerprintKey(
         init: Cipher.(SecretKey) -> Unit,
         use: PromptUse,
         launch: Int,
+        opening: Boolean,
         operation: (Cipher) -> FingerprintResult,
     ): FingerprintResult {
         val cipher = when (val ready = withContext(dispatchers.io) { cipherFor(alias, init) }) {
@@ -228,7 +230,7 @@ class KeystoreFingerprintKey(
         val code = (outcome as? PromptOutcome.Error)?.code
         return when (KeystoreErrors.respond(callback, launchOutstanding = true)) {
             KeystoreErrors.Response.UseCipher ->
-                if (authorised == null) FingerprintResult.Temporary(null) else keyOperation(authorised, operation)
+                if (authorised == null) FingerprintResult.Temporary(null) else keyOperation(authorised, opening, operation)
             KeystoreErrors.Response.Closed -> if (code == null) FingerprintResult.Temporary(null) else FingerprintResult.Closed(code)
             // TEMPORARY with the prompt's code, or null after a success without a cipher. The last two
             // answers belong to callbacks this class never passes on (no launch outstanding, a finger
@@ -241,25 +243,24 @@ class KeystoreFingerprintKey(
     }
 
     /**
-     * The `doFinal` after a successful prompt, on `dispatchers.io`, classified by lock.md §14.3:
-     * `AEADBadTagException` is GONE ("bad_wrap"), anything else TEMPORARY, such as
-     * `IllegalBlockSizeException` caused by "Key user not authenticated". If the caller was cancelled
-     * meanwhile (the visit ended while the prompt was open, lock.md F3 step 4), bytes that were
-     * already made are wiped here, because nobody receives them.
+     * The `doFinal` after a successful prompt, on `dispatchers.io`, classified by lock.md §14.3. When
+     * a wrap is opened ([opening]), `AEADBadTagException` is GONE ("bad_wrap"): the stored wrap does
+     * not match the key. Anything else is TEMPORARY, such as `IllegalBlockSizeException` caused by
+     * "Key user not authenticated", and so is every failure while a wrap is made. If the caller was
+     * cancelled meanwhile (the visit ended while the prompt was open, lock.md F3 step 4), bytes that
+     * were already made are wiped here, because nobody receives them.
      */
-    private suspend fun keyOperation(authorised: Cipher, operation: (Cipher) -> FingerprintResult): FingerprintResult {
+    private suspend fun keyOperation(authorised: Cipher, opening: Boolean, operation: (Cipher) -> FingerprintResult): FingerprintResult {
         var made: FingerprintResult? = null
         try {
             return withContext(dispatchers.io) {
                 val result = try {
-                    access.faults.throwIf(Row.FINGERPRINT_BAD_TAG) { AEADBadTagException(KeystoreFaults.INJECTED) }
+                    if (opening) access.faults.throwIf(Row.FINGERPRINT_BAD_TAG) { AEADBadTagException(KeystoreFaults.INJECTED) }
                     access.faults.throwIf(Row.FINGERPRINT_OTHER) { IllegalBlockSizeException(KeystoreFaults.INJECTED) }
                     operation(authorised)
                 } catch (e: Exception) {
-                    when (val failed = KeystoreFailureAdapter.classify(KeystoreErrors.Place.FINGERPRINT_DO_FINAL, e)) {
-                        is Ks.Gone -> FingerprintResult.Gone(failed.why)
-                        else -> FingerprintResult.Temporary(null)
-                    }
+                    val failed = KeystoreFailureAdapter.classify(KeystoreErrors.Place.FINGERPRINT_DO_FINAL, e)
+                    if (opening && failed is Ks.Gone) FingerprintResult.Gone(failed.why) else FingerprintResult.Temporary(null)
                 }
                 made = result
                 result

@@ -51,8 +51,8 @@ import javax.crypto.SecretKeyFactory
  * @param allowSoftwareKeys `BuildConfig.ALLOW_SOFTWARE_KEYSTORE`: true in the `debug` and `staging`
  *   builds, whose emulators keep every key in software; false in a release build, which then offers
  *   neither PIN nor fingerprint on a phone without secure hardware (lock.md §4.5, F18).
- * @param faults the faults a test build can ask for (`ks-fault`, lock.md §15.3); nothing arms one
- *   in a release build.
+ * @param faults the faults a test build can ask for (`ks-fault`, lock.md §15.3); in a release
+ *   build none can be armed.
  */
 class KeystoreAccess(
     private val allowSoftwareKeys: Boolean,
@@ -130,7 +130,7 @@ class KeystoreAccess(
      * - [Ks.Temporary]: everything else, a Keystore that cannot be loaded, a canary that cannot be
      *   made or does not load, and any other exception among them.
      */
-    fun load(alias: String): Ks<SecretKey> {
+    internal fun load(alias: String): Ks<SecretKey> {
         val keyStore = try {
             open()
         } catch (e: Exception) {
@@ -198,9 +198,11 @@ class KeystoreAccess(
     /**
      * `drop-keys`: deletes every alias of the app, the canary included, as a reinstall that kept the
      * data and lost the keys would leave it (lock.md §15.3, check E10; architecture.md D-21). The
-     * app itself never calls this.
+     * app itself never calls this, and in a build without the test hooks (`faults.testBuild` false:
+     * a release build) it does nothing.
      */
     fun dropAllKeys() {
+        if (!faults.testBuild) return
         try {
             val keyStore = keyStore()
             for (alias in keyStore.aliases().toList()) {
@@ -310,10 +312,10 @@ class KeystoreAccess(
 
     companion object {
         /** The Keystore's provider name. */
-        const val ANDROID_KEYSTORE = "AndroidKeyStore"
+        internal const val ANDROID_KEYSTORE = "AndroidKeyStore"
 
         /** Every key of the lock has 256 bits (lock.md §4.2); a Keystore AES key without a size is 128-bit [V-P10]. */
-        const val KEY_BITS = 256
+        internal const val KEY_BITS = 256
 
         private const val CANARY = KeystoreErrors.CANARY_ALIAS
         private val NO_KEY = Lookup.Failed(KeystoreFailure.NullKey)

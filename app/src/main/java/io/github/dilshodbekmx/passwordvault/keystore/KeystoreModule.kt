@@ -14,7 +14,8 @@ import io.github.dilshodbekmx.passwordvault.lock.LockUiState
  * - `device` is one [KeystoreAccess], which refuses software keys exactly when
  *   `BuildConfig.ALLOW_SOFTWARE_KEYSTORE` is false: a release build (lock.md §4.5, build check R-2).
  * - `pin` is [KeystorePinKey] and `fingerprint` is [KeystoreFingerprintKey], both over that access,
- *   so the three share its faults (`KeystoreAccess.faults`, the `ks-fault` command of lock.md §15.3).
+ *   so the three share its faults (`KeystoreAccess.faults`, the `ks-fault` command of lock.md §15.3),
+ *   which a release build cannot arm.
  * - `launcher` is a [LauncherRelay]: no prompt exists when the keys are built. The lock manager
  *   package (build plan 4.1) attaches the launcher over the activity's one `BiometricPrompt` to it;
  *   until then a prompt is "not shown".
@@ -24,7 +25,10 @@ import io.github.dilshodbekmx.passwordvault.lock.LockUiState
  */
 object KeystoreModule {
     fun create(graph: AppGraph): Keys {
-        val access = KeystoreAccess(allowSoftwareKeys = BuildConfig.ALLOW_SOFTWARE_KEYSTORE)
+        // The builds that allow software keys are the builds with the debug commands: debug, staging
+        // and backupCheck (architecture.md §7.2). Only there can a fault be armed or the keys dropped.
+        val testBuild = BuildConfig.ALLOW_SOFTWARE_KEYSTORE
+        val access = KeystoreAccess(allowSoftwareKeys = testBuild, faults = KeystoreFaults(testBuild))
         val launcher = LauncherRelay()
         return Keys(
             device = access,

@@ -237,11 +237,16 @@ class KeystoreErrorRowsTest {
         assertEquals(FingerprintResult.Temporary(null), open())
         arm(Row.PROMPT_NO_CIPHER)
         assertEquals(FingerprintResult.Temporary(null), seal())
-        // AEADBadTagException: GONE (bad_wrap).
+        // AEADBadTagException: GONE (bad_wrap). The row is about a stored wrap, so it waits for an
+        // unlock: turning fingerprint unlock on meanwhile makes its wrap and does not meet it.
         arm(Row.FINGERPRINT_BAD_TAG)
+        assertTrue(seal() is FingerprintResult.Ok)
+        assertEquals(Row.FINGERPRINT_BAD_TAG.id, faults.pending)
         assertEquals(FingerprintResult.Gone("bad_wrap"), open())
         // A result that is not 32 bytes: GONE (bad_wrap).
         arm(Row.FINGERPRINT_WRONG_SIZE)
+        assertTrue(seal() is FingerprintResult.Ok)
+        assertEquals(Row.FINGERPRINT_WRONG_SIZE.id, faults.pending)
         assertEquals(FingerprintResult.Gone("bad_wrap"), open())
         // Any other exception, such as IllegalBlockSizeException for "Key user not authenticated": TEMPORARY.
         arm(Row.FINGERPRINT_OTHER)
@@ -376,5 +381,24 @@ class KeystoreErrorRowsTest {
         }
         assertTrue(faults.arm("prompt-error-0"))
         faults.disarm()
+    }
+
+    @Test
+    fun aBuildWithoutTheTestHooksArmsNothingAndDropsNothing() {
+        // What a release build makes (KeystoreModule): no fault can be armed, and drop-keys does nothing.
+        val release = KeystoreAccess(allowSoftwareKeys = true, faults = KeystoreFaults(testBuild = false))
+        val alias = kit.pinAlias()
+        assertEquals(KeyCreate.Ok, KeystorePinKey(release).create(alias))
+        for (name in KeystoreFaults.rows + "prompt-error-7") {
+            assertFalse(name, release.faults.arm(name))
+            assertNull(release.faults.pending)
+        }
+        assertTrue(KeystorePinKey(release).hmac(alias, message) is Ks.Ok)
+        release.dropAllKeys()
+        assertTrue("the key stays", kit.has(alias))
+        assertTrue(alias in release.everyAlias())
+        // The app's own access is a test build's exactly when the build allows software keys.
+        val app = kit.graph.keys.device as KeystoreAccess
+        assertEquals(io.github.dilshodbekmx.passwordvault.BuildConfig.ALLOW_SOFTWARE_KEYSTORE, app.faults.testBuild)
     }
 }

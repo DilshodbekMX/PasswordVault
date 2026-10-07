@@ -14,13 +14,18 @@ import java.util.concurrent.atomic.AtomicReference
  * is thrown, or answered, at the place where the platform would have done it, so it takes the same
  * way through [KeystoreFailureAdapter] and the table of `KeystoreErrors` as a real one.
  *
- * Nothing in a release build arms a fault: the only caller is `LockDebug.ksFault` behind the debug
- * commands of the `debug` and `staging` source sets (build check R-2). While nothing is armed, each
- * place costs one read of a field.
+ * Nothing in a release build arms a fault. The only caller is `LockDebug.ksFault` behind the debug
+ * commands of the `debug` and `staging` source sets (build check R-2); and the app's own faults are
+ * made with [testBuild] false in a release build, where [arm] then refuses every name. While nothing
+ * is armed, each place costs one read of a field.
  *
  * `KeystoreAccess.faults` is the one object that the three Keystore classes of the app share.
+ *
+ * @param testBuild whether faults can be armed at all, and whether `KeystoreAccess.dropAllKeys`
+ *   works: true in the builds that carry the debug commands, which are the builds that allow
+ *   software keys (architecture.md §7.2), and in tests.
  */
-class KeystoreFaults {
+class KeystoreFaults(val testBuild: Boolean = true) {
     /**
      * The rows of lock.md §14.3 (and the cases of §14.2) that the Keystore classes can be made to
      * meet. [id] is the name `ks-fault` takes. Each row says where it strikes, what happens there,
@@ -66,13 +71,13 @@ class KeystoreFaults {
         /** `onAuthenticationSucceeded` without a cipher: TEMPORARY, never "unlocked". */
         PROMPT_NO_CIPHER("prompt-no-cipher"),
 
-        /** The fingerprint `doFinal` throws `AEADBadTagException`: GONE, "bad_wrap". */
+        /** The fingerprint `doFinal` that opens a wrap throws `AEADBadTagException`: GONE, "bad_wrap". It waits for an unlock; making a wrap does not meet it. */
         FINGERPRINT_BAD_TAG("fp-dofinal-bad-tag"),
 
-        /** The fingerprint `doFinal` gives a result that is not 32 bytes: GONE, "bad_wrap". */
+        /** The fingerprint `doFinal` that opens a wrap gives a result that is not 32 bytes: GONE, "bad_wrap". It waits for an unlock too. */
         FINGERPRINT_WRONG_SIZE("fp-dofinal-wrong-size"),
 
-        /** The fingerprint `doFinal` throws anything else, as "Key user not authenticated" does: TEMPORARY. */
+        /** The fingerprint `doFinal` throws anything else, as "Key user not authenticated" does: TEMPORARY, when a wrap is opened and when one is made. */
         FINGERPRINT_OTHER("fp-dofinal-other"),
 
         /** Making a key throws `InvalidAlgorithmParameterException`: NOT NOW, and for a fingerprint key "Add a fingerprint in your phone's settings first." */
@@ -99,9 +104,10 @@ class KeystoreFaults {
      * Arms the fault named [row] in place of the one that was armed: the [Row.id] of a row, or
      * `prompt-error-<code>` for a fingerprint prompt that ends at once with `onAuthenticationError`
      * [code] without being shown (10, 13 and 5 are CLOSED, every other code TEMPORARY). False, with
-     * nothing changed, when no fault has that name.
+     * nothing changed, when no fault has that name, and always in a build that is not a [testBuild].
      */
     fun arm(row: String): Boolean {
+        if (!testBuild) return false
         val next = Row.entries.firstOrNull { it.id == row }?.let { Armed(it, null) }
             ?: promptErrorOf(row)?.let { Armed(null, it) }
             ?: return false
