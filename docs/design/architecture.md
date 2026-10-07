@@ -458,7 +458,8 @@ interface LockManager {
     suspend fun setPin(pin: ByteArray, proof: MasterProof): Boolean                      // F6
     suspend fun changePin(current: ByteArray, new: ByteArray): PinChange                 // a counted check of `current` in a prompt
                                                        // PinChange: Changed | Wrong(left) | SameWrongAgain | Limit | CannotCheck | SameAsCurrent | NotSaved
-    suspend fun fingerprintOn(proof: MasterProof): FingerprintResult                     // F9
+    suspend fun fingerprintOn(proof: MasterProof): FingerprintOnResult                   // F9; the app's own result, not the port's FingerprintResult
+                                                       // FingerprintOnResult: On | Cancelled | NoneEnrolled | NoSecureHardware | Failed | NotShown
     suspend fun fingerprintOff()
     suspend fun changeMasterPassword(proof: MasterProof, first: CharArray, again: CharArray, pin: ByteArray?): ChangeResult   // F8; Mismatch before anything is derived
                                                        // ChangeResult: Changed(pinKept, fingerprintKept) | Mismatch | Unassigned(codePoint)
@@ -534,6 +535,7 @@ interface AppSettings {                                // SharedPreferences "pv_
 
 - `SaveResult.NotSaved(TOO_LARGE)` is shown as "Your passwords no longer fit in one file. Delete accounts you don't need, or shorten very long notes." The import preview estimates the sealed size first and refuses an import that would not fit, with the same sentence.
 - `BackupResult.WrongOrDamaged` is the case of 4.4 where the slot fails and the trailer is wrong: "This file may be damaged, or the password is wrong." Another try is allowed.
+- `LockManager.fingerprintOn` returns `FingerprintOnResult`, not `core.lock.flow.FingerprintResult`: the port's result (`Ok(bytes, nonce)`, …) cannot say that no finger is enrolled, which lock.md F9 step 4 needs for "Add a fingerprint in your phone's settings first.", and it would hand a screen the wrap's bytes. `Cancelled` is a closed prompt (codes 10, 13 and 5: stay on the screen), `NoSecureHardware` the text of F18, `Failed` everything else ("Fingerprint unlock could not be turned on. You can try again later in Settings."), `NotShown` a prompt that could not be shown now (lock.md §9.2 rule 3).
 
 ### 3.6 Composition seams (`:app`)
 
