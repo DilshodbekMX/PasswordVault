@@ -681,12 +681,12 @@ class BitwardenJsonTest {
         assertEquals(
             listOf(
                 1 to What.NOT_AN_ITEM, 2 to What.NOT_AN_ITEM, 3 to What.NOT_AN_ITEM, 4 to What.NOT_AN_ITEM,
-                5 to What.EMPTY, 6 to What.IN_TRASH, 7 to What.PASSKEYS, 8 to What.LINKED_FIELD, 8 to What.LINKED_FIELD,
+                5 to What.EMPTY, 6 to What.IN_TRASH, 7 to What.PASSKEYS, 8 to What.LINKED_FIELD, // once for its two linked fields
             ),
             back.notImported.map { it.position to it.what },
         )
         // By name where there is one, by position otherwise.
-        assertEquals(listOf(null, null, null, null, null, "Trashed", "With passkey", "Linked", "Linked"), back.notImported.map { it.name })
+        assertEquals(listOf(null, null, null, null, null, "Trashed", "With passkey", "Linked"), back.notImported.map { it.name })
         // A name is account data: the text of a list entry does not show it.
         assertFalse(back.notImported.toString().contains("Trashed"))
     }

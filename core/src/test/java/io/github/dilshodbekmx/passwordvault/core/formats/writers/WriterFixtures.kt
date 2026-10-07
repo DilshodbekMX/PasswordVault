@@ -254,7 +254,7 @@ internal object WriterFixtures {
                 val sameAccount = last != null && previous != null && previous[0] == v[0] && previous[2] == v[2] &&
                     previous[3] == v[3] && previous[4] == v[4] && v[1].isNotEmpty() && v[1] !in last.urls
                 if (sameAccount) {
-                    out[out.size - 1] = last!!.copy(urls = last.urls + v[1])
+                    out[out.size - 1] = last.copy(urls = last.urls + v[1])
                 } else {
                     out.add(CsvAccount(
                         title = block.title ?: v[0],

@@ -466,7 +466,7 @@ object BitwardenJson {
             /** The item was imported, its passkeys were not ("passkeys are not imported"). */
             PASSKEYS,
 
-            /** The item was imported without a linked field, which only points at another value. */
+            /** The item was imported without its linked fields, which only point at another value. */
             LINKED_FIELD,
 
             /** The item was imported with its newest 5 previous passwords; it had more. */
@@ -498,7 +498,8 @@ object BitwardenJson {
     /**
      * Reads a Bitwarden JSON export or our own. [nowMs] stands in for a date the file does not have;
      * [texts] names an account without a name, a website and a username; [newId] gives the ids of a
-     * foreign file's accounts (`RandomSource::uuid`). Never throws for any [bytes].
+     * foreign file's accounts, and of an account of our own file that has none (`RandomSource::uuid`).
+     * Never throws for any [bytes], and leaves them as they are.
      */
     fun read(
         bytes: ByteArray,
@@ -526,14 +527,18 @@ object BitwardenJson {
         val items = root["items"] as? JsonArray ?: return Read.NotAnExport
         if (items.size > maxItems) return Read.TooMany(items.size, maxItems)
 
-        val extension = root[EXTENSION] as? JsonObject
-        val own = extension != null && isText(extension["format"], FORMAT)
-        val newer = own && (int(extension?.get("version")) ?: VERSION) > VERSION
+        // Our own file says so in the top object's extension; only then is any extension read.
+        val extension = (root[EXTENSION] as? JsonObject)?.takeIf { isText(it["format"], FORMAT) }
+        val own = extension != null
+        val newer = extension != null && (int(extension["version"]) ?: VERSION) > VERSION
         val notImported = ArrayList<NotImported>()
-        val vaultExtras = if (own && extension != null) {
-            extras(extension, ROOT_EXTENSION_KEYS, VAULT_TOP_KEYS, VAULT_EXTRA_DEPTH) { notImported.add(NotImported(0, null, NotImported.What.UNKNOWN_DATA)) }
-        } else {
-            emptyMap()
+        var vaultExtras: Map<String, String> = emptyMap()
+        if (extension != null) {
+            var listed = false
+            vaultExtras = extras(extension, ROOT_EXTENSION_KEYS, VAULT_TOP_KEYS, VAULT_EXTRA_DEPTH) {
+                if (!listed) notImported.add(NotImported(0, null, NotImported.What.UNKNOWN_DATA))
+                listed = true
+            }
         }
         val folders = folderNames(root)
         val entries = ArrayList<Entry>(items.size)
@@ -574,7 +579,12 @@ object BitwardenJson {
         notImported: MutableList<NotImported>,
     ): Entry? {
         val name = text(item["name"])?.takeIf { it.isNotBlank() }
-        fun listed(what: NotImported.What) = notImported.add(NotImported(position, name, what))
+        val alreadyListed = HashSet<NotImported.What>()
+
+        /** Lists [what] for this item, once however often it occurs in it. */
+        fun listed(what: NotImported.What) {
+            if (alreadyListed.add(what)) notImported.add(NotImported(position, name, what))
+        }
 
         val deleted = item["deletedDate"]
         if (deleted != null && deleted !is JsonNull) {
@@ -584,11 +594,13 @@ object BitwardenJson {
         val fields = ArrayList<CustomField>()
         (item["fields"] as? JsonArray)?.forEach { element ->
             val field = element as? JsonObject ?: return@forEach
-            when (int(field["type"]) ?: FIELD_TEXT) {
+            val type = int(field["type"]) ?: FIELD_TEXT
+            if (type == FIELD_LINKED) {
                 // A linked field has no value of its own: it points at the username or the password.
-                FIELD_LINKED -> listed(NotImported.What.LINKED_FIELD)
-                FIELD_HIDDEN -> fields.add(CustomField(text(field["name"]) ?: "", text(field["value"]) ?: "", true))
-                else -> fields.add(CustomField(text(field["name"]) ?: "", text(field["value"]) ?: "", false))
+                listed(NotImported.What.LINKED_FIELD)
+            } else {
+                // Text, a checkbox ("true" or "false") or a kind this version does not know: visible. Hidden: hidden.
+                fields.add(CustomField(text(field["name"]) ?: "", text(field["value"]) ?: "", secret = type == FIELD_HIDDEN))
             }
         }
         var username = ""
@@ -625,12 +637,13 @@ object BitwardenJson {
             val oldPassword = text(old["password"]) ?: return@forEach
             history.add(HistoryItem(oldPassword, IsoTime.parse(text(old["lastUsedDate"])) ?: nowMs))
         }
-        if (!own && history.size > EntryRules.HISTORY_MAX) {
+        if (!own) {
+            // A foreign file: newest first, and the newest 5 (Bitwarden itself keeps no more).
             history.sortByDescending { it.replacedAt } // stable: equal times keep the file's order
-            history = ArrayList(history.subList(0, EntryRules.HISTORY_MAX))
-            listed(NotImported.What.PREVIOUS_PASSWORDS)
-        } else if (!own) {
-            history.sortByDescending { it.replacedAt }
+            if (history.size > EntryRules.HISTORY_MAX) {
+                history = ArrayList(history.subList(0, EntryRules.HISTORY_MAX))
+                listed(NotImported.What.PREVIOUS_PASSWORDS)
+            }
         }
 
         // Our own file: the extension wins (formats.md §5.2).

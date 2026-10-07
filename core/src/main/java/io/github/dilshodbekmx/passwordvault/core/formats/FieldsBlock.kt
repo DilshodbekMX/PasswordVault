@@ -42,6 +42,16 @@ import io.github.dilshodbekmx.passwordvault.core.util.TextHygiene
  * first `: ` without one ends the label, and a ` (hidden)` without one at its end is the flag. The
  * labels `Title` and `Old password` are reserved only when written with no backslash.
  *
+ * **What the grammar leaves open, as this reader settles it** (a later version must read the same):
+ * - The count is written as a number from 1 on without a leading zero, and only that spelling is a
+ *   marker.
+ * - CRLF and a lone CR in a note count as line feeds, so a file that another program saved with
+ *   other line ends still reads; the notes come back with line feeds.
+ * - A reserved label is reserved with or without the flag, and wherever its line stands in the
+ *   block. The first `Title` line gives the name and the first `Old password` line the old password;
+ *   a second line with the same label is read as an ordinary field, so that nothing is dropped.
+ * - A label may be empty, and so may a value.
+ *
  * The marker, `(hidden)` and the two reserved labels stay in English in every language, because the
  * importer reads them. Nothing here trims or cleans what it reads: the importer's rules do that
  * (formats.md §8.4).
