@@ -558,7 +558,7 @@ Declared by the contracts package (build plan 1.1) so that earlier waves can nam
 
 | Type | Package | Filled by |
 |---|---|---|
-| `Entry`, `CustomField`, `HistoryItem`, `Vault`, `Draft`, `FileRef` | `core.model` | 4.3, one field per key |
+| `Entry`, `CustomField`, `HistoryItem`, `Vault`, `Draft`, `FileRef` | `core.model` | 4.3, one field per key; the unknown keys of an entry and of the top level in `extras: Map<String, String>`, each value as compact JSON text (4.3) |
 | `GeneratorOptions` (kind, length, character sets, words, separator) | `core.generator` | the generator package |
 | `SecurityReport` (groups of reused passwords, weak, pending, left out, same as the master password) | `core.strength` | the strength package |
 | `PinRecord`, `FingerprintRecord`, `StateRecord`, `RecordRead` | `core.lock.record` | lock.md §5.3 to §5.6 as revised by its audit: no `trouble_boots`, no `udr`; `unseen` with `count`, `last_at`, `interrupted`; `mp_guard.unseen`; `mp_change`; `pending_mp` and `replaced` with `credited_ms` and `seen_elapsed_ms`. `RecordRead.Damaged` carries the `ParseError` of the rule that failed (5.6) |
@@ -647,7 +647,7 @@ Key names are those of ux.md §2 (camel case; the header keeps the snake case of
 - integers in plain decimal; `true`, `false`, `null`;
 - a kept unknown value written as the compact form of what was read: the same tokens and the same spelling of each number, no white space.
 
-**Unknown keys.** At the top level and in each entry they are **kept** (`Vault.extras`, `Entry.extras`, as parsed JSON) and written back. Anywhere else (in `draft`, a field, a history item, an export or backup reference) they are ignored and not written back. So a later version that only adds data must add it at one of the two levels. A change that an old app must not ignore raises the header's `version`. Version 1 writers always write `schema` 1; a reader treats a higher `schema` as NEWER (R9).
+**Unknown keys.** At the top level and in each entry they are **kept** and written back after the known keys, as they are. `Vault.extras` and `Entry.extras` are a `Map<String, String>`: each kept key with its value as compact JSON text (the same tokens and the same spelling of each number, no white space), in the order they were read. Text, so that the public model names no kotlinx-serialization type. Anywhere else (in `draft`, a field, a history item, an export or backup reference) they are ignored and not written back. So a later version that only adds data must add it at one of the two levels. A change that an old app must not ignore raises the header's `version`. Version 1 writers always write `schema` 1; a reader treats a higher `schema` as NEWER (R9).
 
 **What the reader checks.** A known key with the wrong JSON type makes the body unreadable (R10); that is all R10 checks. The `id` format, unique ids, the limits of ux.md §2 and the absence of unpaired surrogates (`TextHygiene`, formats-review P7) are rules for input, import and the write-time check of 4.9 step 4. A reader never enforces them, so no stored entry is ever refused.
 
