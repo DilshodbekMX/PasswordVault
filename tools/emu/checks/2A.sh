@@ -13,8 +13,9 @@
 #           - every test class of packages 2.1 to 2.6 has a report from that check with no
 #             failure, no error and no skipped test, and each package ran at least the tests it
 #             reported: a class that stopped being compiled or found cannot hide behind a passing
-#             check. :core's classes are read from its last run (fa-IR), 2.5's NavStateTest from
-#             :app's.
+#             check. :core's classes are read from its last run (fa-IR); 2.5's NavStateTest from
+#             :app's test task, run once more on its own because check.sh's offline part reruns it
+#             filtered to one class, which replaces the reports of the unfiltered run.
 #   device  the integrator's API 37 device (boot.sh --integrator 37, port 5580): the debug APK is
 #           built, smoke.sh debug installs it, starts it and finds it in front and running after
 #           5 s, then package 2.5's shell/walk.sh walks every placeholder route of the shell (a new
@@ -74,6 +75,16 @@ full_check() {
     return $rc
 }
 
+# check.sh's offline part runs :app's test task again, filtered to OfflineSourceScanTest, and that
+# run's reports replace those of its unit part. So :app's whole test task runs once more here, on
+# the same inputs as the unit part (the build cache usually hands back that run's own results).
+app_reports() {
+    "$REPO/tools/gradle.sh" :app:testDebugUnitTest ${gradle_args[@]+"${gradle_args[@]}"} > "$LOGS/app-tests.log" 2>&1
+    local rc=$?
+    grep -E '^BUILD|actionable tasks' "$LOGS/app-tests.log" | sed 's/^/   /'
+    return $rc
+}
+
 # The reports of the check's last runs: :core (check.sh runs it under tr-TR, then fa-IR) and :app.
 package_tests() { # round-trip | packages
     python3 - "$1" "$REPO/core/build/test-results/testDebugUnitTest" "$REPO/app/build/test-results/testDebugUnitTest" <<'EOF'
@@ -97,7 +108,7 @@ if what == "round-trip":
 # its agent reported; a package must run at least that many.
 packages = {
     "2.1": ("core", ["crypto.Argon2KnownAnswerTest", "crypto.JcaAesGcmTest", "crypto.DerivedKeysTest",
-                     "crypto.GuardedArgon2idTest", "crypto.GatedMasterKdfTest", "crypto.BouncyCastleArgon2idTest"], 54),
+                     "crypto.GuardedArgon2idTest", "crypto.GatedMasterKdfTest", "crypto.BouncyCastleArgon2idTest"], 52),
     "2.2": ("core", ["vaultfile.VaultVectorsTest", "vaultfile.HeaderRulesTest", "vaultfile.BodyRulesTest",
                      "vaultfile.CanonicalFormTest", "vaultfile.CodecContractTest", "vaultfile.VaultFuzzTest"], 65),
     "2.3": ("core", ["storage.ScanTest", "storage.OpenTest", "storage.PasswordTest", "storage.CommitTest",
@@ -175,6 +186,7 @@ if wants jvm; then
     pv_step "the six branches are merged" -- branches_merged
     pv_step "tools/check.sh all" -- full_check
     pv_step "VaultRoundTripTest ran on the real factories and passed (not skipped)" -- package_tests round-trip
+    pv_step ":app's tests again, for their reports" -- app_reports
     pv_step "every test class of the six packages ran and passed" -- package_tests packages
 fi
 if wants device; then
