@@ -60,6 +60,32 @@ class FieldInput(val max: Int, val lineBreaks: Boolean) : InputTransformation {
         replace(cut, end, "")
     }
 
+    companion object {
+        /** The name (one line, 200). */
+        val TITLE = FieldInput(EntryRules.TITLE_MAX, lineBreaks = false)
+
+        /** The username (one line, 500). */
+        val USERNAME = FieldInput(EntryRules.USERNAME_MAX, lineBreaks = false)
+
+        /** The password (one line, 1,000). */
+        val PASSWORD = FieldInput(EntryRules.PASSWORD_MAX, lineBreaks = false)
+
+        /** One website (one line, 2,048). */
+        val WEBSITE = FieldInput(EntryRules.URL_MAX, lineBreaks = false)
+
+        /** The notes (line breaks, 10,000). */
+        val NOTES = FieldInput(EntryRules.NOTES_MAX, lineBreaks = true)
+
+        /** An extra field's own label (one line, 100). */
+        val FIELD_NAME = FieldInput(EntryRules.FIELD_NAME_MAX, lineBreaks = false)
+
+        /** An extra field's value that is not hidden (line breaks, 1,000). */
+        val VALUE = FieldInput(EntryRules.FIELD_VALUE_MAX, lineBreaks = true)
+
+        /** A hidden value, typed in a one-line password field, where a pasted line break is dropped (1,000). */
+        val SECRET_VALUE = FieldInput(EntryRules.FIELD_VALUE_MAX, lineBreaks = false)
+    }
+
     /** Drops the control characters of [start, end) in [buffer]; returns the new end of that range. */
     private fun dropControls(buffer: TextFieldBuffer, start: Int, end: Int): Int {
         var stop = end

@@ -219,7 +219,7 @@ private fun Form(vm: EditViewModel, ui: EditUiState, padding: PaddingValues, foc
                 placeholder = { Text(text = stringResource(R.string.edit_name_example)) },
                 supportingText = support(form.title, EntryRules.TITLE_MAX, problemsOf(ui, vm, FieldKey.Title), formatters),
                 isError = problemsOf(ui, vm, FieldKey.Title).isNotEmpty(),
-                inputTransformation = TITLE_INPUT,
+                inputTransformation = vm.inputOf(FieldKey.Title),
                 keyboardOptions = VaultFieldDefaults.Text.copy(capitalization = KeyboardCapitalization.Words, imeAction = ImeAction.Next),
                 lineLimits = TextFieldLineLimits.SingleLine,
             )
@@ -229,7 +229,7 @@ private fun Form(vm: EditViewModel, ui: EditUiState, padding: PaddingValues, foc
                 label = { Text(text = stringResource(R.string.edit_username)) },
                 supportingText = support(form.username, EntryRules.USERNAME_MAX, problemsOf(ui, vm, FieldKey.Username), formatters),
                 isError = problemsOf(ui, vm, FieldKey.Username).isNotEmpty(),
-                inputTransformation = USERNAME_INPUT,
+                inputTransformation = vm.inputOf(FieldKey.Username),
                 keyboardOptions = VaultFieldDefaults.Username.copy(imeAction = ImeAction.Next),
                 lineLimits = TextFieldLineLimits.SingleLine,
                 leftToRight = true,
@@ -245,7 +245,7 @@ private fun Form(vm: EditViewModel, ui: EditUiState, padding: PaddingValues, foc
                             label = { Text(text = stringResource(R.string.edit_website)) },
                             supportingText = support(row.state, EntryRules.URL_MAX, problemsOf(ui, vm, rowKey), formatters),
                             isError = problemsOf(ui, vm, rowKey).isNotEmpty(),
-                            inputTransformation = WEBSITE_INPUT,
+                            inputTransformation = vm.inputOf(rowKey),
                             keyboardOptions = VaultFieldDefaults.Website.copy(imeAction = ime(rowKey)),
                             lineLimits = TextFieldLineLimits.SingleLine,
                             leftToRight = true,
@@ -272,7 +272,7 @@ private fun Form(vm: EditViewModel, ui: EditUiState, padding: PaddingValues, foc
                 label = { Text(text = stringResource(R.string.edit_notes)) },
                 supportingText = support(form.notes, EntryRules.NOTES_MAX, problemsOf(ui, vm, FieldKey.Notes), formatters),
                 isError = problemsOf(ui, vm, FieldKey.Notes).isNotEmpty(),
-                inputTransformation = NOTES_INPUT,
+                inputTransformation = vm.inputOf(FieldKey.Notes),
                 keyboardOptions = VaultFieldDefaults.Text,
                 lineLimits = TextFieldLineLimits.MultiLine(minHeightInLines = 3),
             )
@@ -288,7 +288,7 @@ private fun Form(vm: EditViewModel, ui: EditUiState, padding: PaddingValues, foc
                                 label = { Text(text = row.name) },
                                 supportingText = support(row.value, EntryRules.FIELD_VALUE_MAX, problems, formatters),
                                 isError = problems.isNotEmpty(),
-                                inputTransformation = SECRET_VALUE_INPUT,
+                                inputTransformation = vm.inputOf(rowKey),
                                 keyboardOptions = VaultFieldDefaults.Secret.copy(imeAction = ime(rowKey)),
                             )
                         } else {
@@ -298,7 +298,7 @@ private fun Form(vm: EditViewModel, ui: EditUiState, padding: PaddingValues, foc
                                 label = { Text(text = row.name) },
                                 supportingText = support(row.value, EntryRules.FIELD_VALUE_MAX, problems, formatters),
                                 isError = problems.isNotEmpty(),
-                                inputTransformation = VALUE_INPUT,
+                                inputTransformation = vm.inputOf(rowKey),
                                 keyboardOptions = VaultFieldDefaults.Text,
                                 lineLimits = TextFieldLineLimits.MultiLine(maxHeightInLines = 6),
                             )
@@ -338,7 +338,7 @@ private fun PasswordPart(vm: EditViewModel, ui: EditUiState, focus: FieldFocus, 
         },
         supportingText = support(form.password, EntryRules.PASSWORD_MAX, problems, formatters),
         isError = problems.isNotEmpty(),
-        inputTransformation = PASSWORD_INPUT,
+        inputTransformation = vm.inputOf(FieldKey.Password),
         keyboardOptions = VaultFieldDefaults.Secret.copy(imeAction = ImeAction.Next),
     )
     if (form.password.text.isEmpty()) {
@@ -503,7 +503,7 @@ private fun AddFieldDialog(vm: EditViewModel, focus: FieldFocus, formatters: For
                         label = { Text(text = stringResource(R.string.edit_field_label)) },
                         supportingText = labelSupport(add, formatters),
                         isError = add.labelMissing,
-                        inputTransformation = FIELD_NAME_INPUT,
+                        inputTransformation = vm.inputOf(FieldKey.AddFieldName),
                         keyboardOptions = VaultFieldDefaults.Text.copy(imeAction = ImeAction.Next),
                         lineLimits = TextFieldLineLimits.SingleLine,
                     )
@@ -516,7 +516,7 @@ private fun AddFieldDialog(vm: EditViewModel, focus: FieldFocus, formatters: For
                         modifier = focus.field(FieldKey.AddFieldValue, EditTags.FIELD_VALUE),
                         label = { Text(text = stringResource(R.string.edit_field_value)) },
                         supportingText = support(add.value, EntryRules.FIELD_VALUE_MAX, emptyList(), formatters),
-                        inputTransformation = SECRET_VALUE_INPUT,
+                        inputTransformation = vm.inputOf(FieldKey.AddFieldValue),
                     )
                 } else {
                     VaultTextField(
@@ -524,7 +524,7 @@ private fun AddFieldDialog(vm: EditViewModel, focus: FieldFocus, formatters: For
                         modifier = focus.field(FieldKey.AddFieldValue, EditTags.FIELD_VALUE),
                         label = { Text(text = stringResource(R.string.edit_field_value)) },
                         supportingText = support(add.value, EntryRules.FIELD_VALUE_MAX, emptyList(), formatters),
-                        inputTransformation = VALUE_INPUT,
+                        inputTransformation = vm.inputOf(FieldKey.AddFieldValue),
                         lineLimits = TextFieldLineLimits.MultiLine(maxHeightInLines = 4),
                     )
                 }
@@ -619,17 +619,6 @@ private fun rememberFieldFocus(vm: EditViewModel): FieldFocus {
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     return remember(vm, lifecycle) { FieldFocus(vm, lifecycle) }
 }
-
-private val TITLE_INPUT = FieldInput(EntryRules.TITLE_MAX, lineBreaks = false)
-private val USERNAME_INPUT = FieldInput(EntryRules.USERNAME_MAX, lineBreaks = false)
-private val PASSWORD_INPUT = FieldInput(EntryRules.PASSWORD_MAX, lineBreaks = false)
-private val WEBSITE_INPUT = FieldInput(EntryRules.URL_MAX, lineBreaks = false)
-private val NOTES_INPUT = FieldInput(EntryRules.NOTES_MAX, lineBreaks = true)
-private val FIELD_NAME_INPUT = FieldInput(EntryRules.FIELD_NAME_MAX, lineBreaks = false)
-private val VALUE_INPUT = FieldInput(EntryRules.FIELD_VALUE_MAX, lineBreaks = true)
-
-/** A secret value is typed in a one-line password field, where a pasted line break is dropped. */
-private val SECRET_VALUE_INPUT = FieldInput(EntryRules.FIELD_VALUE_MAX, lineBreaks = false)
 
 /**
  * The test tags of the form, exposed as resource ids (the emulator scripts and the skeleton check

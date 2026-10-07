@@ -443,6 +443,18 @@ class EditViewModel(
         return Counter.of(state.text, max)
     }
 
+    /** What typing and pasting may put into the field [key] (its `InputTransformation`). */
+    fun inputOf(key: FieldKey): FieldInput = when (key) {
+        FieldKey.Title -> FieldInput.TITLE
+        FieldKey.Username -> FieldInput.USERNAME
+        FieldKey.Password -> FieldInput.PASSWORD
+        FieldKey.Notes -> FieldInput.NOTES
+        is FieldKey.Website -> FieldInput.WEBSITE
+        is FieldKey.FieldValue -> if (form.fields.firstOrNull { it.id == key.row }?.secret == false) FieldInput.VALUE else FieldInput.SECRET_VALUE
+        FieldKey.AddFieldName -> FieldInput.FIELD_NAME
+        FieldKey.AddFieldValue -> if (addField.secret) FieldInput.SECRET_VALUE else FieldInput.VALUE
+    }
+
     /** The text field of [key] and its limit in code points (ux.md §2). */
     fun stateOf(key: FieldKey): Pair<TextFieldState, Int>? = when (key) {
         FieldKey.Title -> form.title to EntryRules.TITLE_MAX
