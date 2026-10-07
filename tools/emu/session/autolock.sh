@@ -74,6 +74,15 @@ type_into() {
     pv_shell input text "$2" >/dev/null
 }
 
+# submit BUTTON-ID THEN-ID [SECONDS]: the keyboard's Enter, the fields' action (ImeAction.Done); if
+# THEN-ID has not appeared, the button itself, in case the keyboard took the Enter.
+submit() {
+    pv_shell input keyevent KEYCODE_ENTER >/dev/null
+    present "$2" "${3:-15}" && return 0
+    pv_log "Enter did not reach $2; tapping $1"
+    tap "$1" && present "$2" "${3:-15}"
+}
+
 relaunch() {
     local out
     out=$(pv_shell am start -W -n "$PV_PACKAGE/.MainActivity" 2>&1 | tr -d '\r')
@@ -121,31 +130,26 @@ set_up() {
     tap pv.open.CreateMasterPassword && on CreateMasterPassword || return 1
     if present pv.setup.typeOwn 3; then
         tap pv.setup.typeOwn && present pv.setup.own && type_into pv.setup.own "$PASSWORD" || return 1
-        pv_shell input keyevent KEYCODE_BACK >/dev/null # close the keyboard
-        tap pv.setup.useOwn || return 1
-        present pv.setup.reuse.no 10 && tap pv.setup.reuse.no || return 1
+        submit pv.setup.useOwn pv.setup.reuse.no && tap pv.setup.reuse.no || return 1 # "No, it's new"
     else
         tap pv.open.WriteDown || return 1
     fi
     on WriteDown && tap pv.open.TypeAgain && on TypeAgain || return 1
     if present pv.setup.again 3; then
-        type_into pv.setup.again "$PASSWORD" || return 1
-        pv_shell input keyevent KEYCODE_BACK >/dev/null
+        type_into pv.setup.again "$PASSWORD" && submit pv.action.createVault pv.route.Passwords 60
+    else
+        tap pv.action.createVault && on Passwords 60
     fi
-    tap pv.action.createVault && on Passwords 60
 }
 
 # The master password on the lock screen.
 unlock() {
     on Locked || return 1
     if present pv.lock.password 3; then
-        type_into pv.lock.password "$PASSWORD" || return 1
-        pv_shell input keyevent KEYCODE_BACK >/dev/null
-        tap pv.lock.unlock || return 1
+        type_into pv.lock.password "$PASSWORD" && submit pv.lock.unlock pv.route.Passwords 60
     else
-        tap pv.action.unlock || return 1
+        tap pv.action.unlock && on Passwords 60
     fi
-    on Passwords 60
 }
 
 default_written() {
