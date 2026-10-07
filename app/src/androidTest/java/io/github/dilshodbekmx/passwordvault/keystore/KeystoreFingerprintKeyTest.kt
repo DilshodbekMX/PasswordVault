@@ -110,15 +110,51 @@ class KeystoreFingerprintKeyTest {
     }
 
     @Test
-    fun createTakesOnlyAFingerprintAlias() {
+    fun onlyAFingerprintAliasIsEverMadeOrUsed() = runBlocking {
+        assertEquals(KeyCreate.Ok, access.ensureCanary())
+        // Keys that are there, could do the work, and are not a fingerprint's.
+        val pinAlias = kit.pinAlias()
+        kit.makeAesKeyWithoutAuthentication(pinAlias)
+        val library = kit.track("androidxBiometric")
+        kit.makeAesKeyWithoutAuthentication(library)
+        val before = kit.keyStore().aliases().toList().toSet()
         for (alias in listOf("pv_pin_" + kit.newId(), "pv_canary", "androidxBiometric", "")) {
             try {
                 key.create(alias)
                 fail("an alias that is not a fingerprint's: '$alias'")
             } catch (e: IllegalArgumentException) {
-                assertFalse(alias in kit.keyStore().aliases().toList())
+                assertEquals("nothing was made or replaced", before, kit.keyStore().aliases().toList().toSet())
             }
         }
+        val nonce = ByteArray(12) { 1 }
+        for (alias in listOf(pinAlias, library, "pv_canary", "pv_fp", "")) {
+            assertEquals("'$alias'", Ks.Temporary(null), key.probe(alias, nonce))
+            launcher.succeed()
+            assertEquals("'$alias'", FingerprintResult.Temporary(null), key.seal(alias, vk, PromptUse.TURN_ON, 1))
+            assertEquals("'$alias'", FingerprintResult.Temporary(null), key.open(alias, nonce, ByteArray(48), PromptUse.UNLOCK, 2))
+            launcher.answers.clear()
+        }
+        assertEquals("no prompt was asked for", 0, launcher.requests.size)
+        assertEquals(before, kit.keyStore().aliases().toList().toSet())
+    }
+
+    @Test
+    fun aLauncherThatThrowsIsTemporaryAndNothingOpens() = runBlocking {
+        val alias = aliasWithoutAuthentication()
+        val wrap = wrapped(alias)
+        val broken = object : BiometricLauncher {
+            override suspend fun authenticate(cipher: Cipher, use: PromptUse, launch: Int, pinUsable: Boolean): PromptOutcome =
+                throw IllegalStateException("the prompt could not be asked for")
+
+            override fun cancel() = Unit
+        }
+        val brokenKey = KeystoreFingerprintKey(access, broken, kit.context, AppDispatchers.Default) { true }
+        assertEquals(FingerprintResult.Temporary(null), brokenKey.open(alias, wrap.nonce, wrap.bytes, PromptUse.UNLOCK, 1))
+        assertEquals(FingerprintResult.Temporary(null), brokenKey.seal(alias, vk, PromptUse.TURN_ON, 2))
+        val brokenChoice = KeystoreFingerprintKey(access, launcher, kit.context, AppDispatchers.Default) { throw IllegalStateException() }
+        launcher.succeed()
+        assertEquals(FingerprintResult.Temporary(null), brokenChoice.open(alias, wrap.nonce, wrap.bytes, PromptUse.UNLOCK, 3))
+        assertTrue("nothing was removed", kit.has(alias))
     }
 
     @Test

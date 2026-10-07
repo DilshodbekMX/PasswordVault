@@ -43,8 +43,12 @@ class KeystorePinKey(private val access: KeystoreAccess) : PinKey {
      * `Mac.init` is GONE only for `KeyPermanentlyInvalidatedException` and TEMPORARY for anything
      * else, "Device locked" on API 35 and newer among them; a failing `doFinal` is TEMPORARY, with
      * no output and no information, so the try is refunded.
+     *
+     * Only a key under a PIN alias is ever used: for any other alias the answer is TEMPORARY and no
+     * key is touched, so that `pv_canary` is never used on a secret (lock.md §4.2).
      */
     override fun hmac(alias: String, message: ByteArray): Ks<ByteArray> {
+        if (!alias.startsWith(RecordCodec.PIN_ALIAS_PREFIX)) return Ks.Temporary(null)
         val key = when (val loaded = access.load(alias)) {
             is Ks.Ok -> loaded.value
             is Ks.Gone -> return loaded

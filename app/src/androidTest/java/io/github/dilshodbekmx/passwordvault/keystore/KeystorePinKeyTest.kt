@@ -94,15 +94,28 @@ class KeystorePinKeyTest {
     }
 
     @Test
-    fun createTakesOnlyAPinAlias() {
+    fun onlyAPinAliasIsEverMadeOrUsed() {
+        assertEquals(KeyCreate.Ok, access.ensureCanary())
+        val fingerprintAlias = kit.fingerprintAlias()
+        kit.makeAesKeyWithoutAuthentication(fingerprintAlias)
+        val other = kit.track("pvtest_hmac_key")
+        kit.importHmacKey(other, ByteArray(32) { 1 })
+        val before = kit.keyStore().aliases().toList().toSet()
         for (alias in listOf("pv_fp_" + kit.newId(), "pv_canary", "pin", "")) {
             try {
                 pin.create(alias)
                 fail("an alias that is not a PIN's: '$alias'")
             } catch (e: IllegalArgumentException) {
-                assertFalse(alias in kit.keyStore().aliases().toList())
+                assertEquals("nothing was made or replaced", before, kit.keyStore().aliases().toList().toSet())
             }
         }
+        // The canary is never used on a secret (lock.md §4.2), nor is any other key that is not a
+        // PIN's: TEMPORARY, although each of these keys is there and could compute an HMAC.
+        val message = PinWrap.message(vaultId, slotId, pin582913)
+        for (alias in listOf("pv_canary", other, fingerprintAlias, "pv_pin", "")) {
+            assertEquals("'$alias'", Ks.Temporary(null), pin.hmac(alias, message))
+        }
+        assertEquals(before, kit.keyStore().aliases().toList().toSet())
     }
 
     @Test

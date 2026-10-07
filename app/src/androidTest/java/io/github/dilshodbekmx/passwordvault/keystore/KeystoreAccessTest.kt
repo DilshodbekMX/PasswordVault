@@ -249,6 +249,8 @@ class KeystoreAccessTest {
     fun theDebugBuildAllowsSoftwareKeysAndAStrictBuildRefusesThem() {
         assertTrue("debug builds allow software keys (architecture.md §7.2)", BuildConfig.ALLOW_SOFTWARE_KEYSTORE)
         val software = kit.keysAreInSoftware()
+        // On the test emulators this test must take the "refused" branch below.
+        if (kit.isEmulator) assertTrue("emulators report software keys on API 24, 28 and 37", software)
         val strict = KeystoreAccess(allowSoftwareKeys = false)
         val refusedOrOk = if (software) KeyCreate.NoSecureHardware else KeyCreate.Ok
 

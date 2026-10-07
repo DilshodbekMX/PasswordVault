@@ -111,6 +111,11 @@ internal class KeystoreKit {
         }
     }
 
+    /** Whether this is one of the emulators of tools/emu, whose Keystore keeps every key in software [L-bio case 7, L-old §3]. */
+    val isEmulator: Boolean
+        get() = Build.HARDWARE == "ranchu" || Build.HARDWARE == "goldfish" || Build.FINGERPRINT.contains("generic") ||
+            Build.PRODUCT.startsWith("sdk_")
+
     /** Puts the HMAC-SHA256 key [key] into the Keystore under [alias], for signing, as `K_pin` is. */
     fun importHmacKey(alias: String, key: ByteArray) {
         keyStore().setEntry(

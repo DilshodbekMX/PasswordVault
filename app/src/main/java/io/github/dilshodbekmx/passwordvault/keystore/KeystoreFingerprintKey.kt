@@ -167,9 +167,11 @@ class KeystoreFingerprintKey(
     /**
      * The key under [alias] by lock.md §14.2 and a cipher initialised with it by [init]; a failure of
      * either is classified by §14.3. `init` needs no authentication; `doFinal` always does [L-bio
-     * case 2].
+     * case 2]. Only a key under a fingerprint alias is ever used: any other alias is TEMPORARY, and
+     * no key is touched.
      */
     private fun cipherFor(alias: String, init: Cipher.(SecretKey) -> Unit): Ks<Cipher> {
+        if (!alias.startsWith(RecordCodec.FINGERPRINT_ALIAS_PREFIX)) return Ks.Temporary(null)
         val key = when (val loaded = access.load(alias)) {
             is Ks.Ok -> loaded.value
             is Ks.Gone -> return loaded
@@ -201,8 +203,16 @@ class KeystoreFingerprintKey(
             is Ks.Gone -> return FingerprintResult.Gone(ready.why)
             is Ks.Temporary -> return FingerprintResult.Temporary(null)
         }
-        val outcome = access.faults.takePromptError()?.let { PromptOutcome.Error(it) }
-            ?: withContext(dispatchers.main) { launcher.authenticate(cipher, use, launch, pinUsable()) }
+        val outcome = try {
+            access.faults.takePromptError()?.let { PromptOutcome.Error(it) }
+                ?: withContext(dispatchers.main) { launcher.authenticate(cipher, use, launch, pinUsable()) }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            // A prompt that could not even be asked for stopped the shortcut this time: TEMPORARY
+            // (lock.md §14.1), and nothing opens.
+            return FingerprintResult.Temporary(null)
+        }
         val authorised: Cipher?
         val callback = when (outcome) {
             PromptOutcome.NotShown -> return FingerprintResult.NotShown
