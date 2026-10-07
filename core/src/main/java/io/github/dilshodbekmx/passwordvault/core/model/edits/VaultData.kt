@@ -17,8 +17,10 @@ internal object VaultData {
     fun clearDraft(vault: Vault): Edited<Unit> =
         if (vault.draft == null) Edited(vault, Unit) else Edited(vault.copy(draft = null), Unit)
 
-    fun notePlainExport(vault: Vault, nowMs: Long, uri: String, name: String): Edited<Unit> =
-        Edited(vault.copy(plainExports = noted(vault.plainExports, nowMs, uri, name)), Unit)
+    fun notePlainExport(vault: Vault, nowMs: Long, uri: String, name: String): Edited<Unit> {
+        val refs = noted(vault.plainExports, nowMs, uri, name)
+        return if (refs == vault.plainExports) Edited(vault, Unit) else Edited(vault.copy(plainExports = refs), Unit)
+    }
 
     fun forgetPlainExport(vault: Vault, uri: String): Edited<Boolean> {
         val kept = vault.plainExports.filter { it.uri != uri }
@@ -26,8 +28,10 @@ internal object VaultData {
         return Edited(vault.copy(plainExports = kept), true)
     }
 
-    fun noteBackup(vault: Vault, nowMs: Long, uri: String, name: String): Edited<Unit> =
-        Edited(vault.copy(backups = noted(vault.backups, nowMs, uri, name)), Unit)
+    fun noteBackup(vault: Vault, nowMs: Long, uri: String, name: String): Edited<Unit> {
+        val refs = noted(vault.backups, nowMs, uri, name)
+        return if (refs == vault.backups) Edited(vault, Unit) else Edited(vault.copy(backups = refs), Unit)
+    }
 
     fun forgetBackup(vault: Vault, uri: String): Edited<Boolean> {
         val kept = vault.backups.filter { it.uri != uri }
