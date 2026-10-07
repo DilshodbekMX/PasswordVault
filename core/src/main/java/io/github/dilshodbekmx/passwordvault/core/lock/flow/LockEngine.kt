@@ -315,7 +315,8 @@ class LockEngine(
     io: CoroutineDispatcher,
     mutex: Mutex = Mutex(),
 ) {
-    private val core = LockCore(records, lockRoot, clock, random, pinKey, fingerprintKey, deviceKeys, vault, kdf, aead, io, mutex)
+    /** What the flows share. Internal, so that the flow files and their tests reach it; nothing outside `:core` can. */
+    internal val core = LockCore(records, lockRoot, clock, random, pinKey, fingerprintKey, deviceKeys, vault, kdf, aead, io, mutex)
     private val unlock = UnlockFlows(core)
     private val startUp = StartUp(core)
     private val shortcuts = ShortcutFlows(core)

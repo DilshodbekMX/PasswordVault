@@ -494,11 +494,18 @@ internal class LockCore(
         if (target.aside != null) target.aside.newest else (scan?.current as? CurrentVault.Present)?.newest
 
     /**
-     * The `vk_id`s among the kept generations of [target] (lock.md §5.4); null when storage could not
-     * say, and for a vault put aside: no wrap is trimmed then.
+     * The `vk_id`s among the kept generations of [target] (lock.md §5.4), for trimming the wraps at
+     * an unlock; null when no wrap may be trimmed: storage could not say, the vault is one put
+     * aside, or its newest readable generation is an older copy. Storage lists the keys of the
+     * generations it can read; a damaged one above them is still on disk and may carry another key,
+     * and nothing is removed for that mismatch (§5.10, F16a, I6). Its wrap goes once storage has
+     * put the damaged file in quarantine.
      */
-    fun keptVkIds(target: LockTarget): Set<String>? =
-        if (target.aside != null) null else (scan?.current as? CurrentVault.Present)?.takeIf { it.vaultId == target.vaultId }?.keptVkIds
+    fun keptVkIds(target: LockTarget): Set<String>? {
+        if (target.aside != null) return null
+        val present = (scan?.current as? CurrentVault.Present)?.takeIf { it.vaultId == target.vaultId } ?: return null
+        return if (present.olderCopyFirst) null else present.keptVkIds
+    }
 
     // ---------------------------------------------------------------------------------------------
     // Visits (lock.md §6.3)

@@ -628,7 +628,7 @@ internal class UnlockFlows(private val core: LockCore) {
         core.closeVisit()
 
         // The wraps. A right PIN trimmed its own record in the check; its write waits below.
-        var kept = (core.scan?.current as? CurrentVault.Present)?.takeIf { it.vaultId == lock.vaultId }?.keptVkIds
+        var kept = core.target?.takeIf { it.lock === lock }?.let { core.keptVkIds(it) }
         if (by == UnlockBy.MASTER_PASSWORD) {
             kept = try {
                 core.vault.retireOldKeys() // F8 step 10: storage decides whether the old keys may go yet
@@ -636,6 +636,9 @@ internal class UnlockFlows(private val core: LockCore) {
                 kept
             }
         }
+        // An older copy opened: the damaged ones above it are still on disk, and nothing is removed
+        // for a mismatch (§5.10, F16a).
+        if (opened.olderCopy) kept = null
         if (kept != null) {
             if (by != UnlockBy.PIN) lock.pin.keepWrapsFor(kept)
             lock.fingerprint.keepWrapsFor(kept)
