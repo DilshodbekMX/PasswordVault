@@ -51,21 +51,26 @@ object ExportNames {
     fun xlsx(nowMs: Long, zone: TimeZone): String = PLAIN_PREFIX + date(nowMs, zone) + "." + XLSX_EXTENSION
 
     /**
-     * The local date of [nowMs] in [zone] as `2026-10-06`: four digits for the year (a year outside
-     * 0 to 9999 is written as the nearest of the two, so that the name keeps its shape), two for the
-     * month and the day.
+     * The local date of [nowMs] in [zone] as `2026-10-06`: four digits for the year, two for the month
+     * and the day. A clock before the year 0 gives `0000-01-01` and one after the year 9999
+     * `9999-12-31`, so that a name keeps its shape whatever the clock says.
      */
     fun date(nowMs: Long, zone: TimeZone): String {
-        val local = nowMs + zone.getOffset(nowMs)
-        val date = IsoTime.civilFromDays(local.floorDiv(IsoTime.MS_PER_DAY))
+        val ms = nowMs.coerceIn(FIRST_DAY * IsoTime.MS_PER_DAY, (LAST_DAY + 1) * IsoTime.MS_PER_DAY - 1)
+        val local = ms + zone.getOffset(ms)
+        val date = IsoTime.civilFromDays(local.floorDiv(IsoTime.MS_PER_DAY).coerceIn(FIRST_DAY, LAST_DAY))
         val sb = StringBuilder(10)
-        pad(sb, date[0].coerceIn(0, 9999), 4)
+        pad(sb, date[0], 4)
         sb.append('-')
         pad(sb, date[1], 2)
         sb.append('-')
         pad(sb, date[2], 2)
         return sb.toString()
     }
+
+    /** 0000-01-01 and 9999-12-31 as days since 1970-01-01. */
+    private val FIRST_DAY = IsoTime.daysFromCivil(0, 1, 1)
+    private val LAST_DAY = IsoTime.daysFromCivil(9999, 12, 31)
 
     /** Appends [value] (not negative) in ASCII digits with leading zeros up to [width]. */
     private fun pad(sb: StringBuilder, value: Int, width: Int) {
