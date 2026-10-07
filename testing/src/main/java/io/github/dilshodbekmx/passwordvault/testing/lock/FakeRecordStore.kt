@@ -61,6 +61,17 @@ class FakeRecordStore<T : Any>(initial: T? = null, private val now: () -> Long =
     /** Every record handed over since the store was made, in order. */
     val writes: List<Write<T>> @Synchronized get() = handed.toList()
 
+    /**
+     * What a [powerCut] with [settleMs] would leave now, without making one: the latest record handed
+     * over at least [settleMs] before [now], or what was there before every later write; null for
+     * MISSING. A test of lock.md I4 asks this at the moment of a PIN check.
+     */
+    @Synchronized
+    fun durable(settleMs: Long): T? {
+        val cutoff = now() - settleMs
+        return unsettled.lastOrNull { it.atMs <= cutoff }?.record ?: base
+    }
+
     /** How many writes threw `IOException` (landed or not). */
     val failedWrites: Int @Synchronized get() = failed
 
