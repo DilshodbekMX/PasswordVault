@@ -24,7 +24,11 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 import java.lang.reflect.Modifier
 import java.util.IdentityHashMap
 import java.util.concurrent.CountDownLatch
@@ -39,9 +43,19 @@ import java.util.concurrent.TimeUnit
  * the JDK through their public interfaces). None of them may be a vault, an entry, a draft or an
  * `OpenedVault`, both keys must be zero, and no array may hold a key's bytes.
  */
-class LockTest {
-    private val files = FakeFiles().apply { mkdirs(FILES) }
-    private val phone = Phone(files = files)
+@RunWith(Parameterized::class)
+class LockTest(private val kind: DiskKind) {
+    companion object {
+        @JvmStatic
+        @Parameterized.Parameters(name = "{0}")
+        fun kinds(): List<DiskKind> = DiskKind.entries
+    }
+
+    @get:Rule
+    val temp = TemporaryFolder()
+
+    private val disk: Disk by lazy { Disk.of(kind, temp) }
+    private val phone: Phone by lazy { Phone(disk) }
 
     @Test
     fun afterLockNoReferenceToTheVaultRemainsInTheRepository() = runTest {
@@ -101,7 +115,7 @@ class LockTest {
             repo.create()
             val entered = CountDownLatch(1)
             val release = CountDownLatch(1)
-            files.beforeOp = { op, path ->
+            disk.beforeOp = { op, path ->
                 if (op == FakeFiles.Op.WRITE_NEW && path.endsWith(".tmp") && entered.count > 0) {
                     entered.countDown()
                     release.await(20, TimeUnit.SECONDS)
@@ -117,11 +131,11 @@ class LockTest {
             assertTrue(saving.await() is SaveResult.Saved)
             locking.await()
             assertEquals(VaultState.Locked, repo.state.value)
-            files.beforeOp = null
+            disk.beforeOp = null
             repo.unlock()
             assertEquals(listOf("in flight"), repo.shown().vault.entries.map { it.title })
         } finally {
-            files.beforeOp = null
+            disk.beforeOp = null
             scope.cancel()
         }
     }

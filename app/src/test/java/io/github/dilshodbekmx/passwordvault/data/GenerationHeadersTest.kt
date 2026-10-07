@@ -12,7 +12,11 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 import java.util.Locale
 import io.github.dilshodbekmx.passwordvault.core.storage.VaultRef as StoreVaultRef
 
@@ -21,7 +25,19 @@ import io.github.dilshodbekmx.passwordvault.core.storage.VaultRef as StoreVaultR
  * architecture.md §4.7, for the `createdMs` of the lock's results; null when the file is not the
  * one asked for or cannot be read now.
  */
-class GenerationHeadersTest {
+@RunWith(Parameterized::class)
+class GenerationHeadersTest(private val kind: DiskKind) {
+    companion object {
+        @JvmStatic
+        @Parameterized.Parameters(name = "{0}")
+        fun kinds(): List<DiskKind> = DiskKind.entries
+    }
+
+    @get:Rule
+    val temp = TemporaryFolder()
+
+    private val disk: Disk by lazy { Disk.of(kind, temp) }
+
     @Test
     fun namesAreThoseOfSection47WhateverTheLocale() {
         val before = Locale.getDefault()
@@ -45,20 +61,19 @@ class GenerationHeadersTest {
         val dispatcher = StandardTestDispatcher(testScheduler)
         val scope = CoroutineScope(SupervisorJob() + dispatcher)
         try {
-            val files = FakeFiles().apply { mkdirs(FILES) }
-            val phone = Phone(files = files)
+            val phone = Phone(disk)
             val repo = phone.process(scope, dispatcher)
             val first = repo.create(vaultId(1))
             phone.clock.advance(1_000L)
             repo.add(form("later"), phone.random)
-            val headers = GenerationHeaders(files, phone.codec, VAULTS)
+            val headers = GenerationHeaders(phone.files, phone.codec, phone.vaultsDir)
             assertEquals(first.createdMs, headers.createdMs(StoreVaultRef.Current, first.vaultId, first.vkId, 1L))
             assertEquals(first.createdMs + 1_000L, headers.createdMs(StoreVaultRef.Current, first.vaultId, first.vkId, 2L))
             assertNull("another vault", headers.createdMs(StoreVaultRef.Current, vaultId(2), first.vkId, 2L))
             assertNull("another key", headers.createdMs(StoreVaultRef.Current, first.vaultId, id(9), 2L))
             assertNull("no such generation", headers.createdMs(StoreVaultRef.Current, first.vaultId, first.vkId, 3L))
             assertNull("not a generation number", headers.createdMs(StoreVaultRef.Current, first.vaultId, first.vkId, 0L))
-            files.fail(FakeFiles.Op.READ) { it.endsWith(GenerationHeaders.fileName(2L)) }
+            disk.fail(FakeFiles.Op.READ) { it.endsWith(GenerationHeaders.fileName(2L)) }
             assertNull("cannot be read now", headers.createdMs(StoreVaultRef.Current, first.vaultId, first.vkId, 2L))
 
             // A vault put aside: its newest directory.

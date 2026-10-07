@@ -20,20 +20,35 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 
 /**
- * Build plan 3.1, [JVM]: `edit` (architecture.md §3.5, §4.9, §5.3). An edit is visible to
- * observers only after the file is on disk; a failing `syncDir` gives `NotSaved` and the old state;
- * two edits at once are applied one after the other; `TOO_LARGE` is reported as such; a save runs to
- * its end when its caller is cancelled.
+ * Build plan 3.1, [JVM]: `edit` (architecture.md §3.5, §4.9, §5.3), against a real `VaultStore` on
+ * `FakeFiles` and on a temporary directory. An edit is visible to observers only after the file is
+ * on disk; a failing `syncDir` gives `NotSaved` and the old state; two edits at once are applied one
+ * after the other; `TOO_LARGE` is reported as such; a save runs to its end when its caller is
+ * cancelled.
  */
-class EditTest {
-    private val files = FakeFiles().apply { mkdirs(FILES) }
-    private val phone = Phone(files = files)
+@RunWith(Parameterized::class)
+class EditTest(private val kind: DiskKind) {
+    companion object {
+        @JvmStatic
+        @Parameterized.Parameters(name = "{0}")
+        fun kinds(): List<DiskKind> = DiskKind.entries
+    }
+
+    @get:Rule
+    val temp = TemporaryFolder()
+
+    private val disk: Disk by lazy { Disk.of(kind, temp) }
+    private val phone: Phone by lazy { Phone(disk) }
 
     private fun TestScope.repository(): Pair<DefaultVaultRepository, CoroutineScope> {
         val dispatcher = StandardTestDispatcher(testScheduler)
@@ -48,31 +63,33 @@ class EditTest {
         val (repo, scope) = repository()
         try {
             repo.create()
-            // What observers see at every file operation of the save, until the new vault is shown.
-            var shownAt: Int? = null
-            val seenDuringSave = mutableListOf<Pair<String, VaultState>>()
-            files.onBoundary = { _, at -> if (shownAt == null) seenDuringSave += at to repo.state.value }
-            var durableWhenShown: Boolean? = null
+            // Every file operation of the save, with what observers saw then, until the new vault is shown.
+            var shown = false
+            val seenDuringSave = mutableListOf<Triple<FakeFiles.Op, String, VaultState>>()
+            disk.beforeOp = { op, path -> if (!shown) seenDuringSave += Triple(op, path, repo.state.value) }
+            var onDiskWhenShown: Boolean? = null
             val watcher = scope.launch(Dispatchers.Unconfined) {
                 repo.state.collect { state ->
-                    if (state is VaultState.Unlocked && state.generation == 2L && shownAt == null) {
-                        shownAt = seenDuringSave.size
-                        // At the moment observers see it: does the new generation survive a power cut now?
-                        val afterPowerCut = files.copy().also { it.powerCut() }
-                        durableWhenShown = afterPowerCut.bytes(phone.pathOf(2))?.contentEquals(files.bytes(phone.pathOf(2))) == true
+                    if (state is VaultState.Unlocked && state.generation == 2L && !shown) {
+                        shown = true
+                        // At the moment observers see it, the generation is in place and would survive a power cut.
+                        val path = phone.pathOf(2)
+                        onDiskWhenShown = disk.afterPowerCut(path)?.contentEquals(disk.bytes(path)) == true
                     }
                 }
             }
             repo.add(form("gmail"), phone.random)
-            files.onBoundary = null
+            disk.beforeOp = null
             watcher.cancel()
 
-            assertEquals("shown once the generation survives a power cut", true, durableWhenShown)
-            val steps = seenDuringSave.map { it.first }
-            assertTrue("the new file was renamed into place before it was shown: $steps", steps.any { it.startsWith("rename") && it.endsWith(phone.pathOf(2)) })
-            assertTrue("and its directory synced: $steps", steps.any { it == "syncDir $LIVE" })
-            for ((at, state) in seenDuringSave) {
-                assertTrue("at '$at' observers saw the vault as it was", state is VaultState.Unlocked && state.generation == 1L && state.vault.entries.isEmpty())
+            assertEquals("shown once the generation is on disk for good", true, onDiskWhenShown)
+            val tmp = phone.pathOf(2).removeSuffix(".pvault") + ".tmp"
+            val ops = seenDuringSave.map { it.first to it.second }
+            assertTrue("written: $ops", (FakeFiles.Op.WRITE_NEW to tmp) in ops)
+            assertTrue("renamed into place before it was shown: $ops", (FakeFiles.Op.RENAME to tmp) in ops)
+            assertTrue("its directory synced before it was shown: $ops", (FakeFiles.Op.SYNC_DIR to phone.liveDir) in ops)
+            for ((op, path, state) in seenDuringSave) {
+                assertTrue("at $op $path observers saw the vault as it was", state is VaultState.Unlocked && state.generation == 1L && state.vault.entries.isEmpty())
             }
             assertEquals(2L, repo.shown().generation)
             assertEquals(listOf("gmail"), titles(repo))
@@ -88,7 +105,7 @@ class EditTest {
         try {
             repo.create()
             repo.add(form("first"), phone.random)
-            files.fail(FakeFiles.Op.SYNC_DIR) { it == LIVE }
+            disk.fail(FakeFiles.Op.SYNC_DIR) { it == phone.liveDir }
             val result = repo.edit(VaultEdits.add(form("second"), TestTexts, phone.random))
             assertEquals(SaveResult.NotSaved(SaveProblem.NOT_DURABLE), result)
             val shown = repo.shown()
@@ -111,12 +128,12 @@ class EditTest {
         val (repo, scope) = repository()
         try {
             repo.create()
-            files.fail(FakeFiles.Op.WRITE_NEW)
+            disk.fail(FakeFiles.Op.WRITE_NEW)
             assertEquals(SaveResult.NotSaved(SaveProblem.FAILED), repo.edit(VaultEdits.add(form("lost"), TestTexts, phone.random)))
             assertEquals(1L, repo.shown().generation)
             assertEquals(SaveProblem.FAILED, repo.shown().saveProblem)
             assertEquals(listOf(1L), phone.liveNumbers())
-            assertEquals("no .tmp left", listOf("vault-0000000001.pvault"), phone.names(LIVE))
+            assertEquals("no .tmp left", listOf("vault-0000000001.pvault"), phone.names(phone.liveDir))
         } finally {
             scope.cancel()
         }
@@ -131,7 +148,7 @@ class EditTest {
             // The first save stops inside its write until the test lets it go.
             val entered = CountDownLatch(1)
             val release = CountDownLatch(1)
-            files.beforeOp = { op, path ->
+            disk.beforeOp = { op, path ->
                 if (op == FakeFiles.Op.WRITE_NEW && path.endsWith(".tmp") && entered.count > 0) {
                     entered.countDown()
                     release.await(20, TimeUnit.SECONDS)
@@ -157,7 +174,7 @@ class EditTest {
             assertEquals(3L, repo.shown().generation)
             assertEquals(listOf(1L, 2L, 3L), phone.liveNumbers())
         } finally {
-            files.beforeOp = null
+            disk.beforeOp = null
             scope.cancel()
         }
     }
@@ -178,7 +195,7 @@ class EditTest {
             assertEquals(listOf("small"), titles(repo))
             assertEquals(2L, repo.shown().generation)
             assertEquals(listOf(1L, 2L), phone.liveNumbers())
-            assertEquals("no .tmp left", 2, phone.names(LIVE).size)
+            assertEquals("no .tmp left", 2, phone.names(phone.liveDir).size)
         } finally {
             scope.cancel()
         }
@@ -223,10 +240,10 @@ class EditTest {
         try {
             repo.create()
             var caller: Job? = null
-            files.beforeOp = { op, path -> if (op == FakeFiles.Op.RENAME && path.endsWith(".tmp")) caller?.cancel() }
+            disk.beforeOp = { op, path -> if (op == FakeFiles.Op.RENAME && path.endsWith(".tmp")) caller?.cancel() }
             caller = launch { repo.edit(VaultEdits.add(form("kept"), TestTexts, phone.random)) }
             caller.join()
-            files.beforeOp = null
+            disk.beforeOp = null
             assertTrue("the caller was cancelled during the save", caller.isCancelled)
             advanceUntilIdle()
             assertEquals("the save finished and was shown", listOf("kept"), titles(repo))

@@ -20,7 +20,11 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
 /**
  * Build plan 3.1, [JVM]: nothing automatic is written before the older-copy notice is answered
@@ -29,9 +33,19 @@ import org.junit.Test
  * draft flush, the master-password matches, the purge of D-24 and housekeeping write nothing, while
  * the user's own save goes on. Then each of them runs.
  */
-class OlderCopyTest {
-    private val files = FakeFiles().apply { mkdirs(FILES) }
-    private val phone = Phone(files = files)
+@RunWith(Parameterized::class)
+class OlderCopyTest(private val kind: DiskKind) {
+    companion object {
+        @JvmStatic
+        @Parameterized.Parameters(name = "{0}")
+        fun kinds(): List<DiskKind> = DiskKind.entries
+    }
+
+    @get:Rule
+    val temp = TemporaryFolder()
+
+    private val disk: Disk by lazy { Disk.of(kind, temp) }
+    private val phone: Phone by lazy { Phone(disk) }
     private val dayMs = 24L * 60 * 60 * 1000
 
     @Test
@@ -50,7 +64,7 @@ class OlderCopyTest {
             repo.lock()
             testScheduler.advanceUntilIdle()
             phone.settings.purgeArm.value = null // what the unlock above armed is not the point here
-            files.damage(phone.pathOf(3)) { ByteArray(it.size) } // the newest copy is lost
+            disk.zeroFill(phone.pathOf(3)) // the newest copy is lost
 
             // A new process: the older copy opens, and says so.
             repo = phone.process(scope, dispatcher)
@@ -114,7 +128,7 @@ class OlderCopyTest {
             val (vkId, vk) = repo.withVaultKey { id, key -> id to key.copyOf() }
             repo.add(form("two"), phone.random)
             repo.lock()
-            files.damage(phone.pathOf(3)) { ByteArray(it.size) }
+            disk.zeroFill(phone.pathOf(3))
             repo = phone.process(scope, dispatcher)
             val opened = repo.open(VaultRef.Current, mapOf(vkId to vk)) as VaultOpen.Opened
             assertEquals(2L, opened.generation)

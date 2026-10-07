@@ -24,7 +24,11 @@ import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 import java.security.MessageDigest
 
 /**
@@ -33,7 +37,18 @@ import java.security.MessageDigest
  * the current generation; opening one tells "wrong", "damaged or wrong", "damaged", "newer", "not
  * ours" and "not enough memory" apart; a restore keeps and resets the keys of §4.12.
  */
-class BackupAndRestoreTest {
+@RunWith(Parameterized::class)
+class BackupAndRestoreTest(private val kind: DiskKind) {
+    companion object {
+        @JvmStatic
+        @Parameterized.Parameters(name = "{0}")
+        fun kinds(): List<DiskKind> = DiskKind.entries
+    }
+
+    @get:Rule
+    val temp = TemporaryFolder()
+
+    private val disk: Disk by lazy { Disk.of(kind, temp) }
     /** A vault with every key of §4.3 set, as it was on the old phone. */
     private val everything = Vault(
         entries = listOf(
@@ -51,7 +66,7 @@ class BackupAndRestoreTest {
 
     private class Open(val phone: Phone, val repo: DefaultVaultRepository, val scope: CoroutineScope)
 
-    private fun TestScope.started(phone: Phone = Phone()): Open {
+    private fun TestScope.started(phone: Phone = Phone(disk)): Open {
         val dispatcher = StandardTestDispatcher(testScheduler)
         val scope = CoroutineScope(SupervisorJob() + dispatcher)
         return Open(phone, phone.process(scope, dispatcher), scope)
@@ -126,7 +141,7 @@ class BackupAndRestoreTest {
     @Test
     fun aRestoreKeepsAndResetsTheKeysOfSection412() = runTest {
         val old = started()
-        val new = started(Phone(random = FakeRandom(77L))) // another phone draws other numbers
+        val new = started(Phone(Disk.of(kind, temp), random = FakeRandom(77L))) // another phone draws other numbers
         try {
             val (created, backup) = backupOf(old)
             val backupKey = (old.phone.codec.check(backup) as FileCheck.Ok).file.header.vkId
@@ -166,7 +181,7 @@ class BackupAndRestoreTest {
     @Test
     fun aRestoreOverAVaultPutsThatVaultAside() = runTest {
         val old = started()
-        val phone = Phone(random = FakeRandom(78L))
+        val phone = Phone(Disk.of(kind, temp), random = FakeRandom(78L))
         val here = started(phone)
         try {
             val (_, backup) = backupOf(old)

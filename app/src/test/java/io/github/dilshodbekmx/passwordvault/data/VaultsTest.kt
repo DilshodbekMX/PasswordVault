@@ -20,16 +20,30 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
 /**
  * Build plan 3.1, [JVM]: the vault-level calls of `VaultPort` (architecture.md §3.4, §4.11; lock.md
  * F8, F11, F16b, F17): a vault put aside opened in place, `swapIn`, `mergeAside`, `deleteAside`,
  * `replaceVault`, `changePassword` with `retireOldKeys`, and `putNewerAside`.
  */
-class VaultsTest {
-    private val files = FakeFiles().apply { mkdirs(FILES) }
-    private val phone = Phone(files = files)
+@RunWith(Parameterized::class)
+class VaultsTest(private val kind: DiskKind) {
+    companion object {
+        @JvmStatic
+        @Parameterized.Parameters(name = "{0}")
+        fun kinds(): List<DiskKind> = DiskKind.entries
+    }
+
+    @get:Rule
+    val temp = TemporaryFolder()
+
+    private val disk: Disk by lazy { Disk.of(kind, temp) }
+    private val phone: Phone by lazy { Phone(disk) }
 
     private fun TestScope.started(): Pair<DefaultVaultRepository, CoroutineScope> {
         val dispatcher = StandardTestDispatcher(testScheduler)
@@ -125,7 +139,7 @@ class VaultsTest {
             assertTrue(repo.deleteAside(a.vaultId))
             assertEquals(emptyList<String>(), repo.vaults().aside.map { it.vaultId })
             assertFalse("no longer held", repo.swapIn(a.vaultId))
-            assertEquals(listOf("live"), phone.names(VAULTS))
+            assertEquals(listOf("live"), phone.names(phone.vaultsDir))
         } finally {
             scope.cancel()
         }
@@ -219,7 +233,7 @@ class VaultsTest {
             val older = again.openWithPassword(VaultRef.Current, bytesOf(PASSWORD)) as PasswordOpen.OlderPassword
             assertEquals(2L, older.generation)
             assertTrue(again.putNewerAside(older.generation))
-            assertTrue("vault-0000000003.aside" in phone.names(LIVE))
+            assertTrue("vault-0000000003.aside" in phone.names(phone.liveDir))
             again.unlock(PASSWORD)
             assertEquals(listOf("before the change"), titles(again))
             assertEquals(PasswordOpen.Wrong, newProcess(scope).openWithPassword(VaultRef.Current, bytesOf(OTHER_PASSWORD)))
@@ -235,7 +249,7 @@ class VaultsTest {
             repo.create()
             val (vkId2, vk2) = repo.newKey()
             assertEquals(VaultWrite.Quarantined, repo.changePassword(bytesOf(OTHER_PASSWORD), bytesOf("a typo"), vkId2, vk2))
-            assertTrue("vault-0000000002.bad" in phone.names(LIVE))
+            assertTrue("vault-0000000002.bad" in phone.names(phone.liveDir))
             repo.add(form("still under the old key"), phone.random)
             repo.lock()
             newProcess(scope).unlock(PASSWORD)

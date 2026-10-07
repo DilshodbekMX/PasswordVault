@@ -19,18 +19,33 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
 /**
  * Build plan 3.1, [JVM]: `holdDraft` and `flushDraft` (architecture.md §3.5, §5.5 step 2; ux.md
- * §5.14). `flushDraft` writes only a held draft that differs from the stored one; it waits at most
- * two seconds for a save that is running; once started it finishes; a lock drops the held draft.
+ * §5.14), against a real `VaultStore` on `FakeFiles` and on a temporary directory. `flushDraft`
+ * writes only a held draft that differs from the stored one; it waits at most two seconds for a save
+ * that is running; once started it finishes; a lock drops the held draft.
  */
-class DraftTest {
-    private val files = FakeFiles().apply { mkdirs(FILES) }
-    private val phone = Phone(files = files)
+@RunWith(Parameterized::class)
+class DraftTest(private val kind: DiskKind) {
+    companion object {
+        @JvmStatic
+        @Parameterized.Parameters(name = "{0}")
+        fun kinds(): List<DiskKind> = DiskKind.entries
+    }
+
+    @get:Rule
+    val temp = TemporaryFolder()
+
+    private val disk: Disk by lazy { Disk.of(kind, temp) }
+    private val phone: Phone by lazy { Phone(disk) }
 
     private val generated = Draft(entryId = null, savedAt = 100L, entry = DraftEntry(title = "New account", password = "gen-🔑-Xq7"))
 
@@ -134,7 +149,7 @@ class DraftTest {
             repo.holdDraft(generated)
             val entered = CountDownLatch(1)
             val release = CountDownLatch(1)
-            files.beforeOp = { op, path ->
+            disk.beforeOp = { op, path ->
                 if (op == FakeFiles.Op.WRITE_NEW && path.endsWith(".tmp") && entered.count > 0) {
                     entered.countDown()
                     release.await(30, TimeUnit.SECONDS)
@@ -155,7 +170,7 @@ class DraftTest {
             assertEquals(generated, repo.shown().vault.draft)
             assertEquals(listOf(1L, 2L, 3L), phone.liveNumbers())
         } finally {
-            files.beforeOp = null
+            disk.beforeOp = null
             scope.cancel()
         }
     }
@@ -167,10 +182,10 @@ class DraftTest {
             repo.create()
             repo.holdDraft(generated)
             var caller: Job? = null
-            files.beforeOp = { op, path -> if (op == FakeFiles.Op.RENAME && path.endsWith(".tmp")) caller?.cancel() }
+            disk.beforeOp = { op, path -> if (op == FakeFiles.Op.RENAME && path.endsWith(".tmp")) caller?.cancel() }
             caller = launch { repo.flushDraft() }
             caller.join()
-            files.beforeOp = null
+            disk.beforeOp = null
             assertTrue(caller.isCancelled)
             advanceUntilIdle()
             assertEquals(generated, repo.shown().vault.draft)

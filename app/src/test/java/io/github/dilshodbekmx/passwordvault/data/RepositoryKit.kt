@@ -29,6 +29,7 @@ import io.github.dilshodbekmx.passwordvault.testing.storage.FakeFiles
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import org.junit.Assert.assertTrue
+import org.junit.rules.TemporaryFolder
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileNotFoundException
@@ -119,9 +120,42 @@ internal class FastKdf : MasterKdf {
  * [FilePrimitives] over a real directory, for the tests on a temporary directory: `createNewFile`
  * for an exclusive create, `FileDescriptor.sync` for the file, `FileChannel.force` on the directory,
  * and `File.renameTo`, which is rename(2) on Linux and replaces an existing target.
+ *
+ * It has the hooks of `FakeFiles` that the tests use: [beforeOp] runs at the start of every call,
+ * and [fail] makes chosen calls throw `IOException` (a `writeNew` after half of its bytes).
  */
 internal class DirFiles : FilePrimitives {
+    private class Fault(val op: FakeFiles.Op, val matches: (String) -> Boolean, var times: Int)
+
+    private val faults = mutableListOf<Fault>()
+
+    @Volatile var beforeOp: ((op: FakeFiles.Op, path: String) -> Unit)? = null
+
+    /** The next [times] calls of [op] on a path that [path] accepts throw (negative: every one, until [clearFaults]). */
+    @Synchronized
+    fun fail(op: FakeFiles.Op, times: Int = 1, path: (String) -> Boolean = { true }) {
+        faults += Fault(op, path, times)
+    }
+
+    @Synchronized
+    fun clearFaults() = faults.clear()
+
+    /** Runs the hook; true when this call is to fail. */
+    private fun enter(op: FakeFiles.Op, path: String): Boolean {
+        beforeOp?.invoke(op, path)
+        synchronized(this) {
+            val fault = faults.firstOrNull { it.op == op && it.matches(path) } ?: return false
+            if (fault.times > 0 && --fault.times == 0) faults.remove(fault)
+            return true
+        }
+    }
+
+    private fun check(op: FakeFiles.Op, path: String) {
+        if (enter(op, path)) throw IOException("injected failure: $op $path")
+    }
+
     override fun list(dir: String): List<String>? {
+        check(FakeFiles.Op.LIST, dir)
         val file = File(dir)
         if (!file.exists()) return null
         if (!file.isDirectory) throw IOException("not a directory")
@@ -129,6 +163,7 @@ internal class DirFiles : FilePrimitives {
     }
 
     override fun read(path: String, maxBytes: Int): ByteArray {
+        check(FakeFiles.Op.READ, path)
         val file = File(path)
         if (!file.isFile) throw FileNotFoundException("no such file")
         FileInputStream(file).use { input ->
@@ -146,52 +181,151 @@ internal class DirFiles : FilePrimitives {
     }
 
     override fun writeNew(path: String, bytes: ByteArray) {
+        val failing = enter(FakeFiles.Op.WRITE_NEW, path)
         val file = File(path)
         if (!file.createNewFile()) throw IOException("exists")
         FileOutputStream(file).use { out ->
+            if (failing) {
+                out.write(bytes, 0, bytes.size / 2)
+                throw IOException("injected failure: no space left")
+            }
             out.write(bytes)
             out.flush()
             out.fd.sync()
         }
     }
 
-    override fun exists(path: String): Boolean = File(path).exists()
+    override fun exists(path: String): Boolean {
+        check(FakeFiles.Op.EXISTS, path)
+        return File(path).exists()
+    }
 
     override fun rename(from: String, to: String) {
+        check(FakeFiles.Op.RENAME, from)
         if (!File(from).exists()) throw FileNotFoundException("no such file")
         if (!File(from).renameTo(File(to))) throw IOException("rename failed")
     }
 
     override fun syncDir(dir: String) {
+        check(FakeFiles.Op.SYNC_DIR, dir)
         FileChannel.open(Paths.get(dir), StandardOpenOption.READ).use { it.force(true) }
     }
 
     override fun delete(path: String) {
+        check(FakeFiles.Op.DELETE, path)
         val file = File(path)
         if (!file.exists()) throw FileNotFoundException("no such file")
         if (file.isDirectory || !file.delete()) throw IOException("delete failed")
     }
 
     override fun mkdir(dir: String) {
+        check(FakeFiles.Op.MKDIR, dir)
         if (!File(dir).mkdir()) throw IOException("mkdir failed")
     }
 
     override fun deleteTree(dir: String) {
+        check(FakeFiles.Op.DELETE_TREE, dir)
         val file = File(dir)
         if (!file.isDirectory) throw FileNotFoundException("no such directory")
         if (!file.deleteRecursively()) throw IOException("delete failed")
     }
 }
 
+/** Where a test's vaults live: the in-memory file system of `:testing`, or a real temporary directory. */
+enum class DiskKind { FAKE_FILES, TEMPORARY_DIRECTORY }
+
 /**
- * One phone: [files] is its disk, kept from one app process to the next, with the vaults in
+ * A phone's disk for the repository's tests, with the same hooks on both kinds, so that every test
+ * runs against the real `VaultStore` on `FakeFiles` and on a temporary directory (build plan 3.1).
+ * Only `FakeFiles` can tell what a power cut would leave; a real directory answers [afterPowerCut]
+ * with what is on it.
+ */
+internal sealed class Disk {
+    abstract val files: FilePrimitives
+    abstract val vaultsDir: String
+
+    /** Runs at the start of every file operation, with its kind and path (for a rename, the source). */
+    abstract var beforeOp: ((op: FakeFiles.Op, path: String) -> Unit)?
+
+    /** The next [times] calls of [op] on a path that [path] accepts throw `IOException`. */
+    abstract fun fail(op: FakeFiles.Op, times: Int = 1, path: (String) -> Boolean = { true })
+
+    abstract fun clearFaults()
+
+    /** Damage on the disk: every byte of [path] zero, as a lost write leaves a file. */
+    abstract fun zeroFill(path: String)
+
+    /** The bytes of the file at [path] now, or null. */
+    abstract fun bytes(path: String): ByteArray?
+
+    /** The bytes of the file at [path] after a power cut now, or null when it would be gone. */
+    abstract fun afterPowerCut(path: String): ByteArray?
+
+    class Fake : Disk() {
+        val fake = FakeFiles().apply { mkdirs(FILES) }
+        override val files: FilePrimitives get() = fake
+        override val vaultsDir = VAULTS
+        override var beforeOp: ((op: FakeFiles.Op, path: String) -> Unit)?
+            get() = fake.beforeOp
+            set(value) {
+                fake.beforeOp = value
+            }
+
+        override fun fail(op: FakeFiles.Op, times: Int, path: (String) -> Boolean) = fake.fail(op, times, path)
+
+        override fun clearFaults() = fake.clearFaults()
+
+        override fun zeroFill(path: String) = fake.damage(path) { ByteArray(it.size) }
+
+        override fun bytes(path: String): ByteArray? = fake.bytes(path)
+
+        override fun afterPowerCut(path: String): ByteArray? = fake.copy().also { it.powerCut() }.bytes(path)
+
+        override fun toString() = "FakeFiles"
+    }
+
+    class Directory(root: File) : Disk() {
+        private val dir = DirFiles()
+        override val files: FilePrimitives get() = dir
+        override val vaultsDir: String = File(File(root, "files").apply { mkdirs() }, "vaults").path
+        override var beforeOp: ((op: FakeFiles.Op, path: String) -> Unit)?
+            get() = dir.beforeOp
+            set(value) {
+                dir.beforeOp = value
+            }
+
+        override fun fail(op: FakeFiles.Op, times: Int, path: (String) -> Boolean) = dir.fail(op, times, path)
+
+        override fun clearFaults() = dir.clearFaults()
+
+        override fun zeroFill(path: String) {
+            val file = File(path)
+            file.writeBytes(ByteArray(file.length().toInt()))
+        }
+
+        override fun bytes(path: String): ByteArray? = File(path).takeIf { it.isFile }?.readBytes()
+
+        override fun afterPowerCut(path: String): ByteArray? = bytes(path)
+
+        override fun toString() = "a temporary directory"
+    }
+
+    companion object {
+        fun of(kind: DiskKind, temp: TemporaryFolder): Disk = when (kind) {
+            DiskKind.FAKE_FILES -> Fake()
+            DiskKind.TEMPORARY_DIRECTORY -> Directory(temp.newFolder())
+        }
+    }
+}
+
+/**
+ * One phone: [disk] is its disk, kept from one app process to the next, with the vaults in
  * [vaultsDir]; [process] starts a new process: a new store (which remembers nothing of the last
  * one) and a new repository over it. Clock, random, settings and KDF are the phone's and outlive
  * processes, as the clocks and the settings file do.
  */
 internal class Phone(
-    val files: FilePrimitives = FakeFiles().apply { mkdirs(FILES) },
-    val vaultsDir: String = VAULTS,
+    val disk: Disk = Disk.Fake(),
     val clock: FakeClock = FakeClock(),
     val random: FakeRandom = FakeRandom(5L),
     val settings: FakeAppSettings = FakeAppSettings(),
@@ -199,6 +333,9 @@ internal class Phone(
     val build: BuildInfo = BuildInfo("PasswordVault 1.0", 1),
 ) {
     val codec: VaultCodec = VaultCodecs.create(CryptoFactory.aead(), random, clock, build)
+
+    val files: FilePrimitives get() = disk.files
+    val vaultsDir: String get() = disk.vaultsDir
 
     val liveDir: String get() = "$vaultsDir/live"
 

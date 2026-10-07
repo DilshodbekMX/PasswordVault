@@ -12,7 +12,11 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
 /**
  * Build plan 3.1, [JVM]: the purge of Recently deleted, armed and carried out at unlock
@@ -21,13 +25,23 @@ import org.junit.Test
  * entries that were due when it was armed, and nothing else, whatever the wall clock says; a switch
  * of vault disarms.
  */
-class PurgeTest {
+@RunWith(Parameterized::class)
+class PurgeTest(private val kind: DiskKind) {
+    companion object {
+        @JvmStatic
+        @Parameterized.Parameters(name = "{0}")
+        fun kinds(): List<DiskKind> = DiskKind.entries
+    }
+
+    @get:Rule
+    val temp = TemporaryFolder()
+
+    private val disk: Disk by lazy { Disk.of(kind, temp) }
     private val hourMs = 60L * 60 * 1000
     private val dayMs = 24 * hourMs
-    private val files = FakeFiles().apply { mkdirs(FILES) }
-    private val phone = Phone(files = files)
-    private val clock = phone.clock
-    private val settings = phone.settings
+    private val phone: Phone by lazy { Phone(disk) }
+    private val clock get() = phone.clock
+    private val settings get() = phone.settings
 
     private fun TestScope.repository(): Pair<DefaultVaultRepository, CoroutineScope> {
         val dispatcher = StandardTestDispatcher(testScheduler)
@@ -177,7 +191,7 @@ class PurgeTest {
             val armedAt = clock.wallMs()
             clock.advance(25 * hourMs)
             repo.lock()
-            files.fail(FakeFiles.Op.WRITE_NEW)
+            disk.fail(FakeFiles.Op.WRITE_NEW)
             repo.unlock()
             testScheduler.advanceUntilIdle()
             assertEquals(listOf(id(1), id(2), id(3)), ids(repo))
