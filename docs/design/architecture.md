@@ -91,8 +91,8 @@ The three factory objects (`CryptoFactory`, `VaultCodecs`, `VaultStores`, 3.2 an
 | `clipboard` | Copying | `SecretClipboard`, `AndroidSecretClipboard`, `ClipboardClearReceiver`, `ClipStatus`, `SecretClipboardBridge` (the Compose `Clipboard` provided as `LocalClipboard`, ux.md §6 item 5), `ClipboardRoot` (hook), `ClipboardModule` |
 | `window` | Window and input protections, from `docs/lab/window-input-artifacts/VaultSecurity.kt` with the API 26 gate of lock.md §13.5 | `VaultSecurity` (activity window), `VaultWindow` (dialogs and sheets), `Modifier.vaultTextField()`, `NoPersonalizedLearning`, `ObscuredTouchNotice`, `WindowPolicy` (hook) |
 | `files` | Storage Access Framework | `DocRef`, `DocumentIo`, `SafDocumentIo`, `FileTask`, `FileTaskStore`, `BackupSharing` (`FileProvider`), `Places`, `DocumentLaunchers` (hook: the picker launchers registered by the activity), `FilesModule` |
-| `settings` | Non-secret settings | `AppSettings`, `PrefsAppSettings`, `LockDelay`, `ClipDelay`, `ThemeChoice`, `AppLanguage`, `OneTime`, `PurgeArm`, `SettingsModule` |
-| `i18n` | Language-dependent formatting | `UiText` (resource id plus arguments), `Formatters` (`android.icu` dates, relative times, numbers), `SortKeys` (`Collator`, `AlphabeticIndex`, the sort key of i18n.md §2.7, behind the `Collation` interface), `AppLanguages` |
+| `settings` | Non-secret settings | `AppSettings`, `SettingsEditor`, `PrefsAppSettings`, `LockDelay`, `ClipDelay`, `ThemeChoice`, `BackupReminder`, `OneTime`, `PurgeArm`, `PendingClip`, `SettingsModule` |
+| `i18n` | Language-dependent formatting | `UiText` (resource id plus arguments), `Formatters` (`android.icu` dates, relative times, numbers), `SortKeys` (`Collator`, `AlphabeticIndex`, the sort key of i18n.md §2.7, behind the `Collation` interface), `AppLanguages` (with `AppLanguage`; AppCompat keeps the choice, not `AppSettings`, i18n.md §1.4) |
 | `nav` | Navigation 3 | `Route` (every key, holding ids only), `NavState` (three back stacks: setup, locked, unlocked), `Navigator`, `AppNavHost` |
 | `ui.theme`, `ui.common` | Look and shared parts | `PasswordVaultTheme`, `PinPad`, `SecretText`, `MaskedValue`, `VaultTextField`, `VaultSecureField`, `VaultDialog`, `VaultSheet` (the only ways to make a text field, a dialog or a sheet; R-13), `Banner`, `ClipboardRow`, `StrengthBar` |
 | `ui.shell` | The frame around the screens | `AppRoot` (the root content: window policy, clipboard bridge, theme, navigation), `UnlockedScaffold` (bottom bar, the clipboard row's slot, the Security tab's dot) |
@@ -525,12 +525,28 @@ interface AppSettings {                                // SharedPreferences "pv_
     val theme: StateFlow<ThemeChoice>
     val generator: StateFlow<GeneratorOptions>
     val backupReminder: StateFlow<BackupReminder>      // on or off, snoozed until; when a backup is due is computed from the vault (4.3)
-    val fileTask: StateFlow<FileTask?>                 // an unfinished backup, export or import: kind, step, DocRef; nothing secret
-    val oneTime: StateFlow<Set<OneTime>>               // WORDS_SHOWN (ux.md §5.5), FIRST_COPY_TIP, BACKUP_EXPLAINED, NO_SECURE_HARDWARE_TOLD, …
+    val fileTask: StateFlow<FileTask?>                 // an unfinished backup, export, import or restore: kind, step, DocRef; nothing secret
+    val oneTime: StateFlow<Set<OneTime>>               // WORDS_SHOWN (ux.md §5.5), FIRST_COPY_TIP, BACKUP_EXPLAINED, NO_SECURE_HARDWARE_TOLD
     val purgeArm: StateFlow<PurgeArm?>                 // the two-step purge of Recently deleted (4.3)
+    val pendingClip: StateFlow<PendingClip?>           // a clip of ours still to be cleared (D-14), so that an overdue one is cleared when
+                                                       // the app next comes to the front after a force-stop cancelled its alarm
     fun writeDefaults(): Boolean                       // called by createVault after the vault is proven (lock.md §10.1)
-    fun update(change: (SettingsEditor) -> Unit): Boolean        // commit(); false = not written
+    fun update(change: (SettingsEditor) -> Unit): Boolean        // commit(); false = not written, nothing changed; off the main thread
 }
+interface SettingsEditor {                             // the values update() can set, each starting as the current one
+    var lockDelay: LockDelay; var clipDelay: ClipDelay; var theme: ThemeChoice; var generator: GeneratorOptions
+    var backupReminder: BackupReminder; var fileTask: FileTask?; var oneTime: Set<OneTime>; var purgeArm: PurgeArm?
+    var pendingClip: PendingClip?
+}
+// The values (settings/SettingValues.kt). Each persisted enum has a fixed `stored` text, the value kept in "pv_settings", so that
+// renaming a constant (or R8) never changes what is read back.
+// enum class LockDelay(stored, ms) { IMMEDIATELY, SECONDS_30, MINUTE_1, MINUTES_5 }   // WHEN_MISSING = IMMEDIATELY, SETUP = SECONDS_30
+// enum class ClipDelay(stored, ms) { SECONDS_30, MINUTE_1, MINUTES_2, MINUTES_5 }     // WHEN_MISSING = SECONDS_30, SETUP = MINUTE_1
+// enum class ThemeChoice(stored) { SYSTEM, LIGHT, DARK }
+// class BackupReminder(val on: Boolean = true, val snoozedUntilMs: Long? = null)    // "Later" snoozes it for 3 days (wall clock)
+// enum class OneTime(stored) { WORDS_SHOWN, FIRST_COPY_TIP, BACKUP_EXPLAINED, NO_SECURE_HARDWARE_TOLD }
+// class PurgeArm(val vaultId: String, val armedAtMs: Long, val credit: Credit)      // D-24; Credit is core.lock.guard's (lock.md §6.9)
+// class PendingClip(val token: String, val deadlineMs: Long)                       // the token in the clip's extras (hex), the wall-clock deadline
 ```
 
 - `SaveResult.NotSaved(TOO_LARGE)` is shown as "Your passwords no longer fit in one file. Delete accounts you don't need, or shorten very long notes." The import preview estimates the sealed size first and refuses an import that would not fit, with the same sentence.
