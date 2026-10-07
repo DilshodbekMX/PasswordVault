@@ -11,6 +11,16 @@ import io.github.dilshodbekmx.passwordvault.core.model.Vault
  * apart from the current one, until [swapIn], [mergeAside] or a lock; only one vault put aside is
  * held at a time. The lock checks the master password of a vault put aside under that vault's own
  * guard and records (lock.md §6.8). Byte arrays passed in belong to the caller, which wipes them.
+ *
+ * What a caller must know (architecture.md §3.4): [vaults] reads every live generation file, so it is
+ * called off the main thread. [createVault], [replaceVault] and [changePassword] throw
+ * `KdfUnavailable` (core.crypto) before anything is written when Argon2id cannot run; [VaultWrite]
+ * has no case for it, and the lock answers "not enough memory". A writing call runs to its end when
+ * its caller is cancelled, but `withContext` then drops its answer, so the lock runs [createVault],
+ * [replaceVault], [changePassword], [mergeAside], [swapIn], [putAside], [putNewerAside] and
+ * [deleteAside] in a `NonCancellable` context when it needs the answer (after [deleteAside] it
+ * deletes that vault's lock directory and keys, lock.md F17 step 5). An [open] or [openWithPassword]
+ * whose caller is cancelled opens nothing: the implementation undoes it (lock.md I11).
  */
 interface VaultPort {
     /** The vaults on the phone, before anything is typed (lock.md §5.11 step 2, §16.3 "Storage"). */
