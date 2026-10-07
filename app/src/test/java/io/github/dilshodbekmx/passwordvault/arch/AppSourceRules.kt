@@ -82,16 +82,17 @@ object AppSourceRules {
     /**
      * R-13: text fields, dialogs and sheets are made only by the wrappers of `ui/common`, which apply
      * `vaultTextField()` and `VaultWindow`. A call is allowed in a file of `ui/common` that declares
-     * the wrapper.
+     * the wrapper. `InputField` is Material 3's `SearchBarDefaults.InputField`, a `BasicTextField`
+     * underneath; its wrapper is `VaultSearchField` (ux.md §5.11).
      */
     val r13Calls: List<Rule> = listOf(
         PatternRule(
             "R-13",
-            "a text field outside VaultTextField and VaultSecureField",
-            Regex("""\b(TextField|OutlinedTextField|BasicTextField|SecureTextField|OutlinedSecureTextField|BasicSecureTextField)\s*\("""),
+            "a text field outside VaultTextField, VaultSecureField and VaultSearchField",
+            Regex("""\b(TextField|OutlinedTextField|BasicTextField|SecureTextField|OutlinedSecureTextField|BasicSecureTextField|InputField)\s*\("""),
         ) { file, match ->
             isDeclaration(file, match.range.first) ||
-                (file.path.startsWith(UI_COMMON) && declares(file, "VaultTextField", "VaultSecureField"))
+                (file.path.startsWith(UI_COMMON) && declares(file, "VaultTextField", "VaultSecureField", "VaultSearchField"))
         },
         PatternRule(
             "R-13",

@@ -59,14 +59,19 @@ class AppSourceRulesSamplesTest {
             android.app.AlertDialog.Builder(context)
             val s = TextFieldState()
             @Composable fun Dialog(x: Int) = Unit
+            SearchBarDefaults.InputField(state = s, onSearch = {}, expanded = false, onExpandedChange = {})
+            VaultSearchField(state = s, onSearch = {})
         """
-        assertEquals(listOf(1, 2, 3, 5, 6, 8), lines(AppSourceRules.r13Calls, text))
+        assertEquals(listOf(1, 2, 3, 5, 6, 8, 11), lines(AppSourceRules.r13Calls, text))
 
         val common = "app/src/main/java/io/github/dilshodbekmx/passwordvault/ui/common/"
         val field = "@Composable fun VaultSecureField(state: TextFieldState) { BasicSecureTextField(state, Modifier.vaultTextField()) }"
         assertEquals(emptyList<Int>(), lines(AppSourceRules.r13Calls, field, common + "VaultSecureField.kt"))
         val dialog = "@Composable fun VaultDialog(content: @Composable () -> Unit) { Dialog(onDismissRequest = {}) { content() } }"
         assertEquals(emptyList<Int>(), lines(AppSourceRules.r13Calls, dialog, common + "VaultDialog.kt"))
+        val search = "@Composable fun VaultSearchField(state: TextFieldState) { SearchBarDefaults.InputField(state = state, modifier = Modifier.vaultTextField()) }"
+        assertEquals(emptyList<Int>(), lines(AppSourceRules.r13Calls, search, common + "VaultSearchField.kt"))
+        assertEquals("a search wrapper outside ui/common is no wrapper", listOf(1), lines(AppSourceRules.r13Calls, search, screen))
         assertEquals("a wrapper file elsewhere is no wrapper", listOf(1), lines(AppSourceRules.r13Calls, field, screen))
     }
 

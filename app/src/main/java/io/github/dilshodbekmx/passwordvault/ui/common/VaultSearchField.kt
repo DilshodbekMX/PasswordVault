@@ -15,7 +15,7 @@ import io.github.dilshodbekmx.passwordvault.window.vaultTextField
  * that are not accessibility tools. [state] is held by the screen's ViewModel; a search query never
  * reaches saved state (architecture.md §5.6). The keyboard's search key calls [onSearch].
  *
- * `InputField` is a text field that R-13's list does not name yet; this is its wrapper.
+ * `InputField` is a text field (a `BasicTextField` underneath); R-13 allows it only here.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
