@@ -249,9 +249,17 @@ class Staged internal constructor(val vaultId: String, val vkId: String, val gen
                                   val slotSalt: ByteArray /* as read back from disk */, internal val path: String)
 class OpenedVault internal constructor(val vault: Vault, val vaultId: String, val generation: Long, val vkId: String,
                                        val newestOnDisk: Long, internal val vk: ByteArray, internal val slot: PasswordSlot)
+class SlotRef internal constructor(val salt: ByteArray, val vkId: String, val generation: Long, internal val slot: PasswordSlot)
+                                                       // one distinct slot (4.8 step 1): the caller derives the KEK with `salt`;
+                                                       // vkId and generation are those of the newest generation that carries it
+object VaultStores {                                   // the body throws NotImplementedError until package 2.3 is merged
+    fun create(files: FilePrimitives, codec: VaultCodec, clock: Clock, vaultsDir: String, build: BuildInfo): VaultStorage
+}                                                      // vaultsDir: <filesDir>/vaults (4.7); clock: only the wall-clock ms in an
+                                                       // aside-<ms>-<vault_id>/ name, for display (retention uses no clock [V-S4]);
+                                                       // build: the running app's, for the writer_version rule of 4.10
 ```
 
-`OpenedVault` and `Staged` keep VK, the slot and paths `internal` to `:core`, so `:app` can hold them but reach VK only through `useKey`. `olderCopyFirst` says that the newest generation was DAMAGED and an older one is the newest readable (the notice of ux.md §5.9, and the hold on automatic writes in 5.5).
+`OpenedVault`, `Staged` and `SlotRef` keep VK, the slot and paths `internal` to `:core`, so `:app` can hold them but reach VK only through `useKey`. `olderCopyFirst` says that the newest generation was DAMAGED and an older one is the newest readable (the notice of ux.md §5.9, and the hold on automatic writes in 5.5).
 
 ### 3.4 Lock ports (`core.lock.record`, `core.lock.flow`)
 
