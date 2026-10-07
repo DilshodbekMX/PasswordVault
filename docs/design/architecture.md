@@ -564,7 +564,7 @@ class AppGraph(val app: Application) {
     val dispatchers: AppDispatchers = AppDispatchers.Default
     val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     val build = BuildInfo("PasswordVault " + BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE)
-    val platform: Platform by lazy { PlatformModule.create(this) }       // files, records, clock, random, argon2, the two roots
+    val platform: Platform by lazy { PlatformModule.create(this) }       // files, records, clock, random, kdf (the one Argon2id gate), the two roots
     val settings: AppSettings by lazy { SettingsModule.create(this) }
     val keys: Keys by lazy { KeystoreModule.create(this) }              // DeviceKeys, PinKey, FingerprintKey, BiometricLauncher
     val data: Data by lazy { DataModule.create(this) }                  // VaultRepository, VaultPort, ListModelSource
@@ -576,7 +576,18 @@ class AppGraph(val app: Application) {
 }
 ```
 
-`Platform`, `Keys` and `Data` are plain holder classes declared next to `AppGraph`. Each `…Module.create(graph)` is one function in its area's directory, returning the fake of `APP/fake/` until its package replaces the body.
+`Platform`, `Keys` and `Data` are plain holder classes declared next to `AppGraph`:
+
+```kotlin
+class Platform(val files: FilePrimitives, val records: RecordFiles, val clock: Clock, val random: RandomSource,
+               val kdf: MasterKdf,                     // GatedMasterKdf over GuardedArgon2id: every derivation of the app (5.2 item 3)
+               val vaultsDir: String,                  // <filesDir>/vaults (4.7)
+               val lockRoot: String)                   // <noBackupFilesDir>/lock (lock.md §5.2, R-3)
+class Keys(val device: DeviceKeys, val pin: PinKey, val fingerprint: FingerprintKey, val launcher: BiometricLauncher)
+class Data(val repository: VaultRepository, val port: VaultPort, val lists: ListModelSource)   // repository and port: one DefaultVaultRepository
+```
+
+`kdf` is one object for the repository and the lock, so that the one Argon2id gate of 5.2 item 3 holds. Each `…Module.create(graph)` is one function in its area's directory, returning the fake of `APP/fake/` until its package replaces the body. No app fake of a `:core` port exists in `src/main`, so `PlatformModule` and `KeystoreModule` are stubs that throw `NotImplementedError` (nothing the shell runs needs them), and `DataModule`'s `port` is `StubVaultPort`, whose every call throws (the fake lock has no engine to call it).
 
 **`MainActivity`**, written once by the shell package, calls these and holds no other logic:
 
@@ -591,7 +602,7 @@ class AppGraph(val app: Application) {
 
 `AppRoot` is `WindowPolicy.Root { ClipboardRoot(graph) { PasswordVaultTheme(graph.settings) { AppNavHost(graph) } } }`. `WindowPolicy.Root` (window kit) applies `NoPersonalizedLearning` and `ObscuredTouchNotice` around everything; `ClipboardRoot` (clipboard package) provides `SecretClipboardBridge` as `LocalClipboard`. `UnlockedScaffold` (shell) draws the bottom bar and calls `ClipboardRowSlot(graph)` (clipboard package), `FirstCopyTip(graph)` (`ui/shell/FirstCopyTip.kt`, help package) and `SecurityBadge(graph)` (security tab package), all stubs until then.
 
-**Routes.** `nav/Route.kt` (shell) declares every route key of the app. `AppNavHost` (shell) builds its entries from one registration function per package, each in its own file; the shell creates every file with placeholder screens:
+**Routes.** `nav/Route.kt` (shell) declares every route key of the app. `AppNavHost` (shell) builds its entries from one registration function per package, each in its own file: `fun EntryProviderScope<Route>.<file>Nav(graph: AppGraph, nav: Navigator)`, for example `setupNav` and `lockNav`. A screen moves with `Navigator`: `go(route)`, `back()`, `replace(route)` and `tab(root)`, each returning a `Boolean`. `go` and `replace` return false, with nothing changed, when the route does not belong to the back stack shown now, so a screen whose work ends after a lock never puts an unlocked screen over the lock screen; `back` returns false at the root of its stack (Back leaves the app), `tab` while the app is not unlocked or for a route that is not a bottom-bar root. `ui/lock/LockNav.kt` also declares `@Composable fun LockNotices(graph: AppGraph, nav: Navigator)`, the notices after unlock (lock.md §13.4): `UnlockedScaffold` calls it while the app is unlocked, and the lock screens package fills it. The shell registers `Route.Starting` itself (`LockUiState.Starting`) and creates every file below with placeholder screens:
 
 | File | Routes | Filled by |
 |---|---|---|
@@ -599,15 +610,15 @@ class AppGraph(val app: Application) {
 | `ui/setup/PinSetupNav.kt` | CreatePin, ConfirmPin, FingerprintOffer, BackupsExplained | PIN and fingerprint setup |
 | `ui/lock/LockNav.kt` | Locked (one route; `LockUiState` decides what it shows) | master-password lock screen, then the lock screens package |
 | `ui/list/ListNav.kt` | Passwords, RecentlyDeleted | list |
-| `ui/entry/EntryNav.kt` | Entry(id), BigLetters(id, field) | entry detail |
-| `ui/edit/EditNav.kt` | Edit(id?) | add and edit |
-| `ui/settings/SettingsNav.kt` | Settings, the App lock pages, ChangePin, Theme | PIN and fingerprint setup |
+| `ui/entry/EntryNav.kt` | Entry(id), BigLetters(id, field: String) with the field names `username`, `password`, `old-password`, `previous-N`, `field-N` | entry detail |
+| `ui/edit/EditNav.kt` | Edit(id: String? = null) | add and edit |
+| `ui/settings/SettingsNav.kt` | Settings, AppLock (the App lock pages), ChangePin, Theme | PIN and fingerprint setup |
 | `ui/settings/MasterPasswordNav.kt` | ChangeMasterPassword, NewMasterPassword | master-password change |
 | `ui/settings/LanguageNav.kt` | Language | language switch |
-| `ui/settings/HelpNav.kt` | Help(page), Licences | help |
+| `ui/settings/HelpNav.kt` | Help(page: HelpPage) with `HelpPage { PROTECTION, LOST_PHONE, FORGOT_MASTER_PASSWORD, FORGOT_PIN, VERSION }`, Licences | help |
 | `ui/transfer/BackupNav.kt` | Backup, Restore, OldPasswords | backup and restore |
-| `ui/transfer/ExportNav.kt` | Export(step) | export |
-| `ui/transfer/ImportNav.kt` | Import(step), ColumnMapping | import |
+| `ui/transfer/ExportNav.kt` | Export(step: Int) | export |
+| `ui/transfer/ImportNav.kt` | Import(step: Int), ColumnMapping | import |
 | `ui/security/SecurityNav.kt` | Security, Group(id) | security tab |
 | `ui/security/ChangeNav.kt` | GuidedChange(entryId) | guided change |
 
