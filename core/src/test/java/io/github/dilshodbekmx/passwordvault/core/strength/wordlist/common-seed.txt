@@ -1,0 +1,346 @@
+# The entries of common.txt, written for this app (build plan 2.12): what people in Uzbekistan put in
+# passwords most, the likeliest first. One entry per line: a language code, a tab, the spellings
+# separated by tabs. "uz": Uzbek Latin first (any apostrophe; WordListBuilder writes oʻ and gʻ with
+# U+02BB and the tutuq with U+02BC) and adds its Uzbek Cyrillic. "ru": Russian Cyrillic first, and
+# the builder adds its Latin transliterations. "xx": taken as written.
+uz	parol	parollar
+ru	пароль
+uz	salom	salam	салям
+uz	assalomu alaykum	assalom alaykum	assalomu aleykum	assalom aleykum	assalamu alaykum	salom alaykum	ассалому алейкум	ассалом алейкум
+ru	привет
+uz	sevgi
+uz	muhabbat	muxabbat
+uz	sevaman
+uz	seni sevaman
+uz	men seni sevaman
+ru	любовь
+ru	люблю
+ru	я тебя люблю
+uz	jonim	jonimsan
+uz	azizim
+uz	asalim
+uz	shirinim
+uz	erkam
+uz	onam
+uz	onajon	onajonim
+uz	dadam
+uz	dadajon	dadajonim
+uz	oilam
+uz	bolam	bolajonim
+uz	O'zbekiston	Ozbekiston	Uzbekistan	Узбекистан
+uz	Toshkent	Tashkent	Ташкент
+uz	Samarqand	Samarkand	Самарканд
+uz	Buxoro	Bukhara	Buhara	Бухара
+uz	Andijon	Andijan	Андижан
+uz	Farg'ona	Fergana	Farghona	Фергана
+uz	Namangan	Наманган
+uz	Qarshi	Karshi	Карши
+uz	Nukus	Нукус
+uz	Termiz	Termez	Термез
+uz	Urganch	Urgench	Ургенч
+uz	Xiva	Khiva	Хива
+uz	Navoiy	Navoi	Навои
+uz	Jizzax	Jizzakh	Джизак
+uz	Guliston	Gulistan	Гулистан
+uz	Qo'qon	Kokand	Коканд
+uz	Marg'ilon	Margilan	Маргилан
+uz	Chirchiq	Chirchik	Чирчик
+uz	Olmaliq	Almalyk	Алмалык
+uz	Angren	Ангрен
+uz	Shahrisabz	Шахрисабз
+uz	Kattaqo'rg'on	Kattakurgan	Каттакурган
+uz	Zarafshon	Zarafshan	Зарафшан
+uz	Gazli	Газли
+uz	Taxiatosh	Takhiatash	Тахиаташ
+uz	Uchqo'rg'on	Uchkurgan	Учкурган
+uz	Bo'stonliq	Bostanlyk	Бостанлык
+uz	Xorazm	Khorezm	Хорезм
+uz	Surxondaryo	Surkhandarya	Сурхандарья
+uz	Qashqadaryo	Kashkadarya	Кашкадарья
+uz	Sirdaryo	Syrdarya	Сырдарья
+uz	Qoraqalpog'iston	Karakalpakstan	Каракалпакстан
+uz	Chilonzor	Chilanzar	Чиланзар
+uz	Yunusobod	Yunusabad	Юнусабад
+uz	Sergeli	Сергели
+uz	Yakkasaroy	Yakkasaray	Яккасарай
+uz	Olmazor	Almazar	Алмазар
+uz	Mirobod	Mirabad	Мирабад
+uz	Yashnobod	Yashnabad	Яшнабад
+uz	Shayxontohur	Shaykhantakhur	Шайхантахур
+uz	Uchtepa	Учтепа
+uz	Bektemir	Бектемир
+uz	Yangihayot	Янгихаёт
+uz	Bandixon	Бандихон
+uz	Muhammad	Muhammed	Mukhammad	Мухаммад
+uz	Abdulloh	Abdulla	Абдулла
+uz	Shahzoda	Shaxzoda	Шахзода
+uz	Madina	Мадина
+uz	Mohinur	Moxinur	Мохинур
+uz	Sevinch	Севинч
+uz	Malika	Малика
+uz	Dilnoza	Дилноза
+uz	Sevara	Севара
+uz	Zarina	Зарина
+uz	Nilufar	Nilufar	Нилуфар
+uz	Kamola	Камола
+uz	Gulnora	Гульнора
+uz	Feruza	Феруза
+uz	Laylo	Laylo	Лайло
+uz	Sabina	Сабина
+uz	Asal	Асал
+uz	Muslima	Муслима
+uz	Robiya	Робия
+uz	Durdona	Дурдона
+uz	Diyora	Диёра
+uz	Aziza	Азиза
+uz	Gulnoza	Гульноза
+uz	Shahnoza	Shaxnoza	Шахноза
+uz	Dildora	Дилдора
+uz	Nigora	Нигора
+uz	Mohira	Moxira	Мохира
+uz	Nodira	Нодира
+uz	Zilola	Зилола
+uz	Barno	Барно
+uz	Oydin	Ойдин
+uz	Hilola	Xilola	Хилола
+uz	Iroda	Ирода
+uz	Lola	Лола
+uz	Umida	Умида
+uz	Yulduz	Юлдуз
+uz	Sitora	Ситора
+uz	Gulchehra	Гульчехра
+uz	Dilfuza	Дильфуза
+uz	Munisa	Муниса
+uz	Sardor	Сардор
+uz	Jasur	Жасур
+uz	Sherzod	Шерзод
+uz	Dilshod	Дилшод
+uz	Bobur	Babur	Бабур
+uz	Jahongir	Jakhongir	Джахонгир
+uz	Javohir	Javokhir	Джавохир
+uz	Sanjar	Санжар
+uz	Otabek	Отабек
+uz	Ulug'bek	Ulugbek	Улугбек
+uz	Doniyor	Doniyor	Дониёр
+uz	Azizbek	Азизбек
+uz	Asilbek	Асилбек
+uz	Bekzod	Бекзод
+uz	Abror	Аброр
+uz	Shohruh	Shoxrux	Shokhrukh	Шохрух
+uz	Islom	Islam	Ислам
+uz	Temur	Timur	Тимур
+uz	Amir Temur	Amirtemur	Амир Темур
+uz	Rustam	Рустам
+uz	Akmal	Акмал
+uz	Anvar	Анвар
+uz	Bahodir	Baxodir	Bakhodir	Баходир
+uz	Baxtiyor	Bakhtiyor	Бахтиёр
+uz	Farrux	Farrukh	Фаррух
+uz	Firdavs	Фирдавс
+uz	Jamshid	Джамшид
+uz	Kamol	Камол
+uz	Laziz	Лазиз
+uz	Nodir	Нодир
+uz	Ravshan	Равшан
+uz	Sarvar	Сарвар
+uz	Zafar	Зафар
+uz	Aziz	Азиз
+uz	Alisher	Алишер
+uz	Umar	Умар
+uz	Usmon	Usman	Усман
+uz	Ali	Али
+uz	Ibrohim	Ibragim	Ибрагим
+uz	Ismoil	Ismail	Исмаил
+uz	Yusuf	Юсуф
+uz	Abubakr	Абубакр
+uz	Muhammadali	Мухаммадали
+uz	Shoxrux	Шохрух
+uz	Elyor	Элёр
+uz	Eldor	Элдор
+uz	Behruz	Бехруз
+uz	Diyor	Диёр
+ru	Александр
+ru	Саша
+ru	Дмитрий
+ru	Дима
+ru	Сергей
+ru	Андрей
+ru	Алексей
+ru	Максим
+ru	Иван
+ru	Михаил
+ru	Владимир
+ru	Николай
+ru	Евгений
+ru	Женя
+ru	Артём	Артем
+ru	Денис
+ru	Роман
+ru	Игорь
+ru	Олег
+ru	Наталья	Наталия
+ru	Наташа
+ru	Анна
+ru	Аня
+ru	Мария
+ru	Маша
+ru	Елена
+ru	Лена
+ru	Ольга
+ru	Оля
+ru	Татьяна
+ru	Таня
+ru	Ирина
+ru	Ира
+ru	Светлана
+ru	Света
+ru	Екатерина
+ru	Катя
+ru	Анастасия
+ru	Настя
+ru	Юлия
+ru	Юля
+ru	Дарья
+ru	Даша
+ru	Виктория
+ru	Вика
+ru	Алина
+ru	Кристина
+ru	Полина
+uz	vatan
+uz	mustaqillik
+uz	baxt	bakht
+uz	hayot	xayot
+uz	dunyo
+uz	quyosh
+uz	osmon
+uz	gul
+uz	bahor	baxor
+uz	olma
+uz	anor
+uz	uzum
+uz	non
+uz	choy
+uz	osh
+uz	palov	plov	плов
+uz	Alloh	Allah	Аллах
+uz	Xudo	Khudo	Худо
+uz	bismillah	bismilloh	bismillo
+uz	inshaalloh	inshalloh	inshaallah	inshallah
+uz	alhamdulillah	alhamdulilloh
+uz	mashaalloh	mashallah	mashaallah
+uz	subhanalloh	subhanallah
+uz	Qur'on	Quran	Koran	Коран
+uz	Ramazon	Ramadan	Рамадан
+uz	Navro'z	Navruz	Navroz	Наврўз	Навруз
+uz	omad
+uz	baraka
+uz	oltin
+uz	kumush
+uz	olmos
+uz	sher
+uz	burgut
+uz	arslon
+uz	bo'ri
+uz	qoplon
+uz	sevinch
+uz	quvonch
+uz	do'st	dost
+uz	do'stim	dostim
+uz	do'stlik	dostlik
+uz	tinchlik
+uz	ozodlik
+uz	kelajak
+uz	orzu
+uz	umid
+uz	farishta
+uz	podshoh
+uz	qahramon
+uz	go'zal	gozal
+uz	chiroyli
+uz	rahmat	raxmat
+uz	xayrli tong
+uz	xayrli kun
+uz	yaxshi ko'raman
+uz	seni yaxshi ko'raman
+uz	telefon
+uz	kompyuter	kompyuter
+uz	futbol
+uz	Paxtakor	Pakhtakor	Пахтакор
+uz	Bunyodkor	Bunyodkor	Бунёдкор
+uz	Nasaf	Насаф
+uz	Navbahor	Навбахор
+uz	Lokomotiv	Локомотив
+uz	Neftchi	Нефтчи
+xx	Barcelona	Barselona	Барселона
+xx	Real Madrid	Реал Мадрид
+xx	Messi	Месси
+xx	Ronaldo	Роналдо	Роналду
+xx	Neymar	Неймар
+xx	Manchester	Манчестер
+xx	Chelsea	Челси
+xx	Arsenal	Арсенал
+xx	Liverpool	Ливерпуль
+xx	Juventus	Ювентус
+uz	Rossiya	Россия
+uz	Moskva	Москва
+uz	Qozog'iston	Kazakhstan	Казахстан
+uz	Turkiya	Турция
+uz	Amerika	Америка
+uz	Koreya	Корея
+uz	Istanbul	Стамбул
+xx	Dubai	Dubay	Дубай
+xx	London	Лондон
+ru	мама
+ru	папа
+ru	мамочка
+ru	семья
+ru	солнце
+ru	солнышко
+ru	котик
+ru	котёнок	котенок
+ru	зайка
+ru	малыш
+ru	счастье
+ru	жизнь
+ru	родина
+ru	бог
+ru	спасибо
+ru	дружба
+ru	друг
+ru	футбол
+ru	спартак
+ru	зенит
+ru	динамо
+ru	кошка
+ru	собака
+ru	звезда
+ru	красавица
+ru	принцесса
+ru	королева
+ru	ангел
+ru	дракон
+ru	тигр
+ru	волк
+ru	медведь
+ru	весна
+ru	лето
+ru	осень
+ru	зима
+ru	цветок
+ru	роза
+ru	ромашка
+ru	небо
+ru	море
+ru	мечта
+ru	надежда
+ru	вера
+ru	свобода
+ru	победа
+ru	удача
+ru	доброе утро
+ru	спокойной ночи
+xx	йцукен	йцукенг	йцукенгшщзхъ
+xx	фыва	фывапролдж	фывапролджэ
+xx	ячсмить	ячсмитьбю
+xx	ўзбекча	узбекча	o'zbekcha	ozbekcha

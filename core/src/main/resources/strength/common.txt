@@ -1,0 +1,340 @@
+# PasswordVault strength word list: the passwords people choose most: places, names, words and phrases, written for this app.
+# One entry per line, its spellings separated by tabs; see SOURCES.md.
+parol	парол	parollar
+пароль
+salom	салом	salam	салям
+assalomu alaykum	ассалому алайкум	assalom alaykum	assalomu aleykum	assalom aleykum	assalamu alaykum	salom alaykum	ассалому алейкум	ассалом алейкум
+привет	privet
+sevgi	севги
+muhabbat	муҳаббат	muxabbat
+sevaman	севаман
+seni sevaman	сени севаман
+men seni sevaman	мен сени севаман
+любовь	lyubov
+люблю	lyublyu
+я тебя люблю	ya tebya lyublyu
+jonim	жоним	jonimsan
+azizim	азизим
+asalim	асалим
+shirinim	шириним
+erkam	эркам
+onam	онам
+onajon	онажон	onajonim
+dadam	дадам
+dadajon	дадажон	dadajonim
+oilam	оилам
+bolam	болам	bolajonim
+Oʻzbekiston	Ўзбекистон	Ozbekiston	Uzbekistan	Узбекистан
+Toshkent	Тошкент	Tashkent	Ташкент
+Samarqand	Самарқанд	Samarkand	Самарканд
+Buxoro	Бухоро	Bukhara	Buhara	Бухара
+Andijon	Андижон	Andijan	Андижан
+Fargʻona	Фарғона	Fergana	Farghona	Фергана
+Namangan	Наманган
+Qarshi	Қарши	Karshi	Карши
+Nukus	Нукус
+Termiz	Термиз	Termez	Термез
+Urganch	Урганч	Urgench	Ургенч
+Xiva	Хива	Khiva
+Navoiy	Навоий	Navoi	Навои
+Jizzax	Жиззах	Jizzakh	Джизак
+Guliston	Гулистон	Gulistan	Гулистан
+Qoʻqon	Қўқон	Kokand	Коканд
+Margʻilon	Марғилон	Margilan	Маргилан
+Chirchiq	Чирчиқ	Chirchik	Чирчик
+Olmaliq	Олмалиқ	Almalyk	Алмалык
+Angren	Ангрен
+Shahrisabz	Шаҳрисабз	Шахрисабз
+Kattaqoʻrgʻon	Каттақўрғон	Kattakurgan	Каттакурган
+Zarafshon	Зарафшон	Zarafshan	Зарафшан
+Gazli	Газли
+Taxiatosh	Тахиатош	Takhiatash	Тахиаташ
+Uchqoʻrgʻon	Учқўрғон	Uchkurgan	Учкурган
+Boʻstonliq	Бўстонлиқ	Bostanlyk	Бостанлык
+Xorazm	Хоразм	Khorezm	Хорезм
+Surxondaryo	Сурхондарё	Surkhandarya	Сурхандарья
+Qashqadaryo	Қашқадарё	Kashkadarya	Кашкадарья
+Sirdaryo	Сирдарё	Syrdarya	Сырдарья
+Qoraqalpogʻiston	Қорақалпоғистон	Karakalpakstan	Каракалпакстан
+Chilonzor	Чилонзор	Chilanzar	Чиланзар
+Yunusobod	Юнусобод	Yunusabad	Юнусабад
+Sergeli	Сергели
+Yakkasaroy	Яккасарой	Yakkasaray	Яккасарай
+Olmazor	Олмазор	Almazar	Алмазар
+Mirobod	Миробод	Mirabad	Мирабад
+Yashnobod	Яшнобод	Yashnabad	Яшнабад
+Shayxontohur	Шайхонтоҳур	Shaykhantakhur	Шайхантахур
+Uchtepa	Учтепа
+Bektemir	Бектемир
+Yangihayot	Янгиҳаёт	Янгихаёт
+Bandixon	Бандихон
+Muhammad	Муҳаммад	Muhammed	Mukhammad	Мухаммад
+Abdulloh	Абдуллоҳ	Abdulla	Абдулла
+Shahzoda	Шаҳзода	Shaxzoda	Шахзода
+Madina	Мадина
+Mohinur	Моҳинур	Moxinur	Мохинур
+Sevinch	Севинч
+Malika	Малика
+Dilnoza	Дилноза
+Sevara	Севара
+Zarina	Зарина
+Nilufar	Нилуфар
+Kamola	Камола
+Gulnora	Гулнора	Гульнора
+Feruza	Феруза
+Laylo	Лайло
+Sabina	Сабина
+Asal	Асал
+Muslima	Муслима
+Robiya	Робия
+Durdona	Дурдона
+Diyora	Диёра
+Aziza	Азиза
+Gulnoza	Гулноза	Гульноза
+Shahnoza	Шаҳноза	Shaxnoza	Шахноза
+Dildora	Дилдора
+Nigora	Нигора
+Mohira	Моҳира	Moxira	Мохира
+Nodira	Нодира
+Zilola	Зилола
+Barno	Барно
+Oydin	Ойдин
+Hilola	Ҳилола	Xilola	Хилола
+Iroda	Ирода
+Lola	Лола
+Umida	Умида
+Yulduz	Юлдуз
+Sitora	Ситора
+Gulchehra	Гулчеҳра	Гульчехра
+Dilfuza	Дилфуза	Дильфуза
+Munisa	Муниса
+Sardor	Сардор
+Jasur	Жасур
+Sherzod	Шерзод
+Dilshod	Дилшод
+Bobur	Бобур	Babur	Бабур
+Jahongir	Жаҳонгир	Jakhongir	Джахонгир
+Javohir	Жавоҳир	Javokhir	Джавохир
+Sanjar	Санжар
+Otabek	Отабек
+Ulugʻbek	Улуғбек	Ulugbek	Улугбек
+Doniyor	Дониёр
+Azizbek	Азизбек
+Asilbek	Асилбек
+Bekzod	Бекзод
+Abror	Аброр
+Shohruh	Шоҳруҳ	Shoxrux	Shokhrukh	Шохрух
+Islom	Ислом	Islam	Ислам
+Temur	Темур	Timur	Тимур
+Amir Temur	Амир Темур	Amirtemur
+Rustam	Рустам
+Akmal	Акмал
+Anvar	Анвар
+Bahodir	Баҳодир	Baxodir	Bakhodir	Баходир
+Baxtiyor	Бахтиёр	Bakhtiyor
+Farrux	Фаррух	Farrukh
+Firdavs	Фирдавс
+Jamshid	Жамшид	Джамшид
+Kamol	Камол
+Laziz	Лазиз
+Nodir	Нодир
+Ravshan	Равшан
+Sarvar	Сарвар
+Zafar	Зафар
+Aziz	Азиз
+Alisher	Алишер
+Umar	Умар
+Usmon	Усмон	Usman	Усман
+Ali	Али
+Ibrohim	Иброҳим	Ibragim	Ибрагим
+Ismoil	Исмоил	Ismail	Исмаил
+Yusuf	Юсуф
+Abubakr	Абубакр
+Muhammadali	Муҳаммадали	Мухаммадали
+Elyor	Элёр
+Eldor	Элдор
+Behruz	Беҳруз	Бехруз
+Diyor	Диёр
+Александр	Aleksandr
+Саша	Sasha
+Дмитрий	Dmitriy	Dmitrii
+Дима	Dima
+Сергей	Sergey	Sergei
+Андрей	Andrey	Andrei
+Алексей	Aleksey	Aleksei
+Максим	Maksim
+Иван	Ivan
+Михаил	Mikhail	Mihail
+Владимир	Vladimir
+Николай	Nikolay	Nikolai
+Евгений	Evgeniy	Evgenii
+Женя	Zhenya
+Артём	Artyom	Artem	Артем
+Денис	Denis
+Роман	Roman
+Игорь	Igor
+Олег	Oleg
+Наталья	Natalya	Наталия
+Наташа	Natasha
+Анна	Anna
+Аня	Anya
+Мария	Mariya
+Маша	Masha
+Елена	Elena
+Лена	Lena
+Ольга	Olga
+Оля	Olya
+Татьяна	Tatyana
+Таня	Tanya
+Ирина	Irina
+Ира	Ira
+Светлана	Svetlana
+Света	Sveta
+Екатерина	Ekaterina
+Катя	Katya
+Анастасия	Anastasiya
+Настя	Nastya
+Юлия	Yuliya
+Юля	Yulya
+Дарья	Darya
+Даша	Dasha
+Виктория	Viktoriya
+Вика	Vika
+Алина	Alina
+Кристина	Kristina
+Полина	Polina
+vatan	ватан
+mustaqillik	мустақиллик
+baxt	бахт	bakht
+hayot	ҳаёт	xayot
+dunyo	дунё
+quyosh	қуёш
+osmon	осмон
+gul	гул
+bahor	баҳор	baxor
+olma	олма
+anor	анор
+uzum	узум
+non	нон
+choy	чой
+osh
+palov	палов	plov	плов
+Alloh	Аллоҳ	Allah	Аллах
+Xudo	Худо	Khudo
+bismillah	бисмиллаҳ	bismilloh	bismillo
+inshaalloh	иншааллоҳ	inshalloh	inshaallah	inshallah
+alhamdulillah	алҳамдулиллаҳ	alhamdulilloh
+mashaalloh	машааллоҳ	mashallah	mashaallah
+subhanalloh	субҳаналлоҳ	subhanallah
+Qurʼon	Қуръон	Quran	Koran	Коран
+Ramazon	Рамазон	Ramadan	Рамадан
+Navroʻz	Наврўз	Navruz	Navroz	Навруз
+omad	омад
+baraka	барака
+oltin	олтин
+kumush	кумуш
+olmos	олмос
+sher	шер
+burgut	бургут
+arslon	арслон
+boʻri	бўри
+qoplon	қоплон
+quvonch	қувонч
+doʻst	дўст	dost
+doʻstim	дўстим	dostim
+doʻstlik	дўстлик	dostlik
+tinchlik	тинчлик
+ozodlik	озодлик
+kelajak	келажак
+orzu	орзу
+umid	умид
+farishta	фаришта
+podshoh	подшоҳ
+qahramon	қаҳрамон
+goʻzal	гўзал	gozal
+chiroyli	чиройли
+rahmat	раҳмат	raxmat
+xayrli tong	хайрли тонг
+xayrli kun	хайрли кун
+yaxshi koʻraman	яхши кўраман
+seni yaxshi koʻraman	сени яхши кўраман
+telefon	телефон
+kompyuter	компьютер
+futbol	футбол
+Paxtakor	Пахтакор	Pakhtakor
+Bunyodkor	Бунёдкор
+Nasaf	Насаф
+Navbahor	Навбаҳор	Навбахор
+Lokomotiv	Локомотив
+Neftchi	Нефтчи
+Barcelona	Barselona	Барселона
+Real Madrid	Реал Мадрид
+Messi	Месси
+Ronaldo	Роналдо	Роналду
+Neymar	Неймар
+Manchester	Манчестер
+Chelsea	Челси
+Arsenal	Арсенал
+Liverpool	Ливерпуль
+Juventus	Ювентус
+Rossiya	Россия
+Moskva	Москва
+Qozogʻiston	Қозоғистон	Kazakhstan	Казахстан
+Turkiya	Туркия	Турция
+Amerika	Америка
+Koreya	Корея
+Istanbul	Истанбул	Стамбул
+Dubai	Dubay	Дубай
+London	Лондон
+мама	mama
+папа	papa
+мамочка	mamochka
+семья	semya
+солнце	solntse	solnce
+солнышко	solnyshko
+котик	kotik
+котёнок	kotyonok	kotenok	котенок
+зайка	zayka	zaika
+малыш	malysh
+счастье	schaste
+жизнь	zhizn
+родина	rodina
+бог	bog
+спасибо	spasibo
+дружба	druzhba
+друг	drug
+спартак	spartak
+зенит	zenit
+динамо	dinamo
+кошка	koshka
+собака	sobaka
+звезда	zvezda
+красавица	krasavitsa	krasavica
+принцесса	printsessa	princessa
+королева	koroleva
+ангел	angel
+дракон	drakon
+тигр	tigr
+волк	volk
+медведь	medved
+весна	vesna
+лето	leto
+осень	osen
+зима	zima
+цветок	tsvetok	cvetok
+роза	roza
+ромашка	romashka
+небо	nebo
+море	more
+мечта	mechta
+надежда	nadezhda
+вера	vera
+свобода	svoboda
+победа	pobeda
+удача	udacha
+доброе утро	dobroe utro
+спокойной ночи	spokoynoy nochi	spokoinoi nochi
+йцукен	йцукенг	йцукенгшщзхъ
+фыва	фывапролдж	фывапролджэ
+ячсмить	ячсмитьбю
+ўзбекча	узбекча	o'zbekcha	ozbekcha

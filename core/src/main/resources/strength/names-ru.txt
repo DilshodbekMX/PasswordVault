@@ -1,0 +1,587 @@
+# PasswordVault strength word list: Russian first names and their short forms, most frequent first.
+# One entry per line, its spellings separated by tabs; see SOURCES.md.
+Любовь	Lyubov
+Джон	Dzhon
+Майкл	Maykl	Maikl
+Майк	Mayk	Maik
+Питер	Piter
+Слава	Slava
+Макс	Maks
+Джеймс	Dzheyms	Dzheims
+Дэвид	Devid
+Ричард	Richard
+Ким	Kim
+Марк	Mark
+Света	Sveta
+Анна	Anna
+Брайан	Brayan	Braian
+Мария	Mariya
+Роберт	Robert
+Роман	Roman
+Адам	Adam
+Элис	Elis
+Энн	Enn
+Эмма	Emma
+Артур	Artur
+Робин	Robin
+Карен	Karen
+Лиза	Liza
+Эндрю	Endryu
+Надежда	Nadezhda
+Виктор	Viktor
+Уильям	Uilyam
+Роза	Roza
+Вера	Vera
+Майка	Mayka	Maika
+Елена	Elena
+Фредди	Freddi
+Север	Sever
+Лора	Lora
+Ева	Eva
+Кристина	Kristina
+Нина	Nina
+Энтони	Entoni
+Диана	Diana
+Филипп	Filipp
+Шарлотта	Sharlotta
+Стефан	Stefan
+Александр	Aleksandr
+Кира	Kira
+Иван	Ivan
+Альберт	Albert
+Виктория	Viktoriya
+Майя	Mayya	Maiya
+Клара	Klara
+Тереза	Tereza
+Аарон	Aaron
+Валентина	Valentina
+Лидия	Lidiya
+Ника	Nika
+София	Sofiya
+Саша	Sasha
+Соня	Sonya
+Рита	Rita
+Алиса	Alisa
+Лев	Lev
+Ангела	Angela
+Лука	Luka
+Альфред	Alfred
+Анжела	Anzhela
+Мелисса	Melissa
+Давид	David
+Вероника	Veronika
+Августа	Avgusta
+Дина	Dina
+Лена	Lena
+Сильвия	Silviya
+Анджела	Andzhela
+Джемма	Dzhemma
+Таня	Tanya
+Борис	Boris
+Мерседес	Mersedes
+Фокс	Foks
+Мила	Mila
+Весна	Vesna
+Надя	Nadya
+Антон	Anton
+Израиль	Izrail
+Синтия	Sintiya
+Жанна	Zhanna
+Михаил	Mikhail	Mihail
+Александра	Aleksandra
+Элла	Ella
+Генрих	Genrikh	Genrih
+Катя	Katya
+Марина	Marina
+Сергей	Sergey	Sergei
+Лейла	Leyla	Leila
+Андрей	Andrey	Andrei
+Маргарита	Margarita
+Изабелла	Izabella
+Павел	Pavel
+Эмиль	Emil
+Аня	Anya
+Матильда	Matilda
+Маркс	Marks
+Наташа	Natasha
+Долорес	Dolores
+Николай	Nikolay	Nikolai
+Авраам	Avraam
+Ванда	Vanda
+Герман	German
+Каролина	Karolina
+Юрий	Yuriy	Yurii
+Дмитрий	Dmitriy	Dmitrii
+Тамара	Tamara
+Олег	Oleg
+Франциск	Frantsisk	Francisk
+Регина	Regina
+Алексей	Aleksey	Aleksei
+Яна	Yana
+Владимир	Vladimir
+Адриан	Adrian
+Ольга	Olga
+Катерина	Katerina
+Альберта	Alberta
+Флорида	Florida
+Агата	Agata
+Игорь	Igor
+Валерия	Valeriya
+Никита	Nikita
+Лара	Lara
+Валентин	Valentin
+Максим	Maksim
+Эдуард	Eduard
+Иосиф	Iosif
+Анжелика	Anzhelika
+Исаак	Isaak
+Василий	Vasiliy	Vasilii
+Ариэль	Ariel
+Сирил	Siril
+Ирина	Irina
+Миша	Misha
+Илья	Ilya
+Елизавета	Elizaveta
+Анастасия	Anastasiya
+Юлия	Yuliya
+Аврора	Avrora
+Моисей	Moisey	Moisei
+Пётр	Pyotr	Petr
+Венера	Venera
+Паша	Pasha
+Татьяна	Tatyana
+Афина	Afina
+Ира	Ira
+Денис	Denis
+Константин	Konstantin
+Эмилия	Emiliya
+Алистер	Alister
+Наталья	Natalya
+Элвин	Elvin
+Карина	Karina
+Ваня	Vanya
+Полина	Polina
+Маша	Masha
+Яков	Yakov
+Абдул	Abdul
+Абель	Abel
+Адольф	Adolf
+Влад	Vlad
+Жозефина	Zhozefina
+Зоя	Zoya
+Аркадий	Arkadiy	Arkadii
+Григорий	Grigoriy	Grigorii
+Екатерина	Ekaterina
+Медуза	Meduza
+Дарья	Darya
+Павла	Pavla
+Иоанн	Ioann
+Коля	Kolya
+Тоня	Tonya
+Руфь	Ruf
+Женя	Zhenya
+Оля	Olya
+Иоанна	Ioanna
+Элеонора	Eleonora
+Анатолий	Anatoliy	Anatolii
+Людмила	Lyudmila
+Фридман	Fridman
+Гавриил	Gavriil
+Тая	Taya
+Светлана	Svetlana
+Кирилл	Kirill
+Евгений	Evgeniy	Evgenii
+Фатима	Fatima
+Лилия	Liliya
+Юлий	Yuliy	Yulii
+Амос	Amos
+Галя	Galya
+Герда	Gerda
+Августин	Avgustin
+Валера	Valera
+Аким	Akim
+Костя	Kostya
+Арон	Aron
+Квинт	Kvint
+Егор	Egor
+Вадим	Vadim
+Абдулла	Abdulla
+Лариса	Larisa
+Степан	Stepan
+Илона	Ilona
+Петя	Petya
+Георгий	Georgiy	Georgii
+Груша	Grusha
+Авель	Avel
+Евгения	Evgeniya
+Селена	Selena
+Мухаммед	Mukhammed	Muhammed
+Володя	Volodya
+Руслан	Ruslan
+Аделаида	Adelaida
+Клавдия	Klavdiya
+Фома	Foma
+Виталий	Vitaliy	Vitalii
+Даниил	Daniil
+Юля	Yulya
+Юра	Yura
+Ааронка	Aaronka
+Абагор	Abagor
+Абака	Abaka
+Абакум	Abakum
+Абамон	Abamon
+Аббас	Abbas
+Абдаикл	Abdaikl
+Абдрахман	Abdrakhman	Abdrahman
+Абия	Abiya
+Абнодий	Abnodiy	Abnodii
+Абрам	Abram
+Абрамий	Abramiy	Abramii
+Абросим	Abrosim
+Абсей	Absey	Absei
+Аввакир	Avvakir
+Аввакум	Avvakum
+Авгурий	Avguriy	Avgurii
+Августина	Avgustina
+Авда	Avda
+Авдей	Avdey	Avdei
+Авделай	Avdelay	Avdelai
+Авдиес	Avdies
+Авдиисус	Avdiisus
+Авдий	Avdiy	Avdii
+Авдикий	Avdikiy	Avdikii
+Авдокея	Avdokeya
+Авдоким	Avdokim
+Авдон	Avdon
+Авдотья	Avdotya
+Авдюша	Avdyusha
+Авелина	Avelina
+Авенира	Avenira
+Авентин	Aventin
+Авентина	Aventina
+Аверий	Averiy	Averii
+Аверкий	Averkiy	Averkii
+Аверьян	Averyan
+Авессалом	Avessalom
+Авиафа	Aviafa
+Авив	Aviv
+Авива	Aviva
+Авид	Avid
+Авим	Avim
+Авия	Aviya
+Авксентий	Avksentiy	Avksentii
+Авкт	Avkt
+Авраамий	Avraamiy	Avraamii
+Аврам	Avram
+Аврамий	Avramiy	Avramii
+Аврей	Avrey	Avrei
+Аврелиан	Avrelian
+Аврелий	Avreliy	Avrelii
+Аврелия	Avreliya
+Аврея	Avreya
+Авсей	Avsey	Avsei
+Автоном	Avtonom
+Авудим	Avudim
+Авундий	Avundiy	Avundii
+Агав	Agav
+Агавва	Agavva
+Агап	Agap
+Агапа	Agapa
+Агапей	Agapey	Agapei
+Агапея	Agapeya
+Агапий	Agapiy	Agapii
+Агапион	Agapion
+Агапит	Agapit
+Агапия	Agapiya
+Агапон	Agapon
+Агафангел	Agafangel
+Агафия	Agafiya
+Агафодор	Agafodor
+Агафон	Agafon
+Агафоник	Agafonik
+Аглая	Aglaya
+Аграфена	Agrafena
+Агрикола	Agrikola
+Адельфий	Adelfiy	Adelfii
+Аза	Aza
+Азалия	Azaliya
+Айша	Aysha	Aisha
+Акакий	Akakiy	Akakii
+Аксинья	Aksinya
+Алевтина	Alevtina
+Алик	Alik
+Алина	Alina
+Алла	Alla
+Алфред
+Альбина	Albina
+Аля	Alya
+Алёна	Alyona	Alena
+Алёша	Alyosha	Alesha
+Амаль	Amal
+Анастасий	Anastasiy	Anastasii
+Анатолия	Anatoliya
+Ангелина	Angelina
+Андриан	Andrian
+Андриян	Andriyan
+Андрюша	Andryusha
+Анис	Anis
+Анисий	Anisiy	Anisii
+Анисим	Anisim
+Анисия	Anisiya
+Анисья	Anisya
+Антонина	Antonina
+Анфиса	Anfisa
+Анхела	Ankhela	Anhela
+Анхиз	Ankhiz	Anhiz
+Анюта	Anyuta
+Аполлинарий	Apollinariy	Apollinarii
+Артемида	Artemida
+Артина	Artina
+Артём	Artyom	Artem
+Архип	Arkhip	Arhip
+Ася	Asya
+Афанасий	Afanasiy	Afanasii
+Афанасия	Afanasiya
+Афродита	Afrodita
+Ацест	Atsest	Acest
+Аэлита	Aelita
+Богдан	Bogdan
+Болеслав	Boleslav
+Боря	Borya
+Булат	Bulat
+Ваагн	Vaagn
+Валерий	Valeriy	Valerii
+Валя	Valya
+Варвара	Varvara
+Варенька	Varenka
+Варфоломей	Varfolomey	Varfolomei
+Василиса	Vasilisa
+Вася	Vasya
+Венедикт	Venedikt
+Вениамин	Veniamin
+Виссарион	Vissarion
+Виталина	Vitalina
+Владислав	Vladislav
+Владлен	Vladlen
+Вова	Vova
+Вован	Vovan
+Всеволод	Vsevolod
+Вячеслав	Vyacheslav
+Габит	Gabit
+Галина	Galina
+Гамалиил	Gamaliil
+Гарик	Garik
+Геннадий	Gennadiy	Gennadii
+Герасим	Gerasim
+Глеб	Gleb
+Гликерия	Glikeriya
+Гордей	Gordey	Gordei
+Гриша	Grisha
+Грушенька	Grushenka
+Дамиан	Damian
+Дасий	Dasiy	Dasii
+Дасия	Dasiya
+Даша	Dasha
+Дашенька	Dashenka
+Демьян	Demyan
+Дианочка	Dianochka
+Дима	Dima
+Димон	Dimon
+Диодор	Diodor
+Дорофей	Dorofey	Dorofei
+Евдоким	Evdokim
+Евдокия	Evdokiya
+Евсей	Evsey	Evsei
+Елбиздико	Elbizdiko
+Елисей	Elisey	Elisei
+Ермак	Ermak
+Ермола	Ermola
+Ермолай	Ermolay	Ermolai
+Есфирь	Esfir
+Ефан	Efan
+Ефим	Efim
+Жамсо	Zhamso
+Жора	Zhora
+Загир	Zagir
+Замиля	Zamilya
+Зарема	Zarema
+Зарина	Zarina
+Захар	Zakhar	Zahar
+Захра	Zakhra	Zahra
+Земфира	Zemfira
+Зенон	Zenon
+Зина	Zina
+Зинаида	Zinaida
+Зиновий	Zinoviy	Zinovii
+Зося	Zosya
+Зуфар	Zufar
+Игнат	Ignat
+Игнатий	Ignatiy	Ignatii
+Иессей	Iessey	Iessei
+Изяслав	Izyaslav
+Илия	Iliya
+Иммануил	Immanuil
+Инга	Inga
+Инесса	Inessa
+Инна	Inna
+Иоланта	Iolanta
+Ипполит	Ippolit
+Ираида	Iraida
+Ириней	Iriney	Irinei
+Камбар	Kambar
+Капитолина	Kapitolina
+Катенька	Katenka
+Катюша	Katyusha
+Кежкепат	Kezhkepat
+Кизмида	Kizmida
+Клим	Klim
+Колян	Kolyan
+Красс	Krass
+Ксаверий	Ksaveriy	Ksaverii
+Ксена	Ksena
+Ксения	Kseniya
+Кузьма	Kuzma
+Кэйсукэ	Keysuke	Keisuke
+Лада	Lada
+Леночка	Lenochka
+Леонид	Leonid
+Лида	Lida
+Лилиана	Liliana
+Люба	Lyuba
+Люся	Lyusya
+Лёня	Lyonya	Lenya
+Лёха	Lyokha	Leha
+Лёша	Lyosha	Lesha
+Магомет	Magomet
+Макар	Makar
+Макарий	Makariy	Makarii
+Маня	Manya
+Марджана	Mardzhana
+Марияш	Mariyash
+Маруся	Marusya
+Марфа	Marfa
+Марья	Marya
+Матвей	Matvey	Matvei
+Матрёна	Matryona	Matrena
+Матфей	Matfey	Matfei
+Машенька	Mashenka
+Мелентий	Melentiy	Melentii
+Мелетий	Meletiy	Meletii
+Мефодий	Mefodiy	Mefodii
+Милица	Militsa	Milica
+Милослава	Miloslava
+Митрофан	Mitrofan
+Митя	Mitya
+Мишенька	Mishenka
+Мотя	Motya
+Мухаммад	Mukhammad	Muhammad
+Мэлс	Mels
+Настасья	Nastasya
+Настенька	Nastenka
+Настя	Nastya
+Наташенька	Natashenka
+Нафанаил	Nafanail
+Неонила	Neonila
+Нефёд	Nefyod	Nefed
+Никифор	Nikifor
+Никодим	Nikodim
+Ниса	Nisa
+Ноеминь	Noemin
+Оксана	Oksana
+Оксанка	Oksanka
+Олеся	Olesya
+Пантелеймон	Panteleymon	Panteleimon
+Пелагея	Pelageya
+Петрушка	Petrushka
+Платон	Platon
+Полетт	Polett
+Полифем	Polifem
+Порфирий	Porfiriy	Porfirii
+Прасковья	Praskovya
+Пульхерия	Pulkheriya	Pulheriya
+Раиса	Raisa
+Райхан	Raykhan	Raihan
+Рамазан	Ramazan
+Рася	Rasya
+Рахиль	Rakhil	Rahil
+Римма	Rimma
+Родион	Rodion
+Роксана	Roksana
+Роня	Ronya
+Ростислав	Rostislav
+Ростислава	Rostislava
+Руслана	Ruslana
+Рюрик	Ryurik
+Савелий	Saveliy	Savelii
+Самуил	Samuil
+Саня	Sanya
+Святослав	Svyatoslav
+Сева	Seva
+Сейфулла	Seyfulla	Seifulla
+Секст	Sekst
+Селиван	Selivan
+Семён	Semyon	Semen
+Серафим	Serafim
+Серёжа	Seryozha	Serezha
+Сидор	Sidor
+Синдзи	Sindzi
+Сламжан	Slamzhan
+Снежана	Snezhana
+Сонирил	Soniril
+Софья	Sofya
+Спиридон	Spiridon
+Станислав	Stanislav
+Станислава	Stanislava
+Стас	Stas
+Стася	Stasya
+Стёпа	Styopa	Stepa
+Сусанна	Susanna
+Суфиян	Sufiyan
+Таисия	Taisiya
+Таисья	Taisya
+Танюша	Tanyusha
+Тарас	Taras
+Терентий	Terentiy	Terentii
+Тимофей	Timofey	Timofei
+Тимур	Timur
+Тит	Tit
+Тихон	Tikhon	Tihon
+Толик	Tolik
+Толя	Tolya
+Толян	Tolyan
+Трифон	Trifon
+Ульян	Ulyan
+Ульяна	Ulyana
+Устинья	Ustinya
+Фаина	Faina
+Фарида	Farida
+Федора	Fedora
+Федя	Fedya
+Фламиний	Flaminiy	Flaminii
+Фёдор	Fyodor	Fedor
+Фёкла	Fyokla	Fekla
+Хава	Khava	Hava
+Харитон	Khariton	Hariton
+Христина	Khristina	Hristina
+Цолак	Tsolak	Colak
+Шахла	Shakhla	Shahla
+Шахрияр	Shakhriyar	Shahriyar
+Шойгу	Shoygu	Shoigu
+Шура	Shura
+Шурик	Shurik
+Эдик	Edik
+Эйбел	Eybel	Eibel
+Эйбрахам	Eybrakham	Eibraham
+Эльвира	Elvira
+Эльдар	Eldar
+Энгельс	Engels
+Эней	Eney	Enei
+Эсфирь
+Юлиан	Yulian
+Юлиана	Yuliana
+Юстас	Yustas
+Ядвига	Yadviga
+Ярополк	Yaropolk
+Ярослав	Yaroslav
+Ярослава	Yaroslava
+Яша	Yasha
