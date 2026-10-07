@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The lock screens (architecture.md §2.2 ui.lock): the master-password screen of build plan 3.4
+     (ux.md §5.10; lock.md §13.2, §13.3), then every lock screen and notice (4.2). Every name
+     starts with lock_. The English wording is lock.md §13.3's; dates are formatted by the screen
+     in the phone's own style (i18n.md §4.6), so "7 Oct" may read "Oct 7". -->
+<resources>
+
+    <!-- ===== Titles and the line of a set of passwords put aside ===== -->
+
+    <!-- Title of the lock screen that asks for the master password. One line: about 30 characters. -->
+    <string name="lock_mp_title">Type your master password</string>
+    <!-- Title of the same screen when this phone has no PIN or fingerprint for these passwords yet,
+         after a move to a new phone or a reinstall (lock.md F14). One line. -->
+    <string name="lock_mp_title_welcome_back">Welcome back</string>
+    <!-- Title, or the line above the title, on the lock screen of the passwords kept from before the
+         master password was replaced using the PIN (lock.md F16b). %1$s is a date with the year,
+         for example "Oct 7, 2026". -->
+    <string name="lock_from_before">Your passwords from before %1$s</string>
+    <!-- The line above the title on the lock screen of a set of passwords that was put aside, for
+         example after "Start with an empty app" (lock.md F17 step 4). %1$s is a date with the year. -->
+    <string name="lock_aside_locked_on">Passwords locked on %1$s</string>
+
+    <!-- ===== Why the master password is asked for: the subtitle (lock.md §13.3) ===== -->
+
+    <!-- Practice: the app asks for the master password now and then so that it is not forgotten
+         (lock.md §8.3). -->
+    <string name="lock_mp_reason_practice">Time to practise your master password. We ask now and then so you don’t forget it. You need it to open a backup and to move to a new phone.</string>
+    <!-- Under the title "Welcome back". -->
+    <string name="lock_mp_reason_welcome_back">Your PIN and fingerprint don’t work here yet. This happens after you move to a new phone or install the app again. Type your master password once, then choose a PIN for this phone.</string>
+    <!-- Under the title "Your passwords from before …": the master password those passwords had. -->
+    <string name="lock_mp_reason_from_before">Type the master password you used then.</string>
+    <!-- The PIN was turned off after too many wrong tries, and fingerprint cannot be used.
+         "Turned off", not "deleted": the same text says nothing was deleted. -->
+    <string name="lock_mp_reason_pin_limit">Your PIN was entered wrong too many times, so it was turned off. Nothing was deleted. Type your master password, then choose a new PIN.</string>
+    <!-- The PIN's key is gone from the phone, or its record is damaged. -->
+    <string name="lock_mp_reason_pin_stopped_working">Your PIN stopped working on this phone. Type your master password, then choose a PIN again.</string>
+    <!-- The PIN was set up by a newer version of this app than the one installed. -->
+    <string name="lock_mp_reason_pin_newer_app">Your PIN was set up by a newer version of this app. Use your master password, and update the app.</string>
+    <!-- The phone's key store does not answer now; a restart usually helps. Nothing was removed. -->
+    <string name="lock_mp_reason_pin_cannot_check">Your PIN can’t be checked right now. Use your master password this time. Restarting the phone usually fixes this. If it keeps happening, set your PIN up again in Settings.</string>
+    <!-- The try could not be written because the phone's storage is full. -->
+    <string name="lock_mp_reason_pin_storage_full">Your phone’s storage is full, so the PIN can’t be checked now. Free some space, or use your master password.</string>
+    <!-- The master password was changed and the PIN was not kept. -->
+    <string name="lock_mp_reason_master_changed">You changed your master password. Type it once, then choose a PIN again.</string>
+    <!-- The newest copy of the passwords is damaged, and an older copy opens only with the master
+         password of that time (lock.md F16a). %1$s is a day and a month, for example "Oct 5". -->
+    <string name="lock_mp_reason_older_copy">The newest copy of your passwords can’t be read. An older copy from %1$s opens with the master password you used then.</string>
+    <!-- Shown once, on a phone that cannot keep keys in secure hardware (lock.md F18). -->
+    <string name="lock_mp_reason_no_secure_hardware">This phone can’t keep a PIN or fingerprint key in protected hardware, so the app opens with your master password only.</string>
+
+    <!-- ===== Fingerprint unlock is on but cannot be used now: the line under the subtitle, with
+         "Use your master password" (lock.md §13.3). The pad (4.2) has the same lines with "Use your
+         PIN". ===== -->
+
+    <!-- The phone's fingerprints or screen lock changed, so the app's fingerprint key no longer works. -->
+    <string name="lock_fingerprint_turned_off_master">Fingerprint unlock was turned off because this phone’s fingerprints or screen lock changed. Use your master password. You can turn it on again in Settings.</string>
+    <!-- The phone locked its fingerprint sensor after too many failed fingers. -->
+    <string name="lock_fingerprint_locked_master">Fingerprint is locked for now. Use your master password.</string>
+    <!-- The fingerprint prompt was accepted, but the app could not open with it this time. -->
+    <string name="lock_fingerprint_did_not_open_master">Fingerprint did not open the app this time. Use your master password.</string>
+    <!-- The phone's setting that lets apps use fingerprint is off. -->
+    <string name="lock_fingerprint_not_for_apps_master">Fingerprint can’t be used in apps right now. Use your master password. In your phone’s settings, check that fingerprint may be used to verify it’s you in apps.</string>
+    <!-- No fingerprint (or no screen lock) is set on the phone now. -->
+    <string name="lock_fingerprint_none_saved_master">No fingerprint is saved on this phone now. Use your master password. To use fingerprint unlock again, add a fingerprint in your phone’s settings.</string>
+    <!-- The phone needs a security update before its fingerprint sensor may be used. -->
+    <string name="lock_fingerprint_update_needed_master">Your phone needs a security update before fingerprint can be used. Use your master password.</string>
+    <!-- Any other fingerprint problem. -->
+    <string name="lock_fingerprint_cannot_check_master">Fingerprint can’t be checked right now. Use your master password. If this keeps happening, turn fingerprint unlock off and on again in Settings.</string>
+
+    <!-- ===== The field and the buttons ===== -->
+
+    <!-- The label of the password field. Short. -->
+    <string name="lock_mp_field">Master password</string>
+    <!-- Button: opens the app with the typed master password. Short. -->
+    <string name="lock_mp_unlock">Unlock</string>
+    <!-- Shown with a spinner in place of the Unlock button while the password is checked, which
+         takes about a second. -->
+    <string name="lock_opening">Opening…</string>
+    <!-- Text button: the app PIN pad instead of the master password. -->
+    <string name="lock_mp_use_pin">Use PIN</string>
+    <!-- Text button on a practice day: skip practice for now and use the PIN pad. -->
+    <string name="lock_mp_not_now_pin">Not now: use PIN</string>
+    <!-- Text button on a practice day: skip practice for now and use fingerprint. -->
+    <string name="lock_mp_not_now_fingerprint">Not now: use fingerprint</string>
+    <!-- Text button on a practice screen: the user cannot remember the master password (i18n.md
+         glossary 133). -->
+    <string name="lock_mp_cant_remember">I can’t remember it</string>
+    <!-- Text button, always on this screen: what can be done without the master password
+         (i18n.md glossary 132). -->
+    <string name="lock_mp_forgot">Forgot master password?</string>
+
+    <!-- ===== After a try (lock.md §13.3, "When") ===== -->
+
+    <!-- A wrong master password. The same hint whatever was typed. -->
+    <string name="lock_mp_wrong">That’s not the right master password. Check the keyboard language (Latin or Cyrillic) and capital letters.</string>
+    <!-- Added after two wrong master passwords while the app PIN still works. -->
+    <string name="lock_mp_wrong_forgot_pin">Can’t remember it? Open the app with your PIN, then choose a new master password.</string>
+    <!-- The same while only fingerprint still works (no PIN on this phone). -->
+    <string name="lock_mp_wrong_forgot_fingerprint">Can’t remember it? Open the app with your fingerprint, then choose a new master password.</string>
+    <!-- Text button after the line above. -->
+    <string name="lock_mp_i_forgot">I forgot it</string>
+    <!-- Added to a wrong master password when it was replaced, by someone who used the PIN, and the
+         passwords from before are still on this phone (lock.md F16b). "Replaced", not "changed":
+         a replacement does not need the old master password. %1$s is a day and a month. -->
+    <string name="lock_mp_wrong_replaced_pin">The master password was replaced on %1$s using the PIN. If you didn’t do that, open your passwords from before.</string>
+    <!-- The same when it was replaced using a fingerprint. -->
+    <string name="lock_mp_wrong_replaced_fingerprint">The master password was replaced on %1$s using a fingerprint. If you didn’t do that, open your passwords from before.</string>
+    <!-- Button after the line above: the lock screen of the passwords from before. %1$s is a day and
+         a month. -->
+    <string name="lock_mp_open_from_before">Open my passwords from before %1$s</string>
+    <!-- The phone has too little free memory for the check (about 64 MiB). Not counted as a wrong
+         try. Followed by the button "Try again". -->
+    <string name="lock_mp_no_memory">Your phone doesn’t have enough free memory to open your passwords. Close other apps or restart the phone, then try again.</string>
+    <!-- After several wrong master passwords the field waits 30 seconds (lock.md §6.8). -->
+    <string name="lock_mp_wait">Wait 30 seconds, then try again. Take your time and look at your paper.</string>
+    <!-- The countdown of that wait, once a second (i18n.md glossary 59, used only here). -->
+    <plurals name="lock_mp_wait_seconds">
+        <item quantity="one">Try again in %d&#160;second</item>
+        <item quantity="other">Try again in %d&#160;seconds</item>
+    </plurals>
+    <!-- Under the field while a new master password, chosen using the PIN, is not working yet
+         (lock.md F11 step 12). Hours are counted while the phone is switched on (glossary 139). -->
+    <plurals name="lock_mp_pending_hours">
+        <item quantity="one">Your new master password starts working in about %d&#160;hour.</item>
+        <item quantity="other">Your new master password starts working in about %d&#160;hours.</item>
+    </plurals>
+
+</resources>
