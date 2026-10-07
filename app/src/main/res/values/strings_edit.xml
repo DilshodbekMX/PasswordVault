@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Add and edit an account (ux.md §5.14) and the password generator sheet (ux.md §5.15); build plan
+     3.6. Every name starts with edit_. Shared words (Close, Cancel, Try again, Show password) are in
+     strings_common.xml. Sentence case, "you" and plain words (i18n.md §4, ux.md §7). -->
+<resources>
+
+    <!-- ===== The top bar ===== -->
+
+    <!-- Screen title while adding an account. One line; keep it short (about 20 characters). -->
+    <string name="edit_title_new">New account</string>
+    <!-- Screen title while changing an account that exists. One line; keep it short. -->
+    <string name="edit_title_edit">Edit account</string>
+    <!-- Button in the top bar: saves the account. Short: one word if possible. -->
+    <string name="edit_save">Save</string>
+    <!-- Read by TalkBack while the Save button shows a small spinner because saving takes a moment. -->
+    <string name="edit_saving">Saving…</string>
+
+    <!-- ===== The form ===== -->
+
+    <!-- Label of the first field: the name of the account, such as Gmail or Click. -->
+    <string name="edit_name">Name</string>
+    <!-- Grey example text inside the empty name field. "Gmail" is a brand name; keep it. -->
+    <string name="edit_name_example">For example, Gmail</string>
+    <!-- Label of the field for what the person signs in with: an email address, a phone number or a login name. -->
+    <string name="edit_username">Email, phone or login</string>
+    <!-- Label of the password field. -->
+    <string name="edit_password">Password</string>
+    <!-- The dice button in the password field and the text button under an empty password field: opens
+         the password generator. TalkBack reads it for the dice icon too (ux.md §8). -->
+    <string name="edit_generate">Create a strong password</string>
+    <!-- Under a typed password: how many OTHER saved accounts already use exactly this password.
+         Information only; it never stops saving. %1$d is that number (1 or more). "Security" is the name
+         of the app's Security tab. -->
+    <plurals name="edit_reuse">
+        <item quantity="one">You use this password for %1$d other account. You can change it later in Security.</item>
+        <item quantity="other">You use this password for %1$d other accounts. You can change it later in Security.</item>
+    </plurals>
+    <!-- Label of a website address field. -->
+    <string name="edit_website">Website</string>
+    <!-- Text button under the website fields: adds one more website field (up to 10). -->
+    <string name="edit_add_website">Add another website</string>
+    <!-- Read by TalkBack for the button next to an extra website field, which removes that field. -->
+    <string name="edit_remove_website">Remove website</string>
+    <!-- Label of the notes field (free text, several lines). -->
+    <string name="edit_notes">Notes</string>
+    <!-- Text button at the end of the form: adds an extra field such as a PIN code or a security question. -->
+    <string name="edit_add_field">Add field</string>
+    <!-- Read by TalkBack for the button next to an extra field, which removes it. %1$s is the field's
+         label as the person chose it, for example "PIN code". -->
+    <string name="edit_remove_field">Remove %1$s</string>
+    <!-- Under a field that is nearly full or full: characters typed / the most allowed, for example
+         "10,000 / 10,000". %1$s and %2$s are numbers already formatted for the language. -->
+    <string name="edit_counter">%1$s / %2$s</string>
+
+    <!-- ===== What Save found wrong (shown under the field) ===== -->
+
+    <!-- The text is longer than the field allows. %1$s is the most characters allowed, a number already
+         formatted for the language. -->
+    <string name="edit_error_too_long">Too long. It can have at most %1$s characters.</string>
+    <!-- The text holds an invisible control character (such as a tab), which cannot be saved or pasted
+         into websites. -->
+    <string name="edit_error_control">This has a hidden character that can\'t be saved, such as a tab. Type it again without it.</string>
+    <!-- The text holds a broken character (half of an emoji, for example). -->
+    <string name="edit_error_broken">This has a broken character. Type it again.</string>
+    <!-- More website fields than allowed. %1$d is the most allowed (10). -->
+    <string name="edit_error_too_many_websites">An account can have at most %1$d websites.</string>
+    <!-- More extra fields than allowed. %1$d is the most allowed (20). -->
+    <string name="edit_error_too_many_fields">An account can have at most %1$d extra fields.</string>
+    <!-- An extra field has a value but no label. -->
+    <string name="edit_error_label">Give this field a label.</string>
+
+    <!-- ===== Leaving with changes (ux.md §4) ===== -->
+
+    <!-- Title of the dialog shown when the person goes back or closes the form after changing something. -->
+    <string name="edit_unsaved_title">Save changes?</string>
+    <!-- Dialog button: saves the account. -->
+    <string name="edit_unsaved_save">Save</string>
+    <!-- Dialog button: throws the changes away and closes the form. -->
+    <string name="edit_unsaved_discard">Discard</string>
+    <!-- Dialog button: closes the dialog and stays in the form. -->
+    <string name="edit_unsaved_keep">Keep editing</string>
+
+    <!-- ===== Same name and login (ux.md §5.14) ===== -->
+
+    <!-- Dialog at Save when another saved account has the same name and the same login. %1$s is that
+         account's name, for example "Gmail". -->
+    <string name="edit_duplicate">You already have %1$s with this login. Save anyway?</string>
+    <!-- Dialog button: saves although an account with the same name and login exists. -->
+    <string name="edit_duplicate_save">Save anyway</string>
+
+    <!-- ===== Unsaved changes kept from an earlier visit (ux.md §5.14) ===== -->
+
+    <!-- Short message at the bottom of the form when it opens again with what was typed before the app
+         locked or closed. -->
+    <string name="edit_kept">Your unsaved changes were kept.</string>
+    <!-- Dialog when the kept changes are more than 30 days old. %1$s is the account's name, %2$s a short
+         date such as "5 Sep" or "Sep 5", already formatted for the language. -->
+    <string name="edit_old_draft">You have unsaved changes for %1$s from %2$s. Open them?</string>
+    <!-- The same dialog for a new account that had no name yet. %1$s is a short date such as "5 Sep". -->
+    <string name="edit_old_draft_new">You have unsaved changes for a new account from %1$s. Open them?</string>
+    <!-- Dialog button: opens the kept changes in the form. -->
+    <string name="edit_old_draft_open">Open</string>
+    <!-- Dialog button: throws the kept changes away. -->
+    <string name="edit_old_draft_discard">Discard</string>
+
+    <!-- ===== Messages ===== -->
+
+    <!-- Short message when saving failed; the form keeps everything typed. A "Try again" button goes with it. -->
+    <string name="edit_save_failed">Couldn\'t save. Your phone\'s storage may be full.</string>
+    <!-- Short message when the saved file would become too big to save (architecture.md §3.5). -->
+    <string name="edit_too_large">Your passwords no longer fit in one file. Delete accounts you don\'t need, or shorten very long notes.</string>
+    <!-- Shown instead of the form when the account was deleted in the meantime. -->
+    <string name="edit_gone">This account no longer exists.</string>
+
+    <!-- The name saved for an account whose name was left empty and that has no website: "Untitled" and
+         the date and time it was saved. %1$s is the date and time, already formatted for the language,
+         for example "Oct 7, 2026, 5:50 PM". This text is stored with the account. -->
+    <string name="edit_untitled">Untitled %1$s</string>
+
+    <!-- ===== The "Add field" dialog (ux.md §5.14) ===== -->
+
+    <!-- Title of the dialog that adds an extra field to the account. -->
+    <string name="edit_field_title">Add field</string>
+    <!-- A ready label to pick for the extra field. Stored as the field's label. -->
+    <string name="edit_field_pin">PIN code</string>
+    <!-- A ready label to pick for the extra field. Stored as the field's label. -->
+    <string name="edit_field_phone">Phone number</string>
+    <!-- A ready label to pick for the extra field: a second email address for getting the account back. -->
+    <string name="edit_field_recovery_email">Recovery email</string>
+    <!-- A ready label to pick for the extra field. Stored as the field's label. -->
+    <string name="edit_field_question">Security question</string>
+    <!-- A ready label to pick for the extra field: the answer to a security question. -->
+    <string name="edit_field_answer">Answer</string>
+    <!-- A ready label to pick for the extra field: a secret word a bank asks for on the phone. -->
+    <string name="edit_field_code_word">Code word</string>
+    <!-- Choice in the "Add field" dialog: the person types a label of their own. -->
+    <string name="edit_field_other">Other…</string>
+    <!-- Label of the field where the person types a label of their own. -->
+    <string name="edit_field_label">Label</string>
+    <!-- Label of the field for the extra field's value. -->
+    <string name="edit_field_value">Value</string>
+    <!-- Switch in the "Add field" dialog: the value is shown as dots until "Show" is tapped. -->
+    <string name="edit_field_hide">Hide this value</string>
+    <!-- Dialog button: adds the extra field to the form. -->
+    <string name="edit_field_add">Add</string>
+
+    <!-- ===== The password generator sheet (ux.md §5.15) ===== -->
+
+    <!-- Title of the sheet that makes a new random password. -->
+    <string name="edit_gen_title">Create a strong password</string>
+    <!-- Read by TalkBack for the button next to the made password: makes another one. -->
+    <string name="edit_gen_new">New password</string>
+    <!-- Choice of the kind of password: random characters. Short (a segmented button). -->
+    <string name="edit_gen_random">Random</string>
+    <!-- Choice of the kind of password: several real words joined together. Short (a segmented button). -->
+    <string name="edit_gen_words">Words</string>
+    <!-- Label of the slider for the number of characters. -->
+    <string name="edit_gen_length">Length</string>
+    <!-- Read by TalkBack for the minus button next to the length slider. -->
+    <string name="edit_gen_shorter">Shorter</string>
+    <!-- Read by TalkBack for the plus button next to the length slider. -->
+    <string name="edit_gen_longer">Longer</string>
+    <!-- Switch: use the capital letters A to Z. Keep "A–Z" as it is. -->
+    <string name="edit_gen_upper">A–Z</string>
+    <!-- Switch: use the small letters a to z. Keep "a–z" as it is. -->
+    <string name="edit_gen_lower">a–z</string>
+    <!-- Switch: use the digits 0 to 9. Keep "0–9" as it is. -->
+    <string name="edit_gen_digits">0–9</string>
+    <!-- Switch: use these symbols. Translate only the word; keep the symbols exactly as they are. -->
+    <string name="edit_gen_symbols">Symbols ! # $ % &amp; * + - = ? @ _</string>
+    <!-- Switch: leave out characters that are easy to mix up. Keep "I l 1 O 0" as it is. -->
+    <string name="edit_gen_look_alike">Avoid look-alike characters (I l 1 O 0)</string>
+    <!-- Shown when the person tries to switch off the last kind of character that is still on. -->
+    <string name="edit_gen_one_kind">At least one kind of character is needed.</string>
+    <!-- Label of the slider for how many words the password has. -->
+    <string name="edit_gen_word_count">Number of words</string>
+    <!-- Read by TalkBack for the minus button next to the number of words. -->
+    <string name="edit_gen_fewer_words">Fewer words</string>
+    <!-- Read by TalkBack for the plus button next to the number of words. -->
+    <string name="edit_gen_more_words">More words</string>
+    <!-- Label of the choice of what goes between the words. -->
+    <string name="edit_gen_separator">Separator</string>
+    <!-- Separator choice, read by TalkBack (the button shows "-"). -->
+    <string name="edit_gen_separator_hyphen">Hyphen</string>
+    <!-- Separator choice, read by TalkBack (the button shows "."). -->
+    <string name="edit_gen_separator_dot">Dot</string>
+    <!-- Separator choice, read by TalkBack (the button shows "_"). -->
+    <string name="edit_gen_separator_underscore">Underscore</string>
+    <!-- Separator choice: a space between the words. Also shown on the button, so keep it short. -->
+    <string name="edit_gen_separator_space">Space</string>
+    <!-- Switch: each word starts with a capital letter. -->
+    <string name="edit_gen_capitalize">Capital letters</string>
+    <!-- Switch: one digit is added after one of the words. -->
+    <string name="edit_gen_add_number">Add a number</string>
+    <!-- Hint at the bottom of the sheet. -->
+    <string name="edit_gen_hint">If a website refuses this password, try fewer characters or turn symbols off.</string>
+    <!-- The sheet's main button: puts the made password into the password field. -->
+    <string name="edit_gen_use">Use this password</string>
+    <!-- Dialog when "Use this password" is tapped and the password field already has a password. -->
+    <string name="edit_replace">Replace the current password?</string>
+    <!-- Dialog button: replaces the password in the field with the new one. -->
+    <string name="edit_replace_yes">Replace</string>
+
+    <!-- The separator symbols shown on the separator buttons: not translated. -->
+    <string name="edit_gen_symbol_hyphen" translatable="false">-</string>
+    <string name="edit_gen_symbol_dot" translatable="false">.</string>
+    <string name="edit_gen_symbol_underscore" translatable="false">_</string>
+
+</resources>
