@@ -4,6 +4,7 @@ import io.github.dilshodbekmx.passwordvault.core.model.Entry
 import io.github.dilshodbekmx.passwordvault.core.search.WebAddress
 import io.github.dilshodbekmx.passwordvault.data.ListModel
 import java.text.BreakIterator
+import java.text.Normalizer
 import java.util.Locale
 
 /**
@@ -67,9 +68,9 @@ data class EntryRow(
 
         /**
          * The badge's letter for [title]: the grapheme of its first letter or digit, so that
-         * "«Ipak Yoʻli»" shows "I" and "Ўзбектелеком" "Ў", in upper case without a locale (a
-         * Turkish phone must not turn "i" into "İ"); the first grapheme when there is no letter or
-         * digit; "#" for an empty title.
+         * "«Ipak Yoʻli»" shows "I" and "Ўзбектелеком" "Ў", composed (NFC: и + U+0306 shows as Й)
+         * and in upper case without a locale (a Turkish phone must not turn "i" into "İ"); the
+         * first grapheme when there is no letter or digit; "#" for an empty title.
          */
         fun initialOf(title: String): String {
             if (title.isEmpty()) return "#"
@@ -83,7 +84,7 @@ data class EntryRow(
             val graphemes = BreakIterator.getCharacterInstance(Locale.ROOT)
             graphemes.setText(title)
             val end = graphemes.following(start).let { if (it == BreakIterator.DONE) title.length else it }
-            return title.substring(start, end).uppercase(Locale.ROOT)
+            return Normalizer.normalize(title.substring(start, end), Normalizer.Form.NFC).uppercase(Locale.ROOT)
         }
 
         /** The badge's tone for [title], 0 until [BADGE_TONES]: the same title always gets the same colour. */
