@@ -200,7 +200,6 @@ class StrengthMeter private constructor(private val zxcvbn: Zxcvbn, keyboards: L
 
         private const val RECENT_YEAR = "recent_year"
 
-
         /** The lists whose words call for "Avoid city names, people's names and years". */
         private val NAME_DICTIONARIES = setOf(
             BUNDLED,

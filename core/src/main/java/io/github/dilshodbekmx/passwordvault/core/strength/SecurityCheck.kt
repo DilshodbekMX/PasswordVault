@@ -90,8 +90,9 @@ object SecurityCheck {
     }
 
     /**
-     * The words of [entry] that its password should not lean on: the runs of letters and digits, of
-     * at least three, in its name and in its username before an `@`, in lower case.
+     * The words of [entry] that its password should not lean on: the runs of letters, digits and
+     * apostrophes of three characters or more in its username (before an `@`, so not the mail
+     * provider) and in its name, in lower case, in that order.
      */
     fun userInputs(entry: Entry): List<String> {
         val parts = LinkedHashSet<String>()
