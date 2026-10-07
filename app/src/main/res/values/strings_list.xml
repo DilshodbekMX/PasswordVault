@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The Passwords list, its search and its banners, and Recently deleted (ux.md §5.11, §5.23, §6;
+     build plan 3.5). Every name starts with list_. Shared words (OK, Cancel, Later, Delete, Undo)
+     are in strings_common.xml. Quotation marks are “ ” in English (i18n.md §4.2). -->
+<resources>
+
+    <!-- ===== The Passwords screen (ux.md §5.11) ===== -->
+
+    <!-- The title of the home screen, in its top bar. One line, short. -->
+    <string name="list_title">Passwords</string>
+    <!-- The lock icon in the top bar of the Passwords screen, read by TalkBack: locks the app at once
+         (ux.md §5.11). -->
+    <string name="list_lock_now">Lock now</string>
+    <!-- The hint inside the empty search field at the top of the list. -->
+    <string name="list_search_placeholder">Search accounts</string>
+    <!-- The × button at the end of the search field, read by TalkBack: empties the search. -->
+    <string name="list_search_clear">Clear search</string>
+    <!-- The floating button that opens the form for a new account. Short: it collapses to a + while
+         the list scrolls. -->
+    <string name="list_add">Add</string>
+    <!-- The same button while it shows only the + icon, read by TalkBack. -->
+    <string name="list_add_account_description">Add account</string>
+
+    <!-- The heading of the favourite accounts at the top of the list. -->
+    <string name="list_favourites">Favourites</string>
+    <!-- Button under the first 10 favourites when there are more of them. -->
+    <string name="list_show_all_favourites">Show all favourites</string>
+    <!-- The heading above all accounts, A to Z; %1$s is how many there are (always 1 or more),
+         written with the language's digit grouping, for example “All accounts · 1,250”. -->
+    <string name="list_all_accounts">All accounts · %1$s</string>
+    <!-- The last row of the list, which opens the deleted accounts; %1$s is how many (1 or more),
+         written with the language's digit grouping. -->
+    <string name="list_recently_deleted_row">Recently deleted (%1$s)</string>
+
+    <!-- A row's copy button, read by TalkBack; %1$s is the account's name, for example “Gmail”. -->
+    <string name="list_copy_password_for">Copy password for %1$s</string>
+    <!-- The same button while a password change of that account is not finished: it opens a menu
+         with the old and the new password (ux.md §5.17); %1$s is the account's name. -->
+    <string name="list_copy_password_choose">Copy password for %1$s, choose old or new</string>
+    <!-- The small clock on a row whose password change is not finished, read by TalkBack. -->
+    <string name="list_change_pending">Password change not finished</string>
+
+    <!-- The menu of a row (long press) and the same actions for TalkBack (ux.md §5.11). Short menu
+         items. -->
+    <string name="list_menu_copy_username">Copy username</string>
+    <!-- Menu item: copies the account's password. -->
+    <string name="list_menu_copy_password">Copy password</string>
+    <!-- Menu item while a password change is not finished: copies the password the website still
+         has (ux.md §5.17). -->
+    <string name="list_menu_copy_old_password">Copy old password</string>
+    <!-- Menu item while a password change is not finished: copies the new password, which the user
+         has not confirmed yet (ux.md §5.17). -->
+    <string name="list_menu_copy_new_password">Copy new password (not confirmed)</string>
+    <!-- Menu item: opens the account's website in the browser. -->
+    <string name="list_menu_open_website">Open website</string>
+    <!-- Menu item: shows the password large, one character per box (ux.md §5.13). -->
+    <string name="list_menu_big_letters">Show in big letters</string>
+    <!-- Menu item: marks the account as a favourite. -->
+    <string name="list_menu_add_favourite">Add to favourites</string>
+    <!-- Menu item: removes the favourite mark. -->
+    <string name="list_menu_remove_favourite">Remove from favourites</string>
+    <!-- Menu item: opens the account's edit form. -->
+    <string name="list_menu_edit">Edit</string>
+
+    <!-- What was copied, shown in the clipboard row at the bottom of the screen, for example
+         “Password for Gmail · clears in 0:52” (ux.md §6); %1$s is the account's name. -->
+    <string name="list_copied_password">Password for %1$s</string>
+    <!-- As above, for the username. -->
+    <string name="list_copied_username">Username for %1$s</string>
+    <!-- As above, for the old password while a change is not finished. -->
+    <string name="list_copied_old_password">Old password for %1$s</string>
+    <!-- As above, for the new password while a change is not finished. -->
+    <string name="list_copied_new_password">New password for %1$s</string>
+
+    <!-- The list when the vault has no accounts yet (ux.md §5.11 “Empty vault”). Heading. -->
+    <string name="list_empty_title">No accounts yet</string>
+    <!-- The text under it. -->
+    <string name="list_empty_body">Add your first account and its password, or bring your passwords from Chrome.</string>
+    <!-- Button: opens the form for a new account. -->
+    <string name="list_empty_add">Add account</string>
+    <!-- Button: opens the import of a file exported from Google Password Manager. Do not translate
+         “Google Password Manager”. -->
+    <string name="list_empty_import">Import from Google Password Manager</string>
+
+    <!-- Above the results when what was typed found nothing and the same keys on the other keyboard
+         layout (Russian or Latin) found accounts (ux.md §5.11); %1$s is the query that was searched,
+         for example “inst” when “штые” was typed. -->
+    <string name="list_search_retried">Showing results for “%1$s”</string>
+    <!-- When the search finds nothing; %1$s is what was typed. -->
+    <string name="list_no_results">No accounts match “%1$s”.</string>
+    <!-- Button under it: opens the form for a new account; %1$s is what was typed. -->
+    <string name="list_add_as_new">Add “%1$s” as a new account</string>
+
+    <!-- Short message at the bottom after an account was deleted, with the button “Undo”;
+         %1$s is the account's name. -->
+    <string name="list_deleted_message">%1$s deleted</string>
+    <!-- Message when a change could not be saved. -->
+    <string name="list_save_failed">Couldn\'t save. Your phone\'s storage may be full.</string>
+    <!-- Message when the passwords no longer fit in the one locked file (architecture.md §3.5). -->
+    <string name="list_too_large">Your passwords no longer fit in one file. Delete accounts you don\'t need, or shorten very long notes.</string>
+    <!-- Message when “Open website” finds no browser. -->
+    <string name="list_no_browser">No browser found on this phone.</string>
+    <!-- Message when the phone refused to copy (some phone makers' builds do, ux.md §6). -->
+    <string name="list_copy_blocked">This phone blocked copying. Open the password with Show in big letters and type it.</string>
+
+    <!-- ===== Banners at the top of the list: at most two at a time (ux.md §5.11) ===== -->
+
+    <!-- Banner: someone asked for a new master password with the app PIN (lock.md §13.4 item 2).
+         %1$s is the date and time, for example “Oct 6, 2026, 2:02 PM”; %2$d is how many hours are
+         left (1 or more). Keep “PIN”. -->
+    <plurals name="list_banner_pending_pin">
+        <item quantity="one">A new master password was chosen on %1$s, using the PIN. It starts working in about %2$d&#160;hour. The countdown stops while the phone is switched off; open this app in the morning and again in the evening to keep it moving. Not you? Cancel it, then change your PIN.</item>
+        <item quantity="other">A new master password was chosen on %1$s, using the PIN. It starts working in about %2$d&#160;hours. The countdown stops while the phone is switched off; open this app in the morning and again in the evening to keep it moving. Not you? Cancel it, then change your PIN.</item>
+    </plurals>
+    <!-- The same banner when it was asked for with a fingerprint (only possible when no PIN is set).
+         %1$s is the date and time; %2$d is how many hours are left (1 or more). -->
+    <plurals name="list_banner_pending_fingerprint">
+        <item quantity="one">A new master password was chosen on %1$s, using a fingerprint. It starts working in about %2$d&#160;hour. The countdown stops while the phone is switched off; open this app in the morning and again in the evening to keep it moving. Not you? Cancel it.</item>
+        <item quantity="other">A new master password was chosen on %1$s, using a fingerprint. It starts working in about %2$d&#160;hours. The countdown stops while the phone is switched off; open this app in the morning and again in the evening to keep it moving. Not you? Cancel it.</item>
+    </plurals>
+    <!-- Banner when the 24 hours have passed (lock.md §13.4 item 2). -->
+    <string name="list_banner_pending_ready">Your new master password is ready. Type it to finish.</string>
+    <!-- Button on the two banners above: cancels the new master password. -->
+    <string name="list_banner_cancel_it">Cancel it</string>
+    <!-- Button on the “ready” banner: finishes the change of master password. -->
+    <string name="list_banner_finish_now">Finish now</string>
+
+    <!-- Banner after the master password was replaced (lock.md §13.4 item 3); %1$s is the date, for
+         example “Oct 7, 2026”. Keep “PIN”. -->
+    <string name="list_banner_replaced_pin">Your master password was replaced on %1$s using the PIN. If you didn\'t do this, your passwords from before are still on this phone.</string>
+    <!-- The same, when it was replaced with a fingerprint; %1$s is the date. -->
+    <string name="list_banner_replaced_fingerprint">Your master password was replaced on %1$s using a fingerprint. If you didn\'t do this, your passwords from before are still on this phone.</string>
+    <!-- Button on the banner above: opens the passwords as they were before the replacement. -->
+    <string name="list_banner_it_wasnt_me">It wasn\'t me</string>
+
+    <!-- Banner when the master password has not been typed for too long (lock.md §13.4 item 6);
+         %1$s is the date it was last typed, for example “Sep 12, 2026”. -->
+    <string name="list_banner_practice">You have not typed your master password since %1$s. Without it you cannot open a backup or move to a new phone.</string>
+    <!-- Button on that banner: asks for the master password now. -->
+    <string name="list_banner_type_it_now">Type it now</string>
+    <!-- Button on that banner: starts choosing a new master password (ux.md §5.24). -->
+    <string name="list_banner_i_forgot_it">I forgot it</string>
+
+    <!-- Banner while an export without protection was not deleted (ux.md §5.20). %1$s is the file's
+         name, for example “passwords-2026-10-06.xlsx”; %2$s says when it was saved, for example
+         “2 hours ago”. -->
+    <string name="list_banner_export">You have an unprotected file with your passwords: %1$s (saved %2$s).</string>
+    <!-- Button on that banner: the user deleted the file outside the app; the banner goes. -->
+    <string name="list_banner_deleted_it_myself">I deleted it myself</string>
+    <!-- Message when the place of that file does not let the app delete it. -->
+    <string name="list_banner_cannot_delete">This place doesn\'t let apps delete files. Delete it yourself in your Files app.</string>
+
+    <!-- Banner when changes are not in any backup yet (ux.md §5.11). -->
+    <string name="list_banner_backup">Your newest passwords are not in a backup yet.</string>
+    <!-- Button on that banner: opens “Make a backup”. -->
+    <string name="list_banner_back_up_now">Back up now</string>
+
+    <!-- Banner while password changes wait for the user's answer (ux.md §5.17). %1$d is how many
+         (1 or more), %2$s the name of the first account, for example “Gmail”. -->
+    <plurals name="list_banner_change">
+        <item quantity="one">%1$d password change is waiting for your answer (%2$s).</item>
+        <item quantity="other">%1$d password changes are waiting for your answer (%2$s and others).</item>
+    </plurals>
+    <!-- Button on that banner: opens the first of those accounts. -->
+    <string name="list_banner_answer_now">Answer now</string>
+
+    <!-- ===== “Type it now”: the master password in the open app (lock.md §13.4 item 6, F10) ===== -->
+
+    <!-- Title of the small window that asks for the master password. -->
+    <string name="list_practice_title">Type your master password</string>
+    <!-- The text above the field. -->
+    <string name="list_practice_body">This checks that you still remember it. You need it to open a backup and to move to a new phone.</string>
+    <!-- The label of the master password field. -->
+    <string name="list_practice_field">Master password</string>
+    <!-- Button: checks the typed master password. -->
+    <string name="list_practice_check">Check</string>
+    <!-- Under the field after a wrong master password (lock.md §13.3). -->
+    <string name="list_practice_wrong">That\'s not the right master password. Check the keyboard language (Latin or Cyrillic) and capital letters.</string>
+    <!-- Under the field while the app makes the user wait after wrong tries (lock.md §13.3);
+         %1$d is how many seconds are left. -->
+    <plurals name="list_practice_wait">
+        <item quantity="one">Wait %1$d&#160;second, then try again. Take your time and look at your paper.</item>
+        <item quantity="other">Wait %1$d&#160;seconds, then try again. Take your time and look at your paper.</item>
+    </plurals>
+    <!-- Under the field when the phone had too little free memory to check the password. -->
+    <string name="list_practice_no_memory">Your phone doesn\'t have enough free memory to check your master password. Close other apps or restart the phone, then try again.</string>
+    <!-- Under the field when an older master password was typed; %1$s is the date it was changed,
+         for example “Oct 5, 2026”. -->
+    <string name="list_practice_older">This is your master password from before %1$s. Type the one you use now.</string>
+    <!-- Short message after the right master password was typed. -->
+    <string name="list_practice_right">That\'s right. Your master password works.</string>
+
+    <!-- ===== Recently deleted (ux.md §5.23) ===== -->
+
+    <!-- The title of the screen of deleted accounts. One line, short. -->
+    <string name="list_deleted_title">Recently deleted</string>
+    <!-- The back arrow in its top bar, read by TalkBack. -->
+    <string name="list_back">Back</string>
+    <!-- Top-bar button: deletes every account on this screen for good, after a question. -->
+    <string name="list_deleted_empty">Empty</string>
+    <!-- The line at the top of the screen. -->
+    <string name="list_deleted_info">Deleted accounts wait here for 30 days. Then they are removed.</string>
+    <!-- The screen when nothing is deleted. -->
+    <string name="list_deleted_nothing">Nothing here. Accounts you delete wait here for 30 days.</string>
+    <!-- Under an account's name: when it was deleted; %1$s is the date, for example “Oct 6, 2026”. -->
+    <string name="list_deleted_on">Deleted %1$s</string>
+    <!-- Button on a deleted account's row: brings it back to the list. -->
+    <string name="list_deleted_restore">Restore</string>
+    <!-- The same button, read by TalkBack; %1$s is the account's name. -->
+    <string name="list_deleted_restore_description">Restore %1$s</string>
+    <!-- The ⋮ button of a deleted account's row, read by TalkBack; %1$s is the account's name. -->
+    <string name="list_deleted_more">More options for %1$s</string>
+    <!-- Menu item of a deleted account: deletes it for good, after a question. -->
+    <string name="list_deleted_delete_forever">Delete forever</string>
+    <!-- The question before “Delete forever”; %1$s is the account's name. -->
+    <string name="list_deleted_forever_question">Delete %1$s forever? This can\'t be undone.</string>
+    <!-- The question before “Empty”; %1$s is how many accounts are deleted (1 or more), written
+         with the language's digit grouping; the plural follows that number. -->
+    <plurals name="list_deleted_empty_question">
+        <item quantity="one">Delete %1$s&#160;account forever? This can\'t be undone.</item>
+        <item quantity="other">Delete all %1$s&#160;accounts forever? This can\'t be undone.</item>
+    </plurals>
+    <!-- Short message after an account was brought back; %1$s is its name. -->
+    <string name="list_restored_message">%1$s restored</string>
+
+</resources>
