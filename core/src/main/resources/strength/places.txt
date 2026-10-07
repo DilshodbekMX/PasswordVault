@@ -78,7 +78,7 @@ Furqat	Фурқат
 Mirishkar	Миришкар	Myrishkor	Mirishkor
 Boysun	Бойсун
 Yangiariq	Янгиариқ
-Xiva	Хива	Khorezm	Chiwa
+Xiva	Хива	Khorezm	Khiva	Chiwa	Khiwa
 Navbahor	Навбаҳор
 Chimboy	Чимбой	Shimbay
 Quyi Chirchiq	Қуйи Чирчиқ
@@ -121,13 +121,13 @@ Dashtobod	Даштобод	Даштабад	Ulʼyanovo
 Пскент	Pskent
 Риштан	Kuybyshevo	Rishtan	Imeni Kuybysheva	Kuybyshe	Kuybishewo	Kuybyshev	Kuibyshev
 Paxtaobod	Пахтаобод	Kokankishlak	Pakhtaabad	Koran-Kishlak	Pakhtaobod
-Manghit	Мангҳит	Манғит	Мангит	Manga	Mangyt	Mangit
+Manghit	Мангҳит	Манғит	Мангит	Manga	Mangyt	Mangit	Mangʻit
 Moʻynoq	Мўйноқ
 Qorasuv	Қорасув	Карасу	Voroshilovo	Ilʼichevsk	Imeni Voroshilovo	Kara-Su	Imeni Ilʼicha	Qorasuw	Korasuv	Karasu	Kara-Soo	Kara-Sui
 Oyim	Ойим	Аим	Aim
 Nurota	Нурота	Nurata
 Bektemir	Бектемир
-Toʻrqaoʻrgʻon	Тўрқаўрғон	Тўрақўрғон	Tyurya-Kurgan	Turakurgan
+Toʻrqaoʻrgʻon	Тўрқаўрғон	Тўрақўрғон	Tyurya-Kurgan	Turakurgan	Toʻraqoʻrgʻon
 Bulungʻur	Булунғур	Krasnogvardeysk	Bulunghur	Rostovtsevo
 Сырдарья	Syr-Novorossliski	Syr-Darjinskaja	Syrdarʼya	Sidare	Ssyr-Darja	Syrdarya
 Toshbuloq	Тошбулоқ	Tashbulak
@@ -150,7 +150,7 @@ Zafar	Зафар	Almazar	Olmazor
 Payshamba	Пайшамба	Пайшанба	Payshmba	Payshanba
 Gʻallaorol	Ғаллаорол	Gallyaaral	Gallia-Aral	Ghallaorol
 Gʻuzor	Ғузор	Ghuzor	Gusar
-Jalolquduq	Жалолқудуқ	Джалалкудук	Жалақудуқ	Dzhalyalʼ-Kuduk	Dzhalya-Kuduk	Dzhalakunduk	Dzhalakuduk
+Jalolquduq	Жалолқудуқ	Джалалкудук	Жалақудуқ	Dzhalyalʼ-Kuduk	Dzhalya-Kuduk	Dzhalakunduk	Dzhalakuduk	Jalaquduq
 Chinobod	Чинобод	Chinovat	Tschinabad	Chinabad
 Chinoz	Чиноз	Чиназ	Chinaz	Cinaz	Tschin
 Karakulʼ	Каракулъ	Каракуль	Kara Kal	Stantslya-Karakul
@@ -159,7 +159,7 @@ Juma	Жума	Dzhuma
 Kirguli	Киргули	Kirgili
 Xoʻjaobod	Хўжаобод	Khodzhiabad	Khodzhaabad	Khoji-Abad	Khodzhavat
 Sultonobod	Султонобод	Султанабад	Sultanabad
-Бўка	Buka
+Boʻka	Бўка	Buka
 Chiroqchi	Чироқчи	Chirakchya	Chirakchi
 Qorovulbozor	Қоровулбозор	Qorowulbozor
 Beshkent	Бешкент	Bish-Kent
@@ -238,6 +238,7 @@ Boʻzatov	Бўзатов
 Altyarik	Алтярик
 Bagdad	Багдад
 Ulugnar	Улугнар
+Bayaut	Баяут	Boyovut
 Yazyavan	Язяван
 Amir Temur	Амир Темур	Амир Тимур	Eski Toshkent	Eski-Tashkent	Iski-Tashkent	Amir Timur
 Qoʻshrabod	Қўшрабод
@@ -246,12 +247,13 @@ Mugʻlon	Муғлон	Mughlon	Ulʼyanovsk	Muglon
 Toyloq Qishlogʻi	Тойлоқ Қишлоғи	Komsomolʼsk	Taylyak	Taylyak-poyon	Taylak-Payon
 Yangi Mirishkor	Янги Миришкор	Mirichkar
 Loyish	Лойиш	Akdarʼya	Laish
-Қоракўл	Stantsiya Karakulʼ
+Qorakoʻl	Қоракўл	Stantsiya Karakulʼ
 Qorashina	Қорашина	Karashina
+Yangi-Nishon	Янги-Нишон	Yangi-Nishan
 Ravon	Равон	Rawon	Ravan
 Ziyodin	Зиёдин	Kala-ziadin	Ziadin	Ziyautdin	Ziatdin	Ziaeddin	Zradin
 Bogʻdon	Боғдон	Yangikishlak	Yangiqishloq
-Yangibozor Qishlogʻi	Янгибозор Қишлоғи
+Yangibozor Qishlogʻi	Янгибозор Қишлоғи	Yangibazar
 Vodil	Водил	Wodil
 Uchtepa Qishlogʻi	Учтепа Қишлоғи	Uch-Tyube
 Tomdibuloq	Томдибулоқ	Tamdy	Tomdibulog	Tamdybulak
@@ -264,3 +266,33 @@ Qorovul	Қоровул	Karaul	Qorowul
 Langar	Лангар	Karakushchi
 Qozonketkan	Қозонкеткан	Kazanketken
 Oqmangʻit	Оқманғит	Akmangit	Oqmanghit
+Taxiatosh	Тахиатош
+Tuproqqalʼa	Тупроққалъа
+Gulobod	Гулобод
+Yangi Nishon	Янги Нишон
+Koʻkdala	Кўкдала
+Yettitom	Еттитом
+Sariq	Сариқ
+Qumqoʻrgʻon	Қумқўрғон
+Muzrabot	Музработ
+Xalqobod	Халқобод
+Qarluq	Қарлуқ
+Uchqizil	Учқизил
+Sharof Rashidov	Шароф Рашидов
+Mirzachoʻl	Мирзачўл
+Balandchaqir	Баландчақир
+Sardoba	Сардоба
+Xovos	Ховос
+Navroʻz	Наврўз
+Sayxunobod	Сайхунобод
+Sayxun	Сайхун
+Boʻstonliq	Бўстонлиқ
+Doʻstobod	Дўстобод
+Oʻrta Chirchiq	Ўрта Чирчиқ
+Toʻytepa	Тўйтепа
+Gulbahor	Гулбаҳор
+Keles	Келес
+Jomashoʻy	Жомашўй
+Uchqoʻrgʻon	Учқўрғон
+Ibrat	Ибрат
+Qoʻshtepa	Қўштепа

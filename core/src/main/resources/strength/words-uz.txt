@@ -1074,7 +1074,6 @@ rivojlanish	ривожланиш
 kuch	куч
 muzey	музей
 boshqarmasi	бошқармаси
-sariq	сариқ
 umuman	умуман
 beriladi	берилади
 jiddiy	жиддий
@@ -7161,7 +7160,6 @@ koʻngilli	кўнгилли
 toʻqimalar	тўқималар
 santos	сантос
 hududlaridan	ҳудудларидан
-qorakoʻl	қоракўл
 traktor	трактор
 yerlarini	ерларини
 nasriy	насрий
@@ -13195,7 +13193,6 @@ herbulot	ҳербулот
 ekranga	экранга
 xususiylashtirish	хусусийлаштириш
 hamshiralik	ҳамширалик
-boʻstonliq	бўстонлиқ
 oʻzlashtirilgan	ўзлаштирилган
 istilosidan	истилосидан
 devorida	деворида
@@ -13270,7 +13267,6 @@ olsak	олсак
 nomida	номида
 madaniyatga	маданиятга
 rassomlarning	рассомларнинг
-mirzachoʻl	мирзачўл
 toshbaqa	тошбақа
 garnizon	гарнизон
 saljuqiy	салжуқий
@@ -13868,7 +13864,6 @@ yaroslavl	ярославл
 sohibqiron	соҳибқирон
 tarbiyaviy	тарбиявий
 ayyub	айюб
-sardoba	сардоба
 tasvirda	тасвирда
 terilgan	терилган
 shaxslari	шахслари
@@ -18204,7 +18199,6 @@ yakovlevich	яковлевич
 uyushtirildi	уюштирилди
 uyezd	уезд
 ssrga	ссрга
-ibrat	ибрат
 salomatligini	саломатлигини
 qabrini	қабрини
 koʻpchiligini	кўпчилигини
@@ -18529,7 +18523,6 @@ muvaffaqiyatsizlik	муваффақиятсизлик
 salavkiylar	салавкийлар
 sohalarni	соҳаларни
 bogʻlarida	боғларида
-mangʻit	манғит
 muhitining	муҳитининг
 turnirini	турнирини
 togʻidan	тоғидан
@@ -18641,7 +18634,6 @@ beatles	беатлес
 kuzatilmaydi	кузатилмайди
 ukrainadan	украинадан
 raqibini	рақибини
-qoʻshtepa	қўштепа
 joyining	жойининг
 oʻynashdi	ўйнашди
 astronavtlar	астронавтлар
@@ -19118,7 +19110,6 @@ egrad	эград
 hindistoni	ҳиндистони
 qimmatroq	қимматроқ
 maʼrifatparvarlik	маърифатпарварлик
-keles	келес
 rejasining	режасининг
 filarmoniya	филармония
 arxeologiyasi	археологияси
@@ -20000,3 +19991,12 @@ feministlar	феминистлар
 sazovordir	сазовордир
 adigeya	адигея
 geosinklinal	геосинклинал
+sugʻorishda	суғоришда
+botqoqlik	ботқоқлик
+shina	шина
+tomli	томли
+abramovich	абрамович
+tusiga	тусига
+qurishdan	қуришдан
+oʻrmonlardan	ўрмонлардан
+tutashib	туташиб

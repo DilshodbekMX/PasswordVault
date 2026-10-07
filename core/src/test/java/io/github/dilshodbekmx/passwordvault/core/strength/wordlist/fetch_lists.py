@@ -5,10 +5,13 @@ Writes into the directory given as the only argument:
                                  diminutives, one "<category>\t<title>" per line
   uzwiki-given-names.tsv         uz.wikipedia: the articles of three categories of names,
                                  one "<category>\t<title>" per line
+  uzwiki-districts.tsv           uz.wikipedia: the table of every district and its centre in the
+                                 article "Oʻzbekiston tumanlari", "<region>\t<district>\t<centre>"
 The category lists change as the wikis are edited; WordListBuilder records what it was built from.
 Standard library only. Usage: python3 fetch_lists.py <input directory>
 """
 import json
+import re
 import sys
 import time
 import urllib.parse
@@ -70,6 +73,31 @@ def main(out_dir):
         for c in uz:
             for t in members("uz.wikipedia.org", c):
                 f.write("%s\t%s\n" % (c, t))
+    text = api("uz.wikipedia.org", action="parse", page="Oʻzbekiston tumanlari", prop="wikitext")["parse"]["wikitext"]["*"]
+    with open(out_dir + "/uzwiki-districts.tsv", "w", encoding="utf-8") as f:
+        for region, district, centre in districts(text):
+            f.write("%s\t%s\t%s\n" % (region, district, centre))
+
+
+def districts(wikitext):
+    """(region, district, centre) for each row "| n || [[District]] || [[Centre]]" under "== [[Region]] =="."""
+    region = ""
+    for line in wikitext.split("\n"):
+        heading = re.match(r"^==\s*(.*?)\s*==\s*$", line)
+        if heading:
+            region = link_text(heading.group(1))
+            continue
+        cells = [c.strip() for c in line.strip().lstrip("|").split("||")]
+        if len(cells) >= 2 and re.fullmatch(r"\d+", cells[0]) and "[[" in cells[1]:
+            yield region, link_text(cells[1]), link_text(cells[2]) if len(cells) > 2 else ""
+
+
+def link_text(cell):
+    """The label of a wiki link ([[target|label]] or [[target]]), or the cell itself."""
+    m = re.search(r"\[\[([^\]|]*)(?:\|([^\]]*))?\]\]", cell)
+    if not m:
+        return cell.strip()
+    return (m.group(2) or m.group(1)).strip()
 
 
 if __name__ == "__main__":

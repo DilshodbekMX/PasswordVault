@@ -69,6 +69,8 @@ uz	Yashnobod	Yashnabad	Яшнабад
 uz	Shayxontohur	Shaykhantakhur	Шайхантахур
 uz	Uchtepa	Учтепа
 uz	Bektemir	Бектемир
+uz	Yangihayot	Янгихаёт
+uz	Bandixon	Бандихон
 uz	Muhammad	Muhammed	Mukhammad	Мухаммад
 uz	Abdulloh	Abdulla	Абдулла
 uz	Shahzoda	Shaxzoda	Шахзода

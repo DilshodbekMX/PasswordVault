@@ -66,6 +66,8 @@ Yashnobod	Яшнобод	Yashnabad	Яшнабад
 Shayxontohur	Шайхонтоҳур	Shaykhantakhur	Шайхантахур
 Uchtepa	Учтепа
 Bektemir	Бектемир
+Yangihayot	Янгиҳаёт	Янгихаёт
+Bandixon	Бандихон
 Muhammad	Муҳаммад	Muhammed	Mukhammad	Мухаммад
 Abdulloh	Абдуллоҳ	Abdulla	Абдулла
 Shahzoda	Шаҳзода	Shaxzoda	Шахзода

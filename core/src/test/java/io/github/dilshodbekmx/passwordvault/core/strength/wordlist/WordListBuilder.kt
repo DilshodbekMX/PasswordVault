@@ -23,8 +23,8 @@ import org.junit.Test
  * - `geonames-UZ.zip` and `geonames-alternatenames-UZ.zip`: GeoNames' Uzbekistan extract and its
  *   alternate names (`https://download.geonames.org/export/dump/UZ.zip`, `…/dump/alternatenames/UZ.zip`);
  * - `frequencywords-ru_50k.txt`: Hermit Dave's FrequencyWords, `content/2018/ru/ru_50k.txt`;
- * - `enwiktionary-given-names.tsv` and `uzwiki-given-names.tsv`: written by `fetch_lists.py` (this
- *   directory) from the wikis' APIs;
+ * - `enwiktionary-given-names.tsv`, `uzwiki-given-names.tsv` and `uzwiki-districts.tsv`: written by
+ *   `fetch_lists.py` (this directory) from the wikis' APIs;
  * - `uzwiki-words.tsv` and `uzwiki-bio-names.tsv`: written by `uzwiki_counts.py` (this directory)
  *   from a dump of the Uzbek Wikipedia, `uzwiki-<date>-pages-articles.xml.bz2`.
  *
@@ -73,7 +73,8 @@ class WordListBuilder {
         }
         val inputSums = listOf(
             "geonames-UZ.zip", "geonames-alternatenames-UZ.zip", "frequencywords-ru_50k.txt",
-            "enwiktionary-given-names.tsv", "uzwiki-given-names.tsv", "uzwiki-words.tsv", "uzwiki-bio-names.tsv",
+            "enwiktionary-given-names.tsv", "uzwiki-given-names.tsv", "uzwiki-districts.tsv", "uzwiki-words.tsv",
+            "uzwiki-bio-names.tsv",
         ).associateWith { sha256(File(inputs, it).readBytes()) }
         for ((name, sum) in inputSums) ProgramRun.say("input $name sha256 $sum")
         for (file in files) ProgramRun.say("output ${file.name} sha256 ${sha256(File(out, file.name).readBytes())}")
@@ -110,7 +111,7 @@ class WordListBuilder {
                 else -> spellings += given
             }
             val kept = distinctSpellings(spellings, taken)
-            if (kept.isNotEmpty()) entries += Entry(kept, setOf("own"))
+            if (kept.isNotEmpty()) entries += keep(Entry(kept, setOf("own")), taken)
         }
         return entries
     }
@@ -153,7 +154,28 @@ class WordListBuilder {
             spellings += uzLatin.drop(1)
             val kept = distinctSpellings(spellings, taken)
             // "In both scripts" (build plan 2.12): an entry keeps a Latin and a Cyrillic spelling, or goes.
-            if (kept.any { isCyrillic(it) } && kept.any { !isCyrillic(it) }) entries += Entry(kept, setOf("geonames"))
+            if (kept.any { isCyrillic(it) } && kept.any { !isCyrillic(it) }) entries += keep(Entry(kept, setOf("geonames")), taken)
+        }
+        // Every district and district centre of the Uzbek Wikipedia's list that GeoNames left out (it
+        // has some with no population or only an old romanisation), after the places GeoNames ranks.
+        // A name whose Cyrillic another entry has already is added to that entry.
+        for (line in File(inputs, "uzwiki-districts.tsv").readLines(Charsets.UTF_8)) {
+            val cells = line.split('\t')
+            for (cell in cells.drop(1)) {
+                val name = placeName(cell, cyrillic = false) ?: continue
+                if (!UZBEK_LATIN.matches(name.lowercase(Locale.ROOT))) continue
+                val cyrillic = uzbekCyrillic(name)
+                val kept = distinctSpellings(listOf(name, cyrillic), taken)
+                if (kept.size == 2) {
+                    entries += keep(Entry(kept, setOf("uzwiki-districts")), taken)
+                } else if (kept == listOf(name)) {
+                    val k = entries.indexOfFirst { e -> e.spellings.any { it.equals(cyrillic, ignoreCase = true) } }
+                    if (k >= 0) {
+                        entries[k] = Entry(entries[k].spellings + name, entries[k].sources + "uzwiki-districts")
+                        taken.add(name.lowercase(Locale.ROOT))
+                    }
+                }
+            }
         }
         return entries
     }
@@ -191,7 +213,7 @@ class WordListBuilder {
         return ranked.mapNotNull { (_, title) ->
             val display = capitalise(title)
             val kept = distinctSpellings(listOf(display) + transliterations(display), taken)
-            if (kept.firstOrNull() != display) null else Entry(kept, setOf("enwiktionary"))
+            if (kept.firstOrNull() != display) null else keep(Entry(kept, setOf("enwiktionary")), taken)
         }
     }
 
@@ -229,7 +251,7 @@ class WordListBuilder {
         return ranked.mapNotNull { name ->
             val display = capitalise(name)
             val kept = distinctSpellings(listOf(display, uzbekCyrillic(display)), taken)
-            if (kept.size != 2) null else Entry(kept, sources.getValue(name)) // both scripts, or none
+            if (kept.size != 2) null else keep(Entry(kept, sources.getValue(name)), taken) // both scripts, or none
         }
     }
 
@@ -246,7 +268,7 @@ class WordListBuilder {
             if (word in english || word in elsewhere) continue
             if (rareAndShort(entries.size + 1, word)) continue
             val kept = distinctSpellings(listOf(word, uzbekCyrillic(word)), taken)
-            if (kept.size == 2) entries += Entry(kept, setOf("uzwiki-words"))
+            if (kept.size == 2) entries += keep(Entry(kept, setOf("uzwiki-words")), taken)
         }
         return entries
     }
@@ -260,7 +282,7 @@ class WordListBuilder {
             if (!RUSSIAN_WORD.matches(word) || word.length < MIN_LENGTH || word in elsewhere) continue
             if (rareAndShort(entries.size + 1, word)) continue
             val kept = distinctSpellings(listOf(word) + transliterations(word).take(1), taken)
-            if (kept.isNotEmpty()) entries += Entry(kept, setOf("frequencywords"))
+            if (kept.isNotEmpty()) entries += keep(Entry(kept, setOf("frequencywords")), taken)
         }
         return entries
     }
@@ -276,14 +298,26 @@ class WordListBuilder {
 
     // ---- Spellings ----
 
-    /** [spellings] without those seen before in this file ([taken], compared in lower case), in order. */
-    private fun distinctSpellings(spellings: List<String>, taken: MutableSet<String>): List<String> {
+    /**
+     * [spellings] of at least [MIN_LENGTH] characters without those of an entry kept before in this
+     * file ([taken], compared in lower case) and without repeats, in order. Nothing is marked taken
+     * here: [keep] does that once the entry is kept, so that an entry dropped later takes nothing away.
+     */
+    private fun distinctSpellings(spellings: List<String>, taken: Set<String>): List<String> {
         val out = ArrayList<String>()
+        val here = HashSet<String>()
         for (s in spellings) {
             if (s.codePointCount(0, s.length) < MIN_LENGTH) continue
-            if (taken.add(s.lowercase(Locale.ROOT))) out += s
+            val key = s.lowercase(Locale.ROOT)
+            if (key !in taken && here.add(key)) out += s
         }
         return out
+    }
+
+    /** Marks the spellings of a kept entry as taken and returns the entry. */
+    private fun keep(entry: Entry, taken: MutableSet<String>): Entry {
+        for (s in entry.spellings) taken.add(s.lowercase(Locale.ROOT))
+        return entry
     }
 
     /** Uzbek Latin with oʻ and gʻ written with U+02BB and every other apostrophe as U+02BC. */
@@ -375,7 +409,7 @@ class WordListBuilder {
             "rayoni", "rayon", "district", "shahri", "shahar", "shaharchasi", "gorod", "city", "respublikasi", "respublika",
             "republic", "of", "the", "область", "район", "город", "республика", "вилояти", "тумани", "шаҳри", "шаҳар",
             "туман", "вилоят", "посёлок", "поселок", "аул", "кишлак", "assr", "ssr", "shaary", "шаары", "qishlogʻi",
-            "qishlogi", "posyolok", "poselok",
+            "qishlogi", "posyolok", "poselok", "tumani", "shaharcha", "shaharchasi", "qishloq",
         )
         val ADJECTIVE = Regex("""(skiy|skaya|skoye|skiye|ский|ская|ское|ские|ный|ная|ное)$""")
         val LATIN_NAME = Regex("""[A-Z][a-zʻʼ]*(?:[- ][A-Za-zʻʼ]+)?""")
