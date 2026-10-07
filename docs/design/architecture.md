@@ -366,7 +366,7 @@ interface VaultRepository {
     val state: StateFlow<VaultState>
     /** Applies a pure change from core.model.VaultEdits, writes a new generation and publishes it only
      *  when the write is durable (4.9). Runs to the end even if the caller is cancelled. */
-    suspend fun <T> edit(change: (Vault, nowMs: Long) -> Edited<T>): SaveResult<T>      // Saved(value) | NotSaved(SaveProblem)
+    suspend fun <T> edit(change: (Vault, nowMs: Long) -> Edited<T>): SaveResult<T>      // Saved(value) | NotSaved(problem: SaveProblem)
     fun holdDraft(draft: Draft?)                                                        // the open form's unsaved state, in memory only
     suspend fun flushDraft()                                                            // writes a held draft that differs from the stored one; best effort (5.5)
     suspend fun sealBackup(proof: MasterProof): ByteArray                               // a new container with its own key, from the checked bytes (4.12)
@@ -376,7 +376,10 @@ interface VaultRepository {
 }
 enum class SaveProblem { NOT_DURABLE, FAILED, READ_ONLY, TOO_LARGE }
 class Edited<T>(val vault: Vault, val value: T)        // `vault` is the input itself when there is nothing to save
-class ListModel(val favourites: List<Entry>, val sections: List<Section>, val index: SearchIndex)    // in display order (search.md §7)
+class ListModel(val favourites: List<Entry>, val sections: List<Section>, val index: SearchIndex) {  // in display order (search.md §7)
+    val entries: List<Entry>                           // every entry of `sections` in order: the order of `index`, so a SearchHit's index is a position here
+}
+class Section(val header: String, val entries: List<Entry>)                             // one letter header of the list and its entries (ux.md §5.11)
 interface ListModelSource { val model: StateFlow<ListModel?> }                          // null while locked; rebuilt when the vault or the language changes
 interface SecurityReports {                                                             // SecurityCheckRunner; empty until package 7.1
     val report: StateFlow<SecurityReport?>
@@ -425,35 +428,58 @@ sealed interface LockScreen {                          // lock.md §13.2; declar
 // enum class NoticeAnswer { OK, LATER, CANCEL_IT, FINISH_NOW, IT_WASNT_ME, CHANGE_PIN, TYPE_MASTER_PASSWORD, NEW_MASTER_PASSWORD,
 //                           CHOOSE_PIN, TURN_ON_FINGERPRINT, SET_UP_AGAIN, BACK_UP_NOW }   // each Notice's KDoc lists the ones it offers
 class LockStatus(                                      // Settings › App lock, the list's banners, Welcome and the sheet
-    val pin: PinStatus,                                // On | NotSet | Off(reason) | CannotCheck | NoSecureHardware
-    val fingerprint: FingerprintStatus,                // On | Off | TurnOnAgain | Unavailable(canAuthenticate) | NoSecureHardware
-    val pending: PendingMasterPassword?,               // requested at, by, credited and remaining time, ready (lock.md §13.4 item 2)
-    val replaced: ReplacedNotice?,                     // lock.md §13.4 item 3
+    val pin: PinStatus,                                // On | NotSet | Off(reason: PinReason, never CANNOT_CHECK) | CannotCheck | NoSecureHardware
+    val fingerprint: FingerprintStatus,                // On | Off | TurnOnAgain | Unavailable(canAuthenticate: Int) | NoSecureHardware
+    val pending: PendingMasterPassword?,               // lock.md §13.4 item 2: PendingMasterPassword(requestedAtMs, by: Shortcut, creditedMs,
+                                                       //   remainingMs, ready)
+    val replaced: ReplacedNotice?,                     // lock.md §13.4 item 3: ReplacedNotice(atMs, by: Shortcut, oldVaultId)
     val practiceOverdueSinceMs: Long?,                 // the standing banner of lock.md §13.4 item 6
-    val aside: List<AsideVault>)
+    val aside: List<AsideVault>)                       // LockStatus.NONE: PIN NotSet, fingerprint Off, nothing pending, replaced or put aside
 interface LockManager {
     val state: StateFlow<LockUiState>
     val status: StateFlow<LockStatus>
     fun send(intent: LockIntent)                       // main thread, never blocks. LockIntent.kt lists every intent:
-                                                       // Digit(d), DeleteDigit, ClearDigits, UsePin, UseMasterPassword, UseFingerprint, NotNow,
-                                                       // CantRemember, OpenForgotSheet, CloseSheet, OpenAside(vaultId), StartEmpty, RestoreFromFile,
-                                                       // OlderPasswordAnswer(choice), NoticeAnswered(id, answer), CancelPending, FinishPending,
-                                                       // ItWasntMe, GoBack
+                                                       // Digit(digit: Int) (its toString hides the digit), DeleteDigit, ClearDigits, UsePin,
+                                                       // UseMasterPassword, UseFingerprint, NotNow, CantRemember, OpenForgotSheet, CloseSheet,
+                                                       // OpenAside(vaultId), StartEmpty, RestoreFromFile, OlderPasswordAnswer(choice: OlderPasswordChoice),
+                                                       // NoticeAnswered(id, answer), CancelPending, FinishPending, ItWasntMe, GoBack;
+                                                       // enum class OlderPasswordChoice { TRY_AGAIN, OPEN_FROM_BEFORE, OK }
     suspend fun lock(reason: LockReason)               // called only by AutoLock, after the draft flush of 5.5; never writes vault data
+                                                       // enum class LockReason { LEFT, SCREEN_OFF, NO_TOUCH, EXTERNAL_TIMEOUT, LOCK_NOW }
     suspend fun submitMasterPassword(chars: CharArray, purpose: MpPurpose): MpResult        // the lock screen and every prompt; the guard of lock.md §6.8
-                                                       // MpResult: Right(proof) | Wrong | Wait(untilElapsedMs) | NoMemory | OlderPassword(…) | TooLate
+                                                       // MpResult: Right(proof) | Wrong | Wait(untilElapsedMs) | NoMemory
+                                                       //   | OlderPassword(changedAtMs, unfinishedChange) | TooLate
+                                                       // enum class MpPurpose { UNLOCK, PRACTICE, BACKUP, EXPORT, CHANGE_MASTER_PASSWORD, SET_PIN,
+                                                       //   CHANGE_PIN, FINGERPRINT_ON }
     // Flows started from setup and Settings. Each suspends until the flow ends; prompts and pads appear through `state`.
     suspend fun createVault(first: CharArray, again: CharArray, restoreFrom: Vault?): CreateResult   // F1, F13, F17 step 3; Mismatch before anything is derived
+                                                       // CreateResult: Created(vaultId) | Mismatch | Unassigned(codePoint) | NoMemory | NotSaved
     fun pinProblem(pin: ByteArray): PinBlocklist.Reason?
     suspend fun setPin(pin: ByteArray, proof: MasterProof): Boolean                      // F6
     suspend fun changePin(current: ByteArray, new: ByteArray): PinChange                 // a counted check of `current` in a prompt
+                                                       // PinChange: Changed | Wrong(left) | SameWrongAgain | Limit | CannotCheck | SameAsCurrent | NotSaved
     suspend fun fingerprintOn(proof: MasterProof): FingerprintResult                     // F9
     suspend fun fingerprintOff()
     suspend fun changeMasterPassword(proof: MasterProof, first: CharArray, again: CharArray, pin: ByteArray?): ChangeResult   // F8; Mismatch before anything is derived
+                                                       // ChangeResult: Changed(pinKept, fingerprintKept) | Mismatch | Unassigned(codePoint)
+                                                       //   | PinWrong(left) | NoMemory | NothingChanged | Unclear
     suspend fun requestNewMasterPassword(first: CharArray, again: CharArray): RequestResult   // F11 steps 3-5
+                                                       // RequestResult: Requested(remainingMs) | Mismatch | Unassigned(codePoint) | Cancelled
+                                                       //   | NotAllowed | NoMemory | NotSaved
     fun cancelNewMasterPassword()
     suspend fun openAside(vaultId: String, chars: CharArray): AsideResult                // Settings › Old passwords › Open (F17 step 5)
     suspend fun deleteAside(vaultId: String, chars: CharArray): AsideResult              // F17 step 5: files, then its lock directory and keys
+                                                       // AsideResult: Done | Wrong | Wait(untilElapsedMs) | NoMemory | NotSaved
+}
+interface BiometricLauncher {                          // the activity's one BiometricPrompt (BiometricHost, 4.1); FakeLauncher in tests
+    suspend fun authenticate(cipher: Cipher, use: PromptUse, launch: Int, pinUsable: Boolean): PromptOutcome   // lock.md §9.2, §9.3
+                                                       // PromptOutcome: Succeeded(cipher: Cipher?) | Error(code) | NotShown
+    fun cancel()                                       // cancelAuthentication(): an open prompt ends with code 5
+}
+interface LockDebug {                                  // the test hooks of lock.md §15.3 behind the debug commands (4.1); nothing returned is secret
+    suspend fun status(): String
+    fun holdAfterCharge(); fun holdBeforeHmac(); fun release(); fun failNextWrite(); fun ksFault(row: String)
+    suspend fun dropKeys()
 }
 interface Session {
     fun beginExternal()                                // just before CreateDocument, OpenDocument or the share sheet (lock.md §10.3)
@@ -467,14 +493,31 @@ interface SecretClipboard {
     fun clearNow()                                     // "Clear now" and "Lock now"; never called by an automatic lock
     fun appCameToFront()                               // cancel the pending clear if the clipboard now holds something else; clear an overdue clip of ours
 }
+class ClipStatus(val what: UiText, val sensitive: Boolean, val clearsAtElapsedMs: Long, val delayMs: Long, val cleared: Boolean = false)
+                                                       // what was copied, the sensitive flag, the planned clear (elapsedRealtime) the row counts
+                                                       // down to, the chosen delay for the one announcement, and "Clipboard cleared" for 2 s
 class DocRef(val uri: String)                          // a document the user chose; converted to android.net.Uri only inside SafDocumentIo
 interface DocumentIo {
     suspend fun write(doc: DocRef, bytes: ByteArray): Boolean                // "wt", then reopen, hash and compare [V-S6]
-    suspend fun read(doc: DocRef, maxBytes: Int): ByteArray                  // at most maxBytes + 1 bytes
+    suspend fun read(doc: DocRef, maxBytes: Int): ByteArray                  // at most maxBytes + 1 bytes; throws IOException when it cannot be read
     fun keep(doc: DocRef)                              // persistable permission
     fun delete(doc: DocRef): Boolean                   // false: the place does not allow it
     fun place(doc: DocRef): Place                      // PhoneStorage | GoogleDrive | Other(name)
 }
+class FileTask(val kind: Kind, val step: Int, val doc: DocRef?)   // enum class Kind(stored) { BACKUP, EXPORT, IMPORT, RESTORE }; step: the
+                                                       // step of its route (Export(step), Import(step)); doc: once the picker returned one
+interface Collation {                                  // SortKeys (2.9): the A-to-Z order and the letter headers of one language (i18n.md §2.7)
+    fun compare(a: String, b: String): Int
+    fun header(title: String): String                  // "A", "Ш", "Oʻ", or a catch-all such as "#"; agrees with compare
+}
+sealed interface UiText {                              // a resource id and its arguments, never a finished sentence (5.4)
+    class Res(@StringRes val id: Int, val args: List<Any> = emptyList()) : UiText
+    class Plural(@PluralsRes val id: Int, val count: Int, val args: List<Any> = listOf(count)) : UiText
+}                                                      // UiText.resolve(resources: Resources) and @Composable UiText.resolve(); an argument
+                                                       // may be another UiText; toString shows the id and the number of arguments only
+class AppDispatchers(val main: CoroutineDispatcher, val io: CoroutineDispatcher, val default: CoroutineDispatcher)
+                                                       // AppDispatchers.Default, made on first use (Main needs Android's looper), and
+                                                       // AppDispatchers.single(dispatcher) for tests (5.3)
 interface AppSettings {                                // SharedPreferences "pv_settings"; a missing value is the strictest one [V-P9]
     val lockDelay: StateFlow<LockDelay>                // missing or unreadable: Immediately. Setup writes 30 seconds
     val clipDelay: StateFlow<ClipDelay>                // missing or unreadable: 30 seconds. Setup writes 1 minute (ux.md §5.18)
