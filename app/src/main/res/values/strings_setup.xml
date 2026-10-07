@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The setup screens (build plan 3.3; ux.md §5.1, §5.3 to §5.5, §7.1, §7.2): Welcome, "Choose your
+     master password", "Write it down on paper" and "Type your master password again". Every name
+     starts with setup_. Plain words at B1 level, "you" and "your", numbers as digits (ux.md §7). -->
+<resources>
+
+    <!-- Welcome (ux.md §5.1): the first screen when the phone has no passwords yet. -->
+
+    <!-- Welcome's title, under the app's icon. One or two lines. -->
+    <string name="setup_welcome_title">Your passwords, safe on this phone</string>
+    <!-- Welcome, the first of three short lines with an icon (a phone): nothing leaves the phone. -->
+    <string name="setup_welcome_point_offline">Everything stays on this phone. No sign-up, no internet.</string>
+    <!-- Welcome, the second line (a lock): how the app is opened. -->
+    <string name="setup_welcome_point_lock">Open the app with a PIN or your fingerprint, like a bank app.</string>
+    <!-- Welcome, the third line (a copy icon): what the app is for. -->
+    <string name="setup_welcome_point_copy">Copy a password with one tap when you need it.</string>
+    <!-- Welcome's main button: starts setup with the master password. -->
+    <string name="setup_welcome_start">Start</string>
+    <!-- Welcome: a button for passwords that were put aside with "Start with an empty app" (lock.md
+         F17 step 4); it opens their own lock screen. %1$s is the date they were put aside, for
+         example "Oct 6, 2026". One button per such set of passwords. -->
+    <string name="setup_welcome_open_aside">Open my previous passwords (locked on %1$s)</string>
+    <!-- Welcome: a button that opens a backup file made by this app (ux.md §5.2). -->
+    <string name="setup_welcome_restore">Restore from a backup file</string>
+    <!-- Welcome: the globe button at the top right, read by TalkBack only. It opens the list of
+         languages. -->
+    <string name="setup_welcome_language">Language</string>
+
+    <!-- "Choose your master password" (ux.md §5.3). -->
+
+    <!-- The title of the first step of setup. -->
+    <string name="setup_create_title">Choose your master password</string>
+    <!-- Under the title (ux.md §7.1): what the master password is. -->
+    <string name="setup_create_body">Your master password is the key to all your other passwords. You need it if you forget your PIN, to open a backup, and to move to a new phone.</string>
+    <!-- The first paragraph of the warning card under the body (ux.md §7.2). -->
+    <string name="setup_create_warning_reset">Nobody can reset it. We don\'t keep a copy, and there is no “Forgot password” email. If you forget it, your passwords can\'t be opened on a new phone or from a backup.</string>
+    <!-- The second paragraph of the warning card. -->
+    <string name="setup_create_warning_reuse">Don\'t use a password you already use anywhere else.</string>
+    <!-- Shown above new suggested words when setup was left before it finished, after words had
+         been shown (ux.md §5.5): the old words were never used and are gone. -->
+    <string name="setup_create_interrupted">Setup was interrupted. Cross out the words you wrote down before. These are your new words.</string>
+    <!-- One of the six suggested words as TalkBack reads it, for example "Word 1 of 6: vowel".
+         %1$d is its number, %2$d the number of words (6), %3$s the word itself (English). -->
+    <string name="setup_create_word">Word %1$d of %2$d: %3$s</string>
+    <!-- Above the whole suggested password, which is shown under the numbered words exactly as it is
+         typed, for example "vowel-shiny-shell-crisp-shaft-cadet". -->
+    <string name="setup_create_typed_as">You type it like this:</string>
+    <!-- Under the suggested words: they come from an English word list. -->
+    <string name="setup_create_latin">The words are English. Type them with Latin letters.</string>
+    <!-- Main button under the suggested words: they become the master password. -->
+    <string name="setup_create_use_words">Use these words</string>
+    <!-- Button: six other words are suggested instead. -->
+    <string name="setup_create_other_words">Show other words</string>
+    <!-- Button: the user types a master password of their own instead of the words. -->
+    <string name="setup_create_type_own">Type my own instead</string>
+    <!-- Button in the view for a password of one's own: back to the suggested words. -->
+    <string name="setup_create_show_words">Use the suggested words</string>
+
+    <!-- The view for a master password the user makes up (ux.md §5.3 "Own password view"). -->
+
+    <!-- The label of the master-password field on "Choose your master password" and "Type your
+         master password again". -->
+    <string name="setup_field_label">Master password</string>
+    <!-- The first item of the checklist under the field. -->
+    <string name="setup_own_rule_length">At least 12 characters</string>
+    <!-- The second item of the checklist: the password scores 4, zxcvbn's highest, with the app's
+         Uzbek and Russian word list. -->
+    <string name="setup_own_rule_hard">Hard to guess</string>
+    <!-- A checklist item as TalkBack reads it when it is met; %1$s is the item, for example "At least
+         12 characters". -->
+    <string name="setup_own_rule_met">%1$s: done</string>
+    <!-- A checklist item as TalkBack reads it when it is not met yet. -->
+    <string name="setup_own_rule_not_met">%1$s: not yet</string>
+    <!-- A hint under the strength meter when the password is not hard to guess yet. -->
+    <string name="setup_own_hint_add_word">Add another word</string>
+    <!-- A hint under the strength meter: the password holds a city, a name, a common word or a year. -->
+    <string name="setup_own_hint_names">Avoid city names, people\'s names and years</string>
+    <!-- A hint under the strength meter: the password holds keys that sit next to each other. -->
+    <string name="setup_own_hint_keyboard">Avoid keyboard rows like qwerty</string>
+    <!-- Shown while the password has both Latin and Cyrillic letters. A question, not an error. -->
+    <string name="setup_own_mixed_scripts">Your password mixes Latin and Cyrillic letters. Is your keyboard set to the right language?</string>
+    <!-- Main button under the checklist. It is never disabled: when something is missing it says
+         what (the next three texts). -->
+    <string name="setup_own_use">Use this password</string>
+    <!-- Shown when "Use this password" is tapped and the password is shorter than 12 characters. -->
+    <string name="setup_own_missing_length">Your master password needs at least 12 characters.</string>
+    <!-- Shown when "Use this password" is tapped and the password is too easy to guess. A hint
+         (for example "Add another word") is shown with it. -->
+    <string name="setup_own_missing_hard">Your master password is too easy to guess.</string>
+    <!-- Shown when the password holds a character (such as a very new emoji) that this phone does
+         not know; a later phone might read it differently, so it is refused. -->
+    <string name="setup_own_unassigned">Your password has a character that some phones can\'t read. Remove it and try again.</string>
+    <!-- A question in a dialog, once the checklist passes. -->
+    <string name="setup_own_reuse_question">Do you use this password for any other account?</string>
+    <!-- The dialog's answer: the password is already used elsewhere. -->
+    <string name="setup_own_reuse_yes">Yes</string>
+    <!-- The dialog's answer: the password is new; setup goes on. -->
+    <string name="setup_own_reuse_no">No, it\'s new</string>
+    <!-- Shown under the field after the answer "Yes". -->
+    <string name="setup_own_reuse_refused">Then choose a different one. If a website leaks it, anyone with your backup file could open it.</string>
+
+    <!-- "Write it down on paper" (ux.md §5.4). -->
+
+    <!-- The title of the second step. -->
+    <string name="setup_write_title">Write it down on paper</string>
+    <!-- Under the title. -->
+    <string name="setup_write_body">Write your master password on paper now. Keep the paper at home in a safe place — not in your phone case, not in your wallet, and not as a photo on this phone.</string>
+    <!-- A button under the password: opens it with one large character per box (ux.md §5.13). -->
+    <string name="setup_write_big_letters">Show in big letters</string>
+    <!-- A checkbox; ticking it is not required. -->
+    <string name="setup_write_wrote">I wrote it down</string>
+    <!-- The main button of "Write it down on paper" and of "Type your master password again". -->
+    <string name="setup_next">Next</string>
+    <!-- "Show in big letters": one character of the password as TalkBack reads it; %1$d is its
+         position, %2$s the character. -->
+    <string name="setup_big_cell">%1$d: %2$s</string>
+    <!-- "Show in big letters" for a password longer than 128 characters. -->
+    <string name="setup_big_too_long">Too long to show in big letters</string>
+
+    <!-- "Type your master password again" (ux.md §5.5). -->
+
+    <!-- The title of the third step. -->
+    <string name="setup_again_title">Type your master password again</string>
+    <!-- Under the title. -->
+    <string name="setup_again_body">This checks that you wrote it correctly.</string>
+    <!-- Under the field when the two typings differ. -->
+    <string name="setup_again_mismatch">This doesn\'t match. Look at your paper and try again.</string>
+    <!-- Shown with the mismatch message when what was typed has Cyrillic letters and the master
+         password has none. -->
+    <string name="setup_again_cyrillic">Your keyboard may be set to Russian. Switch to Latin letters.</string>
+    <!-- A button shown after 3 mismatches: back to "Write it down on paper". -->
+    <string name="setup_again_show_again">Show my password again</string>
+    <!-- Shown with a spinner while the locked file is made, written and checked (about 1 second). -->
+    <string name="setup_again_setting_up">Setting up…</string>
+    <!-- Shown when the locked file could not be written; the main button then says "Try again". -->
+    <string name="setup_again_not_saved">Couldn\'t save. Your phone\'s storage may be full.</string>
+    <!-- Shown when the phone has too little free memory to make the key (about 64 MB are needed);
+         the main button then says "Try again". -->
+    <string name="setup_again_no_memory">Your phone doesn\'t have enough free memory to finish setup. Close other apps or restart the phone, then try again.</string>
+
+</resources>
