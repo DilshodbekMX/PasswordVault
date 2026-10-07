@@ -187,6 +187,9 @@ class DialogSheetPolicyTest {
 
     private fun longPressAndRecord(): List<Any> {
         val before = menu.shown.size
+        // The toolbar shows only while the field has the focus (TextFieldDecoratorModifier).
+        compose.onNodeWithTag(FIELD).performClick()
+        compose.waitForIdle()
         compose.onNodeWithTag(FIELD).performTouchInput { longClick() }
         compose.waitUntil(SHOW_MS) { menu.shown.size > before }
         val items = menu.shown.last()

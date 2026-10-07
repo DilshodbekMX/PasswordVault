@@ -33,7 +33,8 @@ import org.junit.runner.RunWith
  * Build plan 2.8, [device]: a `VaultSecureField` leaves nothing in the saved bundle, checked by the
  * method of the window lab's `e5_state.py` (Experiment 5): type into the fields, let the activity
  * be recreated as a rotation does, and read every leaf of the Bundle that `onSaveInstanceState`
- * wrote; here also its parcelled bytes, in UTF-16 and UTF-8, which reach into the `Parcelable`s.
+ * wrote, as the new activity receives it; here also its parcelled bytes, in UTF-16 and UTF-8,
+ * which reach into the `Parcelable`s.
  *
  * The method is checked on the same Bundle: a field whose state comes from
  * `rememberTextFieldState()`, which the lab found in the Bundle twice (text and undo history),
@@ -59,14 +60,18 @@ class SecureFieldSavedStateTest {
     fun aVaultSecureFieldLeavesNothingInTheSavedBundle() {
         val saved = CopyOnWriteArrayList<Saved>()
         val application = compose.activity.application
+        // The Bundle as the recreated activity receives it. onActivitySaveInstanceState would see it
+        // too early: Activity.onSaveInstanceState calls it before ComponentActivity adds the
+        // androidx saved-state registry, where Compose's saved state is.
         val watcher = object : Application.ActivityLifecycleCallbacks {
-            override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {
+            override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
+                if (savedInstanceState == null) return
                 val leaves = mutableListOf<String>()
-                leavesOf("outState", outState, leaves)
-                saved += Saved(leaves, bytesOf(outState))
+                leavesOf("savedInstanceState", savedInstanceState, leaves)
+                saved += Saved(leaves, bytesOf(savedInstanceState))
             }
 
-            override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) = Unit
+            override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) = Unit
             override fun onActivityStarted(activity: Activity) = Unit
             override fun onActivityResumed(activity: Activity) = Unit
             override fun onActivityPaused(activity: Activity) = Unit

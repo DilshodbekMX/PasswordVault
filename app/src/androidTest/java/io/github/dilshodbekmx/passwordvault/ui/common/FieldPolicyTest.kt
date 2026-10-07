@@ -156,6 +156,9 @@ class FieldPolicyTest {
     /** Long-presses the empty field [tag] and returns the items its toolbar was asked to show. */
     private fun longPressAndRecord(menu: MenuRecorder, tag: String): List<Any> {
         val before = menu.shown.size
+        // The toolbar shows only while the field has the focus (TextFieldDecoratorModifier).
+        compose.onNodeWithTag(tag).performClick()
+        compose.waitForIdle()
         compose.onNodeWithTag(tag).performTouchInput { longClick() }
         compose.waitUntil(TOOLBAR_MS) { menu.shown.size > before }
         val items = menu.shown.last()
