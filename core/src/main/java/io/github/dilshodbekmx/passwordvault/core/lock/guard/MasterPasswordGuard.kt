@@ -223,7 +223,8 @@ class MasterPasswordGuard private constructor(private val vault: Guarded?, priva
 
     /**
      * The notice of wrong tries was answered (lock.md §13.4 item 4): the [shown] number of wrong
-     * master passwords is taken off `unseen`. Best effort; returns whether the record is on disk.
+     * master passwords is taken off `unseen`. Best effort; returns whether the record is on disk, and
+     * true when there is no record to write (the counts are then in memory only).
      */
     fun unseenShown(shown: Int): Boolean {
         require(shown >= 0) { "a negative count" }
@@ -231,6 +232,7 @@ class MasterPasswordGuard private constructor(private val vault: Guarded?, priva
         val unseen = maxOf(0, tries.unseen - shown)
         if (unseen == tries.unseen) return true
         tries = tries.copy(unseen = unseen)
+        if (rec == null || !writable) return true
         return writeQuietly()
     }
 

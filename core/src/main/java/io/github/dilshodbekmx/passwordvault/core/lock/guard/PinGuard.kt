@@ -438,7 +438,7 @@ class PinGuard(
             0
         }
         val guard = PinRecord.Guard(charged = false, row = 0, total = maxOf(0, r.guard.total - forgiven))
-        val unseen = r.unseen.copy(count = maxOf(0, r.unseen.count - forgiven))
+        val unseen = less(r.unseen, forgiven, interruptedShown = false)
         val kept = slot.wraps.filter { it.vkId in opened && (keptVkIds == null || it.vkId in keptVkIds) }
         val next = if (kept.isEmpty()) {
             r.copy(slot = null, off = PinRecord.Off(PinRecord.OffReason.MASTER_CHANGED, nowWall), guard = guard, unseen = unseen)
@@ -592,12 +592,7 @@ class PinGuard(
     fun unseenShown(shown: Int, interruptedShown: Boolean): Boolean {
         require(shown >= 0) { "a negative count" }
         val r = rec ?: return true
-        val count = maxOf(0, r.unseen.count - shown)
-        val unseen = PinRecord.Unseen(
-            count = count,
-            lastAtMs = if (count == 0) null else r.unseen.lastAtMs,
-            interrupted = count > 0 && r.unseen.interrupted && !interruptedShown,
-        )
+        val unseen = less(r.unseen, shown, interruptedShown)
         if (unseen == r.unseen) return true
         return keep(r.copy(unseen = unseen))
     }
@@ -666,5 +661,16 @@ class PinGuard(
         /** One more wrong PIN: `charged = false`, `row + 1`, `total + 1`, held at the limits so a record stays within its rules (§5.4). */
         private fun counted(guard: PinRecord.Guard): PinRecord.Guard =
             PinRecord.Guard(charged = false, row = minOf(guard.row + 1, ROW_LIMIT), total = minOf(guard.total + 1, TOTAL_LIMIT))
+
+        /**
+         * [unseen] less [n] wrong PINs (forgiven, or shown by the notice), and without its
+         * "interrupted" line when [interruptedShown]. At 0 nothing is left to tell: no time and no
+         * interrupted entry either, so a later notice never shows the time of a slip it does not count.
+         */
+        private fun less(unseen: PinRecord.Unseen, n: Int, interruptedShown: Boolean): PinRecord.Unseen {
+            val count = maxOf(0, unseen.count - n)
+            if (count == 0) return PinRecord.Unseen(count = 0, lastAtMs = null, interrupted = false)
+            return unseen.copy(count = count, interrupted = unseen.interrupted && !interruptedShown)
+        }
     }
 }
