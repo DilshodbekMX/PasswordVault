@@ -17,6 +17,8 @@
 # depend on the language, and it works while the module stubs return the fakes of APP/fake/: the
 # fake lock starts with no vault, makes one at "Create the vault", locks at "Lock now" and opens
 # with "Unlock". It installs the APK afresh, then:
+#   a setup step kept in a new process (Home, am kill or run-as kill -9, relaunch: the saved back
+#   stack is read back, architecture.md §7.2; SKIPPED where neither ends the process) ->
 #   setup (Welcome, Language, Restore, the three steps, the vault made) -> the notice "Choose a
 #   PIN" -> the PIN setup steps -> Passwords and below it -> Security and below it -> Settings and
 #   every route it opens -> Lock now (no bottom bar, Restore over the lock) -> Unlock (the same
@@ -126,6 +128,37 @@ shell_texts_localized() {
     english=$(pv_ui_nodes | awk -F'|' '$1 == "Passwords" || $1 == "Security" || $1 == "Settings"')
     [ -z "$english" ] || { pv_log "English labels under $LOCALE: $english"; return 1; }
     present pv.tab.Passwords
+}
+
+app_pid() {
+    local p
+    p=$(pv_shell pidof "$PV_PACKAGE" 2>/dev/null | tr -d '\r')
+    [ -n "$p" ] || p=$( { pv_shell ps -A 2>/dev/null || pv_shell ps; } | tr -d '\r' | awk -v p="$PV_PACKAGE" '$NF == p { print $2; exit }')
+    echo "$p"
+}
+
+# Home, then am kill, or kill -9 through run-as where am kill is refused (API 24) and the build is
+# debuggable (architecture.md §8.4): true when the app's process is gone.
+kill_in_background() {
+    local pid
+    pv_shell input keyevent KEYCODE_HOME >/dev/null
+    pv_sleep 2
+    pv_shell am kill "$PV_PACKAGE" >/dev/null 2>&1
+    pv_sleep 2
+    pid=$(app_pid)
+    if [ -n "$pid" ] && pv_is_debuggable; then
+        pv_shell run-as "$PV_PACKAGE" kill -9 "$pid" >/dev/null 2>&1
+        pv_sleep 2
+    fi
+    [ -z "$(app_pid)" ]
+}
+
+# The app is started again from the launcher's intent: the task's activity comes back.
+relaunch_on() {
+    local out
+    out=$(pv_shell am start -W -n "$PV_PACKAGE/.MainActivity" 2>&1 | tr -d '\r')
+    echo "$out" | grep -q '^Status: ok' || { pv_log "am start: $out"; return 1; }
+    on "$1"
 }
 
 start() {
@@ -239,8 +272,18 @@ no_crash() {
     [ -z "$crash" ] || { pv_log "the app crashed: $crash"; return 1; }
 }
 
-pv_step "install the debug app afresh" -- install_fresh || { pv_summary; exit 1; }
+pv_step "install the app afresh" -- install_fresh || { pv_summary; exit 1; }
 pv_step "start the app" -- start || { pv_summary; exit 1; }
+if pv_step "open a setup step" -- eval 'on Welcome && open CreateMasterPassword && open WriteDown'; then
+    if kill_in_background; then
+        pv_step "a new process after the app was killed in the background shows the same setup step" -- \
+            eval 'relaunch_on WriteDown && back CreateMasterPassword && back Welcome'
+    else
+        pv_report SKIPPED "a new process after the app was killed in the background shows the same setup step" \
+            "neither am kill nor run-as kill -9 ended the app's process on API $API"
+        pv_step "back to Welcome" -- eval 'relaunch_on WriteDown && back CreateMasterPassword && back Welcome'
+    fi
+fi
 if [ -n "$LOCALE" ]; then
     if [ "$API" -lt 33 ]; then
         pv_report SKIPPED "set the app's language to $LOCALE on Welcome" "cmd locale needs Android 13 or newer"
