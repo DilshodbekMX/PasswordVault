@@ -27,6 +27,7 @@ import io.github.dilshodbekmx.passwordvault.fake.FakeLockManager
 import io.github.dilshodbekmx.passwordvault.lock.LockUiState
 import io.github.dilshodbekmx.passwordvault.window.WindowPolicy
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -65,13 +66,16 @@ class MasterPasswordRotationTest {
         val lock = FakeLockManager(initial = LockUiState.Locked(PLAIN_SCREEN))
         val application = ApplicationProvider.getApplicationContext<Application>()
         val saved = CopyOnWriteArrayList<Saved>()
-        val created = CopyOnWriteArrayList<Activity>()
-        val resumed = AtomicReference<Activity?>()
+        // Activities by identity only: a destroyed activity that the test still held would keep its
+        // compose root alive, and Compose's idling check waits for every root it has seen, also a
+        // detached one with a layout still pending, so waitForIdle() would never return.
+        val created = CopyOnWriteArrayList<Int>()
+        val resumed = AtomicInteger()
         val viewModel = AtomicReference<LockViewModel?>()
         val host = object : Application.ActivityLifecycleCallbacks {
             override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
                 if (activity !is ComponentActivity) return
-                created += activity
+                created += System.identityHashCode(activity)
                 if (savedInstanceState != null) {
                     val leaves = mutableListOf<String>()
                     leavesOf("savedInstanceState", savedInstanceState, leaves)
@@ -88,7 +92,8 @@ class MasterPasswordRotationTest {
             }
 
             override fun onActivityResumed(activity: Activity) {
-                if (activity in created) resumed.set(activity)
+                val id = System.identityHashCode(activity)
+                if (id in created) resumed.set(id)
             }
 
             override fun onActivityStarted(activity: Activity) = Unit
@@ -108,14 +113,18 @@ class MasterPasswordRotationTest {
                 eventually("the field has the keyboard before the rotation") { focused(LockTags.FIELD) && keyboardShown() }
                 val before = viewModel.get()!!
                 assertEquals(SECRET, before.password.text.toString())
-                val first = created.single()
+                assertEquals(1, created.size)
 
                 scenario.onActivity { it.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE }
-                eventually("the rotated activity is resumed") { created.size >= 2 && resumed.get() === created.last() }
+                eventually("the rotated activity is resumed", syncCompose = false) { created.size == 2 && resumed.get() == created.last() }
+                collectOldRoots()
                 compose.waitForIdle()
-                val rotated = created.last()
-                assertTrue("a new activity", rotated !== first)
-                assertEquals(Configuration.ORIENTATION_LANDSCAPE, rotated.resources.configuration.orientation)
+                var orientation = Configuration.ORIENTATION_UNDEFINED
+                scenario.onActivity {
+                    assertEquals("the activity on screen is the rotated one", created.last(), System.identityHashCode(it))
+                    orientation = it.resources.configuration.orientation
+                }
+                assertEquals(Configuration.ORIENTATION_LANDSCAPE, orientation)
 
                 // Nothing of the field in the Bundle the rotated activity received.
                 assertTrue("the rotation saved a Bundle", saved.isNotEmpty())
@@ -134,11 +143,26 @@ class MasterPasswordRotationTest {
                 assertSame("the rotation kept the ViewModel", before, viewModel.get())
                 assertEquals(SECRET, before.password.text.toString())
 
-                scenario.onActivity { it.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED }
-                compose.waitForIdle()
+                // Back to portrait before the next test starts, which would otherwise begin while the
+                // screen turns; nothing waits for Compose after it.
+                scenario.onActivity { it.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT }
+                eventually("back in portrait", syncCompose = false) { created.size == 3 && resumed.get() == created.last() }
+                collectOldRoots()
             }
         } finally {
             application.unregisterActivityLifecycleCallbacks(host)
+        }
+    }
+
+    /**
+     * A rotation leaves the old activity's compose root behind, unreachable but not yet collected,
+     * and Compose's idling check waits for every root it still holds: a detached one with a layout
+     * pending would keep waitForIdle() waiting until a full collection. So the old root goes first.
+     */
+    private fun collectOldRoots() {
+        repeat(2) {
+            Runtime.getRuntime().gc()
+            System.runFinalization()
         }
     }
 
@@ -148,11 +172,14 @@ class MasterPasswordRotationTest {
         false // no such node yet: the screen is being built
     }
 
-    /** Waits up to [timeoutMs] for [condition], checking every [stepMs]; fails with [what]. */
-    private fun eventually(what: String, timeoutMs: Long = 15_000, stepMs: Long = 250, condition: () -> Boolean) {
+    /**
+     * Waits up to [timeoutMs] for [condition], checking every [stepMs]; fails with [what]. With
+     * [syncCompose], Compose is idle at each check.
+     */
+    private fun eventually(what: String, timeoutMs: Long = 15_000, stepMs: Long = 250, syncCompose: Boolean = true, condition: () -> Boolean) {
         val end = SystemClock.uptimeMillis() + timeoutMs
         while (true) {
-            compose.waitForIdle()
+            if (syncCompose) compose.waitForIdle()
             if (condition()) return
             if (SystemClock.uptimeMillis() > end) throw AssertionError("timed out: $what")
             SystemClock.sleep(stepMs)

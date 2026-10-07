@@ -75,7 +75,8 @@ class MasterPasswordScreenTest {
         val lock = FakeLockManager(initial = LockUiState.Locked(PLAIN_SCREEN))
         lock.mpResults += MpResult.Wrong
         val vm = show(lock)
-        compose.onNodeWithTag(LockTags.FIELD).assertIsFocused()
+        // The field asks for focus once the window has it, which can be a moment after the start.
+        compose.waitUntil(5_000) { isFocused(LockTags.FIELD) }
         compose.onNodeWithTag(LockTags.UNLOCK).assertIsNotEnabled()
 
         compose.onNodeWithTag(LockTags.FIELD).performTextInput(SECRET)
@@ -86,7 +87,7 @@ class MasterPasswordScreenTest {
         assertEquals("", vm.password.text.toString())
         compose.onNodeWithTag(LockTags.line(0)).assertTextEquals(resources.getString(R.string.lock_mp_wrong))
         compose.onNodeWithTag(LockTags.UNLOCK).assertIsNotEnabled()
-        compose.onNodeWithTag(LockTags.FIELD).assertIsFocused()
+        compose.waitUntil(5_000) { isFocused(LockTags.FIELD) }
     }
 
     @Test
