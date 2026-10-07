@@ -3,6 +3,7 @@ package io.github.dilshodbekmx.passwordvault.platform
 import android.os.Build
 import android.os.Process
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SdkSuppress
 import com.lambdapioneer.argon2kt.Argon2Exception
 import io.github.dilshodbekmx.passwordvault.core.crypto.Argon2Params
 import io.github.dilshodbekmx.passwordvault.core.crypto.CryptoFactory
@@ -16,7 +17,6 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
-import org.junit.Assume.assumeTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -141,19 +141,27 @@ class NativeArgon2idTest {
         }
     }
 
+    /**
+     * 2 TiB of work area. In a 64-bit process argon2 accepts the size, and scudo, the allocator from
+     * Android 11 on, refuses any request above 1 TiB, so argon2's malloc returns null: KdfUnavailable.
+     * A 32-bit process refuses the size before allocating (ARGON2_MEMORY_TOO_MUCH), which passes
+     * unchanged. Not run below Android 11: the Android 7 and 9 images allocate with jemalloc over a
+     * kernel that promises any amount (vm.overcommit_memory 1), so the request succeeds and the
+     * low-memory killer ends the process while Argon2 fills it, which no code can catch (seen on both
+     * on 2026-10-07). `@SdkSuppress`, not an assumption: AGP 9.4.1 reports a test that ends in an
+     * assumption failure as failed.
+     */
     @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.R)
     fun aWorkAreaThatCannotBeAllocatedIsKdfUnavailable() {
-        // 2 TiB: argon2 accepts the size in a 64-bit process, and scudo, the allocator from Android
-        // 11 on, refuses any request above 1 TiB, so argon2's malloc returns null. The Android 7 and
-        // 9 images allocate with jemalloc over a kernel that promises any amount
-        // (vm.overcommit_memory 1): there the request succeeds and the low-memory killer ends the
-        // process while Argon2 fills it, which no code can catch (seen on both on 2026-10-07).
-        assumeTrue("a 64-bit process on Android 11 or later", Process.is64Bit() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
         try {
             native.derive("x".toByteArray(), ByteArray(16), Argon2Params(Int.MAX_VALUE, 1, 4, 32))
             fail("2 TiB were allocated")
         } catch (e: KdfUnavailable) {
+            assertTrue("a 64-bit process", Process.is64Bit())
             assertTrue("caused by argon2kt: ${e.cause}", e.cause is Argon2Exception)
+        } catch (e: Argon2Exception) {
+            assertTrue("a 32-bit process refuses the size: ${e.message}", !Process.is64Bit() && e.message!!.startsWith("ARGON2_MEMORY_TOO_MUCH"))
         }
         // The process goes on, and so does argon2kt.
         theReferenceImplementationVector()

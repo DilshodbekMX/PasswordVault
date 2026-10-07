@@ -8,6 +8,7 @@ import android.os.SystemClock
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import io.github.dilshodbekmx.passwordvault.core.crypto.KdfUnavailable
 import io.github.dilshodbekmx.passwordvault.core.crypto.MasterPasswordBytes
@@ -16,7 +17,6 @@ import java.io.File
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
-import org.junit.Assume.assumeTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -58,9 +58,10 @@ class MemoryLimiterTest {
     private fun procKb(file: String, name: String): Long =
         File(file).readLines().firstOrNull { it.startsWith("$name:") }?.substringAfter(':')?.trim()?.substringBefore(' ')?.toLongOrNull() ?: 0L
 
+    /** API 37 only, by `@SdkSuppress`: AGP 9.4.1 reports a test that ends in an assumption failure as failed. */
     @Test
+    @SdkSuppress(minSdkVersion = 37)
     fun aDerivationUnderTheMemoryLimiterGivesTheKeyOrKdfUnavailable() = runBlocking {
-        assumeTrue("Android 17's memory limiter: API 37 only", Build.VERSION.SDK_INT >= 37)
         val pid = Process.myPid()
         val kdf = appGraph().platform.kdf
         val salt = ByteArray(16) { it.toByte() }
