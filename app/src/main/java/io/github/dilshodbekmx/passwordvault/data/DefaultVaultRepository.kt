@@ -37,6 +37,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -299,12 +300,16 @@ class DefaultVaultRepository internal constructor(
     /** §4.8 `scan`, mapped onto the lock's types. It reads files: call it off the main thread. */
     override fun vaults(): VaultScan = PortTypes.scanOf(storage.scan())
 
-    override suspend fun open(target: LockVaultRef, keys: Map<String, ByteArray>): VaultOpen = underMutex { openLocked(target, keys) }
+    override suspend fun open(target: LockVaultRef, keys: Map<String, ByteArray>): VaultOpen {
+        val caller = currentCoroutineContext()[Job]
+        return underMutex { openLocked(target, keys, caller) }
+    }
 
-    private fun openLocked(target: LockVaultRef, keys: Map<String, ByteArray>): VaultOpen =
+    private fun openLocked(target: LockVaultRef, keys: Map<String, ByteArray>, caller: Job?): VaultOpen =
         when (val result = storage.open(PortTypes.refOf(target), keys)) {
             is OpenResult.Opened -> {
                 val opened = result.opened
+                if (caller?.isCancelled == true) return dropLate(opened)
                 val created = take(target, opened, slot = null)
                 VaultOpen.Opened(opened.vaultId, opened.generation, opened.vkId, created, olderCopyOf(opened))
             }
@@ -314,11 +319,13 @@ class DefaultVaultRepository internal constructor(
             OpenResult.Unreadable -> VaultOpen.Unreadable
         }
 
-    override suspend fun openWithPassword(target: LockVaultRef, passwordBytes: ByteArray): PasswordOpen =
-        underMutex { openWithPasswordLocked(target, passwordBytes) }
+    override suspend fun openWithPassword(target: LockVaultRef, passwordBytes: ByteArray): PasswordOpen {
+        val caller = currentCoroutineContext()[Job]
+        return underMutex { openWithPasswordLocked(target, passwordBytes, caller) }
+    }
 
     /** §4.8 "Opening with the master password": one derivation per distinct slot, newest first, and "wrong" only when none opened [V-S3]. */
-    private suspend fun openWithPasswordLocked(target: LockVaultRef, passwordBytes: ByteArray): PasswordOpen {
+    private suspend fun openWithPasswordLocked(target: LockVaultRef, passwordBytes: ByteArray, caller: Job?): PasswordOpen {
         val ref = PortTypes.refOf(target)
         val slots = storage.slots(ref)
         if (slots.isEmpty()) return noSlot(ref)
@@ -337,6 +344,10 @@ class DefaultVaultRepository internal constructor(
                 PasswordResult.SlotClosed -> continue
                 is PasswordResult.Opened -> {
                     val opened = result.opened
+                    if (caller?.isCancelled == true) {
+                        dropLate(opened)
+                        return PasswordOpen.Unreadable
+                    }
                     val created = take(target, opened, slot)
                     return PasswordOpen.Opened(opened.vaultId, opened.generation, opened.vkId, created, olderCopyOf(opened))
                 }
@@ -347,6 +358,16 @@ class DefaultVaultRepository internal constructor(
             }
         }
         return PasswordOpen.Wrong
+    }
+
+    /**
+     * The caller of an open was cancelled while it ran (its visit of the lock screen ended): a result
+     * that comes after its visit opens nothing (lock.md I11). The key is zeroed and nothing is shown;
+     * the answer is never delivered, because the cancelled caller does not resume with it.
+     */
+    private fun dropLate(opened: OpenedVault): VaultOpen {
+        wipe(opened)
+        return VaultOpen.Unreadable
     }
 
     /** No slot to try: why no generation can be used, which is never "wrong". */
