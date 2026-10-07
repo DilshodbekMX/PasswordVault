@@ -25,6 +25,10 @@
 #   - with the lock delay set to "Immediately" in pv_settings (run-as and a restart of the app;
 #     SKIPPED on staging), a rotation still does not lock, while leaving does, at once;
 #   - the app did not crash.
+# It checks the master-password gate, so the APK needs a real vault port (build plan 3.1 merged):
+# while DataModule still returns StubVaultPort, LockModule keeps the fake lock, which writes no
+# default, and the 30-second steps fail. Run on 2026-10-07 against this branch merged with 3.1, 3.3
+# and 3.4: 16 of 16 on API 24 and 37 (debug), 12 passed and 4 skipped (staging).
 # Prints PASS, FAIL or SKIPPED per step and a summary; exit 0 when no step failed, 1 otherwise, 2 for
 # a usage error, 3 for a refused serial.
 set -u
