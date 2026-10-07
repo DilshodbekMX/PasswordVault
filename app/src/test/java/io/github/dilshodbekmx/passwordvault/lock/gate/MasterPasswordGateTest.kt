@@ -530,6 +530,50 @@ class MasterPasswordGateTest {
     }
 
     @Test
+    fun aCheckOfTheOpenAppThatIsRunningWhenTheAppLocks_opensNothing() = runTest {
+        val rig = GateRig(this)
+        rig.vaultOnThePhone(password)
+        rig.process.toFront()
+        val gate = rig.start()
+        rig.settle()
+        assertTrue(gate.submitMasterPassword(password, MpPurpose.UNLOCK) is MpResult.Right)
+        val hold = CompletableDeferred<Unit>().also { rig.vault.checkHold = it }
+
+        val check = async { gate.submitMasterPassword(password, MpPurpose.BACKUP) }
+        rig.settle()
+        val locking = async { gate.lock(LockReason.NO_TOUCH) }
+        rig.settle()
+        assertFalse("the lock waits for the running check (the lock mutex)", "VaultPort.lock" in rig.vault.log)
+        hold.complete(Unit)
+        rig.settle()
+        locking.await()
+
+        assertEquals("its prompt ended with the lock (lock.md §6.3)", MpResult.TooLate, check.await())
+        assertEquals(LockUiState.Locked(fresh), gate.state.value)
+        assertEquals(listOf("checkPassword", "VaultPort.lock"), rig.vault.log.takeLast(2))
+    }
+
+    @Test
+    fun aCheckOfTheOpenAppThatIsRunningAtOnStop_opensNothing() = runTest {
+        val rig = GateRig(this)
+        rig.vaultOnThePhone(password)
+        rig.process.toFront()
+        val gate = rig.start()
+        rig.settle()
+        assertTrue(gate.submitMasterPassword(password, MpPurpose.UNLOCK) is MpResult.Right)
+        val hold = CompletableDeferred<Unit>().also { rig.vault.checkHold = it }
+
+        val check = async { gate.submitMasterPassword(password, MpPurpose.EXPORT) }
+        rig.settle()
+        rig.process.away()
+        hold.complete(Unit)
+        rig.settle()
+
+        assertEquals(MpResult.TooLate, check.await())
+        assertTrue("whether to lock is AutoLock's decision", gate.state.value is LockUiState.Unlocked)
+    }
+
+    @Test
     fun aStepOfTheOpenAppWhileLockedChecksNothing() = runTest {
         val rig = GateRig(this)
         rig.vaultOnThePhone(password)

@@ -34,8 +34,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
  *
  * Scripted with [scanFails], [current] and [aside] (before a vault is made here), [opens] and
  * [checks] (the next answers, in place of the comparison), [createAnswer] and [createFails],
- * [flushFails], and the holds: while [hold], [createHold] or [flushHold] is set and not complete,
- * [openWithPassword], [createVault] or [flushDraft] waits for it, as if Argon2id or a save were
+ * [flushFails], and the holds: while [hold], [checkHold], [createHold] or [flushHold] is set and not complete,
+ * [openWithPassword], [checkPassword], [createVault] or [flushDraft] waits for it, as if Argon2id or a save were
  * still running. Single-threaded, like the main thread it stands for.
  */
 class InMemoryVault(private val clock: Clock) : VaultPort, VaultRepository {
@@ -68,6 +68,9 @@ class InMemoryVault(private val clock: Clock) : VaultPort, VaultRepository {
 
     /** While set and not complete, [createVault] waits for it (the vault is being written and proven). */
     var createHold: CompletableDeferred<Unit>? = null
+
+    /** While set and not complete, [checkPassword] waits for it (Argon2id is running). */
+    var checkHold: CompletableDeferred<Unit>? = null
 
     /** While set and not complete, [flushDraft] waits for it (the draft's save is running). */
     var flushHold: CompletableDeferred<Unit>? = null
@@ -138,6 +141,7 @@ class InMemoryVault(private val clock: Clock) : VaultPort, VaultRepository {
 
     override suspend fun checkPassword(passwordBytes: ByteArray): Boolean? {
         log += "checkPassword"
+        checkHold?.await()
         if (checks.isNotEmpty()) return checks.removeFirst()
         return password != null && passwordBytes.contentEquals(password)
     }
