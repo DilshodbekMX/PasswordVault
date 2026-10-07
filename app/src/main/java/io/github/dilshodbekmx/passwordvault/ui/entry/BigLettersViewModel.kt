@@ -124,6 +124,9 @@ class BigLettersViewModel(
     }
 
     override fun onCleared() {
+        // The screen has left the back stack already: it must not take this end for a reason to go
+        // back once more, should it still be composed while it slides away.
+        left = true
         close()
     }
 

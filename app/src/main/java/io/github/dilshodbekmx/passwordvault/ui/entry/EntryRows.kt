@@ -36,11 +36,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.autofill.ContentDataType
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDataType
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -483,10 +485,11 @@ private fun SecretValueRow(
             null
         },
         trailing = {
+            val toggle = Modifier.testTag(EntryTags.show(value)).notForAutofill()
             if (password) {
-                RevealToggle(revealed = isShown, onRevealedChange = { actions.setShown(value, it) }, modifier = Modifier.testTag(EntryTags.show(value)))
+                RevealToggle(revealed = isShown, onRevealedChange = { actions.setShown(value, it) }, modifier = toggle)
             } else {
-                IconToggleButton(checked = isShown, onCheckedChange = { actions.setShown(value, it) }, modifier = Modifier.testTag(EntryTags.show(value))) {
+                IconToggleButton(checked = isShown, onCheckedChange = { actions.setShown(value, it) }, modifier = toggle) {
                     Icon(
                         painter = painterResource(if (isShown) R.drawable.ic_common_visibility_off else R.drawable.ic_common_visibility),
                         contentDescription = if (isShown) hideLabel else showLabel,
@@ -589,6 +592,15 @@ private fun CopyButton(value: EntryValue, copied: Boolean, description: String, 
         IconButton(onClick = { onCopy(value) }, modifier = Modifier.testTag(EntryTags.copy(value)), content = icon)
     }
 }
+
+/**
+ * For a show/hide button. It is a toggle, and Compose offers every toggle to the phone's autofill
+ * service as a value to read and to set (foundation 1.12.1: `ContentDataType.Toggle` with
+ * `OnFillData`), so a fill could switch "Show password" on. Nothing on this screen is for an
+ * autofill service: the button opts out, as every text field of the app does ([V-P4], ux.md §3).
+ * This modifier comes first on the button, so its value is the node's.
+ */
+private fun Modifier.notForAutofill(): Modifier = semantics { contentDataType = ContentDataType.None }
 
 /** The text style of a username or a website: always left to right (ux.md §3). */
 @Composable
