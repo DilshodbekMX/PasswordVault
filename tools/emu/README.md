@@ -157,7 +157,7 @@ S24=$(tools/emu/boot.sh 24); S28=$(tools/emu/boot.sh 28); S37=$(tools/emu/boot.s
 tools/emu/boot.sh --list                          # three ports from 5556..5578, -read-only
 for s in $S24 $S28 $S37; do tools/emu/adb.sh -s $s install -r app/build/outputs/apk/debug/app-debug.apk; done
 SX=$(tools/emu/boot.sh 37)                        # another emulator running
-tools/emu/adb.sh --connected $S24 $S28 $S37       # the connected tests (now nav.NavLockTest, nav.NavRecreationTest) on exactly those three
+tools/emu/adb.sh --connected $S24 $S28 $S37       # every connected test (since wave 2B: nav.*, platform.*, vectors.*, window.*, ui.common.*, i18n.*) on exactly those three
 tools/emu/adb.sh -s $SX shell pm list packages | grep -c passwordvault   # 0
 tools/emu/smoke.sh staging $S24; tools/emu/smoke.sh staging $S37
 tools/emu/stop.sh --mine; tools/emu/boot.sh --verify-base
@@ -188,6 +188,10 @@ says `Found systemPath /home/asus/pvlab/sysimg/...`).
   NEXT button until it times out); `boot.sh --provision` has its own enrolment for all three.
 - Secure windows (staging and release builds) give black `screencap` output; use
   `adb -s SERIAL emu screenrecord screenshot DIR`.
+- A device test meant for some API levels only is filtered with `@SdkSuppress(minSdkVersion = …)`
+  (`androidx.test.filters`), never `org.junit.Assume`: AGP 9.4.1 writes a test that ends in
+  `AssumptionViolatedException` into the JUnit XML as a failure, so `adb.sh --connected` fails that
+  device (seen on API 24 and 28 on 2026-10-07). A suppressed test is left out of the report.
 - Connected tests by hand: `ANDROID_SERIAL=emulator-5556,emulator-5558 tools/gradle.sh
   :app:connectedDebugAndroidTest`, then `tools/emu/adb.sh --connected-results
   app/build/outputs/androidTest-results/connected/debug emulator-5556 emulator-5558`
