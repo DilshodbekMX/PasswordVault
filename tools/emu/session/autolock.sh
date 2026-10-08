@@ -25,9 +25,11 @@
 #   - with the lock delay set to "Immediately" in pv_settings (run-as and a restart of the app;
 #     SKIPPED on staging), a rotation still does not lock, while leaving does, at once;
 #   - the app did not crash.
-# It checks the master-password gate, so the APK needs a real vault port (build plan 3.1 merged):
-# while DataModule still returns StubVaultPort, LockModule keeps the fake lock, which writes no
-# default, and the 30-second steps fail. Run on 2026-10-07 against this branch merged with 3.1, 3.3
+# The lock is DefaultLockManager since build plan 4.1 (the master-password gate of 3.2, which this
+# script was written against, is gone): after setup and after each master-password unlock its
+# "Choose a PIN" opens 4.3's PIN steps over the list, and "Make a backup now?" may follow; they are
+# answered "Not now" and "Later" (tools/emu/app.sh, pva_settle), so the PIN stays off and the lock
+# screen stays the master-password screen. Run on 2026-10-07 against the gate, merged with 3.1, 3.3
 # and 3.4: 16 of 16 on API 24 and 37 (debug), 12 passed and 4 skipped (staging).
 # Prints PASS, FAIL or SKIPPED per step and a summary; exit 0 when no step failed, 1 otherwise, 2 for
 # a usage error, 3 for a refused serial.
@@ -35,6 +37,7 @@ set -u
 EMU="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REPO="$(cd "$EMU/../.." && pwd)"
 source "$EMU/adb.sh"
+source "$EMU/app.sh"
 
 SERIAL=${1:-}
 [ -n "$SERIAL" ] || pv_usage "${BASH_SOURCE[0]}"
@@ -49,6 +52,7 @@ while [ $# -gt 0 ]; do
 done
 
 pv_use "$SERIAL"
+pva_init
 PV_ADB_TIMEOUT=${PV_ADB_TIMEOUT:-120}
 API=$(pv_api)
 # Letters and digits only (adb's "input text" takes them as they are); 18 random characters pass
@@ -129,6 +133,17 @@ submit() {
     tap "$1" && need "$2" "${3:-15}"
 }
 
+# submit_open BUTTON-ID: as submit, then the app is open on the list once what the lock puts over it
+# after setup or a master password ("Choose a PIN" and its steps, a notice) is answered (app.sh).
+submit_open() {
+    pv_shell input keyevent KEYCODE_ENTER >/dev/null
+    if ! pva_unlocked Passwords 15; then
+        pv_log "Enter did not open the app; tapping $1"
+        tap "$1" && pva_unlocked Passwords 60 || return 1
+    fi
+    pva_settle Passwords
+}
+
 relaunch() {
     local out
     out=$(pv_shell am start -W -n "$PV_PACKAGE/.MainActivity" 2>&1 | tr -d '\r')
@@ -186,7 +201,7 @@ set_up() {
     fi
     on WriteDown && tap pv.open.TypeAgain && on TypeAgain || return 1
     if reveal pv.setup.again; then
-        type_into pv.setup.again "$PASSWORD" && submit pv.action.createVault pv.route.Passwords 60
+        type_into pv.setup.again "$PASSWORD" && submit_open pv.action.createVault
     else
         tap pv.action.createVault && on Passwords 60
     fi
@@ -196,7 +211,7 @@ set_up() {
 unlock() {
     on Locked || return 1
     if reveal pv.lock.password; then
-        type_into pv.lock.password "$PASSWORD" && submit pv.lock.unlock pv.route.Passwords 60
+        type_into pv.lock.password "$PASSWORD" && submit_open pv.lock.unlock
     else
         tap pv.action.unlock && on Passwords 60
     fi

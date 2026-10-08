@@ -164,5 +164,5 @@ judge_masked "setup, the master password again" pv.setup.again "$WIN_MASTER"
 pv_step "setup: the vault is made" -- win_create_vault || win_end
 pv_step "the app locked, the master password typed on the lock screen" -- eval 'win_lock && typed pv.lock.password "$WIN_MASTER"' || win_end
 judge_masked "the lock screen, the master password" pv.lock.password "$WIN_MASTER"
-pv_step "the lock screen: the master password opens the vault" -- pva_submit pv.lock.unlock pv.route.Passwords 90
+pv_step "the lock screen: the master password opens the vault" -- pva_submit_open pv.lock.unlock Passwords 90
 win_end

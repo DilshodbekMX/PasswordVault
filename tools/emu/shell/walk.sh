@@ -12,25 +12,31 @@
 #       its own empty record into the system once, at the first start, i18n.md §1.4.3.)
 #
 # The walk finds screens by the resource ids the app gives them (architecture.md §3.6):
-# pv.route.<Route> on each screen, pv.open.<Route> on the buttons that open a route (a placeholder's,
-# and the setup screens'), pv.action.* for the few that do something else, pv.tab.* on the bottom
-# bar, and the ids of the real screens of sub-wave 3A (pv.setup.*, pv.lock.*, pv.list.*, pv.edit.*,
-# through tools/emu/app.sh). So it does not depend on the language. Since sub-wave 3A the setup
-# screens, the master-password lock screen, the list and the form are real and the lock is the
-# master-password gate over the real vault; the other routes are still placeholders. It installs the
-# APK afresh, then:
+# pv.route.<Route> on each screen, pv.open.<Route> on the buttons and rows that open a route (a
+# placeholder's, the setup screens', Settings'), pv.action.* for the few that do something else,
+# pv.tab.* on the bottom bar, and the ids of the real screens (pv.setup.*, pv.lock.*, pv.pin.*,
+# pv.list.*, pv.edit.*, pv.settings.*, through tools/emu/app.sh). So it does not depend on the
+# language. Since the merge of round R3 the lock is DefaultLockManager (build plan 4.1) with the lock
+# screens of 4.2, the PIN steps and Settings are 4.3's, and Backup, Restore, Export and Import are
+# 5.2 to 5.4's; the routes of later packages are still placeholders. It installs the APK afresh, then:
 #   a setup step left by a new process (Home, am kill, or kill -9 through run-as or su; relaunch:
 #   the words are not kept, so setup starts again at step 1 with "Setup was interrupted", ux.md §5.5;
 #   SKIPPED where nothing ends the process) ->
 #   setup (Welcome, Language, Restore, the three steps with the suggested words typed again, the
-#   vault made) -> Passwords: an account added through the form, its screen, big letters, its form;
-#   a second account, the first deleted through its row's menu, Recently deleted -> Security and
-#   below it -> Settings and every route it opens -> the PIN setup steps, opened from App lock ->
-#   Lock now (no bottom bar) -> the master password (the same route comes back) -> a rotation keeps
-#   the route -> Back leaves the app.
-# Every route key of nav/Route.kt except Starting must have been shown, and the app must not have
-# crashed. Prints PASS or FAIL per step and a summary; exit 0 when no step failed, 1 otherwise,
-# 2 for a usage error, 3 for a refused serial.
+#   vault made) -> "Choose a PIN", which the lock opens after setup (lock.md F1 step 6): a PIN, the
+#   same PIN again, the fingerprint offer "Not now", "Make backups" Finish -> Passwords: an account
+#   added through the form, its screen, big letters, its form; a second account, the first deleted
+#   through its row's menu, Recently deleted -> Security and below it -> Settings and every route its
+#   rows open (the dialog "Appearance" with two of its colours, the Help pages) -> Lock now (the pad,
+#   no bottom bar) -> the PIN (the same route comes back) -> a rotation keeps the route -> Back leaves
+#   the app.
+# Every route key of nav/Route.kt must have been shown, except Starting and three that no walk can
+# reach without more set-up: AppLock (no screen opens it; the fingerprint notice's "Turn on" does),
+# OldPasswords (its Settings row is there only while a vault is put aside) and ColumnMapping (it
+# opens for a picked CSV file without a password column, build plan 5.4); and the app must not have
+# crashed. PV_WALK_PIN sets the PIN (default 582913, which lock.md §7.2 allows). Prints PASS or FAIL
+# per step and a summary; exit 0 when no step failed, 1 otherwise, 2 for a usage error, 3 for a
+# refused serial.
 set -u
 EMU="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REPO="$(cd "$EMU/../.." && pwd)"
@@ -41,6 +47,7 @@ SERIAL=${1:-}
 [ -n "$SERIAL" ] || pv_usage "${BASH_SOURCE[0]}"
 shift
 APK=$REPO/app/build/outputs/apk/debug/app-debug.apk
+PIN=${PV_WALK_PIN:-582913}
 LOCALE=""
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -59,6 +66,8 @@ echo "walk.sh on $SERIAL (API $API)${LOCALE:+, locale $LOCALE}: $APK"
 
 # Every route key of nav/Route.kt (data objects and data classes nested in Route).
 ROUTES=$(sed -n 's/^ *data \(object\|class\) \([A-Za-z]*\)\b.*: Route.*/\2/p' "$REPO/app/src/main/java/io/github/dilshodbekmx/passwordvault/nav/Route.kt" | sort -u)
+# The route keys the walk cannot reach (see the top of this file).
+UNREACHED="Starting AppLock OldPasswords ColumnMapping"
 SEEN=""
 
 # ---- helpers ----------------------------------------------------------------------------------
@@ -68,8 +77,10 @@ re() { printf '%s' "$1" | sed 's/[.]/\\./g'; }
 on() {
     pv_ui_wait "[|]pv\.route\.$1\$" 20 || { pv_log "not on $1; nodes: $(pv_ui_nodes | awk -F'|' '$3 ~ /^pv[.]/ { printf "%s ", $3 }')"; return 1; }
     if [ -n "${2:-}" ]; then pv_ui_wait "$2" 10 || { pv_log "no text matching $2 on $1"; return 1; }; fi
-    case " $SEEN " in *" $1 "*) ;; *) SEEN="$SEEN $1" ;; esac
+    seen "$1"
 }
+
+seen() { case " $SEEN " in *" $1 "*) ;; *) SEEN="$SEEN $1" ;; esac; }
 
 # The screen's height in pixels, and the bottom band where the bottom bar and the system's
 # navigation bar are: a node of a screen whose centre is there is scrolled up before a tap.
@@ -113,6 +124,15 @@ open() { tap "pv.open.$1" && on "$@"; }
 # back ROUTE: system Back, then ROUTE is shown. An open keyboard is closed first: it would take the
 # Back.
 back() { pva_hide_keyboard; pv_shell input keyevent KEYCODE_BACK >/dev/null && on "$1"; }
+
+# to_top: the list on the screen scrolled back to its top (tap only scrolls down).
+to_top() {
+    local i
+    for i in 1 2 3 4 5; do
+        pv_shell input swipe 540 $((SCREEN_H * 3 / 10)) 540 $((SCREEN_H * 7 / 10)) 300 >/dev/null
+    done
+    pv_sleep 1
+}
 
 absent() { # ID: no node has this resource id
     ! pv_ui_nodes | pv_ui_match "[|]$(re "$1")\$" | grep -q .
@@ -183,7 +203,20 @@ setup_routes() {
     open WriteDown && open TypeAgain \
         && back WriteDown && open TypeAgain \
         && pva_type pv.setup.again "$PVA_PASSWORD" \
-        && pva_submit pv.action.createVault pv.route.Passwords 120 && on Passwords
+        && pva_submit pv.action.createVault pv.route.CreatePin 120 && on CreatePin
+}
+
+# "Choose a PIN", which the lock opens over the list after setup (lock.md F1 step 6; build plan 4.3):
+# the PIN, the same PIN again, the fingerprint offer (shown where the phone has a fingerprint, as these
+# emulators do) "Not now", "Make backups" Finish: the list. The PIN is the lock screen's from then on.
+pin_steps() {
+    on CreatePin && pva_pin "$PIN" && on ConfirmPin && pva_pin "$PIN" || return 1
+    if pv_ui_wait '[|]pv\.route\.FingerprintOffer$' 20; then
+        on FingerprintOffer && tap pv.fingerprintOffer.notNow || return 1
+    else
+        pv_log "no fingerprint offer (canAuthenticate is not 0 here?); its route will be missing"
+    fi
+    on BackupsExplained && tap pv.action.finish && on Passwords
 }
 
 # The list is real: an account with a name and a password is added through the form (Save shows its
@@ -217,46 +250,48 @@ security_routes() {
         && open Group && open GuidedChange && back Group && back Security
 }
 
+# Settings (build plan 4.3): the App lock rows are in the list itself, so no row opens AppLock or
+# CreatePin. Its rows open ChangePin ("Change PIN": a PIN is set), ChangeMasterPassword (5.5's
+# placeholder, with NewMasterPassword), Backup, Export and Import (5.2 to 5.4), Language (6.1's
+# placeholder), the dialog "Appearance" (Route.Theme), the Help pages, Licences and Version. tap
+# only scrolls down, so the rows are taken from the top down.
 settings_routes() {
-    tap pv.tab.Settings && on Settings \
-        && open AppLock && open ChangePin && back AppLock \
-        && open CreatePin && back AppLock \
-        && open ChangeMasterPassword && open NewMasterPassword && back ChangeMasterPassword && back AppLock \
-        && back Settings \
+    tap pv.tab.Settings && on Settings && to_top \
+        && open ChangePin && back Settings \
+        && open ChangeMasterPassword && open NewMasterPassword && back ChangeMasterPassword && back Settings \
         && open Backup && back Settings \
         && open Export && back Settings \
-        && open Import && open ColumnMapping && back Import && back Settings \
-        && open OldPasswords && back Settings \
+        && open Import && back Settings \
         && open Language && back Settings \
-        && open Theme && back Settings \
-        && help_pages && back Settings
+        && appearance \
+        && help_pages
 }
 
+# Route.Theme draws the dialog "Appearance" (4.3b), a window of its own, so its route's node is not in
+# the active window's dump: its choices show it. A colour applies at once and the dialog stays (two
+# are tried: Emerald, then Bank blue again); Back closes it.
+appearance() {
+    tap pv.open.Theme && present pv.settings.theme.SYSTEM && present pv.settings.style.BANK_BLUE || return 1
+    seen Theme
+    tap pv.settings.style.EMERALD && present pv.settings.style.EMERALD \
+        && tap pv.settings.style.BANK_BLUE && present pv.settings.theme.SYSTEM \
+        && back Settings
+}
+
+# The Help rows (the help package's placeholders until build plan 7.3): each page, Licences, Version.
 help_pages() {
-    open Help 'Help\(page=PROTECTION\)' \
-        && open Help 'Help\(page=LOST_PHONE\)' \
-        && open Help 'Help\(page=FORGOT_MASTER_PASSWORD\)' \
-        && open Help 'Help\(page=FORGOT_PIN\)' \
-        && open Help 'Help\(page=VERSION\)' \
-        && open Licences \
-        && back Help && back Help && back Help && back Help && back Help && back Settings \
-        && open Licences
+    help_page PROTECTION && help_page LOST_PHONE && help_page FORGOT_MASTER_PASSWORD && help_page FORGOT_PIN \
+        && open Licences && back Settings \
+        && help_page VERSION
 }
 
-# The master-password gate of sub-wave 3A shows no "Choose a PIN" notice after setup (PIN setup is
-# wave 4), so the PIN setup steps are opened from Settings, App lock; "Finish setup" goes to the list.
-pin_setup_routes() {
-    on Settings && open AppLock && open CreatePin \
-        && open ConfirmPin && open FingerprintOffer && open BackupsExplained \
-        && tap pv.action.finish && on Passwords \
-        && tap pv.tab.Settings && on Settings
-}
+help_page() { tap "pv.open.Help.$1" && on Help "Help\\(page=$1\\)" && back Settings; }
 
-# Lock now: the master-password screen of build plan 3.4, without the bottom bar; the master password
-# set up above opens the same route again.
+# Lock now (an App lock row, at the top of Settings): the lock screen with the pad, without the bottom
+# bar; the PIN chosen after setup opens the same route again.
 lock_and_unlock() {
-    tap pv.action.lockNow && on Locked && absent pv.tab.Settings \
-        && pva_unlock Settings && on Settings && present pv.tab.Settings
+    to_top && tap pv.action.lockNow && on Locked && absent pv.tab.Settings \
+        && pva_pin_unlock Settings "$PIN" && on Settings && present pv.tab.Settings
 }
 
 rotate_keeps_route() {
@@ -285,12 +320,12 @@ back_leaves_the_app() {
 every_route_shown() {
     local missing="" r
     for r in $ROUTES; do
-        [ "$r" = Starting ] && continue
+        case " $UNREACHED " in *" $r "*) continue ;; esac
         case " $SEEN " in *" $r "*) ;; *) missing="$missing $r" ;; esac
     done
     [ -n "$ROUTES" ] || { pv_log "no routes read from Route.kt"; return 1; }
     [ -z "$missing" ] || { pv_log "never shown:$missing"; return 1; }
-    pv_log "shown: $(echo $SEEN | wc -w) routes:$SEEN"
+    pv_log "shown: $(echo $SEEN | wc -w) routes:$SEEN; not reachable by this walk: $UNREACHED"
 }
 
 no_crash() {
@@ -320,13 +355,13 @@ if [ -n "$LOCALE" ]; then
         pv_step "set the app's language to $LOCALE on Welcome: the same route after the recreation" -- set_locale
     fi
 fi
-pv_step "setup: Welcome, Language, Restore, the three steps with the words typed again, the vault made" -- setup_routes
+pv_step "setup: Welcome, Language, Restore, the three steps with the words typed again, the vault made: \"Choose a PIN\"" -- setup_routes
+pv_step "the PIN steps after setup: a PIN, the same again, the fingerprint offer \"Not now\", \"Make backups\" Finish: the list" -- pin_steps
 if [ -n "$LOCALE" ]; then pv_step "the bottom bar's labels are in $LOCALE, not English" -- shell_texts_localized; fi
 pv_step "Passwords: an account added, its screen, big letters, its form; one deleted, Recently deleted" -- passwords_routes
 pv_step "Security and the routes below it" -- security_routes
-pv_step "Settings and every route it opens" -- settings_routes
-pv_step "the PIN setup steps, opened from App lock, and Finish" -- pin_setup_routes
-pv_step "Lock now shows the lock route without the bottom bar; the master password brings Settings back" -- lock_and_unlock
+pv_step "Settings and every route its rows open, the dialog \"Appearance\" and the Help pages" -- settings_routes
+pv_step "Lock now shows the lock route (the pad) without the bottom bar; the PIN brings Settings back" -- lock_and_unlock
 pv_step "a rotation keeps the route" -- rotate_keeps_route
 pv_step "Back goes to Passwords, then leaves the app" -- back_leaves_the_app
 pv_step "every route key was shown" -- every_route_shown

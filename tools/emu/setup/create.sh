@@ -18,7 +18,8 @@
 #   1. With the suggested words: Welcome -> Start -> six words of the EFF short list, "Show other
 #      words" gives six others -> "Use these words" -> "Write it down on paper" shows the same words
 #      -> Next -> "Type your master password again" has the focus: the words are typed there -> Next
-#      -> the app is unlocked (the Passwords route is shown).
+#      -> the app is unlocked: the list, or "Choose a PIN" (pv.route.CreatePin), which the lock opens
+#      over it at once since build plan 4.1 (lock.md F1 step 6).
 #   2. With an own password, after `pm clear`: Welcome -> Start -> "Type my own instead" -> a weak
 #      password ("Samarqand2024") is refused with a message and no question -> a strong one ->
 #      "Use this password" -> "Do you use this password for any other account?" -> "No, it's new"
@@ -284,7 +285,9 @@ unlocked_after() { # how: button | done
     else
         tap pv.action.createVault || return 1
     fi
-    on Passwords || return 1
+    # Since build plan 4.1 the lock's "Choose a PIN" opens over the list at once (lock.md F1 step 6).
+    present pv.route.Passwords 20 || present pv.route.CreatePin 10 \
+        || { pv_log "not unlocked; ids: $(fresh_nodes | awk -F'|' '$3 ~ /^pv[.]/ { printf "%s ", $3 }')"; return 1; }
     absent pv.route.TypeAgain
 }
 

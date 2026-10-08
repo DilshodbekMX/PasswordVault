@@ -33,7 +33,9 @@
 #             steps 1, 2 and 4 (debug builds only: staging's secure window captures black).
 #
 # The steps, each found by the screens' resource ids (tools/emu/app.sh), so the language does not
-# matter:
+# matter. Since the merge of round R3 the lock is DefaultLockManager: after setup and after each
+# master-password unlock its "Choose a PIN" opens the PIN steps over the app, and "Make a backup
+# now?" may follow; app.sh answers them "Not now" and "Later" (pva_settle), so the PIN stays off:
 #   1. Install. Welcome, Start, the suggested words, "Use these words", "Write it down on paper",
 #      Next, the words typed again, Next: the list is shown, and it is empty.
 #   2. Add an account with a name, a login, a password, a website and a note: its screen, then Back:
@@ -155,7 +157,7 @@ step6_lock_screen() {
         pva_wait_keyboard 15 || { pv_log "no keyboard after turning to $o"; return 1; }
         pva_on Locked 10 || return 1
     done
-    pva_type pv.lock.password "$rest" && pva_submit pv.lock.unlock pv.route.Passwords 90 || { pv_log "the two halves did not open it"; return 1; }
+    pva_type pv.lock.password "$rest" && pva_submit_open pv.lock.unlock Passwords 90 || { pv_log "the two halves did not open it"; return 1; }
 }
 
 # The edit form: a name typed, landscape and portrait: the form, the name and the keyboard stay.

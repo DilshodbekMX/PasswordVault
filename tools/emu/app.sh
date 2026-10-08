@@ -8,9 +8,17 @@
 # Screens are found by the resource ids the app gives them (architecture.md §3.6), never by their
 # texts, so nothing depends on the language: pv.route.<Route> on every screen, pv.open.<Route> and
 # pv.action.* on the shell's buttons, and the tags of the screens of build plan 3.3 to 3.6
-# (SetupTags pv.setup.*, LockTags pv.lock.*, ListTags pv.list.*, EditTags pv.edit.*, GenTags pv.gen.*).
+# (SetupTags pv.setup.*, LockTags pv.lock.*, ListTags pv.list.*, EditTags pv.edit.*, GenTags pv.gen.*),
+# of the lock's notices (pv.notice, pv.answer.<NoticeAnswer>) and of the PIN steps of 4.3 (the pad's
+# keys pv.pin.key.N, "Not now" pv.pin.notNow, pv.fingerprintOffer.notNow, "Finish" pv.action.finish).
 # Every function returns 0 on success and logs (pv_log) why it failed. The functions are named pva_*
 # so that a script can keep its own short helpers.
+#
+# Since the merge of round R3 the lock is DefaultLockManager (build plan 4.1): after setup, and after
+# every master-password unlock while the vault has no PIN, its "Choose a PIN" opens 4.3's PIN steps
+# over the unlocked app (lock.md F1 step 6), and a notice such as "Make a backup now?" may follow.
+# pva_set_up, pva_unlock and pva_submit_open walk past them (pva_settle): the PIN and fingerprint are
+# left off ("Not now"), so the lock screen stays the master-password screen.
 #
 # Made by the integrator of sub-wave 3A for the skeleton check (build plan 3A, checks/3A.sh) and the
 # skeleton stage of smoke.sh.
@@ -270,9 +278,99 @@ pva_kill_in_background() {
     return 2
 }
 
+# The routes of 4.3's PIN steps, which the lock's "Choose a PIN" opens over the unlocked app.
+PVA_PIN_STEPS='CreatePin|ConfirmPin|FingerprintOffer|BackupsExplained'
+
+# pva_unlocked ROUTE [SECONDS]: right after setup or an unlock, the app is open within SECONDS
+# (default 90): ROUTE is shown, or the PIN steps that "Choose a PIN" opens over it, or a notice.
+pva_unlocked() {
+    pv_ui_wait "[|]pv\.(route\.($1|$PVA_PIN_STEPS)|notice)\$" "${2:-90}" \
+        || { pv_log "the app is not open on $1; ids: $(pva_ids)"; return 1; }
+}
+
+# pva_settle ROUTE [SECONDS]: walks past what the lock puts over the open app after setup or a
+# master-password unlock, until ROUTE is shown with nothing over it for 3 s (default deadline 120 s):
+# on "Choose a PIN" "Not now" (Back on the second PIN step, which goes back to the first), on the
+# fingerprint offer "Not now", on "Make backups" "Finish", and on a notice its answer "Later", or "OK"
+# where it has no "Later". The PIN and fingerprint stay off.
+pva_settle() {
+    local route=$1 deadline=$((SECONDS + ${2:-120})) nodes answer
+    while :; do
+        nodes=$(pv_ui_nodes)
+        if pva_in_nodes '[|]pv\.notice$' "$nodes"; then
+            answer=""
+            for answer in LATER OK; do
+                [ -n "$(pva_node "pv.answer.$answer" "$nodes")" ] && break
+                answer=""
+            done
+            [ -n "$answer" ] || { pv_log "a notice without Later or OK; ids: $(pva_ids)"; return 1; }
+            pva_tap "pv.answer.$answer" || return 1
+        elif pva_in_nodes '[|]pv\.route\.CreatePin$' "$nodes"; then
+            pva_tap pv.pin.notNow || return 1
+        elif pva_in_nodes '[|]pv\.route\.ConfirmPin$' "$nodes"; then
+            pv_shell input keyevent KEYCODE_BACK >/dev/null
+        elif pva_in_nodes '[|]pv\.route\.FingerprintOffer$' "$nodes"; then
+            pva_tap pv.fingerprintOffer.notNow || return 1
+        elif pva_in_nodes '[|]pv\.route\.BackupsExplained$' "$nodes"; then
+            pva_tap pv.action.finish || return 1
+        elif pva_in_nodes "[|]pv\\.route\\.$route\$" "$nodes"; then
+            # "Choose a PIN" and a notice come a moment after the unlock: shown alone for 3 s is settled.
+            pv_sleep 3
+            nodes=$(pv_ui_nodes)
+            if pva_in_nodes "[|]pv\\.route\\.$route\$" "$nodes" \
+                && ! pva_in_nodes "[|]pv\\.(notice|route\\.($PVA_PIN_STEPS))\$" "$nodes"; then
+                return 0
+            fi
+        fi
+        [ $SECONDS -lt $deadline ] || { pv_log "not settled on $route; ids: $(pva_ids)"; return 1; }
+        pv_sleep 1
+    done
+}
+
+# pva_in_nodes REGEX NODES: an enabled node of NODES (a pv_ui_nodes dump) matches REGEX, as
+# pv_ui_match matches (on "text|description|resource id").
+pva_in_nodes() { [ -n "$(printf '%s\n' "$2" | pv_ui_match "$1")" ]; }
+
+# pva_submit_open BUTTON-ID ROUTE [SECONDS]: the keyboard closed and BUTTON-ID tapped (Next on the
+# last setup step, Unlock on the lock screen); then the app is open within SECONDS (default 90), and
+# ROUTE is shown once what the lock puts over it has been walked past (pva_settle).
+pva_submit_open() {
+    pva_hide_keyboard
+    pva_tap "$1" || return 1
+    pva_unlocked "$2" "${3:-90}" && pva_settle "$2"
+}
+
+# pva_pin DIGITS: types DIGITS on the pad that is shown (the lock screen's or a PIN step's), one key
+# after another (pv.pin.key.N; the keys are read once, as a finger would find them).
+pva_pin() {
+    local nodes line n i
+    declare -A key=()
+    pva_need pv.pin.key.0 20 || return 1
+    nodes=$(pv_ui_nodes)
+    for n in 0 1 2 3 4 5 6 7 8 9; do
+        line=$(printf '%s\n' "$nodes" | pv_ui_match "[|]pv\.pin\.key\.$n\$")
+        [ -n "$line" ] || { pv_log "no key $n; ids: $(pva_ids)"; return 1; }
+        key[$n]="$(printf '%s\n' "$line" | cut -d'|' -f6) $(printf '%s\n' "$line" | cut -d'|' -f7)"
+    done
+    for ((i = 0; i < ${#1}; i++)); do
+        pv_shell input tap ${key[${1:$i:1}]} >/dev/null
+        pv_sleep 0.4
+    done
+}
+
+# pva_pin_unlock [ROUTE] PIN: the PIN on the lock screen's pad; then ROUTE (default Passwords) is
+# shown, with nothing over it.
+pva_pin_unlock() {
+    local route=${1:-Passwords}
+    pva_on Locked 30 && pva_need pv.lock.pad 20 && pva_pin "$2" || return 1
+    pva_unlocked "$route" 60 && pva_settle "$route"
+}
+
 # pva_set_up: setup with the suggested words (ux.md §5.3 to §5.5; lock.md F1 steps 1 to 3), from
 # Welcome to the list: Start, the six words read from the screen into PVA_PASSWORD, "Use these words",
-# "Write it down on paper", Next, the words typed again, Next. The vault is made then.
+# "Write it down on paper", Next, the words typed again, Next. The vault is made then, and "Choose a
+# PIN" (lock.md F1 step 6) is answered "Not now", as are the fingerprint offer and "Make backups":
+# the lock screen stays the master-password screen.
 pva_set_up() {
     pva_on Welcome 30 || return 1
     pva_tap pv.open.CreateMasterPassword && pva_on CreateMasterPassword || return 1
@@ -283,16 +381,16 @@ pva_set_up() {
     pva_tap pv.open.WriteDown && pva_on WriteDown || return 1
     pva_tap pv.open.TypeAgain && pva_on TypeAgain || return 1
     pva_type pv.setup.again "$PVA_PASSWORD" || return 1
-    pva_submit pv.action.createVault pv.route.Passwords 120
+    pva_submit_open pv.action.createVault Passwords 120
 }
 
 # pva_unlock [ROUTE] [PASSWORD]: the master password on the lock screen; then ROUTE (default
-# Passwords) is shown.
+# Passwords) is shown, once what the lock puts over it has been walked past (pva_settle).
 pva_unlock() {
     local route=${1:-Passwords} password=${2:-$PVA_PASSWORD}
     pva_on Locked 30 && pva_need pv.lock.password 10 || return 1
     pva_type pv.lock.password "$password" || return 1
-    pva_submit pv.lock.unlock "pv.route.$route" 90
+    pva_submit_open pv.lock.unlock "$route" 90
 }
 
 # pva_add_account NAME LOGIN PASSWORD WEBSITE NOTE: from the list, Add, the five fields, Save; the

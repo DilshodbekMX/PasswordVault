@@ -430,7 +430,7 @@ pv_step "the sheet and the form closed, the app locked, the master password type
 judge hidden "the lock screen, the master password" pv.lock.password "$WIN_MASTER"
 pv_step "the lock screen: a screen reader focuses the masked field, sets its text, moves its cursor by character, types and deletes at the cursor, puts the cursor" -- eval 'win_a11y_wait 10 && mark && screen_reader' || win_end
 judge hidden "the lock screen, the master password, while a screen reader moves the cursor and edits" pv.lock.password "$WIN_MASTER"
-pv_step "the lock screen: after the screen reader's edits the field holds exactly the master password: it opens the vault" -- pva_submit pv.lock.unlock pv.route.Passwords 90
+pv_step "the lock screen: after the screen reader's edits the field holds exactly the master password: it opens the vault" -- pva_submit_open pv.lock.unlock Passwords 90
 
 # ---- what else was seen ------------------------------------------------------------------------
 win_file a11y-plain-events.log >"$WIN_OUT/a11y-$VARIANT-plain-events.log"

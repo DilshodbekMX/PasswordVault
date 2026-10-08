@@ -15,7 +15,9 @@
 #     am kill is refused, API 24; SKIPPED when nothing can end it) and started again: locked, and the
 #     master password brings the same account's screen back (the saved back stack, under R8 in
 #     staging); Back to the list, Lock now: locked; the master password: the list with the account.
-#     Driven by resource id through tools/emu/app.sh.
+#     Driven by resource id through tools/emu/app.sh. Since the merge of round R3 the lock's "Choose
+#     a PIN" after setup and after each master-password unlock is answered "Not now", and "Make a
+#     backup now?" "Later" (app.sh, pva_settle): the PIN and fingerprint stay off here.
 #   sub-wave 3B (the account's screen and the clipboard): the account opened from the list, its
 #     password drawn as dots and in no node; "Show password" shows it; Copy: the clip, read from
 #     outside the app (clipboard/lib.sh), carries the sensitive flag and a 32-digit token and holds

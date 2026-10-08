@@ -217,6 +217,6 @@ else
     pv_step "without the overlay: the same tap closes the sheet; the form closed, the app locked, the master password typed" -- eval 'pva_tap pv.gen.use && pv_sleep 1 && pva_absent pv.gen.use && win_close_form && win_lock && pva_type pv.lock.password "$WIN_MASTER" && pva_hide_keyboard' || win_end
     pv_step "overlay: the lock screen: the tap on Unlock through the overlay is dropped" -- dropped pv.lock.unlock pv.route.Locked
     overlay_off
-    pv_step "without the overlay: the same tap unlocks" -- pva_submit pv.lock.unlock pv.route.Passwords 90
+    pv_step "without the overlay: the same tap unlocks" -- pva_submit_open pv.lock.unlock Passwords 90
 fi
 win_end

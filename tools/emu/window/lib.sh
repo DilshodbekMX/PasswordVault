@@ -216,8 +216,9 @@ win_reuse_no() { pva_tap pv.setup.reuse.no && pva_on WriteDown && pva_need pv.se
 # Next: "Type your master password again", the field pv.setup.again.
 win_to_again() { pva_tap pv.open.TypeAgain && pva_on TypeAgain && pva_need pv.setup.again; }
 
-# Next on "Type again": the vault is made and the list is shown.
-win_create_vault() { pva_submit pv.action.createVault pv.route.Passwords 120; }
+# Next on "Type again": the vault is made and the list is shown, once "Choose a PIN", which the lock
+# opens over it (lock.md F1 step 6), and what follows it are answered "Not now" (app.sh, pva_settle).
+win_create_vault() { pva_submit_open pv.action.createVault Passwords 120; }
 
 # The whole setup with a password of one's own, from Welcome to the list.
 win_set_up() {
@@ -265,7 +266,7 @@ win_lock() {
     pva_tap pv.list.lockNow && pva_on Locked 20 && pva_need pv.lock.password
 }
 
-win_unlock() { pva_type pv.lock.password "$WIN_MASTER" && pva_submit pv.lock.unlock pv.route.Passwords 90; }
+win_unlock() { pva_type pv.lock.password "$WIN_MASTER" && pva_submit_open pv.lock.unlock Passwords 90; }
 
 # win_long_press ID: a long press on the node, which opens a text field's toolbar.
 win_long_press() {
