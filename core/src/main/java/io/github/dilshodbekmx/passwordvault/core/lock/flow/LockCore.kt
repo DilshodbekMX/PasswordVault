@@ -92,8 +92,9 @@ internal enum class SlotWrite {
  * `fingerprint.rec` of one vault as the lock controller means to have it on disk (lock.md §5.5,
  * §6.3): what `PinGuard` is for `pin.rec`, without a counter. Every write stores the whole record,
  * so a write that failed is made good by the next one that succeeds. A record that read DAMAGED,
- * NEWER or UNREADABLE is not used and not rewritten (§5.3); only turning fingerprint unlock on
- * ([setSlot], "set it up again") replaces a DAMAGED or UNREADABLE one, and nothing replaces a NEWER
+ * NEWER or UNREADABLE is not used and not rewritten (§5.3), with two exceptions: turning
+ * fingerprint unlock on ([setSlot], "set it up again") replaces a DAMAGED or UNREADABLE one, and a
+ * DAMAGED one goes at the next master-password unlock ([replaceDamaged]). Nothing replaces a NEWER
  * one. Called under the lock mutex, with I/O on the engine's dispatcher.
  *
  * It deletes a fingerprint key only where lock.md says "at once": when its slot is removed. A key
@@ -167,6 +168,24 @@ internal class FingerprintKeeper(
             back is RecordRead.Unreadable -> SlotWrite.MAY_BE_WRITTEN // what is on disk cannot be known now
             else -> SlotWrite.NOT_WRITTEN
         }
+    }
+
+    /**
+     * A `fingerprint.rec` that read DAMAGED goes (lock.md §5.3), at the master-password unlock that
+     * offers "Turn fingerprint unlock on again?": it is replaced by a record without a slot, with
+     * `off = key_gone`, as F15a leaves one. It is not repaired: which key it named cannot be known,
+     * so nothing is deleted here; with every record readable again the key sweep runs at the next
+     * start and deletes the key that no record names (§5.7). Returns whether the new record is on
+     * disk; when the write fails the record stays damaged, here and on disk, and the next
+     * master-password unlock tries again. Nothing happens to a record that did not read DAMAGED.
+     */
+    fun replaceDamaged(): Boolean {
+        if (rec != null || lastRead !is RecordRead.Damaged) return true
+        val next = FingerprintRecord(vaultId, slot = null, off = FingerprintRecord.Off(FingerprintRecord.OffReason.KEY_GONE, clock.wallMs()))
+        if (!write(next)) return false
+        rec = next
+        lastRead = RecordRead.Ok(next)
+        return true
     }
 
     /**

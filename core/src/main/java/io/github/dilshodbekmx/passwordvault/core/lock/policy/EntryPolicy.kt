@@ -58,6 +58,10 @@ import io.github.dilshodbekmx.passwordvault.core.lock.record.StateRecord
  * still skippable; NEWER or UNREADABLE means practice is not asked. It is never asked while a new
  * master password is pending, without a usable shortcut, or on a vault put aside.
  *
+ * **A damaged `fingerprint.rec`** (§5.3) is not offered, and the screen says so with a fingerprint
+ * line ([DAMAGED_FINGERPRINT_LINE]), as after a fingerprint key that is gone (F15a); a
+ * master-password unlock then offers to turn fingerprint unlock on again (§13.4 item 5).
+ *
  * The screens hold facts, never sentences (lock.md §11); the lock screens pick the texts of §13.3
  * from them.
  */
@@ -67,6 +71,16 @@ object EntryPolicy {
 
     /** At most this many tries are left when a fresh pad warns "2 tries left before the PIN turns off" (§6.4, §13.3). */
     const val WARN_AT_TRIES_LEFT = 2
+
+    /**
+     * The line of lock.md §13.3 while `fingerprint.rec` reads DAMAGED (§5.3): "Fingerprint unlock
+     * stopped working on this phone. Use your PIN. You can turn it on again in Settings." The lock
+     * screens have no fact for that sentence yet (`FingerprintLine` is their contract, architecture.md
+     * §3.5), so until it has one this is the line of a fingerprint key that is gone (F15a), which the
+     * decision of 2026-10-08 names as the case to follow: not offered, and "You can turn it on again
+     * in Settings."
+     */
+    val DAMAGED_FINGERPRINT_LINE: FingerprintLine = FingerprintLine.TurnedOff
 
     /** Which vault the lock screen is for. */
     sealed interface Target {
@@ -417,6 +431,8 @@ object EntryPolicy {
         val canAuthenticate = input.canAuthenticate
         val usable = on && !visit.fingerprintHidden && canAuthenticate != null && KeystoreErrors.mayProbe(canAuthenticate)
         val unavailable = when {
+            // §5.3: a damaged record is not offered, and the screen says that fingerprint unlock stopped working.
+            input.fingerprint is RecordRead.Damaged -> DAMAGED_FINGERPRINT_LINE
             !on || usable -> null
             visit.fingerprintHidden -> FingerprintLine.CannotCheck
             canAuthenticate == null -> null

@@ -179,6 +179,8 @@ class EntryPolicyTest {
         val fingerprintLine: FingerprintLine? = when {
             markedReplaced -> null
             visit.fingerprintLine != null -> visit.fingerprintLine
+            // "`fingerprint.rec` is damaged (5.3)": not offered, and the screen says that it stopped working on this phone.
+            input.fingerprint is RecordRead.Damaged -> EntryPolicy.DAMAGED_FINGERPRINT_LINE
             !fingerprintOn || fingerprintUsable -> null
             visit.fingerprintHidden -> FingerprintLine.CannotCheck
             input.canAuthenticate == null -> null
