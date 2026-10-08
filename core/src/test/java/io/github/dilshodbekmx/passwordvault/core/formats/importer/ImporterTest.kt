@@ -92,9 +92,11 @@ class ImporterTest {
         assertEquals(listOf("Shopping list", "", "", "milk, bread"), listOf(list.title, list.username, list.password, list.notes))
         assertTrue(list.urls.isEmpty() && list.fields.isEmpty() && !list.favourite)
         assertEquals(listOf("https://jira.example.com"), jira.urls)
-        assertEquals("Plain line without a separator", jira.notes) // a value without a name is kept in the notes
-        assertEquals(listOf(visible("Folder", "Work")), jira.fields)
-        assertEquals("[NAMELESS_FIELDS_MOVED×1]", file.accounts[2].changes.toString())
+        // A line without a name is hidden, as every value whose label is not harmless: it stays a hidden
+        // field, named "Hidden value 1" (build-plan §12, decision 11), and is not moved into the notes.
+        assertEquals("", jira.notes)
+        assertEquals(listOf(hidden("Hidden value 1", "Plain line without a separator"), visible("Folder", "Work")), jira.fields)
+        assertTrue(file.accounts[2].changes.isEmpty())
     }
 
     /**
@@ -449,6 +451,39 @@ class ImporterTest {
         assertFalse(file(GoogleCsv.export(listOf(plain)).parts.single()).fromThisApp)
         assertFalse(file(csv("name,url,username,password,note", "gmail.com,https://gmail.com,ali,pw,")).fromThisApp)
         assertFalse(file("""{"encrypted":false,"folders":[],"items":[{"type":1,"name":"B","login":{"password":"q"}}]}""").fromThisApp)
+    }
+
+    /**
+     * Build-plan §12, decision 11: a hidden value without a name is kept as a hidden field "Hidden value
+     * 1", "Hidden value 2", in the file's order within its account, and never moved into the notes,
+     * where it would show; a visible one moves into the notes as before.
+     */
+    @Test
+    fun aHiddenValueWithoutANameIsKeptAsAHiddenField() {
+        val json = """{"encrypted":false,"folders":[],"items":[""" +
+            """{"type":1,"name":"Bank","login":{"username":"ali","password":"pw"},"fields":[""" +
+            """{"name":"","value":"1234","type":1},{"name":"PIN","value":"0000","type":1},{"name":"","value":"seen","type":0},""" +
+            """{"name":"  ","value":"5678","type":1},{"name":"","value":"","type":1}]},""" +
+            """{"type":1,"name":"Card","login":{"username":"c","password":"q"},"fields":[{"name":null,"value":"9999","type":1}]}]}"""
+        val (bank, card) = file(json).accounts
+        assertEquals(listOf(hidden("Hidden value 1", "1234"), hidden("PIN", "0000"), hidden("Hidden value 2", "5678")), bank.entry.fields)
+        assertEquals("the visible one, as before", "seen", bank.entry.notes)
+        assertEquals("[NAMELESS_FIELDS_MOVED×1]", bank.changes.toString())
+        assertEquals("counted within each account", listOf(hidden("Hidden value 1", "9999")), card.entry.fields)
+        assertTrue(card.changes.isEmpty())
+
+        // The name is the import's text, in the user's language.
+        val uzbek = object : EditTexts by ImportFixtures.Texts {
+            override fun hiddenValue(number: Int): String = "Yashirin qiymat $number"
+        }
+        val read = Importer.read(json.toByteArray(Charsets.UTF_8), NOW, uzbek, FakeRandom(7)) as Importer.Result.Read
+        assertEquals(listOf("Yashirin qiymat 1", "PIN", "Yashirin qiymat 2"), read.file.accounts[0].entry.fields.map { it.name })
+
+        // A hidden line without a label in our own CSV block: the same.
+        val own = GoogleCsv.export(listOf(ImportFixtures.entry(1, "Bank", "ali", "pw", fields = listOf(hidden("", "4321"), visible("", "note line"))))).parts.single()
+        val back = file(own).accounts.single()
+        assertEquals(listOf(hidden("Hidden value 1", "4321")), back.entry.fields)
+        assertEquals("note line", back.entry.notes)
     }
 
     /** The review of 3.15: a JSON password that is not text is listed on its account, and a secure note keeps its login. */
