@@ -262,6 +262,78 @@ class ImportPlannerTest {
         assertTrue(plan(siteAfter, siteFile).accounts.isEmpty())
     }
 
+    /**
+     * Many accounts of one login and one password are the planner's worst case: each was compared with
+     * every one before it, and looking for one note inside another took the two lengths multiplied when
+     * the notes begin alike. 800 such rows, a file of 3 MB, took 112 s to plan, and 9,950 rows with
+     * notes of 900 characters 14 s.
+     */
+    @Test
+    fun manyAccountsOfOneLoginArePlannedInTimeThatGrowsWithTheFile() {
+        // Notes made to defeat the search: none holds another, and each begins like every other.
+        val long = "a".repeat(5_000)
+        val short = "a".repeat(2_500)
+        val hard = file(csv(header, *Array(800) { i -> "Site,https://site.example,user,pw," + (if (i % 2 == 0) long + "d" + i else short + "c" + i) }))
+        var start = System.nanoTime()
+        val hardPlan = plan(hard)
+        val hardMs = (System.nanoTime() - start) / 1_000_000
+        assertEquals(800, hardPlan.accounts.size)
+        assertEquals(0, hardPlan.repeatedInFile)
+        assertTrue("$hardMs ms", hardMs < 5_000)
+
+        // 9,900 accounts of one login and password, each with a note of its own; then 50 of them once more, exactly.
+        val note = "n".repeat(900)
+        val rows = Array(9_900) { "Site,https://site.example,user,pw,$note$it" } + Array(50) { "Site,https://site.example,user,pw,$note${it * 100}" }
+        val many = file(csv(header, *rows))
+        assertEquals(9_950, many.accounts.size)
+        start = System.nanoTime()
+        val manyPlan = plan(many)
+        val manyMs = (System.nanoTime() - start) / 1_000_000
+        assertEquals(9_900, manyPlan.accounts.size)
+        assertEquals(50, manyPlan.repeatedInFile) // an exact repeat is found however many accounts share its login
+        assertTrue("$manyMs ms", manyMs < 5_000)
+        // Imported, and the same file once more: every account is already here.
+        val after = VaultEdits.addImported(manyPlan.entries, FakeRandom(21), Texts::fromFile)(Vault(), NOW).vault
+        start = System.nanoTime()
+        val again = plan(after, many)
+        val againMs = (System.nanoTime() - start) / 1_000_000
+        assertEquals(9_950, again.alreadyHere)
+        assertTrue(again.accounts.isEmpty())
+        assertTrue("$againMs ms", againMs < 5_000)
+        println("many accounts of one login: planned in $hardMs ms (notes that begin alike), $manyMs ms and $againMs ms (9,950 rows, new and again)")
+    }
+
+    /** "Nothing new in its notes": the incoming notes, trimmed, stand somewhere in the notes the vault has. */
+    @Test
+    fun notesThatTheVaultsAccountHoldsAreNothingNew() {
+        val cases = listOf(
+            // the vault's notes, the incoming notes, already here
+            Triple("aaab", "aab", true),
+            Triple("aabababc", "ababc", true),
+            Triple("abcabcabd", "abcabd", true),
+            Triple("personal\nsecond line", " second line \n", true),
+            Triple("xyz", "xyz", true),
+            Triple("xyz", "", true),
+            Triple("xyz", " \n ", true),
+            Triple("", "", true),
+            Triple("aaab", "aaaa", false),
+            Triple("abcabcabd", "abcabe", false),
+            Triple("xyz", "xyzz", false),
+            Triple("xyz", "wxyz", false),
+            Triple("", "x", false),
+            Triple("ab", "abc", false),
+            Triple("Oʻzbek‘ matni 😀 ёж", "matni 😀 ё", true),
+            Triple("Oʻzbek‘ matni 😀 ёж", "matni 😃", false),
+        )
+        for ((had, brings, here) in cases) {
+            val vault = Vault(entries = listOf(entry(1, "Gmail", "aziz", "G00gle!", listOf("https://mail.google.com"), had)))
+            val incoming = entry(2, "Gmail", "aziz", "G00gle!", listOf("https://mail.google.com"), brings)
+            val plan = plan(vault, file(BitwardenJson.export(listOf(incoming), NOW, GENERATOR).bytes))
+            assertEquals("[$had] holds [$brings]", if (here) 1 else 0, plan.alreadyHere)
+            assertEquals("[$had] holds [$brings]", if (here) 0 else 1, plan.accounts.size)
+        }
+    }
+
     @Test
     fun theEstimateIsTheSealedFileAtMost() {
         val vault = Vault(entries = WriterFixtures.bulkEntries(800))
