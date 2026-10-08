@@ -23,10 +23,13 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.window.Dialog
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import io.github.dilshodbekmx.passwordvault.i18n.UiText
 import io.github.dilshodbekmx.passwordvault.settings.ThemeChoice
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultDialog
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultTextField
 import io.github.dilshodbekmx.passwordvault.ui.theme.PasswordVaultTheme
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -199,6 +202,50 @@ class SecretClipboardBridgeTest {
         assertEquals("card 8600 1234", ClipDevice.text())
         assertEquals(true, ClipDevice.sensitive())
         assertEquals(AndroidSecretClipboard.COPIED_TEXT, graph.clipboard.status.value?.what)
+    }
+
+    /**
+     * A copy the phone refuses (ux.md §6 "Failures") ends in the bridge: the text toolbar has nowhere
+     * to say so, and an exception there would end the app inside Compose's coroutine.
+     */
+    @Test
+    fun aCopyThePhoneRefusesFromTheToolbarEndsQuietly() {
+        val refusing = RefusingClipboard()
+        compose.setContent {
+            CompositionLocalProvider(LocalTextContextMenuToolbarProvider provides toolbar, LocalSecretClipboard provides refusing) {
+                ClipboardWindow {
+                    PasswordVaultTheme(ThemeChoice.LIGHT) {
+                        SelectionContainer { Text(NOTE, Modifier.testTag(NOTE_TAG)) }
+                    }
+                }
+            }
+        }
+        ClipDevice.awaitFocus(compose.activity)
+        ClipDevice.otherCopy("copied before")
+
+        compose.onNodeWithTag(NOTE_TAG).performTouchInput { longClick() }
+        compose.waitUntil(TOOLBAR_MS) { toolbar.has(TextContextMenuKeys.CopyKey) }
+        compose.runOnUiThread { toolbar.tap(TextContextMenuKeys.CopyKey) }
+        compose.waitUntil(TOOLBAR_MS) { refusing.copies == 1 }
+        compose.waitForIdle()
+        assertEquals("the clipboard keeps what it had", "copied before", ClipDevice.text())
+    }
+
+    /** A [SecretClipboard] on a phone that refuses every copy. */
+    private class RefusingClipboard : SecretClipboard {
+        @Volatile
+        var copies = 0
+
+        override val status: StateFlow<ClipStatus?> = MutableStateFlow(null)
+
+        override fun copy(value: CharSequence, what: UiText, sensitive: Boolean) {
+            copies++
+            throw SecurityException("this phone blocked copying")
+        }
+
+        override fun clearNow() = Unit
+
+        override fun appCameToFront() = Unit
     }
 
     private companion object {

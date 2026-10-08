@@ -37,6 +37,10 @@ internal class SecretClipboardBridge(
      * Text goes to [SecretClipboard.copy] as plain text (Compose's own style marks are left out).
      * Null, which asks for an empty clipboard, clears a clip of ours and nothing else. A clip
      * without text, which no screen of the app makes, is handed to the platform as it is.
+     *
+     * A copy the phone refuses (some makers' builds, ux.md §6 "Failures") ends here: the copy
+     * buttons tell the user, but the text toolbar has nowhere to, and the exception would otherwise
+     * end the app inside Compose's coroutine. [SecretClipboard.copy] leaves nothing of ours behind.
      */
     override suspend fun setClipEntry(clipEntry: ClipEntry?) {
         if (clipEntry == null) {
@@ -44,7 +48,15 @@ internal class SecretClipboardBridge(
             return
         }
         val text = textOf(clipEntry.clipData)
-        if (text == null) platform.setClipEntry(clipEntry) else secret.copy(text, AndroidSecretClipboard.COPIED_TEXT, sensitive = true)
+        if (text == null) {
+            platform.setClipEntry(clipEntry)
+            return
+        }
+        try {
+            secret.copy(text, AndroidSecretClipboard.COPIED_TEXT, sensitive = true)
+        } catch (e: RuntimeException) {
+            // Nothing was copied; the clipboard keeps what it had.
+        }
     }
 
     private fun textOf(clip: ClipData): String? {
