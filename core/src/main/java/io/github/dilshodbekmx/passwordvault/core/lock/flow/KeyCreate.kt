@@ -11,6 +11,9 @@ sealed interface KeyCreate {
     /** Fingerprint only: no biometric is enrolled. "Add a fingerprint in your phone's settings first." */
     data object NoneEnrolled : KeyCreate
 
-    /** `KeyInfo` says software, in a release build: for good (lock.md F18). The key was deleted. */
+    /**
+     * `KeyInfo` says software, in a release build: for good (lock.md F18). A key that was made just
+     * now was deleted again (lock.md §4.5); a `pv_canary` that was already there is kept (§4.2, §5.7).
+     */
     data object NoSecureHardware : KeyCreate
 }
