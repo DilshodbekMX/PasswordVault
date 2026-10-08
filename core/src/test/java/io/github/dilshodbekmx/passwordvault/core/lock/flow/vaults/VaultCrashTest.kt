@@ -287,11 +287,13 @@ class VaultCrashTest {
         atEveryBoundary(
             "F17 step 4 by $way",
             setUp = { f ->
+                // Both PINs have wrong tries counted from earlier visits, so that a count that goes down
+                // where §6.4 does not say so can be seen (I5).
                 val vault = f.seedVault(generations = 2)
-                val pin = f.plantPin(vault)
+                val pin = f.plantPin(vault, row = 1, total = 4)
                 f.plantState(maxGeneration = StateRecord.MaxGeneration(2, f.clock.wallMs()))
                 val old = f.port.seedAside(OTHER_VAULT, bytes(Secrets.OTHER), putAsideAtMs = f.clock.wallMs() - 86_400_000L)
-                val oldPin = f.plantPin(old, pin = Secrets.OTHER_PIN)
+                val oldPin = f.plantPin(old, pin = Secrets.OTHER_PIN, row = 2, total = 3)
                 val oldFinger = f.plantFingerprint(old)
                 f.plantState(OTHER_VAULT)
                 slots = mapOf("pin $VAULT" to pin, "pin $OTHER_VAULT" to oldPin, "fingerprint $OTHER_VAULT" to oldFinger)
@@ -323,10 +325,18 @@ class VaultCrashTest {
             assertEquals(where, slots["pin $VAULT"], f.pinRecord(VAULT).slot)
             assertEquals(where, slots["pin $OTHER_VAULT"], f.pinRecord(OTHER_VAULT).slot)
             assertEquals(where, slots["fingerprint $OTHER_VAULT"], f.fingerprintRecord(OTHER_VAULT).slot)
-            // I5: nothing went down, and only an interrupted entry can have gone up.
-            assertEquals(where, PinRecord.Guard(false, 0, 0), f.pinRecord(VAULT).guard)
+            // I5: the counts go down only as §6.4 says. The current vault's are not touched. The other
+            // vault's wrong PINs were typed on another visit, so its right PIN here forgives none of them
+            // (row 0, total as it was), its fingerprint resets nothing, and only its master password
+            // returns both to 0. A charge left on disk is counted by the next process (§6.3 S), not here.
+            assertEquals(where, PinRecord.Guard(false, 1, 4), f.pinRecord(VAULT).guard)
             val otherGuard = f.pinRecord(OTHER_VAULT).guard
-            assertTrue("$where: $otherGuard", otherGuard.row == 0 && otherGuard.total == 0)
+            val allowed = when (way) {
+                Way.PIN -> setOf(2 to 3, 0 to 3)
+                Way.FINGERPRINT -> setOf(2 to 3)
+                Way.MASTER_PASSWORD -> setOf(2 to 3, 0 to 0)
+            }
+            assertTrue("$where: $otherGuard", (otherGuard.row to otherGuard.total) in allowed)
             // I1: the swap is the only vault data written; no generation changed.
             writingCallsAre(f, where, setOf("swapIn $OTHER_VAULT"))
             assertEquals(where, files[VAULT], filesOf(f, VAULT))

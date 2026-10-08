@@ -239,6 +239,8 @@ class PreviousPasswordsFlowTest {
     @Test
     fun f17step4_itsOwnFingerprintOpensIt() {
         val phone = twoVaults(otherFingerprint = true)
+        // Wrong PINs counted on that vault from an earlier visit.
+        f.putPin(f.pinRecord(OTHER_VAULT).copy(guard = PinRecord.Guard(false, 2, 3)))
         f.startInFront()
         await { f.engine.showAside(OTHER_VAULT) }
         assertTrue(f.pad.fingerprintKey)
@@ -252,6 +254,8 @@ class PreviousPasswordsFlowTest {
         assertEquals(OTHER_VAULT, f.port.current!!.vaultId)
         assertEquals(listOf("swapIn $OTHER_VAULT"), f.port.writingCalls)
         assertNull((f.state as LockState.Unlocked).proof)
+        // A fingerprint unlock resets no count (§6.4, F3 step 5), also when it makes a vault put aside current.
+        assertEquals(PinRecord.Guard(false, 2, 3), f.pinRecord(OTHER_VAULT).guard)
     }
 
     @Test
