@@ -427,8 +427,9 @@ sealed interface LockScreen {                          // lock.md §13.2; declar
 // sentence: the screens pick the texts of lock.md §13.3 and §13.4 from them, so that the language can change under them.
 // AsideLine: LockedOn(atMs) | FromBefore(atMs)
 // PadStatus: TriesLeft(left) | WrongPin(left) | LastTry | LastTryWhilePending | SameAgain | Interrupted(left) | StorageFull | FingerprintLine
-// FingerprintLine, a PadStatus: TurnedOff | Locked | DidNotOpen | NotForApps | NoneSaved | UpdateNeeded | CannotCheck
-//                                (also FingerprintOnly's status and MasterPassword's fingerprintLine)
+// FingerprintLine, a PadStatus: TurnedOff | StoppedWorking | Locked | DidNotOpen | NotForApps | NoneSaved | UpdateNeeded | CannotCheck
+//                                (also FingerprintOnly's status and MasterPassword's fingerprintLine). StoppedWorking: fingerprint.rec
+//                                reads DAMAGED (lock.md §5.3, §13.3; build-plan §12, decision 1); TurnedOff: its key is gone (F15a)
 // enum class PinReason { LIMIT, CANNOT_CHECK, STOPPED_WORKING, STORAGE_FULL, NEWER_APP }
 // MpReason, highest first: PracticeDue | WelcomeBack | FromBefore(atMs) | Pin(reason: PinReason) | MasterChanged | OlderCopy(createdMs)
 //                          | NoSecureHardware

@@ -56,6 +56,8 @@
 
     <!-- The phone's fingerprints or screen lock changed, so the app's fingerprint key no longer works. -->
     <string name="lock_fingerprint_turned_off_master">Fingerprint unlock was turned off because this phone’s fingerprints or screen lock changed. Use your master password. You can turn it on again in Settings.</string>
+    <!-- The app's record of fingerprint unlock on this phone is damaged; which key it named is unknown. -->
+    <string name="lock_fingerprint_stopped_working_master">Fingerprint unlock stopped working on this phone. Use your master password. You can turn it on again in Settings.</string>
     <!-- The phone locked its fingerprint sensor after too many failed fingers. -->
     <string name="lock_fingerprint_locked_master">Fingerprint is locked for now. Use your master password.</string>
     <!-- The fingerprint prompt was accepted, but the app could not open with it this time. -->
@@ -180,6 +182,8 @@
 
     <!-- The phone's fingerprints or screen lock changed, so the app's fingerprint key no longer works. -->
     <string name="lock_fingerprint_turned_off_pin">Fingerprint unlock was turned off because this phone’s fingerprints or screen lock changed. Use your PIN. You can turn it on again in Settings.</string>
+    <!-- The app's record of fingerprint unlock on this phone is damaged; which key it named is unknown. -->
+    <string name="lock_fingerprint_stopped_working_pin">Fingerprint unlock stopped working on this phone. Use your PIN. You can turn it on again in Settings.</string>
     <!-- The phone locked its fingerprint sensor after too many failed fingers. -->
     <string name="lock_fingerprint_locked_pin">Fingerprint is locked for now. Use your PIN.</string>
     <!-- The fingerprint prompt was accepted, but the app could not open with it this time (the phone's

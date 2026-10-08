@@ -83,6 +83,7 @@ class PadViewModelTest {
             PadStatus.Interrupted(4) to same(UiText.plural(R.plurals.lock_pad_interrupted, 4)),
             PadStatus.StorageFull to (text(R.string.lock_pad_storage_full) to text(R.string.lock_pad_storage_full_fingerprint)),
             FingerprintLine.TurnedOff to same(text(R.string.lock_fingerprint_turned_off_pin)),
+            FingerprintLine.StoppedWorking to same(text(R.string.lock_fingerprint_stopped_working_pin)),
             FingerprintLine.Locked to same(text(R.string.lock_fingerprint_locked_pin)),
             FingerprintLine.DidNotOpen to same(text(R.string.lock_fingerprint_did_not_open_pin)),
             FingerprintLine.NotForApps to same(text(R.string.lock_fingerprint_not_for_apps_pin)),

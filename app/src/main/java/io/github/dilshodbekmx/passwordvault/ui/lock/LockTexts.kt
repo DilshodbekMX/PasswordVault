@@ -56,6 +56,7 @@ internal object LockTexts {
     fun fingerprintWithPin(line: FingerprintLine): UiText = UiText.of(
         when (line) {
             FingerprintLine.TurnedOff -> R.string.lock_fingerprint_turned_off_pin
+            FingerprintLine.StoppedWorking -> R.string.lock_fingerprint_stopped_working_pin
             FingerprintLine.Locked -> R.string.lock_fingerprint_locked_pin
             FingerprintLine.DidNotOpen -> R.string.lock_fingerprint_did_not_open_pin
             FingerprintLine.NotForApps -> R.string.lock_fingerprint_not_for_apps_pin
@@ -73,6 +74,7 @@ internal object LockTexts {
     fun fingerprintWithMasterPassword(line: FingerprintLine): UiText = UiText.of(
         when (line) {
             FingerprintLine.TurnedOff -> R.string.lock_fingerprint_turned_off_master
+            FingerprintLine.StoppedWorking -> R.string.lock_fingerprint_stopped_working_master
             FingerprintLine.Locked -> R.string.lock_fingerprint_locked_master
             FingerprintLine.DidNotOpen -> R.string.lock_fingerprint_did_not_open_master
             FingerprintLine.NotForApps -> R.string.lock_fingerprint_not_for_apps_master

@@ -129,6 +129,13 @@ sealed interface FingerprintLine : PadStatus {
     /** The key was invalidated (F15a): "Fingerprint unlock was turned off because this phone's fingerprints or screen lock changed. …" */
     data object TurnedOff : FingerprintLine
 
+    /**
+     * `fingerprint.rec` reads DAMAGED (§5.3; build-plan.md §12, decision 1): "Fingerprint unlock
+     * stopped working on this phone. … You can turn it on again in Settings." Which key it named
+     * cannot be known, so the phone's fingerprints are not blamed, as [TurnedOff] does.
+     */
+    data object StoppedWorking : FingerprintLine
+
     /** Locked by the system (codes 7, 9): "Fingerprint is locked for now." */
     data object Locked : FingerprintLine
 

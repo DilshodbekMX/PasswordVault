@@ -140,6 +140,7 @@ class LockViewModelTest {
     fun eachFingerprintLineSaysUseYourMasterPassword() = runTest {
         val cases = mapOf(
             FingerprintLine.TurnedOff to R.string.lock_fingerprint_turned_off_master,
+            FingerprintLine.StoppedWorking to R.string.lock_fingerprint_stopped_working_master,
             FingerprintLine.Locked to R.string.lock_fingerprint_locked_master,
             FingerprintLine.DidNotOpen to R.string.lock_fingerprint_did_not_open_master,
             FingerprintLine.NotForApps to R.string.lock_fingerprint_not_for_apps_master,
@@ -150,8 +151,8 @@ class LockViewModelTest {
         // Every FingerprintLine is among them (a new case does not compile here).
         for (line in cases.keys) {
             when (line) {
-                FingerprintLine.TurnedOff, FingerprintLine.Locked, FingerprintLine.DidNotOpen, FingerprintLine.NotForApps,
-                FingerprintLine.NoneSaved, FingerprintLine.UpdateNeeded, FingerprintLine.CannotCheck,
+                FingerprintLine.TurnedOff, FingerprintLine.StoppedWorking, FingerprintLine.Locked, FingerprintLine.DidNotOpen,
+                FingerprintLine.NotForApps, FingerprintLine.NoneSaved, FingerprintLine.UpdateNeeded, FingerprintLine.CannotCheck,
                 -> Unit
             }
         }

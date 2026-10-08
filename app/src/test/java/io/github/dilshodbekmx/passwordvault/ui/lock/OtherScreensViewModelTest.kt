@@ -78,6 +78,7 @@ class OtherScreensViewModelTest {
     fun theFingerprintOnlyScreenSaysUseYourMasterPasswordForEachFingerprintLine() = runTest {
         val expected = mapOf(
             FingerprintLine.TurnedOff to R.string.lock_fingerprint_turned_off_master,
+            FingerprintLine.StoppedWorking to R.string.lock_fingerprint_stopped_working_master,
             FingerprintLine.Locked to R.string.lock_fingerprint_locked_master,
             FingerprintLine.DidNotOpen to R.string.lock_fingerprint_did_not_open_master,
             FingerprintLine.NotForApps to R.string.lock_fingerprint_not_for_apps_master,

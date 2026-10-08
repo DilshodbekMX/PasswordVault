@@ -47,6 +47,7 @@ internal object LockKit {
     val FINGERPRINT_LINES: List<FingerprintLine>
         get() = listOf(
             FingerprintLine.TurnedOff,
+            FingerprintLine.StoppedWorking,
             FingerprintLine.Locked,
             FingerprintLine.DidNotOpen,
             FingerprintLine.NotForApps,
@@ -58,7 +59,7 @@ internal object LockKit {
     /** Every case of [PadStatus] is in [PAD_STATUSES]: a new case does not compile here. */
     fun covered(status: PadStatus): Unit = when (status) {
         is PadStatus.TriesLeft, is PadStatus.WrongPin, PadStatus.LastTry, PadStatus.LastTryWhilePending, PadStatus.SameAgain,
-        is PadStatus.Interrupted, PadStatus.StorageFull, FingerprintLine.TurnedOff, FingerprintLine.Locked,
+        is PadStatus.Interrupted, PadStatus.StorageFull, FingerprintLine.TurnedOff, FingerprintLine.StoppedWorking, FingerprintLine.Locked,
         FingerprintLine.DidNotOpen, FingerprintLine.NotForApps, FingerprintLine.NoneSaved, FingerprintLine.UpdateNeeded,
         FingerprintLine.CannotCheck,
         -> Unit

@@ -51,7 +51,7 @@ class DamagedFingerprintRecordTest {
     private val f = LockFixture()
     private val file = RecordCodec.Fingerprint.fileName
 
-    /** The line a damaged record shows: the one of a fingerprint key that is gone (F15a), until the lock screens have a sentence of its own. */
+    /** The line a damaged record shows: "Fingerprint unlock stopped working on this phone." (lock.md §13.3). */
     private val line: FingerprintLine = EntryPolicy.DAMAGED_FINGERPRINT_LINE
 
     private lateinit var vault: FakeVaultPort.FakeVault
@@ -70,8 +70,8 @@ class DamagedFingerprintRecordTest {
     private fun onDisk(vaultId: String = VAULT) = f.files.bytes(f.dirOf(vaultId), file)!!
 
     @Test
-    fun theLineIsTheOneOfAFingerprintKeyThatIsGone() {
-        assertEquals(FingerprintLine.TurnedOff, line)
+    fun theLineSaysThatFingerprintUnlockStoppedWorking_notThatTheFingerprintsChanged() {
+        assertEquals("lock.md §13.3, the row of a damaged fingerprint.rec (decision 1)", FingerprintLine.StoppedWorking, line)
     }
 
     @Test
