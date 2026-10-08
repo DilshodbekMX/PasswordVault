@@ -834,12 +834,16 @@ object Importer {
 
         /**
          * The extra fields as the model holds them: names trimmed and on one line, values with line
-         * feeds. A value without a name, a value over 1,000 characters and the fields beyond 20 go to
-         * [moved]; of more than 20, the hidden ones are kept first.
+         * feeds. A hidden value without a name is named "Hidden value 1", "Hidden value 2" in the order
+         * of the file ([EditTexts.hiddenValue]; build-plan §12, decision 11) and stays a hidden field:
+         * it never moves into the notes, where it would show, for want of a name. A visible value
+         * without a name, a value over 1,000 characters and the fields beyond 20 go to [moved]; of more
+         * than 20, the hidden ones are kept first.
          */
         private fun fields(raw: List<CustomField>, moved: MutableList<String>, changes: Changes): List<CustomField> {
             val candidates = ArrayList<CustomField>(raw.size)
             var nameless = 0
+            var hiddenNameless = 0
             var longValues = 0
             var cutNames = 0
             for (f in raw) {
@@ -848,9 +852,13 @@ object Importer {
                 val value = lines(f.value)
                 if (name.isEmpty()) {
                     if (value.isBlank()) continue
-                    moved.add(value)
-                    nameless++
-                    continue
+                    if (f.secret) {
+                        name = hiddenName(++hiddenNameless)
+                    } else {
+                        moved.add(value)
+                        nameless++
+                        continue
+                    }
                 }
                 if (EntryRules.length(value) > EntryRules.FIELD_VALUE_MAX) {
                     moved.add("$name: $value")
@@ -892,6 +900,12 @@ object Importer {
             }
             changes.add(ImportChange.Kind.FIELDS_MOVED, count)
             return out
+        }
+
+        /** "Hidden value [number]" in the user's language, as a field's name may be: one line, at most 100 characters. */
+        private fun hiddenName(number: Int): String {
+            val name = TextHygiene.removeControls(texts.hiddenValue(number), lineBreaks = false).trim()
+            return EntryRules.cut(name, EntryRules.FIELD_NAME_MAX).trimEnd().ifEmpty { number.toString() }
         }
     }
 
@@ -1049,7 +1063,10 @@ class ImportChange(val kind: Kind, val count: Int) {
         /** [count] extra fields whose value is longer than 1,000 characters moved to the notes. */
         LONG_FIELDS_MOVED,
 
-        /** [count] values without a name moved to the notes. */
+        /**
+         * [count] visible values without a name moved to the notes. A hidden one stays a hidden field,
+         * named "Hidden value 1" and on (build-plan §12, decision 11), and is not counted here.
+         */
         NAMELESS_FIELDS_MOVED,
 
         /** [count] field names longer than 100 characters were cut. */
