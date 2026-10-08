@@ -151,6 +151,15 @@ class SafDocumentIoTest {
     }
 
     @Test
+    fun aPlaceThatCannotBeReachedHasDeletedNothing() {
+        // The app of the place is installed, but its provider does not come up (the phone gives up
+        // after 10 seconds): nothing was deleted, and nothing is known of the document. "Deleted"
+        // here would take the banner of an unprotected export away while the file is still there.
+        val doc = DocRef("content://" + TestDocuments.UNREACHABLE_AUTHORITY + "/document/plain-1")
+        assertFalse("not deleted", io.delete(doc))
+    }
+
+    @Test
     fun aDocumentThatCannotBeReadIsAnIOException() = runBlocking {
         val (_, doc) = document(TestDocuments.NO_READ, payload(10))
         try {

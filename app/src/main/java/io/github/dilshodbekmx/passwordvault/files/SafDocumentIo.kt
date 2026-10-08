@@ -1,10 +1,12 @@
 package io.github.dilshodbekmx.passwordvault.files
 
+import android.content.ContentProviderClient
 import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ProviderInfo
 import android.net.Uri
+import android.os.RemoteException
 import android.os.storage.StorageManager
 import android.provider.DocumentsContract
 import android.provider.OpenableColumns
@@ -35,8 +37,8 @@ import kotlinx.coroutines.withContext
  * - **Keep** takes the persistable permission that the picker's result granted, read and write
  *   where both were granted, so that a task continues in a new process (ux.md §4 item 1).
  * - **Delete** asks the provider (`DocumentsContract.deleteDocument`, API 19). False where the place
- *   does not allow it or the document is still there; true when it is gone, also when it was gone
- *   already.
+ *   does not allow it, cannot be reached, or the document is still there; true when it is gone, also
+ *   when it was gone already.
  * - **Place** by the provider ([Places]); another place is named by the label of its provider, or for
  *   an SD card or USB drive by its volume's description ("SanDisk SD card").
  * - **Name** asks the provider for the document's display name. That name, and the name of another
@@ -96,14 +98,23 @@ class SafDocumentIo(private val context: Context, private val io: CoroutineDispa
 
     override fun delete(doc: DocRef): Boolean {
         val uri = Uri.parse(doc.uri)
-        val deleted = try {
-            DocumentsContract.deleteDocument(resolver, uri)
-        } catch (e: FileNotFoundException) {
-            false // from Android 10 the call throws where it returned false before
-        } catch (e: RuntimeException) {
-            false // the place does not allow it, or no permission
+        // The provider must be there to say what became of the document. One that cannot be reached
+        // (its app is installed and does not come up) has deleted nothing and tells nothing. It is
+        // looked for first, through a link that may break: from Android 10 the request to delete
+        // holds on to the provider, and Android ends this app when that provider's process dies.
+        val provider = providerOf(uri) ?: return false
+        try {
+            val deleted = try {
+                DocumentsContract.deleteDocument(resolver, uri)
+            } catch (e: FileNotFoundException) {
+                false // from Android 10 the call throws where it returned false before
+            } catch (e: RuntimeException) {
+                false // the place does not allow it, or no permission
+            }
+            return deleted || isGone(provider, uri)
+        } finally {
+            provider.close()
         }
-        return deleted || isGone(uri)
     }
 
     override fun place(doc: DocRef): Place = Places.of(doc.uri, ::nameOf)
@@ -198,21 +209,27 @@ class SafDocumentIo(private val context: Context, private val io: CoroutineDispa
         return if (size == buffer.size) buffer else buffer.copyOf(size)
     }
 
+    /** The provider of [uri], reached now; null when there is none or it does not come up. */
+    private fun providerOf(uri: Uri): ContentProviderClient? = try {
+        uri.authority?.let { resolver.acquireUnstableContentProviderClient(it) }
+    } catch (e: RuntimeException) {
+        null // SecurityException: a provider this app may not reach
+    }
+
     /**
-     * True only when the provider, which is there, says the document is not: a query that finds no
-     * row, or none at all (a documents provider answers a missing document so). A provider that is
-     * not installed, or a permission that is gone, tells nothing, and the document is taken to be
-     * there.
+     * True only when [provider] itself says the document is not there: its answer to a query finds
+     * no row, or is none at all (a documents provider answers a missing document so). A provider
+     * that dies while it is asked, or a permission that is gone, tells nothing, and the document is
+     * taken to be there. `ContentResolver.query` would not do: it also answers with nothing when the
+     * provider could not be reached.
      */
-    private fun isGone(uri: Uri): Boolean {
-        val authority = uri.authority ?: return false
-        if (providerInfo(authority) == null) return false
-        return try {
-            resolver.query(uri, arrayOf(DocumentsContract.Document.COLUMN_DOCUMENT_ID), null, null, null)
-                ?.use { it.count == 0 } ?: true
-        } catch (e: RuntimeException) {
-            false // SecurityException: no permission any more, nothing is known
-        }
+    private fun isGone(provider: ContentProviderClient, uri: Uri): Boolean = try {
+        provider.query(uri, arrayOf(DocumentsContract.Document.COLUMN_DOCUMENT_ID), null, null, null)
+            ?.use { it.count == 0 } ?: true
+    } catch (e: RemoteException) {
+        false // the provider's process died
+    } catch (e: RuntimeException) {
+        false // SecurityException: no permission any more, nothing is known
     }
 
     private fun volumeDescription(uuid: String): String? = try {
