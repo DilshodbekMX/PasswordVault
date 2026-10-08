@@ -10,6 +10,7 @@ import io.github.dilshodbekmx.passwordvault.core.util.ParseError
 import io.github.dilshodbekmx.passwordvault.core.util.RandomSource
 import io.github.dilshodbekmx.passwordvault.core.util.StrictJson
 import io.github.dilshodbekmx.passwordvault.core.util.TextHygiene
+import io.github.dilshodbekmx.passwordvault.core.util.Uuid
 import java.util.Locale
 
 /**
@@ -61,7 +62,8 @@ import java.util.Locale
  * - A broken character (half of a surrogate pair) cannot be stored and becomes U+FFFD
  *   ([ImportFile.replacedCharacters]); in a password that is listed too.
  * - Ids: a CSV row and a foreign item get new ids; our own JSON's ids are kept here, and
- *   `VaultEdits.addImported` keeps one only when it is free (formats-review P1).
+ *   `VaultEdits.addImported` keeps one only when it is free (formats-review P1). An id of our own JSON
+ *   that is no id (any text may stand there) is not kept: `Entry.toString` shows an id.
  *
  * Nothing here throws for any bytes, and no exception message or `toString` holds a value of the
  * file (architecture.md §5.6).
@@ -208,7 +210,7 @@ object Importer {
             is BitwardenJson.Read.TooMany -> return Result.TooManyRows(read.items, read.limit)
             is BitwardenJson.Read.Ok -> read
         }
-        val cleaner = Cleaner(nowMs, texts)
+        val cleaner = Cleaner(nowMs, texts, random::uuid)
         val leftOut = ArrayList<ImportLeftOut>()
         // Every element of `items` is an account, or one of the three that are not imported; the
         // reader lists the others (passkeys, linked fields, …) by the position of an account it made.
@@ -313,7 +315,7 @@ object Importer {
         }
         // Rule (a) on the rows as written, before the limits move anything: one account, all its websites.
         val joined = if (format == Format.BITWARDEN_CSV) rows else joinAdjacent(rows)
-        val cleaner = Cleaner(nowMs, texts)
+        val cleaner = Cleaner(nowMs, texts, random::uuid)
         val leftOut = ArrayList<ImportLeftOut>()
         val accounts = ArrayList<ImportAccount>(joined.size)
         for (r in joined) {
@@ -403,8 +405,21 @@ object Importer {
             }
         }
         ambiguous.sort()
-        val samples = headers.indices.map { i -> rows.firstNotNullOfOrNull { r -> r.values.getOrNull(i)?.takeIf { it.isNotBlank() } } ?: "" }
-        return ImportColumns(format, headers, samples, meanings, ambiguous, fromUser = given != null)
+        // The first value of each column that is not blank, in one pass over the rows: a hostile file
+        // may have a million columns over ten thousand short rows.
+        val samples = arrayOfNulls<String>(headers.size)
+        var missing = headers.size
+        for (row in rows) {
+            if (missing == 0) break
+            val values = row.values
+            for (i in 0 until minOf(values.size, headers.size)) {
+                if (samples[i] == null && values[i].isNotBlank()) {
+                    samples[i] = values[i]
+                    missing--
+                }
+            }
+        }
+        return ImportColumns(format, headers, samples.map { it ?: "" }, meanings, ambiguous, fromUser = given != null)
     }
 
     /** One row (or adjacent rows joined) as an entry, before the rules of every format are applied. */
@@ -418,15 +433,35 @@ object Importer {
         private val nowMs: Long,
     ) {
         private val column = HashMap<ColumnMeaning, Int>()
-        private val fieldColumns = ArrayList<Int>()
+
+        /**
+         * The columns that are extra fields, in order, with the name and the hidden flag each one gives
+         * its fields. Worked out once, not once for every row, and every row's field is named with the
+         * same string: a hostile header may be most of the file, and the time and memory of a read must
+         * not grow with the header times the rows (the cleaner, too, cleans a long name once).
+         */
+        private val fieldColumns: IntArray
+        private val fieldLabels: Array<String>
+        private val fieldSecret: BooleanArray
 
         init {
+            var fields = 0
             meanings.forEachIndexed { i, m ->
                 when (m) {
-                    ColumnMeaning.FIELD -> fieldColumns.add(i)
+                    ColumnMeaning.FIELD -> fields++
                     ColumnMeaning.SKIP -> Unit
                     else -> column.putIfAbsent(m, i)
                 }
+            }
+            fieldColumns = IntArray(fields)
+            fieldSecret = BooleanArray(fields)
+            var k = 0
+            fieldLabels = Array(fields) {
+                while (meanings[k] != ColumnMeaning.FIELD) k++
+                val label = headers[k].replace("\uFEFF", "").trim()
+                fieldColumns[it] = k++
+                fieldSecret[it] = !HeaderAliases.isHarmless(label)
+                label
             }
         }
 
@@ -438,11 +473,12 @@ object Importer {
             // Our own CSV: a block at the end of the note, recognised only when it is ours (D-10a).
             val block = FieldsBlock.read(note)
             val fields = ArrayList<CustomField>(block.fields)
-            for (i in fieldColumns) {
-                val v = values.getOrNull(i) ?: continue
+            for (k in fieldColumns.indices) {
+                val i = fieldColumns[k]
+                if (i >= values.size) break // the columns are in order: this row has no value for the rest
+                val v = values[i]
                 if (v.isEmpty()) continue
-                val label = headers[i].replace("\uFEFF", "").trim()
-                fields.add(CustomField(label, v, secret = !HeaderAliases.isHarmless(label)))
+                fields.add(CustomField(fieldLabels[k], v, fieldSecret[k]))
             }
             if (ColumnMeaning.BITWARDEN_FIELDS in column) {
                 for (line in TextHygiene.normalizeLineBreaks(value(values, ColumnMeaning.BITWARDEN_FIELDS)).split('\n')) {
@@ -478,15 +514,17 @@ object Importer {
             val extra = if (values.size > headers.size) values.subList(headers.size, values.size).filter { it.isNotBlank() } else emptyList()
             val notes = if (extra.isEmpty()) block.notes else listOf(block.notes).filter { it.isNotEmpty() }.plus(extra).joinToString("\n")
 
-            val isNote = value(values, ColumnMeaning.BITWARDEN_TYPE).trim().equals("note", ignoreCase = true)
+            // Bitwarden's `type` needs no reading: a secure note's row has empty login columns (formats.md
+            // §8.3), and a row of type "note" that has a username or a password keeps them, since a password
+            // is never dropped on import but for its length (§8.4, D-10f).
             val created = time(value(values, ColumnMeaning.CREATED)) ?: nowMs
             val titleText = block.title ?: value(values, ColumnMeaning.TITLE)
             return RawRow(
                 Entry(
                     id = id,
                     title = titleText,
-                    username = if (isNote) "" else value(values, ColumnMeaning.USERNAME),
-                    password = if (isNote) "" else value(values, ColumnMeaning.PASSWORD),
+                    username = value(values, ColumnMeaning.USERNAME),
+                    password = value(values, ColumnMeaning.PASSWORD),
                     notes = notes,
                     urls = urls,
                     fields = fields,
@@ -506,7 +544,29 @@ object Importer {
 
     private fun isWeb(url: String): Boolean = url.startsWith("https://", ignoreCase = true) || url.startsWith("http://", ignoreCase = true)
 
-    private fun hostOf(url: String): String = WebAddress.hostOf(EntryRules.normalizeUrl(url))
+    private fun hostOf(url: String): String = WebAddress.hostOf(website(url))
+
+    /**
+     * [text] as the shared website rule `EntryRules.normalizeUrl` stores it (formats.md §8.4), for a
+     * value of any length. The rule asks whether a text without a scheme looks like a host with a
+     * pattern whose time grows with the square of the text when white space follows many dots, and
+     * an imported value may be megabytes long. A text with white space in it never looks like a host
+     * (the pattern allows none), so the rule only trims it: that is done here, without asking.
+     *
+     * White space here is every character that the pattern's `\s` means on the JVM or on Android,
+     * whose pattern engines differ (ASCII only on the one, Unicode on the other): so a website with,
+     * say, a no-break space in it is read the same way on both.
+     */
+    private fun website(text: String): String {
+        val url = text.trim()
+        return if (url.any { it.isWhitespace() || it == NEXT_LINE }) url else EntryRules.normalizeUrl(url)
+    }
+
+    /** U+0085, white space by Unicode's property though not by `Char.isWhitespace`. */
+    private const val NEXT_LINE = '\u0085'
+
+    /** A field name longer than this many characters is cleaned once for every row that has it ([Cleaner]). */
+    private const val LONG_NAME = 2 * EntryRules.FIELD_NAME_MAX
 
     private val YES = setOf("1", "true", "yes", "y", "да", "ha", "ҳа")
 
@@ -574,7 +634,7 @@ object Importer {
     }
 
     /** formats.md §8.4 and architecture.md D-10f for one account, counting over the whole file. */
-    private class Cleaner(private val nowMs: Long, private val texts: EditTexts) {
+    private class Cleaner(private val nowMs: Long, private val texts: EditTexts, private val newId: () -> String) {
         val controls = TextHygiene.Counter()
         val surrogates = TextHygiene.Counter()
 
@@ -585,6 +645,36 @@ object Importer {
         /** Text with line breaks (notes, a field's value): line feeds, no other control character. */
         private fun lines(text: String): String =
             TextHygiene.replaceUnpairedSurrogates(TextHygiene.removeControls(text, lineBreaks = true, counter = controls), surrogates)
+
+        /**
+         * A field's name as the model holds it: [name], made by [line] and trimmed; and [cut], that name
+         * cut to [EntryRules.FIELD_NAME_MAX] when it is longer, or null. [controls] and [surrogates] are
+         * what cleaning it removed and replaced.
+         */
+        private class FieldName(val name: String, val cut: String?, val controls: Int, val surrogates: Int)
+
+        /** The long names cleaned so far, by the string they came as: every row of a column has the same one. */
+        private val longNames = java.util.IdentityHashMap<String, FieldName>()
+
+        /**
+         * [raw] as a field's name ([FieldName]), every removal counted in [controls] and [surrogates]. A
+         * long name (a column's header, which every row of the file repeats) is cleaned once and then
+         * counted again for each row: a hostile header costs its length once, not once for every row.
+         */
+        private fun fieldName(raw: String): FieldName {
+            val clean = if (raw.length <= LONG_NAME) cleanName(raw) else longNames.getOrPut(raw) { cleanName(raw) }
+            controls.add(clean.controls)
+            surrogates.add(clean.surrogates)
+            return clean
+        }
+
+        private fun cleanName(raw: String): FieldName {
+            val c = TextHygiene.Counter()
+            val s = TextHygiene.Counter()
+            val name = TextHygiene.replaceUnpairedSurrogates(TextHygiene.removeControls(raw, lineBreaks = false, counter = c), s).trim()
+            val cut = if (EntryRules.length(name) > EntryRules.FIELD_NAME_MAX) EntryRules.cut(name, EntryRules.FIELD_NAME_MAX).trimEnd() else null
+            return FieldName(name, cut, c.count, s.count)
+        }
 
         fun clean(
             raw: Entry,
@@ -601,11 +691,13 @@ object Importer {
             val changes = Changes(given)
             val moved = ArrayList<String>()
 
-            // Websites: the shared rule, blank ones dropped, each once (formats-review P10).
+            // Websites: the shared rule, blank ones dropped, each once (formats-review P10). "Once" is a
+            // set, not a search through the list: a hostile item may list a million websites.
             val urls = ArrayList<String>()
+            val seen = HashSet<String>()
             for (u in raw.urls) {
-                val url = EntryRules.normalizeUrl(line(u))
-                if (url.isNotEmpty() && url !in urls) urls.add(url)
+                val url = website(line(u))
+                if (url.isNotEmpty() && seen.add(url)) urls.add(url)
             }
             var long = 0
             var beyond = 0
@@ -635,7 +727,7 @@ object Importer {
 
             var title = line(raw.title).trim()
             val fromFile = titleFromFile && title.isNotEmpty()
-            if (title.isEmpty()) title = BitwardenJson.titleFor(kept, username, nowMs, texts)
+            if (title.isEmpty()) title = madeName(kept.firstOrNull(), username)
             if (EntryRules.length(title) > EntryRules.TITLE_MAX) {
                 moved.add(0, title)
                 title = EntryRules.cut(title, EntryRules.TITLE_MAX).trimEnd()
@@ -679,7 +771,10 @@ object Importer {
             }
 
             val entry = raw.copy(
-                id = TextHygiene.replaceUnpairedSurrogates(raw.id, surrogates),
+                // Our own JSON may hold any text where an id belongs. One that is no id would get a new one
+                // from `VaultEdits.addImported` anyway; it gets it here, so that no text of the file stands
+                // where `Entry.toString` shows it (architecture.md §5.6).
+                id = if (Uuid.isValid(raw.id)) raw.id else newId(),
                 title = title,
                 username = username,
                 password = password,
@@ -697,9 +792,19 @@ object Importer {
         private fun nameOf(raw: Entry): String {
             val title = TextHygiene.replaceUnpairedSurrogates(TextHygiene.removeControls(raw.title, lineBreaks = false)).trim()
             if (title.isNotEmpty()) return EntryRules.cut(title, EntryRules.TITLE_MAX)
-            val urls = raw.urls.map { EntryRules.normalizeUrl(TextHygiene.removeControls(it, lineBreaks = false)) }
-            return BitwardenJson.titleFor(urls, TextHygiene.removeControls(raw.username, lineBreaks = false).trim(), nowMs, texts)
+            val first = raw.urls.asSequence().map { website(TextHygiene.removeControls(it, lineBreaks = false)) }.firstOrNull { it.isNotEmpty() }
+            return madeName(first, TextHygiene.removeControls(raw.username, lineBreaks = false).trim())
         }
+
+        /**
+         * The name of an account that came without one, as `BitwardenJson.titleFor` makes it: the host
+         * of its first website, else its username, else "Untitled" and the time. [firstWebsite] is as
+         * [website] left it, so its host is taken here, without asking the shared rule once more
+         * whether the text looks like a host.
+         */
+        private fun madeName(firstWebsite: String?, username: String): String =
+            firstWebsite?.let { EntryRules.storedTitle(WebAddress.hostOf(it)).ifEmpty { null } }
+                ?: BitwardenJson.titleFor(emptyList(), username, nowMs, texts)
 
         /**
          * The extra fields as the model holds them: names trimmed and on one line, values with line
@@ -710,9 +815,10 @@ object Importer {
             val candidates = ArrayList<CustomField>(raw.size)
             var nameless = 0
             var longValues = 0
-            var longNames = 0
+            var cutNames = 0
             for (f in raw) {
-                var name = line(f.name).trim()
+                val clean = fieldName(f.name)
+                var name = clean.name
                 val value = lines(f.value)
                 if (name.isEmpty()) {
                     if (value.isBlank()) continue
@@ -725,15 +831,15 @@ object Importer {
                     longValues++
                     continue
                 }
-                if (EntryRules.length(name) > EntryRules.FIELD_NAME_MAX) {
-                    name = EntryRules.cut(name, EntryRules.FIELD_NAME_MAX).trimEnd()
-                    longNames++
+                if (clean.cut != null) {
+                    name = clean.cut
+                    cutNames++
                 }
                 candidates.add(if (name == f.name && value == f.value) f else CustomField(name, value, f.secret))
             }
             changes.add(ImportChange.Kind.NAMELESS_FIELDS_MOVED, nameless)
             changes.add(ImportChange.Kind.LONG_FIELDS_MOVED, longValues)
-            changes.add(ImportChange.Kind.FIELD_NAMES_CUT, longNames)
+            changes.add(ImportChange.Kind.FIELD_NAMES_CUT, cutNames)
             if (candidates.size <= EntryRules.FIELDS_MAX) return candidates
             // More than 20: the hidden values stay fields (masked), the visible ones go to the notes first.
             val keep = BooleanArray(candidates.size)
@@ -832,7 +938,7 @@ class ImportWrongLength(val values: Int, val expected: Int) {
 
 /** One account the file holds, as the importer read and cleaned it. */
 class ImportAccount(
-    /** The account as it would be added. Its id is new, except for our own JSON (`VaultEdits.addImported` decides). */
+    /** The account as it would be added. Its id is new, except for a valid id of our own JSON (`VaultEdits.addImported` decides). */
     val entry: Entry,
     /** CSV: the line each of its rows starts on (several when adjacent rows were joined); JSON: none. */
     val lines: List<Int>,
@@ -848,7 +954,11 @@ class ImportAccount(
     /** How many rows of the file it is (1 for a JSON item). */
     val rows: Int get() = if (lines.isEmpty()) 1 else lines.size
 
-    /** This account and [other], read from later rows, as one: [other]'s websites added (rules (a) to (c) of ux.md §5.21). */
+    /**
+     * This account and [other], read from later rows, as one: [other]'s websites added (rules (a) to (c)
+     * of ux.md §5.21), and a favourite when either was one (rules (b) and (c) join rows whatever their
+     * stars, and the star of a row that is taken in is not lost).
+     */
     internal fun joinedWith(other: ImportAccount): ImportAccount {
         val a = entry
         val b = other.entry
@@ -859,6 +969,7 @@ class ImportAccount(
         return ImportAccount(
             a.copy(
                 urls = urls,
+                favourite = a.favourite || b.favourite,
                 createdAt = minOf(a.createdAt, b.createdAt),
                 updatedAt = maxOf(a.updatedAt, b.updatedAt),
                 passwordChangedAt = listOfNotNull(a.passwordChangedAt, b.passwordChangedAt).maxOrNull(),

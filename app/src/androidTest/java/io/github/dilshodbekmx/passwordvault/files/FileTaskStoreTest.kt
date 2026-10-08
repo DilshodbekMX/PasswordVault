@@ -12,6 +12,7 @@ import io.github.dilshodbekmx.passwordvault.session.Session
 import io.github.dilshodbekmx.passwordvault.settings.AppSettings
 import java.io.File
 import java.util.UUID
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
@@ -58,8 +59,15 @@ class FileTaskStoreTest {
 
     // The store runs its work in backgroundScope, which advanceUntilIdle() leaves alone: the tests
     // let it run with runCurrent(), which runs every task due now. Nothing here waits for time.
-    private fun TestScope.newStore(attached: Boolean = true): FileTaskStore {
-        val dispatchers = AppDispatchers.single(StandardTestDispatcher(testScheduler))
+    private fun TestScope.newStore(attached: Boolean = true, threads: Boolean = false): FileTaskStore {
+        // With [threads], the main thread and the I/O dispatcher are two dispatchers, as in the app:
+        // every write of the settings and every call to a place is then a point where another call
+        // of the store can come in between.
+        val dispatchers = if (threads) {
+            AppDispatchers(StandardTestDispatcher(testScheduler), StandardTestDispatcher(testScheduler), StandardTestDispatcher(testScheduler))
+        } else {
+            AppDispatchers.single(StandardTestDispatcher(testScheduler))
+        }
         val store = FileTaskStore(settings, session, documents, lock, backgroundScope, dispatchers, BackupSharing(sharedDir))
         if (attached) store.attach(launcher)
         return store
@@ -343,6 +351,87 @@ class FileTaskStoreTest {
     }
 
     @Test
+    fun anAnswerThatIsNotAnotherAppsDocumentIsNoDocument() = runTest {
+        // The picker is whatever app answers the request (on Android 7 the user is asked which one).
+        // An answer that is not a content:// address of another app is not a place the user chose:
+        // the task gets no document, and its screen hears that the picker was closed.
+        val store = newStore()
+        val export = FileTask(FileTask.Kind.EXPORT, 2, null)
+        val own = "file:///data/data/io.github.dilshodbekmx.passwordvault/files/vaults/live/vault-0000000001.pvault"
+        for (answer in listOf(own, "FILE:///sdcard/x.csv", "/data/data/io.github.dilshodbekmx.passwordvault/shared_prefs/pv_settings.xml", "", "content://")) {
+            store.create(export, "passwords.csv", DocumentTypes.CSV)
+            val seen = resultsOf(store, FileTask.Kind.EXPORT)
+            store.returned(FileTaskStore.Action.CREATE, answer)
+            runCurrent()
+            assertEquals(answer, listOf<PickResult>(PickResult.Cancelled(export)), seen)
+            assertNull(answer, store.task.value)
+            assertNull(answer, settings.fileTask.value)
+            assertTrue(answer, documents.kept.isEmpty())
+        }
+    }
+
+    @Test
+    fun aTaskGivenUpWhileItsResultIsBeingRecordedDoesNotComeBack() = runTest {
+        // The picker's result is on its way into the record (the permission, then the settings file)
+        // when the screen gives the task up: the giving up waits for the record, and then removes the
+        // empty document that "Save as" made.
+        val store = newStore(threads = true)
+        val backup = FileTask(FileTask.Kind.BACKUP, 3, null)
+        documents.files[DOC] = ByteArray(0)
+        store.create(backup, "b.pvault", DocumentTypes.BACKUP)
+        store.returned(FileTaskStore.Action.CREATE, DOC)
+        val cleanup = store.abandon(FileTask.Kind.BACKUP)
+        runCurrent()
+        assertNull("the task does not come back", store.task.value)
+        assertNull(settings.fileTask.value)
+        assertFalse("the empty document is gone", DOC in documents.files)
+        assertEquals("and the screen was told", Cleanup.Removed, cleanup)
+    }
+
+    @Test
+    fun aResultThatComesWhileItsTaskIsBeingGivenUpLeavesNothingBehind() = runTest {
+        // The other way round: the task is being given up (its record is being written) when the
+        // picker's result comes. No task waits for that document any more.
+        val store = newStore(threads = true)
+        val export = FileTask(FileTask.Kind.EXPORT, 2, null)
+        documents.files[DOC] = ByteArray(0)
+        store.create(export, "passwords.csv", DocumentTypes.CSV)
+        var cleanup: Cleanup? = null
+        backgroundScope.launch(start = CoroutineStart.UNDISPATCHED) { cleanup = store.abandon(FileTask.Kind.EXPORT) }
+        store.returned(FileTaskStore.Action.CREATE, DOC)
+        runCurrent()
+        assertEquals("the picker had returned nothing yet", Cleanup.NoDocument, cleanup)
+        assertNull("the task does not come back", store.task.value)
+        assertNull(settings.fileTask.value)
+        assertFalse("the empty document is gone", DOC in documents.files)
+        assertTrue("nothing was kept", documents.kept.isEmpty())
+    }
+
+    @Test
+    fun aNewTaskBegunWhileTheOneBeforeIsBeingGivenUpKeepsItsRecord() = runTest {
+        // "Couldn't save to this place. Try another folder.": the failed document is still being
+        // removed (a place may take seconds) when the user opens "Save as" again.
+        val store = newStore(threads = true)
+        val backup = FileTask(FileTask.Kind.BACKUP, 3, null)
+        picked(store, backup, "$DOC-first", byteArrayOf(1, 2, 3))
+        var cleanup: Cleanup? = null
+        backgroundScope.launch(start = CoroutineStart.UNDISPATCHED) { cleanup = store.abandon(FileTask.Kind.BACKUP, written = true) }
+        assertTrue(store.create(backup, "b.pvault", DocumentTypes.BACKUP))
+        runCurrent()
+        assertEquals(Cleanup.Removed, cleanup)
+        assertFalse("$DOC-first" in documents.files)
+        assertEquals("the new task is the one recorded", backup, store.task.value)
+        assertEquals(backup, settings.fileTask.value)
+
+        // So its picker's result is taken as its own.
+        documents.files["$DOC-second"] = ByteArray(0)
+        store.returned(FileTaskStore.Action.CREATE, "$DOC-second")
+        runCurrent()
+        assertEquals(backup.copy(doc = DocRef("$DOC-second")), store.task.value)
+        assertTrue("$DOC-second" in documents.files)
+    }
+
+    @Test
     fun shareWritesTheCopyAndOpensTheShareSheetInTheGrace() = runTest {
         val store = newStore()
         val bytes = byteArrayOf(80, 86, 65, 85, 76, 84, 48, 49)
@@ -356,6 +445,46 @@ class FileTaskStoreTest {
         launcher.failure = ActivityNotFoundException("no share sheet")
         assertFalse(store.share(bytes, "again.pvault", "Send"))
         assertFalse("the grace ended", session.external)
+    }
+
+    @Test
+    fun aNameThatIsNotAFileNameDoesNotEndTheCaller() = runTest {
+        // The name may be the one a place shows for the backup, and a place may show a "/" in a name
+        // (Google Drive does). The copy is a file under cache/shared/ all the same.
+        val store = newStore()
+        val bytes = byteArrayOf(80, 86, 65, 85, 76, 84, 48, 49)
+        assertTrue(store.share(bytes, "Backups/2026\u0000-10.pvault", "Send"))
+        assertEquals(File(sharedDir, "Backups_2026_-10.pvault"), launcher.shared)
+        assertArrayEquals(bytes, launcher.shared!!.readBytes())
+        assertEquals("nothing outside cache/shared/", listOf("Backups_2026_-10.pvault"), sharedDir.walkTopDown().filter { it.isFile }.map { it.name }.toList())
+
+        // Nothing of a name: false, as for a copy that could not be written, and no grace begins.
+        for (none in listOf("", ".", "..")) assertFalse("\"$none\"", store.share(bytes, none, "Send"))
+        assertEquals("only the first one was shared", 1, launcher.calls.size)
+        assertEquals(1, session.begun)
+    }
+
+    @Test
+    fun theGraceOfTheShareSheetEndsWhenTheAppIsInFrontAgain() = runTest {
+        // lock.md §10.3 item 3: the share sheet returns no result, and it covers the activity without
+        // stopping it, so the store ends the grace when the activity says that it is in front again.
+        val store = newStore()
+        store.inFront()
+        assertEquals("nothing was shared: nothing ends", 0, session.ended)
+
+        assertTrue(store.share(byteArrayOf(80, 86), "b.pvault", "Send"))
+        assertTrue("in the share sheet", session.external)
+        store.inFront()
+        assertFalse("the grace is over", session.external)
+        assertEquals(1, session.ended)
+        store.inFront()
+        assertEquals("once for each share sheet", 1, session.ended)
+
+        // The grace of a file picker ends with its result, not when the activity is in front.
+        store.create(FileTask(FileTask.Kind.BACKUP, 3, null), "b.pvault", DocumentTypes.BACKUP)
+        store.inFront()
+        assertTrue("the picker is still open", session.external)
+        assertEquals(1, session.ended)
     }
 
     @Test
