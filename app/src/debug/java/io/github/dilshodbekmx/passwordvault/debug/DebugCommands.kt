@@ -3,6 +3,7 @@ package io.github.dilshodbekmx.passwordvault.debug
 import android.content.Context
 import io.github.dilshodbekmx.passwordvault.debug.data.EntryCommand
 import io.github.dilshodbekmx.passwordvault.debug.i18n.LocaleCommand
+import io.github.dilshodbekmx.passwordvault.debug.lock.LockCommands
 
 /**
  * One test hook, run by [DebugCommandReceiver] (architecture.md §3.6, lock.md §15.3). Debug and
@@ -27,5 +28,12 @@ object DebugCommands {
     val all: Map<String, DebugCommand> = mapOf(
         "entry" to EntryCommand,
         "locale" to LocaleCommand,
+        "status" to LockCommands.Status,
+        "hold-after-charge" to LockCommands.HoldAfterCharge,
+        "hold-before-hmac" to LockCommands.HoldBeforeHmac,
+        "release" to LockCommands.Release,
+        "fail-next-write" to LockCommands.FailNextWrite,
+        "ks-fault" to LockCommands.KsFault,
+        "drop-keys" to LockCommands.DropKeys,
     )
 }
