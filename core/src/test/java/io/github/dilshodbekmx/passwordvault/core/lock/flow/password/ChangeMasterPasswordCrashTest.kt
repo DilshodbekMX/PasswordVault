@@ -177,7 +177,7 @@ class ChangeMasterPasswordCrashTest {
         assertTrue("$where: the PIN's slot holds ${slot.wraps.size} wraps", slot.wraps.size in 1..2)
         if (script.fingerprint) {
             val finger = (f.fingerprintOnDisk() as? RecordRead.Ok)?.record ?: throw AssertionError("$where: fingerprint.rec is ${f.fingerprintOnDisk()}")
-            assertTrue("$where: the fingerprint's slot", finger.slot != null && finger.slot!!.wraps.size in 1..2)
+            assertTrue("$where: the fingerprint's slot", finger.slot != null && finger.slot.wraps.size in 1..2)
         }
         // I1: the lock asked storage for nothing but the change, and no generation that was there changed or went.
         assertTrue("$where: writing calls ${f.port.writingCalls}", f.port.writingCalls.all { it.startsWith("changePassword ") })

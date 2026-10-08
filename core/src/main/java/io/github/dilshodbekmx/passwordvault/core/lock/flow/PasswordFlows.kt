@@ -667,7 +667,7 @@ internal class PasswordFlows(private val core: LockCore) {
             val vkId = openKeyId()
             val current = core.launchEnded(confirm.launch) && !at.hasEnded && core.state.value is LockState.Unlocked &&
                 core.open?.vaultId == lock.vaultId && lock.fingerprint.slot?.id == confirm.slotId && vkId == confirm.wrap.vkId
-            if (!current || vkId == null) return ProofOutcome.Cancelled
+            if (!current) return ProofOutcome.Cancelled // `current` also says that vkId is the open vault's key, so not null
             return when (result) {
                 is FingerprintResult.Ok -> when {
                     result.bytes.size != VK_SIZE -> { // §14.3: a result that is not 32 bytes
