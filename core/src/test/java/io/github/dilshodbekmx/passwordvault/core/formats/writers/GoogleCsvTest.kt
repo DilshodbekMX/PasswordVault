@@ -181,6 +181,34 @@ class GoogleCsvTest {
     }
 
     @Test
+    fun everyVectorOfFormatsMdComesBackWholeThroughTheFile() {
+        // formats.md §4.4: the four cases of formats-review P8, both reserved labels, an escaped
+        // backslash and notes that read as a block, in one file, read back by our own readers.
+        val vectors = WriterFixtures.vectors()
+        val export = GoogleCsv.export(vectors.map { it.entry })
+        val rows = Csv.read(String(export.parts.single(), Charsets.UTF_8)).rows.map { it.values }
+        assertEquals(vectors.size, rows.size)
+        for ((vector, row) in vectors.zip(rows)) assertEquals(vector.toString(), vector.note, row[4])
+        // Vector 6: the password column holds the new password; the block keeps the old one.
+        assertEquals("N3w!pass", rows[vectors.indexOfFirst { it.number == 6 }][3])
+        val back = WriterFixtures.readCsv(export.parts)
+        for ((vector, account) in vectors.zip(back)) assertEquals(vector.toString(), csvAccount(vector.entry), account)
+        // What each vector says it reads back as.
+        assertEquals(listOf(visible("Q: mother's name", "Aziza")), back[0].fields)
+        assertEquals("Branch: Chilonzor", back[0].notes)
+        assertEquals(listOf(visible("Code (hidden)", "77"), hidden("PIN", "1234")), back[1].fields)
+        assertEquals(listOf(visible("A", "1"), visible("B", "x")), back[2].fields)
+        for (pasted in back.subList(3, 5)) assertTrue(pasted.fields.isEmpty())
+        assertEquals(listOf(visible("Title", "Mr"), visible("Old password", "x")), back[5].fields)
+        assertEquals("Telegram", back[5].title)
+        assertFalse(back[5].changePending)
+        assertEquals(Triple("N3w!pass", "Old#2", true), Triple(back[6].password, back[6].pendingOldPassword, back[6].changePending))
+        assertEquals(listOf(visible("C:\\keys", "line 1\nline 2")), back[7].fields)
+        assertEquals(vectors[8].entry.notes, back[8].notes)
+        assertTrue(back[8].fields.isEmpty())
+    }
+
+    @Test
     fun unpairedSurrogatesAreWrittenAsTheReplacementCharacterAndCounted() {
         val e = entry(1, "T\uD800x", "u\uDC00", "p\uD83D", listOf("https://x.example/a\uD800", "https://y.example"), "n\uDE00\uD83Dz",
             listOf(hidden("F\uD800", "v\uDFFF")))

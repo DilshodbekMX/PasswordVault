@@ -265,6 +265,20 @@ class BitwardenJsonTest {
     }
 
     @Test
+    fun everyVectorOfFormatsMdComesBackWholeThroughTheFile() {
+        // The entries of formats.md §4.4 (the cases of formats-review P8, both reserved labels, an
+        // escaped backslash, notes that read as a block): in our JSON they are plain values.
+        val entries = WriterFixtures.vectors().map { it.entry }
+        val back = ok(export(entries).bytes)
+        assertTrue(back.notImported.isEmpty())
+        assertEquals(entries.size, back.entries.size)
+        for ((want, got) in entries.zip(back.entries)) assertTrue("entry ${want.id}", want == got)
+        assertEquals(listOf(visible("Title", "Mr"), visible("Old password", "x")), back.entries[5].fields)
+        assertEquals("Old#2", back.entries[6].pendingOldPassword)
+        assertTrue(back.entries[6].changePending)
+    }
+
+    @Test
     fun aVaultIsExportedWithItsAccountsOutsideRecentlyDeletedAndItsUnknownKeys() {
         val vault = Vault(
             entries = listOf(gmail, entry(2, "Deleted", "gone", "Deleted#Pass", deletedAt = T0), entry(3, "Bank", "ali", "B@nk1")),

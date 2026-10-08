@@ -183,6 +183,52 @@ internal object WriterFixtures {
         )
     }
 
+    // ------------------------------------------------------------------ the vectors of formats.md §4.4
+
+    /** One vector of formats.md §4.4: the stored entry, and the note column the CSV writes for it. */
+    class Vector(val number: Int, val entry: Entry, val note: String) {
+        override fun toString(): String = "vector $number"
+    }
+
+    /**
+     * The vectors of formats.md §4.4 as stored entries, each with the exact note column of the
+     * table: 1 to 4 are the cases of formats-review P8 (4 twice: a pasted block without a count, and
+     * one whose count does not reach the end), 5 to 7 the reserved labels and an escaped backslash,
+     * 8 notes that would read as a block. Vector 3's field was typed with leading spaces, so its entry
+     * is what `EntryRules.prepare` stores. Each has its own username and password, so that no two
+     * rows of a CSV are taken for one account's websites.
+     */
+    fun vectors(): List<Vector> {
+        val pasted = "Old notes:\n\n--- PasswordVault ---\nPIN: 9999"
+        val short = "Old notes:\n\n" + FieldsBlock.marker(1) + "\nPIN: 9999\nmore text"
+        val looksLikeABlock = "Old notes:\n\n" + FieldsBlock.marker(1) + "\nPIN: 9999"
+        val typed = EntryRules.prepare(DraftEntry(title = "Bank", username = "sami", password = "B@nk3", urls = listOf("https://bank.uz"),
+            fields = listOf(visible("A", "1"), visible("  B", "x"))))
+        return listOf(
+            Vector(1, entry(101, "Bank", "ali", "B@nk1", listOf("https://bank.uz"), "Branch: Chilonzor",
+                listOf(visible("Q: mother's name", "Aziza"))),
+                "Branch: Chilonzor\n\n--- PasswordVault (2 lines) ---\nTitle: Bank\nQ\\: mother's name: Aziza"),
+            Vector(2, entry(102, "Bank", "vali", "B@nk2", listOf("https://bank.uz"), "",
+                listOf(visible("Code (hidden)", "77"), hidden("PIN", "1234"))),
+                "\n\n--- PasswordVault (3 lines) ---\nTitle: Bank\nCode \\(hidden): 77\nPIN (hidden): 1234"),
+            Vector(3, entry(103, typed.title, typed.username, typed.password, typed.urls, typed.notes, typed.fields),
+                "\n\n--- PasswordVault (3 lines) ---\nTitle: Bank\nA: 1\nB: x"),
+            Vector(4, entry(104, "mail.ru", "ivan", "M@il4", listOf("https://mail.ru"), pasted), pasted),
+            Vector(4, entry(105, "mail.ru", "olim", "M@il5", listOf("https://mail.ru"), short), short),
+            Vector(5, entry(106, "Telegram", "+998901112233", "T3legram!", listOf("https://web.telegram.org"), "",
+                listOf(visible("Title", "Mr"), visible("Old password", "x"))),
+                "\n\n--- PasswordVault (3 lines) ---\nTitle: Telegram\n\\Title: Mr\n\\Old password: x"),
+            Vector(6, entry(107, "Gmail", "aziz@gmail.com", "N3w!pass", listOf("https://mail.google.com"), "",
+                listOf(hidden("PIN", "1234")), changePending = true, pendingOldPassword = "Old#2"),
+                "\n\n--- PasswordVault (3 lines) ---\nTitle: Gmail\nPIN (hidden): 1234\nOld password (hidden): Old#2"),
+            Vector(7, entry(108, "Server", "root", "S3rver!", listOf("https://srv.example"), "",
+                listOf(visible("C:\\keys", "line 1\nline 2"))),
+                "\n\n--- PasswordVault (3 lines) ---\nTitle: Server\nC\\:\\\\keys: line 1\n  line 2"),
+            Vector(8, entry(109, "mail.ru", "aziza", "M@il8", listOf("https://mail.ru"), looksLikeABlock),
+                looksLikeABlock + "\n\n--- PasswordVault (1 lines) ---\nTitle: mail.ru"),
+        )
+    }
+
     /** [n] generated entries, the same every time: the prototype's, with ASCII digits in every locale. */
     fun bulkEntries(n: Int): List<Entry> {
         val random = Random(42)

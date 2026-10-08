@@ -16,7 +16,7 @@ import io.github.dilshodbekmx.passwordvault.core.util.TextHygiene
  * ```
  * note    = user-notes [ LF LF block ]                 ; written only when the block has at least one line
  * block   = marker 1*( LF line )
- * marker  = "--- PasswordVault (" count " lines) ---"  ; count: the lines after the marker, ASCII digits
+ * marker  = "--- PasswordVault (" count " lines) ---"  ; count: the lines after the marker, continuation lines included, ASCII digits
  * line    = label [ " (hidden)" ] ": " text *( LF "  " text )    ; later lines of a value: two spaces
  * ```
  *

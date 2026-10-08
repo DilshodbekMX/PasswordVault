@@ -284,6 +284,9 @@ object GoogleCsv {
  *   the two agree. They differ for `ß` and the Greek final sigma, for letters newer than Unicode 3.2,
  *   and for right-to-left names that end in a digit or a vowel sign, which IDNA 2003 refuses: such a
  *   website is counted as invalid here although Chrome takes it.
+ * - **Another scheme.** Chrome measures a valid address before it looks at the scheme
+ *   (`password_importer.cc`, read again on 2026-10-08), so an `ftp:` or `mailto:` address over 2,048
+ *   characters is refused there for its length and here as invalid. The row is refused either way.
  *
  * It decides nothing in this app: our own importer takes every website (formats.md §8.4).
  */
