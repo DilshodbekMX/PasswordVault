@@ -3,6 +3,7 @@ package io.github.dilshodbekmx.passwordvault.core.lock.flow
 import io.github.dilshodbekmx.passwordvault.core.crypto.MasterPasswordBytes
 import io.github.dilshodbekmx.passwordvault.core.lock.guard.MpAttempt
 import io.github.dilshodbekmx.passwordvault.core.lock.guard.MpCheck
+import io.github.dilshodbekmx.passwordvault.core.lock.guard.PinGuard
 import io.github.dilshodbekmx.passwordvault.core.lock.guard.PinWrap
 import io.github.dilshodbekmx.passwordvault.core.lock.guard.Place
 import io.github.dilshodbekmx.passwordvault.core.lock.policy.EntryPolicy
@@ -10,6 +11,7 @@ import io.github.dilshodbekmx.passwordvault.core.lock.record.FileRecordStore
 import io.github.dilshodbekmx.passwordvault.core.lock.record.FingerprintRecord
 import io.github.dilshodbekmx.passwordvault.core.lock.record.PinRecord
 import io.github.dilshodbekmx.passwordvault.core.lock.record.RecordRead
+import io.github.dilshodbekmx.passwordvault.core.lock.record.ShortcutSlot
 import io.github.dilshodbekmx.passwordvault.core.model.Vault
 import io.github.dilshodbekmx.passwordvault.core.util.Bytes
 
@@ -295,7 +297,10 @@ internal class VaultFlows(private val core: LockCore) {
      *    passwords again. These writes must be on disk before a file is deleted; if one fails, or a
      *    vault's records cannot be read now (NEWER or UNREADABLE: they may hold such a mark or such
      *    a slot), nothing is deleted ([AsideOutcome.NotSaved]). What was settled stays settled, as
-     *    start-up would leave it.
+     *    start-up would leave it. When something was settled, the files wait until those writes are
+     *    [SETTLED_MS] old, the age a charge must have before its PIN is checked (§6.2, I4): a write
+     *    that `fsync` handed over may not be on the flash yet (§2.3, §6.7, [V-S8]), and a power cut
+     *    must not keep the deletion and lose the settling.
      * 2. Storage deletes that vault's files (`VaultPort.deleteAside`).
      * 3. Only after that returned true: `lock/<vault_id>/`, then the keys its records name. A
      *    directory that cannot be deleted is left: a lock directory whose vault is gone is left alone
@@ -319,10 +324,12 @@ internal class VaultFlows(private val core: LockCore) {
         refusal(checkOwnPassword(lock, chars, at))?.let { return it }
         val onPhone = vaultsOnPhone() ?: return AsideOutcome.NotSaved
         if (vaultId !in onPhone || vaultId == core.open?.vaultId) return AsideOutcome.NotSaved
-        if (!settleMarksNaming(vaultId, onPhone - vaultId)) {
+        val settled = settleMarksNaming(vaultId, onPhone - vaultId)
+        if (settled == null) {
             core.publishSummary()
             return AsideOutcome.NotSaved
         }
+        if (settled > 0) core.clock.delayUntilElapsed(core.clock.elapsedMs() + SETTLED_MS)
         if (at.hasEnded) return AsideOutcome.NotSaved
         if (!core.vault.deleteAside(vaultId)) {
             core.rescan()
@@ -430,42 +437,60 @@ internal class VaultFlows(private val core: LockCore) {
 
     /**
      * Holds the mutex. F17 step 5: every vault in [others] whose `replaced` names [vaultId] is
-     * settled as start-up would settle it (§5.11 step 3, first row), with every write on disk. False
-     * when one could not be: a write failed, or a record that may hold the mark cannot be read now
-     * (NEWER, UNREADABLE). A `state.rec` that is MISSING or DAMAGED holds no mark that start-up would
-     * act on.
+     * settled as start-up would settle it (§5.11 step 3, first row), with every write on disk.
+     * Returns how many were settled, or null when one could not be: a write failed, or a record that
+     * may hold the mark cannot be read now (NEWER, UNREADABLE). A `state.rec` that is MISSING or
+     * DAMAGED holds no mark that start-up would act on. The mark is the one the lock means to have
+     * (in memory, §6.3), as start-up and the flows that write it keep it.
      */
-    private fun settleMarksNaming(vaultId: String, others: Set<String>): Boolean {
+    private fun settleMarksNaming(vaultId: String, others: Set<String>): Int? {
+        var settled = 0
         for (id in others) {
             val other = core.lockOf(id)
             when (other.stateRead) {
                 is RecordRead.Ok -> Unit
                 RecordRead.Missing, is RecordRead.Damaged -> continue
-                RecordRead.Newer, RecordRead.Unreadable -> return false
+                RecordRead.Newer, RecordRead.Unreadable -> return null
             }
             if (other.state?.replaced?.newVaultId != vaultId) continue
-            if (!removeShortcutsOnDisk(other)) return false
+            if (!removeShortcutsOnDisk(other)) return null
+            settled++
         }
-        return true
+        return settled
     }
 
     /**
      * Holds the mutex. Start-up's first row of §5.11 step 3 for [other]: both slots removed
      * (`off = replaced`), each key at once (§5.7), and `pending_mp = null`; `replaced` stays. The PIN's
-     * record is read through its counter first (§6.3 S), as start-up does. True only when all of it
-     * is on disk; a slot record that cannot be read now (NEWER, UNREADABLE) may still hold a slot,
-     * so it is false then, and nothing is changed.
+     * record is read through its counter first (§6.3 S), as start-up does.
+     *
+     * True only when all of it is on disk. `state.rec` is written whole even when nothing in it
+     * changes, and both slot records are read back from disk: a slot that start-up removed in
+     * memory while its write failed is still on disk, and would come back once vault N is gone. A
+     * slot record that cannot be read now (NEWER, UNREADABLE) may still hold a slot, so it is false
+     * then, and nothing is changed.
      */
     private fun removeShortcutsOnDisk(other: VaultLock): Boolean {
         other.startPin()
         if (mayHoldUnknownSlot(other.pinRead) || mayHoldUnknownSlot(other.fingerprint.read)) return false
         val pinRemoved = other.pin.removeSlot(PinRecord.OffReason.REPLACED)
         val fingerprintRemoved = other.fingerprint.removeSlot(FingerprintRecord.OffReason.REPLACED)
-        val pendingCleared = other.state?.pendingMp == null || other.master.update(bestEffort = false) { it.copy(pendingMp = null) }
-        return pinRemoved && fingerprintRemoved && pendingCleared
+        val pendingCleared = other.master.update(bestEffort = false) { it.copy(pendingMp = null) }
+        return pinRemoved && fingerprintRemoved && pendingCleared && noSlotOnDisk(other.vaultId)
     }
 
     private fun mayHoldUnknownSlot(read: RecordRead<*>): Boolean = read is RecordRead.Newer || read is RecordRead.Unreadable
+
+    /** Whether `pin.rec` and `fingerprint.rec` of [vaultId], as they are on disk now, hold no slot that could ever be used. */
+    private fun noSlotOnDisk(vaultId: String): Boolean =
+        holdsNoSlot(FileRecordStore.pin(core.files, core.root, vaultId).read()) { it.slot } &&
+            holdsNoSlot(FileRecordStore.fingerprint(core.files, core.root, vaultId).read()) { it.slot }
+
+    private fun <T> holdsNoSlot(read: RecordRead<T>, slotOf: (T) -> ShortcutSlot?): Boolean = when (read) {
+        is RecordRead.Ok -> slotOf(read.record) == null
+        RecordRead.Missing, is RecordRead.Damaged -> true // a damaged record is never used and never repaired in place (§5.3)
+        RecordRead.Newer, RecordRead.Unreadable -> false
+    }
 
     /** The aliases that the slots of [lock]'s records name now (`pv_pin_…`, `pv_fp_…`). */
     private fun aliasesNamedBy(lock: VaultLock): List<String> {
@@ -511,5 +536,14 @@ internal class VaultFlows(private val core: LockCore) {
         if (core.knownLock(open.vaultId)?.state?.pendingMp != null) return
         if (now.notices.any { it is Notice.BackupNow }) return
         core.addNotice { Notice.BackupNow(it) }
+    }
+
+    private companion object {
+        /**
+         * How old the writes that settle another vault's `replaced` mark must be before the files of
+         * the vault it names are deleted (F17 step 5): the charge age of lock.md §6.2, which is this
+         * design's time for a handed-over write to reach the flash (§2.3, §6.7).
+         */
+        const val SETTLED_MS = PinGuard.CHARGE_AGE_MS
     }
 }
