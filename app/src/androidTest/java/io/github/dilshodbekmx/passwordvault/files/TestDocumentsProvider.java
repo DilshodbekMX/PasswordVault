@@ -47,7 +47,8 @@ public final class TestDocumentsProvider extends DocumentsProvider {
 
     @Override
     public Cursor queryDocument(String documentId, String[] projection) throws FileNotFoundException {
-        MatrixCursor cursor = new MatrixCursor(projection != null ? projection : DOCUMENT_COLUMNS);
+        boolean own = projection == null || TestDocuments.ALL_COLUMNS.equals(TestDocuments.behaviour(documentId));
+        MatrixCursor cursor = new MatrixCursor(own ? DOCUMENT_COLUMNS : projection);
         addRow(cursor, documentId);
         return cursor;
     }

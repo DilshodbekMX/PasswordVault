@@ -173,5 +173,13 @@ class SafDocumentIoTest {
         assertEquals(doc.uri.substringAfterLast('/') + ".bin", io.name(doc))
     }
 
+    @Test
+    fun theNameIsReadFromItsOwnColumn() {
+        // A provider may answer with other columns than the one asked for; the first one is its id here.
+        val id = DocumentsRig.newId(TestDocuments.ALL_COLUMNS)
+        val doc = DocumentsRig.newDocument(id, name = "PasswordVault-backup-2026-10-08 (1).pvault").also { made += it }
+        assertEquals("PasswordVault-backup-2026-10-08 (1).pvault", io.name(doc))
+    }
+
     private fun payload(size: Int, seed: Int = 1): ByteArray = ByteArray(size) { ((it * 31 + seed * 7) xor (it ushr 8)).toByte() }
 }

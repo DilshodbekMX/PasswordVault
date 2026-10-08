@@ -109,11 +109,14 @@ class SafDocumentIo(private val context: Context, private val io: CoroutineDispa
 
     /**
      * The name the provider shows for [doc] (`OpenableColumns.DISPLAY_NAME`), which may differ from
-     * the one the picker suggested ("(1)" added on a clash); null when it cannot be read.
+     * the one the picker suggested ("(1)" added on a clash); null when it cannot be read. The column
+     * is found by its name: a provider may answer with other columns than the one asked for, and the
+     * first of those is often the document's id.
      */
     override fun name(doc: DocRef): String? = try {
         resolver.query(Uri.parse(doc.uri), arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
-            if (cursor.moveToFirst() && !cursor.isNull(0)) cursor.getString(0) else null
+            val column = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+            if (column >= 0 && cursor.moveToFirst() && !cursor.isNull(column)) cursor.getString(column) else null
         }
     } catch (e: RuntimeException) {
         null

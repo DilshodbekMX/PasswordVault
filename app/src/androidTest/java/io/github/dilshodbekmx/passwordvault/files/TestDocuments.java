@@ -49,6 +49,8 @@ final class TestDocuments {
     static final String NO_DELETE = "nodelete";
     /** Cannot open the document for reading. */
     static final String NO_READ = "noread";
+    /** Answers a query with all its columns, in its own order, whatever columns were asked for. */
+    static final String ALL_COLUMNS = "allcolumns";
 
     /** The receiver's commands; see {@link TestDocumentsReceiver}. */
     static final String ACTION_CREATE = "io.github.dilshodbekmx.passwordvault.test.documents.CREATE";
