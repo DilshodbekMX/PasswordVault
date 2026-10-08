@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Account screen in night vault</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&amp;family=Roboto+Mono:wght@500&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#F2B84B}a:hover{color:#FFD58A}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; display: flex; flex-direction: column; background: #0E1216; color: #E3E6EA; font-family: Roboto, system-ui, sans-serif; overflow: hidden">
+<div style="height: 64px; flex-shrink: 0; display: flex; align-items: center; padding: 0 4px">
+<button type="button" aria-label="Back" style="width: 48px; height: 48px; border: 0; border-radius: 50%; background: transparent; color: #E3E6EA; display: flex; align-items: center; justify-content: center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12H5"></path><path d="M11 18l-6-6 6-6"></path></svg></button>
+<h1 style="flex-grow: 1; margin: 0 0 0 4px; font-size: 22px; font-weight: 400">Gmail</h1>
+<button type="button" aria-label="Remove from favourites" style="width: 48px; height: 48px; border: 0; border-radius: 50%; background: transparent; color: #F2B84B; display: flex; align-items: center; justify-content: center"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"></path></svg></button>
+<button type="button" aria-label="Edit" style="width: 48px; height: 48px; border: 0; border-radius: 50%; background: transparent; color: #A7AFB8; display: flex; align-items: center; justify-content: center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17z"></path><path d="M14 8l3 3"></path></svg></button>
+<button type="button" aria-label="More options" style="width: 48px; height: 48px; border: 0; border-radius: 50%; background: transparent; color: #A7AFB8; display: flex; align-items: center; justify-content: center"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5.5" r="1.6"></circle><circle cx="12" cy="12" r="1.6"></circle><circle cx="12" cy="18.5" r="1.6"></circle></svg></button>
+</div>
+<div style="flex-grow: 1; display: flex; flex-direction: column; overflow: hidden">
+<div style="display: flex; align-items: center; gap: 16px; padding: 8px 20px 20px">
+<span aria-hidden="true" style="width: 56px; height: 56px; flex-shrink: 0; border-radius: 50%; background: #46222C; color: #F7BECA; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 500">G</span>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 24px">Gmail</span>
+<span style="font-size: 14px; color: #A7AFB8">Password changed 3 days ago</span>
+</div>
+</div>
+<div style="display: flex; align-items: center; gap: 4px; padding: 8px 8px 8px 20px">
+<div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+<span style="font-size: 12px; font-weight: 500; color: #A7AFB8">Username</span>
+<span style="font-size: 16px">aziz.karimov@example.uz</span>
+</div>
+<button type="button" aria-label="Copy username" style="width: 48px; height: 48px; flex-shrink: 0; border: 0; border-radius: 50%; background: transparent; color: #A7AFB8; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"></rect><path d="M5 15V6a1 1 0 0 1 1-1h9"></path></svg></button>
+</div>
+<div style="margin: 4px 12px 0; border-radius: 20px; background: #161C21; box-shadow: inset 0 0 0 1px #2A323A; display: flex; flex-direction: column; padding: 4px 0 2px">
+<div style="display: flex; align-items: center; gap: 4px; padding: 8px 4px 0 16px">
+<div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+<span style="font-size: 12px; font-weight: 500; color: #A7AFB8">Password</span>
+<span style="font-family: 'Roboto Mono', ui-monospace, monospace; font-size: 18px; font-weight: 500; letter-spacing: 0.5px">Tz<span style="color: #F2B84B">7</span><span style="color: #8FC7FF">#</span>mq<span style="color: #8FC7FF">-</span>Lo<span style="color: #F2B84B">4</span><span style="color: #8FC7FF">!</span>ve</span>
+</div>
+<button type="button" aria-label="Hide password" style="width: 48px; height: 48px; flex-shrink: 0; border: 0; border-radius: 50%; background: transparent; color: #A7AFB8; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l18 18"></path><path d="M10.6 6.1A9.8 9.8 0 0 1 12 6c6 0 9.5 6 9.5 6a16 16 0 0 1-2.6 3.3M6.6 6.6C3.9 8.3 2.5 12 2.5 12s3.5 6 9.5 6a9.3 9.3 0 0 0 4.4-1.1"></path><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"></path></svg></button>
+<button type="button" aria-label="Copy password" style="width: 48px; height: 48px; flex-shrink: 0; border: 0; border-radius: 50%; background: #3A2D11; color: #FFDFA3; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"></rect><path d="M5 15V6a1 1 0 0 1 1-1h9"></path></svg></button>
+</div>
+<div style="padding: 0 0 4px 4px">
+<button type="button" style="border: 0; background: transparent; color: #F2B84B; font-family: inherit; font-size: 14px; font-weight: 500; padding: 10px 12px; border-radius: 20px">Show in big letters</button>
+</div>
+</div>
+<div style="display: flex; align-items: center; gap: 4px; padding: 12px 8px 8px 20px">
+<div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 12px; font-weight: 500; color: #A7AFB8">Website</span>
+<span style="font-size: 16px; font-weight: 500">accounts.google.com</span>
+<span style="font-size: 14px; color: #A7AFB8">https://accounts.google.com/</span>
+</div>
+<button type="button" aria-label="Open website" style="width: 48px; height: 48px; flex-shrink: 0; border: 0; border-radius: 50%; background: transparent; color: #A7AFB8; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6"></path><path d="M20 4l-9 9"></path><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"></path></svg></button>
+<button type="button" aria-label="Copy website" style="width: 48px; height: 48px; flex-shrink: 0; border: 0; border-radius: 50%; background: transparent; color: #A7AFB8; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"></rect><path d="M5 15V6a1 1 0 0 1 1-1h9"></path></svg></button>
+</div>
+<div style="padding: 8px 20px; display: flex; flex-direction: column; gap: 4px">
+<span style="font-size: 12px; font-weight: 500; color: #A7AFB8">Notes</span>
+<p style="margin: 0; font-size: 16px; line-height: 1.45">Recovery codes are in the blue notebook, page 3.</p>
+</div>
+<div style="padding: 16px 20px 0; font-size: 13px; color: #9AA3AD">Added 1 Oct 2026 · Edited 5 Oct 2026</div>
+</div>
+<div role="status" style="margin: 0 12px 16px; flex-shrink: 0; min-height: 56px; box-sizing: border-box; border-radius: 16px; background: #E3E6EA; color: #1A1F24; display: flex; align-items: center; gap: 12px; padding: 4px 4px 4px 16px">
+<span style="flex-grow: 1; font-size: 14px">Password for Gmail · clears in 0:45</span>
+<button type="button" style="border: 0; background: transparent; color: #6A4800; font-family: inherit; font-size: 14px; font-weight: 500; padding: 12px 14px; border-radius: 20px">Clear now</button>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>
