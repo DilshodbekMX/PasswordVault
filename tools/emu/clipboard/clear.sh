@@ -47,9 +47,12 @@
 #   locknow      "Lock now" clears at once
 #   entry        on an account's screen, which has no bar of the app's below it, the row stands
 #                clear of the system's navigation bar
+#   restricted   (API 28 and later; the last case, because it changes the delay) with battery use
+#                "Restricted" and a 2-minute delay, the clip is cleared on time or stays until the
+#                app is brought to the front, which clears it; the step says which
 # Each case ends with the app's process free of crashes. Prints PASS, FAIL or SKIPPED per step and a
 # summary; exit 0 when no step failed, 1 otherwise, 2 for a usage error, 3 for a refused serial.
-# A run takes about 12 minutes on a debug build.
+# A run takes about 16 minutes on a debug build (12 on API 24).
 set -u
 EMU="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REPO="$(cd "$EMU/../.." && pwd)"
@@ -61,7 +64,7 @@ SERIAL=${1:-}
 [ -n "$SERIAL" ] || pv_usage "${BASH_SOURCE[0]}"
 shift
 APK=$REPO/app/build/outputs/apk/debug/app-debug.apk
-ALL_CASES="copy background kill swipe screenoff forcestop other infront return recopy clearnow locknow entry"
+ALL_CASES="copy background kill swipe screenoff forcestop other infront return recopy clearnow locknow entry restricted"
 CASES=$ALL_CASES
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -84,7 +87,7 @@ PREFS=shared_prefs/pv_settings.xml
 ACCOUNT=Gmail
 SECRET=Pv7Secret9Clip4Test
 OTHER=LaterCopyOfAnotherApp
-DELAY_S=60       # what setup writes (D-7); 30 once set_delay_30 has run
+DELAY_S=60       # what setup writes (D-7); set_delay changes it
 DEBUGGABLE=0
 COPY_ID=""
 TOKEN=""         # the token of the clip the last copy made
@@ -344,25 +347,27 @@ setup_wrote_one_minute() {
     prefs | grep -q '<string name="clip_delay">1m</string>' || { pv_log "$PREFS: $(prefs | tr -d '\n')"; return 1; }
 }
 
-# "30 seconds" through the settings file (the Settings screen comes with build plan 4.3): the app
-# reads the file once per process, so it is stopped, edited and started again.
-set_delay_30() {
+# set_delay STORED SECONDS: "Clear copied text after" through the settings file (the Settings screen
+# comes with build plan 4.3). The app reads the file once per process, so it is stopped, edited and
+# started again.
+set_delay() {
     pv_shell am force-stop "$PV_PACKAGE" >/dev/null
     # One string, so that the device's shell gets the single quotes around the expression.
-    pv_shell "run-as $PV_PACKAGE sed -i 's#<string name=\"clip_delay\">[^<]*</string>#<string name=\"clip_delay\">30s</string>#' $PREFS" || return 1
-    prefs | grep -q '<string name="clip_delay">30s</string>' || { pv_log "$PREFS: $(prefs | tr -d '\n')"; return 1; }
-    DELAY_S=30
+    pv_shell "run-as $PV_PACKAGE sed -i 's#<string name=\"clip_delay\">[^<]*</string>#<string name=\"clip_delay\">$1</string>#' $PREFS" || return 1
+    prefs | grep -q "<string name=\"clip_delay\">$1</string>" || { pv_log "$PREFS: $(prefs | tr -d '\n')"; return 1; }
+    DELAY_S=$2
     to_list
 }
 
 # The watch that "a copy shows no toast" relies on does see a toast when there is one.
 toast_watch_works() {
-    local seen
+    local seen job
     pvc_toast "PV toast control" &
+    job=$!
     seen=$(pvc_watch_toasts 3)
-    wait
+    wait "$job" || { pv_log "the shell's toast could not be shown"; return 1; }
     printf '%s\n' "$seen" | grep -q 'com\.android\.shell' || { pv_log "the watch did not see the shell's toast: '${seen:-nothing}'"; return 1; }
-    pv_sleep 2
+    pv_sleep 1
 }
 
 # ---- the cases ------------------------------------------------------------------------------------
@@ -481,15 +486,15 @@ screen_off_clears() {
             rc=1
         fi
         while [ $rc = 0 ]; do
-            clip_read || { rc=1; break; }
             if [ -z "$(pvc_alarm | head -n 1)" ] && { [ $DEBUGGABLE = 0 ] || [ "$(prefs_token)" != "$TOKEN" ]; }; then
+                clip_read || { rc=1; break; }
                 gone_at=$CLIP_NOW
                 break
             fi
+            clip_read || { rc=1; break; }
             [ "$CLIP_NOW" -lt $((DEADLINE + 4000)) ] || { pv_log "the plan is still there $((CLIP_NOW - DEADLINE)) ms after the clip's time: the clear has not run"; rc=1; }
-            pv_sleep 0.1
         done
-        [ -z "$gone_at" ] || note "the plan was gone at the reading $((gone_at - DEADLINE)) ms after the planned clear, the screen off"
+        [ -z "$gone_at" ] || note "the plan was seen gone by $((gone_at - DEADLINE)) ms after the planned clear, the screen off"
     else
         rc=1
     fi
@@ -640,6 +645,38 @@ row_clears_the_system_bar() {
     return $rc
 }
 
+# Battery use "Restricted" (Settings > Apps > Battery; `RUN_ANY_IN_BACKGROUND ignore`): once the app
+# has been in the background for about a minute Android runs neither its alarm nor its timer (D-14,
+# measured on Android 17 with a 2-minute delay), so the copy stays until the app is opened again,
+# which then clears it. With a shorter delay the timer may still be in time. Either way nothing is
+# left once the app is in front.
+restricted_clears_in_front_at_the_latest() {
+    local rc=0 i
+    copy && go_home || return 1
+    pv_shell cmd appops set "$PV_PACKAGE" RUN_ANY_IN_BACKGROUND ignore >/dev/null 2>&1
+    if ! pv_shell cmd appops get "$PV_PACKAGE" RUN_ANY_IN_BACKGROUND 2>/dev/null | grep -q 'ignore'; then
+        pv_log "battery use could not be set to Restricted: $(pv_shell cmd appops get "$PV_PACKAGE" RUN_ANY_IN_BACKGROUND 2>&1 | tr -d '\r' | head -n 1)"
+        return 1
+    fi
+    until_device $((DEADLINE + 5000)) && clip_read || rc=1
+    if [ $rc = 0 ] && [ "$CLIP_TOKEN" = "$TOKEN" ]; then
+        note "$((CLIP_NOW - DEADLINE)) ms after its time the clip is still there, as the first-copy tip says; the app is brought to the front"
+        pva_relaunch || rc=1
+        for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do
+            clip_read || { rc=1; break; }
+            [ "$CLIP_TOKEN" = "$TOKEN" ] || break
+            pv_sleep 0.3
+        done
+        [ "$CLIP_TOKEN" != "$TOKEN" ] || { pv_log "the app's clip is still there with the app in front"; rc=1; }
+    elif [ $rc = 0 ]; then
+        note "the clear ran in the background all the same, by $((CLIP_NOW - DEADLINE)) ms after its time"
+    fi
+    [ $rc != 0 ] || cleared || rc=1
+    [ $rc != 0 ] || no_plan || rc=1
+    pv_shell cmd appops set "$PV_PACKAGE" RUN_ANY_IN_BACKGROUND allow >/dev/null 2>&1
+    return $rc
+}
+
 run_case() {
     case "$1" in
         copy)
@@ -675,6 +712,14 @@ run_case() {
         clearnow) pv_step "clearnow: \"Clear now\" clears at once and removes the plan" -- clear_now_clears ;;
         locknow) pv_step "locknow: \"Lock now\" clears at once" -- lock_now_clears ;;
         entry) pv_step "entry: on an account's screen the row stands clear of the system's navigation bar" -- row_clears_the_system_bar ;;
+        restricted)
+            if [ "$API" -lt 28 ]; then
+                pv_report SKIPPED "restricted: with battery use Restricted the clip is gone at the latest when the app is in front" "Android $API has no such setting"
+            else
+                # Two minutes, so that Android has stopped the app's alarm and timer before the clip's time.
+                pv_step "restricted: the clipboard delay set to 2 minutes" needs-debuggable -- set_delay 2m 120
+                pv_step "restricted: with battery use Restricted the clip is gone at the latest when the app is in front" -- restricted_clears_in_front_at_the_latest
+            fi ;;
     esac
 }
 
@@ -682,7 +727,7 @@ pv_step "install the app afresh" -- install_fresh || { pv_summary; exit 1; }
 pv_step "set up a vault and add an account" -- set_up || { pv_summary; exit 1; }
 pv_is_debuggable && DEBUGGABLE=1
 pv_step "setup wrote the 1-minute clipboard delay" needs-debuggable -- setup_wrote_one_minute
-pv_step "the clipboard delay set to 30 seconds (pv_settings, a new process, unlocked)" needs-debuggable -- set_delay_30
+pv_step "the clipboard delay set to 30 seconds (pv_settings, a new process, unlocked)" needs-debuggable -- set_delay 30s 30
 [ $DELAY_S = 30 ] || note "the delay is $DELAY_S s in every case below"
 pv_step "the toast watch sees a toast (the shell's own)" -- toast_watch_works
 for c in $CASES; do

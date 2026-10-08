@@ -24,6 +24,7 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.window.Dialog
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.github.dilshodbekmx.passwordvault.settings.ThemeChoice
+import io.github.dilshodbekmx.passwordvault.ui.common.VaultDialog
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultTextField
 import io.github.dilshodbekmx.passwordvault.ui.theme.PasswordVaultTheme
 import org.junit.After
@@ -177,6 +178,27 @@ class SecretClipboardBridgeTest {
         assertTrue("the root's content has the bridge", root is SecretClipboardBridge)
         assertFalse("a dialog's content has the platform's clipboard", plain is SecretClipboardBridge)
         assertTrue("inside ClipboardWindow it has the bridge", wrapped is SecretClipboardBridge)
+    }
+
+    /** The same copy as in the activity's window, from a field in one of the app's own dialogs. */
+    @Test
+    fun aFieldInADialogCopiesThroughTheBridgeInsideClipboardWindow() {
+        val field = TextFieldState("card 8600 1234")
+        show(focused = false) {
+            VaultDialog(onDismissRequest = {}) {
+                ClipboardWindow {
+                    VaultTextField(state = field, modifier = Modifier.testTag(FIELD_TAG))
+                }
+            }
+        }
+        compose.onNodeWithTag(FIELD_TAG).performClick()
+        compose.runOnUiThread { field.edit { selection = TextRange(0, length) } }
+        compose.waitForIdle()
+        compose.onNodeWithTag(FIELD_TAG).performSemanticsAction(SemanticsActions.CopyText)
+        compose.waitUntil(TOOLBAR_MS) { ClipDevice.token() != null }
+        assertEquals("card 8600 1234", ClipDevice.text())
+        assertEquals(true, ClipDevice.sensitive())
+        assertEquals(AndroidSecretClipboard.COPIED_TEXT, graph.clipboard.status.value?.what)
     }
 
     private companion object {

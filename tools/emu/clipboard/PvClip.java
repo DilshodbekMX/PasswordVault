@@ -7,6 +7,7 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.os.PersistableBundle;
 import android.os.SystemClock;
+import android.view.LayoutInflater;
 import android.widget.Toast;
 
 import java.io.PrintStream;
@@ -195,9 +196,25 @@ public final class PvClip {
                 return PACKAGE;
             }
 
+            // Overrides Context's hidden method of this name, which names the window's owner to the
+            // window manager: Android 9 refuses a toast window whose owner is not the caller's package.
+            public String getBasePackageName() {
+                return PACKAGE;
+            }
+
             @Override
             public Context getApplicationContext() {
                 return this;
+            }
+
+            // The toast's view must be made in this context, not in the system's, or the window it
+            // is shown in is the system's again (Android 7 to 10 show a toast in the caller's process).
+            @Override
+            public Object getSystemService(String name) {
+                if (Context.LAYOUT_INFLATER_SERVICE.equals(name)) {
+                    return LayoutInflater.from(getBaseContext()).cloneInContext(this);
+                }
+                return super.getSystemService(name);
             }
         };
         Handler handler = new Handler(Looper.getMainLooper());
