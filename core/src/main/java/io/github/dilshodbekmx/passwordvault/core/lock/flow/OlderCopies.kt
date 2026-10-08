@@ -2,6 +2,7 @@ package io.github.dilshodbekmx.passwordvault.core.lock.flow
 
 import io.github.dilshodbekmx.passwordvault.core.lock.record.FingerprintRecord
 import io.github.dilshodbekmx.passwordvault.core.lock.record.PinRecord
+import io.github.dilshodbekmx.passwordvault.core.lock.record.RecordRead
 import io.github.dilshodbekmx.passwordvault.core.lock.record.StateRecord
 import io.github.dilshodbekmx.passwordvault.core.util.Bytes
 
@@ -143,11 +144,16 @@ internal class OlderCopies(private val core: LockCore) {
             }
             core.rescan()
             core.retarget()
-            // Step 5: the old vault's records. A write that fails is made good by start-up (§5.11 step 3).
+            // Step 5: the old vault's records. A write that fails is made good by start-up (§5.11 step 3),
+            // and start-up does that only while the mark is there: the mark goes with both slots, never
+            // before. While a slot could not be removed (its record cannot be read now, or its write did
+            // not reach the disk), the mark stays, and the next start removes that slot and then the mark
+            // ("the owner went back, and step 5 there did not finish"). Without it, the PIN or the finger of
+            // whoever replaced the master password would open these passwords again once that record reads.
             lock.startPin()
-            lock.pin.removeSlot(PinRecord.OffReason.REPLACED)
-            lock.fingerprint.removeSlot(FingerprintRecord.OffReason.REPLACED)
-            lock.master.update { it.copy(pendingMp = null, replaced = null) }
+            val pinGone = lock.pin.removeSlot(PinRecord.OffReason.REPLACED) && noSlotCanComeBack(lock.pinRead)
+            val fingerprintGone = lock.fingerprint.removeSlot(FingerprintRecord.OffReason.REPLACED) && noSlotCanComeBack(lock.fingerprint.read)
+            lock.master.update { it.copy(pendingMp = null, replaced = if (pinGone && fingerprintGone) null else it.replaced) }
             if (core.visit !== visit || visit.place.hasEnded) {
                 // The visit ended while the vaults changed places: the swap stands, and nothing opens (I11).
                 try {
@@ -196,8 +202,9 @@ internal class OlderCopies(private val core: LockCore) {
     /**
      * The vault of [target], put aside and marked `replaced`, has opened in place with its own
      * master password (F16b steps 3 to 6): the question first; then the swap of F17 step 4, the old
-     * vault's records (both slots removed if start-up has not, `pending_mp = null`,
-     * `replaced = null`), and "Choose a new PIN. Someone else may know the old one."
+     * vault's records (both slots removed if start-up has not, `pending_mp = null`, and
+     * `replaced = null` once both slots are gone), and "Choose a new PIN. Someone else may know the
+     * old one."
      *
      * The question is a screen of its own, and its answer comes in a later call ([answer]): this
      * call puts an `OlderSetQuestion` on the visit (`LockVisit.olderSet`, with [opened] and a copy
@@ -247,6 +254,17 @@ internal class OlderCopies(private val core: LockCore) {
     private fun forget() {
         kept?.let { Bytes.wipe(it.typed) }
         kept = null
+    }
+
+    /**
+     * Whether a shortcut record that [read] gives can bring no slot back: one the lock holds (its
+     * removal of the slot is then the record), none at all, or a damaged one, which is never used
+     * (§5.3). Not one that cannot be read now, which may read fine next time with its slot in it,
+     * nor one written by a newer version of the app, which the lock never rewrites.
+     */
+    private fun noSlotCanComeBack(read: RecordRead<*>): Boolean = when (read) {
+        is RecordRead.Ok, RecordRead.Missing, is RecordRead.Damaged -> true
+        RecordRead.Unreadable, RecordRead.Newer -> false
     }
 
     /** The vault put aside that is open in place in the vault port is dropped again, with its key (`VaultPort.dropAside`). */

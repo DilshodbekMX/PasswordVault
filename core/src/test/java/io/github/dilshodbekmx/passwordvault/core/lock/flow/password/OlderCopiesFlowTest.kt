@@ -495,6 +495,52 @@ class OlderCopiesFlowTest {
     }
 
     @Test
+    fun f16b_afterAReplacement_aShortcutRecordThatCannotBeReadAtStep5_keepsTheMark_soTheNextStartRemovesTheShortcut() {
+        for (record in listOf("pin.rec", "fingerprint.rec")) {
+            val g = LockFixture()
+            val old = g.seedVault()
+            g.plantPin(old)
+            g.plantFingerprint(old)
+            g.plantState()
+            g.startInFront()
+            g.type(PIN)
+            val newVault = g.replaceMasterPassword()
+            g.answerAll()
+            g.lock()
+            // A later process in which this record of the old vault cannot be read (§5.3 UNREADABLE: an
+            // I/O error that may pass). Start-up cannot remove that slot now; it tries again at every start
+            // while the mark is there (§5.11 step 3).
+            g.files.reboot()
+            g.restart()
+            g.files.fail(FakeRecordFiles.Op.READ, times = -1) { it.endsWith("/$VAULT/$record") }
+            g.startInFront()
+            await { g.engine.showAside(VAULT) } // "Open my passwords from before …" (F16b step 1)
+            assertEquals(record, MasterPasswordOutcome.TooLate, g.unlockWith(PASSWORD))
+            assertTrue(record, g.screen is LockScreen.OpenOlderSet)
+
+            g.answerOlder(OlderPasswordAnswer.OPEN_OLDER_SET) // steps 4 to 6
+
+            assertTrue(record, g.state is LockState.Unlocked)
+            assertEquals(record, VAULT, g.port.current!!.vaultId)
+            assertEquals(record, listOf(newVault), g.port.asideVaults.map { it.vaultId })
+            // The error passes, and the phone starts again.
+            g.files.clearFaults()
+            g.lock()
+            g.files.reboot()
+            g.restart()
+            g.startInFront()
+            // The PIN and the fingerprint of the old vault were what whoever replaced the master password
+            // knew or had (F11 step 3): step 5 removes both, and "a write that fails is made good by
+            // start-up" (§5.11 step 3, the owner went back). Neither may open the owner's passwords now.
+            assertNull("$record: the old PIN slot", g.pinRecord(VAULT).slot)
+            assertNull("$record: the old fingerprint slot", g.fingerprintRecord(VAULT).slot)
+            assertNull(record, g.stateRecord(VAULT).replaced)
+            assertTrue("$record: ${g.screen}", g.screen is LockScreen.MasterPassword)
+            assertTrue(record, g.unlockWith(PASSWORD) is MasterPasswordOutcome.Right)
+        }
+    }
+
+    @Test
     fun f16b_itWasntMe_withMoreThanOneReplacement_isTheSheetsList_soTheOpenAppIsLocked() {
         afterAReplacement()
         await { f.engine.goBack() }
