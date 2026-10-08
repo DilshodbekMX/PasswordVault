@@ -312,6 +312,24 @@ class FingerprintOnOffFlowTest {
     }
 
     @Test
+    fun f9_step8_aWriteThatFailsAtTheDirectorySync_hasReplacedTheRecord_andItsKeyIsStillThere() {
+        val (vault, proof) = openWithMasterPassword(fingerprint = true)
+        val old = f.fingerprintAliasOnDisk()!!
+        f.files.failNextWrite(FakeRecordFiles.WriteStep.DIR_SYNC) // §5.9: "not written", although the rename is on disk
+        assertEquals(FingerprintOnOutcome.Failed, f.fingerprintOn(proof))
+        val onDisk = f.fingerprintAliasOnDisk()!!
+        assertNotEquals(old, onDisk)
+        assertTrue("a record names the new key: it was not deleted", onDisk in f.keys.aliases)
+
+        f.restart()
+        f.startInFront()
+        assertEquals(listOf(old), f.keys.deleted) // the key the new slot replaced, which no record names now
+        await { f.engine.promptIfDue() }
+        assertTrue(f.state is LockState.Unlocked)
+        assertTrue(f.fingerprintOpens(vault))
+    }
+
+    @Test
     fun f9_aFingerprintRecordOfANewerApp_isNeverReplaced() {
         val vault = f.seedVault()
         f.plantPin(vault)
