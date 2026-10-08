@@ -42,6 +42,7 @@ import kotlinx.coroutines.withContext
  *   that keeps the document from being read, a missing permission included, is an [IOException].
  * - **Keep** takes the persistable permission that the picker's result granted, read and write
  *   where both were granted, so that a task continues in a new process (ux.md §4 item 1).
+ *   **Release** gives it up again, when nothing will read or write the document any more.
  * - **Delete** asks the provider (`DocumentsContract.deleteDocument`, API 19). False where the place
  *   does not allow it, cannot be reached, or the document is still there; true when it is gone, also
  *   when it was gone already.
@@ -50,8 +51,8 @@ import kotlinx.coroutines.withContext
  * - **Name** asks the provider for the document's display name. That name, and the name of another
  *   place, come from another app: both are made safe to show first ([ShownName]).
  *
- * Everything that reads or writes runs on [io] (architecture.md §5.3); [keep], [delete], [place],
- * [name] and [nameOf] are binder calls of their own, made by their callers off the main thread.
+ * Everything that reads or writes runs on [io] (architecture.md §5.3); [keep], [release], [delete],
+ * [place], [name] and [nameOf] are binder calls of their own, made by their callers off the main thread.
  */
 class SafDocumentIo(private val context: Context, private val io: CoroutineDispatcher) : DocumentIo {
     private val resolver: ContentResolver get() = context.contentResolver
@@ -100,6 +101,20 @@ class SafDocumentIo(private val context: Context, private val io: CoroutineDispa
             } catch (e: SecurityException) {
                 // Not granted with these flags, or not persistable: try the next ones.
             }
+        }
+    }
+
+    override fun release(doc: DocRef) {
+        val uri = othersDocument(doc) ?: return
+        try {
+            // The modes held, as they were kept: read and write, or what was granted.
+            val held = resolver.persistedUriPermissions.firstOrNull { it.uri == uri } ?: return
+            var flags = 0
+            if (held.isReadPermission) flags = flags or Intent.FLAG_GRANT_READ_URI_PERMISSION
+            if (held.isWritePermission) flags = flags or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+            if (flags != 0) resolver.releasePersistableUriPermission(uri, flags)
+        } catch (e: RuntimeException) {
+            // SecurityException: no grant any more (released already, or the document is gone). Best effort.
         }
     }
 
