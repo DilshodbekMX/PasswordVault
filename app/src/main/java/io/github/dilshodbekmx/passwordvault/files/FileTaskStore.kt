@@ -46,10 +46,12 @@ import kotlinx.coroutines.withContext
  *    new process, waits for the next unlock. A restore's in any state but `Starting` (its screens
  *    are shown in setup and while locked). A recorded document is handed out again after every
  *    unlock until the screen calls [finish]: the task continues where it was (ux.md §4 item 2).
- * 4. The screen calls [finish] when the task is done, or given up after it cleaned up (ux.md §4 item
- *    3: a document the picker created and nothing was written to is deleted, and the user is told).
+ * 4. The screen calls [finish] when the task is done, or [abandon] when it is given up (the user
+ *    cancelled after the picker, or the write failed): that deletes the document "Save as" created
+ *    when nothing of the user's is in it, and says what it did, for the screen's sentence (ux.md §4
+ *    item 3).
  *
- * A new task replaces the one recorded: a screen finishes or cleans up its own task first. Nothing
+ * A new task replaces the one recorded: a screen finishes or abandons its own task first. Nothing
  * secret is ever recorded: a kind, a step and a `content://` address.
  *
  * @param lockState the lock's state (`LockManager.state`), which decides when a result is handed out.
@@ -119,11 +121,27 @@ class FileTaskStore(
             .map { PickResult.Picked(it) },
     )
 
-    /** Forgets the task of [kind]: it is done, or given up and cleaned up. Nothing happens to its document. */
+    /** Forgets the task of [kind]: it is done. Nothing happens to its document. */
     suspend fun finish(kind: FileTask.Kind) {
         withContext(dispatchers.main) {
             if (recorded.value?.kind == kind) record(null)
         }
+    }
+
+    /**
+     * Gives up the task of [kind] and cleans up after it (ux.md §4 item 3: the user cancelled after
+     * the picker, or the write failed), then forgets it. The document that "Save as" created for it is
+     * deleted when nothing of the user's is in it: it is still empty, or [written] says that this task
+     * wrote into it and the write or its check failed. A document that holds something else (an
+     * existing file the user chose to replace), or that cannot be read, is left as it was; one that
+     * an import or a restore opened is never touched. Says what was done, for the screen's sentence.
+     */
+    suspend fun abandon(kind: FileTask.Kind, written: Boolean = false): Cleanup = withContext(dispatchers.main) {
+        val task = recorded.value?.takeIf { it.kind == kind } ?: return@withContext Cleanup.NoDocument
+        val doc = task.doc
+        val cleanup = if (doc == null || kind.action != Action.CREATE) Cleanup.NoDocument else withContext(NonCancellable) { remove(doc, written) }
+        record(null)
+        cleanup
     }
 
     /**
@@ -231,13 +249,21 @@ class FileTaskStore(
     }
 
     private suspend fun removeIfEmpty(doc: DocRef) {
-        withContext(NonCancellable) {
+        withContext(NonCancellable) { remove(doc, written = false) }
+    }
+
+    /** Deletes [doc], a document "Save as" created, when it is empty or [written] by this task (see [abandon]). */
+    private suspend fun remove(doc: DocRef, written: Boolean): Cleanup {
+        if (!written) {
             val empty = try {
                 documents.read(doc, 0).isEmpty()
             } catch (e: IOException) {
-                false
+                false // it cannot be read: nothing is known of it
             }
-            if (empty) withContext(dispatchers.io) { documents.delete(doc) }
+            if (!empty) return Cleanup.Kept
+        }
+        return withContext(dispatchers.io) {
+            if (documents.delete(doc)) Cleanup.Removed else Cleanup.Left(doc, documents.place(doc))
         }
     }
 

@@ -37,7 +37,8 @@ import org.junit.runner.RunWith
  * the app was locked waits for the unlock and is handed out again after every unlock until the task
  * is finished; a restore's is not held back; a closed picker clears the record; nothing opens without
  * an activity, without a record, or without a picker app; a document no task waits for is removed
- * only when the picker created it and it is empty. The same flows with the real activity, picker
+ * only when the picker created it and it is empty; a task given up removes what "Save as" created
+ * when nothing of the user's is in it, and says so. The same flows with the real activity, picker
  * results and lock are in [PickerProcessTest].
  */
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -291,6 +292,53 @@ class FileTaskStoreTest {
         store.finish(FileTask.Kind.BACKUP)
         assertEquals(export, settings.fileTask.value)
         store.finish(FileTask.Kind.EXPORT)
+        assertNull(settings.fileTask.value)
+    }
+
+    /** The picker of [task] returns [uri], a document holding [content]. */
+    private suspend fun TestScope.picked(store: FileTaskStore, task: FileTask, uri: String, content: ByteArray) {
+        documents.files[uri] = content
+        if (task.kind.action == FileTaskStore.Action.CREATE) store.create(task, "x", DocumentTypes.BACKUP) else store.open(task)
+        store.returned(task.kind.action, uri)
+        runCurrent()
+        assertEquals(task.copy(doc = DocRef(uri)), store.task.value)
+    }
+
+    @Test
+    fun abandonRemovesWhatSaveAsCreatedWhenNothingOfTheUsersIsInIt() = runTest {
+        val store = newStore()
+        val backup = FileTask(FileTask.Kind.BACKUP, 3, null)
+        val bytes = byteArrayOf(1, 2, 3)
+
+        store.create(backup, "b.pvault", DocumentTypes.BACKUP)
+        assertEquals("the picker returned nothing yet", Cleanup.NoDocument, store.abandon(FileTask.Kind.BACKUP))
+        assertNull(settings.fileTask.value)
+
+        picked(store, backup, "$DOC-empty", ByteArray(0))
+        assertEquals(Cleanup.Removed, store.abandon(FileTask.Kind.BACKUP))
+        assertFalse("$DOC-empty" in documents.files)
+        assertNull(settings.fileTask.value)
+
+        picked(store, backup, "$DOC-replaced", bytes)
+        assertEquals("an existing file the user chose stays", Cleanup.Kept, store.abandon(FileTask.Kind.BACKUP))
+        assertArrayEquals(bytes, documents.files["$DOC-replaced"])
+
+        picked(store, backup, "$DOC-broken", bytes)
+        assertEquals("a write of this task that failed", Cleanup.Removed, store.abandon(FileTask.Kind.BACKUP, written = true))
+        assertFalse("$DOC-broken" in documents.files)
+
+        documents.notDeletable += "$DOC-drive"
+        documents.places["$DOC-drive"] = Place.GoogleDrive
+        picked(store, backup, "$DOC-drive", ByteArray(0))
+        assertEquals(Cleanup.Left(DocRef("$DOC-drive"), Place.GoogleDrive), store.abandon(FileTask.Kind.BACKUP))
+        assertNull(settings.fileTask.value)
+
+        val import = FileTask(FileTask.Kind.IMPORT, 1, null)
+        picked(store, import, "$DOC-users", ByteArray(0))
+        assertEquals(Cleanup.NoDocument, store.abandon(FileTask.Kind.EXPORT))
+        assertEquals("another kind's task stays", import.copy(doc = DocRef("$DOC-users")), settings.fileTask.value)
+        assertEquals("an opened document is never touched", Cleanup.NoDocument, store.abandon(FileTask.Kind.IMPORT))
+        assertTrue("$DOC-users" in documents.files)
         assertNull(settings.fileTask.value)
     }
 

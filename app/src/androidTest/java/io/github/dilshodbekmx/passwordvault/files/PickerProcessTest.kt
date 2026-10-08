@@ -238,6 +238,32 @@ class PickerProcessTest {
     }
 
     @Test
+    fun aGivenUpBackupRemovesTheEmptyFileOrNamesItsPlace() {
+        val backup = FileTask(FileTask.Kind.BACKUP, 3, null)
+        val name = DocumentNames.backup("2026-10-08")
+        for (behaviour in listOf(TestDocuments.PLAIN, TestDocuments.NO_DELETE)) {
+            val id = DocumentsRig.newId(behaviour)
+            val doc = DocumentsRig.docOf(id).also { made += it }
+            val activity = currentActivity()
+            val handled = handedOut(FileTask.Kind.BACKUP)
+            DocumentsRig.SystemScreens().use { assertTrue(runBlocking { store().create(backup, name, DocumentTypes.BACKUP) }) }
+            pick(activity, DocumentLaunchers.CREATE_KEY, id, name)
+            assertTrue(DocumentsRig.finishPicker(Activity.RESULT_OK))
+            DocumentsRig.await("handed out") { handled.isNotEmpty() }
+            // The user cancels at the master password: no backup, and the empty file goes where it can.
+            val cleanup = runBlocking { store().abandon(FileTask.Kind.BACKUP) }
+            if (behaviour == TestDocuments.PLAIN) {
+                assertEquals(Cleanup.Removed, cleanup)
+                assertNull("gone from the place", DocumentsRig.stored(id))
+            } else {
+                assertEquals(Cleanup.Left(doc, Place.Other("PV test documents")), cleanup)
+                assertArrayEquals("still there, empty", ByteArray(0), DocumentsRig.stored(id))
+            }
+            assertNull(store().task.value)
+        }
+    }
+
+    @Test
     fun theShareSheetOpensForACopyOnlyTheFileProviderHandsOut() {
         val bytes = "PVAULT01 shared".toByteArray()
         val name = DocumentNames.backup("2026-10-08")
