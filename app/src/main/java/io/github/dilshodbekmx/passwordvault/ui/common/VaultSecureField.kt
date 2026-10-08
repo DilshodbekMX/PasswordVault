@@ -20,6 +20,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.editableText
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextDirection
 import io.github.dilshodbekmx.passwordvault.R
@@ -29,7 +32,9 @@ import io.github.dilshodbekmx.passwordvault.window.vaultTextField
  * The app's password field (R-13: with [VaultTextField], the only way to make a text field), for
  * the master password, an account's password or a secret value: an `OutlinedSecureTextField` with
  * `vaultTextField()` and an explicit obfuscation mode, `RevealLastTyped`, plus a show/hide button
- * (ux.md §3, lock.md §13.5). The text is always laid out left to right.
+ * (ux.md §3, lock.md §13.5). The text is always laid out left to right. While it is masked,
+ * accessibility services read one mask character per character, never the text, on every version
+ * of Android ([maskedForAccessibility]).
  *
  * [state] is held by the screen's ViewModel (architecture.md §5.6, lock.md §5.8): this field adds
  * nothing to the saved-instance state, not even whether the password is shown, which starts hidden
@@ -68,9 +73,10 @@ fun VaultSecureField(
         }
         else -> trailingIcon
     }
+    val masked = !(revealable && revealed)
     OutlinedSecureTextField(
         state = state,
-        modifier = modifier.vaultTextField(),
+        modifier = modifier.vaultTextField().maskedForAccessibility(state, masked),
         enabled = enabled,
         textStyle = textStyle.copy(textDirection = TextDirection.Ltr),
         label = label?.let { slot -> { slot() } },
@@ -80,12 +86,43 @@ fun VaultSecureField(
         supportingText = supportingText,
         isError = isError,
         inputTransformation = inputTransformation,
-        textObfuscationMode = if (revealable && revealed) TextObfuscationMode.Visible else TextObfuscationMode.RevealLastTyped,
+        textObfuscationMode = if (masked) TextObfuscationMode.RevealLastTyped else TextObfuscationMode.Visible,
         keyboardOptions = keyboardOptions,
         onKeyboardAction = onKeyboardAction,
         interactionSource = interactionSource,
     )
 }
+
+/**
+ * While [masked], the field's semantics hold one mask character for each character of [state]
+ * instead of its text, so that no accessibility service, a screen reader or any other, reads the
+ * secret on any version of Android (architecture.md §8.4, lock.md §13.5).
+ *
+ * The text field's own semantics (Compose foundation 1.12) put the plain text into the node's
+ * editable text, unlike the platform's password `EditText`, whose node holds what it draws. That
+ * editable text is what an accessibility service gets as the node's text, as the text and the
+ * "before" text of the text-changed and selection-changed events, and to step through with the
+ * movement granularities. `isSensitiveData` keeps the services that are not accessibility tools away
+ * from it only from Android 14 on; before, any service the user turned on read the typed master
+ * password (tools/emu/window/a11y.sh on Android 9).
+ *
+ * This modifier is placed before the field's own semantics on the same layout node, and of the
+ * semantics modifiers of one node the outermost one's value of a property wins, so its editable
+ * text replaces the field's. Its length is the text's length in UTF-16 units, as the platform's
+ * masked text has it, so the cursor and selection positions that the field reports, and that an
+ * accessibility service sends back to move the cursor, keep their meaning; the field still says that
+ * it is a password field and how many characters it holds. Its actions are untouched: a screen
+ * reader still focuses it, types and deletes through the keyboard or sets its text, and moves the
+ * cursor. Shown ("Show password"), the field reports its text again, which is then on the screen
+ * for anybody to read (lock.md §2.3).
+ */
+private fun Modifier.maskedForAccessibility(state: TextFieldState, masked: Boolean): Modifier =
+    semantics {
+        if (masked) editableText = AnnotatedString(MASK_CHARACTER.toString().repeat(state.text.length))
+    }
+
+/** The platform's mask character for password text (`PasswordTransformationMethod`), and Compose's. */
+private const val MASK_CHARACTER = '•'
 
 /**
  * The show/hide button of a password field and of a stored password (ux.md §3, §5.12, §8): an

@@ -3,6 +3,7 @@ package io.github.dilshodbekmx.pvlab.window;
 import android.accessibilityservice.AccessibilityService;
 import android.graphics.Rect;
 import android.os.Build;
+import android.os.Bundle;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
@@ -20,6 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * It writes down two things, in the helper's files directory:
  *  - every event that carries something readable, as it arrives (files/a11y-KIND-events.log):
  *      EVENT TAB type TAB package TAB class TAB id TAB password=B TAB text=... TAB before=... TAB desc=...
+ *            TAB from=N TAB to=N TAB added=N TAB removed=N TAB count=N TAB granularity=N
  *  - on the command "a11y-dump" ([LabCommandReceiver]), every node of every window it can reach
  *    (files/a11y-KIND-dump.txt):
  *      DUMP nonce
@@ -30,6 +32,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *      FOCUS TAB ... (the node that has the input focus, asked for directly; the fields of NODE)
  *      END nonce nodes=N windows=W
  * A text is written on one line: a line break in it as \n, a tab as \t.
+ * On the command "a11y-act" it does to a text field what a screen reader does ([act]).
  */
 public class LabA11yService extends AccessibilityService {
     /** The connected services by kind ("plain", "tool"); both run in the helper's one process. */
@@ -66,7 +69,8 @@ public class LabA11yService extends AccessibilityService {
         CharSequence description = event.getContentDescription();
         int type = event.getEventType();
         boolean textEvent = type == AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED
-                || type == AccessibilityEvent.TYPE_VIEW_TEXT_SELECTION_CHANGED;
+                || type == AccessibilityEvent.TYPE_VIEW_TEXT_SELECTION_CHANGED
+                || type == AccessibilityEvent.TYPE_VIEW_TEXT_TRAVERSED_AT_MOVEMENT_GRANULARITY;
         boolean readable = (texts != null && !texts.isEmpty()) || before != null || description != null;
         // Without anything readable an event is only noise here (a focused Compose field on Android 9
         // sends a content-changed event every 500 ms for its cursor).
@@ -90,7 +94,125 @@ public class LabA11yService extends AccessibilityService {
         b.append('\t').append("text=").append(LabFiles.oneLine(join(texts)));
         b.append('\t').append("before=").append(LabFiles.oneLine(before));
         b.append('\t').append("desc=").append(LabFiles.oneLine(description));
+        // Where in the text: the change, the selection, or the stretch a cursor move went over.
+        b.append('\t').append("from=").append(event.getFromIndex());
+        b.append('\t').append("to=").append(event.getToIndex());
+        b.append('\t').append("added=").append(event.getAddedCount());
+        b.append('\t').append("removed=").append(event.getRemovedCount());
+        b.append('\t').append("count=").append(event.getItemCount());
+        b.append('\t').append("granularity=").append(event.getMovementGranularity());
         LabFiles.append(this, LabFiles.events(kind()), b.toString());
+    }
+
+    /**
+     * What a screen reader does with a text field, done by this service: [action] on the node whose
+     * view id is [id] (a resource name, or a Compose test tag that the app reports as its id), in
+     * any window this service can reach. Returns the node as it is half a second later, on one line:
+     *   found=B result=B password=B editable=B focused=B a11yfocused=B sel=START,END granularities=G
+     *   actions=ID,ID,... text=TEXT
+     * (the text last, with a line break written as \n). The actions:
+     *   info              nothing, only the node
+     *   focus, unfocus    ACTION_ACCESSIBILITY_FOCUS, ACTION_CLEAR_ACCESSIBILITY_FOCUS
+     *   click             ACTION_CLICK (a screen reader's double tap: the field takes the input focus)
+     *   prev, next        ACTION_PREVIOUS_AT_MOVEMENT_GRANULARITY, ACTION_NEXT_AT_MOVEMENT_GRANULARITY
+     *                     by [granularity] (1 character, 2 word, ...), without extending the selection:
+     *                     the cursor moves, as with a screen reader's "move by character"
+     *   select            ACTION_SET_SELECTION from [start] to [end]: the cursor is put there
+     *   settext           ACTION_SET_TEXT with [text], as a screen reader's paste or edit does
+     */
+    String act(String id, String action, int granularity, int start, int end, String text) {
+        AccessibilityNodeInfo node = find(id);
+        if (node == null) return "found=false";
+        boolean result;
+        Bundle args = new Bundle();
+        switch (action) {
+            case "info":
+                result = true;
+                break;
+            case "focus":
+                result = node.performAction(AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS);
+                break;
+            case "unfocus":
+                result = node.performAction(AccessibilityNodeInfo.ACTION_CLEAR_ACCESSIBILITY_FOCUS);
+                break;
+            case "click":
+                result = node.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+                break;
+            case "prev":
+            case "next":
+                args.putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_MOVEMENT_GRANULARITY_INT, granularity);
+                args.putBoolean(AccessibilityNodeInfo.ACTION_ARGUMENT_EXTEND_SELECTION_BOOLEAN, false);
+                result = node.performAction(action.equals("prev")
+                        ? AccessibilityNodeInfo.ACTION_PREVIOUS_AT_MOVEMENT_GRANULARITY
+                        : AccessibilityNodeInfo.ACTION_NEXT_AT_MOVEMENT_GRANULARITY, args);
+                break;
+            case "select":
+                args.putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_START_INT, start);
+                args.putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_END_INT, end);
+                result = node.performAction(AccessibilityNodeInfo.ACTION_SET_SELECTION, args);
+                break;
+            case "settext":
+                args.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text);
+                result = node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args);
+                break;
+            default:
+                return "found=true result=false unknown-action=" + action;
+        }
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        AccessibilityNodeInfo after = find(id);
+        if (after == null) return "found=false result=" + result;
+        StringBuilder actions = new StringBuilder();
+        for (AccessibilityNodeInfo.AccessibilityAction a : after.getActionList()) {
+            if (actions.length() > 0) actions.append(',');
+            actions.append(a.getId());
+        }
+        return "found=true result=" + result
+                + " password=" + after.isPassword()
+                + " editable=" + after.isEditable()
+                + " focused=" + after.isFocused()
+                + " a11yfocused=" + after.isAccessibilityFocused()
+                + " sel=" + after.getTextSelectionStart() + "," + after.getTextSelectionEnd()
+                + " granularities=" + after.getMovementGranularities()
+                + " actions=" + actions
+                + " text=" + LabFiles.oneLine(after.getText());
+    }
+
+    /** The first node whose view id is [id] or ends with "/" + [id], in the windows this service reaches. */
+    private AccessibilityNodeInfo find(String id) {
+        List<AccessibilityWindowInfo> windows = getWindows();
+        for (int i = windows.size() - 1; i >= -1; i--) {
+            AccessibilityNodeInfo root;
+            try {
+                root = i >= 0 ? windows.get(i).getRoot() : getRootInActiveWindow();
+            } catch (RuntimeException e) {
+                continue;
+            }
+            AccessibilityNodeInfo found = root == null ? null : find(root, id, 0);
+            if (found != null) return found;
+        }
+        return null;
+    }
+
+    private static AccessibilityNodeInfo find(AccessibilityNodeInfo node, String id, int depth) {
+        String name = node.getViewIdResourceName();
+        if (name != null && (name.equals(id) || name.endsWith("/" + id))) return node;
+        if (depth > 60) return null;
+        for (int i = 0; i < node.getChildCount(); i++) {
+            AccessibilityNodeInfo child;
+            try {
+                child = node.getChild(i);
+            } catch (RuntimeException e) {
+                continue;
+            }
+            if (child == null) continue;
+            AccessibilityNodeInfo found = find(child, id, depth + 1);
+            if (found != null) return found;
+        }
+        return null;
     }
 
     private static String join(List<CharSequence> texts) {

@@ -6,6 +6,8 @@ import android.content.ClipboardManager;
 import android.content.Context;
 import android.os.Bundle;
 import android.text.InputType;
+import android.text.method.HideReturnsTransformationMethod;
+import android.text.method.PasswordTransformationMethod;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.ViewGroup;
@@ -16,8 +18,9 @@ import android.widget.TextView;
 
 /**
  * The control of every check of tools/emu/window: a screen with no protection at all, made of
- * platform views. A text field (control_text), a password field (control_password) and a button
- * (control_button) that counts its taps (control_status shows "clicks=N").
+ * platform views. A text field (control_text), a password field (control_password) with a show/hide
+ * button (control_reveal, "SHOW" or "HIDE": the platform's own way, a change of the transformation
+ * method), and a button (control_button) that counts its taps (control_status shows "clicks=N").
  *
  * What the app under test must prevent has to happen here, or a clean result would mean nothing: the
  * autofill service gets a fill request and, after Save, the typed text; the keyboard gets no
@@ -57,6 +60,21 @@ public class ControlActivity extends Activity {
         password.setHint("control password");
         password.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
         column.addView(password, wide());
+
+        Button reveal = new Button(this);
+        reveal.setId(R.id.control_reveal);
+        reveal.setText("SHOW");
+        reveal.setOnClickListener(v -> {
+            boolean shown = !(password.getTransformationMethod() instanceof PasswordTransformationMethod);
+            int cursor = password.getSelectionEnd();
+            password.setTransformationMethod(shown
+                    ? PasswordTransformationMethod.getInstance()
+                    : HideReturnsTransformationMethod.getInstance());
+            password.setSelection(Math.max(0, Math.min(cursor, password.length())));
+            reveal.setText(shown ? "SHOW" : "HIDE");
+            Log.i(TAG, "control password " + (shown ? "hidden" : "shown"));
+        });
+        column.addView(reveal, wide());
 
         TextView status = new TextView(this);
         status.setId(R.id.control_status);

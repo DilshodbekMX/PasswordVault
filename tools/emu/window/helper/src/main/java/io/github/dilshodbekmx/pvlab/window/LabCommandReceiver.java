@@ -37,6 +37,11 @@ import android.widget.TextView;
  *   a11y-dump --es kind plain|tool --es nonce N
  *       The service KIND writes every node it can reach into files/a11y-KIND-dump.txt
  *       ([LabA11yService.dump]); data: "nodes=N windows=W".
+ *   a11y-act --es kind plain|tool --es id ID --es action ACTION [--ei granularity G]
+ *            [--ei start S --ei end E] [--es text TEXT]
+ *       The service KIND does to the node ID what a screen reader does to a text field
+ *       ([LabA11yService.act]: info, focus, unfocus, click, prev, next, select, settext); data: the
+ *       node half a second later, "found=B result=B password=B ... text=TEXT".
  *   clip --es text TEXT
  *       Puts TEXT on the clipboard, so that a text toolbar has "Paste" to show.
  *   control
@@ -69,6 +74,9 @@ public class LabCommandReceiver extends BroadcastReceiver {
                 break;
             case "a11y-dump":
                 dump(intent);
+                break;
+            case "a11y-act":
+                act(intent);
                 break;
             case "clip":
                 ClipboardManager clipboard = (ClipboardManager) app.getSystemService(Context.CLIPBOARD_SERVICE);
@@ -116,6 +124,36 @@ public class LabCommandReceiver extends BroadcastReceiver {
                 pending.finish();
             }
         }, "a11y-dump").start();
+    }
+
+    private void act(Intent intent) {
+        String kind = String.valueOf(intent.getStringExtra("kind"));
+        LabA11yService service = LabA11yService.RUNNING.get(kind);
+        if (service == null) {
+            answer(FAILED, "the accessibility service '" + kind + "' is not connected");
+            return;
+        }
+        String id = String.valueOf(intent.getStringExtra("id"));
+        String action = String.valueOf(intent.getStringExtra("action"));
+        int granularity = intent.getIntExtra("granularity", 1);
+        int start = intent.getIntExtra("start", 0);
+        int end = intent.getIntExtra("end", 0);
+        String text = intent.getStringExtra("text");
+        PendingResult pending = goAsync();
+        new Thread(() -> {
+            try {
+                String result = service.act(id, action, granularity, start, end, text == null ? "" : text);
+                Log.i(TAG, "a11y-act " + action + " on " + id + ": " + result.replaceAll(" text=.*", ""));
+                pending.setResultData(result);
+                pending.setResultCode(DONE);
+            } catch (RuntimeException e) {
+                Log.e(TAG, "a11y-act", e);
+                pending.setResultData("failed: " + e.getClass().getName());
+                pending.setResultCode(FAILED);
+            } finally {
+                pending.finish();
+            }
+        }, "a11y-act").start();
     }
 
     private void addOverlay(Context app, Intent intent) {
