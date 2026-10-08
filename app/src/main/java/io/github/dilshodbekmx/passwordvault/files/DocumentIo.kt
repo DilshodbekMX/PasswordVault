@@ -31,4 +31,13 @@ interface DocumentIo {
 
     /** Where [doc] lives. */
     fun place(doc: DocRef): Place
+
+    /**
+     * The name the place shows for [doc]. It may differ from the name the picker suggested: a
+     * provider adds "(1)" on a clash. The screens show this one ("Backup saved: …", ux.md §5.19;
+     * "Delete the empty file … yourself", ux.md §4 item 3), and it is the `name` kept with the file's
+     * reference in the vault (`plainExports`, `backups`; architecture.md §4.3). Null when it cannot
+     * be read. It asks the provider, so it is called off the main thread.
+     */
+    fun name(doc: DocRef): String?
 }

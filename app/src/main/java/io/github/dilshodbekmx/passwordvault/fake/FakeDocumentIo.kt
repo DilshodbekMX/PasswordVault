@@ -7,8 +7,8 @@ import java.io.IOException
 
 /**
  * In-memory documents (architecture.md §2.2 `fake`): [files] by URI. Scripted with [writeResults]
- * (the next writes: false fails and stores nothing), [notDeletable] and [places]; [kept] lists the
- * documents given a persistable permission. Single-threaded.
+ * (the next writes: false fails and stores nothing), [notDeletable], [places] and [names]; [kept]
+ * lists the documents given a persistable permission. Single-threaded.
  */
 class FakeDocumentIo : DocumentIo {
     /** The documents' bytes by URI. */
@@ -25,6 +25,9 @@ class FakeDocumentIo : DocumentIo {
 
     /** The place of each URI; [Place.PhoneStorage] when not given. */
     val places = mutableMapOf<String, Place>()
+
+    /** The name the place shows for each URI; null (it cannot be read) when not given. */
+    val names = mutableMapOf<String, String>()
 
     override suspend fun write(doc: DocRef, bytes: ByteArray): Boolean {
         if (!(writeResults.removeFirstOrNull() ?: true)) return false
@@ -48,4 +51,6 @@ class FakeDocumentIo : DocumentIo {
     }
 
     override fun place(doc: DocRef): Place = places[doc.uri] ?: Place.PhoneStorage
+
+    override fun name(doc: DocRef): String? = names[doc.uri]
 }
