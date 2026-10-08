@@ -105,6 +105,17 @@ class ImportFlowTest {
     // ---- A lock, a new process -------------------------------------------------------------
 
     @Test
+    fun theMappingOpeningByItselfLeavesThePausedLine() = ImportKit.run {
+        recorded(utf8("Sayt,Login,Kalit\nhttps://my.gov.uz,aziz,Kalit-1-Pw\n"))
+        val file = file()
+        assertEquals(ImportMove.COLUMNS, file.ui.value.move)
+        assertTrue("not something the user did", file.ui.value.paused)
+        file.moved()
+        file.openColumns()
+        assertFalse("the user's own tap is", file.ui.value.paused)
+    }
+
+    @Test
     fun aFileChosenBeforeALockOpensTheFileStepThatSaysItWasPaused() = ImportKit.run {
         recorded(utf8(SMALL_CSV))
         val sources = sources()

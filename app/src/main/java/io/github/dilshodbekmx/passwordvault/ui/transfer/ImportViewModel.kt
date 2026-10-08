@@ -226,7 +226,7 @@ internal class ImportViewModel(
             is Importer.Result.ChooseColumns -> {
                 // formats-review P6: no password column, so the user chooses (ux.md §5.21).
                 set(ImportScreen.NeedsColumns)
-                if (!memory.choicesFor(d).columnsShown) openColumns()
+                if (!memory.choicesFor(d).columnsShown) showColumns()
             }
             is Importer.Result.Read -> {
                 file = result.file
@@ -234,7 +234,7 @@ internal class ImportViewModel(
                 val columns = result.file.columns
                 // A column whose meaning another one took is an ambiguity the user should see (formats.md §8.3).
                 if (columns != null && columns.ambiguous.isNotEmpty() && !columns.fromUser && !memory.choicesFor(d).columnsShown) {
-                    openColumns()
+                    showColumns()
                 }
                 replan()
             }
@@ -308,10 +308,15 @@ internal class ImportViewModel(
         replan()
     }
 
-    /** "Choose columns" or "Check columns": the column-mapping screen. */
+    /** "Choose columns", "Check columns" or "Change columns": the column-mapping screen. */
     fun openColumns() {
-        val d = doc ?: return
         acted()
+        showColumns()
+    }
+
+    /** The column-mapping screen, opened by the user or by itself (once per file). */
+    private fun showColumns() {
+        val d = doc ?: return
         memory.update(d) { it.copy(columnsShown = true) }
         move(ImportMove.COLUMNS)
     }
