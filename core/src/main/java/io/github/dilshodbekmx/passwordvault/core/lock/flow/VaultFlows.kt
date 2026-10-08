@@ -564,7 +564,8 @@ internal class VaultFlows(private val core: LockCore) {
      * master password has started working."), or when the offer was made on this entry already:
      * shown now, or answered ("The typed bytes are kept only until the offer is answered", F12 step
      * 2), so an entry is offered once. Nothing is written. Whether a backup is due is the app's to
-     * say (ux.md §5.19).
+     * say (ux.md §5.19). `UnlockFlows.answerNotice` drops the proof when the offer is answered with
+     * anything but "Back up now".
      */
     suspend fun offerBackup() {
         val now = core.state.value as? LockState.Unlocked ?: return

@@ -833,7 +833,12 @@ internal class UnlockFlows(private val core: LockCore) {
         val open = core.open
         val lock = open?.let { core.knownLock(it.vaultId) }
         when (notice) {
-            is Notice.OlderCopy, is Notice.PendingCancelled, is Notice.ChoosePin, is Notice.BackupNow -> Unit
+            is Notice.OlderCopy, is Notice.PendingCancelled, is Notice.ChoosePin -> Unit
+            // F12 step 2: the entry that the offer was made on is kept only until the offer is answered.
+            // "Back up now" hands it to the backup that this answer starts; any other answer ends its
+            // flow, and the proof of this unlock is dropped (§5.8). The offer is the last notice of
+            // §13.4, so no notice after it wants that proof.
+            is Notice.BackupNow -> if (answer != NoticeAnswer.BACK_UP_NOW) dropUnlockProof()
             is Notice.OlderThanLastTime ->
                 // The owner has been told: from now on this copy is the one this phone has opened (F16c).
                 if (lock != null) lock.master.update { it.copy(maxGeneration = StateRecord.MaxGeneration(open.generation, core.clock.wallMs())) }
@@ -854,6 +859,14 @@ internal class UnlockFlows(private val core: LockCore) {
                 }
         }
         core.publishSummary()
+    }
+
+    /** Holds the mutex: the proof of the unlock that the open app shows is zeroed and taken off the state (lock.md §5.8). */
+    private fun dropUnlockProof() {
+        val now = core.state.value as? LockState.Unlocked ?: return
+        val proof = now.proof ?: return
+        core.dropProof(proof)
+        core.state.value = now.copy(proof = null)
     }
 
     // ---------------------------------------------------------------------------------------------

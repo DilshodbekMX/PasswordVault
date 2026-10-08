@@ -87,7 +87,12 @@ sealed interface Notice {
     /** 5. A lock record could not be read (§5.3 UNREADABLE): "Part of the app's storage could not be read. Make a backup now." Answers: SET_UP_AGAIN, BACK_UP_NOW, LATER. */
     data class StorageUnreadable(override val id: Long) : Notice
 
-    /** 7. "Make a backup now?" when the master password was just typed and a backup is due (F12). Answers: BACK_UP_NOW, LATER. */
+    /**
+     * 7. "Make a backup now?" when the master password was just typed and a backup is due (F12).
+     * Answers: BACK_UP_NOW, LATER. The backup that BACK_UP_NOW starts uses the entry of this unlock
+     * (`LockState.Unlocked.proof`); any other answer drops that proof: "The typed bytes are kept only
+     * until the offer is answered" (F12 step 2).
+     */
     data class BackupNow(override val id: Long) : Notice
 }
 

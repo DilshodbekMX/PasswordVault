@@ -13,11 +13,13 @@ import io.github.dilshodbekmx.passwordvault.core.lock.flow.core.LockFixture.Comp
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.core.LockFixture.Companion.VAULT
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.core.LockFixture.Companion.await
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.core.LockFixture.Companion.bytes
+import io.github.dilshodbekmx.passwordvault.core.lock.flow.core.LockFixture.Companion.digits
 import io.github.dilshodbekmx.passwordvault.core.lock.guard.PracticeSchedule
 import io.github.dilshodbekmx.passwordvault.core.lock.record.PinRecord
 import io.github.dilshodbekmx.passwordvault.core.lock.record.Shortcut
 import io.github.dilshodbekmx.passwordvault.core.lock.record.StateRecord
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
@@ -93,6 +95,59 @@ class BackupOfferFlowTest {
         f.answerNotices()
         await { f.engine.offerBackup() }
         assertEquals(1, backupNow().size)
+    }
+
+    @Test
+    fun step2_theTypedBytesAreKeptOnlyUntilTheOfferIsAnswered() {
+        vaultWithPin()
+        f.startInFront()
+        await { f.engine.useMasterPassword() }
+        val proof = (f.unlockWith(PASSWORD) as MasterPasswordOutcome.Right).proof
+        // The notices before it take nothing from the entry: "Choose a new PIN" › "Later" among them.
+        f.answerNotices()
+        assertSame(proof, (f.state as LockState.Unlocked).proof)
+        await { f.engine.offerBackup() }
+        assertTrue(proof.useBytes { it.contentEquals(bytes(PASSWORD)) })
+
+        await { f.engine.answerNotice(backupNow().single().id, NoticeAnswer.LATER) }
+
+        // §5.8: the flow of that entry has ended. Its proof is off the state, not held, and zeroed.
+        assertEquals(LockState.Unlocked(emptyList(), null), f.state)
+        assertFalse(f.engine.core.holds(proof))
+        try {
+            proof.useBytes { it.size }
+            throw AssertionError("the proof still lends its bytes")
+        } catch (e: IllegalStateException) {
+            // dropped
+        }
+        // What needs the master password asks for it again from here on (§8.2): that entry sets no PIN.
+        val pinBefore = f.pinRecord()
+        assertFalse(await { f.engine.setPin(digits("368014"), proof) })
+        assertEquals(pinBefore, f.pinRecord())
+        // A master password typed now is a new entry, with a proof of its own.
+        val again = (f.check(PASSWORD) as MasterPasswordOutcome.Right).proof
+        assertTrue(f.engine.core.holds(again))
+    }
+
+    @Test
+    fun step2_backUpNow_keepsTheEntryForTheBackupItStarts_untilTheAppStopsBeingVisible() {
+        vaultWithPin()
+        f.startInFront()
+        await { f.engine.useMasterPassword() }
+        val proof = (f.unlockWith(PASSWORD) as MasterPasswordOutcome.Right).proof
+        f.answerNotices()
+        await { f.engine.offerBackup() }
+
+        await { f.engine.answerNotice(backupNow().single().id, NoticeAnswer.BACK_UP_NOW) }
+
+        // The backup that this answer starts is sealed from that entry (architecture.md §4.12).
+        assertEquals(LockState.Unlocked(emptyList(), proof), f.state)
+        assertTrue(f.engine.core.holds(proof))
+        assertTrue(proof.useBytes { it.contentEquals(bytes(PASSWORD)) })
+        // The file picker makes the app stop being visible, and that drops it as always (§5.8, §10.3).
+        await { f.engine.appStopped() }
+        assertNull((f.state as LockState.Unlocked).proof)
+        assertFalse(f.engine.core.holds(proof))
     }
 
     @Test
