@@ -26,6 +26,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.github.dilshodbekmx.passwordvault.i18n.UiText
 import io.github.dilshodbekmx.passwordvault.settings.ThemeChoice
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultDialog
+import io.github.dilshodbekmx.passwordvault.ui.common.VaultSheet
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultTextField
 import io.github.dilshodbekmx.passwordvault.ui.theme.PasswordVaultTheme
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -180,6 +181,22 @@ class SecretClipboardBridgeTest {
         compose.waitUntil(TOOLBAR_MS) { wrapped != null }
         assertTrue("the root's content has the bridge", root is SecretClipboardBridge)
         assertFalse("a dialog's content has the platform's clipboard", plain is SecretClipboardBridge)
+        assertTrue("inside ClipboardWindow it has the bridge", wrapped is SecretClipboardBridge)
+    }
+
+    /** A bottom sheet is a window of its own too, drawn by its own ComposeView: as with a dialog. */
+    @Test
+    fun aSheetGetsTheBridgeOnlyThroughClipboardWindow() {
+        var plain: Clipboard? = null
+        var wrapped: Clipboard? = null
+        show(focused = false) {
+            VaultSheet(onDismissRequest = {}) {
+                plain = LocalClipboard.current
+                ClipboardWindow { wrapped = LocalClipboard.current }
+            }
+        }
+        compose.waitUntil(TOOLBAR_MS) { wrapped != null }
+        assertFalse("a sheet's content has the platform's clipboard", plain is SecretClipboardBridge)
         assertTrue("inside ClipboardWindow it has the bridge", wrapped is SecretClipboardBridge)
     }
 
