@@ -187,6 +187,25 @@ class FileTaskStoreJvmTest {
         assertEquals(3, fake.released.size)
     }
 
+    @Test
+    fun onlyABackupIsShared() = runTest {
+        // D-12, formats.md §2 rule 6: only the encrypted backup reaches the share sheet, whatever the caller hands over.
+        val store = newStore()
+        val json = "{\"passwordVault\":{\"version\":1},\"items\":[]}".toByteArray()
+        for (bytes in listOf(PLAIN, json, ByteArray(0), "PVAULT".toByteArray(), "PK\u0003\u0004".toByteArray())) {
+            assertFalse(String(bytes), store.share(bytes, "PasswordVault-backup-2026-10-08.pvault", "Send"))
+        }
+        assertTrue("nothing was opened", launcher.calls.isEmpty())
+        assertEquals("no grace began", 0, session.begun)
+        assertTrue("nothing was written", shared.list().isNullOrEmpty())
+
+        val backup = "PVAULT01".toByteArray() + ByteArray(64) { it.toByte() }
+        assertTrue(store.share(backup, "PasswordVault-backup-2026-10-08.pvault", "Send"))
+        assertEquals(listOf("share PasswordVault-backup-2026-10-08.pvault"), launcher.calls)
+        assertArrayEquals(backup, launcher.shared!!.readBytes())
+        assertEquals(1, session.begun)
+    }
+
     /** The fake documents, what the settings held when a write came, and the deletes and releases in order. */
     private class SeeingDocuments(private val fake: FakeDocumentIo, private val settings: AppSettings) : DocumentIo by fake {
         var recordedAtWrite: FileTask? = null
