@@ -85,9 +85,10 @@ import kotlinx.coroutines.launch
  *   and the fourth are about the current vault and are left out.
  * - **The lock's question** (`LockScreen.OpenOlderSet`, lock.md F16b step 3) is a screen of its own,
  *   [OlderSetUi]: the passwords from before a replacement have opened with their master password,
- *   and nothing changes until "Open my passwords from 7 Oct" is answered; "Cancel" changes nothing.
- *   Both go straight to the lock (`LockIntent.OlderPasswordAnswer`), which asks no second time.
- *   Nothing lies over it: a sheet or a question that was open when the lock asks is closed.
+ *   and nothing changes unless "Open my passwords from 7 Oct" is the answer; "Cancel" changes
+ *   nothing. Both go straight to the lock (`LockIntent.OlderPasswordAnswer`): the screen is the
+ *   question, so neither is asked once more. A sheet or a question that was open when the lock asks
+ *   is closed, and the screen itself has no button that opens one, so nothing lies over it.
  *
  * @param testBuild `BuildConfig.ALLOW_SOFTWARE_KEYSTORE`: every lock screen shows "TEST BUILD: PIN
  *   keys are not protected" (lock.md §4.5, §13.3; architecture.md §7.2).

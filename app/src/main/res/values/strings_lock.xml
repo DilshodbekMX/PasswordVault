@@ -238,7 +238,8 @@
          deleted, whatever the answer. %1$s is a day and a month, for example "Oct 7". -->
     <string name="lock_older_set_text">These are your passwords as they were on %1$s. Passwords added or changed after that are in the newer set, which stays on this phone. Open the older set instead?</string>
     <!-- Button: the app uses the older set from now on; the newer set stays on the phone, put
-         aside (compare glossary 145, which says "from before"). %1$s is a day and a month. -->
+         aside. These are the passwords of "Open my passwords from before …" (glossary 145). %1$s
+         is a day and a month. -->
     <string name="lock_older_set_open">Open my passwords from %1$s</string>
 
     <!-- ===== "Your passwords can't be opened" (ux.md §5.9; lock.md §13.1 row 2). Never an offer to
