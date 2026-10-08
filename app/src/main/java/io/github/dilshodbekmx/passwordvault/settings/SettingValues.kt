@@ -39,11 +39,51 @@ enum class ClipDelay(val stored: String, val ms: Long) {
     }
 }
 
-/** Settings › Appearance & language › Theme (ux.md §5.18). */
+/** Settings › Appearance › "Light or dark" (ux.md §5.18): System follows the phone. */
 enum class ThemeChoice(val stored: String) {
     SYSTEM("system"),
     LIGHT("light"),
     DARK("dark"),
+}
+
+/**
+ * Settings › Appearance › "Colours" (ux.md §5.18; docs/design/looks/README.md): the three styles the
+ * user chose, each with a light and a dark colour scheme ([ThemeChoice] picks between them), and the
+ * colours of the phone's wallpaper, which exist from Android 12 only.
+ */
+enum class StyleChoice(val stored: String) {
+    BANK_BLUE("bank_blue"),
+    EMERALD("emerald"),
+    NIGHT_VAULT("night_vault"),
+
+    /** "Phone's colours": Material 3's dynamic colour, which follows the wallpaper. */
+    PHONE_COLOURS("phone"),
+    ;
+
+    companion object {
+        /** The style of a new install, and what a missing or unknown stored value reads as. */
+        val DEFAULT = BANK_BLUE
+
+        /** The first Android version that has the wallpaper's colours: Android 12. */
+        const val PHONE_COLOURS_FROM_SDK = 31
+
+        /** Whether a phone with the Android version [sdk] has the wallpaper's colours. */
+        fun hasPhoneColours(sdk: Int): Boolean = sdk >= PHONE_COLOURS_FROM_SDK
+
+        /**
+         * The styles a phone offers, in the order Settings lists them: [PHONE_COLOURS] only when
+         * [phoneColours], so before Android 12 its row is not shown.
+         */
+        fun offered(phoneColours: Boolean): List<StyleChoice> = if (phoneColours) entries else entries - PHONE_COLOURS
+
+        /**
+         * The style that [stored], the text kept in "pv_settings", stands for on this phone:
+         * [DEFAULT] when it is missing or not one this version knows, and for [PHONE_COLOURS] on a
+         * phone without them.
+         */
+        fun read(stored: Any?, phoneColours: Boolean): StyleChoice =
+            entries.firstOrNull { it.stored == stored }?.takeIf { it in offered(phoneColours) } ?: DEFAULT
+    }
 }
 
 /**

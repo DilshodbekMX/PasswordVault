@@ -91,7 +91,7 @@ The three factory objects (`CryptoFactory`, `VaultCodecs`, `VaultStores`, 3.2 an
 | `clipboard` | Copying | `SecretClipboard`, `AndroidSecretClipboard`, `ClipboardClearReceiver`, `ClipStatus`, `SecretClipboardBridge` (the Compose `Clipboard` provided as `LocalClipboard`, ux.md §6 item 5), `ClipboardRoot` (hook), `ClipboardModule` |
 | `window` | Window and input protections, from `docs/lab/window-input-artifacts/VaultSecurity.kt` with the API 26 gate of lock.md §13.5 | `VaultSecurity` (activity window), `VaultWindow` (dialogs and sheets), `Modifier.vaultTextField()`, `NoPersonalizedLearning`, `ObscuredTouchNotice`, `WindowPolicy` (hook) |
 | `files` | Storage Access Framework | `DocRef`, `DocumentIo`, `SafDocumentIo`, `FileTask`, `FileTaskStore`, `BackupSharing` (`FileProvider`), `Places`, `DocumentLaunchers` (hook: the picker launchers registered by the activity), `FilesModule` |
-| `settings` | Non-secret settings | `AppSettings`, `SettingsEditor`, `PrefsAppSettings`, `LockDelay`, `ClipDelay`, `ThemeChoice`, `BackupReminder`, `OneTime`, `PurgeArm`, `PendingClip`, `SettingsModule` |
+| `settings` | Non-secret settings | `AppSettings`, `SettingsEditor`, `PrefsAppSettings`, `LockDelay`, `ClipDelay`, `ThemeChoice`, `StyleChoice`, `BackupReminder`, `OneTime`, `PurgeArm`, `PendingClip`, `SettingsModule` |
 | `i18n` | Language-dependent formatting | `UiText` (resource id plus arguments), `Formatters` (`android.icu` dates, relative times, numbers), `SortKeys` (`Collator`, `AlphabeticIndex`, the sort key of i18n.md §2.7, behind the `Collation` interface), `AppLanguages` (with `AppLanguage`; AppCompat keeps the choice, not `AppSettings`, i18n.md §1.4) |
 | `nav` | Navigation 3 | `Route` (every key, holding ids only), `NavState` (three back stacks: setup, locked, unlocked), `Navigator`, `AppNavHost` |
 | `ui.theme`, `ui.common` | Look and shared parts | `PasswordVaultTheme(settings)` (and `PasswordVaultTheme(theme: ThemeChoice)` for previews and tests), `PinPad` (made of `PinDots` and `PinKeys`; `PinPadTags`, `PIN_LENGTH`), `SecretText`, `MaskedValue`, `VaultTextField`, `VaultSecureField` (with `RevealToggle`), `VaultSearchField`, `VaultDialog`, `VaultSheet` (a plain form, and an `@ExperimentalMaterial3Api` form that takes a `SheetState`) (the only ways to make a text field, a dialog or a sheet; R-13), `VaultFieldDefaults`, `TextFieldState.readSecret()` and `clearSecret()`, `Banner` (with `BannerKind`), `ClipboardRow`, `StrengthBar` |
@@ -540,7 +540,9 @@ class AppDispatchers(val main: CoroutineDispatcher, val io: CoroutineDispatcher,
 interface AppSettings {                                // SharedPreferences "pv_settings"; a missing value is the strictest one [V-P9]
     val lockDelay: StateFlow<LockDelay>                // missing or unreadable: Immediately. Setup writes 30 seconds
     val clipDelay: StateFlow<ClipDelay>                // missing or unreadable: 30 seconds. Setup writes 1 minute (ux.md §5.18)
-    val theme: StateFlow<ThemeChoice>
+    val theme: StateFlow<ThemeChoice>                  // light or dark; missing or unreadable: System
+    val style: StateFlow<StyleChoice>                  // the colours (looks/README.md); missing or unreadable: Bank blue, as is a stored
+                                                       // "Phone's colours" on a phone before Android 12, where it cannot be set either
     val generator: StateFlow<GeneratorOptions>
     val backupReminder: StateFlow<BackupReminder>      // on or off, snoozed until; when a backup is due is computed from the vault (4.3)
     val fileTask: StateFlow<FileTask?>                 // an unfinished backup, export, import or restore: kind, step, DocRef; nothing secret
@@ -552,15 +554,18 @@ interface AppSettings {                                // SharedPreferences "pv_
     fun update(change: (SettingsEditor) -> Unit): Boolean        // commit(); false = not written, nothing changed; off the main thread
 }
 interface SettingsEditor {                             // the values update() can set, each starting as the current one
-    var lockDelay: LockDelay; var clipDelay: ClipDelay; var theme: ThemeChoice; var generator: GeneratorOptions
-    var backupReminder: BackupReminder; var fileTask: FileTask?; var oneTime: Set<OneTime>; var purgeArm: PurgeArm?
-    var pendingClip: PendingClip?
+    var lockDelay: LockDelay; var clipDelay: ClipDelay; var theme: ThemeChoice; var style: StyleChoice
+    var generator: GeneratorOptions; var backupReminder: BackupReminder; var fileTask: FileTask?; var oneTime: Set<OneTime>
+    var purgeArm: PurgeArm?; var pendingClip: PendingClip?
 }
 // The values (settings/SettingValues.kt). Each persisted enum has a fixed `stored` text, the value kept in "pv_settings", so that
 // renaming a constant (or R8) never changes what is read back.
 // enum class LockDelay(stored, ms) { IMMEDIATELY, SECONDS_30, MINUTE_1, MINUTES_5 }   // WHEN_MISSING = IMMEDIATELY, SETUP = SECONDS_30
 // enum class ClipDelay(stored, ms) { SECONDS_30, MINUTE_1, MINUTES_2, MINUTES_5 }     // WHEN_MISSING = SECONDS_30, SETUP = MINUTE_1
-// enum class ThemeChoice(stored) { SYSTEM, LIGHT, DARK }
+// enum class ThemeChoice(stored) { SYSTEM, LIGHT, DARK }                              // Settings › Appearance › "Light or dark"
+// enum class StyleChoice(stored) { BANK_BLUE, EMERALD, NIGHT_VAULT, PHONE_COLOURS }   // Settings › Appearance › "Colours"; DEFAULT = BANK_BLUE;
+//                                                    // offered(phoneColours) leaves PHONE_COLOURS out before Android 12 (API 31), and
+//                                                    // read(stored, phoneColours) is what a stored text stands for on this phone
 // class BackupReminder(val on: Boolean = true, val snoozedUntilMs: Long? = null)    // "Later" snoozes it for 3 days (wall clock)
 // enum class OneTime(stored) { WORDS_SHOWN, FIRST_COPY_TIP, BACKUP_EXPLAINED, NO_SECURE_HARDWARE_TOLD }
 // class PurgeArm(val vaultId: String, val armedAtMs: Long, val credit: Credit)      // D-24; Credit is core.lock.guard's (lock.md §6.9)
