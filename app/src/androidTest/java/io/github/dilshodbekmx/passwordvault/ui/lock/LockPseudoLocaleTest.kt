@@ -58,10 +58,10 @@ import org.junit.runner.RunWith
  * Build plan §1 rule 5: the lock screens walked once in the `en-XA` pseudo-locale (the debug build
  * makes it, i18n.md §1.1): every `lock_` string and plural comes out pseudo-localized, so none is
  * plain English or marked untranslatable; and each screen (the master password, the pad, fingerprint
- * only, an older master password, "can't be opened"), the sheet, the questions, every notice and the
- * prompt, drawn in `en-XA` in states that between them show every line and button, has no text and
- * no label that stayed plain English, so none is written into the code. The app's name and the
- * keys' digits are the same in every language.
+ * only, an older master password, "Open the older set instead?", "can't be opened"), the sheet, the
+ * questions, every notice and the prompt, drawn in `en-XA` in states that between them show every
+ * line and button, has no text and no label that stayed plain English, so none is written into the
+ * code. The app's name and the keys' digits are the same in every language.
  */
 @RunWith(AndroidJUnit4::class)
 class LockPseudoLocaleTest {
@@ -150,6 +150,8 @@ class LockPseudoLocaleTest {
             LockUiState.Locked(LockScreen.FingerprintOnly(FingerprintLine.CannotCheck, PinReason.STOPPED_WORKING, AsideLine.FromBefore(AT))),
             LockUiState.Locked(LockScreen.OlderPassword(AT, unfinishedChange = true)),
             LockUiState.Locked(LockScreen.OlderPassword(AT, unfinishedChange = false, aside = AsideLine.LockedOn(AT))),
+            LockUiState.Locked(LockScreen.OpenOlderSet(AT, AsideLine.FromBefore(AT))),
+            LockUiState.Locked(LockScreen.OpenOlderSet(AT, AsideLine.LockedOn(AT))),
             LockUiState.Unreadable(CurrentVault.Why.IO, listOf(AsideVault("00000000-0000-4000-8000-0000000000aa", AT, null))),
             LockUiState.Unreadable(CurrentVault.Why.DAMAGED, emptyList()),
             LockUiState.Unreadable(CurrentVault.Why.NEWER, emptyList()),

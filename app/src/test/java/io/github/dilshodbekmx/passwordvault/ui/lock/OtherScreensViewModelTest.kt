@@ -1,19 +1,24 @@
 package io.github.dilshodbekmx.passwordvault.ui.lock
 
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.lifecycle.ViewModelStore
 import io.github.dilshodbekmx.passwordvault.R
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.AsideLine
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.CurrentVault
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.FingerprintLine
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockScreen
+import io.github.dilshodbekmx.passwordvault.core.lock.flow.MpReason
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.PadStatus
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.PinReason
 import io.github.dilshodbekmx.passwordvault.core.lock.record.Shortcut
 import io.github.dilshodbekmx.passwordvault.fake.FakeLockManager
 import io.github.dilshodbekmx.passwordvault.i18n.UiText
 import io.github.dilshodbekmx.passwordvault.lock.LockIntent
+import io.github.dilshodbekmx.passwordvault.lock.LockManager
 import io.github.dilshodbekmx.passwordvault.lock.LockStatus
 import io.github.dilshodbekmx.passwordvault.lock.LockUiState
+import io.github.dilshodbekmx.passwordvault.lock.MpPurpose
+import io.github.dilshodbekmx.passwordvault.lock.MpResult
 import io.github.dilshodbekmx.passwordvault.lock.OlderPasswordChoice
 import io.github.dilshodbekmx.passwordvault.lock.ReplacedNotice
 import io.github.dilshodbekmx.passwordvault.testing.FakeClock
@@ -25,6 +30,7 @@ import io.github.dilshodbekmx.passwordvault.ui.lock.LockKit.VAULT_B
 import io.github.dilshodbekmx.passwordvault.ui.lock.LockKit.aside
 import io.github.dilshodbekmx.passwordvault.ui.lock.LockKit.fingerprintOnly
 import io.github.dilshodbekmx.passwordvault.ui.lock.LockKit.lockViewModel
+import io.github.dilshodbekmx.passwordvault.ui.lock.LockKit.masterPassword
 import io.github.dilshodbekmx.passwordvault.ui.lock.LockKit.send
 import io.github.dilshodbekmx.passwordvault.ui.lock.LockKit.text
 import kotlinx.coroutines.Dispatchers
@@ -45,9 +51,10 @@ import org.junit.Test
 
 /**
  * Build plan 4.2, [JVM], U §12 check 17: the fingerprint-only screen (lock.md §13.3, its second
- * table), "This is an older master password" in both forms (F16b), and "Your passwords can't be
- * opened" for each reason (§13.1 row 2), from `FakeLockManager`: every text, every button and what
- * it tells the lock. None of them offers to delete.
+ * table), "This is an older master password" in both forms (F16b), "Open the older set instead?"
+ * (F16b step 3, `LockScreen.OpenOlderSet`; build plan 4.2b), and "Your passwords can't be opened"
+ * for each reason (§13.1 row 2), from `FakeLockManager`: every text, every button and what it tells
+ * the lock. None of them offers to delete.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class OtherScreensViewModelTest {
@@ -195,6 +202,170 @@ class OtherScreensViewModelTest {
         assertTrue(olderUi(vm).goesBack)
     }
 
+    // ---- "Open the older set instead?" (F16b step 3) ---------------------------------------------
+
+    @Test
+    fun theOlderSetQuestionShowsItsTitleItsQuestionAndItsTwoButtons() = runTest {
+        val lock = FakeLockManager(initial = olderSet())
+        val vm = vm(lock)
+        val day = LockDate(REPLACED_AT, LockDate.Style.DAY_MONTH)
+        assertEquals(
+            OlderSetUi(
+                asideLine = null, // the title says it
+                title = text(R.string.lock_from_before, LockDate(REPLACED_AT, LockDate.Style.DATE)),
+                text = text(R.string.lock_older_set_text, day),
+                buttons = listOf(
+                    LockButton(text(R.string.lock_older_set_open, day), send(LockIntent.OlderPasswordAnswer(OlderPasswordChoice.OPEN_OLDER_SET)), LockTags.OLDER_SET_OPEN, ButtonStyle.FILLED),
+                    LockButton(text(R.string.common_cancel), send(LockIntent.OlderPasswordAnswer(OlderPasswordChoice.KEEP_NEWER_SET)), LockTags.OLDER_SET_CANCEL, ButtonStyle.OUTLINED),
+                ),
+                goesBack = true,
+            ),
+            vm.screen.value,
+        )
+        // No field, no sheet and no second question come with it, and nothing was told to the lock.
+        assertNull(vm.masterPassword.value)
+        assertNull(vm.sheet.value)
+        assertNull(vm.confirm.value)
+        assertTrue(lock.sent.isEmpty())
+    }
+
+    @Test
+    fun openMyPasswordsTellsTheLockAtOnce_theScreenIsTheQuestion() = runTest {
+        val lock = FakeLockManager(initial = olderSet())
+        val vm = vm(lock)
+        vm.onAction(olderSetUi(vm).buttons[0].action)
+        runCurrent()
+        assertNull("it is not asked once more", vm.confirm.value)
+        assertEquals(listOf<LockIntent>(LockIntent.OlderPasswordAnswer(OlderPasswordChoice.OPEN_OLDER_SET)), lock.sent)
+        // The two vaults have changed places and the app is open: the question stays until the route leaves.
+        lock.state.value = LockUiState.Unlocked(emptyList(), null)
+        runCurrent()
+        assertTrue("nothing flashes", vm.screen.value is OlderSetUi)
+        assertEquals(1, lock.sent.size)
+    }
+
+    @Test
+    fun cancelTellsTheLockToKeepTheNewerSet_andTheFieldComesBackAsTheLockShowsIt() = runTest {
+        val lock = FakeLockManager(initial = olderSet())
+        val vm = vm(lock)
+        vm.onAction(olderSetUi(vm).buttons[1].action)
+        runCurrent()
+        assertNull(vm.confirm.value)
+        assertEquals(listOf<LockIntent>(LockIntent.OlderPasswordAnswer(OlderPasswordChoice.KEEP_NEWER_SET)), lock.sent)
+        assertTrue("the lock decides what follows", vm.screen.value is OlderSetUi)
+        // Nothing changed: the lock shows that vault's own field again.
+        lock.state.value = LockUiState.Locked(fromBeforeField())
+        runCurrent()
+        val field = vm.screen.value as MasterPasswordUi
+        assertEquals(text(R.string.lock_from_before, LockDate(REPLACED_AT, LockDate.Style.DATE)), field.title)
+        assertTrue(field.lines.isEmpty())
+        assertTrue(field.canSubmit)
+        assertEquals(1, lock.sent.size)
+    }
+
+    @Test
+    fun theQuestionFollowsTheRightPassword_withTheFieldEmptyAndNothingLeftOfTheCheck() = runTest {
+        // As the lock does it (iface-89): it publishes the question, and the check ends with TooLate.
+        val fake = FakeLockManager(initial = LockUiState.Locked(fromBeforeField()))
+        val lock = object : LockManager by fake {
+            override suspend fun submitMasterPassword(chars: CharArray, purpose: MpPurpose): MpResult {
+                fake.purposes += purpose
+                fake.state.value = olderSet()
+                return MpResult.TooLate
+            }
+        }
+        val vm = lockViewModel(store, lock, clock)
+        vm.password.setTextAndPlaceCursorAtEnd("the words from before")
+        vm.submit()
+        runCurrent()
+        assertEquals(listOf(MpPurpose.UNLOCK), fake.purposes)
+        assertTrue(vm.screen.value is OlderSetUi)
+        assertNull(vm.masterPassword.value)
+        assertEquals("", vm.password.text.toString())
+
+        // "Cancel": the field is back with no line, and it can be typed into and sent again.
+        vm.onAction(olderSetUi(vm).buttons[1].action)
+        fake.state.value = LockUiState.Locked(fromBeforeField())
+        runCurrent()
+        val field = vm.screen.value as MasterPasswordUi
+        assertFalse(field.opening)
+        assertTrue(field.fieldEnabled && field.canSubmit)
+        assertTrue(field.lines.isEmpty())
+        assertEquals(listOf<LockIntent>(LockIntent.OlderPasswordAnswer(OlderPasswordChoice.KEEP_NEWER_SET)), fake.sent)
+    }
+
+    @Test
+    fun theLineOfAVaultPutAsideIsSaidOnce_andWithoutOneBackLeavesTheApp() = runTest {
+        val title = text(R.string.lock_from_before, LockDate(REPLACED_AT, LockDate.Style.DATE))
+        // A vault from before a replacement (what the lock gives): its line is the title.
+        val lock = FakeLockManager(initial = olderSet(AsideLine.FromBefore(REPLACED_AT)))
+        val vm = vm(lock)
+        assertNull(olderSetUi(vm).asideLine)
+        assertEquals(title, olderSetUi(vm).title)
+        assertTrue(olderSetUi(vm).goesBack)
+        // Another line is shown above the title, as on every screen of a vault put aside.
+        lock.state.value = olderSet(AsideLine.LockedOn(ASIDE_AT))
+        runCurrent()
+        assertEquals(text(R.string.lock_aside_locked_on, LockDate(ASIDE_AT, LockDate.Style.DATE)), olderSetUi(vm).asideLine)
+        assertEquals(title, olderSetUi(vm).title)
+        assertTrue(olderSetUi(vm).goesBack)
+        // No line: Back is not taken, and the question is the same.
+        lock.state.value = olderSet(aside = null)
+        runCurrent()
+        assertNull(olderSetUi(vm).asideLine)
+        assertFalse(olderSetUi(vm).goesBack)
+        assertEquals(text(R.string.lock_older_set_text, LockDate(REPLACED_AT, LockDate.Style.DAY_MONTH)), olderSetUi(vm).text)
+        assertEquals(listOf(LockTags.OLDER_SET_OPEN, LockTags.OLDER_SET_CANCEL), olderSetUi(vm).buttons.map { it.tag })
+    }
+
+    @Test
+    fun aSheetAndAQuestionOpenWhenTheLockAsksAreClosed_andTheLockIsToldTheSheetClosed() = runTest {
+        val lock = FakeLockManager(initial = LockUiState.Locked(masterPassword()))
+        val vm = vm(lock)
+        vm.onAction(LockAction.OpenSheet)
+        vm.onAction(LockAction.AskStartEmpty)
+        runCurrent()
+        assertTrue(vm.sheet.value != null && vm.confirm.value == LockConfirm.StartEmpty)
+
+        lock.state.value = olderSet()
+        runCurrent()
+        assertTrue(vm.screen.value is OlderSetUi)
+        assertNull("nothing lies over the lock's question", vm.sheet.value)
+        assertNull(vm.confirm.value)
+        assertEquals(listOf<LockIntent>(LockIntent.OpenForgotSheet, LockIntent.CloseSheet), lock.sent)
+
+        // The question stays as it is while the lock shows it again, and the lock is told only once.
+        lock.status.value = LockStatus.NONE.copy(aside = listOf(aside(VAULT_A, REPLACED_AT)))
+        runCurrent()
+        assertTrue(vm.screen.value is OlderSetUi)
+        // Back on the field, neither comes back by itself.
+        lock.state.value = LockUiState.Locked(fromBeforeField())
+        runCurrent()
+        assertNull(vm.sheet.value)
+        assertNull(vm.confirm.value)
+        assertEquals(2, lock.sent.size)
+    }
+
+    @Test
+    fun theAnswersOfTheQuestionAreItsOwn_andNoButtonOfItDeletes() = runTest {
+        val lock = FakeLockManager(initial = olderSet())
+        val vm = vm(lock)
+        val choices = olderSetUi(vm).buttons.map { ((it.action as LockAction.Send).intent as LockIntent.OlderPasswordAnswer).choice }
+        assertEquals(listOf(OlderPasswordChoice.OPEN_OLDER_SET, OlderPasswordChoice.KEEP_NEWER_SET), choices)
+        // The buttons of "This is an older master password" answer with the three other choices.
+        lock.state.value = LockUiState.Locked(LockScreen.OlderPassword(CHANGED_AT, unfinishedChange = true))
+        runCurrent()
+        vm.onAction(olderUi(vm).buttons[1].action)
+        vm.onAction(LockAction.Confirm)
+        vm.onAction(olderUi(vm).buttons[0].action)
+        lock.state.value = LockUiState.Locked(LockScreen.OlderPassword(CHANGED_AT, unfinishedChange = false))
+        runCurrent()
+        vm.onAction(olderUi(vm).buttons.single().action)
+        val older = lock.sent.map { (it as LockIntent.OlderPasswordAnswer).choice }
+        assertEquals(listOf(OlderPasswordChoice.OPEN_FROM_BEFORE, OlderPasswordChoice.TRY_AGAIN, OlderPasswordChoice.OK), older)
+        assertEquals("every choice has its button", OlderPasswordChoice.entries.toSet(), (choices + older).toSet())
+    }
+
     // ---- "Your passwords can't be opened" --------------------------------------------------------
 
     @Test
@@ -296,6 +467,16 @@ class OtherScreensViewModelTest {
     private fun fpUi(vm: LockViewModel): FingerprintOnlyUi = vm.screen.value as FingerprintOnlyUi
 
     private fun olderUi(vm: LockViewModel): OlderPasswordUi = vm.screen.value as OlderPasswordUi
+
+    private fun olderSetUi(vm: LockViewModel): OlderSetUi = vm.screen.value as OlderSetUi
+
+    /** The lock's question on the lock screen of the vault a replacement put aside on [REPLACED_AT], as `LockCore` publishes it. */
+    private fun olderSet(aside: AsideLine? = AsideLine.FromBefore(REPLACED_AT)): LockUiState =
+        LockUiState.Locked(LockScreen.OpenOlderSet(REPLACED_AT, aside))
+
+    /** That vault's own master-password field (lock.md F16b step 2), which the question follows. */
+    private fun fromBeforeField(): LockScreen.MasterPassword =
+        masterPassword(reason = MpReason.FromBefore(REPLACED_AT), aside = AsideLine.FromBefore(REPLACED_AT))
 
     private fun unreadable(vm: LockViewModel): UnreadableUi = vm.screen.value as UnreadableUi
 }
