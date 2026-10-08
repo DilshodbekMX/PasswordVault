@@ -251,7 +251,7 @@ class DefaultLockManager(
     }
 
     override suspend fun lock(reason: LockReason) {
-        // The merge of sub-wave 4A passes the reason on (build plan §12, decision 2): SCREEN_OFF is the screen-off lock, the others are not.
+        // The merge of sub-wave 4A passes `reason` to the engine, value for value (build plan §12 item 8, decision 2).
         engine.lock()
     }
 
@@ -475,7 +475,7 @@ class DefaultLockManager(
         if (engine.state.value !is LockState.Unlocked || engine.summary.value.pending?.ready != true) return
         setAside = true
         act {
-            engine.lock()
+            lock(LockReason.LOCK_NOW)
             engine.useMasterPassword()
         }
     }
