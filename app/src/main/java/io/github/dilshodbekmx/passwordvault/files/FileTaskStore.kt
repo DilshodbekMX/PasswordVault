@@ -221,11 +221,15 @@ class FileTaskStore(
     }
 
     /**
-     * The picker of [action] returned [uri], or null when it was closed without a document. Called by
-     * the launchers' callbacks on the main thread, also in a new process, before the lock has decided.
+     * The picker of [action] returned [answer], or null when it was closed without a document. Called
+     * by the launchers' callbacks on the main thread, also in a new process, before the lock has decided.
      */
-    internal fun returned(action: Action, uri: String?) {
+    internal fun returned(action: Action, answer: String?) {
         session.endExternal()
+        // The picker is whatever app answers the request, and Android 7 lets the user choose another
+        // app than the system's. An answer that is not a content:// address (a file:// address, a
+        // path) is not a place the user chose: it counts as a picker closed without a document.
+        val uri = answer?.takeIf { Places.authorityOf(it) != null }
         scope.launch {
             var closed: FileTask? = null // the task whose picker was closed without a document
             var nobodys: DocRef? = null // a document that "Save as" made and that no task waits for

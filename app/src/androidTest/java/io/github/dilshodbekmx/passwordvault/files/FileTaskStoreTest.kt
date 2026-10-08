@@ -351,6 +351,26 @@ class FileTaskStoreTest {
     }
 
     @Test
+    fun anAnswerThatIsNotAnotherAppsDocumentIsNoDocument() = runTest {
+        // The picker is whatever app answers the request (on Android 7 the user is asked which one).
+        // An answer that is not a content:// address of another app is not a place the user chose:
+        // the task gets no document, and its screen hears that the picker was closed.
+        val store = newStore()
+        val export = FileTask(FileTask.Kind.EXPORT, 2, null)
+        val own = "file:///data/data/io.github.dilshodbekmx.passwordvault/files/vaults/live/vault-0000000001.pvault"
+        for (answer in listOf(own, "FILE:///sdcard/x.csv", "/data/data/io.github.dilshodbekmx.passwordvault/shared_prefs/pv_settings.xml", "", "content://")) {
+            store.create(export, "passwords.csv", DocumentTypes.CSV)
+            val seen = resultsOf(store, FileTask.Kind.EXPORT)
+            store.returned(FileTaskStore.Action.CREATE, answer)
+            runCurrent()
+            assertEquals(answer, listOf<PickResult>(PickResult.Cancelled(export)), seen)
+            assertNull(answer, store.task.value)
+            assertNull(answer, settings.fileTask.value)
+            assertTrue(answer, documents.kept.isEmpty())
+        }
+    }
+
+    @Test
     fun aTaskGivenUpWhileItsResultIsBeingRecordedDoesNotComeBack() = runTest {
         // The picker's result is on its way into the record (the permission, then the settings file)
         // when the screen gives the task up: the giving up waits for the record, and then removes the

@@ -1,6 +1,8 @@
 package io.github.dilshodbekmx.passwordvault.files
 
+import android.net.Uri
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.io.File
 import java.io.IOException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
@@ -148,6 +150,38 @@ class SafDocumentIoTest {
         assertFalse("the place does not allow deleting", io.delete(doc))
         assertNotNull("still there", DocumentsRig.stored(id))
         assertArrayEquals(payload(10), io.read(doc, 100))
+    }
+
+    @Test
+    fun onlyAnotherAppsDocumentIsWrittenOrRead() = runBlocking {
+        // A picker is any app that answers "Save as" (on Android 7 the user is asked which one), and
+        // its answer is an address. A file:// address, or one of the app's own providers, is the
+        // app's own storage: the vault's files, the lock records, the settings. Nothing is written
+        // there or read from there through DocumentIo.
+        val app = DocumentsRig.app
+        val vaultSide = File(app.filesDir, "pvtest-vault-side.pvault").apply { writeBytes("PVAULT01 the vault".toByteArray()) }
+        val shared = File(File(app.cacheDir, BackupSharing.DIR), "pvtest-own-provider.pvault").apply {
+            parentFile!!.mkdirs()
+            writeBytes("PVAULT01 a shared copy".toByteArray())
+        }
+        val ownProvider = DocRef("content://" + app.packageName + BackupSharing.AUTHORITY_SUFFIX + "/" + BackupSharing.DIR + "/" + shared.name)
+        try {
+            for (doc in listOf(DocRef(Uri.fromFile(vaultSide).toString()), DocRef("file://" + vaultSide.path), ownProvider)) {
+                assertFalse("not written: ${doc.uri}", io.write(doc, "name,url,username,password\r\nBank,,me,hunter2\r\n".toByteArray()))
+                try {
+                    io.read(doc, 100)
+                    fail("not read: ${doc.uri}")
+                } catch (e: IOException) {
+                    // expected
+                }
+                assertFalse("not deleted: ${doc.uri}", io.delete(doc))
+            }
+            assertArrayEquals("the vault's file is as it was", "PVAULT01 the vault".toByteArray(), vaultSide.readBytes())
+            assertArrayEquals("the shared copy is as it was", "PVAULT01 a shared copy".toByteArray(), shared.readBytes())
+        } finally {
+            vaultSide.delete()
+            shared.delete()
+        }
     }
 
     @Test

@@ -23,7 +23,9 @@ import kotlinx.coroutines.withContext
 
 /**
  * [DocumentIo] over the Storage Access Framework (architecture.md §3.5, §4.12; formats.md §2 rules 2
- * and 3; ux.md §4 item 3, §5.19). The only place where a [DocRef] becomes an `android.net.Uri`.
+ * and 3; ux.md §4 item 3, §5.19). The only place where a [DocRef] becomes an `android.net.Uri`. It
+ * writes, reads, keeps and deletes only another app's documents (`content://`, from a provider that
+ * is not this app's): a `file://` address or the app's own provider would reach the app's own storage.
  *
  * - **Write** goes straight into the document, opened with mode "wt" (never through a plain
  *   temporary file in the app's own storage), hashing what it writes, then syncs it where the
@@ -55,7 +57,7 @@ class SafDocumentIo(private val context: Context, private val io: CoroutineDispa
     private val resolver: ContentResolver get() = context.contentResolver
 
     override suspend fun write(doc: DocRef, bytes: ByteArray): Boolean = withContext(io) {
-        val uri = Uri.parse(doc.uri)
+        val uri = othersDocument(doc) ?: return@withContext false
         val wrote = MessageDigest.getInstance(SHA_256)
         try {
             openForWriting(uri).use { out ->
@@ -85,11 +87,12 @@ class SafDocumentIo(private val context: Context, private val io: CoroutineDispa
 
     override suspend fun read(doc: DocRef, maxBytes: Int): ByteArray = withContext(io) {
         require(maxBytes >= 0) { "maxBytes must not be negative" }
-        readAtMost(Uri.parse(doc.uri), maxBytes.toLong() + 1)
+        val uri = othersDocument(doc) ?: throw FileNotFoundException("not another app's document")
+        readAtMost(uri, maxBytes.toLong() + 1)
     }
 
     override fun keep(doc: DocRef) {
-        val uri = Uri.parse(doc.uri)
+        val uri = othersDocument(doc) ?: return
         for (flags in KEEP_FLAGS) {
             try {
                 resolver.takePersistableUriPermission(uri, flags)
@@ -101,7 +104,7 @@ class SafDocumentIo(private val context: Context, private val io: CoroutineDispa
     }
 
     override fun delete(doc: DocRef): Boolean {
-        val uri = Uri.parse(doc.uri)
+        val uri = othersDocument(doc) ?: return false
         // The provider must be there to say what became of the document. One that cannot be reached
         // (its app is installed and does not come up) has deleted nothing and tells nothing. It is
         // looked for first, through a link that may break: from Android 10 the request to delete
@@ -211,6 +214,21 @@ class SafDocumentIo(private val context: Context, private val io: CoroutineDispa
             size += n
         }
         return if (size == buffer.size) buffer else buffer.copyOf(size)
+    }
+
+    /**
+     * [doc] as the address of another app's document: `content://`, with the provider of another app.
+     * The picker is whatever app answers the request (Android 7 asks the user which one), and its
+     * answer is an address that ContentResolver would open with this app's own rights: a `file://`
+     * address, or one of this app's own providers, is the app's own storage (the vault's files, the
+     * lock records, the settings). Null for those: nothing is written there, read or deleted.
+     */
+    private fun othersDocument(doc: DocRef): Uri? {
+        val uri = Uri.parse(doc.uri)
+        if (uri.scheme != ContentResolver.SCHEME_CONTENT) return null
+        val authority = uri.authority?.substringAfterLast('@')?.takeIf { it.isNotEmpty() } ?: return null
+        if (providerInfo(authority)?.packageName == context.packageName) return null
+        return uri
     }
 
     /** The provider of [uri], reached now; null when there is none or it does not come up. */
