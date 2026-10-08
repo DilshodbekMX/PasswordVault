@@ -51,7 +51,7 @@ class ChangePinFlowTest {
     @get:Rule
     val timeout: Timeout = Timeout.seconds(60)
 
-    private var f = LockFixture()
+    private val f = LockFixture()
 
     /** A vault with a PIN (and a fingerprint when asked), opened with the PIN. */
     private fun openByPin(
@@ -399,7 +399,7 @@ class ChangePinFlowTest {
         assertEquals(PinChangeOutcome.Changed, f.changePin(PIN, NEW_PIN))
         assertEquals(PinRecord.Guard(false, 0, 2), f.pinRecord().guard) // never forgiven in a prompt (§6.3)
         assertEquals(2, f.pinRecord().unseen.count) // reported at the next unlock
-        assertTrue(PinGuard.left(f.pinRecord().guard) == 5)
+        assertEquals(5, PinGuard.left(f.pinRecord().guard)) // the row is back to 0: five tries before the PIN turns off
         f.lock()
         f.type(NEW_PIN)
         assertEquals(2, f.notices.filterIsInstance<Notice.WrongTries>().single().wrongPins)
