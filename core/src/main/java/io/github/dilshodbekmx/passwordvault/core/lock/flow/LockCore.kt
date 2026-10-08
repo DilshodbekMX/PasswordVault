@@ -302,8 +302,10 @@ internal class LockVisit(val place: Place, val target: LockTarget) {
 
     /**
      * Practice is not asked on this visit (lock.md §13.1 rows 3 and 4 are skipped): "I can't
-     * remember it" was chosen, and F11 step 3 wants the PIN or the fingerprint now (F10 step 4).
-     * Package 4.4 sets it; nothing in the core does.
+     * remember it" was chosen, and F11 step 3 wants the PIN or the fingerprint now (F10 step 4); or
+     * "Not now" was chosen while `state.rec` cannot hold the snooze (F10 step 3). `ShortcutFlows`
+     * sets it for "Not now" (build plan 3.13) and `PasswordFlows` for "I can't remember it" (4.4);
+     * nothing in the core does.
      */
     var practiceSkipped = false
 
@@ -331,6 +333,8 @@ internal class LockVisit(val place: Place, val target: LockTarget) {
     /**
      * Runs once, right after this visit has unlocked the app, with how it was opened: for a flow
      * that begins on the lock screen and goes on in the open app (F11 from "I can't remember it").
+     * `ShortcutFlows` also uses it, to snooze practice in the `state.rec` that this visit's unlock
+     * makes (F10 step 3). A flow that sets it chains the function already set and never replaces it.
      */
     var afterUnlock: (suspend (UnlockBy) -> Unit)? = null
 }
