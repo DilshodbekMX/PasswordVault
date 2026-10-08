@@ -324,3 +324,19 @@ says `Found systemPath /home/asus/pvlab/sysimg/...`).
   `checks/3C.sh` prints those of its three devices after each part (`studio_runs`). Studio also
   attaches to every debuggable process of every running emulator to learn its name (idea.log:
   `Device 'pvlab_api28 [emulator-5582]' tracking jdwp process`), which stops nothing.
+
+- A device is in keyboard mode after `boot.sh` and during a standard connected run (`dumpsys window`
+  prints `mInTouchMode=false`). A tap, or a run with `-e pvShots` (`LockShots.touchMode`), puts it in
+  touch mode until the next navigation or typing key. On API 37 in touch mode the keyboard does not
+  come back after a rotation to landscape on the master-password screen, so
+  `MasterPasswordRotationTest` fails about every second time there (2026-10-08: 9 of 18 runs alone
+  in touch mode, 0 of 6 in keyboard mode; Gboard hides itself in its landscape full-screen mode, job
+  4.2b). Make screenshots with a run of their own, or send `input keyevent 61` before the other
+  tests. The sentence can go once the keyboard is fixed.
+- DocumentsUI on the API 24 image (measured with 5.2's screens on 2026-10-08): its open picker
+  ignores `input tap` and `input swipe` on a file, in the grid and in the list view;
+  `KEYCODE_DPAD_DOWN` twice and then `KEYCODE_ENTER` opens it. Its "Save as" opens in Recent with
+  SAVE disabled until a root such as Downloads is chosen ("Show roots"). Its file-name keyboard
+  covers the SAVE bar, which uidump still reports, until the keyboard is closed. Its Downloads root
+  lists only DownloadManager's files: a file pushed with adb is reached only through ⋮ › Show
+  internal storage › the device › Download (5.4), or through 5.1's test documents provider.
