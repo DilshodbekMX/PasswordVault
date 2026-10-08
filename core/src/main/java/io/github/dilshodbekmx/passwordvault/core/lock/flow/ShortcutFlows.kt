@@ -67,6 +67,11 @@ internal class ShortcutFlows(private val core: LockCore) {
      * `FingerprintKey.seal` of the open vault's VK behind the prompt `PromptUse.TURN_ON`, under a
      * launch number, with no mutex held while it is open; then `FingerprintKeeper.setSlot` with the
      * one wrap. On any error or cancel the new alias is deleted and the earlier state kept.
+     *
+     * `VaultPort.withVaultKey` lends VK to a lambda that cannot suspend, and the prompt suspends:
+     * take a copy of VK and its `vk_id` out of it, seal the copy, and wipe it in a `finally`. A
+     * result whose launch is no longer outstanding (`core.launchEnded(number)` false: a lock or
+     * `ON_STOP` came while the prompt was open) changes nothing, and its new alias is deleted.
      */
     @Suppress("UNUSED_PARAMETER")
     suspend fun fingerprintOn(proof: MasterProof): FingerprintOnOutcome = notYet("F9: turn fingerprint unlock on")
