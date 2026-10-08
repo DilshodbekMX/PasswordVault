@@ -274,6 +274,25 @@ class VaultsAndNoticesTest {
     }
 
     @Test
+    fun whileTheAppIsNotVisibleNothingWakesForIt_andTheReturnBringsTheStatusUpToDate() = runTest {
+        val rig = LockRig(this)
+        withAPendingPassword(rig, creditedMs = DAY_MS - HOUR_MS)
+        rig.typePin()
+        val writes = rig.files.log.size
+        rig.away() // left within the lock delay: the app stays open
+        val afterLeaving = rig.files.log.size
+        assertTrue("leaving observes the credit once (lock.md §6.9)", afterLeaving >= writes)
+
+        rig.advance(2 * HOUR_MS)
+        assertFalse("nobody looked: the status is as it was left", rig.status.pending!!.ready)
+        assertEquals("and no record was written meanwhile", afterLeaving, rig.files.log.size)
+
+        rig.toFront()
+        assertTrue(rig.isUnlocked)
+        assertTrue("the return asks the engine again", rig.status.pending!!.ready)
+    }
+
+    @Test
     fun finishNowAsksForTheMasterPasswordOnTheLockScreen_withNoFingerprintPromptOverIt() = runTest {
         val rig = LockRig(this)
         withAPendingPassword(rig, creditedMs = DAY_MS, fingerprint = true)

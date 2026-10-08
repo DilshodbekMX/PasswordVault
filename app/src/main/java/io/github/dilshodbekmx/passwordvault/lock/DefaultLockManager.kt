@@ -32,9 +32,12 @@ import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.ExperimentalForInheritanceCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.FlowCollector
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -60,10 +63,10 @@ import kotlinx.coroutines.withContext
  *   while the activity is resumed, its window has the focus and nothing the screens told it about
  *   lies over the lock screen. A prompt runs in the app's scope, never in a screen's, so that a
  *   rotation cannot cancel it.
- * - **Time.** The engine decides again when asked (`refresh`): this class asks when a
- *   master-password wait is over, when a pending new master password becomes ready, at every unlock
- *   and at every return to the open app, so that Settings › App lock shows what the phone says about
- *   fingerprint now (lock.md §9.4).
+ * - **Time.** The engine decides again when asked (`refresh`): this class asks, while the app is
+ *   visible, when a master-password wait is over and when a pending new master password becomes
+ *   ready; and at every unlock and every return to the open app, so that Settings › App lock shows
+ *   what the phone says about fingerprint now (lock.md §9.4).
  * - **After a correct master password** (architecture.md D-9b): `VaultRepository.matchesMasterPassword`
  *   with the proof of that entry, once per proof, before the caller gets the proof back (a caller
  *   that drops its proof at once, as the practice prompt does, cannot be faster). Every in-app check
@@ -126,6 +129,9 @@ class DefaultLockManager(
      * itself until the lock screen is used again or the app has been unlocked.
      */
     private var setAside = false
+
+    /** The app is visible: between the process-level `ON_START` and `ON_STOP`. */
+    private val visible = MutableStateFlow(false)
 
     private var prompting = false
     private var promptAgain = false
@@ -349,13 +355,19 @@ class DefaultLockManager(
     // ---------------------------------------------------------------------------------------------
     // The process (lock.md §10.2)
 
-    private fun cameToFront() = act {
-        engine.appStarted()
-        // The phone's settings may have changed while the app was away (a finger added, lock.md §9.4).
-        if (engine.state.value is LockState.Unlocked) engine.refresh()
+    private fun cameToFront() {
+        visible.value = true
+        act {
+            engine.appStarted()
+            // The phone's settings may have changed while the app was away (a finger added, lock.md §9.4).
+            if (engine.state.value is LockState.Unlocked) engine.refresh()
+        }
     }
 
-    private fun wentAway() = act { engine.appStopped() }
+    private fun wentAway() {
+        visible.value = false
+        act { engine.appStopped() }
+    }
 
     /**
      * Hands a step to the engine at once: it runs on the calling thread up to the engine's first
@@ -524,32 +536,40 @@ class DefaultLockManager(
     // ---------------------------------------------------------------------------------------------
     // Time (the engine decides again when asked)
 
+    /**
+     * While the app is visible, asks the engine again at the moment something it shows changes by
+     * time alone: the end of a master-password wait on the lock screen (lock.md §6.8), and the
+     * moment a pending new master password becomes ready (F11 step 13; its credit runs with this
+     * clock while the phone is on, §6.9). Nothing wakes while the app is not visible: every return
+     * to it asks anyway.
+     */
     private suspend fun watchTime() {
-        combine(engine.state, engine.summary) { state, summary -> nextChangeAt(state, summary) }.collectLatest { at ->
+        // Each deadline is worked out once, when its state or summary arrives, because what the engine
+        // gives is a time from then on ("ready in N ms").
+        val onLockScreen = engine.state.map { state ->
+            val field = (state as? LockState.Locked)?.screen as? LockScreen.MasterPassword
+            val now = clock.elapsedMs()
+            listOfNotNull(
+                field?.waitUntilElapsedMs?.takeIf { it > now },
+                field?.pendingReadyInMs?.takeIf { it > 0 }?.let { now + it },
+            ).minOrNull()
+        }
+        val inOpenApp = engine.summary.map { summary ->
+            summary.pending?.takeIf { !it.ready && it.remainingMs > 0 }?.let { clock.elapsedMs() + it.remainingMs }
+        }
+        combine(engine.state, onLockScreen, inOpenApp, visible) { state, locked, open, shown ->
+            when {
+                !shown -> null
+                state is LockState.Locked -> locked
+                state is LockState.Unlocked -> open
+                else -> null
+            }
+        }.distinctUntilChanged().collectLatest { at ->
             if (at != null) {
                 clock.delayUntilElapsed(at)
                 engine.refresh()
             }
         }
-    }
-
-    /**
-     * The `elapsedRealtime()` at which what is shown changes by time alone, or null: the end of a
-     * master-password wait (lock.md §6.8), or the moment a pending new master password becomes ready
-     * (F11 step 13; its credit runs with this clock while the phone is on, §6.9).
-     */
-    private fun nextChangeAt(state: LockState, summary: LockSummary): Long? {
-        val now = clock.elapsedMs()
-        val times = ArrayList<Long>(2)
-        when (state) {
-            is LockState.Locked -> (state.screen as? LockScreen.MasterPassword)?.let { screen ->
-                screen.waitUntilElapsedMs?.takeIf { it > now }?.let(times::add)
-                screen.pendingReadyInMs?.takeIf { it > 0 }?.let { times += now + it }
-            }
-            is LockState.Unlocked -> summary.pending?.takeIf { !it.ready && it.remainingMs > 0 }?.let { times += now + it.remainingMs }
-            LockState.Starting, is LockState.NoVault, is LockState.Unreadable -> Unit
-        }
-        return times.minOrNull()
     }
 
     private companion object {
