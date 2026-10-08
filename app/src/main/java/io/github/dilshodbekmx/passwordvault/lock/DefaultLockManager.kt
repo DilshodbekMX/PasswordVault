@@ -399,6 +399,9 @@ class DefaultLockManager(
             RequestOutcome.NotSaved -> RequestResult.NotSaved
         }
 
+    /** The engine drops the proof of F11 step 3 (`LockEngine.leaveNewMasterPassword`), in the order of the calls. */
+    override fun leaveNewMasterPassword() = act { engine.leaveNewMasterPassword() }
+
     override fun cancelNewMasterPassword() = act { engine.cancelPending() }
 
     override suspend fun openAside(vaultId: String, chars: CharArray): AsideResult = asideResultOf(engine.mergeAside(vaultId, chars))

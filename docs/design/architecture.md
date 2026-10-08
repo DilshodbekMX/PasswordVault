@@ -499,6 +499,9 @@ interface LockManager {
     suspend fun requestNewMasterPassword(first: CharArray, again: CharArray): RequestResult   // F11 steps 4-5, with the proof of step 3
                                                        // RequestResult: Requested(remainingMs) | Mismatch | Unassigned(codePoint) | Cancelled
                                                        //   | NotAllowed | NoMemory | NotSaved; NotAllowed: no proof of step 3 is held
+    fun leaveNewMasterPassword()                       // the flow of F11 ended without RequestResult.Requested (Cancel, Back, its screens
+                                                       // closed, in the open app or after the lock-screen route): the proof of step 3 goes
+                                                       // with it (lock.md F11 step 3, §5.8), so a later request needs the PIN typed again
     fun cancelNewMasterPassword()
     suspend fun openAside(vaultId: String, chars: CharArray): AsideResult                // Settings › Old passwords › Open (F17 step 5)
     suspend fun deleteAside(vaultId: String, chars: CharArray): AsideResult              // F17 step 5: files, then its lock directory and keys

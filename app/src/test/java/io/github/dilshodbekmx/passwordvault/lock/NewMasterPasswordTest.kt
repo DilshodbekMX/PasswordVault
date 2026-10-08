@@ -18,8 +18,9 @@ import org.junit.Test
 /**
  * The calls of [LockManager] that the screens of a new master password use (lock.md F11; build plan
  * 5.5 builds the screens), through [DefaultLockManager] over the real engine with fake ports: "Proof
- * now" in the open app (F11 step 3, T16) and the request that uses it up (steps 4 and 5). Added by
- * the merge of round R3 (build-plan.md §12), which gave the lock manager these calls.
+ * now" in the open app (F11 step 3, T16), the request that uses it up (steps 4 and 5), and the end
+ * of a flow that made no request, which drops the proof (`leaveNewMasterPassword`). Added by the
+ * merge of round R3 (build-plan.md §12), which gave the lock manager these calls.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class NewMasterPasswordTest {
@@ -124,6 +125,59 @@ class NewMasterPasswordTest {
         assertEquals("lock.md §5.8: a lock drops it", RequestResult.NotAllowed, request(rig))
     }
 
+    // ---- the proof goes with its flow (lock.md F11 step 3, §5.8; build-plan.md §12 item 13) ------------
+
+    @Test
+    fun anHourAfterTheFlowWasLeft_inTheSameSession_noNewMasterPasswordCanBeAskedForWithoutThePinAgain() = runTest {
+        val rig = LockRig(this)
+        rig.setUpWithPin()
+        rig.answerNotices(NoticeAnswer.LATER)
+        assertEquals(ProofResult.Proven(Shortcut.PIN), prove(rig, PIN))
+
+        rig.manager.leaveNewMasterPassword() // "Cancel" on the explanation, Back, or the screens closed
+        rig.settle()
+        rig.advance(HOUR_MS) // the app stays open: no lock, no ON_STOP
+
+        assertEquals(RequestResult.NotAllowed, request(rig))
+        assertNull("nothing is pending", rig.status.pending)
+        assertEquals("the PIN is asked for again", ProofResult.NeedsPin, prove(rig, null))
+        assertEquals(ProofResult.Proven(Shortcut.PIN), prove(rig, PIN))
+        assertEquals("typed again, it is the proof of a new flow", RequestResult.Requested(DAY_MS), request(rig))
+    }
+
+    @Test
+    fun theProofOfTheLockScreenRoute_goesWithItsFlowToo() = runTest {
+        val rig = LockRig(this)
+        rig.setUpWithPin()
+        rig.answerNotices(NoticeAnswer.LATER)
+        rig.lock()
+        rig.send(LockIntent.UseMasterPassword)
+        rig.send(LockIntent.CantRemember)
+        rig.typePin() // the PIN opens the app and is the proof of step 3
+        rig.answerNotices(NoticeAnswer.LATER)
+
+        rig.manager.leaveNewMasterPassword() // the screens of F11 closed without a request
+        rig.settle()
+
+        assertEquals(RequestResult.NotAllowed, request(rig))
+        assertEquals(ProofResult.NeedsPin, prove(rig, null))
+    }
+
+    @Test
+    fun leavingAfterTheRequestChangesNothing() = runTest {
+        val rig = LockRig(this)
+        rig.setUpWithPin()
+        rig.answerNotices(NoticeAnswer.LATER)
+        assertEquals(ProofResult.Proven(Shortcut.PIN), prove(rig, PIN))
+        assertEquals(RequestResult.Requested(DAY_MS), request(rig))
+
+        rig.manager.leaveNewMasterPassword()
+        rig.settle()
+
+        assertNotNull("the request stands", rig.status.pending)
+        assertNotNull(rig.stateRecord().pendingMp)
+    }
+
     /** The proof of the master password typed in a prompt of the open app, for a flow that needs one ("Set a PIN", F6). */
     private suspend fun LockRig.unlockedProofForAPin() = (submit(LockRig.PASSWORD, MpPurpose.SET_PIN) as MpResult.Right).proof
 
@@ -134,5 +188,6 @@ class NewMasterPasswordTest {
 
     private companion object {
         const val NEW_PASSWORD = "Samarqand tongi 2026 yangi kalit"
+        const val HOUR_MS = 3_600_000L
     }
 }

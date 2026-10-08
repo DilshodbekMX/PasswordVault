@@ -260,6 +260,8 @@ class MasterPasswordGate(
     override suspend fun requestNewMasterPassword(first: CharArray, again: CharArray): RequestResult =
         if (!MasterPasswordBytes.same(first, again)) RequestResult.Mismatch else RequestResult.NotAllowed
 
+    override fun leaveNewMasterPassword() = Unit
+
     override fun cancelNewMasterPassword() = Unit
 
     /** The gate opens no vault put aside (lock.md F17 comes with build plan 4.1 and 5.2). */

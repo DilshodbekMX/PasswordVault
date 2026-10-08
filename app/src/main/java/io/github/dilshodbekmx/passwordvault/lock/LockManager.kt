@@ -87,8 +87,8 @@ interface LockManager {
      * proof, [ProofResult.NeedsPin] while a PIN exists, and otherwise the fingerprint prompt "Confirm
      * with your fingerprint", which appears through `state` like every prompt and is accepted only
      * where there is no PIN. The proof is held by the lock, never handed out: it is used up by
-     * [requestNewMasterPassword], and dropped at a lock and when the app stops being visible (lock.md
-     * §5.8).
+     * [requestNewMasterPassword], and dropped by [leaveNewMasterPassword], at a lock and when the app
+     * stops being visible (lock.md §5.8).
      */
     suspend fun proveForNewMasterPassword(pin: ByteArray?): ProofResult
 
@@ -99,6 +99,16 @@ interface LockManager {
      * compared before anything is derived. Without such a proof: [RequestResult.NotAllowed].
      */
     suspend fun requestNewMasterPassword(first: CharArray, again: CharArray): RequestResult
+
+    /**
+     * The flow of a new master password ended without [RequestResult.Requested] (lock.md F11 step 3,
+     * §5.8): "Cancel" on its explanation, Back from choosing, or its screens closed any other way, in
+     * the open app or after the lock-screen route ([LockIntent.CantRemember]). The proof of step 3
+     * goes with that flow, so a request later in this session needs the PIN typed again (or the
+     * fingerprint where there is no PIN). The screens of F11 call it whenever they close without a
+     * request; after a request, a lock or `ON_STOP` it changes nothing. Main thread; never blocks.
+     */
+    fun leaveNewMasterPassword()
 
     /** "Cancel it": the pending new master password is dropped (lock.md F11 step 9). */
     fun cancelNewMasterPassword()
@@ -369,7 +379,8 @@ sealed interface RequestResult {
     /**
      * No proof of step 3 is held (lock.md T16): the PIN was not typed now
      * ([LockManager.proveForNewMasterPassword], or the lock screen after [LockIntent.CantRemember]),
-     * or a fingerprint was the proof and a PIN exists. Nothing was derived.
+     * the flow that had one was left ([LockManager.leaveNewMasterPassword]), or a fingerprint was the
+     * proof and a PIN exists. Nothing was derived.
      */
     data object NotAllowed : RequestResult
 

@@ -62,6 +62,10 @@ class FakeLockManager(
     /** Whether each [proveForNewMasterPassword] was given a PIN; the digits are never kept. */
     val proofPins = mutableListOf<Boolean>()
 
+    /** How many times [leaveNewMasterPassword] was called. */
+    var newMasterPasswordLeft = 0
+        private set
+
     val mpResults = ArrayDeque<MpResult>()
     val createResults = ArrayDeque<CreateResult>()
     val setPinResults = ArrayDeque<PinSetResult>()
@@ -162,6 +166,10 @@ class FakeLockManager(
     override suspend fun requestNewMasterPassword(first: CharArray, again: CharArray): RequestResult =
         requestResults.removeFirstOrNull()
             ?: if (first.contentEquals(again)) RequestResult.Requested(remainingMs = 24L * 60 * 60 * 1000) else RequestResult.Mismatch
+
+    override fun leaveNewMasterPassword() {
+        newMasterPasswordLeft++
+    }
 
     override fun cancelNewMasterPassword() {
         status.value = status.value.copy(pending = null)
