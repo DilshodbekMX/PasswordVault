@@ -36,10 +36,23 @@ CONTROL_SECRET=CtrlSecretKKK5
 # requests KIND PACKAGE: how many fill requests (FILL) or save requests (SAVE) the service got from PACKAGE.
 requests() { win_file "autofill.log" | grep -c "^$1 [0-9]* package=$2 "; }
 
-# sessions PACKAGE: how many autofill sessions Android started for an activity of PACKAGE.
-sessions() {
+# session_ids: the ids of the autofill sessions in Android's request history ("dumpsys autofill",
+# "Requests history"), each with the activity it was for: "ID PACKAGE/ACTIVITY", one per line (an
+# id can be negative).
+session_ids() {
     pv_shell dumpsys autofill 2>/dev/null | tr -d '\r' \
-        | awk '/^Requests history:/ { f = 1; next } f && /history:$/ { f = 0 } f' | grep -c "a={$1/"
+        | awk '/^Requests history:/ { f = 1; next } f && /history:$/ { f = 0 } f' \
+        | sed -n 's/.* - id=\([-0-9]*\) .* a={\([^}]*\)}.*/\1 \2/p' | sort -u
+}
+
+# sessions PACKAGE: how many autofill sessions Android started for an activity of PACKAGE since this
+# script began. The history is the device's and outlives apps and scripts: it keeps the sessions of
+# earlier runs, and those of the connected tests, whose test activities run in the app's package
+# and have fields without the opt-out (seen on API 37, where Google's autofill service is the
+# default), so the sessions that were there at the start (SESSIONS_BEFORE) do not count.
+SESSIONS_BEFORE=""
+sessions() {
+    session_ids | grep -v -x -F -f <(printf '%s\n' "$SESSIONS_BEFORE") | grep -c " $1/"
 }
 
 save_prompt() { pv_ui_nodes | pv_ui_match '[|]autofill_save_yes$' | grep -q .; }
@@ -172,6 +185,7 @@ no_autofill_item() {
     nothing_sent
 }
 
+SESSIONS_BEFORE=$(session_ids)
 pv_step "the lab's logging service is the device's autofill service" -- set_service || win_end
 pv_step "control: a platform field starts a session and a fill request" -- control_fill || win_end
 pv_step "control: after typing and leaving, Save sends the service the typed password" -- control_save || win_end
