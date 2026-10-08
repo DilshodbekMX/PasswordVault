@@ -607,8 +607,9 @@ internal class LockCore(
      * Holds the mutex: decides the screen of the locked app again and shows it (lock.md §13.1,
      * §13.2). Without a vault to lock it shows Welcome or "Your passwords can't be opened". The
      * first time a visit needs it, `canAuthenticate` is asked; until its answer is there the pad is
-     * shown without the fingerprint key. An entry on a pad that is no longer shown is given up
-     * (§6.3 A).
+     * shown without the fingerprint key. Any other screen waits for the answer, which may change it
+     * (to the fingerprint-only screen, or to a practice screen once a shortcut is usable). An entry
+     * on a pad that is no longer shown is given up (§6.3 A).
      */
     fun showLockScreen() {
         val shown = target
@@ -625,8 +626,10 @@ internal class LockCore(
         val now = visit?.takeIf { it.target === shown && !it.place.hasEnded }
         var decision = decide(shown, now) as? EntryPolicy.Decision.Locked ?: return
         if (now != null && decision.fingerprintWaitsForAnswer && !now.canAuthenticateAsked) {
-            now.decision = decision
-            state.value = LockState.Locked(screenOf(decision, now, shown))
+            if (decision.screen is LockScreen.Pad) {
+                now.decision = decision
+                state.value = LockState.Locked(screenOf(decision, now, shown))
+            }
             now.canAuthenticateAsked = true
             now.canAuthenticate = askAvailability()
             decision = decide(shown, now) as? EntryPolicy.Decision.Locked ?: return

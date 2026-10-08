@@ -4,7 +4,6 @@ import io.github.dilshodbekmx.passwordvault.core.lock.record.FingerprintRecord
 import io.github.dilshodbekmx.passwordvault.core.lock.record.PinRecord
 import io.github.dilshodbekmx.passwordvault.core.lock.record.RecordRead
 import io.github.dilshodbekmx.passwordvault.core.util.Uuid
-import java.io.IOException
 
 /**
  * What process start does, in order (lock.md §5.11), under the lock mutex, before any lock screen is
@@ -14,7 +13,9 @@ import java.io.IOException
  * 2. Every record of every `lock/<vault_id>/` directory is read, and storage is asked which vaults
  *    are on the phone: the current one and those put aside.
  * 3. **Replaced vaults** (F11, F16b), for every `state.rec` that reads OK and has `replaced` set,
- *    N being its `new_vault_id`. Skipped when storage could not say which vaults are there.
+ *    N being its `new_vault_id`. Skipped when storage could not say which vaults are there, and
+ *    when the current vault cannot be read: its `vault_id` is then unknown, and a vault N that is
+ *    there would be taken for one that is not (the third row would clear a mark that is right).
  *
  *    | This vault is | Vault N is | The lock |
  *    |---|---|---|
@@ -42,8 +43,9 @@ internal class StartUp(private val core: LockCore) {
     fun run() {
         try {
             core.files.deleteStaleTmp(core.root) // step 1
-        } catch (e: IOException) {
-            // What stays is deleted at the next start; a `.tmp` file is never read.
+        } catch (e: Exception) {
+            // What stays is deleted at the next start; a `.tmp` file is never read. No failure here
+            // may keep the lock screen from being drawn, so any is let go, not only an I/O error.
         }
         val dirs = readDirs() // step 2
         val scan = core.rescan()
@@ -56,11 +58,14 @@ internal class StartUp(private val core: LockCore) {
         core.publishSummary()
     }
 
-    /** Step 2: the three records of every lock directory, as they are on disk now; null when the directories cannot be listed. */
+    /**
+     * Step 2: the three records of every lock directory, as they are on disk now; null when the
+     * directories cannot be listed, for whatever reason, so that the sweep deletes nothing.
+     */
     private fun readDirs(): List<DirRecords>? {
         val paths = try {
             core.files.dirs(core.root)
-        } catch (e: IOException) {
+        } catch (e: Exception) {
             return null
         }
         return paths.map { path ->

@@ -365,6 +365,52 @@ class FingerprintFlowTest {
     }
 
     @Test
+    fun untilCanAuthenticateHasAnswered_onlyThePadIsShown_andNoScreenThatTheAnswerWouldChange() {
+        // §13.1: "Until the answer is there, the pad is shown without the fingerprint key." Without a
+        // PIN the answer decides between the master-password and the fingerprint-only screen, so
+        // nothing is shown before it: what was there stays until the answer has come.
+        val seen = ArrayList<LockState>()
+        f.fingerprintKey = object : FingerprintKey by f.keys.fingerprint {
+            override fun availability(): Int {
+                seen += f.engine.state.value
+                return f.keys.fingerprint.availability()
+            }
+        }
+        f.rebuild()
+        vault = f.seedVault()
+        finger = f.plantFingerprint(vault)
+        f.plantState()
+        f.startInFront()
+        assertEquals(LockScreen.FingerprintOnly(status = null, pinReason = null, aside = null), f.screen)
+        await { f.engine.promptIfDue() }
+        assertTrue(f.state is LockState.Unlocked)
+
+        seen.clear()
+        f.lock() // in front: a new visit asks again
+        assertEquals(LockScreen.FingerprintOnly(status = null, pinReason = null, aside = null), f.screen)
+        assertEquals(1, seen.size)
+        assertTrue("shown before the answer: ${seen.single()}", seen.single() is LockState.Unlocked)
+
+        // With a PIN, the pad is shown at once, without the fingerprint key until the answer.
+        val g = LockFixture()
+        val padSeen = ArrayList<LockState>()
+        g.fingerprintKey = object : FingerprintKey by g.keys.fingerprint {
+            override fun availability(): Int {
+                padSeen += g.engine.state.value
+                return g.keys.fingerprint.availability()
+            }
+        }
+        g.rebuild()
+        val v = g.seedVault()
+        g.plantPin(v)
+        g.plantFingerprint(v)
+        g.plantState()
+        g.startInFront()
+        assertEquals(LockScreen.Pad(digits = 0, status = null, fingerprintKey = false, opening = false, aside = null), (padSeen.single() as LockState.Locked).screen)
+        assertTrue(g.pad.fingerprintKey)
+    }
+
+    @Test
     fun theFingerprintKeyOpensNothingWhereTheScreenDoesNotShowIt_thePracticeScreensAmongThem() {
         // §8.3: on a practice screen the fingerprint comes only after "Not now", and past its grace not
         // at all; §9.2 rule 7 and §13.2: only the pad's fingerprint key and the fingerprint-only screen
