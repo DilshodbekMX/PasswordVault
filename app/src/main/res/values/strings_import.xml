@@ -104,12 +104,12 @@
     <string name="import_columns_ambiguous">Some columns seem to mean the same thing. Check what each column holds.</string>
     <!-- First text when the user opened the column mapping from the preview. -->
     <string name="import_columns_check">Check what each column holds.</string>
-    <!-- Under a column's name: its first value in the file. %1$s is that value. -->
-    <string name="import_columns_first_value">First value: %1$s</string>
+    <!-- Under a column's name, above its first value in the file (the value is shown on the next line). -->
+    <string name="import_columns_first_value">First value</string>
     <!-- Under a column's name when the column has no value at all. -->
     <string name="import_columns_no_value">No values</string>
-    <!-- Under the password column's name: its first value is not shown. TalkBack reads it too. -->
-    <string name="import_columns_hidden_value">First value: hidden</string>
+    <!-- Read by TalkBack for the dots that stand for the password column's first value, which is not shown. -->
+    <string name="import_columns_hidden_value">First value, hidden</string>
     <!-- The label of each column's drop-down list of meanings. -->
     <string name="import_columns_holds">Holds</string>
     <!-- Warning when no column is marked as the password column. -->

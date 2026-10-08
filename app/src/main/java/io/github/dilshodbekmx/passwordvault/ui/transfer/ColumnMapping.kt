@@ -19,6 +19,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -26,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -36,6 +38,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.dilshodbekmx.passwordvault.R
@@ -166,31 +169,48 @@ private fun ColumnCard(index: Int, column: MappingColumn, onChoose: (ColumnMeani
     }
 }
 
-/** The column's first value: dots for the password column, otherwise the value, left to right and marked sensitive. */
+/**
+ * The column's first value under the words "First value": dots for the password column (and a
+ * one-time code key), otherwise the value, left to right as usernames and websites are (ux.md §3) and
+ * marked sensitive, since any column may hold a secret.
+ */
 @Composable
 private fun FirstValue(index: Int, column: MappingColumn) {
     val modifier = Modifier.testTag(ImportTags.sample(index))
-    when {
-        column.sample.isEmpty() -> Text(
+    if (column.sample.isEmpty()) {
+        Text(
             text = stringResource(R.string.import_columns_no_value),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = modifier,
         )
-        column.meaning == ColumnMeaning.PASSWORD || column.meaning == ColumnMeaning.TOTP -> MaskedValue(
-            value = column.sample,
-            revealed = false,
-            hiddenDescription = stringResource(R.string.import_columns_hidden_value),
-            modifier = modifier,
-            style = MaterialTheme.typography.bodyMedium,
+        return
+    }
+    Column {
+        Text(
+            text = stringResource(R.string.import_columns_first_value),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        else -> Text(
-            text = stringResource(R.string.import_columns_first_value, column.sample),
-            style = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Ltr),
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            modifier = modifier.semantics { isSensitiveData = true },
-        )
+        if (column.meaning == ColumnMeaning.PASSWORD || column.meaning == ColumnMeaning.TOTP) {
+            MaskedValue(
+                value = column.sample,
+                revealed = false,
+                hiddenDescription = stringResource(R.string.import_columns_hidden_value),
+                modifier = modifier,
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        } else {
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                Text(
+                    text = column.sample,
+                    style = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Ltr),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = modifier.semantics { isSensitiveData = true },
+                )
+            }
+        }
     }
 }
 

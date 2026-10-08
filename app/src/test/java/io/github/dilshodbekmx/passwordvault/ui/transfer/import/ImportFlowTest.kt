@@ -112,6 +112,9 @@ class ImportFlowTest {
         val file = file()
         assertTrue("This was paused when the app locked.", file.ui.value.paused)
         assertEquals(2, preview(file).toAdd)
+        file.importNow()
+        settle()
+        assertFalse("the line goes once the user acted", file.ui.value.paused)
     }
 
     @Test

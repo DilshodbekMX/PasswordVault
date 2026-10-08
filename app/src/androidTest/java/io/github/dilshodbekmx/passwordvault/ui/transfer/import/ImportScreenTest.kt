@@ -7,6 +7,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -156,7 +157,7 @@ class ImportScreenTest {
         compose.onNodeWithTag(ImportTags.meaning(ColumnMeaning.PASSWORD)).performClick()
         compose.waitForIdle()
         assertTrue("dots once it is the password column", compose.shownTexts().none { it.contains("Kalit-1-Pw") })
-        compose.onNodeWithText(string(R.string.import_columns_hidden_value), useUnmergedTree = true).assertExists()
+        compose.onNodeWithContentDescription(string(R.string.import_columns_hidden_value), useUnmergedTree = true).assertExists()
         compose.onNodeWithTag(ImportTags.MAPPING_NO_PASSWORD).assertDoesNotExist()
 
         compose.onNodeWithTag(ImportTags.MAPPING_CONTINUE).performClick()

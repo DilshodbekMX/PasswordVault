@@ -82,8 +82,12 @@ class ImportScreenshotsTest {
         compose.onNodeWithTag(ImportTags.HELP_CANT_FIND).performClick()
         ImportShots.take(compose, "5.4-03-google-help-settings")
 
-        // The file Chrome exported.
-        rig.recorded((ImportRig.CHROME_CSV + "Google,https://www.youtube.com,aziz.karimov@gmail.com,Pw-Gmail-7731,\n").toByteArray())
+        // The file Chrome exported, chosen in the picker.
+        compose.onNodeWithTag(ImportTags.CHOOSE_FILE).performClick()
+        compose.waitUntil(TIMEOUT_MS) { rig.launcher.opened == 1 && rig.settings.fileTask.value != null }
+        val csv = ImportRig.CHROME_CSV + "Google,https://www.youtube.com,aziz.karimov@gmail.com,Pw-Gmail-7731,\n"
+        compose.runOnUiThread { rig.answer(ImportRig.DOC, csv.toByteArray()) }
+        compose.waitUntil(TIMEOUT_MS) { rig.nav.moves.isNotEmpty() }
         compose.runOnUiThread {
             file = rig.file()
             which = FILE

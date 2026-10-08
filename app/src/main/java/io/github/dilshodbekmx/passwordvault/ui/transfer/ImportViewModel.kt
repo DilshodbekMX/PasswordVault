@@ -287,6 +287,7 @@ internal class ImportViewModel(
     /** "Text looks wrong? Read as …" (formats.md §8.2). */
     fun readAs(encoding: TextDecoding.Encoding) {
         val d = doc ?: return
+        acted()
         memory.update(d) { it.copy(encoding = encoding) }
     }
 
@@ -301,6 +302,7 @@ internal class ImportViewModel(
 
     private fun choose(change: (ImportMemory.Choices) -> ImportMemory.Choices) {
         val d = doc ?: return
+        acted()
         memory.update(d, change)
         replan()
     }
@@ -308,6 +310,7 @@ internal class ImportViewModel(
     /** "Choose columns" or "Check columns": the column-mapping screen. */
     fun openColumns() {
         val d = doc ?: return
+        acted()
         memory.update(d) { it.copy(columnsShown = true) }
         move(ImportMove.COLUMNS)
     }
@@ -326,6 +329,7 @@ internal class ImportViewModel(
         }
         if (p.accounts.isEmpty()) return
         val planned = plannedVault
+        acted()
         set(now.copy(importing = true))
         viewModelScope.launch {
             val saved = repository.edit { vault, nowMs ->
@@ -379,6 +383,7 @@ internal class ImportViewModel(
         val done = (state.value.screen as? ImportScreen.Done)?.done ?: return
         val b = before ?: return
         if (done.busy || !done.canUndo) return
+        acted()
         set(ImportScreen.Done(done.copy(busy = true)))
         viewModelScope.launch {
             val result = repository.edit(VaultEdits.replaceVault(b))
@@ -398,6 +403,7 @@ internal class ImportViewModel(
         val done = (state.value.screen as? ImportScreen.Done)?.done ?: return
         val d = doc ?: return
         if (done.busy || !done.askFile) return
+        acted()
         set(ImportScreen.Done(done.copy(busy = true)))
         viewModelScope.launch {
             val deleted = withContext(dispatchers.io) {
@@ -426,6 +432,7 @@ internal class ImportViewModel(
     fun keepFile() {
         val done = (state.value.screen as? ImportScreen.Done)?.done ?: return
         if (done.busy || !done.askFile) return
+        acted()
         set(ImportScreen.Done(done.copy(askFile = false, file = FileOutcome.KEPT)))
         viewModelScope.launch { end() }
     }
@@ -505,6 +512,7 @@ internal class ImportViewModel(
         val chars = backupPassword.readSecret()
         if (chars.isEmpty()) return
         backupPassword.clearSecret()
+        acted()
         set(ImportScreen.BackupPassword(opening = true))
         viewModelScope.launch {
             val password = try {
@@ -578,6 +586,9 @@ internal class ImportViewModel(
     }
 
     private fun set(screen: ImportScreen) = state.update { it.copy(screen = screen) }
+
+    /** The user acted on the continued task: "This was paused when the app locked." has done its work. */
+    private fun acted() = state.update { it.copy(paused = false) }
 
     private fun say(message: ImportMessage) = state.update { it.copy(message = message) }
 
