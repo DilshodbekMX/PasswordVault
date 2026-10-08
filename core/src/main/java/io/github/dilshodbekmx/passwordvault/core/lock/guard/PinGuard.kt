@@ -512,10 +512,13 @@ class PinGuard(
     /**
      * A new PIN is set (lock.md F6 step 7): writes [slot] with `off = null` and the guard of §6.4,
      * `row = 0` and `total = 0` when the master password was typed in this flow, otherwise `total`
-     * unchanged; `unseen` is kept. It must reach the disk: when the write fails the old record stays,
-     * here and on disk, and it returns false ("Couldn't save the new PIN. Your old PIN still works.";
-     * the flow deletes the new alias). The old key is left to the sweep (§5.7). A `pin.rec` that read
-     * NEWER is never replaced: false.
+     * unchanged; `unseen` is kept. It must reach the disk: when the write reports a failure the old
+     * record stays here, in memory, and it returns false ("Couldn't save the new PIN. Your old PIN
+     * still works."). Such a write may still have replaced the record on disk: a failed directory
+     * `fsync` counts as not written (§5.9) while the rename is already there. So the flow leaves the
+     * new alias to the sweep and never deletes it (F6 step 8): a record must not name a deleted key.
+     * The old key is left to the sweep too (§5.7). A `pin.rec` that read NEWER is never replaced:
+     * false.
      *
      * The slot must hold one or two wraps with different `vk_id`s (§5.4).
      */
