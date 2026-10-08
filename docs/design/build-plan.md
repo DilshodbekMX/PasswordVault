@@ -339,7 +339,7 @@ Tag `wave-3A-ok`.
 
 #### 4.1 Lock manager
 - **Owns:** `APP/lock/{DefaultLockManager,PromptLauncher,LockDebugImpl}.kt`, the body of `APP/lock/BiometricHost.kt`, the body of `LockModule.kt`, the removal of `MasterPasswordGate.kt`, `APP-T/lock/`, `APP-D/debug/lock/` (the commands of L §15.3: `status`, `hold-after-charge`, `hold-before-hmac`, `release`, `fail-next-write`, `ks-fault`, `drop-keys`, listed through the integrator).
-- **Inputs:** A §3.5, §5; L §9.2 (the prompt rules, launch numbers included), §10.4, §11, §13.1; `docs/lab/biometric-artifacts/LabActivity.kt` (how the one prompt is built in `onCreate` and results are routed).
+- **Inputs:** A §3.5, §5; L §9.2 (the prompt rules, launch numbers included), §10.4, §11, §13.1; `docs/lab/biometric-artifacts/LabActivity.kt` (how the one prompt is built in `onCreate` and results are routed). From 3.9: `Keys.launcher` is `APP/keystore/LauncherRelay.kt`. `LockModule.create` attaches the `BiometricLauncher` over the one prompt with `(graph.keys.launcher as LauncherRelay).attach(launcher)`; until then every seal and open is `NotShown`. `LockDebugImpl` reaches the Keystore hooks through `graph.keys.device as KeystoreAccess`: `faults.arm(name)`, `faults.pending` and `faults.disarm()` for `ks-fault` (the names are `KeystoreFaults.rows` plus `prompt-error-<code>`); `dropAllKeys()` for `drop-keys`; `everyAlias()` for the aliases of `status`. `KeystoreFingerprintKey` passes `pinUsable` as "the lock state is `Locked` with `LockScreen.Pad`", read when an UNLOCK prompt is shown, so that state is published before the prompt is launched.
 - **Implements:** `LockManager` and `LockStatus` over `LockEngine` with the real ports; `BiometricLauncher` over the one `BiometricPrompt`; `createVault` and `changeMasterPassword` with both typings compared first; `matchesMasterPassword` after every correct master password (A D-9b); `openAside` and `deleteAside` under that vault's guard; `LockDebug`.
 - **Accepted when:** [JVM] with fake ports: every `LockIntent`, every state of L §13.2, a rotation keeps the digits and the charge, an automatic lock drops the proof, a result that comes after its visit opens nothing; at the integration check, L E1 to E3, E6 and E11 without its language step.
 
@@ -367,7 +367,7 @@ Tag `wave-3A-ok`.
 
 #### 4.5 The lock's emulator scripts
 - **Owns:** `tools/emu/lock/`.
-- **Inputs:** L §15.3; `docs/lab/biometric-artifacts/{lab.sh,enroll_fingerprint.sh,delete_all_fingerprints.sh,uitap.py,uidump.sh}` (copied and adapted); `docs/lab/old-android-artifacts/{labenv.sh,heapsim.sh}`.
+- **Inputs:** L §15.3; `docs/lab/biometric-artifacts/{lab.sh,enroll_fingerprint.sh,delete_all_fingerprints.sh,uitap.py,uidump.sh}` (copied and adapted); `docs/lab/old-android-artifacts/{labenv.sh,heapsim.sh}`; the `ks-fault` names of `APP/keystore/KeystoreFaults.kt` (`KeystoreFaults.rows`, `prompt-error-<code>`).
 - **Uses:** the debug commands of 4.1; `tools/emu/adb.sh`.
 - **Accepted when:** [script] each script E1 to E17 runs unattended against the merged app, prints PASS or FAIL per step and exits non-zero on a failure; steps that need a debuggable build or root print SKIPPED on staging; E12 checks the accessibility tree (TalkBack itself is A §8.6 item 8); E15 builds and uses the `backupCheck` variant. The steps that need later waves (E4's pending wait and "replaced" notice, E5, E11's language step, E17's picker steps) are written now and marked with the wave that enables them.
 
