@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Made by docs/design/looks/icon/make-icon.py from icon.svg. Do not edit: change the drawing and run the script. -->
+<!-- The app's logo: the icon's drawing alone. White; a screen tints it and gives it its size. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="55.199"
+    android:viewportHeight="55.199">
+    <group
+        android:translateX="-26.4"
+        android:translateY="-26.4">
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M54 26.4 l22.2 8.4 v17.4 c0 14.4 -9.6 24.9 -22.2 29.4 c-12.6 -4.5 -22.2 -15 -22.2 -29.4 V34.8 z M57.261 54.836 A6 6 0 1 0 50.739 54.836 L48.6 66.6 h10.8 z" />
+    </group>
+</vector>
