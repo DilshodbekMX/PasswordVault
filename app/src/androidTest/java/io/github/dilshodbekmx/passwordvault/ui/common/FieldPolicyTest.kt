@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.text.contextmenu.data.TextContextMenuKeys
 import androidx.compose.foundation.text.contextmenu.provider.LocalTextContextMenuToolbarProvider
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -21,8 +22,10 @@ import androidx.compose.ui.platform.InterceptPlatformTextInput
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithTag
@@ -45,7 +48,8 @@ import org.junit.runner.RunWith
  * window policy (R-13; lock.md §13.5; ux.md §3).
  *  - `VaultTextField`, `VaultSecureField` and `VaultSearchField`: `ContentDataType.None` (no
  *    autofill session, so no fill or save request [V-P4]) and `isSensitiveData` [V-P5] on the
- *    editable node itself.
+ *    editable node itself; and `VaultSecureField`'s show/hide button is not offered to autofill
+ *    either, which Compose does with every toggle unless it opts out.
  *  - The window's part, inside `WindowPolicy.Root`: the text toolbar has no "Autofill" item, which
  *    would send a manual autofill request [L-win Experiment 2]; and the keyboard gets
  *    `IME_FLAG_NO_PERSONALIZED_LEARNING` [L-win Experiment 3].
@@ -82,6 +86,32 @@ class FieldPolicyTest {
             assertEquals("$tag content type", ContentDataType.None, config.getOrNull(SemanticsProperties.ContentDataType))
             assertEquals("$tag sensitive", true, config.getOrNull(SemanticsProperties.IsSensitiveData))
         }
+    }
+
+    /**
+     * No node of a `VaultSecureField` is offered to the phone's autofill service, its show/hide
+     * button (`RevealToggle`) included (ux.md §3, [V-P4]). Compose offers every toggle as a value to
+     * read and to set (foundation 1.12.1: `ContentDataType.Toggle` with `OnFillData`), so a fill could
+     * switch "Show password" on. The control, a plain `IconToggleButton`, is offered, so that the test
+     * cannot pass because it saw nothing.
+     */
+    @Test
+    fun noNodeOfThePasswordFieldIsOfferedToAutofill() {
+        compose.setContent {
+            WindowPolicy.Root {
+                Column {
+                    VaultSecureField(state = remember { TextFieldState() }, modifier = Modifier.testTag(SECURE))
+                    IconToggleButton(checked = false, onCheckedChange = {}, modifier = Modifier.testTag(CONTROL)) {}
+                }
+            }
+        }
+        val nodes = compose.onAllNodes(SemanticsMatcher("any node") { true }, useUnmergedTree = true).fetchSemanticsNodes()
+        val control = nodes.single { it.config.getOrNull(SemanticsProperties.TestTag) == CONTROL }
+        assertTrue("a plain toggle is offered to autofill: ${control.config}", control.config.offeredToAutofill())
+        val toggles = nodes.filter { it.id != control.id && SemanticsProperties.ToggleableState in it.config }
+        assertEquals("the field's show/hide button: ${toggles.map { it.config }}", 1, toggles.size)
+        val offered = nodes.filter { it.id != control.id && it.config.offeredToAutofill() }
+        assertTrue("offered to autofill: ${offered.map { it.config }}", offered.isEmpty())
     }
 
     @Test
@@ -159,6 +189,14 @@ class FieldPolicyTest {
         VaultSecureField(state = remember { TextFieldState() }, modifier = Modifier.testTag(SECURE))
         VaultSearchField(state = remember { TextFieldState() }, onSearch = {}, modifier = Modifier.testTag(SEARCH))
     }
+
+    /**
+     * Whether the phone's autofill service is offered this node: it has a content type, or a kind of
+     * value other than "none" (Compose ui 1.12.1 leaves a node whose kind is "none" out of autofill).
+     */
+    private fun SemanticsConfiguration.offeredToAutofill(): Boolean =
+        SemanticsProperties.ContentType in this ||
+            (SemanticsProperties.ContentDataType in this && this[SemanticsProperties.ContentDataType] != ContentDataType.None)
 
     /** Long-presses the empty field [tag] and returns the items its toolbar was asked to show. */
     private fun longPressAndRecord(menu: MenuRecorder, tag: String): List<Any> {

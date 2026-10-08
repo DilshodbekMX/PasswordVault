@@ -18,8 +18,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.autofill.ContentDataType
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDataType
 import androidx.compose.ui.semantics.editableText
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
@@ -128,10 +130,20 @@ private fun Modifier.maskedForAccessibility(state: TextFieldState, masked: Boole
  * The show/hide button of a password field and of a stored password (ux.md §3, §5.12, §8): an
  * `IconToggleButton` labelled "Show password" while hidden and "Hide password" while shown, whose
  * on or off state TalkBack reads with it.
+ *
+ * Compose offers every toggle to the phone's autofill service as a value it can read and set
+ * (foundation 1.12.1: `ContentDataType.Toggle` with `OnFillData`), so a fill could switch "Show
+ * password" on. Like every field of the app ([V-P4], ux.md §3), the button opts out. The opt-out
+ * comes before the button's own toggleable on the same node, so its value is the node's.
  */
 @Composable
 fun RevealToggle(revealed: Boolean, onRevealedChange: (Boolean) -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
-    IconToggleButton(checked = revealed, onCheckedChange = onRevealedChange, modifier = modifier, enabled = enabled) {
+    IconToggleButton(
+        checked = revealed,
+        onCheckedChange = onRevealedChange,
+        modifier = Modifier.semantics { contentDataType = ContentDataType.None }.then(modifier),
+        enabled = enabled,
+    ) {
         Icon(
             painter = painterResource(if (revealed) R.drawable.ic_common_visibility_off else R.drawable.ic_common_visibility),
             contentDescription = stringResource(if (revealed) R.string.common_hide_password else R.string.common_show_password),
