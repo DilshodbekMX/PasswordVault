@@ -800,10 +800,22 @@ internal class LockCore(
      * password opens it, and a password from before an earlier, proven change gets "OK" only, as it
      * does without a mark. Never on the lock screen of a vault put aside: storage puts newer
      * generations aside in the current vault only (`VaultPort.putNewerAside`).
+     *
+     * And the kept copies must be under exactly two keys, the one the change made and one more:
+     * that one is then the key the change started from, and the typed password, which opened an
+     * older copy, is the master password from directly before the change. With a third key kept (a
+     * second change before the copies of the first were retired, F8 step 10) storage cannot say
+     * which older key the typed password opened, and `putNewerAside` would put aside every copy
+     * above it, those of an earlier change that was proven among them: a master password the owner
+     * changed away from would undo that change ("An old master password has to stop working when
+     * the user changes it", decision 20). Nor when storage could not read every live copy.
      */
     fun changeUnfinished(target: LockTarget): Boolean {
         val change = target.lock.state?.mpChange ?: return false
-        return target.aside == null && newest(target)?.vkId == change.toVkId
+        if (target.aside != null) return false
+        val present = (scan?.current as? CurrentVault.Present)?.takeIf { it.vaultId == target.vaultId } ?: return false
+        val kept = present.keptVkIds ?: return false
+        return present.newest.vkId == change.toVkId && kept.size == 2 && change.toVkId in kept
     }
 
     /**

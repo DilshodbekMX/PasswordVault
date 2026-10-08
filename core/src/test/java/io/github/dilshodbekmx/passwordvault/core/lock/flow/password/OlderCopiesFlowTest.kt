@@ -1,6 +1,7 @@
 package io.github.dilshodbekmx.passwordvault.core.lock.flow.password
 
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.AsideLine
+import io.github.dilshodbekmx.passwordvault.core.lock.flow.ChangeOutcome
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.ChoosePinReason
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockCause
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockScreen
@@ -16,6 +17,7 @@ import io.github.dilshodbekmx.passwordvault.core.lock.flow.core.LockFixture.Comp
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.core.LockFixture.Companion.VAULT
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.core.LockFixture.Companion.await
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.core.LockFixture.Companion.bytes
+import io.github.dilshodbekmx.passwordvault.core.lock.flow.shortcuts.proofInTheOpenApp
 import io.github.dilshodbekmx.passwordvault.core.lock.guard.MasterPasswordGuard
 import io.github.dilshodbekmx.passwordvault.core.lock.guard.PinWrap
 import io.github.dilshodbekmx.passwordvault.core.lock.record.FingerprintRecord
@@ -244,6 +246,46 @@ class OlderCopiesFlowTest {
         f.answerOlder(OlderPasswordAnswer.OPEN_FROM_BEFORE)
         assertEquals(emptyList<String>(), f.port.writingCalls)
         assertEquals(listOf(2L, 1L), vault.live.map { it.number })
+    }
+
+    @Test
+    fun f16b_aPasswordFromBeforeAnEarlierProvenChange_isOnlyAnOlderMasterPassword_whileALaterChangeIsUnfinished() {
+        // Change 1 (PASSWORD to NEW_PASSWORD) is proven. Change 2 (NEW_PASSWORD to THIRD_PASSWORD), in the
+        // same process, ends with "Saving may not have finished": its mark stays, and its copy is the
+        // newest. The copies under PASSWORD are still kept, because no master password was typed at a
+        // later start in between (F8 step 10, and the F8 table: "The password is changed twice before
+        // the app is restarted").
+        vault = f.seedVault(generations = 2)
+        f.plantPin(vault)
+        f.plantState()
+        f.startInFront()
+        f.type(PIN)
+        assertEquals(ChangeOutcome.Changed(pinKept = true, fingerprintKept = false), f.changeMasterPassword(f.proofInTheOpenApp(), NEW_PASSWORD, pin = PIN))
+        f.port.failWrites(FakeVaultPort.WriteFault.UNCLEAR)
+        assertEquals(ChangeOutcome.Unclear, f.changeMasterPassword(f.proofInTheOpenApp(NEW_PASSWORD), THIRD_PASSWORD, pin = PIN))
+        f.answerAll()
+        f.lock()
+        val newest = vault.live.first()
+        assertEquals("the second change is unfinished, and its copy is the newest", newest.vkId, f.stateRecord().mpChange?.toVkId)
+        assertEquals(3, vault.live.map { it.vkId }.toSet().size)
+        await { f.engine.useMasterPassword() }
+
+        // The master password the owner changed away from with change 1, which was proven. "An old master
+        // password has to stop working when the user changes it" (F16b; decision 20): only "OK".
+        val outcome = f.unlockWith(PASSWORD)
+
+        assertTrue("$outcome", outcome is MasterPasswordOutcome.OlderPassword)
+        assertFalse("a password from before a proven change is offered the copy from before", (outcome as MasterPasswordOutcome.OlderPassword).unfinishedChange)
+        assertFalse((f.screen as LockScreen.OlderPassword).unfinishedChange)
+        f.answerOlder(OlderPasswordAnswer.OPEN_FROM_BEFORE) // not on this screen: nothing
+        assertTrue("${f.port.writingCalls}", f.port.writingCalls.none { it.startsWith("putNewerAside") })
+        assertEquals("nothing was put aside", newest.number, vault.live.first().number)
+        assertNull("nothing opened", f.port.openVaultId)
+        assertTrue(f.state is LockState.Locked)
+        // The vault's master password as it stands opens the newest copy.
+        f.answerOlder(OlderPasswordAnswer.OK)
+        assertTrue(f.unlockWith(THIRD_PASSWORD) is MasterPasswordOutcome.Right)
+        assertEquals(newest.number, f.port.openGeneration)
     }
 
     @Test

@@ -209,7 +209,12 @@ class ChangeMasterPasswordCrashTest {
             assertTrue("$where: the mark was set by a change that asked for a key", "call: newKey" in trace)
             if (reachedTheDisk && trace.last().startsWith("storage: changePassword: published")) assertEquals(where, newest.vkId, mark.toVkId)
         }
-        val offered = mark != null && mark.toVkId == newest.vkId // "Open my passwords from before the change"
+        // "Open my passwords from before the change": for the copy of an unfinished change, and only while
+        // the copies are under that change's key and the one before it. With the copies of an earlier
+        // change still kept (the second change of CHANGED_TWICE_IN_ONE_PROCESS) storage cannot say which
+        // older password was typed, and a password from before the first change, which was proven, must
+        // not undo it (decision 20): only "OK" then.
+        val offered = mark != null && mark.toVkId == newest.vkId && keptKeys.size == 2
         if (run.how == Restart.KILL) reached += Triple(reachedTheDisk, mark != null, offered)
 
         // ---- The next process -------------------------------------------------------------------------
