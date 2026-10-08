@@ -62,6 +62,7 @@ object LockModule {
             scope = graph.appScope,
             io = io,
             prompts = prompts,
+            lockNow = { graph.session.lockNow() },
             olderCopyAnswered = { (data.repository as? DefaultVaultRepository)?.olderCopyAnswered() },
             debug = debug,
         )

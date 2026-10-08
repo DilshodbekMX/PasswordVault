@@ -28,6 +28,13 @@ import javax.crypto.Cipher
  * the activity is resumed or its window has the focus back: the moments at which a prompt may open
  * by itself (rule 7). The activity keeps nothing. When it is destroyed, the launcher only forgets its
  * prompt; nothing is cancelled, refunded or cleared (lock.md §11).
+ *
+ * **Android 6 to 8.1 in an optimised build.** There the library goes through `FingerprintManager`,
+ * which the android.jar of compileSdk 37 no longer has. R8 then cannot see that the four methods of
+ * the library's own `FingerprintManager.AuthenticationCallback` (`FingerprintManagerCompat$Api23Impl$1`)
+ * override the framework's, and removes them: in a staging or release build no result of the prompt
+ * reaches this class on those phones, and the prompt stays open. The app's R8 rules must keep them
+ * (build plan 4.1 asked for the rule; check E6 on API 24 with the staging build shows it).
  */
 object BiometricHost {
     fun onCreate(activity: FragmentActivity, graph: AppGraph) {

@@ -281,6 +281,10 @@ class LockRig(val test: TestScope, seed: Long = 1L) {
     var olderCopyAnswers = 0
         private set
 
+    /** How many times the manager asked the session to lock as "Lock now" does ("Finish now"). */
+    var lockNows = 0
+        private set
+
     var process = TestProcess()
         private set
     var main = TestMain()
@@ -325,7 +329,22 @@ class LockRig(val test: TestScope, seed: Long = 1L) {
             CryptoFactory.aead(),
             dispatcher,
         )
-        val built = DefaultLockManager(engine, vault, settings, clock, scope, dispatcher, launcher, olderCopyAnswered = { olderCopyAnswers++ }, debug = hooks)
+        val built = DefaultLockManager(
+            engine,
+            vault,
+            settings,
+            clock,
+            scope,
+            dispatcher,
+            launcher,
+            // As `AutoLock.lockNow`: the lock runs in the session's own coroutine, after its draft flush.
+            lockNow = {
+                lockNows++
+                scope.launch { made?.lock(LockReason.LOCK_NOW) }
+            },
+            olderCopyAnswered = { olderCopyAnswers++ },
+            debug = hooks,
+        )
         hooks?.attach(engine, built)
         made = built
         launcher.attach(window)

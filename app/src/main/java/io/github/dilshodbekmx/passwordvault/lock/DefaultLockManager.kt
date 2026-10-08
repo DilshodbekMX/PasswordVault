@@ -89,6 +89,8 @@ import kotlinx.coroutines.withContext
  *   it, and a step of the engine that has started always finishes.
  * @param io the dispatcher of the settings' writes.
  * @param prompts the fingerprint prompt of the process; `BiometricHost` gives it each activity's.
+ * @param lockNow `Session.lockNow` (architecture.md §5.5: our clip cleared, a draft flushed, then
+ *   [lock]), for "Finish now"; this class never calls [lock] itself.
  * @param olderCopyAnswered called when the older-copy notice was answered (lock.md §13.4 item 1):
  *   the vault's automatic writes may run again (architecture.md §5.5).
  * @param debug the test hooks of lock.md §15.3 in a build that has the debug commands, else null.
@@ -101,6 +103,7 @@ class DefaultLockManager(
     private val scope: CoroutineScope,
     private val io: CoroutineDispatcher,
     val prompts: PromptLauncher,
+    private val lockNow: () -> Unit,
     private val olderCopyAnswered: () -> Unit = {},
     val debug: LockDebug? = null,
 ) : LockManager {
@@ -129,6 +132,9 @@ class DefaultLockManager(
      * itself until the lock screen is used again or the app has been unlocked.
      */
     private var setAside = false
+
+    /** "Finish now" asked for a lock: when it has come, the master-password field is shown ([finishPending]). */
+    private var finishAfterLock = false
 
     /** The app is visible: between the process-level `ON_START` and `ON_STOP`. */
     private val visible = MutableStateFlow(false)
@@ -404,6 +410,11 @@ class DefaultLockManager(
         when (now) {
             is LockState.Unlocked -> if (before !is LockState.Unlocked) unlocked(before)
             is LockState.Locked -> {
+                if (finishAfterLock) {
+                    // The lock that "Finish now" asked for: the field that takes the new master password (F11 step 13).
+                    finishAfterLock = false
+                    act { engine.useMasterPassword() }
+                }
                 val screen = now.screen
                 if (screen is LockScreen.MasterPassword && screen.reason == MpReason.NoSecureHardware) noSecureHardwareSeen = true
                 if (offersFingerprint(now) && !offersFingerprint(before)) promptIfDue()
@@ -478,18 +489,20 @@ class DefaultLockManager(
      * "Finish now" on the list's banner, which opens no screen of its own: the new master password is
      * typed where a master password is typed, on the lock screen, whose field accepts it (lock.md
      * F11 step 13: "The lock screen's master-password field accepts it as well"). So the app is
-     * locked and the master-password screen shown; the new master password then finishes (steps 14
-     * to 19), the old one cancels the request (step 9), and "Use PIN" leads back as on any lock
-     * screen. Only while a new master password is ready. The list holds no unsaved form, so there is
-     * no draft to write first.
+     * locked as "Lock now" locks it, through the session ([lockNow]: architecture.md §5.5), and when
+     * the lock has come the master-password screen is shown, with no fingerprint prompt over it; the
+     * new master password then finishes (steps 14 to 19), the old one cancels the request (step 9),
+     * and "Use PIN" leads back as on any lock screen. Only while a new master password is ready.
+     *
+     * The contract has no way yet to type the new master password in the open app (the engine's
+     * `finishPending`, a prompt over the list); build plan 5.5 may add one, and this intent would
+     * then open it instead.
      */
     private fun finishPending() {
         if (engine.state.value !is LockState.Unlocked || engine.summary.value.pending?.ready != true) return
         setAside = true
-        act {
-            lock(LockReason.LOCK_NOW)
-            engine.useMasterPassword()
-        }
+        finishAfterLock = true
+        lockNow()
     }
 
     // ---------------------------------------------------------------------------------------------

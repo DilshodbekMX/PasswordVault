@@ -266,6 +266,7 @@ class VaultsAndNoticesTest {
 
         rig.send(LockIntent.FinishPending)
         assertTrue("\"Finish now\" before its time changes nothing", rig.isUnlocked)
+        assertEquals("and asks for no lock", 0, rig.lockNows)
 
         rig.advance(pending.remainingMs - 1)
         assertFalse(rig.status.pending!!.ready)
@@ -304,6 +305,7 @@ class VaultsAndNoticesTest {
 
         rig.send(LockIntent.FinishPending) // "Finish now" on the list's banner
 
+        assertEquals("the lock is the session's, as \"Lock now\" (architecture.md §5.5)", 1, rig.lockNows)
         // lock.md F11 step 13: "The lock screen's master-password field accepts it as well."
         val field = rig.field
         assertNull(field.reason)
