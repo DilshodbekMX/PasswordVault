@@ -440,6 +440,26 @@ class LockViewModelTest {
         assertEquals(emptyList<LockLine>(), ui(vm).lines)
     }
 
+    /** lock.md F11 steps 15 and 16: the new master password was ready and typed here, and could not finish. */
+    @Test
+    fun aNewMasterPasswordThatCouldNotFinishSaysSoAndNothingElse() = runTest {
+        val lock = FakeLockManager(initial = LockUiState.Locked(screen()))
+        lock.mpResults += MpResult.NotFinished
+        val vm = viewModel(lock)
+        vm.password.setTextAndPlaceCursorAtEnd(TYPED)
+        vm.submit()
+        runCurrent()
+        assertEmpty(vm.password)
+        assertEquals(listOf(LockLine(UiText.of(R.string.lock_mp_not_finished), alert = true)), ui(vm).lines)
+        assertFalse("not a wrong master password", ui(vm).fieldError)
+        assertTrue(ui(vm).canSubmit)
+        assertTrue(lock.state.value is LockUiState.Locked)
+
+        lock.state.value = LockUiState.Locked(screen(reason = MpReason.MasterChanged))
+        runCurrent()
+        assertEquals("another screen of the lock: the answer is gone", emptyList<LockLine>(), ui(vm).lines)
+    }
+
     @Test
     fun theFieldIsEmptyAfterAWaitAnswerAndWaitsForIt() = runTest {
         val lock = FakeLockManager(initial = LockUiState.Locked(screen()))

@@ -168,6 +168,7 @@ class BackupViewModel(
                 MpResult.NoMemory -> show(BackupStep.Password(error = PasswordError.NoMemory))
                 is MpResult.OlderPassword -> show(BackupStep.Password(error = PasswordError.Older(result.changedAtMs, result.unfinishedChange)))
                 MpResult.TooLate -> show(BackupStep.Password()) // the app was left or locked while it was checked: nothing was made
+                MpResult.NotFinished -> show(BackupStep.Password()) // the lock screen's answer only; nothing was made
             }
         }
     }

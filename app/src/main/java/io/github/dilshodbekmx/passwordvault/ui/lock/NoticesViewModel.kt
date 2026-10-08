@@ -161,7 +161,7 @@ class NoticesViewModel(
                         is MpResult.Wait -> PromptState(error = PromptError.Wait(result.untilElapsedMs))
                         MpResult.NoMemory -> PromptState(error = PromptError.NoMemory)
                         is MpResult.OlderPassword -> PromptState(error = PromptError.Older(result.changedAtMs))
-                        is MpResult.Right, MpResult.TooLate, null -> null
+                        is MpResult.Right, MpResult.TooLate, MpResult.NotFinished, null -> null // NotFinished: the lock screen's answer only
                     }
                 }
             }

@@ -158,6 +158,16 @@ sealed interface MpResult {
 
     /** Right, but the visit that asked has ended: nothing opens (lock.md §6.8 step 8, I11). */
     data object TooLate : MpResult
+
+    /**
+     * The new master password was ready (lock.md F11 step 13) and was typed right, but the
+     * replacement could not be finished (F11 steps 15 and 16: the mark or the new vault could not be
+     * written): "Couldn't finish now. Nothing was changed. Try again later." The pending password
+     * stays ready, PIN and fingerprint work as before, and the try is not counted. Only the lock
+     * screen's field answers it today ([MpPurpose.UNLOCK]); a check of the current master password
+     * in the open app never does.
+     */
+    data object NotFinished : MpResult
 }
 
 /** What [LockManager.createVault] came to (lock.md F1 steps 2 and 3, F13, F17 step 3). */

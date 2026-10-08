@@ -238,7 +238,7 @@ class ExportViewModel(
                 is MpResult.Wait -> startWait(still.copy(checking = false), result.untilElapsedMs)
                 MpResult.NoMemory -> ui.value = still.copy(checking = false, error = ExportPasswordError.NoMemory)
                 is MpResult.OlderPassword -> ui.value = still.copy(checking = false, error = ExportPasswordError.Older(result.changedAtMs))
-                MpResult.TooLate, null -> ui.value = still.copy(checking = false)
+                MpResult.TooLate, MpResult.NotFinished, null -> ui.value = still.copy(checking = false) // NotFinished: the lock screen's answer only
             }
         }
     }

@@ -341,7 +341,7 @@ class PasswordsViewModel(
                 is MpResult.Wait -> PracticeState(error = PracticeError.Wait(result.untilElapsedMs))
                 MpResult.NoMemory -> PracticeState(error = PracticeError.NoMemory)
                 is MpResult.OlderPassword -> PracticeState(error = PracticeError.Older(result.changedAtMs))
-                MpResult.TooLate -> null
+                MpResult.TooLate, MpResult.NotFinished -> null // NotFinished: the lock screen's answer only
             }
         }
     }

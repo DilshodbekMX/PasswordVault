@@ -353,7 +353,7 @@ class MasterPasswordAsk(
                 MpResult.Wrong, is MpResult.OlderPassword -> state.value = MasterPasswordAskUi(line = PinLine(UiText.of(R.string.pin_mp_wrong)))
                 is MpResult.Wait -> startWait(result.untilElapsedMs)
                 MpResult.NoMemory -> state.value = MasterPasswordAskUi(line = PinLine(UiText.of(R.string.pin_mp_no_memory)))
-                MpResult.TooLate, null -> state.value = MasterPasswordAskUi()
+                MpResult.TooLate, MpResult.NotFinished, null -> state.value = MasterPasswordAskUi() // NotFinished: the lock screen's answer only
             }
         }
     }

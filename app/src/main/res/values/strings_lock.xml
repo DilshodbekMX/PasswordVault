@@ -114,6 +114,10 @@
     <!-- The phone has too little free memory for the check (about 64 MiB). Not counted as a wrong
          try. Followed by the button "Try again". -->
     <string name="lock_mp_no_memory">Your phone doesn’t have enough free memory to open your passwords. Close other apps or restart the phone, then try again.</string>
+    <!-- The new master password was ready and was typed here, but the change could not be finished
+         (lock.md F11 steps 15 and 16). Nothing changed: the new master password stays ready, and
+         PIN and fingerprint work as before. -->
+    <string name="lock_mp_not_finished">Couldn’t finish now. Nothing was changed. Try again later.</string>
     <!-- After several wrong master passwords the field waits 30 seconds (lock.md §6.8). -->
     <string name="lock_mp_wait">Wait 30 seconds, then try again. Take your time and look at your paper.</string>
     <!-- The countdown of that wait, once a second (i18n.md glossary 59, used only here). -->

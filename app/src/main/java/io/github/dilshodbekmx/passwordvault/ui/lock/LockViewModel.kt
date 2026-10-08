@@ -72,6 +72,9 @@ import kotlinx.coroutines.launch
  *   and the wait from `waitUntilElapsedMs`. If the lock answers with `MpResult.Wrong`, `NoMemory` or
  *   `Wait` and leaves its screen as it was, that answer is shown instead, until the lock publishes
  *   another screen; so a lock that reports a try only by its result still gives the message.
+ *   `MpResult.NotFinished` (a ready new master password that could not finish, lock.md F11 steps 15
+ *   and 16) is reported by its result alone, as "Couldn't finish now. Nothing was changed. Try again
+ *   later."
  * - **The wait** counts down on [clock]'s elapsed time (`elapsedRealtime()`), once a second.
  * - **The sheet** ([sheet]) is this screen's own: `LockUiState` has no place for it. Opening it and
  *   closing it tell the lock (`LockIntent.OpenForgotSheet`, `CloseSheet`), so that the lock knows no
@@ -262,6 +265,8 @@ class LockViewModel(
         val error: MpError? = null,
         /** The wait of the last answer (`MpResult.Wait`). */
         val waitUntilElapsedMs: Long? = null,
+        /** The last answer was `MpResult.NotFinished`: the new master password could not finish (lock.md F11 steps 15 and 16). */
+        val notFinished: Boolean = false,
         /** The lock's screen when that answer came: the answer is shown while the lock still shows it. */
         val resultFor: LockScreen.MasterPassword? = null,
         /** "Try again" hid the line of the lock's screen [dismissedOn] until the lock shows another one. */
@@ -279,6 +284,7 @@ class LockViewModel(
             MpResult.Wrong -> Local(error = MpError.Wrong(offerForgot = false, replaced = null), resultFor = screen)
             MpResult.NoMemory -> Local(error = MpError.NoMemory, resultFor = screen)
             is MpResult.Wait -> Local(waitUntilElapsedMs = result.untilElapsedMs, resultFor = screen)
+            MpResult.NotFinished -> Local(notFinished = true, resultFor = screen)
             else -> Local()
         }
     }
@@ -404,7 +410,7 @@ class LockViewModel(
                         alert = true,
                     ),
                 )
-                null -> Unit
+                null -> if (answer?.notFinished == true && !opening) add(LockLine(UiText.of(R.string.lock_mp_not_finished), alert = true))
             }
             if (waitLeft != null) add(LockLine(UiText.of(R.string.lock_mp_wait)))
         }
