@@ -23,6 +23,8 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
 /**
@@ -83,6 +85,18 @@ class FileTaskStore(
     /** The launchers of the activity that is there now; main thread. */
     private var launcher: PickerLauncher? = null
 
+    /** The share sheet was opened, and the app has not been in front since: its grace has not ended. Main thread. */
+    private var shareSheetOpen = false
+
+    /**
+     * One change of the record at a time. A new task, a picker's result, [finish] and [abandon] each
+     * wait in the middle of what they do, for the settings file and some for the place. Without this
+     * a result that was being recorded came back after its task had been given up, and a task begun
+     * while the one before was still being given up lost its record with its picker open. It is
+     * never held while a picker is open (architecture.md §5.2).
+     */
+    private val changes = Mutex()
+
     init {
         scope.launch(dispatchers.io) { sharing.clear() } // kept until the next app start (ux.md §5.19)
     }
@@ -124,7 +138,9 @@ class FileTaskStore(
     /** Forgets the task of [kind]: it is done. Nothing happens to its document. */
     suspend fun finish(kind: FileTask.Kind) {
         withContext(dispatchers.main) {
-            if (recorded.value?.kind == kind) record(null)
+            changes.withLock {
+                if (recorded.value?.kind == kind) record(null)
+            }
         }
     }
 
@@ -135,37 +151,63 @@ class FileTaskStore(
      * wrote into it and the write or its check failed. A document that holds something else (an
      * existing file the user chose to replace), or that cannot be read, is left as it was; one that
      * an import or a restore opened is never touched. Says what was done, for the screen's sentence.
+     *
+     * The store does not know what a task wrote: only [written] says it, and only for the try that
+     * calls. A document that an earlier try filled, before a lock or the end of the process cut it
+     * off, counts as "something else" and is kept ([Cleanup.Kept]).
      */
     suspend fun abandon(kind: FileTask.Kind, written: Boolean = false): Cleanup = withContext(dispatchers.main) {
-        val task = recorded.value?.takeIf { it.kind == kind } ?: return@withContext Cleanup.NoDocument
-        val doc = task.doc
-        val cleanup = if (doc == null || kind.action != Action.CREATE) Cleanup.NoDocument else withContext(NonCancellable) { remove(doc, written) }
-        record(null)
-        cleanup
+        changes.withLock {
+            val task = recorded.value?.takeIf { it.kind == kind } ?: return@withLock Cleanup.NoDocument
+            val doc = task.doc
+            val cleanup = if (doc == null || kind.action != Action.CREATE) Cleanup.NoDocument else withContext(NonCancellable) { remove(doc, written) }
+            record(null)
+            cleanup
+        }
     }
 
     /**
      * Shares [bytes], an encrypted backup, as [name] through the share sheet titled [title] (ux.md
-     * §5.19 item 6), after `Session.beginExternal`; the grace ends when the app is in front again,
-     * because the share sheet returns no result. False, with nothing opened: no activity is there,
-     * the copy could not be written, or no app on the phone shows a share sheet.
+     * §5.19 item 6), after `Session.beginExternal`; the grace ends when the app is in front again
+     * ([inFront]), because the share sheet returns no result. [name] may be the name a place shows
+     * for the backup: a "/" in it becomes "_" in the copy's file name ([BackupSharing.fileName]).
+     * False, with nothing opened: no activity is there, the copy could not be written (also: [name]
+     * is no name, or too long for a file), or no app on the phone shows a share sheet.
      */
     suspend fun share(bytes: ByteArray, name: String, title: CharSequence): Boolean = withContext(dispatchers.main) {
         if (launcher == null) return@withContext false
         val file = try {
-            withContext(NonCancellable + dispatchers.io) { sharing.write(bytes, name) }
+            withContext(NonCancellable + dispatchers.io) { sharing.write(bytes, BackupSharing.fileName(name)) }
         } catch (e: IOException) {
             return@withContext false
+        } catch (e: IllegalArgumentException) {
+            return@withContext false // nothing of a name ("", ".", ".."): no copy was written
         }
         val now = launcher ?: return@withContext false
         session.beginExternal()
         try {
             now.share(file, title)
+            shareSheetOpen = true
             true
         } catch (e: RuntimeException) {
             session.endExternal()
             false
         }
+    }
+
+    /**
+     * The activity is in front again: it was resumed (main thread). That ends the grace of a share
+     * sheet (lock.md §10.3 item 3). The session cannot see it by itself: the share sheet covers the
+     * activity without stopping it, so when it is closed without a choice the process has never
+     * left, and without this the lock delay would not apply for the rest of the 10 minutes. While
+     * the user is in the app chosen in the sheet, the activity is stopped and is not resumed, so
+     * the grace holds as lock.md §10.3 means it to. A picker's grace ends with its result
+     * ([returned]) and is not touched here.
+     */
+    internal fun inFront() {
+        if (!shareSheetOpen) return
+        shareSheetOpen = false
+        session.endExternal()
     }
 
     /** The activity [now] is there to open the system screens (main thread). */
@@ -179,54 +221,64 @@ class FileTaskStore(
     }
 
     /**
-     * The picker of [action] returned [uri], or null when it was closed without a document. Called by
-     * the launchers' callbacks on the main thread, also in a new process, before the lock has decided.
+     * The picker of [action] returned [answer], or null when it was closed without a document. Called
+     * by the launchers' callbacks on the main thread, also in a new process, before the lock has decided.
      */
-    internal fun returned(action: Action, uri: String?) {
+    internal fun returned(action: Action, answer: String?) {
         session.endExternal()
-        val waiting = recorded.value?.takeIf { it.doc == null && it.kind.action == action }
-        if (uri == null) {
-            if (waiting != null) {
-                scope.launch {
-                    record(null)
-                    cancels.emit(waiting)
+        // The picker is whatever app answers the request, and Android 7 lets the user choose another
+        // app than the system's. An answer that is not a content:// address (a file:// address, a
+        // path) is not a place the user chose: it counts as a picker closed without a document.
+        val uri = answer?.takeIf { Places.authorityOf(it) != null }
+        scope.launch {
+            var closed: FileTask? = null // the task whose picker was closed without a document
+            var nobodys: DocRef? = null // a document that "Save as" made and that no task waits for
+            changes.withLock {
+                // Which task waits is looked up here, after whatever was changing the record before:
+                // a task given up meanwhile no longer waits.
+                val waiting = recorded.value?.takeIf { it.doc == null && it.kind.action == action }
+                if (uri == null) {
+                    if (waiting != null) {
+                        record(null)
+                        closed = waiting
+                    }
+                } else if (waiting == null) {
+                    if (action == Action.CREATE) nobodys = DocRef(uri)
+                } else {
+                    val doc = DocRef(uri)
+                    withContext(NonCancellable + dispatchers.io) { documents.keep(doc) }
+                    record(waiting.copy(doc = doc))
                 }
             }
-            return
-        }
-        val doc = DocRef(uri)
-        if (waiting == null) {
-            // No task waits for it. A document the picker created for us is removed while still empty;
-            // one the user chose to open is never touched.
-            if (action == Action.CREATE) scope.launch { removeIfEmpty(doc) }
-            return
-        }
-        scope.launch {
-            withContext(NonCancellable + dispatchers.io) { documents.keep(doc) }
-            record(waiting.copy(doc = doc))
+            closed?.let { cancels.emit(it) }
+            // A document the picker created for us is removed while still empty; one the user chose to
+            // open is never touched.
+            nobodys?.let { removeIfEmpty(it) }
         }
     }
 
     private suspend fun launch(task: FileTask, start: (PickerLauncher) -> Unit): Boolean = withContext(dispatchers.main) {
-        if (launcher == null) return@withContext false
-        val before = recorded.value
-        if (!record(task.copy(doc = null))) {
-            recorded.value = before // not recorded, so the picker does not open
-            return@withContext false
-        }
-        val now = launcher
-        if (now == null) { // the activity went while the task was written
-            record(before)
-            return@withContext false
-        }
-        session.beginExternal()
-        try {
-            start(now)
-            true
-        } catch (e: RuntimeException) { // ActivityNotFoundException, or a launcher already unregistered
-            session.endExternal()
-            record(before)
-            false
+        changes.withLock {
+            if (launcher == null) return@withLock false
+            val before = recorded.value
+            if (!record(task.copy(doc = null))) {
+                recorded.value = before // not recorded, so the picker does not open
+                return@withLock false
+            }
+            val now = launcher
+            if (now == null) { // the activity went while the task was written
+                record(before)
+                return@withLock false
+            }
+            session.beginExternal()
+            try {
+                start(now)
+                true
+            } catch (e: RuntimeException) { // ActivityNotFoundException, or a launcher already unregistered
+                session.endExternal()
+                record(before)
+                false
+            }
         }
     }
 

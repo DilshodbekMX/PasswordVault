@@ -1,6 +1,8 @@
 package io.github.dilshodbekmx.passwordvault.files
 
+import android.net.Uri
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.io.File
 import java.io.IOException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
@@ -112,6 +114,24 @@ class SafDocumentIoTest {
     }
 
     @Test
+    fun aProviderThatTakesOnlyWIsWrittenAndAnOldTailIsCaught() = runBlocking {
+        // Where "wt" is refused as a bad mode the document is written with "w", which cuts nothing
+        // here: what was written is all there is only when the old content was not longer.
+        val old = payload(50, seed = 9)
+        val (id, doc) = document(TestDocuments.W_ONLY, old)
+        val longer = payload(200)
+        assertTrue("longer than the old content", io.write(doc, longer))
+        assertArrayEquals(longer, DocumentsRig.stored(id))
+        val same = payload(200, seed = 3)
+        assertTrue("as long as the old content", io.write(doc, same))
+        assertArrayEquals(same, DocumentsRig.stored(id))
+        val shorter = payload(120, seed = 4)
+        assertFalse("the old tail is still there, and the read-back sees it", io.write(doc, shorter))
+        assertArrayEquals(shorter + same.copyOfRange(120, 200), DocumentsRig.stored(id))
+        assertFalse("also when nothing at all was to be written", io.write(doc, ByteArray(0)))
+    }
+
+    @Test
     fun deleteWhereAllowed() = runBlocking {
         val (id, doc) = document(TestDocuments.PLAIN, payload(10))
         assertTrue("the place allows deleting", io.delete(doc))
@@ -130,6 +150,47 @@ class SafDocumentIoTest {
         assertFalse("the place does not allow deleting", io.delete(doc))
         assertNotNull("still there", DocumentsRig.stored(id))
         assertArrayEquals(payload(10), io.read(doc, 100))
+    }
+
+    @Test
+    fun onlyAnotherAppsDocumentIsWrittenOrRead() = runBlocking {
+        // A picker is any app that answers "Save as" (on Android 7 the user is asked which one), and
+        // its answer is an address. A file:// address, or one of the app's own providers, is the
+        // app's own storage: the vault's files, the lock records, the settings. Nothing is written
+        // there or read from there through DocumentIo.
+        val app = DocumentsRig.app
+        val vaultSide = File(app.filesDir, "pvtest-vault-side.pvault").apply { writeBytes("PVAULT01 the vault".toByteArray()) }
+        val shared = File(File(app.cacheDir, BackupSharing.DIR), "pvtest-own-provider.pvault").apply {
+            parentFile!!.mkdirs()
+            writeBytes("PVAULT01 a shared copy".toByteArray())
+        }
+        val ownProvider = DocRef("content://" + app.packageName + BackupSharing.AUTHORITY_SUFFIX + "/" + BackupSharing.DIR + "/" + shared.name)
+        try {
+            for (doc in listOf(DocRef(Uri.fromFile(vaultSide).toString()), DocRef("file://" + vaultSide.path), ownProvider)) {
+                assertFalse("not written: ${doc.uri}", io.write(doc, "name,url,username,password\r\nBank,,me,hunter2\r\n".toByteArray()))
+                try {
+                    io.read(doc, 100)
+                    fail("not read: ${doc.uri}")
+                } catch (e: IOException) {
+                    // expected
+                }
+                assertFalse("not deleted: ${doc.uri}", io.delete(doc))
+            }
+            assertArrayEquals("the vault's file is as it was", "PVAULT01 the vault".toByteArray(), vaultSide.readBytes())
+            assertArrayEquals("the shared copy is as it was", "PVAULT01 a shared copy".toByteArray(), shared.readBytes())
+        } finally {
+            vaultSide.delete()
+            shared.delete()
+        }
+    }
+
+    @Test
+    fun aPlaceThatCannotBeReachedHasDeletedNothing() {
+        // The app of the place is installed, but its provider does not come up (the phone gives up
+        // after 10 seconds): nothing was deleted, and nothing is known of the document. "Deleted"
+        // here would take the banner of an unprotected export away while the file is still there.
+        val doc = DocRef("content://" + TestDocuments.UNREACHABLE_AUTHORITY + "/document/plain-1")
+        assertFalse("not deleted", io.delete(doc))
     }
 
     @Test
@@ -171,6 +232,40 @@ class SafDocumentIoTest {
         val (_, doc) = document(TestDocuments.PLAIN)
         assertEquals(Place.Other("PV test documents"), io.place(doc))
         assertEquals(doc.uri.substringAfterLast('/') + ".bin", io.name(doc))
+    }
+
+    @Test
+    fun theNameIsReadFromItsOwnColumn() {
+        // A provider may answer with other columns than the one asked for; the first one is its id here.
+        val id = DocumentsRig.newId(TestDocuments.ALL_COLUMNS)
+        val doc = DocumentsRig.newDocument(id, name = "PasswordVault-backup-2026-10-08 (1).pvault").also { made += it }
+        assertEquals("PasswordVault-backup-2026-10-08 (1).pvault", io.name(doc))
+    }
+
+    @Test
+    fun aNameFromAPlaceIsMadeSafeToShow() {
+        // The place is another app, and its name for a document is shown in the app's own sentences
+        // ("Backup saved: …") and kept in the vault: no line breaks, nothing that turns the text
+        // around or hides in it, and not without end.
+        val hostile = "passwords.csv\n\nYour passwords were NOT saved.\r\nCall +998 00 000 00 00\u007F\u2028\u202Egnp.exe\u200B\u2066" + "x".repeat(5_000)
+        val id = DocumentsRig.newId(TestDocuments.PLAIN)
+        val doc = DocumentsRig.newDocument(id, name = hostile).also { made += it }
+        val shown = io.name(doc)!!
+        assertTrue("not without end: ${shown.length}", shown.length <= 255)
+        assertTrue("one line, no control characters", shown.none { Character.getType(it) == Character.CONTROL.toInt() })
+        assertTrue("no line or paragraph separator", shown.none { it == '\u2028' || it == '\u2029' })
+        assertTrue("nothing that turns text around or hides in it", shown.none { Character.getType(it) == Character.FORMAT.toInt() })
+        assertTrue(shown, shown.startsWith("passwords.csv  Your passwords were NOT saved.  Call +998 00 000 00 00  gnp.exexxx"))
+        assertTrue("cut with a mark", shown.endsWith("\u2026"))
+
+        // What a place really shows stays as it is: Uzbek and Cyrillic letters, "(1)" on a clash.
+        for (plain in listOf("PasswordVault-backup-2026-10-08 (1).pvault", "Oʻzbekcha parollar.csv", "Пароли ўзбекча 2026.xlsx", "passwords – копия.json")) {
+            val other = DocumentsRig.newDocument(DocumentsRig.newId(TestDocuments.PLAIN), name = plain).also { made += it }
+            assertEquals(plain, io.name(other))
+        }
+        // Nothing left to show is no name.
+        val blank = DocumentsRig.newDocument(DocumentsRig.newId(TestDocuments.PLAIN), name = " \n\u200B\u202E ").also { made += it }
+        assertNull(io.name(blank))
     }
 
     private fun payload(size: Int, seed: Int = 1): ByteArray = ByteArray(size) { ((it * 31 + seed * 7) xor (it ushr 8)).toByte() }

@@ -36,7 +36,8 @@ object Places {
     /**
      * The place of the document at [uri]. [name] names any other place: it gets the provider's
      * authority and, for the external-storage provider, the root id (an SD card's or USB drive's
-     * volume id); when it finds no name, the place is named by its authority.
+     * volume id); when it finds no name, the place is named by its authority. The name comes from
+     * another app (a provider's label), so it is made safe to show ([ShownName]).
      */
     fun of(uri: String, name: (authority: String, rootId: String?) -> String?): Place {
         val authority = authorityOf(uri).orEmpty()
@@ -45,7 +46,7 @@ object Places {
             authority == DOWNLOADS || authority == MEDIA -> Place.PhoneStorage
             authority == EXTERNAL_STORAGE && rootId in MAIN_STORAGE_ROOTS -> Place.PhoneStorage
             authority in GOOGLE_DRIVE -> Place.GoogleDrive
-            else -> Place.Other(name(authority, rootId)?.takeIf { it.isNotBlank() } ?: authority)
+            else -> Place.Other(ShownName.of(name(authority, rootId)) ?: ShownName.of(authority).orEmpty())
         }
     }
 

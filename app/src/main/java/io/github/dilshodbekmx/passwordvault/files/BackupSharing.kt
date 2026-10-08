@@ -22,13 +22,24 @@ import java.io.IOException
  * @param dir `cache/shared/`.
  */
 class BackupSharing(private val dir: File) {
-    /** Writes [bytes] as [name] in [dir], replacing a copy of that name. Off the main thread. */
+    /**
+     * Writes [bytes] as [name] in [dir], replacing a copy of that name. Off the main thread. The copy is
+     * written under a name of its own and then renamed to [name], so that an app that is still reading
+     * an earlier copy of that name (it was shared before, and the upload is slow) goes on reading that
+     * copy whole: it holds the old file open, which the rename does not change.
+     */
     @Throws(IOException::class)
     fun write(bytes: ByteArray, name: String): File {
         require(name.isNotEmpty() && name != "." && name != ".." && '/' !in name && '\u0000' !in name) { "not a file name" }
         if (!dir.isDirectory && !dir.mkdirs() && !dir.isDirectory) throw IOException("cache/shared cannot be made")
         val file = File(dir, name)
-        FileOutputStream(file).use { it.write(bytes) }
+        val fresh = File.createTempFile("copy", ".tmp", dir)
+        try {
+            FileOutputStream(fresh).use { it.write(bytes) }
+            if (!fresh.renameTo(file)) throw IOException("the copy could not be put in place")
+        } finally {
+            fresh.delete() // after the rename there is nothing of that name any more
+        }
         return file
     }
 
@@ -40,6 +51,14 @@ class BackupSharing(private val dir: File) {
     companion object {
         /** The directory under `cacheDir` that `res/xml/file_paths.xml` names. */
         const val DIR = "shared"
+
+        /**
+         * [name] as the name of the copy's file. What a place shows as a backup's name is not always
+         * a file name (Google Drive shows a "/" in one): a path separator and a NUL become "_", so
+         * that the copy is one file in `cache/shared/` whatever the name. [write] still takes
+         * nothing but a file name.
+         */
+        fun fileName(name: String): String = name.replace('/', '_').replace('\u0000', '_')
 
         /** The `FileProvider`'s authority is the application id followed by this. */
         const val AUTHORITY_SUFFIX = ".files"
