@@ -546,7 +546,26 @@ object Importer {
 
     private fun isWeb(url: String): Boolean = url.startsWith("https://", ignoreCase = true) || url.startsWith("http://", ignoreCase = true)
 
-    private fun hostOf(url: String): String = WebAddress.hostOf(EntryRules.normalizeUrl(url))
+    private fun hostOf(url: String): String = WebAddress.hostOf(website(url))
+
+    /**
+     * [text] as the shared website rule `EntryRules.normalizeUrl` stores it (formats.md §8.4), for a
+     * value of any length. The rule asks whether a text without a scheme looks like a host with a
+     * pattern whose time grows with the square of the text when white space follows many dots, and
+     * an imported value may be megabytes long. A text with white space in it never looks like a host
+     * (the pattern allows none), so the rule only trims it: that is done here, without asking.
+     *
+     * White space here is every character that the pattern's `\s` means on the JVM or on Android,
+     * whose pattern engines differ (ASCII only on the one, Unicode on the other): so a website with,
+     * say, a no-break space in it is read the same way on both.
+     */
+    private fun website(text: String): String {
+        val url = text.trim()
+        return if (url.any { it.isWhitespace() || it == NEXT_LINE }) url else EntryRules.normalizeUrl(url)
+    }
+
+    /** U+0085, white space by Unicode's property though not by `Char.isWhitespace`. */
+    private const val NEXT_LINE = '\u0085'
 
     private val YES = setOf("1", "true", "yes", "y", "да", "ha", "ҳа")
 
@@ -646,7 +665,7 @@ object Importer {
             val urls = ArrayList<String>()
             val seen = HashSet<String>()
             for (u in raw.urls) {
-                val url = EntryRules.normalizeUrl(line(u))
+                val url = website(line(u))
                 if (url.isNotEmpty() && seen.add(url)) urls.add(url)
             }
             var long = 0
@@ -677,7 +696,7 @@ object Importer {
 
             var title = line(raw.title).trim()
             val fromFile = titleFromFile && title.isNotEmpty()
-            if (title.isEmpty()) title = BitwardenJson.titleFor(kept, username, nowMs, texts)
+            if (title.isEmpty()) title = madeName(kept.firstOrNull(), username)
             if (EntryRules.length(title) > EntryRules.TITLE_MAX) {
                 moved.add(0, title)
                 title = EntryRules.cut(title, EntryRules.TITLE_MAX).trimEnd()
@@ -739,9 +758,19 @@ object Importer {
         private fun nameOf(raw: Entry): String {
             val title = TextHygiene.replaceUnpairedSurrogates(TextHygiene.removeControls(raw.title, lineBreaks = false)).trim()
             if (title.isNotEmpty()) return EntryRules.cut(title, EntryRules.TITLE_MAX)
-            val urls = raw.urls.map { EntryRules.normalizeUrl(TextHygiene.removeControls(it, lineBreaks = false)) }
-            return BitwardenJson.titleFor(urls, TextHygiene.removeControls(raw.username, lineBreaks = false).trim(), nowMs, texts)
+            val first = raw.urls.asSequence().map { website(TextHygiene.removeControls(it, lineBreaks = false)) }.firstOrNull { it.isNotEmpty() }
+            return madeName(first, TextHygiene.removeControls(raw.username, lineBreaks = false).trim())
         }
+
+        /**
+         * The name of an account that came without one, as `BitwardenJson.titleFor` makes it: the host
+         * of its first website, else its username, else "Untitled" and the time. [firstWebsite] is as
+         * [website] left it, so its host is taken here, without asking the shared rule once more
+         * whether the text looks like a host.
+         */
+        private fun madeName(firstWebsite: String?, username: String): String =
+            firstWebsite?.let { EntryRules.storedTitle(WebAddress.hostOf(it)).ifEmpty { null } }
+                ?: BitwardenJson.titleFor(emptyList(), username, nowMs, texts)
 
         /**
          * The extra fields as the model holds them: names trimmed and on one line, values with line

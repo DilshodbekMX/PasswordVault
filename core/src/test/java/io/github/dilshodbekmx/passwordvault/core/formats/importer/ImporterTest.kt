@@ -4,6 +4,7 @@ import io.github.dilshodbekmx.passwordvault.core.formats.BitwardenJson
 import io.github.dilshodbekmx.passwordvault.core.formats.ColumnMeaning
 import io.github.dilshodbekmx.passwordvault.core.formats.GoogleCsv
 import io.github.dilshodbekmx.passwordvault.core.formats.ImportChange
+import io.github.dilshodbekmx.passwordvault.core.formats.ImportLeftOut
 import io.github.dilshodbekmx.passwordvault.core.formats.Importer
 import io.github.dilshodbekmx.passwordvault.core.formats.IsoTime
 import io.github.dilshodbekmx.passwordvault.core.formats.TextDecoding.Encoding
@@ -259,6 +260,46 @@ class ImporterTest {
             assertTrue(a.entry.notes.startsWith("https://h11.example\nhttps://h12.example\n"))
             assertTrue("$ms ms with $repeats repeats", ms < 5_000)
         }
+    }
+
+    /**
+     * The shared website rule (`EntryRules.normalizeUrl`) asks whether a text looks like a host with a
+     * pattern whose time grows with the square of the text when a space follows many dots. An imported
+     * value may be megabytes long: one website of 200,000 such characters took 40 s to read, and 4,000
+     * accounts each with one of 2,000 characters, which the rule is asked about twice when the account
+     * has no name, half a minute.
+     */
+    @Test
+    fun aWebsiteOfDotsWithASpaceIsReadInTimeThatGrowsWithTheFile() {
+        val long = "a.".repeat(100_000) + " b"
+        val short = "a.".repeat(1_000) + " b"
+        val files = listOf(
+            // In the website column of an account with a name: too long for a website, so it goes to the notes.
+            csv("name,url,username,password", "Site,\"$long\",u,p"),
+            // Firefox's layout, which compares the host of the website with the host of the form.
+            csv("url,username,password,httpRealm,formActionOrigin", "\"$long\",u,p,,https://form.example"),
+            // An account that is left out (its password is too long) is listed by a name made from its website.
+            csv("name,url,username,password", ",\"$long\",,${"p".repeat(1_001)}"),
+            // Accounts without a name, each named after a website that is short enough to be kept.
+            csv("name,url,username,password", *Array(4_000) { ",\"$short\",u$it,p" }),
+        )
+        val times = ArrayList<Long>()
+        val read = files.map { text ->
+            val start = System.nanoTime()
+            file(text).also { times.add((System.nanoTime() - start) / 1_000_000) }
+        }
+        // What is read is what the rule gives: such a text is no host, so it is kept as written.
+        val a = read[0].accounts.single()
+        assertTrue(a.entry.urls.isEmpty())
+        assertEquals(long.substring(0, 10_000), a.entry.notes)
+        assertEquals("[LONG_WEBSITES_MOVED×1, NOTES_CUT×1]", a.changes.toString())
+        assertEquals("[LONG_WEBSITES_MOVED×1, NOTES_CUT×1]", read[1].accounts.single().changes.toString())
+        assertEquals(ImportLeftOut.Kind.PASSWORD_TOO_LONG, read[2].leftOut.single().kind)
+        assertEquals(long.substring(0, 200), read[2].leftOut.single().name)
+        assertEquals(4_000, read[3].accounts.size)
+        assertEquals(listOf(short), read[3].accounts.last().entry.urls)
+        assertEquals(short.substring(0, 200), read[3].accounts.last().entry.title) // the "host" of a text that is no address
+        assertTrue("$times ms", times.all { it < 5_000 })
     }
 
     @Test
