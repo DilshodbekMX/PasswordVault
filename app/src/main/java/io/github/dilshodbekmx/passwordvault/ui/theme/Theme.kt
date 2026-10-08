@@ -1,21 +1,15 @@
 package io.github.dilshodbekmx.passwordvault.ui.theme
 
-import android.content.Context
 import android.graphics.Color
-import android.os.Build
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.LocalActivity
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -26,33 +20,54 @@ import androidx.compose.ui.text.style.Hyphens
 import androidx.compose.ui.text.style.LineBreak
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.dilshodbekmx.passwordvault.settings.AppSettings
+import io.github.dilshodbekmx.passwordvault.settings.StyleChoice
 import io.github.dilshodbekmx.passwordvault.settings.ThemeChoice
 
 /**
  * The app's look, around the whole navigation (architecture.md §3.6: `AppRoot` calls it with
- * `graph.settings`). Light or dark as Settings › Theme says (`AppSettings.theme`: System, Light or
- * Dark; ux.md §5.18), and the status and navigation bar icons follow the same choice, so a forced
- * light theme on a phone in dark mode still has readable bar icons.
+ * `graph.settings`): the two choices of Settings › Appearance (ux.md §5.18;
+ * docs/design/looks/README.md).
  *
- * The colours are Material 3's: the wallpaper-based scheme on Android 12 and later, a fixed scheme
- * before (ux.md §8 "Contrast"; Material 3 colour roles meet WCAG AA when used as pairs). Russian
- * text is hyphenated (i18n.md §4.5 rule 4); Uzbek has no hyphenation patterns on Android.
+ * - **Colours** (`AppSettings.style`): Bank blue, Emerald or Night vault, or the colours of the
+ *   phone's wallpaper (Android 12 and later; Bank blue stands in for them where the phone has none).
+ * - **Light or dark** (`AppSettings.theme`): System, Light or Dark. Every style has both schemes. The
+ *   status and navigation bar icons follow the same choice, so a forced light theme on a phone in
+ *   dark mode still has readable bar icons.
+ *
+ * Both are app settings outside the vault, read before unlock, so the lock screen has them too. A
+ * change applies at once, without a restart, to every screen, dialog and sheet: they are all drawn
+ * with `MaterialTheme.colorScheme` and [LocalLook], which this provides.
+ *
+ * Every text pair of the app's own schemes has a contrast of at least 4.5:1 and every outline that
+ * carries meaning 3:1 (ux.md §8 "Contrast"; `SchemeContrastTest`). Russian text is hyphenated
+ * (i18n.md §4.5 rule 4); Uzbek has no hyphenation patterns on Android.
  */
 @Composable
 fun PasswordVaultTheme(settings: AppSettings, content: @Composable () -> Unit) {
-    val choice by settings.theme.collectAsStateWithLifecycle()
-    val dark = isDark(choice)
+    val theme by settings.theme.collectAsStateWithLifecycle()
+    val style by settings.style.collectAsStateWithLifecycle()
+    val dark = isDark(theme)
     SystemBarsFollow(dark)
-    PasswordVaultLook(dark, content)
+    PasswordVaultLook(style, dark, content)
 }
 
 /**
- * The same look for a fixed [theme], without touching the system bars: for previews and tests, and
- * for the few parts drawn outside the app's theme (the window kit's notice of an obscured touch).
+ * The look of a fixed [style] and [theme], without touching the system bars: for previews and
+ * tests, and for the previews of the styles in Settings › Appearance.
+ */
+@Composable
+fun PasswordVaultTheme(style: StyleChoice, theme: ThemeChoice, content: @Composable () -> Unit) {
+    PasswordVaultLook(style, isDark(theme), content)
+}
+
+/**
+ * The default style, Bank blue, in a fixed [theme], without touching the system bars: for previews
+ * and tests, and for the few parts drawn outside the app's theme (the window kit's notice of an
+ * obscured touch).
  */
 @Composable
 fun PasswordVaultTheme(theme: ThemeChoice, content: @Composable () -> Unit) {
-    PasswordVaultLook(isDark(theme), content)
+    PasswordVaultLook(StyleChoice.DEFAULT, isDark(theme), content)
 }
 
 /** Whether [choice] means dark: System follows the phone. */
@@ -64,26 +79,28 @@ fun isDark(choice: ThemeChoice): Boolean = when (choice) {
 }
 
 /**
- * The colour scheme: on Android 12 and later the wallpaper-based one, before that Material 3's
- * baseline scheme.
+ * The look of [style] in light or in [dark] on this phone, remembered: the wallpaper's colours are
+ * read again when the configuration changes, which a new wallpaper causes.
  */
-fun passwordVaultColorScheme(dark: Boolean, context: Context): ColorScheme = when {
-    Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ->
-        if (dark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-    dark -> darkColorScheme()
-    else -> lightColorScheme()
+@Composable
+fun rememberLook(style: StyleChoice, dark: Boolean): Look {
+    val context = LocalContext.current
+    val configuration = LocalConfiguration.current
+    return remember(style, dark, context, configuration) { Looks.shown(style, dark, context) }
 }
 
 @Composable
-private fun PasswordVaultLook(dark: Boolean, content: @Composable () -> Unit) {
-    val context = LocalContext.current
+private fun PasswordVaultLook(style: StyleChoice, dark: Boolean, content: @Composable () -> Unit) {
+    val look = rememberLook(style, dark)
     val language = LocalConfiguration.current.locales[0]?.language
     val typography = remember(language) { typographyFor(language) }
-    MaterialTheme(
-        colorScheme = passwordVaultColorScheme(dark, context),
-        typography = typography,
-        content = content,
-    )
+    CompositionLocalProvider(LocalLook provides look) {
+        MaterialTheme(
+            colorScheme = look.colors,
+            typography = typography,
+            content = content,
+        )
+    }
 }
 
 /**

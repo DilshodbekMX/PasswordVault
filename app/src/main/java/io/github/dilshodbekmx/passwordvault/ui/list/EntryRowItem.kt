@@ -5,7 +5,6 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -22,7 +21,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -41,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.dilshodbekmx.passwordvault.R
 import io.github.dilshodbekmx.passwordvault.core.search.matchedRanges
+import io.github.dilshodbekmx.passwordvault.ui.theme.LocalLook
 
 /**
  * What a row's taps, its menu and its TalkBack actions do (ux.md §5.11). Made once per screen.
@@ -61,7 +60,7 @@ internal class RowActions(
 )
 
 /**
- * One account of the list (ux.md §5.11, §8): the round badge with its first letter, the title (up
+ * One account of the list (ux.md §5.11, §8): the badge with its first letter, the title (up
  * to two lines), the username or the first website's host (one line, always left to right), a
  * clock while a password change is pending, and the copy button.
  *
@@ -218,22 +217,26 @@ private fun rowActionsFor(row: EntryRow, key: String, actions: RowActions, label
     }
 
 /**
- * The round badge with the title's first letter (ux.md §5.11): one of eight tones by a hash of the
- * title, the letter white on it at 5:1 contrast or more. It grows with the font size, and TalkBack
- * does not read it: the title says the same.
+ * The badge with the title's first letter (ux.md §5.11): one of eight tones by a hash of the title.
+ * The tones and the badge's shape are the style's (docs/design/looks/README.md "Avatars", read from
+ * `LocalLook`): a circle, or a square with rounded corners, and in every tone the letter has a
+ * contrast of at least 4.5:1 on the badge. It grows with the font size, and TalkBack does not read
+ * it: the title says the same.
  */
 @Composable
 private fun InitialBadge(row: EntryRow) {
     val size = with(LocalDensity.current) { maxOf(BADGE_SIZE, BADGE_SIZE.value.sp.toDp()) }
+    val look = LocalLook.current
+    val tone = look.avatarTones[row.tone.mod(look.avatarTones.size)]
     Box(
         modifier = Modifier
             .size(size)
-            .clip(CircleShape)
-            .background(BADGE_COLOURS[row.tone])
+            .clip(look.avatarShape)
+            .background(tone.background)
             .clearAndSetSemantics {},
         contentAlignment = Alignment.Center,
     ) {
-        Text(row.initial, color = Color.White, style = MaterialTheme.typography.titleMedium, maxLines = 1)
+        Text(row.initial, color = tone.letter, style = MaterialTheme.typography.titleMedium, maxLines = 1)
     }
 }
 
@@ -247,21 +250,5 @@ internal fun bold(text: String, query: String?): AnnotatedString {
         for (range in ranges) addStyle(SpanStyle(fontWeight = FontWeight.Bold), range.first, range.last + 1)
     }
 }
-
-/**
- * The badge's eight tones (Material's blue 800, green 800, purple 800, pink 800, teal 800, deep
- * orange 900, indigo 700 and brown 600): white text on each has a contrast of 5.1:1 to 10.2:1, above
- * the 4.5:1 of ux.md §5.11, in the light and the dark theme alike.
- */
-private val BADGE_COLOURS = listOf(
-    Color(0xFF1565C0),
-    Color(0xFF2E7D32),
-    Color(0xFF6A1B9A),
-    Color(0xFFAD1457),
-    Color(0xFF00695C),
-    Color(0xFFBF360C),
-    Color(0xFF303F9F),
-    Color(0xFF6D4C41),
-)
 
 private val BADGE_SIZE = 40.dp
