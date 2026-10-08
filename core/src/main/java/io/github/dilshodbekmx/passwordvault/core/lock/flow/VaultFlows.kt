@@ -302,10 +302,12 @@ internal class VaultFlows(private val core: LockCore) {
      *    that `fsync` handed over may not be on the flash yet (§2.3, §6.7, [V-S8]), and a power cut
      *    must not keep the deletion and lose the settling.
      * 2. Storage deletes that vault's files (`VaultPort.deleteAside`).
-     * 3. Only after that returned true: `lock/<vault_id>/`, then the keys its records name. A
-     *    directory that cannot be deleted is left: a lock directory whose vault is gone is left alone
-     *    by every start (§5.11), and its keys are deleted here all the same. Keys of slots that were
-     *    replaced earlier are named by no record any more, and the next sweep deletes them (§5.7).
+     * 3. Only after that returned true: `lock/<vault_id>/`, then, once its deletion is [SETTLED_MS]
+     *    old, the keys its records named: a record that a power cut brings back must not name a deleted
+     *    key (T14). A directory that cannot be deleted is left with its keys: a lock directory whose
+     *    vault is gone is left alone by every start (§5.11). Keys of slots that were replaced earlier
+     *    are named by no record any more, and the next sweep deletes them (§5.7), as it deletes these
+     *    two when the process dies before they are.
      *
      * A lock or `ON_STOP` while the check runs, or before the files are deleted, deletes nothing.
      * The current vault is never deleted here. [chars] stays the caller's, which wipes it.
@@ -337,16 +339,20 @@ internal class VaultFlows(private val core: LockCore) {
             return AsideOutcome.NotSaved
         }
         val aliases = aliasesNamedBy(lock)
-        try {
+        val dirDeleted = try {
             core.files.deleteDir(FileRecordStore.dir(core.root, vaultId))
+            true
         } catch (e: Exception) {
-            // Left behind: a lock directory whose vault is gone is left alone at every start (§5.11).
+            false // left behind, with its keys: a lock directory whose vault is gone is left alone at every start (§5.11)
         }
-        for (alias in aliases) {
-            try {
-                core.deviceKeys.delete(alias)
-            } catch (e: RuntimeException) {
-                // Ignored (§5.7): no record will name it, so the next sweep deletes it.
+        if (dirDeleted && aliases.isNotEmpty()) {
+            core.clock.delayUntilElapsed(core.clock.elapsedMs() + SETTLED_MS)
+            for (alias in aliases) {
+                try {
+                    core.deviceKeys.delete(alias)
+                } catch (e: RuntimeException) {
+                    // Ignored (§5.7): no record names it any more, so the next sweep deletes it.
+                }
             }
         }
         core.forgetLock(vaultId)

@@ -248,7 +248,7 @@ class OldPasswordsFlowTest {
     }
 
     @Test
-    fun delete_whenTheLockDirectoryCannotBeDeleted_theVaultAndItsKeysAreGoneAll_theSame() {
+    fun delete_whenTheLockDirectoryCannotBeDeleted_theVaultIsGone_andTheDirectoryStaysWithItsKeys() {
         val old = phone()
         openTheApp()
         f.files.fail(FakeRecordFiles.Op.DELETE_DIR)
@@ -257,12 +257,42 @@ class OldPasswordsFlowTest {
 
         assertNull(f.port.vault(OTHER_VAULT))
         assertTrue(f.files.hasDir(f.dirOf(OTHER_VAULT))) // left: a directory whose vault is gone is left alone at every start
-        assertFalse(PinWrap.alias(old.pin.id) in f.keys.aliases)
+        assertTrue(PinWrap.alias(old.pin.id) in f.keys.aliases) // its records still name its keys, so they stay
+        assertTrue(RecordCodec.FINGERPRINT_ALIAS_PREFIX + old.fingerprint.id in f.keys.aliases)
         f.restart()
         f.startInFront()
+        assertTrue(f.files.hasDir(f.dirOf(OTHER_VAULT)))
+        assertTrue(PinWrap.alias(old.pin.id) in f.keys.aliases)
         f.type(PIN)
         assertEquals(VAULT, f.port.openVaultId)
         assertEquals(emptyList<AsideVault>(), f.engine.summary.value.aside)
+    }
+
+    @Test
+    fun delete_theKeysGoASecondAfterTheDirectory_soThatNoRecordAPowerCutBringsBackNamesADeletedKey() {
+        val old = phone()
+        val deletedAt = ArrayList<Long>()
+        var dirGoneAt = -1L
+        f.files.onBoundary = { _, at -> if (at == "deleteDir ${f.dirOf(OTHER_VAULT)}: after") dirGoneAt = f.clock.elapsedMs() }
+        val inner = f.keys.device
+        f.deviceKeys = object : DeviceKeys {
+            override fun ensureCanary(): KeyCreate = inner.ensureCanary()
+
+            override fun aliases(): List<String> = inner.aliases()
+
+            override fun delete(alias: String) {
+                deletedAt += f.clock.elapsedMs()
+                inner.delete(alias)
+            }
+        }
+        f.rebuild()
+        openTheApp()
+
+        assertEquals(AsideOutcome.Done, delete(OTHER_VAULT, Secrets.OTHER))
+
+        assertEquals(2, deletedAt.size)
+        assertTrue("$deletedAt, $dirGoneAt", dirGoneAt >= 0 && deletedAt.all { it - dirGoneAt >= 1_000 })
+        assertFalse(PinWrap.alias(old.pin.id) in f.keys.aliases)
     }
 
     // ---- "Delete" settles another vault's replaced mark first ----------------------------------------
