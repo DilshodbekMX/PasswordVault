@@ -279,7 +279,10 @@ object Importer {
 
     private fun readCsv(bytes: ByteArray, nowMs: Long, texts: EditTexts, random: RandomSource, choices: Choices): Result {
         val decoded = choices.encoding?.let { TextDecoding.decode(bytes, it) } ?: TextDecoding.decode(bytes)
-        if (decoded.text.indexOf('\u0000') >= 0) return Result.NotText
+        // Not text: a NUL near the start, where `FileKind` looks too. A NUL further on is only a control
+        // character, removed from a value and counted, or listed in a password: one stray byte late in a
+        // large export must not lose the whole file.
+        if (decoded.text.indexOf('\u0000') in 0 until NUL_SNIFF_CHARS) return Result.NotText
         val decoding = ImportDecoding(
             decoded.encoding, decoded.why, decoded.byteOrderMarks, decoded.replacedBytes, decoded.replacedLines,
             decoded.replacedLineCount,
@@ -337,6 +340,9 @@ object Importer {
             ),
         )
     }
+
+    /** How far into a CSV text a NUL makes it no text at all. */
+    private const val NUL_SNIFF_CHARS = 8_192
 
     private val BITWARDEN_KEYS = listOf("loginuri", "loginusername", "loginpassword")
     private val KEEPASSXC_KEYS = listOf("group", "title", "username", "password", "url", "notes")

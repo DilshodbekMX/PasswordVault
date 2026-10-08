@@ -192,6 +192,21 @@ class ImporterTest {
     }
 
     @Test
+    fun aNulFarIntoACsvIsAControlCharacterNotTheEndOfTheImport() {
+        val rows = (1..300).joinToString("") { "s$it,https://s$it.example,u$it,p$it,note $it\n" }
+        val text = "name,url,username,password,note\n" + rows + "Last,https://last.example,u,p\u0000w,n\u0000ote\n"
+        assertTrue(text.indexOf('\u0000') > 8_192)
+        val file = file(text)
+        val last = file.accounts.last()
+        assertEquals("p\u0000w", last.entry.password) // a password is never altered: kept and listed
+        assertEquals("[PASSWORD_HAS_CONTROL×1]", last.changes.toString())
+        assertEquals("note", last.entry.notes)
+        assertEquals(1, file.removedControls)
+        // Near the start it is not text at all, as FileKind says.
+        assertEquals(Importer.Result.NotText, read("name,url\u0000,username,password\n"))
+    }
+
+    @Test
     fun tenThousandRowsAreReadAndOneMoreIsRefused() {
         val header = "name,url,username,password\n"
         fun rows(n: Int) = (1..n).joinToString("") { "s$it,https://s$it.example,u$it,p$it\n" }
