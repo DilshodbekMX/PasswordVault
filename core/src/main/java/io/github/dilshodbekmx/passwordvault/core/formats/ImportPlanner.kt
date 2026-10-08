@@ -359,46 +359,80 @@ object ImportPlanner {
             return sb.toString()
         }
 
-        private class Open(var account: ImportAccount, val tokens: MutableSet<String>, var absorbed: Int = 0)
+        /** An account of the result: the first of its rows, and every row joined to it since. */
+        private class Open(var account: ImportAccount, val tokens: MutableSet<String>, val group: String, val name: String) {
+            var absorbed = 0
+        }
 
+        /**
+         * Joins [accounts] in their order: each one goes into the earliest account before it that it is
+         * related to, that has the same login and room for its websites, and whose name it may share;
+         * otherwise it starts an account of its own. Open accounts are found through two indexes, by
+         * (login, token) and by (login, name, token), which keep only the accounts with room, so that a
+         * file of thousands of rows of one login is joined in linear time.
+         */
         fun join(accounts: List<ImportAccount>): Joined {
             val open = ArrayList<Open>(accounts.size)
-            // group + token → the open accounts holding that token, in order
-            val index = HashMap<String, MutableList<Int>>()
+            val byToken = HashMap<String, MutableList<Int>>()
+            val byNameAndToken = HashMap<String, MutableList<Int>>()
+
+            fun keys(o: Open, token: String) = listOf(
+                byToken to o.group + SEPARATOR + token,
+                byNameAndToken to o.group + SEPARATOR + o.name + SEPARATOR + token,
+            )
+
+            fun register(o: Open, at: Int, tokens: Collection<String>) {
+                for (t in tokens) {
+                    for ((index, key) in keys(o, t)) {
+                        val list = index.getOrPut(key) { ArrayList(1) }
+                        val pos = list.binarySearch(at).let { if (it < 0) -it - 1 else it } // each list in the accounts' order
+                        if (pos >= list.size || list[pos] != at) list.add(pos, at)
+                    }
+                }
+            }
+
+            fun unregister(o: Open, at: Int) {
+                for (t in o.tokens) {
+                    for ((index, key) in keys(o, t)) {
+                        val list = index[key] ?: continue
+                        val pos = list.binarySearch(at)
+                        if (pos >= 0) list.removeAt(pos)
+                    }
+                }
+            }
+
             for (a in accounts) {
                 val e = a.entry
                 val tokens = if (e.password.isEmpty() || a.wrongLength != null) emptySet() else tokens(e)
                 if (tokens.isEmpty()) {
-                    open.add(Open(a, HashSet()))
+                    open.add(Open(a, HashSet(), "", ""))
                     continue
                 }
-                val g = group(e)
+                val group = group(e)
+                val name = e.title.trim().lowercase(Locale.ROOT)
+                // A name that is only its website's may give way to any account's; another only to the same name.
+                val anyName = nameIsOnlyItsSite(a)
                 var target = -1
                 for (t in tokens) {
-                    for (i in index[g + SEPARATOR + partner(t)].orEmpty()) {
+                    val key = if (anyName) group + SEPARATOR + partner(t) else group + SEPARATOR + name + SEPARATOR + partner(t)
+                    for (i in (if (anyName) byToken else byNameAndToken)[key].orEmpty()) {
                         if (target in 0..i) break
-                        if (canJoin(open[i].account, a)) {
+                        if (hasRoom(open[i].account, a)) {
                             target = i
                             break
                         }
                     }
                 }
                 if (target < 0) {
-                    open.add(Open(a, tokens.toMutableSet()))
-                    val at = open.size - 1
-                    for (t in tokens) index.getOrPut(g + SEPARATOR + t) { ArrayList(1) }.add(at)
+                    val o = Open(a, tokens.toMutableSet(), group, name)
+                    open.add(o)
+                    if (e.urls.size < EntryRules.URLS_MAX) register(o, open.size - 1, tokens)
                 } else {
                     val o = open[target]
                     o.account = o.account.joinedWith(a)
                     o.absorbed++
-                    for (t in tokens) {
-                        if (o.tokens.add(t)) {
-                            val list = index.getOrPut(g + SEPARATOR + t) { ArrayList(1) }
-                            // keep each list in the order of the accounts
-                            val pos = list.binarySearch(target).let { if (it < 0) -it - 1 else it }
-                            if (pos >= list.size || list[pos] != target) list.add(pos, target)
-                        }
-                    }
+                    val fresh = tokens.filter { o.tokens.add(it) }
+                    if (o.account.entry.urls.size >= EntryRules.URLS_MAX) unregister(o, target) else register(o, target, fresh)
                 }
             }
             var rows = 0
@@ -412,12 +446,9 @@ object ImportPlanner {
             return Joined(open.map { it.account }, rows, joinedAccounts)
         }
 
-        /** [a] can take [b]'s websites: room for them within 10, and [b]'s name is the same or only its website's. */
-        private fun canJoin(a: ImportAccount, b: ImportAccount): Boolean {
-            val fresh = b.entry.urls.count { it !in a.entry.urls }
-            if (a.entry.urls.size + fresh > EntryRules.URLS_MAX) return false
-            return b.entry.title.trim().equals(a.entry.title.trim(), ignoreCase = true) || nameIsOnlyItsSite(b)
-        }
+        /** [a] has room within 10 websites for those of [b] it does not have yet. */
+        private fun hasRoom(a: ImportAccount, b: ImportAccount): Boolean =
+            a.entry.urls.size + b.entry.urls.count { it !in a.entry.urls } <= EntryRules.URLS_MAX
     }
 }
 

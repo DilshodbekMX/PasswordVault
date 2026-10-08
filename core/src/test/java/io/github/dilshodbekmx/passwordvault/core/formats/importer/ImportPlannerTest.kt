@@ -110,6 +110,29 @@ class ImportPlannerTest {
     }
 
     @Test
+    fun tenThousandRowsOfOneLoginArePlannedQuickly() {
+        // Rows named after their site: accounts of 10 websites each.
+        val sites = (1..10_000).map { "s$it.google.com,https://s$it.google.com/,aziz@gmail.com,G00gle!," }
+        val joined = file(csv(header, *sites.toTypedArray()))
+        var start = System.nanoTime()
+        val many = plan(joined)
+        val joinMs = (System.nanoTime() - start) / 1_000_000
+        assertEquals(1_000, many.accounts.size)
+        assertTrue(many.accounts.all { it.entry.urls.size == 10 })
+        assertEquals(10_000 to 1_000, many.relatedRows to many.relatedAccounts)
+        assertTrue("$joinMs ms", joinMs < 1_000)
+        // Rows the user named: none is joined, and none is a repeat (each has its own website).
+        val named = file(csv(header, *(1..10_000).map { "Account $it,https://s$it.google.com/,aziz@gmail.com,G00gle!," }.toTypedArray()))
+        start = System.nanoTime()
+        val apart = plan(named)
+        val apartMs = (System.nanoTime() - start) / 1_000_000
+        assertEquals(10_000, apart.accounts.size)
+        assertEquals(0, apart.relatedAccounts)
+        assertTrue("$apartMs ms", apartMs < 1_000)
+        println("10,000 rows of one login: planned in $joinMs ms joined, $apartMs ms apart")
+    }
+
+    @Test
     fun bitwardensRowsAndJsonItemsAreNeverJoined() {
         val bitwarden = file(
             csv(

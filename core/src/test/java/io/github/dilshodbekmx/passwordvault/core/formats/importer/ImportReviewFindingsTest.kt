@@ -483,7 +483,8 @@ class ImportReviewFindingsTest {
         assertEquals(0, last.alreadyHere)
         assertTrue(last.fits)
         val median = times.sorted()[times.size / 2]
-        assertTrue("median ${median} ms of $times", median < 1_000)
+        println("P16: a plan of 10,000 accounts against a vault of 10,000 took a median $median ms (runs: $times)")
+        assertTrue("median $median ms of $times", median < 1_000)
     }
 
     private fun indexOf(bytes: ByteArray, part: ByteArray): Int {
