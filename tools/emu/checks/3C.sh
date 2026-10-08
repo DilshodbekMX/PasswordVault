@@ -26,7 +26,8 @@
 #                .bin on Android 17. And with that table a provider keeps every suggested name
 #                (FileUtils.splitFileName's rule, as DocumentNamesTest states it);
 #              - adb.sh --connected on the API 28 device with the runner's package argument: the
-#                seven classes of APP-AT/files/ and nothing else, 50 tests, none failed.
+#                seven classes of APP-AT/files/ with at least the tests they have at wave-3C-merged
+#                (50), none failed, and no class of another package.
 #   connected  adb.sh --connected on the three devices: every connected test, and every serial has a
 #              passing report (BUILD SUCCESSFUL alone does not count). A class that failed is run once
 #              more, alone, on that device (one run per class: of a comma-separated class list the
@@ -293,7 +294,8 @@ files_on_28() {
     return $rc
 }
 
-# The classes of APP-AT/files/ with their tests: the same on every API level (no @SdkSuppress).
+# The classes of APP-AT/files/ with their tests at wave-3C-merged: the same on every API level (no
+# @SdkSuppress).
 FILES_CLASSES="files.BackupSharingTest=3 files.DocumentNamesTest=3 files.FileTaskStoreTest=15 files.PickerContractsTest=4 files.PickerProcessTest=8 files.PlacesTest=5 files.SafDocumentIoTest=12"
 
 files_classes() {
@@ -318,17 +320,20 @@ for f in sorted(glob.glob(d + "/TEST-*.xml")):
                 failed.append(f"{cls}.{case.get('name')}")
 bad = 0
 for cls, n in want.items():
-    if ran[cls] != n:
-        print(f"   {cls}: {ran[cls]} tests ran, not {n}")
+    if ran[cls] < n:
+        print(f"   {cls}: {ran[cls]} tests ran, fewer than its {n}")
         bad = 1
-for cls in sorted(set(ran) - set(want)):
-    print(f"   {cls}: {ran[cls]} tests of another package ran")
-    bad = 1
+others = sorted(set(ran) - set(want))
+for cls in others:
+    if not cls.startswith("files."):
+        print(f"   {cls}: {ran[cls]} tests of another package ran")
+        bad = 1
 for name in failed:
     print(f"   failed: {name}")
     bad = 1
-print(f"   API 28 ({serial}): {sum(ran.values())} tests ran (5.1 has {sum(want.values())}), {len(failed)} failed; "
-      + ", ".join(f"{c.split('.')[-1]} {ran[c]}" for c in want))
+print(f"   API 28 ({serial}): {sum(ran.values())} tests ran (5.1 had {sum(want.values())} at wave-3C-merged), {len(failed)} failed; "
+      + ", ".join(f"{c.split('.')[-1]} {ran[c]}" for c in want)
+      + (f"; other classes of the package: {', '.join(f'{c} {ran[c]}' for c in others if c.startswith('files.'))}" if any(c.startswith("files.") for c in others) else ""))
 sys.exit(bad)
 EOF
 }
@@ -613,7 +618,7 @@ for part in files connected skeleton smoke window; do
         files)
             pv_step "formats.md 2 rule 4: the platform's MIME table on API 24, 28 and 37 is what the rule says, and a provider keeps the suggested names" -- mime_tables
             pv_step "5.1's device tests alone on API 28 (adb.sh --connected, the runner's package argument)" -- files_on_28
-            pv_step "the seven classes of APP-AT/files/ ran on API 28 with their 50 tests, none failed, nothing else ran" -- files_classes
+            pv_step "the seven classes of APP-AT/files/ ran on API 28 with at least their 50 tests, none failed, no class of another package" -- files_classes
             studio_runs "$began" ;;
         connected)
             pv_step "connectedDebugAndroidTest on API 24, 28 and 37 (adb.sh --connected; a failed class once more alone)" -- connected_tests
