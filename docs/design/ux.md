@@ -1077,7 +1077,7 @@ This is for a user who has forgotten the master password while the PIN or finger
 2. **The clear job.** Any earlier clear job is replaced, and a new one is scheduled for the chosen delay (default 1 minute). The mechanism is architecture.md D-14, measured in the clipboard lab (`docs/lab/clipboard.md`): an alarm to a receiver that is not exported, plus a timer in the process; the alarm is exact where no permission is needed, and otherwise aimed so that its delivery window ends at the deadline. No exact-alarm permission and no WorkManager. The token and the deadline are also kept in the app's settings, so that an overdue clip of the app's own is cleared when the app next comes to the front. The job clears **only the app's own clip**. It reads the clip's description, never its content:
    - **Description readable, token differs or missing**: the user has copied something else since, so nothing is cleared.
    - **Description readable, token matches**: the clip is cleared (`clearPrimaryClip()` on API 28+; an empty clip below).
-   - **Description not readable**: on Android 10+ a background app can neither read the clipboard nor learn that it changed [E: V-P2], so the clip is cleared anyway, as Proton fails closed [E: platform_code.md:34]. On Android 7–9 the check always works.
+   - **Description not readable**: on Android 10+ a background app can neither read the clipboard nor learn that it changed [E: V-P2], so the clip is cleared anyway, as Proton fails closed [E: platform_code.md:34]. On Android 7–9 the check works while the phone is unlocked. While it is locked, Android 9 lets no app read the clipboard, so a clear that falls due then clears whatever is on it, as on Android 10+; Android 7 still answers then (measured by build plan 3.8's review; Android 8 not tested).
 
    When the app comes back to the front with a clear pending, it checks the same way. If the clipboard holds something else, it cancels the pending clear and hides the status row.
 3. **Confirmation.** The row's icon becomes a check mark for 1.5 s, with `HapticFeedbackType.Confirm`.
@@ -1273,7 +1273,7 @@ Icons are Material Symbols imported as vector drawables; `material-icons-extende
 2. **Clearing.** With the app in the background, the clipboard is empty about 1 minute after the copy, also after the app was swiped from Recents or its process was killed. Test on Android 7, 9, 13 and 17, and on one Samsung and one Xiaomi phone if available.
    - Leaving the app or an automatic lock never clears it early.
    - After a force-stop, or with the app's battery use set to "Restricted", the copy stays until the app is opened, which then clears it (architecture.md D-14), as the first-copy tip and Help say.
-   - A text copied after the password is not cleared on Android 7–9 (token check), nor on any version when the app is in front at clear time.
+   - A text copied after the password is not cleared on Android 7–9 (token check; on Android 9 only while the phone is unlocked at clear time, §6 item 2), nor on any version when the app is in front at clear time.
 3. **Returning.**
    - Returning within 30 s shows the last screen with secrets masked.
    - Returning later shows the lock screen, and so does returning after the screen turned off while the app was open. When the screen turned off while the app was in the background, the lock applies when Android delivers the screen-off event, which Android 14+ may hold back until the app runs again; that case is best effort, and the lock delay still applies (lock.md §10.2, §2.3).
