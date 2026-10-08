@@ -6,8 +6,10 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToKey
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -118,7 +120,8 @@ class ImportScreenshotsTest {
         }
         compose.waitUntil(TIMEOUT_MS) { columns!!.ui.value.screen is ColumnsScreen.Shown }
         ImportShots.take(compose, "5.4-10-columns")
-        compose.onNodeWithTag(ImportTags.column(2)).performClick()
+        compose.onNodeWithTag(ImportTags.column(2)).performScrollTo().performClick()
+        compose.waitUntil(TIMEOUT_MS) { compose.onAllNodesWithTag(ImportTags.meaning(ColumnMeaning.PASSWORD)).fetchSemanticsNodes().isNotEmpty() }
         ImportShots.take(compose, "5.4-11-columns-menu")
         compose.onNodeWithTag(ImportTags.meaning(ColumnMeaning.PASSWORD)).performClick()
         ImportShots.take(compose, "5.4-12-columns-chosen")

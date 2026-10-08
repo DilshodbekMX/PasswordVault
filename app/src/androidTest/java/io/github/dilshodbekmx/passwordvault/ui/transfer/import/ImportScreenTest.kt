@@ -11,6 +11,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToKey
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -153,7 +154,9 @@ class ImportScreenTest {
         // Not yet the password column: its first value is shown, so that the user can recognise it.
         assertTrue(compose.shownTexts().any { it.contains("Kalit-1-Pw") })
 
-        compose.onNodeWithTag(ImportTags.column(2)).performClick()
+        // On a short screen the third column is under the bottom bar: scrolled into view first.
+        compose.onNodeWithTag(ImportTags.column(2)).performScrollTo().performClick()
+        compose.waitUntil(TIMEOUT_MS) { compose.onAllNodesWithTag(ImportTags.meaning(ColumnMeaning.PASSWORD)).fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag(ImportTags.meaning(ColumnMeaning.PASSWORD)).performClick()
         compose.waitForIdle()
         assertTrue("dots once it is the password column", compose.shownTexts().none { it.contains("Kalit-1-Pw") })
