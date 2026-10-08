@@ -59,7 +59,6 @@ object EntryRules {
     const val HISTORY_MAX = 5
 
     private val SCHEME = Regex("^[A-Za-z][A-Za-z0-9+.-]*://")
-    private val HOST_LIKE = Regex("^[^\\s/:]+\\.\\S+$")
 
     /** The number of Unicode code points in [text]: how ux.md §2 counts every limit. */
     fun length(text: CharSequence): Int = Character.codePointCount(text, 0, text.length)
@@ -77,16 +76,40 @@ object EntryRules {
     /**
      * The website rule of ux.md §2, shared with the importer (formats.md §8.4, formats-review P10):
      * trimmed, and `https://` put in front when the text has no scheme (`letters://` at its start)
-     * and looks like a host: no space, no `/` or `:` before its first dot, and something after it.
-     * So `gmail.com` and `mail.google.com/x` get `https://`; `android://…`, `androidapp://…`,
+     * and looks like a host: no white space, no `/` or `:` before its first dot, and something after
+     * it. So `gmail.com` and `mail.google.com/x` get `https://`; `android://…`, `androidapp://…`,
      * `mailto:…`, `localhost` and text such as "my bank" are kept as they are. Nothing else changes:
-     * no case, no `www.`, no path.
+     * no case, no `www.`, no path. Its time grows with the length of the text, which an imported value
+     * may have in megabytes.
      */
     fun normalizeUrl(raw: String): String {
         val url = raw.trim()
         if (url.isEmpty() || SCHEME.containsMatchIn(url)) return url
-        return if (HOST_LIKE.matches(url)) "https://$url" else url
+        return if (looksLikeHost(url)) "https://$url" else url
     }
+
+    /**
+     * What the pattern `^[^\s/:]+\.\S+$` says of [url], in one pass: no white space anywhere, and a
+     * dot after the first character and before the last with no `/` or `:` in front of it. The pattern
+     * took time that grows with the square of the text when white space followed many dots (an
+     * 80,000-character text took 8 s), and its `\s` is Unicode's White_Space on Android but ASCII
+     * only on the JVM, so a website with a no-break space was stored one way on the phone and another
+     * in the tests. White space here is Unicode's White_Space on every platform.
+     */
+    private fun looksLikeHost(url: String): Boolean {
+        if (url.any(::isWhiteSpace)) return false
+        val dot = url.indexOf('.', 1)
+        if (dot !in 1..url.length - 2) return false
+        for (i in 0 until dot) if (url[i] == '/' || url[i] == ':') return false
+        return true
+    }
+
+    /**
+     * Unicode's White_Space (what `\s` means on Android): U+0009 to U+000D, U+0085, and the space,
+     * line and paragraph separators (U+0020, U+00A0, U+1680, U+2000 to U+200A, U+2028, U+2029, U+202F,
+     * U+205F, U+3000).
+     */
+    private fun isWhiteSpace(c: Char): Boolean = Character.isSpaceChar(c) || c in '\t'..'\r' || c == '\u0085'
 
     /**
      * What Save stores of [form], before the name is filled ([title]): the name, the username, every
