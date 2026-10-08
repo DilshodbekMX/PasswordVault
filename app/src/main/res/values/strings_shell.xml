@@ -11,9 +11,4 @@
     <string name="shell_placeholder_state" translatable="false">State: %1$s</string>
     <string name="shell_placeholder_open" translatable="false">Open %1$s</string>
     <string name="shell_placeholder_back" translatable="false">Back</string>
-    <string name="shell_placeholder_unlock" translatable="false">Unlock</string>
-    <string name="shell_placeholder_lock_now" translatable="false">Lock now</string>
-    <string name="shell_placeholder_finish" translatable="false">Finish setup</string>
-    <string name="shell_placeholder_notice" translatable="false">Notice: %1$s</string>
-    <string name="shell_placeholder_answer" translatable="false">Answer: %1$s</string>
 </resources>
