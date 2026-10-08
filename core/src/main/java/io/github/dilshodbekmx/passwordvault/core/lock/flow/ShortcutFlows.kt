@@ -295,7 +295,25 @@ internal class ShortcutFlows(private val core: LockCore) {
      * changes nothing: [FingerprintOnOutcome.Cancelled].
      */
     suspend fun fingerprintOn(proof: MasterProof): FingerprintOnOutcome {
-        val turnOn = when (val prepared = core.locked { prepareTurnOn(proof) }) {
+        var made: Prepared? = null
+        val prepared = try {
+            core.locked { prepareTurnOn(proof).also { made = it } }
+        } catch (e: CancellationException) {
+            // The first turn ran to its end under the mutex, and its answer was dropped on the way back
+            // to a caller that is gone (`withContext` changes the dispatcher): what it made goes with it.
+            // The copy of VK is wiped, the launch ends (no prompt was shown) and the new key is deleted.
+            (made as? Prepared.Ready)?.turnOn?.let { dropped ->
+                Bytes.wipe(dropped.vk)
+                withContext(NonCancellable) {
+                    core.locked {
+                        core.launchEnded(dropped.launch)
+                        deleteQuietly(dropped.alias)
+                    }
+                }
+            }
+            throw e
+        }
+        val turnOn = when (prepared) {
             is Prepared.Done -> return prepared.outcome
             is Prepared.Ready -> prepared.turnOn
         }

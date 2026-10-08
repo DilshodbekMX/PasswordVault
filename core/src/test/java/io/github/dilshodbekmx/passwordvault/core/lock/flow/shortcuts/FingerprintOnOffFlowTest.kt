@@ -2,11 +2,14 @@ package io.github.dilshodbekmx.passwordvault.core.lock.flow.shortcuts
 
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.FingerprintOnOutcome
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.KeyCreate
+import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockEngine
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockScreen
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockState
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockSummary
+import io.github.dilshodbekmx.passwordvault.core.lock.flow.MasterPasswordOutcome
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.MasterProof
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.PromptUse
+import io.github.dilshodbekmx.passwordvault.core.lock.flow.VaultPort
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.core.LockFixture
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.core.LockFixture.Companion.PASSWORD
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.core.LockFixture.Companion.PIN
@@ -16,10 +19,13 @@ import io.github.dilshodbekmx.passwordvault.core.lock.flow.core.LockFixture.Comp
 import io.github.dilshodbekmx.passwordvault.core.lock.record.FingerprintRecord
 import io.github.dilshodbekmx.passwordvault.core.lock.record.RecordCodec
 import io.github.dilshodbekmx.passwordvault.core.lock.record.RecordRead
+import io.github.dilshodbekmx.passwordvault.testing.FakeRandom
 import io.github.dilshodbekmx.passwordvault.testing.lock.FakeKeys
 import io.github.dilshodbekmx.passwordvault.testing.lock.FakeRecordFiles
 import io.github.dilshodbekmx.passwordvault.testing.lock.FakeVaultPort
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.yield
@@ -256,6 +262,54 @@ class FingerprintOnOffFlowTest {
         assertEquals(1, f.keys.cancels)
         assertEquals(RecordRead.Missing, f.fingerprintOnDisk())
         assertNoStrayFingerprintKey()
+    }
+
+    /**
+     * The caller goes away (the Settings screen is closed, and its scope cancelled) while F9's first
+     * turn runs under the mutex: the key is being made and VK copied out of the vault port. That turn
+     * runs to its end, but the coroutine library drops its answer on the way back to a caller that is
+     * cancelled (`withContext` changes the dispatcher). What the turn made must not outlive it: the
+     * copy of VK is wiped (lock.md §4.2 "Wiping", §5.8), the new alias, which no record names, is
+     * deleted (F9 step 9), and the launch number is not left outstanding (§9.2 rule 8), so that the
+     * switch works again at once.
+     */
+    @Test
+    fun aCallerCancelledWhileTheKeyIsBeingMade_wipesTheCopyOfTheVaultKey_endsTheLaunch_andTheNewKeyGoes() {
+        val vault = f.seedVault()
+        f.plantPin(vault)
+        f.plantState()
+        // The vault port as the engine reaches it, keeping what each use of the open vault's key gave back.
+        val lent = ArrayList<Any?>()
+        val port = object : VaultPort by f.port {
+            override suspend fun <T> withVaultKey(use: (vkId: String, vk: ByteArray) -> T): T = f.port.withVaultKey(use).also { lent += it }
+        }
+        val engine = LockEngine(
+            f.files, LockFixture.ROOT, f.clock, FakeRandom(77), f.keys.pin, f.keys.fingerprint, f.keys.device, port, f.kdf, f.aead,
+            Dispatchers.Unconfined,
+        )
+        await { engine.start() }
+        await { engine.appStarted() }
+        await { engine.useMasterPassword() }
+        val proof = (await { engine.unlockWithMasterPassword(PASSWORD.toCharArray()) } as MasterPasswordOutcome.Right).proof
+
+        runBlocking {
+            val gate = CompletableDeferred<Unit>()
+            f.port.beforeCall = { call -> if (call == "withVaultKey") gate.await() }
+            val on = launch(start = CoroutineStart.UNDISPATCHED) { engine.fingerprintOn(proof) }
+            on.cancel() // while the first turn waits at the vault key, with the new key made
+            gate.complete(Unit)
+            on.join()
+        }
+        f.port.beforeCall = null
+
+        val copy = lent.filterIsInstance<Pair<*, *>>().single().second as ByteArray
+        assertTrue("the copy of VK is wiped", copy.all { it == 0.toByte() })
+        assertEquals("no launch is left outstanding", 0, engine.core.outstandingLaunch)
+        assertNoStrayFingerprintKey()
+        assertEquals(emptyList<FakeKeys.PromptCall>(), f.keys.prompts)
+        assertEquals(RecordRead.Missing, f.fingerprintOnDisk())
+        assertEquals("the switch works again at once", FingerprintOnOutcome.On, await { engine.fingerprintOn(proof) })
+        assertTrue(f.fingerprintOpens(vault))
     }
 
     @Test
