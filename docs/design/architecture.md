@@ -510,6 +510,8 @@ interface DocumentIo {
     fun keep(doc: DocRef)                              // persistable permission
     fun delete(doc: DocRef): Boolean                   // false: the place does not allow it
     fun place(doc: DocRef): Place                      // PhoneStorage | GoogleDrive | Other(name)
+    fun name(doc: DocRef): String?                     // the name the place shows for it, which may differ from the suggested one
+                                                       // ("(1)" on a clash); null: it cannot be read
 }
 class FileTask(val kind: Kind, val step: Int, val doc: DocRef?)   // enum class Kind(stored) { BACKUP, EXPORT, IMPORT, RESTORE }; step: the
                                                        // step of its route (Export(step), Import(step)); doc: once the picker returned one

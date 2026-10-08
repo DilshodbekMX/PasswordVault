@@ -16,11 +16,18 @@
 #     master password brings the same account's screen back (the saved back stack, under R8 in
 #     staging); Back to the list, Lock now: locked; the master password: the list with the account.
 #     Driven by resource id through tools/emu/app.sh.
+#   sub-wave 3B (the account's screen and the clipboard): the account opened from the list, its
+#     password drawn as dots and in no node; "Show password" shows it; Copy: the clip, read from
+#     outside the app (clipboard/lib.sh), carries the sensitive flag and a 32-digit token and holds
+#     the password, and the status row is shown; Home: the clip is still there 4 s before its time and
+#     gone 4 s after it at the latest, with the delay setup wrote (1 minute; the time is the first
+#     reading of the clip plus the delay, as clipboard/clear.sh estimates it without run-as).
 # Prints PASS, FAIL or SKIPPED per step and a summary line. Exit codes: 0 every step passed or
 # was skipped; 1 a step failed; 2 usage; 3 SERIAL refused.
 set -u
 source "$(dirname "${BASH_SOURCE[0]}")/adb.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/app.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/clipboard/lib.sh"
 
 usage() { pv_usage "$0"; }
 
@@ -206,5 +213,100 @@ stage_skeleton() {
     pv_step "no crash" -- pva_no_crash
 }
 
-stage_install_and_start && stage_skeleton
+# ---- stage: the account's screen and the clipboard (sub-wave 3B) --------------------------------
+SMOKE_PASSWORD=Hv4Nc8Rt2Wq6Yz3
+SMOKE_DELAY_MS=60000 # "Clear copied text after", as setup writes it (D-7)
+SMOKE_TOKEN=""
+SMOKE_DEADLINE=0
+
+# One reading of the clipboard from outside the app: SMOKE_NOW (the device's clock, ms), SMOKE_HAS,
+# SMOKE_CLIP (the app's token; empty when the clip is not the app's) and SMOKE_SENSITIVE.
+smoke_clip() {
+    local d
+    d=$(pvc_describe) || { pv_log "the clipboard could not be read"; return 1; }
+    SMOKE_NOW=$(printf '%s\n' "$d" | pvc_field now)
+    SMOKE_HAS=$(printf '%s\n' "$d" | pvc_field has)
+    SMOKE_CLIP=$(printf '%s\n' "$d" | pvc_field token)
+    SMOKE_SENSITIVE=$(printf '%s\n' "$d" | pvc_field sensitive)
+    [ -n "$SMOKE_NOW" ]
+}
+
+smoke_open_account() {
+    local row
+    pva_on Passwords 20 || return 1
+    row=$(pv_ui_nodes | awk -F'|' '$3 ~ /^pv[.]list[.]row[.]/ { print $3; exit }')
+    [ -n "$row" ] || { pv_log "no row in the list; ids: $(pva_ids)"; return 1; }
+    pva_tap "$row" && same_entry || return 1
+    pva_need pv.entry.password.value 10 || return 1
+    ! pv_ui_nodes | grep -qF -- "$SMOKE_PASSWORD" || { pv_log "a node holds the password while it is hidden"; return 1; }
+}
+
+smoke_show_password() {
+    local deadline=$((SECONDS + 10)) text=""
+    pva_tap pv.entry.password.show || return 1
+    until [ "$text" = "$SMOKE_PASSWORD" ]; do
+        [ $SECONDS -lt $deadline ] || { pv_log "pv.entry.password.value reads '$text'"; return 1; }
+        pv_sleep 0.5
+        text=$(pva_text pv.entry.password.value)
+    done
+}
+
+smoke_copy() {
+    local i text
+    pvc_clear || return 1
+    pva_tap pv.entry.password.copy || return 1
+    for i in $(seq 1 20); do
+        smoke_clip || return 1
+        [ -n "$SMOKE_CLIP" ] && break
+        pv_sleep 0.2
+    done
+    [ -n "$SMOKE_CLIP" ] || { pv_log "no clip of the app's after Copy (has=$SMOKE_HAS)"; return 1; }
+    printf '%s' "$SMOKE_CLIP" | grep -Eq '^[0-9a-f]{32}$' || { pv_log "the token is not 32 hex digits: '$SMOKE_CLIP'"; return 1; }
+    [ "$SMOKE_SENSITIVE" = true ] || { pv_log "the sensitive flag is '${SMOKE_SENSITIVE:-absent}'"; return 1; }
+    SMOKE_TOKEN=$SMOKE_CLIP
+    SMOKE_DEADLINE=$((SMOKE_NOW + SMOKE_DELAY_MS))
+    pva_need pv.clip.row 5 || return 1
+    text=$(pvc_get | pvc_field text) || return 1
+    [ "$text" = "$SMOKE_PASSWORD" ] || { pv_log "the clip does not hold the password (${#text} characters)"; return 1; }
+    pv_log "the clip is flagged sensitive, has the token $SMOKE_TOKEN and holds the password; the status row is shown"
+}
+
+# smoke_until MS: returns when the device's clock reads MS.
+smoke_until() {
+    local left
+    smoke_clip || return 1
+    left=$(($1 - SMOKE_NOW))
+    [ "$left" -le 0 ] || pv_sleep "$((left / 1000)).$(printf '%03d' $((left % 1000)))"
+}
+
+smoke_clear_in_background() {
+    local text
+    pv_shell input keyevent KEYCODE_HOME >/dev/null || return 1
+    smoke_until $((SMOKE_DEADLINE - 4000)) && smoke_clip || return 1
+    [ "$SMOKE_CLIP" = "$SMOKE_TOKEN" ] || { pv_log "$((SMOKE_DEADLINE - SMOKE_NOW)) ms before its time the clip is gone already"; return 1; }
+    while :; do
+        smoke_clip || return 1
+        [ "$SMOKE_CLIP" = "$SMOKE_TOKEN" ] || break
+        [ "$SMOKE_NOW" -lt $((SMOKE_DEADLINE + 4000)) ] || { pv_log "the clip is still there $((SMOKE_NOW - SMOKE_DEADLINE)) ms after its time"; return 1; }
+        pv_sleep 0.2
+    done
+    pv_log "the clip was gone $((SMOKE_NOW - SMOKE_DEADLINE + SMOKE_DELAY_MS)) ms after the copy was first seen"
+    # Nothing is left: no clip from API 28 on; on Android 7, which cannot clear otherwise, an empty clip.
+    if [ "$API" -ge 28 ]; then
+        [ "$SMOKE_HAS" = false ] || { pv_log "the clipboard is not empty"; return 1; }
+    else
+        text=$(pvc_get | pvc_field text) || return 1
+        [ -z "$SMOKE_CLIP" ] && [ -z "$text" ] || { pv_log "the clipboard is not empty"; return 1; }
+    fi
+}
+
+stage_clipboard() {
+    pv_step "the account from the list: its password drawn as dots, in no node" -- smoke_open_account || return 1
+    pv_step "Show password shows it" -- smoke_show_password
+    pv_step "Copy: the clip is flagged sensitive, has a token and holds the password; the status row is shown" -- smoke_copy || return 1
+    pv_step "with the app in the background the clip is gone at its time (setup's 1-minute delay)" -- smoke_clear_in_background
+    pv_step "no crash" -- pva_no_crash
+}
+
+stage_install_and_start && stage_skeleton && stage_clipboard
 pv_summary
