@@ -289,8 +289,11 @@ nav_inset() {
 task_in_recents() { pv_shell dumpsys activity recents 2>/dev/null | tr -d '\r' | grep -q "Recent #.*$PV_PACKAGE/"; }
 
 # swipe_away: Home, Recents, and the app's card flicked off the screen: upwards where the cards
-# stand side by side (Android 9 and later, the card's "snapshot" node carries the app's name),
-# sideways in Android 7's stack (the card's "title"). Up to three tries; the task must be gone.
+# stand side by side (Android 9 and later), sideways in Android 7's stack (the card's "title").
+# Android 17's card has a "snapshot" node that carries the app's name. Android 9's Recents names no
+# card at all (no text, no description on the card, its snapshot or its icon); there the card in
+# the middle is taken, which after Home is the newest task, the app's. Up to three tries; the app's
+# task must be gone, so a wrong card is never taken for the app's.
 swipe_away() {
     local try nodes line x y
     for try in 1 2 3; do
@@ -300,6 +303,11 @@ swipe_away() {
         pv_sleep 2
         nodes=$(pv_ui_nodes)
         line=$(printf '%s\n' "$nodes" | awk -F'|' '$3 == "snapshot" && $2 == "PasswordVault" { print; exit }')
+        if [ -z "$line" ] && ! printf '%s\n' "$nodes" | awk -F'|' '$3 == "snapshot" && $2 != "" { named = 1 } END { exit !named }'; then
+            line=$(printf '%s\n' "$nodes" | awk -F'|' -v mid=$((PVA_SCREEN_W / 2)) '
+                $3 == "snapshot" { d = $6 - mid; if (d < 0) d = -d; if (best == "" || d < bestd) { best = $0; bestd = d } }
+                END { if (best != "") print best }')
+        fi
         if [ -n "$line" ]; then
             x=$(printf '%s\n' "$line" | cut -d'|' -f6); y=$(printf '%s\n' "$line" | cut -d'|' -f7)
             pv_shell input swipe "$x" "$y" "$x" $((y * 35 / 100)) 100 >/dev/null
