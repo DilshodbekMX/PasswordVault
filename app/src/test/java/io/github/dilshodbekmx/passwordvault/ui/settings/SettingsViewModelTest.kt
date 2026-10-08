@@ -363,6 +363,14 @@ class SettingsViewModelTest {
     }
 
     @Test
+    fun theThemeDialogsBackdropStartsWhereTheListWasOnce() {
+        ThemeBackdrop.take()
+        ThemeBackdrop.mark(12, 34)
+        assertEquals(12 to 34, ThemeBackdrop.take())
+        assertEquals("used once: the top of the list next time", 0 to 0, ThemeBackdrop.take())
+    }
+
+    @Test
     fun theMessageOfChangePinIsShownOnce() = runTest {
         val vm = model()
         SettingsNotice.post(UiText.of(R.string.pin_changed))

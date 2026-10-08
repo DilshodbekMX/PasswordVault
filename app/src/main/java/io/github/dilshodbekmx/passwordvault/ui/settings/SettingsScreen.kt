@@ -8,7 +8,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -70,7 +72,7 @@ import kotlinx.coroutines.launch
  */
 @OptIn(ExperimentalMaterial3Api::class) // TopAppBar's signature names TopAppBarScrollBehavior (ux.md §10)
 @Composable
-fun SettingsScreen(vm: SettingsViewModel, nav: Navigator, modifier: Modifier = Modifier) {
+fun SettingsScreen(vm: SettingsViewModel, nav: Navigator, modifier: Modifier = Modifier, listState: LazyListState = rememberLazyListState()) {
     val ui by vm.ui.collectAsStateWithLifecycle()
     LaunchedEffect(vm) { vm.screenShown() }
     val snackbar = remember { SnackbarHostState() }
@@ -87,7 +89,7 @@ fun SettingsScreen(vm: SettingsViewModel, nav: Navigator, modifier: Modifier = M
         topBar = { TopAppBar(title = { Text(title, modifier = Modifier.semantics { heading() }) }) },
         snackbarHost = { SnackbarHost(snackbar) },
     ) { padding ->
-        LazyColumn(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding).testTag(SettingsTags.LIST)) {
+        LazyColumn(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding).testTag(SettingsTags.LIST), state = listState) {
             heading("appLock", R.string.settings_group_app_lock)
             appLockRows(ui, AppLockActions.of(vm, nav))
 
@@ -159,7 +161,10 @@ fun SettingsScreen(vm: SettingsViewModel, nav: Navigator, modifier: Modifier = M
                     supporting = ui.themeText.resolve(),
                     icon = R.drawable.ic_settings_theme,
                     tag = SettingsTags.open(Route.Theme),
-                    onClick = { nav.go(Route.Theme) },
+                    onClick = {
+                        ThemeBackdrop.mark(listState.firstVisibleItemIndex, listState.firstVisibleItemScrollOffset)
+                        nav.go(Route.Theme)
+                    },
                 )
             }
 
@@ -194,6 +199,28 @@ fun SettingsScreen(vm: SettingsViewModel, nav: Navigator, modifier: Modifier = M
         }
     }
     SettingsDialogs(vm, ui)
+}
+
+/**
+ * Where the Settings list was scrolled when "Theme" was tapped: the theme dialog's route draws the
+ * list behind its dialog from the same place, so that nothing moves when the dialog opens or closes
+ * (each route draws its own screen). In memory only; main thread only.
+ */
+object ThemeBackdrop {
+    private var index = 0
+    private var offset = 0
+
+    /** The list shows its item [firstIndex], scrolled by [firstOffset] pixels. */
+    fun mark(firstIndex: Int, firstOffset: Int) {
+        index = firstIndex
+        offset = firstOffset
+    }
+
+    /** The place last marked, once; the top of the list when none was. */
+    fun take(): Pair<Int, Int> = (index to offset).also {
+        index = 0
+        offset = 0
+    }
 }
 
 /** The help pages in the order of ux.md §5.18; "Version" comes after "Open-source licences". */

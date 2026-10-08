@@ -1,7 +1,9 @@
 package io.github.dilshodbekmx.passwordvault.ui.settings
 
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.runtime.EntryProviderScope
@@ -16,7 +18,8 @@ import io.github.dilshodbekmx.passwordvault.nav.Route
  * back stack or the app locks (architecture.md §5.5 step 5).
  *
  * The theme dialog is a route of its own (it is not kept across a lock, `NavState.keptAcrossLock`):
- * it is drawn over the Settings list, as a dialog opened from the list would be.
+ * it is drawn over the Settings list, scrolled where the list was when "Theme" was tapped
+ * ([ThemeBackdrop]), as a dialog opened from the list would be.
  */
 fun EntryProviderScope<Route>.settingsNav(graph: AppGraph, nav: Navigator) {
     entry<Route.Settings> { SettingsRoute(graph, nav) }
@@ -47,7 +50,8 @@ private fun ChangePinRoute(graph: AppGraph, nav: Navigator) {
 private fun ThemeRoute(graph: AppGraph, nav: Navigator) {
     val vm = viewModel { SettingsViewModel.from(graph) }
     val ui by vm.ui.collectAsStateWithLifecycle()
-    SettingsScreen(vm, nav)
+    val (index, offset) = remember { ThemeBackdrop.take() }
+    SettingsScreen(vm, nav, listState = rememberLazyListState(index, offset))
     ThemeDialog(
         current = ui.theme,
         onChoose = { choice ->
