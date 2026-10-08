@@ -3,10 +3,8 @@ package io.github.dilshodbekmx.passwordvault.ui.transfer.backup
 import io.github.dilshodbekmx.passwordvault.R
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.MasterProof
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.Notice
-import io.github.dilshodbekmx.passwordvault.core.model.EditTexts
 import io.github.dilshodbekmx.passwordvault.core.model.FileRef
 import io.github.dilshodbekmx.passwordvault.core.model.Vault
-import io.github.dilshodbekmx.passwordvault.data.BackupResult
 import io.github.dilshodbekmx.passwordvault.data.SaveProblem
 import io.github.dilshodbekmx.passwordvault.files.Cleanup
 import io.github.dilshodbekmx.passwordvault.files.DocRef
@@ -14,22 +12,15 @@ import io.github.dilshodbekmx.passwordvault.files.Place
 import io.github.dilshodbekmx.passwordvault.i18n.UiText
 import io.github.dilshodbekmx.passwordvault.lock.LockReason
 import io.github.dilshodbekmx.passwordvault.lock.LockUiState
-import io.github.dilshodbekmx.passwordvault.testing.FakeRandom
-import io.github.dilshodbekmx.passwordvault.ui.transfer.BackupMerge
 import io.github.dilshodbekmx.passwordvault.ui.transfer.BackupNotes
 import io.github.dilshodbekmx.passwordvault.ui.transfer.BackupOffer
 import io.github.dilshodbekmx.passwordvault.ui.transfer.BackupStep
 import io.github.dilshodbekmx.passwordvault.ui.transfer.BackupTexts
-import io.github.dilshodbekmx.passwordvault.ui.transfer.MergeOutcome
 import io.github.dilshodbekmx.passwordvault.ui.transfer.NoteDeleted
-import io.github.dilshodbekmx.passwordvault.ui.transfer.RestoreProblem
 import io.github.dilshodbekmx.passwordvault.ui.transfer.backup.BackupRig.Companion.BACKUP_BYTES
 import io.github.dilshodbekmx.passwordvault.ui.transfer.backup.BackupRig.Companion.DOC
 import io.github.dilshodbekmx.passwordvault.ui.transfer.backup.BackupRig.Companion.ENTRIES
 import io.github.dilshodbekmx.passwordvault.ui.transfer.backup.BackupRig.Companion.NOW
-import io.github.dilshodbekmx.passwordvault.ui.transfer.backup.BackupRig.Companion.PASSWORD
-import io.github.dilshodbekmx.passwordvault.ui.transfer.backup.BackupRig.Companion.PASSWORD_BYTES
-import io.github.dilshodbekmx.passwordvault.ui.transfer.backup.BackupRig.Companion.entry
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -39,7 +30,6 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
-import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -52,10 +42,9 @@ import org.junit.rules.TemporaryFolder
 
 /**
  * Build plan 5.2, [JVM]: the parts of the backup screens that are not a ViewModel. [BackupOffer]
- * (the entry of "Make a backup now?" and of a flow that hands its own over), [BackupMerge] ("Backup
- * file into an existing vault", ux.md §5.21), [BackupNotes] (the vault forgets a backup and its
- * permission goes, architecture.md §3.5) and the texts of a saved backup for each place (ux.md §5.19
- * step 5 and the owner's decision 8).
+ * (the entry of "Make a backup now?" and of a flow that hands its own over), [BackupNotes] (the vault
+ * forgets a backup and its permission goes, architecture.md §3.5) and the texts of a saved backup for
+ * each place (ux.md §5.19 step 5 and the owner's decision 8).
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class BackupPartsTest {
@@ -108,48 +97,6 @@ class BackupPartsTest {
         rig.fakeLock.state.value = LockUiState.Unlocked(emptyList(), second)
         runCurrent()
         assertNull(offers.take())
-    }
-
-    // ---- BackupMerge ----------------------------------------------------------------------------
-
-    @Test
-    fun aBackupFileIsMergedByItsRulesWithItsOwnPassword() = runTest {
-        val gmail = entry("00000000-0000-4000-8000-00000000000a", "Gmail")
-        val bank = entry("00000000-0000-4000-8000-00000000000b", "Bank")
-        val rig = rig(Vault(entries = listOf(gmail, bank)))
-        val merge = BackupMerge(rig.repository, FakeRandom())
-        val bankChanged = bank.copy(password = "another", updatedAt = NOW)
-        val brandNew = entry("00000000-0000-4000-8000-0000000000ff", "New")
-        rig.vault.backupResults.add(BackupResult.Opened(Vault(entries = listOf(gmail, bankChanged, brandNew)), NOW))
-        val outcome = merge.merge(BACKUP_BYTES, PASSWORD.toCharArray(), Texts)
-        val merged = (outcome as MergeOutcome.Merged).merged
-        assertEquals("the identical one", 1, merged.skipped)
-        assertEquals("the one with an id of the vault and other content", 1, merged.renamed)
-        assertEquals(2, merged.addedIds.size)
-        assertEquals(listOf("Gmail", "Bank", "Bank (from backup)", "New"), rig.vault.stored.entries.map { it.title })
-        assertEquals("nothing is overwritten", bank, rig.vault.stored.entries[1])
-        assertArrayEquals(PASSWORD_BYTES, rig.repository.openedWith.single().second)
-    }
-
-    @Test
-    fun aBackupThatDoesNotOpenGivesTheRestoresMessage() = runTest {
-        val rig = rig()
-        val merge = BackupMerge(rig.repository, FakeRandom())
-        for ((answer, problem) in listOf(
-            BackupResult.Wrong to RestoreProblem.WRONG,
-            BackupResult.WrongOrDamaged to RestoreProblem.WRONG_OR_DAMAGED,
-            BackupResult.Damaged to RestoreProblem.DAMAGED,
-            BackupResult.Newer to RestoreProblem.NEWER,
-            BackupResult.NotOurs to RestoreProblem.NOT_OURS_LOCKED,
-            BackupResult.NoMemory to RestoreProblem.NO_MEMORY,
-        )) {
-            rig.vault.backupResults.add(answer)
-            assertEquals(MergeOutcome.NotOpened(problem), merge.merge(BACKUP_BYTES, PASSWORD.toCharArray(), Texts))
-        }
-        rig.vault.backupResults.add(BackupResult.Opened(Vault(entries = listOf(entry("00000000-0000-4000-8000-0000000000ee", "New"))), NOW))
-        rig.vault.failures.add(SaveProblem.TOO_LARGE)
-        assertEquals(MergeOutcome.NotSaved(SaveProblem.TOO_LARGE), merge.merge(BACKUP_BYTES, PASSWORD.toCharArray(), Texts))
-        assertEquals(ENTRIES, rig.vault.stored.entries)
     }
 
     // ---- BackupNotes ----------------------------------------------------------------------------
@@ -221,13 +168,5 @@ class BackupPartsTest {
         false
     } catch (e: IllegalStateException) {
         true
-    }
-
-    private object Texts : EditTexts {
-        override fun untitled(nowMs: Long) = "Untitled"
-
-        override fun fromBackup(title: String) = "$title (from backup)"
-
-        override fun fromFile(title: String) = "$title (from file)"
     }
 }
