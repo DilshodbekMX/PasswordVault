@@ -8,6 +8,7 @@ import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockEngine
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockScreen
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockState
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.MasterPasswordOutcome
+import io.github.dilshodbekmx.passwordvault.core.lock.flow.PinKey
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.Notice
 import io.github.dilshodbekmx.passwordvault.core.lock.guard.PinWrap
 import io.github.dilshodbekmx.passwordvault.core.lock.record.FileRecordStore
@@ -54,6 +55,7 @@ internal class LockFixture(val clock: FakeClock = FakeClock(elapsedMs = 3_600_00
 
     /** What the engine is given for its ports; a test that wraps one sets it here and calls [rebuild]. */
     var recordFiles: RecordFiles = files
+    var pinKey: PinKey = keys.pin
     var fingerprintKey: FingerprintKey = keys.fingerprint
     var deviceKeys: DeviceKeys = keys.device
 
@@ -61,7 +63,7 @@ internal class LockFixture(val clock: FakeClock = FakeClock(elapsedMs = 3_600_00
         private set
 
     private fun newEngine(): LockEngine =
-        LockEngine(recordFiles, ROOT, clock, random, keys.pin, fingerprintKey, deviceKeys, port, kdf, aead, Dispatchers.Unconfined)
+        LockEngine(recordFiles, ROOT, clock, random, pinKey, fingerprintKey, deviceKeys, port, kdf, aead, Dispatchers.Unconfined)
 
     /** A new engine over the ports as they are set now, before anything has run. */
     fun rebuild(): LockEngine {

@@ -102,7 +102,7 @@ internal class UnlockFlows(private val core: LockCore) {
         }
         visit.digits[visit.count++] = (ASCII_ZERO + digit).toByte()
         if (visit.count < PIN_SIZE) {
-            core.showLockScreen()
+            core.showAgain(visit)
             return
         }
         sixthDigit(visit)
@@ -114,7 +114,7 @@ internal class UnlockFlows(private val core: LockCore) {
         if (visit.count == 0) return
         visit.digits[--visit.count] = 0
         if (visit.count == 0) visit.target.lock.pin.giveUp()
-        core.showLockScreen()
+        core.showAgain(visit)
     }
 
     /** Holds the mutex: every digit goes, and the charge is refunded. */
@@ -122,7 +122,7 @@ internal class UnlockFlows(private val core: LockCore) {
         val visit = padVisit(epoch) ?: return
         if (visit.count == 0) return
         giveUpEntry(visit)
-        core.showLockScreen()
+        core.showAgain(visit)
     }
 
     /** The visit whose pad takes a key pressed at [epoch], or null when the press is dropped. */
@@ -146,7 +146,7 @@ internal class UnlockFlows(private val core: LockCore) {
         val target = visit.target
         val lock = target.lock
         visit.opening = true
-        core.showLockScreen() // "Opening…"
+        core.showAgain(visit) // "Opening…"
         val pin = visit.digits.copyOf()
         val outcome = try {
             lock.pin.check(pin, core.keptVkIds(target))
@@ -417,7 +417,7 @@ internal class UnlockFlows(private val core: LockCore) {
         var opened: PasswordOpen? = null
         var pending: MasterPasswordOutcome? = null
         visit.opening = true
-        core.showLockScreen() // "Opening…" while Argon2id runs
+        core.showAgain(visit) // "Opening…" while Argon2id runs
         try {
             val attempt = guard.attempt(at) {
                 val result = core.vault.openWithPassword(target.ref, bytes)

@@ -641,6 +641,17 @@ internal class LockCore(
         state.value = LockState.Locked(screenOf(decision, now, shown))
     }
 
+    /**
+     * Holds the mutex: shows the screen that was decided last on [visit] again, with its dots and
+     * its "Opening…" as they are now. Nothing is decided again: while a PIN is being typed or a
+     * check runs, the screen does not change under the user because the time moved on.
+     */
+    fun showAgain(visit: LockVisit) {
+        val decision = visit.decision
+        if (decision == null || visit.place.hasEnded || this.visit !== visit) return
+        state.value = LockState.Locked(screenOf(decision, visit, visit.target))
+    }
+
     private fun screenOf(decision: EntryPolicy.Decision.Locked, visit: LockVisit?, target: LockTarget): LockScreen {
         val older = visit?.olderPassword
         if (older != null) {
