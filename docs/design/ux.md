@@ -889,8 +889,12 @@ Exact file layouts are in formats.md. This section covers what the user sees.
   - Android 7–10: "On this phone other apps with storage access can read files in Downloads."
 - `Checkbox` "I understand" (required), then `Button` "Continue" leads through:
   - the master password, always typed now (Bitwarden also asks for it [E: `export_vault_master_password_description`]);
-  - the file picker (`CreateDocument`; time there counts as time in the app, §4);
-  - "Saving…", then the read-back check.
+  - the file picker (`CreateDocument`; time there counts as time in the app, §4). The vault notes the file just before it is written, so that the banner below also covers a file cut off by a crash;
+  - "Saving and checking the file…": one line, because the read-back happens inside the write.
+- **While a new master password is pending** (lock.md F12 step 2, formats.md §2 rule 1) nothing is exported: "You can export your passwords when your new master password has started working."
+- **The Google card** on the CSV warning is a list: "Google Password Manager will skip:", one counted line per reason ("2 accounts with notes too long for Google": its limit is 1,000 bytes, about 500 Cyrillic letters, not 1,000 characters), then "They are still in the file. Other apps may accept them."
+- **A CSV cut into parts** (formats.md §2): each part has its own "Save as", and one master password covers the whole export unless the app locks. After a part: "Saved file 1 of 2: passwords-2026-10-06-1.csv. When you're done with it, delete it." with the main button "Save file 2"; after the last, as below.
+- **A failed write whose file the place cannot delete**: "The file passwords-2026-10-06.csv may hold some of your passwords. Delete it yourself in your Files app." (or "in Google Drive", or the place's name). The vault's note of the file then stays, so the banner keeps reminding.
 - Plain exports are **not offered to the share sheet**; the user can still save and move them [I].
 - **During a pending change** the exported password is the new, unconfirmed one, and the old one is kept (architecture.md D-10d, formats.md §2 rule 12): `pendingOldPassword` in the JSON, the hidden line "Old password" in the CSV block and in Excel's extra fields. Importing our own file brings both back.
 - **Deleted accounts** (Recently deleted) are in no plain export (D-10e); the backup holds them.
@@ -898,7 +902,7 @@ Exact file layouts are in formats.md. This section covers what the user sees.
 **After export**:
 - The screen says "Saved: passwords-2026-10-06.xlsx. When you're done with it, delete it."
   - `Button` "Done" (primary).
-  - `OutlinedButton` "Delete it now" (`DocumentsContract.deleteDocument`; possible when the provider reports `FLAG_SUPPORTS_DELETE` [V: Android "documents and files" guide]).
+  - `OutlinedButton` "Delete it now" (`DocumentsContract.deleteDocument`; possible when the provider reports `FLAG_SUPPORTS_DELETE` [V: Android "documents and files" guide]). Afterwards the screen says only "passwords-2026-10-06.xlsx was deleted.", with "Done".
 
   The primary button is "Done" because the user just asked for this file.
 - **A place that is not the phone** (Google Drive or any other) adds the line of §5.19 step 5: "This place may upload the file later. Open it there once to check that it arrived." (build-plan §12, decision 8).
