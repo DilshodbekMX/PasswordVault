@@ -92,6 +92,26 @@ class ImporterTest {
         assertEquals("[NAMELESS_FIELDS_MOVED×1]", file.accounts[2].changes.toString())
     }
 
+    /**
+     * Bitwarden writes a secure note's row with empty login columns (formats.md §8.3: `type=note` has no
+     * username or password). A row of type `note` that has them all the same, as an edited file may,
+     * keeps them: a password is never dropped on import but for its length (formats.md §8.4, D-10f).
+     */
+    @Test
+    fun aBitwardenNoteRowThatHasAPasswordKeepsIt() {
+        val file = file(
+            csv(
+                "folder,favorite,type,name,notes,fields,reprompt,login_uri,login_username,login_password,login_totp",
+                ",,note,Shopping list,\"milk, bread\",,0,,,,",
+                ",,note,Wi-Fi at home,router in the hall,,0,,admin,R0uter#Pass,",
+            ),
+        )
+        val (list, wifi) = file.accounts.map { it.entry }
+        assertEquals(listOf("", ""), listOf(list.username, list.password))
+        assertEquals(listOf("admin", "R0uter#Pass", "router in the hall"), listOf(wifi.username, wifi.password, wifi.notes))
+        assertTrue(file.accounts.all { it.changes.isEmpty() })
+    }
+
     @Test
     fun keePassXcsCsv() {
         val file = file(

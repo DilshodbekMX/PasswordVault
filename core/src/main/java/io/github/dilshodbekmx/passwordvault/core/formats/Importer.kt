@@ -514,15 +514,17 @@ object Importer {
             val extra = if (values.size > headers.size) values.subList(headers.size, values.size).filter { it.isNotBlank() } else emptyList()
             val notes = if (extra.isEmpty()) block.notes else listOf(block.notes).filter { it.isNotEmpty() }.plus(extra).joinToString("\n")
 
-            val isNote = value(values, ColumnMeaning.BITWARDEN_TYPE).trim().equals("note", ignoreCase = true)
+            // Bitwarden's `type` needs no reading: a secure note's row has empty login columns (formats.md
+            // §8.3), and a row of type "note" that has a username or a password keeps them, since a password
+            // is never dropped on import but for its length (§8.4, D-10f).
             val created = time(value(values, ColumnMeaning.CREATED)) ?: nowMs
             val titleText = block.title ?: value(values, ColumnMeaning.TITLE)
             return RawRow(
                 Entry(
                     id = id,
                     title = titleText,
-                    username = if (isNote) "" else value(values, ColumnMeaning.USERNAME),
-                    password = if (isNote) "" else value(values, ColumnMeaning.PASSWORD),
+                    username = value(values, ColumnMeaning.USERNAME),
+                    password = value(values, ColumnMeaning.PASSWORD),
                     notes = notes,
                     urls = urls,
                     fields = fields,

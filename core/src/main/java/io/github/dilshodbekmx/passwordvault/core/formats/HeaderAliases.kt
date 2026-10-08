@@ -43,7 +43,10 @@ enum class ColumnMeaning {
     /** Bitwarden's `fields`: one extra field per line, `name: value`. Only in Bitwarden's CSV. */
     BITWARDEN_FIELDS,
 
-    /** Bitwarden's `type`: `note` is a secure note, without username and password. Only in Bitwarden's CSV. */
+    /**
+     * Bitwarden's `type` (`login`, `note`): not imported. A secure note's row has empty login columns;
+     * one that has a username or a password keeps them. Only in Bitwarden's CSV.
+     */
     BITWARDEN_TYPE,
 
     /** An extra field named by the column's header. */
