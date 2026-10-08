@@ -276,7 +276,7 @@ object NoticeTags {
 
 /**
  * The texts of lock.md §13.4 and ux.md §5.9, §5.24 for each [Notice], and its answers in the order
- * they are drawn (the one that changes nothing last). Each notice offers only answers its KDoc
+ * they are drawn, from the start of the row to its end. Each notice offers only answers its KDoc
  * lists. "Choose a PIN" with the proof of this unlock has no dialog: null.
  */
 internal object NoticeTexts {
