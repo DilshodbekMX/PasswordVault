@@ -226,7 +226,9 @@ says `Found systemPath /home/asus/pvlab/sysimg/...`).
   Add button): a tap at such a node types a letter. `pva_tap` closes the keyboard first.
 - A key event (`input keyevent`, `input text`) ends touch mode: when the screen then changes, its
   first text field takes the focus and the keyboard stays up. Scripts submit a form by tapping its
-  button (`pva_submit`). On API 24 the list's search field takes the focus after an unlock even so.
+  button (`pva_submit`). In touch mode the list's search field refuses the focus that Android 7 and
+  8 hand on when a focused field leaves the screen (after an unlock, after the form closes; A §5.4);
+  after a key event it still takes the focus on every API level, which is why scripts tap.
 - A streamed `adb install` (adb's default) never ends about one time in six on the API 24 device
   (measured on 2026-10-07; seen by package 3.6 too): the package manager reads until the end of its
   input, and now and then that end does not arrive (`dumpsys package installs` shows the session with
