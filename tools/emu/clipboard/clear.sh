@@ -575,7 +575,15 @@ later_copy_in_the_background() {
     pvc_set "$OTHER" || return 1
     until_device $((DEADLINE + 4000)) || return 1
     if [ "$API" -ge 29 ]; then
-        cleared || return 1
+        if ! cleared; then
+            # Seen once in eleven runs on API 37 (the 3B device check, three devices and builds running),
+            # with nothing recorded: what the plan looks like now, and the clipboard 10 s later, tell a
+            # late clear (the plan still there) from a clip the app took for another app's (no plan).
+            note "at the failure: pending_clip_token '$([ $DEBUGGABLE = 0 ] || prefs_token)' (the copy's: $TOKEN); alarm '$(pvc_alarm | head -n 1 | sed 's/^ *//')'; the app's process '$(pva_pid)'"
+            pv_sleep 10
+            clip_read && note "10 s later: $(clip_says)"
+            return 1
+        fi
         note "API $API: the app cannot read the clipboard from the background, so the later text was cleared too"
     else
         text=$(clip_text) || return 1

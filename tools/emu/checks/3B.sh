@@ -347,6 +347,8 @@ row_on_the_list() {
     if [ -n "$SHOT_DIR" ]; then
         cp "$LOGS/$PV_SERIAL-list-row-1.png" "$SHOT_DIR/3B-list-copy-row-1.png" && cp "$LOGS/$PV_SERIAL-list-row-3.png" "$SHOT_DIR/3B-list-copy-row-2.png" \
             && note "screenshots $SHOT_DIR/3B-list-copy-row-1.png and -2.png, 2.2 s apart"
+        # Once the system's clipboard overlay (Android 13 and later, about 6 s) has gone.
+        until_device $((COPIED_AT + 13000)) && shot 3B-list-copy-row-3
     fi
 }
 
@@ -546,11 +548,17 @@ note_copied() {
 # iface-66: a copy in one of the app's dialogs goes through SecretClipboard (VaultWindow wraps every
 # dialog's content in ClipboardWindow).
 dialog_copied() {
-    local bounds l t r b text
+    local bounds l t r b text try
     [ -f "$LOGS/$PV_SERIAL-copy-word.png" ] || { pv_log "no picture of the word Copy from the note's toolbar"; return 1; }
     to_entry || return 1
     pva_tap pv.entry.edit && pva_on Edit 20 || return 1
-    pva_tap pv.edit.addField && pva_need pv.edit.addField.hide 10 || return 1
+    for try in 1 2; do
+        pva_tap pv.edit.addField || return 1
+        pva_present pv.edit.addField.hide 6 && break
+        capture "$LOGS/$PV_SERIAL-add-field-tap-$try.png"
+        [ "$try" = 1 ] || { pv_log "no Add field dialog after two taps; ids: $(pva_ids)"; return 1; }
+        note "the first tap on Add field opened no dialog (the screen: $LOGS/$PV_SERIAL-add-field-tap-1.png); a second tap"
+    done
     pva_tap pv.edit.addField.hide || return 1
     pv_sleep 1
     pva_type pv.edit.addField.value "$FIELD_VALUE" || return 1
@@ -644,14 +652,21 @@ print(f"{black / total:.4f}")
 EOF
 }
 
-# screencap shows nothing of the app: on Android 7 and 17 its picture is black where the app is; on
-# Android 9 screencap refuses while a secure window is shown (exit 1, no picture).
+# screencap shows nothing of the app: on Android 17 its picture is black where the app is; on Android
+# 7 and 9 screencap writes no picture while a secure window is shown (an empty file on 7, exit 1 on 9),
+# and that counts only when it gives a picture of the launcher a moment later (the control).
 screencap_is_black() {
-    local file=$LOGS/$PV_SERIAL-staging-screencap.png share
+    local file=$LOGS/$PV_SERIAL-staging-screencap.png share launcher=$LOGS/$PV_SERIAL-launcher-screencap.png
     pva_in_front || { pv_log "the app is not in front: $(pv_focus)"; return 1; }
     pv_adb exec-out screencap -p > "$file" 2> /dev/null
     if [ ! -s "$file" ]; then
         note "screencap wrote no picture: $(pv_shell 'screencap -p /data/local/tmp/pv-secure.png > /dev/null 2>&1; echo exit $?; rm -f /data/local/tmp/pv-secure.png' | tr -d '\r' | tr '\n' ' ')"
+        pv_shell input keyevent KEYCODE_HOME > /dev/null
+        pv_sleep 2
+        pv_adb exec-out screencap -p > "$launcher" 2> /dev/null
+        pva_relaunch > /dev/null 2>&1
+        [ -s "$launcher" ] || { pv_log "screencap gives no picture of the launcher either: it is not the secure window that stops it"; return 1; }
+        note "the control: screencap of the launcher gives a picture of $(stat -c %s "$launcher") bytes ($launcher)"
         return 0
     fi
     share=$(black_share "$file") || return 1
