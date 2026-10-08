@@ -384,6 +384,8 @@ interface VaultRepository {
     suspend fun openBackup(bytes: ByteArray, passwordBytes: ByteArray): BackupResult
                                                        // Opened(vault, createdMs) | Wrong | WrongOrDamaged | Damaged | Newer | NotOurs | NoMemory (4.4)
     suspend fun matchesMasterPassword(proof: MasterProof): Set<String>                 // entry ids; after a correct MP entry only (D-9b)
+    fun olderCopyAnswered()                                                             // the older-copy notice was answered (lock.md §13.4 item 1):
+                                                                                        // the automatic writes of 5.5 may run again; the lock calls it
 }
 enum class SaveProblem { NOT_DURABLE, FAILED, READ_ONLY, TOO_LARGE }
 class Edited<T>(val vault: Vault, val value: T)        // `vault` is the input itself when there is nothing to save

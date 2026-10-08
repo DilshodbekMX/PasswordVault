@@ -220,6 +220,8 @@ class InMemoryVault(private val clock: Clock) : VaultPort, VaultRepository {
 
     override suspend fun matchesMasterPassword(proof: MasterProof): Set<String> = unsupported()
 
+    override fun olderCopyAnswered() = Unit // this vault opens no older copy
+
     private fun unsupported(): Nothing = throw UnsupportedOperationException("not used by the gate of build plan 3.2")
 
     companion object {

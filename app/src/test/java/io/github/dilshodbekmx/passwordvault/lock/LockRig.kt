@@ -237,6 +237,8 @@ class RecordingVault : VaultRepository {
     override suspend fun sealBackup(proof: MasterProof): ByteArray = throw UnsupportedOperationException("not used by the lock")
 
     override suspend fun openBackup(bytes: ByteArray, passwordBytes: ByteArray): BackupResult = throw UnsupportedOperationException("not used by the lock")
+
+    override fun olderCopyAnswered() = Unit // the manager's own hook is counted (LockRig.olderCopyAnswers)
 }
 
 /** [AppSettings] that writes "writeDefaults while <state>" into [log] when the defaults are written. */

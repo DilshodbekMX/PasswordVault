@@ -4,7 +4,6 @@ import androidx.lifecycle.ProcessLifecycleOwner
 import io.github.dilshodbekmx.passwordvault.AppGraph
 import io.github.dilshodbekmx.passwordvault.core.crypto.CryptoFactory
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockEngine
-import io.github.dilshodbekmx.passwordvault.data.DefaultVaultRepository
 import io.github.dilshodbekmx.passwordvault.keystore.KeystoreAccess
 import io.github.dilshodbekmx.passwordvault.keystore.LauncherRelay
 
@@ -63,7 +62,7 @@ object LockModule {
             io = io,
             prompts = prompts,
             lockNow = { graph.session.lockNow() },
-            olderCopyAnswered = { (data.repository as? DefaultVaultRepository)?.olderCopyAnswered() },
+            olderCopyAnswered = data.repository::olderCopyAnswered,
             debug = debug,
         )
         debug?.attach(engine, manager)

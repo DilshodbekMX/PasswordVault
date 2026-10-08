@@ -299,10 +299,9 @@ class DefaultVaultRepository internal constructor(
      * The older-copy notice was answered (lock.md §13.4 item 1): automatic writes and housekeeping
      * may run again for this session, and the work of its unlock (the purge) runs now. It does
      * nothing when no older copy is open. It returns at once and does its work under the vault
-     * mutex, in turn with every other call. Not part of `VaultRepository` yet: package 3.1 asked for
-     * it (interface request), so that the lock manager can call it when it receives the answer.
+     * mutex, in turn with every other call.
      */
-    fun olderCopyAnswered() {
+    override fun olderCopyAnswered() {
         scope.launch(dispatchers.io) {
             underMutex {
                 val s = session

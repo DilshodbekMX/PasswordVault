@@ -107,4 +107,12 @@ class FakeVaultRepository(
         backupResults.removeFirstOrNull() ?: BackupResult.NotOurs
 
     override suspend fun matchesMasterPassword(proof: MasterProof): Set<String> = matches
+
+    /** How many times [olderCopyAnswered] was called. */
+    var olderCopyAnswers = 0
+        private set
+
+    override fun olderCopyAnswered() {
+        olderCopyAnswers++
+    }
 }

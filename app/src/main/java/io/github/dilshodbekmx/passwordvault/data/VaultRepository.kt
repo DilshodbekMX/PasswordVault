@@ -51,6 +51,14 @@ interface VaultRepository {
      * only.
      */
     suspend fun matchesMasterPassword(proof: MasterProof): Set<String>
+
+    /**
+     * The older-copy notice was answered (lock.md §13.4 item 1; architecture.md §5.5 "Automatic
+     * writes"): the automatic writes and housekeeping that waited since an unlock opened an older
+     * copy may run again. Nothing happens when no older copy is open. Returns at once; the lock
+     * manager calls it when it receives the answer.
+     */
+    fun olderCopyAnswered()
 }
 
 /** Why a save did not happen (architecture.md §3.5, §4.9). */
