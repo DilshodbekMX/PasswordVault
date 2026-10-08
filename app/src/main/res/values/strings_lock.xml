@@ -2,8 +2,9 @@
 <!-- The lock screens (architecture.md §2.2 ui.lock): the master-password screen of build plan 3.4
      (ux.md §5.10; lock.md §13.2, §13.3), then every lock screen, the "Forgot master password?"
      sheet and the notices after unlock (4.2; ux.md §5.9, §5.10; lock.md §13.3, §13.4, F16, F17),
-     and the question of lock.md F16b step 3 (4.2b). Every name starts with lock_. The English wording is lock.md's and ux.md's; dates are formatted
-     by the screen in the phone's own style (i18n.md §4.6), so "7 Oct" may read "Oct 7". -->
+     and the question of lock.md F16b step 3 (4.2b). Every name starts with lock_. The English
+     wording is lock.md's and ux.md's; dates are formatted by the screen in the phone's own style
+     (i18n.md §4.6), so "7 Oct" may read "Oct 7". -->
 <resources xmlns:tools="http://schemas.android.com/tools">
 
     <!-- ===== Titles and the line of a set of passwords put aside ===== -->
