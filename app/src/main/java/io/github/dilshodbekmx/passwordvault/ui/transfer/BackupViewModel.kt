@@ -343,7 +343,7 @@ class BackupViewModel(
         doc = target
         show(BackupStep.Working(Phase.SAVING))
         work = viewModelScope.launch {
-            if (!files.write(target, made.bytes)) {
+            if (!files.write(made.bytes)) {
                 failed(Failure.WRITE, target)
                 return@launch
             }

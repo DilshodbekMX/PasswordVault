@@ -43,10 +43,13 @@ class BackupFiles(private val store: FileTaskStore, private val documents: Docum
     suspend fun openBackupFile(step: Int): Boolean = store.open(FileTask(FileTask.Kind.RESTORE, step, null))
 
     /**
-     * Writes the backup [bytes] into [doc], the document of the backup task, and reads it back
-     * inside `DocumentIo.write` [V-S6]. False: not written, or what was read back differs.
+     * Writes the backup [bytes] into the document of the backup task, through the store, which
+     * records first that the task's write began (iface-92), so that a write cut off by a lock or the
+     * end of the process is removed when the task is given up, in this process or in a new one; the
+     * write reads the file back and compares it [V-S6]. False: no backup task has a document, or it
+     * was not written, or what was read back differs.
      */
-    suspend fun write(doc: DocRef, bytes: ByteArray): Boolean = documents.write(doc, bytes)
+    suspend fun write(bytes: ByteArray): Boolean = store.write(FileTask.Kind.BACKUP, bytes)
 
     /**
      * What [doc] holds, read again for "Checking the saved file…": at most [size] + 1 bytes, so that
@@ -79,6 +82,16 @@ class BackupFiles(private val store: FileTaskStore, private val documents: Docum
 
     /** Where [doc] is. */
     suspend fun place(doc: DocRef): Place = withContext(io) { documents.place(doc) }
+
+    /**
+     * The vault no longer notes the backup [doc] (`VaultEdits.forgetBackup` was saved): the
+     * permission taken on it when it was chosen is given up (iface-93; Android 7 keeps 128 per app
+     * and drops the oldest). Best effort.
+     */
+    suspend fun release(doc: DocRef) = withContext(io) { documents.release(doc) }
+
+    /** Deletes [doc] (`DocumentsContract.deleteDocument`); false where the place does not allow it or cannot be reached. */
+    suspend fun delete(doc: DocRef): Boolean = withContext(io) { documents.delete(doc) }
 
     /** "Send to another app…": the share sheet titled [title] for a copy of the backup [bytes] named [name]. */
     suspend fun share(bytes: ByteArray, name: String, title: CharSequence): Boolean = store.share(bytes, name, title)
