@@ -493,7 +493,11 @@ class LockEngine(
         if (screen?.practice?.notNow != null) shortcuts.practiceNotNow()
     }
 
-    /** "I can't remember it" on a practice screen (F10 step 4): F11, which wants the PIN or the fingerprint now. */
+    /**
+     * "I can't remember it" on a practice screen (F10 step 4), or "Use my PIN" or "Use my fingerprint"
+     * on the "Forgot master password?" sheet (F11 step 1, F17 step 1): F11 from the lock screen, which
+     * wants the PIN now, or the fingerprint when there is no PIN.
+     */
     suspend fun cantRemember() = core.locked { passwords.cantRemember() }
 
     // ---------------------------------------------------------------------------------------------
