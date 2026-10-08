@@ -41,6 +41,14 @@ class BackupSharing(private val dir: File) {
         /** The directory under `cacheDir` that `res/xml/file_paths.xml` names. */
         const val DIR = "shared"
 
+        /**
+         * [name] as the name of the copy's file. What a place shows as a backup's name is not always
+         * a file name (Google Drive shows a "/" in one): a path separator and a NUL become "_", so
+         * that the copy is one file in `cache/shared/` whatever the name. [write] still takes
+         * nothing but a file name.
+         */
+        fun fileName(name: String): String = name.replace('/', '_').replace('\u0000', '_')
+
         /** The `FileProvider`'s authority is the application id followed by this. */
         const val AUTHORITY_SUFFIX = ".files"
 

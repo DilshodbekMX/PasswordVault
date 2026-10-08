@@ -150,15 +150,19 @@ class FileTaskStore(
     /**
      * Shares [bytes], an encrypted backup, as [name] through the share sheet titled [title] (ux.md
      * §5.19 item 6), after `Session.beginExternal`; the grace ends when the app is in front again
-     * ([inFront]), because the share sheet returns no result. False, with nothing opened: no activity
-     * is there, the copy could not be written, or no app on the phone shows a share sheet.
+     * ([inFront]), because the share sheet returns no result. [name] may be the name a place shows
+     * for the backup: a "/" in it becomes "_" in the copy's file name ([BackupSharing.fileName]).
+     * False, with nothing opened: no activity is there, the copy could not be written (also: [name]
+     * is no name, or too long for a file), or no app on the phone shows a share sheet.
      */
     suspend fun share(bytes: ByteArray, name: String, title: CharSequence): Boolean = withContext(dispatchers.main) {
         if (launcher == null) return@withContext false
         val file = try {
-            withContext(NonCancellable + dispatchers.io) { sharing.write(bytes, name) }
+            withContext(NonCancellable + dispatchers.io) { sharing.write(bytes, BackupSharing.fileName(name)) }
         } catch (e: IOException) {
             return@withContext false
+        } catch (e: IllegalArgumentException) {
+            return@withContext false // nothing of a name ("", ".", ".."): no copy was written
         }
         val now = launcher ?: return@withContext false
         session.beginExternal()

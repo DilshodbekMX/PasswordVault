@@ -359,6 +359,23 @@ class FileTaskStoreTest {
     }
 
     @Test
+    fun aNameThatIsNotAFileNameDoesNotEndTheCaller() = runTest {
+        // The name may be the one a place shows for the backup, and a place may show a "/" in a name
+        // (Google Drive does). The copy is a file under cache/shared/ all the same.
+        val store = newStore()
+        val bytes = byteArrayOf(80, 86, 65, 85, 76, 84, 48, 49)
+        assertTrue(store.share(bytes, "Backups/2026\u0000-10.pvault", "Send"))
+        assertEquals(File(sharedDir, "Backups_2026_-10.pvault"), launcher.shared)
+        assertArrayEquals(bytes, launcher.shared!!.readBytes())
+        assertEquals("nothing outside cache/shared/", listOf("Backups_2026_-10.pvault"), sharedDir.walkTopDown().filter { it.isFile }.map { it.name }.toList())
+
+        // Nothing of a name: false, as for a copy that could not be written, and no grace begins.
+        for (none in listOf("", ".", "..")) assertFalse("\"$none\"", store.share(bytes, none, "Send"))
+        assertEquals("only the first one was shared", 1, launcher.calls.size)
+        assertEquals(1, session.begun)
+    }
+
+    @Test
     fun theGraceOfTheShareSheetEndsWhenTheAppIsInFrontAgain() = runTest {
         // lock.md §10.3 item 3: the share sheet returns no result, and it covers the activity without
         // stopping it, so the store ends the grace when the activity says that it is in front again.
