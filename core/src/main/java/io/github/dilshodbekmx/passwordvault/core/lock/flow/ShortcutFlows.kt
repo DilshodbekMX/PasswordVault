@@ -85,7 +85,8 @@ internal class ShortcutFlows(private val core: LockCore) {
         require(PinWrap.isPin(pin)) { "a PIN is six ASCII digits" }
         val open = openVault() ?: return false
         if (!core.holds(proof) || proof.vaultId != open.vaultId) return false
-        return newPin(core.lockOf(open.vaultId), pin, masterPasswordTyped = true)
+        // A lock or ON_STOP drops the proof at once, without the mutex (§5.8): asked again before the write.
+        return newPin(core.lockOf(open.vaultId), pin, masterPasswordTyped = true) { core.holds(proof) }
     }
 
     /**
@@ -147,20 +148,25 @@ internal class ShortcutFlows(private val core: LockCore) {
             false
         }
         if (!yields) return PinChangeOutcome.CannotCheck
-        return if (newPin(core.lockOf(open.vaultId), new, masterPasswordTyped = false)) PinChangeOutcome.Changed else PinChangeOutcome.NotSaved
+        val changed = newPin(core.lockOf(open.vaultId), new, masterPasswordTyped = false) { !at.hasEnded }
+        return if (changed) PinChangeOutcome.Changed else PinChangeOutcome.NotSaved
     }
 
     /**
      * Holds the mutex: F6 steps 4 to 8 for the vault of [lock], which is open. A new slot with one
      * wrap, for the key of the open vault, made, tested and written; true when the record is on disk.
+     * [wanted] says whether the flow that asked still stands (its proof is held, its prompt has not
+     * ended): a lock or `ON_STOP` ends it at once, without the mutex, so it is asked before the key
+     * is made and again just before the record is written.
      */
-    private suspend fun newPin(lock: VaultLock, pin: ByteArray, masterPasswordTyped: Boolean): Boolean {
+    private suspend fun newPin(lock: VaultLock, pin: ByteArray, masterPasswordTyped: Boolean, wanted: () -> Boolean): Boolean {
         // The guard writes the new record over the one it read at its start-up step (§6.3 S): that
         // step must have run, or a record on disk would be overwritten unread.
         lock.startPin()
         if (lock.pinRead == RecordRead.Newer) return false // a newer app owns it: never replaced (§5.3)
         if (PinBlocklist.rule(pin) != 0) return false // §7.2: there is no "use it anyway"
         if (core.canHoldKeys() != KeyCreate.Ok) return false // step 4: the canary; F18 or NOT NOW
+        if (!wanted()) return false
 
         val slotId = core.random.uuid()
         val alias = PinWrap.alias(slotId)
@@ -178,7 +184,7 @@ internal class ShortcutFlows(private val core: LockCore) {
         } catch (e: RuntimeException) {
             null
         }
-        if (slot == null) { // step 8: no record names the new key
+        if (slot == null || !wanted()) { // step 8: no record names the new key
             deleteQuietly(alias)
             return false
         }
