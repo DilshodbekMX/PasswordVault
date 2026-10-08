@@ -45,6 +45,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -88,7 +89,6 @@ import io.github.dilshodbekmx.passwordvault.ui.common.VaultSecureField
  * and leaves the screen from the first step and from a result; it is ignored while a file is saved
  * (ux.md §4). "Backup file (recommended)" opens the backup's own screen.
  */
-@OptIn(ExperimentalMaterial3Api::class) // TopAppBar's signature names TopAppBarScrollBehavior (ux.md §10)
 @Composable
 fun ExportScreen(vm: ExportViewModel, nav: Navigator) {
     val state by vm.state.collectAsStateWithLifecycle()
@@ -103,7 +103,31 @@ fun ExportScreen(vm: ExportViewModel, nav: Navigator) {
         }
     }
     BackHandler(enabled = vm.takesBack(state)) { vm.back() }
+    val actions = remember(vm, nav) {
+        ExportActions(
+            choose = vm::choose,
+            continueFromChoice = vm::continueFromChoice,
+            setUnderstood = vm::setUnderstood,
+            toggleWhich = vm::toggleWhich,
+            continueFromWarning = vm::continueFromWarning,
+            submitPassword = vm::submitPassword,
+            cancelPaused = vm::cancelPaused,
+            nextPart = vm::nextPart,
+            deleteNow = vm::deleteNow,
+            tryAgain = vm::tryAgain,
+            leave = { nav.back() },
+        )
+    }
+    ExportFrame(state, vm.password, actions, onBack = { if (!vm.back()) nav.back() })
+}
 
+/**
+ * The export's frame: the top bar with "Export" and Back ([onBack]; off while a file is saved), and
+ * the step [state] is under it ([ExportContent]).
+ */
+@OptIn(ExperimentalMaterial3Api::class) // TopAppBar's signature names TopAppBarScrollBehavior (ux.md §10)
+@Composable
+fun ExportFrame(state: ExportUiState, password: TextFieldState, actions: ExportActions, onBack: () -> Unit) {
     val title = stringResource(R.string.export_title)
     Scaffold(
         modifier = Modifier.semantics {
@@ -115,7 +139,7 @@ fun ExportScreen(vm: ExportViewModel, nav: Navigator) {
                 title = { Text(text = title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 navigationIcon = {
                     IconButton(
-                        onClick = { if (!vm.back()) nav.back() },
+                        onClick = onBack,
                         enabled = state !is ExportUiState.Saving,
                         modifier = Modifier.testTag(ExportTags.BACK),
                     ) {
@@ -125,26 +149,7 @@ fun ExportScreen(vm: ExportViewModel, nav: Navigator) {
             )
         },
     ) { padding ->
-        ExportContent(
-            state = state,
-            password = vm.password,
-            actions = remember(vm, nav) {
-                ExportActions(
-                    choose = vm::choose,
-                    continueFromChoice = vm::continueFromChoice,
-                    setUnderstood = vm::setUnderstood,
-                    toggleWhich = vm::toggleWhich,
-                    continueFromWarning = vm::continueFromWarning,
-                    submitPassword = vm::submitPassword,
-                    cancelPaused = vm::cancelPaused,
-                    nextPart = vm::nextPart,
-                    deleteNow = vm::deleteNow,
-                    tryAgain = vm::tryAgain,
-                    leave = { nav.back() },
-                )
-            },
-            padding = padding,
-        )
+        ExportContent(state, password, actions, padding)
     }
 }
 
@@ -173,25 +178,28 @@ fun ExportContent(state: ExportUiState, password: TextFieldState, actions: Expor
         modifier = Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding).imePadding(),
         contentAlignment = Alignment.TopCenter,
     ) {
-        Column(
-            modifier = Modifier
-                .widthIn(max = CONTENT_MAX_WIDTH)
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp, vertical = 16.dp)
-                .testTag(ExportTags.CONTENT),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            when (state) {
-                is ExportUiState.Choose -> ChooseStep(state, actions)
-                is ExportUiState.Warning -> WarningStep(state, actions)
-                is ExportUiState.Password -> PasswordStep(state, password, actions)
-                is ExportUiState.Picking -> Busy(R.string.export_picking, ExportTags.PICKING, progress = false)
-                is ExportUiState.Saving -> Busy(R.string.export_saving, ExportTags.SAVING, progress = true)
-                is ExportUiState.Saved -> SavedStep(state, actions)
-                is ExportUiState.Failed -> FailedStep(state, actions)
-                is ExportUiState.Ended -> EndedStep(state, actions)
-                is ExportUiState.Pending -> PendingStep(state, actions)
+        // Each step starts at its top.
+        key(state.javaClass) {
+            Column(
+                modifier = Modifier
+                    .widthIn(max = CONTENT_MAX_WIDTH)
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 24.dp, vertical = 16.dp)
+                    .testTag(ExportTags.CONTENT),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                when (state) {
+                    is ExportUiState.Choose -> ChooseStep(state, actions)
+                    is ExportUiState.Warning -> WarningStep(state, actions)
+                    is ExportUiState.Password -> PasswordStep(state, password, actions)
+                    is ExportUiState.Picking -> Busy(R.string.export_picking, ExportTags.PICKING, progress = false)
+                    is ExportUiState.Saving -> Busy(R.string.export_saving, ExportTags.SAVING, progress = true)
+                    is ExportUiState.Saved -> SavedStep(state, actions)
+                    is ExportUiState.Failed -> FailedStep(state, actions)
+                    is ExportUiState.Ended -> EndedStep(state, actions)
+                    is ExportUiState.Pending -> PendingStep(state, actions)
+                }
             }
         }
     }
