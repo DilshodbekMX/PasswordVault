@@ -400,9 +400,23 @@ class ImportFlowTest {
     @Test
     fun dataOfANewerVersionIsSaidNotToBeImported() = ImportKit.run {
         val entries = listOf(account("66666666-6666-4666-8666-666666666666", "Mail", "u", "P-1", "https://mail.uz"))
-        recorded(BitwardenJson.export(entries, NOW_MS, "PasswordVault 2.0", mapOf("futureThing" to "{\"a\":1}")).bytes)
+        val json = BitwardenJson.export(entries, NOW_MS, "PasswordVault 2.0", mapOf("futureThing" to "{\"a\":1}")).bytes
+        recorded(json)
         val file = file()
         assertTrue(preview(file).newerData)
+        file.importNow()
+        settle()
+        assertTrue(vault().extras.isEmpty())
+
+        // Read again after the import (a lock came between it and the answer): every account is here,
+        // and the newer data, never imported, does not stop the question about the file.
+        lockVault()
+        clear()
+        unlockVault()
+        val again = file()
+        val done = (again.ui.value.screen as ImportScreen.Done).done
+        assertEquals(1, done.alreadyAll)
+        assertTrue(done.askFile)
     }
 
     @Test

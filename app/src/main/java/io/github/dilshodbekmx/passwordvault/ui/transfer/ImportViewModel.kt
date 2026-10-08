@@ -7,6 +7,7 @@ import io.github.dilshodbekmx.passwordvault.AppGraph
 import io.github.dilshodbekmx.passwordvault.core.crypto.MasterPasswordBytes
 import io.github.dilshodbekmx.passwordvault.core.formats.FileKind
 import io.github.dilshodbekmx.passwordvault.core.formats.ImportFile
+import io.github.dilshodbekmx.passwordvault.core.formats.ImportLeftOut
 import io.github.dilshodbekmx.passwordvault.core.formats.ImportPlan
 import io.github.dilshodbekmx.passwordvault.core.formats.ImportPlanner
 import io.github.dilshodbekmx.passwordvault.core.formats.Importer
@@ -664,11 +665,14 @@ internal object ImportDefaults {
     }
 
     /**
-     * Every account the file holds is already here, and nothing of it was left out: the preview then
-     * has nothing to import, and asks about the file at once.
+     * Every account the file holds is already here, and no account of it was left out (a password
+     * too long, or rows of the wrong length not confirmed): the preview then has nothing to import,
+     * and asks about the file at once. What is not an account (Bitwarden's trash, an empty item, a
+     * newer version's data) is never imported, so it does not count.
      */
     fun nothingNew(preview: ImportPreview): Boolean =
-        preview.toAdd == 0 && preview.found > 0 && preview.leftOut.isEmpty() &&
+        preview.toAdd == 0 && preview.found > 0 &&
+            preview.leftOut.none { it.kind == ImportLeftOut.Kind.PASSWORD_TOO_LONG } &&
             (preview.wrongRows.isEmpty() || preview.wrongRowsIncluded)
 
     /**
