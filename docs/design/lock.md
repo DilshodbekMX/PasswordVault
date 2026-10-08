@@ -1206,7 +1206,7 @@ Without this route every backup becomes unopenable, and the next PIN lockout or 
    - **Plain export:** always typed now.
    - Neither is possible while a new master password is pending (F11 step 10).
 3. Backup: a new container with its own key, salt and one password slot made from the typed password (formats.md §3). Plain export: formats.md.
-4. `session.beginExternal()` (10.3), the file picker, the write, then the read-back check before "Saved" [V-S6]. For a backup the read-back copy is opened with the typed password.
+4. **A backup is made before the file picker opens:** the new container is sealed with the typed password and opened once with it, and the password is dropped. The picker makes the app stop being visible, and that drops every proof (5.8), so the typed bytes are gone when the file comes back (the owner's decision 5 of 2026-10-08, §18 item 20). Then `session.beginExternal()` (10.3), the file picker, the write, then the read-back check before "Saved" [V-S6]: for a backup, what is read back must be, by length and SHA-256, what was sealed and opened.
 5. Zero the password and keys. PIN and fingerprint are never used here, and no lock record changes except the practice dates and the counters.
 
 ### F13. Restore on a new phone

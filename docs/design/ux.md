@@ -849,11 +849,12 @@ The app is stricter on locking because the user asked for a bank-like lock. It k
    - No backup is made while a new master password is pending (§5.24): "You can make a backup when your new master password has started working." Such a backup would need a password nobody remembers.
    - The cost: the paper is kept at home, and typing a long passphrase for every backup makes backups rarer. The offer after each master-password entry is how the app makes up for it.
 3. **File picker** (`CreateDocument`, suggested name `PasswordVault-backup-2026-10-06.pvault`). Google Drive appears in the picker when its app is installed. Time in the picker counts as time in the app (§4).
-4. **"Saving…" then "Checking the saved file…"** The file is read back and opened before success is shown [E: storage.md §5.4; V-S6].
+4. **"Saving…" then "Checking the saved file…"** The backup was made and opened with the master password before the picker opened (lock.md F12 step 4); the saved file is read back and must be that backup, byte for byte, before success is shown [E: storage.md §5.4; V-S6].
 5. **Result**: "Backup saved: PasswordVault-backup-2026-10-06.pvault (52 accounts)." The next line depends on the place, recognised by the document's provider:
    - **Phone storage** (the Downloads provider, or the main storage root of the external-storage provider): "This copy is on this phone. If the phone is lost, this copy is lost too. Keep a copy somewhere else." `Button` "Send to another app…".
    - **Google Drive** (Drive's document provider [I: check its authority on a device]): "Saved to Google Drive. It is uploaded when the phone is online."
    - **Anywhere else** (SD card, USB drive, other apps): "Saved to <the place's name>." `OutlinedButton` "Send to another app…".
+   - **Google Drive and anywhere else** add a last line: "This place may upload the file later. Open it there once to check that it arrived." The app reads the file back, but it cannot see whether the place uploaded it (the owner's decision 8 of 2026-10-08).
 6. **"Send to another app…"** (encrypted backup only) opens the share sheet with the file through a `FileProvider` (Telegram Saved Messages, email to yourself, Drive).
    - Text: "The file is locked with your master password. Keep your master password strong."
    - The shared copy is encrypted and is kept until the next app start, so a receiving app can still read it after this app has locked.
