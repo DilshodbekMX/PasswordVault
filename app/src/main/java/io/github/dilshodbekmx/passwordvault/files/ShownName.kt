@@ -23,7 +23,7 @@ internal object ShownName {
     /** The longest name shown, in UTF-16 units, the mark of a cut name included. */
     const val MAX_LENGTH = 255
 
-    private const val CUT_MARK = '…'
+    private const val CUT_MARK = '\u2026' // …
     private const val REPLACEMENT = 0xFFFD
 
     fun of(raw: String?): String? {

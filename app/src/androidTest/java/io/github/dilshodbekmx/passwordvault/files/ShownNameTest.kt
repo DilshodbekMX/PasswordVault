@@ -24,7 +24,7 @@ class ShownNameTest {
             "Oʻzbekcha parollar.csv", // U+02BB
             "O‘zbekcha gʻoyalar.json", // U+2018, U+02BB
             "Пароли ўзбекча ҳисоб қайдлари.xlsx",
-            "a b.csv", // a no-break space inside a name stays what it is
+            "a\u00A0b.csv", // a no-break space inside a name stays what it is
             "résumé – копия.json",
             "写真 📷.pvault",
             "x".repeat(255),
@@ -38,17 +38,17 @@ class ShownNameTest {
         assertEquals("a b", ShownName.of("a\nb"))
         assertEquals("a  b", ShownName.of("a\r\nb"))
         assertEquals("a b c d e f", ShownName.of("a\u0000b\tc\u007Fd\u0085e\u001Bf"))
-        assertEquals("a b c", ShownName.of("a b c"))
-        assertEquals("the ends are trimmed", "a b", ShownName.of(" \n a b\n\n  "))
+        assertEquals("a b c", ShownName.of("a\u2028b\u2029c"))
+        assertEquals("the ends are trimmed", "a b", ShownName.of(" \n a b\n\n\u00A0 "))
     }
 
     @Test
     fun whatTurnsTextAroundOrHidesInItIsLeftOut() {
         // Direction marks, embeddings, overrides and isolates; zero-width characters; the soft hyphen; tags.
-        val marks = "‎‏؜‪‫‬‭‮⁦⁧⁨⁩​‌‍⁠﻿­"
+        val marks = "\u200E\u200F\u061C\u202A\u202B\u202C\u202D\u202E\u2066\u2067\u2068\u2069\u200B\u200C\u200D\u2060\uFEFF\u00AD"
         for (mark in marks) assertEquals("U+" + Integer.toHexString(mark.code), "ab", ShownName.of("a" + mark + "b"))
         assertEquals("ab", ShownName.of("a" + String(Character.toChars(0xE0041)) + "b")) // a tag character
-        assertEquals("invoice.exe", ShownName.of("invoice‮.exe")) // not shown as "invoiceexe."
+        assertEquals("invoice.exe", ShownName.of("invoice\u202E.exe")) // not shown as "invoiceexe."
         assertEquals("passwords.csv", ShownName.of(marks + "passwords.csv" + marks))
     }
 
@@ -62,7 +62,7 @@ class ShownNameTest {
 
     @Test
     fun nothingLeftIsNoName() {
-        for (empty in listOf("", " ", "\n", "​", " ‮\t  ﻿ ")) assertNull(ShownName.of(empty))
+        for (empty in listOf("", " ", "\n", "\u200B", " \u202E\t\u2028\u00A0\uFEFF ")) assertNull(ShownName.of(empty))
     }
 
     @Test
@@ -71,7 +71,7 @@ class ShownNameTest {
         assertEquals("x".repeat(254) + "…", ShownName.of("x".repeat(256)))
         assertEquals("x".repeat(254) + "…", ShownName.of("x".repeat(3_000_000)))
         assertEquals("255 characters and space after them fit", "x".repeat(255), ShownName.of("x".repeat(255) + "   \n"))
-        assertEquals("what does not count does not cut", "x".repeat(255), ShownName.of("​".repeat(500) + "x".repeat(255) + "‮".repeat(500)))
+        assertEquals("what does not count does not cut", "x".repeat(255), ShownName.of("\u200B".repeat(500) + "x".repeat(255) + "\u202E".repeat(500)))
 
         // Cut at a whole character: a pair is not split, and no space is left before the mark.
         val camera = "📷"
@@ -79,7 +79,7 @@ class ShownNameTest {
         assertEquals("x".repeat(253) + "…", cutInAPair)
         assertEquals("x".repeat(250) + "…", ShownName.of("x".repeat(250) + "    yyyy"))
         assertEquals("spaces without end are no name", null, ShownName.of(" ".repeat(100_000)))
-        assertEquals("ab", ShownName.of("a" + "​".repeat(100_000) + "b"))
+        assertEquals("ab", ShownName.of("a" + "\u200B".repeat(100_000) + "b"))
         assertEquals("a" + " ".repeat(253) + "b", ShownName.of("a" + " ".repeat(253) + "b"))
         assertEquals("a…", ShownName.of("a" + " ".repeat(254) + "b"))
         assertTrue(ShownName.of("a" + " ".repeat(100_000) + "b")!!.length <= ShownName.MAX_LENGTH)
