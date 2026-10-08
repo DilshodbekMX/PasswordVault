@@ -67,7 +67,9 @@
 #                   picture whose app area is black, while the emulator's own screenshot (`emu
 #                   screenrecord screenshot`) of the same screen is not (the control; kept in the logs).
 #
-# Prints PASS, FAIL or SKIPPED per step and a summary; logs in build/emu-checks/3B/. Exit 0 when no step
+# Prints PASS, FAIL or SKIPPED per step and a summary; logs in build/emu-checks/3B/. "clip" and
+# "secure" end with a NOTE when another adb client stopped or started the app on the device meanwhile
+# (Android Studio's Run with a private emulator chosen: tools/emu/README.md). Exit 0 when no step
 # failed, 1 otherwise, 2 for a usage error, 3 for a refused serial. Written by the device check of
 # sub-wave 3B (round R2 of build-plan.md section 12).
 set -u
