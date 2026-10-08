@@ -465,31 +465,46 @@ internal class VaultFlows(private val core: LockCore) {
      * record is read through its counter first (§6.3 S), as start-up does.
      *
      * True only when all of it is on disk. `state.rec` is written whole even when nothing in it
-     * changes, and both slot records are read back from disk: a slot that start-up removed in
-     * memory while its write failed is still on disk, and would come back once vault N is gone. A
-     * slot record that cannot be read now (NEWER, UNREADABLE) may still hold a slot, so it is false
-     * then, and nothing is changed.
+     * changes. A slot record is looked at on disk: when the slot is still there because a removal
+     * was made in memory and its write failed (start-up's, or an earlier try of this flow), the
+     * record the lock means to have, without the slot, is written once more; a slot that stayed on
+     * disk would come back once vault N is gone. A slot record that cannot be read now (NEWER,
+     * UNREADABLE) may still hold a slot and is never written over: false then.
      */
     private fun removeShortcutsOnDisk(other: VaultLock): Boolean {
         other.startPin()
         if (mayHoldUnknownSlot(other.pinRead) || mayHoldUnknownSlot(other.fingerprint.read)) return false
-        val pinRemoved = other.pin.removeSlot(PinRecord.OffReason.REPLACED)
-        val fingerprintRemoved = other.fingerprint.removeSlot(FingerprintRecord.OffReason.REPLACED)
+        val pinWritten = other.pin.removeSlot(PinRecord.OffReason.REPLACED)
+        val fingerprintWritten = other.fingerprint.removeSlot(FingerprintRecord.OffReason.REPLACED)
         val pendingCleared = other.master.update(bestEffort = false) { it.copy(pendingMp = null) }
-        return pinRemoved && fingerprintRemoved && pendingCleared && noSlotOnDisk(other.vaultId)
+        val pinGone = goneOnDisk(pinWritten, FileRecordStore.pin(core.files, core.root, other.vaultId), other.pin.record) { it.slot }
+        val fingerprintGone =
+            goneOnDisk(fingerprintWritten, FileRecordStore.fingerprint(core.files, core.root, other.vaultId), other.fingerprint.record) { it.slot }
+        return pendingCleared && pinGone && fingerprintGone
     }
 
     private fun mayHoldUnknownSlot(read: RecordRead<*>): Boolean = read is RecordRead.Newer || read is RecordRead.Unreadable
 
-    /** Whether `pin.rec` and `fingerprint.rec` of [vaultId], as they are on disk now, hold no slot that could ever be used. */
-    private fun noSlotOnDisk(vaultId: String): Boolean =
-        holdsNoSlot(FileRecordStore.pin(core.files, core.root, vaultId).read()) { it.slot } &&
-            holdsNoSlot(FileRecordStore.fingerprint(core.files, core.root, vaultId).read()) { it.slot }
-
-    private fun <T> holdsNoSlot(read: RecordRead<T>, slotOf: (T) -> ShortcutSlot?): Boolean = when (read) {
-        is RecordRead.Ok -> slotOf(read.record) == null
-        RecordRead.Missing, is RecordRead.Damaged -> true // a damaged record is never used and never repaired in place (§5.3)
-        RecordRead.Newer, RecordRead.Unreadable -> false
+    /**
+     * Whether the record of [store] holds no slot on disk after a removal whose write came to
+     * [written] (true also when there was nothing to remove in memory). Where it was not written, or
+     * the disk still names a slot, [meant] (the record the lock means to have, which holds no slot)
+     * is written again, whole. MISSING and DAMAGED hold no slot that could ever be used (§5.3: a
+     * damaged record is never used and never repaired in place).
+     */
+    private fun <T : Any> goneOnDisk(written: Boolean, store: FileRecordStore<T>, meant: T?, slotOf: (T) -> ShortcutSlot?): Boolean {
+        val onDisk = store.read()
+        if (onDisk is RecordRead.Newer || onDisk is RecordRead.Unreadable) return false
+        val slotOnDisk = (onDisk as? RecordRead.Ok)?.record?.let(slotOf)
+        if (written && slotOnDisk == null) return true
+        if (meant == null) return slotOnDisk == null
+        if (slotOf(meant) != null) return false
+        return try {
+            store.write(meant)
+            true
+        } catch (e: Exception) {
+            false
+        }
     }
 
     /** The aliases that the slots of [lock]'s records name now (`pv_pin_…`, `pv_fp_…`). */
