@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The Settings tab (build plan 4.3; ux.md §5.18): the list with its four groups, the App lock page,
+     the dialogs of the lock delay, the clipboard delay and the theme, and the master-password question
+     before fingerprint unlock is turned on. The rows of later screens (backup, export, import, old
+     passwords, language, help) have their texts here too; their screens bring their own. Every name
+     starts with settings_. Sentence case for titles and rows (i18n.md §4.3). -->
+<resources>
+
+    <!-- The tab's title, at the top of the list. Short: one line. -->
+    <string name="settings_title">Settings</string>
+
+    <!-- ===== The group "App lock" (glossary term 69): how the app is opened and when it locks. ===== -->
+
+    <!-- Heading of the group, and the title of the page that shows the group alone. -->
+    <string name="settings_group_app_lock">App lock</string>
+    <!-- Row: opens "Change PIN" (a PIN is set). -->
+    <string name="settings_change_pin">Change PIN</string>
+    <!-- Row: opens "Set a PIN" (no PIN works now). It asks for the master password first. -->
+    <string name="settings_set_pin">Set a PIN</string>
+    <!-- Under "Set a PIN" when the PIN was turned off after too many wrong tries. -->
+    <string name="settings_pin_off_limit">PIN unlock was turned off after too many wrong tries.</string>
+    <!-- Under "Set a PIN" when the PIN's key is gone from the phone, or its record is damaged. -->
+    <string name="settings_pin_stopped_working">Your PIN stopped working on this phone.</string>
+    <!-- Under "Set a PIN" when the PIN was set up by a newer version of this app. -->
+    <string name="settings_pin_newer_app">Your PIN was set up by a newer version of this app.</string>
+    <!-- Under "Set a PIN" when the phone's storage was too full to check the PIN. -->
+    <string name="settings_pin_storage_full">Your phone’s storage is full, so the PIN can’t be checked now.</string>
+    <!-- Under "Change PIN" while the phone's key store does not answer (lock.md F15c). -->
+    <string name="settings_pin_cannot_check">Your PIN can’t be checked right now. If this keeps happening, choose a new PIN with your master password.</string>
+    <!-- Under the PIN row, which is then off, on a phone that cannot keep keys in its secure
+         hardware (lock.md F18). -->
+    <string name="settings_no_secure_hardware">This phone can’t keep a PIN or fingerprint key in protected hardware.</string>
+
+    <!-- The fingerprint switch (glossary term 62). -->
+    <string name="settings_fingerprint">Fingerprint unlock</string>
+    <!-- The same row after a master-password change that did not keep fingerprint unlock (lock.md F8
+         step 7): the switch is off and can be turned on again. -->
+    <string name="settings_fingerprint_turn_on_again">Fingerprint unlock: turn on again</string>
+    <!-- Under the switch when the phone has a screen lock but no fingerprint (lock.md §9.4). -->
+    <string name="settings_fingerprint_none_enrolled">Set a screen lock and add a fingerprint in your phone’s settings first</string>
+    <!-- Under the switch when the phone has no fingerprint sensor that apps can use (lock.md §9.4). -->
+    <string name="settings_fingerprint_no_sensor">This phone has no fingerprint sensor that apps can use</string>
+    <!-- Under the switch when the phone's setting that lets apps use fingerprint is off (lock.md §9.4). -->
+    <string name="settings_fingerprint_not_for_apps">Fingerprint can’t be used in apps right now. In your phone’s settings, check that fingerprint may be used to verify it’s you in apps.</string>
+    <!-- Under the switch when the phone needs a security update first (lock.md §9.4). -->
+    <string name="settings_fingerprint_update_needed">Your phone needs a security update before fingerprint can be used</string>
+    <!-- The question before fingerprint unlock is turned on (lock.md F9 step 2): its title is
+         pin_fingerprint_turn_on, and under it this line, then the field. -->
+    <string name="settings_fingerprint_on_body">Type your master password to turn on fingerprint unlock.</string>
+    <!-- The button of that question: checks the master password, then the phone's fingerprint prompt opens. -->
+    <string name="settings_fingerprint_on_button">Turn on</string>
+    <!-- Turning fingerprint unlock on failed (lock.md F9 step 9); nothing changed. -->
+    <string name="settings_fingerprint_failed">Fingerprint unlock could not be turned on. Try again later.</string>
+    <!-- Shown for a few seconds after fingerprint unlock was turned on. -->
+    <string name="settings_fingerprint_is_on">Fingerprint unlock is on.</string>
+
+    <!-- Row: when the app locks after the user leaves it (glossary terms 70 to 73). Opens a dialog. -->
+    <string name="settings_lock_delay">Lock the app after leaving it</string>
+    <!-- A choice of the lock delay, and the row's value when chosen (glossary term 71). -->
+    <string name="settings_lock_delay_immediately">Immediately</string>
+    <!-- A choice of the lock delay in seconds (glossary term 72); %d is 30. -->
+    <plurals name="settings_lock_delay_seconds">
+        <item quantity="one">After %d second</item>
+        <item quantity="other">After %d seconds</item>
+    </plurals>
+    <!-- A choice of the lock delay in minutes (glossary term 73); %d is 1 or 5. -->
+    <plurals name="settings_lock_delay_minutes">
+        <item quantity="one">After %d minute</item>
+        <item quantity="other">After %d minutes</item>
+    </plurals>
+    <!-- Under the choices of the lock delay dialog (ux.md §5.18, lock.md §10.3). -->
+    <string name="settings_lock_delay_note">Time in a file picker or share sheet that the app opened counts as time in the app.</string>
+    <!-- Under the lock delay row: the two rules that cannot be changed (ux.md §5.18 "always"). -->
+    <string name="settings_lock_always">The app also locks at once when the screen turns off, and after 5 minutes without a touch.</string>
+
+    <!-- Row: when copied text is cleared from the clipboard (glossary term 113). Opens a dialog. -->
+    <string name="settings_clip_delay">Clear copied text after</string>
+    <!-- A choice of the clipboard delay in seconds; %d is 30. -->
+    <plurals name="settings_clip_delay_seconds">
+        <item quantity="one">%d second</item>
+        <item quantity="other">%d seconds</item>
+    </plurals>
+    <!-- A choice of the clipboard delay in minutes; %d is 1, 2 or 5. -->
+    <plurals name="settings_clip_delay_minutes">
+        <item quantity="one">%d minute</item>
+        <item quantity="other">%d minutes</item>
+    </plurals>
+
+    <!-- Row: opens "Change master password" (glossary term 51). -->
+    <string name="settings_change_master_password">Change master password</string>
+    <!-- Row: locks the app at once (ux.md §4). -->
+    <string name="settings_lock_now">Lock now</string>
+    <!-- Under "Lock now". -->
+    <string name="settings_lock_now_body">The PIN, your fingerprint or the master password opens it again.</string>
+
+    <!-- ===== The group "Backup & transfer". ===== -->
+
+    <!-- Heading of the group. -->
+    <string name="settings_group_backup">Backup &amp; transfer</string>
+    <!-- Row: opens "Make a backup" (ux.md §5.19). -->
+    <string name="settings_backup">Make a backup</string>
+    <!-- Under "Make a backup": the newest backup this app saved. %1$s says how long ago, for example
+         "3 days ago" or "yesterday"; %2$s is the place, for example "Google Drive" or "this phone". -->
+    <string name="settings_backup_last">Last backup: %1$s, %2$s</string>
+    <!-- Under "Make a backup" when this app has saved no backup of these passwords yet. -->
+    <string name="settings_backup_none">No backup yet</string>
+    <!-- The place in settings_backup_last when the backup is in the phone's own storage. -->
+    <string name="settings_place_phone">this phone</string>
+    <!-- The place in settings_backup_last for Google Drive: a product name, not translated (i18n.md §3). -->
+    <string name="settings_place_drive" translatable="false">Google Drive</string>
+    <!-- A switch (on by default): the app reminds the user when a backup is due (ux.md §5.11). -->
+    <string name="settings_backup_reminders">Backup reminders</string>
+    <!-- Row: opens "Export" (ux.md §5.20), to save the passwords as a CSV, JSON or Excel file. -->
+    <string name="settings_export">Export</string>
+    <!-- Under "Export". Keep the three format names as they are. -->
+    <string name="settings_export_body">Excel, CSV or JSON file</string>
+    <!-- Row: opens "Import" (ux.md §5.21), to add passwords from a file. -->
+    <string name="settings_import">Import</string>
+    <!-- Under "Import". -->
+    <string name="settings_import_body">From Chrome, another password app or a file</string>
+    <!-- Row, only when passwords were put aside with "Start with an empty app" (lock.md F17): opens
+         them. %1$s is the date they were put aside, for example "Oct 6, 2026". -->
+    <string name="settings_old_passwords">Old passwords (locked on %1$s)</string>
+
+    <!-- ===== The group "Appearance & language". ===== -->
+
+    <!-- Heading of the group. -->
+    <string name="settings_group_appearance">Appearance &amp; language</string>
+    <!-- Under the language row (whose title is the same in every language, i18n.md §1.4.5): the app
+         follows the phone's language. -->
+    <string name="settings_language_system">System language</string>
+    <!-- Row: opens the theme dialog (glossary term 114). -->
+    <string name="settings_theme">Theme</string>
+    <!-- A choice of the theme, and the row's value: light or dark as the phone is set. -->
+    <string name="settings_theme_system">System</string>
+    <!-- A choice of the theme (glossary term 116). -->
+    <string name="settings_theme_light">Light</string>
+    <!-- A choice of the theme (glossary term 117). -->
+    <string name="settings_theme_dark">Dark</string>
+
+    <!-- ===== The group "Help" (ux.md §5.22). ===== -->
+
+    <!-- Heading of the group. -->
+    <string name="settings_group_help">Help</string>
+    <!-- Row: opens the help page about how the passwords are kept safe. -->
+    <string name="settings_help_protection">How your passwords are protected</string>
+    <!-- Row: opens the help page for a lost phone or a new phone. -->
+    <string name="settings_help_lost_phone">If you lose your phone or move to a new one</string>
+    <!-- Row: opens the help page for a forgotten master password. -->
+    <string name="settings_help_forgot_master_password">If you forget your master password</string>
+    <!-- Row: opens the help page for a forgotten PIN. -->
+    <string name="settings_help_forgot_pin">If you forget your PIN</string>
+    <!-- Row: opens the licences of the open-source parts of the app (glossary term 120). -->
+    <string name="settings_licences">Open-source licences</string>
+    <!-- Row: opens the page with the app's version (glossary term 121). Under it, the version number. -->
+    <string name="settings_version">Version</string>
+
+    <!-- ===== Messages and the back button. ===== -->
+
+    <!-- A setting could not be written to the phone's storage; nothing changed. -->
+    <string name="settings_not_saved">The setting could not be saved. Try again.</string>
+    <!-- The back arrow of the App lock page and of "Change PIN", read by TalkBack. -->
+    <string name="settings_back">Back</string>
+
+</resources>
