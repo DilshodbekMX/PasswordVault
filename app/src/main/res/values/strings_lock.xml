@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- The lock screens (architecture.md §2.2 ui.lock): the master-password screen of build plan 3.4
-     (ux.md §5.10; lock.md §13.2, §13.3), then every lock screen and notice (4.2). Every name
-     starts with lock_. The English wording is lock.md §13.3's; dates are formatted by the screen
-     in the phone's own style (i18n.md §4.6), so "7 Oct" may read "Oct 7". -->
-<resources>
+     (ux.md §5.10; lock.md §13.2, §13.3), then every lock screen, the "Forgot master password?"
+     sheet and the notices after unlock (4.2; ux.md §5.9, §5.10; lock.md §13.3, §13.4, F16, F17),
+     and the question of lock.md F16b step 3 (4.2b). Every name starts with lock_. The English
+     wording is lock.md's and ux.md's; dates are formatted by the screen in the phone's own style
+     (i18n.md §4.6), so "7 Oct" may read "Oct 7". -->
+<resources xmlns:tools="http://schemas.android.com/tools">
 
     <!-- ===== Titles and the line of a set of passwords put aside ===== -->
 
@@ -105,8 +107,9 @@
     <string name="lock_mp_wrong_replaced_pin">The master password was replaced on %1$s using the PIN. If you didn’t do that, open your passwords from before.</string>
     <!-- The same when it was replaced using a fingerprint. -->
     <string name="lock_mp_wrong_replaced_fingerprint">The master password was replaced on %1$s using a fingerprint. If you didn’t do that, open your passwords from before.</string>
-    <!-- Button after the line above: the lock screen of the passwords from before. %1$s is a day and
-         a month. -->
+    <!-- Button after the line above: the lock screen of the passwords from before (glossary 145). %1$s
+         is a day and a month here ("Oct 7"); on the "Forgot master password?" sheet and on "Your
+         passwords can't be opened" it is a date with the year ("Oct 7, 2026"). -->
     <string name="lock_mp_open_from_before">Open my passwords from before %1$s</string>
     <!-- The phone has too little free memory for the check (about 64 MiB). Not counted as a wrong
          try. Followed by the button "Try again". -->
@@ -124,5 +127,282 @@
         <item quantity="one">Your new master password starts working in about %d&#160;hour.</item>
         <item quantity="other">Your new master password starts working in about %d&#160;hours.</item>
     </plurals>
+
+    <!-- ===== The PIN pad (ux.md §5.9; lock.md §13.2, §13.3 "On the pad") ===== -->
+
+    <!-- Under the title "PasswordVault" on the PIN pad (glossary 131). "App PIN": the system's own
+         fingerprint dialog may ask for the phone's PIN, and the two must never read alike. -->
+    <string name="lock_pad_subtitle">Enter your app PIN</string>
+    <!-- Text button under the pad: opens the master-password screen instead. -->
+    <string name="lock_pad_forgot">Forgot PIN? Use master password</string>
+    <!-- Status line of a fresh pad when 2 or fewer tries are left before the PIN turns off
+         (glossary 58, 135). Never a wait, never a word about wiping. -->
+    <plurals name="lock_pad_tries_left">
+        <item quantity="one">%d&#160;try left before the PIN turns off.</item>
+        <item quantity="other">%d&#160;tries left before the PIN turns off.</item>
+    </plurals>
+    <!-- Status line after a wrong PIN, when 2 or more tries are left (glossary 57, 58). It stays while
+         digits are typed, so that someone who is handed the phone sees it. -->
+    <plurals name="lock_pad_wrong_pin">
+        <item quantity="one">Wrong PIN. %d&#160;try left.</item>
+        <item quantity="other">Wrong PIN. %d&#160;tries left.</item>
+    </plurals>
+    <!-- Status line after a wrong PIN when only 1 try is left and fingerprint unlock can be used. -->
+    <string name="lock_pad_last_try_fingerprint">Wrong PIN. 1&#160;try left. After that you’ll need your fingerprint or master password.</string>
+    <!-- The same without fingerprint unlock. -->
+    <string name="lock_pad_last_try">Wrong PIN. 1&#160;try left. After that you’ll need your master password.</string>
+    <!-- The same while a new master password, chosen using the PIN, is not working yet (lock.md F11
+         step 11): the next wrong PIN turns the PIN off. -->
+    <string name="lock_pad_last_try_pending">Careful: your new master password is not working yet. If the next PIN is wrong, the PIN turns off.</string>
+    <!-- Status line when the same wrong PIN was typed again: it costs no try. -->
+    <string name="lock_pad_same_again">You already tried that PIN. It was not counted again.</string>
+    <!-- Status line when the last PIN entry was cut off (the app was closed during the check) and
+         counted as a try. -->
+    <plurals name="lock_pad_interrupted">
+        <item quantity="one">Your last PIN entry was interrupted and counted as a try. %d&#160;try left.</item>
+        <item quantity="other">Your last PIN entry was interrupted and counted as a try. %d&#160;tries left.</item>
+    </plurals>
+    <!-- Status line when the try could not be written because the phone's storage is full. -->
+    <string name="lock_pad_storage_full">Your phone’s storage is full, so the PIN can’t be checked now. Free some space or use your master password.</string>
+    <!-- The same when fingerprint unlock can be used. -->
+    <string name="lock_pad_storage_full_fingerprint">Your phone’s storage is full, so the PIN can’t be checked now. Free some space, or use your fingerprint or master password.</string>
+    <!-- Red line on the lock screens of test builds only, which keep the PIN key outside protected
+         hardware. Never seen by the user in the release build. -->
+    <string name="lock_test_build">TEST BUILD: PIN keys are not protected</string>
+
+    <!-- ===== Fingerprint unlock is on but cannot be used now: the pad's status line, with "Use your
+         PIN" (lock.md §13.3). The master-password screen and the fingerprint-only screen use the
+         lines above with "Use your master password". ===== -->
+
+    <!-- The phone's fingerprints or screen lock changed, so the app's fingerprint key no longer works. -->
+    <string name="lock_fingerprint_turned_off_pin">Fingerprint unlock was turned off because this phone’s fingerprints or screen lock changed. Use your PIN. You can turn it on again in Settings.</string>
+    <!-- The phone locked its fingerprint sensor after too many failed fingers. -->
+    <string name="lock_fingerprint_locked_pin">Fingerprint is locked for now. Use your PIN.</string>
+    <!-- The fingerprint prompt was accepted, but the app could not open with it this time (the phone's
+         own PIN was typed in the system prompt). "App PIN" as in the subtitle. -->
+    <string name="lock_fingerprint_did_not_open_pin">Fingerprint did not open the app this time. Enter your app PIN.</string>
+    <!-- The phone's setting that lets apps use fingerprint is off. -->
+    <string name="lock_fingerprint_not_for_apps_pin">Fingerprint can’t be used in apps right now. Use your PIN. In your phone’s settings, check that fingerprint may be used to verify it’s you in apps.</string>
+    <!-- No fingerprint (or no screen lock) is set on the phone now. -->
+    <string name="lock_fingerprint_none_saved_pin">No fingerprint is saved on this phone now. Use your PIN. To use fingerprint unlock again, add a fingerprint in your phone’s settings.</string>
+    <!-- The phone needs a security update before its fingerprint sensor may be used. -->
+    <string name="lock_fingerprint_update_needed_pin">Your phone needs a security update before fingerprint can be used. Use your PIN.</string>
+    <!-- Any other fingerprint problem; the fingerprint key is hidden until the next visit. -->
+    <string name="lock_fingerprint_cannot_check_pin">Fingerprint can’t be checked right now. Use your PIN. If this keeps happening, turn fingerprint unlock off and on again in Settings.</string>
+
+    <!-- ===== The fingerprint-only screen (ux.md §5.9; lock.md §13.1 row 6, §13.3): fingerprint can be
+         used, the PIN cannot ===== -->
+
+    <!-- Button: opens the phone's fingerprint prompt again. -->
+    <string name="lock_use_fingerprint">Use fingerprint</string>
+    <!-- Button: the master-password screen instead (glossary 50). -->
+    <string name="lock_use_master_password">Use master password</string>
+    <!-- Why there is no PIN pad: the PIN was turned off after too many wrong tries (glossary 135:
+         "turned off", not "deleted"). -->
+    <string name="lock_fingerprint_only_pin_limit">PIN unlock was turned off after too many wrong tries. Nothing was deleted. Use your fingerprint or master password, then choose a new PIN.</string>
+    <!-- Why there is no PIN pad: the phone's key store does not answer now (glossary 137). -->
+    <string name="lock_fingerprint_only_pin_cannot_check">Your PIN can’t be checked right now. Use your fingerprint or master password. Restarting the phone usually fixes this. If it keeps happening, set your PIN up again in Settings.</string>
+    <!-- Why there is no PIN pad: the PIN's key is gone from the phone, or its record is damaged
+         (glossary 136). -->
+    <string name="lock_fingerprint_only_pin_stopped_working">Your PIN stopped working on this phone. Use your fingerprint or master password, then choose a PIN again.</string>
+    <!-- Why there is no PIN pad: the phone's storage is full. -->
+    <string name="lock_fingerprint_only_pin_storage_full">Your phone’s storage is full, so the PIN can’t be checked now. Free some space, or use your fingerprint or master password.</string>
+    <!-- Why there is no PIN pad: the PIN was set up by a newer version of this app. -->
+    <string name="lock_fingerprint_only_pin_newer_app">Your PIN was set up by a newer version of this app. Use your fingerprint or master password, and update the app.</string>
+
+    <!-- ===== "This is an older master password" (lock.md F16b, glossary 144) ===== -->
+
+    <!-- Title: the typed master password opens only a copy from before a change. -->
+    <string name="lock_older_title">This is an older master password</string>
+    <!-- The change was finished. %1$s is a day and a month, for example "Oct 7". Followed by "OK". -->
+    <string name="lock_older_proven">You changed your master password on %1$s. Type the new one.</string>
+    <!-- The change may not have finished. %1$s is a day and a month. Followed by "Try again" and the
+         button below. -->
+    <string name="lock_older_unfinished">Your master password change on %1$s may not have finished. Try your new master password first. If it does not work, you can open your passwords as they were before the change.</string>
+    <!-- Button: opens the passwords as they were before the unfinished change (asked once more). -->
+    <string name="lock_older_open_from_before">Open my passwords from before the change</string>
+    <!-- Title of the question asked once more. %1$s is a day and a month, for example "Oct 7". -->
+    <string name="lock_older_confirm_title">Open your passwords as they were before %1$s?</string>
+    <!-- The question's text. -->
+    <string name="lock_older_confirm_body">The copy made during the change stays on this phone but is no longer used.</string>
+    <!-- The question's button that opens them. Short. -->
+    <string name="lock_older_confirm_open">Open</string>
+
+    <!-- ===== "Open the older set instead?" (lock.md F16b step 3; ux.md §5.24): asked on the lock
+         screen of the passwords from before a replacement (title "Your passwords from before …",
+         lock_from_before), once their own master password has opened them and before anything
+         changes. Followed by the button below and "Cancel" (common_cancel), which changes
+         nothing ===== -->
+
+    <!-- The question. "The older set": these passwords, as they were when the master password was
+         replaced (glossary 143); "the newer set": the passwords used since then. Neither is
+         deleted, whatever the answer. %1$s is a day and a month, for example "Oct 7". -->
+    <string name="lock_older_set_text">These are your passwords as they were on %1$s. Passwords added or changed after that are in the newer set, which stays on this phone. Open the older set instead?</string>
+    <!-- Button: the app uses the older set from now on; the newer set stays on the phone, put
+         aside. These are the passwords of "Open my passwords from before …" (glossary 145). %1$s
+         is a day and a month. -->
+    <string name="lock_older_set_open">Open my passwords from %1$s</string>
+
+    <!-- ===== "Your passwords can't be opened" (ux.md §5.9; lock.md §13.1 row 2). Never an offer to
+         delete ===== -->
+
+    <!-- Title: no saved copy of the passwords can be read. -->
+    <string name="lock_unreadable_title">Your passwords can’t be opened</string>
+    <!-- Every saved copy is damaged. -->
+    <string name="lock_unreadable_damaged">The file with your passwords is damaged. Nothing was deleted. Restart your phone and try again. If that doesn’t help, restore from a backup file.</string>
+    <!-- The file could not be read just now (a passing storage error). Followed by "Try again". -->
+    <string name="lock_unreadable_io">The file with your passwords can’t be read right now. Nothing was deleted. Try again. If that doesn’t help, restart your phone, or restore from a backup file.</string>
+    <!-- The file was saved by a newer version of this app, which this version cannot read. -->
+    <string name="lock_unreadable_newer">Your passwords were saved by a newer version of this app. Nothing was deleted. Install the newest version of PasswordVault to open them.</string>
+    <!-- Button, here and on the "Forgot master password?" sheet: open a backup file instead. -->
+    <string name="lock_restore">Restore from a backup file</string>
+    <!-- Button for a set of passwords that was put aside, for example after "Start with an empty app"
+         (glossary 146, not 21). %1$s is a date with the year, for example "Oct 6, 2026". -->
+    <string name="lock_open_aside">Open my previous passwords (locked on %1$s)</string>
+
+    <!-- ===== The "Forgot master password?" sheet (ux.md §5.10; lock.md F17 step 1). No option
+         deletes anything, and none says "Delete" ===== -->
+
+    <!-- The sheet's title (glossary 132). -->
+    <string name="lock_sheet_title">Forgot your master password?</string>
+    <!-- Under the title. -->
+    <string name="lock_sheet_body">Nobody can recover it: it is not stored anywhere.</string>
+    <!-- While the app PIN still works. Followed by "Use my PIN". -->
+    <string name="lock_sheet_pin_text">Your PIN still opens the app on this phone. Open the app with it, then choose a new master password.</string>
+    <!-- Button: unlock with the PIN, then choose a new master password (lock.md F11). -->
+    <string name="lock_sheet_use_pin">Use my PIN</string>
+    <!-- While no PIN exists and fingerprint still works. Followed by "Use my fingerprint". -->
+    <string name="lock_sheet_fingerprint_text">Your fingerprint still opens the app on this phone. Open the app with it, then choose a new master password.</string>
+    <!-- Button: unlock with the fingerprint, then choose a new master password. -->
+    <string name="lock_sheet_use_fingerprint">Use my fingerprint</string>
+    <!-- Before "Restore from a backup file". -->
+    <string name="lock_sheet_restore_text">If you remember the master password of an older backup, you can open that backup instead. Your current passwords stay on this phone, locked.</string>
+    <!-- Only while no PIN or fingerprint can be used. Followed by the button below. -->
+    <string name="lock_sheet_empty_text">Start with an empty app. Your current passwords stay on this phone, locked. If you remember the master password later, you can open them again.</string>
+    <!-- Text button; asks once more (glossary 147). -->
+    <string name="lock_sheet_empty">Start with an empty app…</string>
+    <!-- Title of the question asked once more. -->
+    <string name="lock_empty_title">Start with an empty app?</string>
+    <!-- The question's text. "Settings › Backup &amp; transfer" names the Settings page. -->
+    <string name="lock_empty_body">Your passwords stay on this phone, locked with your old master password. You can open them again from the first screen or from Settings › Backup &amp; transfer.</string>
+    <!-- The question's button that does it. -->
+    <string name="lock_empty_confirm">Start with an empty app</string>
+
+    <!-- ===== Notices after unlock, one at a time (lock.md §13.4; ux.md §5.9, §5.24) ===== -->
+
+    <!-- The newest copy could not be read and an older one was opened. %1$s is a date and a time,
+         for example "Oct 5, 2026, 18:42". -->
+    <string name="lock_notice_older_copy">The newest copy of your passwords could not be read. We opened the copy from %1$s. Changes after that time are missing.</string>
+    <!-- Button of the notice above and of the storage notice: opens the backup screen. -->
+    <string name="lock_notice_back_up_now">Make a backup now</string>
+    <!-- The passwords are older than the ones this app opened before (someone may have put back old
+         files). %1$s is a date and a time. -->
+    <string name="lock_notice_older_than_last">These passwords are older than the ones this app opened on %1$s. Changes after that time are missing. If you didn’t restore anything, someone may have replaced the app’s files.</string>
+    <!-- A new master password was chosen using the PIN and is not working yet (glossary 138, 139).
+         %1$d is the number of hours still to be counted with the phone switched on; %2$s is a date
+         and a time. Never a date when it will start working. -->
+    <plurals name="lock_notice_pending_pin">
+        <item quantity="one">A new master password was chosen on %2$s, using the PIN. It starts working in about %1$d&#160;hour. The countdown stops while the phone is switched off; open this app in the morning and again in the evening to keep it moving. Not you? Cancel it, then change your PIN.</item>
+        <item quantity="other">A new master password was chosen on %2$s, using the PIN. It starts working in about %1$d&#160;hours. The countdown stops while the phone is switched off; open this app in the morning and again in the evening to keep it moving. Not you? Cancel it, then change your PIN.</item>
+    </plurals>
+    <!-- The same when it was chosen using a fingerprint (there is no PIN on this phone). -->
+    <plurals name="lock_notice_pending_fingerprint">
+        <item quantity="one">A new master password was chosen on %2$s, using a fingerprint. It starts working in about %1$d&#160;hour. The countdown stops while the phone is switched off; open this app in the morning and again in the evening to keep it moving. Not you? Cancel it. Anyone whose fingerprint is saved in this phone’s settings can open the app.</item>
+        <item quantity="other">A new master password was chosen on %2$s, using a fingerprint. It starts working in about %1$d&#160;hours. The countdown stops while the phone is switched off; open this app in the morning and again in the evening to keep it moving. Not you? Cancel it. Anyone whose fingerprint is saved in this phone’s settings can open the app.</item>
+    </plurals>
+    <!-- Button: drops the new master password that is waiting (glossary 141; not the plain "Cancel"). -->
+    <string name="lock_notice_cancel_it">Cancel it</string>
+    <!-- The new master password has counted its hours. Followed by "Finish now", "Later", "Cancel it". -->
+    <string name="lock_notice_pending_ready">Your new master password is ready. Type it to finish.</string>
+    <!-- Button (glossary 140). -->
+    <string name="lock_notice_finish_now">Finish now</string>
+    <!-- The current master password was typed, which cancels a new one that was waiting. -->
+    <string name="lock_notice_pending_cancelled">You typed your master password, so the new one was cancelled.</string>
+    <!-- The master password was replaced using the PIN (glossary 143: "replaced", not "changed"). %1$s
+         is a day and a month. Followed by "It wasn't me" and "OK". -->
+    <string name="lock_notice_replaced_pin">Your master password was replaced on %1$s using the PIN. If you didn’t do this, your passwords from before are still on this phone.</string>
+    <!-- The same when it was replaced using a fingerprint. -->
+    <string name="lock_notice_replaced_fingerprint">Your master password was replaced on %1$s using a fingerprint. If you didn’t do this, your passwords from before are still on this phone.</string>
+    <!-- Button: opens the passwords from before the replacement (glossary 142). -->
+    <string name="lock_notice_it_wasnt_me">It wasn’t me</string>
+    <!-- Wrong PINs typed before this unlock; the last one today. %1$d is how many; %2$s is a time, for
+         example "14:32". -->
+    <plurals name="lock_notice_wrong_pins_today">
+        <item quantity="one">A wrong PIN was typed %1$d&#160;time before you opened the app (last time today at %2$s). If it wasn’t you, keep your phone with you and change your PIN.</item>
+        <item quantity="other">A wrong PIN was typed %1$d&#160;times before you opened the app (last time today at %2$s). If it wasn’t you, keep your phone with you and change your PIN.</item>
+    </plurals>
+    <!-- The same when the last one was on another day. %2$s is a date and a time. -->
+    <plurals name="lock_notice_wrong_pins_on">
+        <item quantity="one">A wrong PIN was typed %1$d&#160;time before you opened the app (last time on %2$s). If it wasn’t you, keep your phone with you and change your PIN.</item>
+        <item quantity="other">A wrong PIN was typed %1$d&#160;times before you opened the app (last time on %2$s). If it wasn’t you, keep your phone with you and change your PIN.</item>
+    </plurals>
+    <!-- The same when the time of the last one is not known. -->
+    <plurals name="lock_notice_wrong_pins">
+        <item quantity="one">A wrong PIN was typed %1$d&#160;time before you opened the app. If it wasn’t you, keep your phone with you and change your PIN.</item>
+        <item quantity="other">A wrong PIN was typed %1$d&#160;times before you opened the app. If it wasn’t you, keep your phone with you and change your PIN.</item>
+    </plurals>
+    <!-- Added when one of those entries was cut off and counted. -->
+    <string name="lock_notice_interrupted">One entry was interrupted and counted as a try.</string>
+    <!-- Added when many wrong PINs were not put right by a right PIN at once. %1$d is how many more
+         turn the PIN off. Followed by "Type master password". -->
+    <plurals name="lock_notice_pins_before_off">
+        <item quantity="one">After %1$d more wrong PIN that is not put right at once, the PIN turns off. Type your master password once to start the count again.</item>
+        <item quantity="other">After %1$d more wrong PINs that are not put right at once, the PIN turns off. Type your master password once to start the count again.</item>
+    </plurals>
+    <!-- Button: the master password, typed now, starts the count of wrong PINs again. -->
+    <string name="lock_notice_type_master_password">Type master password</string>
+    <!-- Added when the master password has not been practised for a long time. Followed by the button
+         below. -->
+    <string name="lock_notice_new_master_text">Can’t remember it? Choose a new one.</string>
+    <!-- Button: choose a new master password using the PIN (lock.md F11). -->
+    <string name="lock_notice_new_master">Choose a new master password</string>
+    <!-- Wrong master passwords typed before this unlock. %1$d is how many. -->
+    <plurals name="lock_notice_wrong_master">
+        <item quantity="one">A wrong master password was typed %1$d&#160;time before you opened the app.</item>
+        <item quantity="other">A wrong master password was typed %1$d&#160;times before you opened the app.</item>
+    </plurals>
+    <!-- Button: opens "Change PIN" (glossary 56). -->
+    <string name="lock_notice_change_pin">Change PIN</string>
+    <!-- The PIN is off and the app was opened with the fingerprint: a new PIN needs the master password. -->
+    <string name="lock_notice_choose_pin_master">PIN unlock is off. To choose a new PIN you need your master password.</string>
+    <!-- Button: choose a new PIN (asks for the master password first). -->
+    <string name="lock_notice_choose_pin">Choose a new PIN</string>
+    <!-- Title of a notice: fingerprint unlock was turned off and can be turned on again. Followed by
+         "Turn on" and "Later". -->
+    <string name="lock_notice_fingerprint_again">Turn fingerprint unlock on again?</string>
+    <!-- Button: opens Settings › App lock, where fingerprint unlock is turned on. Short. -->
+    <string name="lock_notice_turn_on">Turn on</string>
+    <!-- A small record of the app (not the passwords) could not be read. Followed by "Set up again",
+         "Make a backup now" and "Later". -->
+    <string name="lock_notice_storage_unreadable">Part of the app’s storage could not be read. Make a backup now.</string>
+    <!-- Button: writes that record again. -->
+    <string name="lock_notice_set_up_again">Set up again</string>
+    <!-- Title of the offer made right after the master password was typed, when a backup is due. -->
+    <string name="lock_notice_backup_title">Make a backup now?</string>
+    <!-- The offer's text (ux.md §5.19). -->
+    <string name="lock_notice_backup_body">A backup is a locked copy of all your passwords. It opens only with your master password, on any phone.</string>
+    <!-- The offer's button. Short. -->
+    <string name="lock_notice_back_up">Back up now</string>
+
+    <!-- ===== The system's fingerprint prompt (lock.md §9.2; ux.md §5.7, §5.9), built by the lock
+         manager (build plan 4.1, which uses these from its own code; tools:ignore until then). Its
+         negative button is "Use PIN" (lock_mp_use_pin), "Use master password"
+         (lock_use_master_password) when no PIN is usable, or "Cancel" (common_cancel) ===== -->
+
+    <!-- Title of the phone's fingerprint prompt over the lock screen. The app's name is not
+         translated (i18n.md §3). -->
+    <string name="lock_prompt_unlock_title" tools:ignore="UnusedResources">Open PasswordVault</string>
+    <!-- Title of the phone's fingerprint prompt that turns fingerprint unlock on (lock.md F9 step 6). -->
+    <string name="lock_prompt_turn_on_title" tools:ignore="UnusedResources">Turn on fingerprint unlock</string>
+
+    <!-- ===== "Type master password" from the notice about wrong PINs: the master password typed in
+         the open app (title "Type your master password", lock_mp_title) ===== -->
+
+    <!-- Button: checks the typed master password. Short. -->
+    <string name="lock_prompt_check">Check</string>
+    <!-- The phone has too little free memory for the check (about 64 MiB). Not counted as a wrong try. -->
+    <string name="lock_prompt_no_memory">Your phone doesn’t have enough free memory to check your master password. Close other apps or restart the phone, then try again.</string>
+    <!-- The typed password is the master password from before a change. %1$s is a date with the year. -->
+    <string name="lock_prompt_older">This is your master password from before %1$s. Type the one you use now.</string>
 
 </resources>
