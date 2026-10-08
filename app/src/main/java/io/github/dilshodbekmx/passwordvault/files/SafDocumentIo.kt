@@ -24,11 +24,12 @@ import kotlinx.coroutines.withContext
  * and 3; ux.md §4 item 3, §5.19). The only place where a [DocRef] becomes an `android.net.Uri`.
  *
  * - **Write** goes straight into the document, opened with mode "wt" (never through a plain
- *   temporary file in the app's own storage), then syncs it where the provider gives a real file.
- *   Then the document is opened again and read back, at most one byte more than was written, and
- *   the two SHA-256 sums and byte counts are compared: providers have reported success after
- *   writing 0 bytes, and have cut files [V-S6]. A provider that refuses the mode "wt" (some take
- *   only "w") is written with "w": a longer old content that "w" leaves behind fails the comparison.
+ *   temporary file in the app's own storage), hashing what it writes, then syncs it where the
+ *   provider gives a real file. Then the document is opened again and read back as a stream, hashed
+ *   and counted up to one byte more than was written, and the two SHA-256 sums and byte counts are
+ *   compared: providers have reported success after writing 0 bytes, and have cut files [V-S6]. A
+ *   provider that refuses the mode "wt" (some take only "w") is written with "w": a longer old
+ *   content that "w" leaves behind fails the comparison.
  * - **Read** reads at most `maxBytes + 1` bytes, so that the caller can tell "too long"; anything
  *   that keeps the document from being read, a missing permission included, is an [IOException].
  * - **Keep** takes the persistable permission that the picker's result granted, read and write
@@ -62,13 +63,16 @@ class SafDocumentIo(private val context: Context, private val io: CoroutineDispa
         } catch (e: RuntimeException) {
             return@withContext false // SecurityException, IllegalArgumentException, UnsupportedOperationException...
         }
-        val back = try {
-            readAtMost(uri, bytes.size.toLong() + 1)
+        // The read-back: a new stream, hashed and counted as it comes, one byte past what was written.
+        val read = MessageDigest.getInstance(SHA_256)
+        val count = try {
+            openForReading(uri).use { input -> digestUpTo(input, read, bytes.size.toLong() + 1) }
         } catch (e: IOException) {
             return@withContext false
+        } catch (e: RuntimeException) {
+            return@withContext false
         }
-        val read = MessageDigest.getInstance(SHA_256).digest(back)
-        back.size == bytes.size && MessageDigest.isEqual(read, wrote.digest())
+        count == bytes.size.toLong() && MessageDigest.isEqual(read.digest(), wrote.digest())
     }
 
     override suspend fun read(doc: DocRef, maxBytes: Int): ByteArray = withContext(io) {
@@ -142,20 +146,36 @@ class SafDocumentIo(private val context: Context, private val io: CoroutineDispa
         }
     }
 
+    /** A new stream of the document; [IOException] for anything that keeps it from being opened. */
+    private fun openForReading(uri: Uri): InputStream = try {
+        resolver.openInputStream(uri)
+    } catch (e: IOException) {
+        throw e
+    } catch (e: RuntimeException) {
+        throw IOException("the document cannot be opened", e) // SecurityException: no permission
+    } ?: throw FileNotFoundException("no stream for reading")
+
     /** At most [limit] bytes of the document; [IOException] for anything that keeps it from being read. */
     private fun readAtMost(uri: Uri, limit: Long): ByteArray {
-        val input = try {
-            resolver.openInputStream(uri)
-        } catch (e: IOException) {
-            throw e
-        } catch (e: RuntimeException) {
-            throw IOException("the document cannot be opened", e)
-        } ?: throw FileNotFoundException("no stream for reading")
+        val input = openForReading(uri)
         try {
             return input.use { readUpTo(it, limit) }
         } catch (e: RuntimeException) {
             throw IOException("the document cannot be read", e)
         }
+    }
+
+    /** Feeds [digest] with the stream until its end or [limit] bytes; the number of bytes. */
+    private fun digestUpTo(input: InputStream, digest: MessageDigest, limit: Long): Long {
+        val buffer = ByteArray(FIRST_BUFFER)
+        var count = 0L
+        while (count < limit) {
+            val n = input.read(buffer, 0, minOf(buffer.size.toLong(), limit - count).toInt())
+            if (n < 0) break
+            digest.update(buffer, 0, n)
+            count += n
+        }
+        return count
     }
 
     /** Reads until the end or until [limit] bytes, growing the buffer as the bytes come. */
