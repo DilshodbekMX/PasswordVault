@@ -22,6 +22,7 @@ import io.github.dilshodbekmx.passwordvault.core.lock.record.PinRecord
 import io.github.dilshodbekmx.passwordvault.core.lock.record.StateRecord
 import io.github.dilshodbekmx.passwordvault.testing.FakeClock
 import io.github.dilshodbekmx.passwordvault.testing.lock.FakeVaultPort
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -213,6 +214,29 @@ class PromptChecksTest {
         }
         assertDropped(atSetup!!)
         assertFalse(k.engine.core.holds(atSetup))
+    }
+
+    @Test
+    fun aMasterPasswordCheckWhoseCallerIsCancelled_dropsTheProofItMade() {
+        // The prompt's screen closes while the check runs (its scope goes, and the caller with it). The
+        // check runs to its end under the mutex and finds the password right; the proof it made is for a
+        // caller that never receives it, so the flow it was made for has ended (lock.md §5.8).
+        openByPin()
+        assertEquals(emptyList<MasterProof>(), f.engine.core.heldProofs())
+        val gate = CompletableDeferred<Unit>()
+        f.port.beforeCall = { call -> if (call == "checkPassword") gate.await() }
+        runBlocking {
+            val asking = launch(start = CoroutineStart.UNDISPATCHED) { f.engine.checkMasterPassword(PASSWORD.toCharArray()) }
+            asking.cancel()
+            gate.complete(Unit)
+            asking.join()
+        }
+        f.port.beforeCall = null
+        assertEquals("no proof is left that nobody received", emptyList<MasterProof>(), f.engine.core.heldProofs())
+        assertEquals("the password was right, and its counts went back to zero", 0, f.stateRecord().mpGuard.failures)
+        // A caller that stays gets its proof, as always.
+        val right = f.check(PASSWORD) as MasterPasswordOutcome.Right
+        assertTrue(f.engine.core.holds(right.proof))
     }
 
     @Test

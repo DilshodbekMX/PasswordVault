@@ -973,6 +973,9 @@ internal class LockCore(
     /** Whether this engine made [proof] and has not dropped it: a flow accepts no other. */
     fun holds(proof: MasterProof): Boolean = synchronized(proofs) { proofs.any { it === proof } }
 
+    /** Every proof this engine made and has not dropped, for the tests of lock.md §5.8: one that nobody received is among them only by mistake. */
+    fun heldProofs(): List<MasterProof> = synchronized(proofs) { proofs.toList() }
+
     /**
      * Any thread: [proof] alone is zeroed and no longer held, because the flow it was made for has
      * ended (lock.md §5.8; F12 step 2: "The typed bytes are kept only until the offer is answered").

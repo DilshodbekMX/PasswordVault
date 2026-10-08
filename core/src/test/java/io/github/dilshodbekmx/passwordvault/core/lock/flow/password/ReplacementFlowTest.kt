@@ -8,6 +8,7 @@ import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockScreen
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockState
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockSummary
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.MasterPasswordOutcome
+import io.github.dilshodbekmx.passwordvault.core.lock.flow.MasterProof
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.MpError
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.MpReason
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.Notice
@@ -39,6 +40,7 @@ import io.github.dilshodbekmx.passwordvault.core.util.Uuid
 import io.github.dilshodbekmx.passwordvault.testing.lock.FakeKeys
 import io.github.dilshodbekmx.passwordvault.testing.lock.FakeRecordFiles
 import io.github.dilshodbekmx.passwordvault.testing.lock.FakeVaultPort
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -679,6 +681,45 @@ class ReplacementFlowTest {
         assertTrue(f.state is LockState.Locked)
         assertNull(f.port.openVaultId)
         assertTrue(f.unlockWith(NEW_PASSWORD) is MasterPasswordOutcome.Right)
+    }
+
+    @Test
+    fun f11_finishNowWhoseCallerIsCancelled_dropsAProofMadeForItAlone_andKeepsTheOneTheOpenAppGoesOnWith() {
+        // lock.md §5.8 (build-plan.md §12 item 16): the screen of "Finish now" closes while the check runs.
+        phone()
+        ready()
+        assertEquals(emptyList<MasterProof>(), f.engine.core.heldProofs())
+
+        // The current master password typed there: right, and it cancels the request (F11 step 9). Its proof
+        // was made for the caller alone, which never receives it.
+        val checking = CompletableDeferred<Unit>()
+        f.port.beforeCall = { call -> if (call == "checkPassword") checking.await() }
+        runBlocking {
+            val finishing = launch(start = CoroutineStart.UNDISPATCHED) { f.engine.finishPending(PASSWORD.toCharArray()) }
+            finishing.cancel()
+            checking.complete(Unit)
+            finishing.join()
+        }
+        f.port.beforeCall = null
+        assertNull("the current master password cancelled the request", f.stateRecord().pendingMp)
+        assertEquals("no proof is left that nobody received", emptyList<MasterProof>(), f.engine.core.heldProofs())
+
+        // The new master password: the replacement runs to its end, and the open app goes on in vault N with the
+        // proof that "Choose a PIN" takes (step 19), caller or no caller.
+        ready()
+        val replacing = CompletableDeferred<Unit>()
+        f.port.beforeCall = { call -> if (call.startsWith("replaceVault")) replacing.await() }
+        runBlocking {
+            val finishing = launch(start = CoroutineStart.UNDISPATCHED) { f.engine.finishPending(NEW_PASSWORD.toCharArray()) }
+            finishing.cancel()
+            replacing.complete(Unit)
+            finishing.join()
+        }
+        f.port.beforeCall = null
+        assertNotEquals(VAULT, f.port.openVaultId)
+        val proof = checkNotNull((f.state as LockState.Unlocked).proof)
+        assertEquals(listOf(proof), f.engine.core.heldProofs())
+        assertTrue(f.setPin(NEW_PIN, proof))
     }
 
     @Test

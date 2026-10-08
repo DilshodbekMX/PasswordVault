@@ -7,7 +7,10 @@ import io.github.dilshodbekmx.passwordvault.core.lock.record.Shortcut
 import io.github.dilshodbekmx.passwordvault.core.model.Vault
 import io.github.dilshodbekmx.passwordvault.core.util.Clock
 import io.github.dilshodbekmx.passwordvault.core.util.RandomSource
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
@@ -708,11 +711,20 @@ class LockEngine(
      * The master password typed in a prompt of the open app (a backup, an export, a change, a
      * setting, "Type it now"), checked against the open vault's own slot under the same guard. It
      * belongs to that prompt: a lock or `ON_STOP` while it runs makes it [MasterPasswordOutcome.TooLate].
+     * A caller that is cancelled while it runs (its screen closed) never receives the proof the check
+     * made, so the flow it was made for has ended: it is dropped then (§5.8), not left until the
+     * next lock or `ON_STOP`.
      */
     suspend fun checkMasterPassword(chars: CharArray): MasterPasswordOutcome {
         val at = core.openPrompt()
+        var made: MasterPasswordOutcome? = null
         try {
-            return step { unlock.masterPasswordInApp(chars, at) }
+            val outcome = step { unlock.masterPasswordInApp(chars, at).also { made = it } }
+            currentCoroutineContext().ensureActive() // a caller cancelled meanwhile receives nothing, whatever the dispatcher
+            return outcome
+        } catch (e: CancellationException) {
+            (made as? MasterPasswordOutcome.Right)?.let { core.dropProof(it.proof) }
+            throw e
         } finally {
             core.closePrompt(at)
         }

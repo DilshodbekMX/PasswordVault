@@ -22,6 +22,8 @@ import io.github.dilshodbekmx.passwordvault.core.util.Bytes
 import io.github.dilshodbekmx.passwordvault.core.util.Uuid
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 
 /**
@@ -963,8 +965,20 @@ internal class PasswordFlows(private val core: LockCore) {
      */
     suspend fun finishPending(chars: CharArray): MasterPasswordOutcome {
         val at = core.openPrompt()
+        var made: MasterPasswordOutcome? = null
         try {
-            return core.locked { finishLocked(chars, at) }
+            val outcome = core.locked { finishLocked(chars, at).also { made = it } }
+            currentCoroutineContext().ensureActive() // a caller cancelled meanwhile receives nothing, whatever the dispatcher
+            return outcome
+        } catch (e: CancellationException) {
+            // The caller went while this ran (§5.8). The proof of the current master password (step 9)
+            // was made for that caller alone, and goes now. The new master password's proof is also the
+            // open app's (`LockState.Unlocked.proof`, for "Choose a PIN" in step 19): it stays with the
+            // flow it continues, until a lock or ON_STOP.
+            (made as? MasterPasswordOutcome.Right)?.proof?.let { proof ->
+                if ((core.state.value as? LockState.Unlocked)?.proof !== proof) core.dropProof(proof)
+            }
+            throw e
         } finally {
             core.closePrompt(at)
         }

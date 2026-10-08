@@ -434,7 +434,7 @@ This design holds two live keys per vault directory, the canary, and for a short
 - VK, the decrypted entries, every KEK, the six PIN digits (a `ByteArray(6)` in the lock controller), the typed master password.
 - The time of the charge; the number of the current visit or prompt; the times of this visit's wrong PINs, for forgiving (6.3); the wrong guesses already checked (6.6); the number of the fingerprint launch that is outstanding (9.2).
 - The session clock values of section 10.
-- A `MasterProof` object: made by a correct master-password check and handed to the next step of the same flow (8.2). It is dropped when that flow ends, when the app stops being visible, and on lock. It is not a time window.
+- A `MasterProof` object: made by a correct master-password check and handed to the next step of the same flow (8.2). It is dropped when that flow ends, when the app stops being visible, and on lock. A check whose caller has gone while it ran (its screen closed) has ended its flow: the proof it made for that caller is dropped as soon as the check returns, not at the next lock. It is not a time window.
 
 The master-password field is a `TextFieldState` held by a ViewModel, never `rememberTextFieldState()`, which writes the text and its undo history into saved state [V-C11, L-win Experiment 5]. After reading it: `clearText()`, then `undoState.clearHistory()`, or drop the state object.
 
