@@ -308,7 +308,10 @@ interface FingerprintKey {
     suspend fun open(alias: String, nonce: ByteArray, ct: ByteArray, use: PromptUse, launch: Int): FingerprintResult
                                                        // FingerprintResult: Ok(bytes, nonce) | Closed(code) | Gone(why) | Temporary(code: Int?) | NotShown;
                                                        // Temporary(null): the prompt succeeded, then the key operation failed or the
-                                                       // prompt's cipher was missing (lock.md §9.2 rule 6, §9.3)
+                                                       // prompt's cipher was missing (lock.md §9.2 rule 6, §9.3); also a key that could
+                                                       // not be made ready before the prompt, and a launcher that threw. One result
+                                                       // (build-plan §12, decision 3): the screen says that the fingerprint did not open
+                                                       // the app, and the next tap probes again
     fun cancel()
 }
 sealed interface VaultRef { object Current : VaultRef; class Aside(val vaultId: String) : VaultRef }

@@ -72,6 +72,12 @@ sealed interface FingerprintResult {
      * TEMPORARY: [code] is the prompt's error code (7 and 9 lockout, 1 not allowed for apps, and the
      * rest of §14.3), or null when the prompt succeeded and the key operation then failed, or the
      * prompt's cipher was missing (lock.md §9.2 rule 6, §9.3).
+     *
+     * `Temporary(null)` is one result (build-plan.md §12, decision 3): it also covers a key that
+     * could not be made ready before the prompt (its `Cipher.init` failed in a way that is not GONE)
+     * and a launcher that threw before the prompt could answer. Whichever it was, nothing opens and
+     * nothing is removed; the screen says that the fingerprint did not open the app (lock.md §13.3,
+     * "Fingerprint did not open the app this time."), and the next tap probes the key again.
      */
     data class Temporary(val code: Int?) : FingerprintResult
 
