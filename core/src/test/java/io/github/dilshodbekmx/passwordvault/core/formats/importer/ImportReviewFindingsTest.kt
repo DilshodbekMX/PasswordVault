@@ -349,13 +349,14 @@ class ImportReviewFindingsTest {
         // An item with nothing in it is listed, not imported with an empty name; the others take a name as on the CSV path.
         assertEquals(listOf("accounts.google.com", "ali", "Passkey site"), file.accounts.map { it.entry.title })
         assertEquals(
-            listOf(ImportLeftOut.Kind.EMPTY_ITEM to 1, ImportLeftOut.Kind.NOT_AN_ITEM to 4, ImportLeftOut.Kind.NOT_AN_ITEM to 5,
-                ImportLeftOut.Kind.NOT_AN_ITEM to 6),
+            listOf(ImportLeftOut.Kind.UNKNOWN_DATA to 0, ImportLeftOut.Kind.EMPTY_ITEM to 1, ImportLeftOut.Kind.NOT_AN_ITEM to 4,
+                ImportLeftOut.Kind.NOT_AN_ITEM to 5, ImportLeftOut.Kind.NOT_AN_ITEM to 6),
             file.leftOut.map { it.kind to it.position },
         )
         assertEquals(listOf(2, 3, 7), file.accounts.map { it.position })
         assertEquals("[PASSKEYS_NOT_IMPORTED×1]", file.accounts[2].changes.toString())
-        assertEquals(mapOf("folders" to "[{\"id\":1}]"), file.vaultExtras) // a later version's data at the top is kept
+        // A later version's data at the top is read and listed (UNKNOWN_DATA at 0, above), and not kept (build-plan §12, decision 9).
+        assertEquals(mapOf("folders" to "[{\"id\":1}]"), file.vaultExtras)
 
         // Two byte-order marks in front: still JSON.
         val bom = byteArrayOf(0xEF.toByte(), 0xBB.toByte(), 0xBF.toByte())
