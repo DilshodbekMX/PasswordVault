@@ -440,7 +440,11 @@ class DefaultLockManager(
                 }
                 val screen = now.screen
                 if (screen is LockScreen.MasterPassword && screen.reason == MpReason.NoSecureHardware) noSecureHardwareSeen = true
-                if (offersFingerprint(now) && !offersFingerprint(before)) promptIfDue()
+                // The lock screen starts to offer fingerprint, or another vault's lock screen does (Back from a vault
+                // put aside, on a visit of its own): the pad shown first without the fingerprint key may never be seen
+                // here, because a state flow hands on only its latest value.
+                val otherVault = screen.aside != ((before as? LockState.Locked)?.screen)?.aside
+                if (offersFingerprint(now) && (!offersFingerprint(before) || otherVault)) promptIfDue()
             }
             LockState.Starting, is LockState.NoVault, is LockState.Unreadable -> Unit
         }

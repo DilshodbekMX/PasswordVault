@@ -1,5 +1,6 @@
 package io.github.dilshodbekmx.passwordvault.lock
 
+import io.github.dilshodbekmx.passwordvault.core.lock.flow.AsideLine
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.FingerprintLine
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockScreen
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.MasterProof
@@ -8,6 +9,7 @@ import io.github.dilshodbekmx.passwordvault.core.lock.flow.NoticeAnswer
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.PromptUse
 import io.github.dilshodbekmx.passwordvault.core.lock.record.FingerprintRecord
 import io.github.dilshodbekmx.passwordvault.core.lock.record.RecordRead
+import io.github.dilshodbekmx.passwordvault.core.model.Vault
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -183,6 +185,38 @@ class FingerprintTest {
         rig.away()
         rig.toFront()
         assertEquals("the lock screen was used again: the next visit's prompt opens by itself", 3, unlockPrompts(rig))
+    }
+
+    @Test
+    fun backFromTheLockScreenOfAVaultPutAside_theCurrentVaultsNewVisitOpensItsPromptByItself() = runTest {
+        // Two vaults with a PIN and fingerprint unlock each: the first was put aside by a restore (F17 step 3).
+        val rig = LockRig(this)
+        withPinAndFingerprint(rig)
+        val old = rig.vaultId
+        rig.lock()
+        rig.promptError(10)
+        val restored = rig.manager.createVault(LockRig.OTHER_PASSWORD.toCharArray(), LockRig.OTHER_PASSWORD.toCharArray(), Vault())
+        rig.settle()
+        assertTrue(restored is CreateResult.Created)
+        val proof = checkNotNull(rig.unlocked.proof)
+        assertTrue(rig.manager.setPin(LockRig.digits(LockRig.PIN), proof))
+        rig.settle()
+        rig.fingerprintOn(proof)
+        rig.answerNotices(NoticeAnswer.LATER)
+        rig.lock()
+        rig.promptError(10) // the current vault's own prompt of this visit
+        rig.send(LockIntent.UseMasterPassword)
+        rig.send(LockIntent.OpenForgotSheet)
+        rig.send(LockIntent.CloseSheet) // its option "Open my previous passwords" closes it first
+        rig.send(LockIntent.OpenAside(old))
+        assertTrue("that vault's own pad (lock.md F17 step 4)", rig.pad.aside is AsideLine.LockedOn && rig.pad.fingerprintKey)
+        val before = unlockPrompts(rig)
+        if (rig.launcher.open != null) rig.promptError(10) // its own prompt, if it opened by itself
+
+        rig.send(LockIntent.GoBack) // Back: the current vault's lock screen, on a visit of its own
+
+        assertTrue(rig.pad.aside == null && rig.pad.fingerprintKey)
+        assertEquals("lock.md §9.2 rule 7: the prompt opens by itself once per visit", before + 1, unlockPrompts(rig))
     }
 
     // ---- the fingerprint-only screen (lock.md §13.1 row 6, §13.2) -----------------------------------
