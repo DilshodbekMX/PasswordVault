@@ -1,9 +1,13 @@
 package io.github.dilshodbekmx.passwordvault.core.lock.flow
 
+import io.github.dilshodbekmx.passwordvault.core.lock.record.FingerprintRecord
+import io.github.dilshodbekmx.passwordvault.core.lock.record.PinRecord
+import io.github.dilshodbekmx.passwordvault.core.lock.record.StateRecord
+import io.github.dilshodbekmx.passwordvault.core.util.Bytes
+
 /**
- * Older copies and older master passwords (lock.md **F16**). Build plan 4.4 fills the bodies; until
- * then every function throws `NotImplementedError`, and `LockEngine` already sends its entry points
- * here. Every function here **holds the mutex**.
+ * Older copies and older master passwords (lock.md **F16**, build plan 4.4). `LockEngine` sends its
+ * entry points here; every function here **holds the mutex**.
  *
  * **What the core already does, so that it is not done twice.**
  * - **F16a**, the newest copy is damaged and storage opens an older one: `EntryPolicy` names the
@@ -18,40 +22,174 @@ package io.github.dilshodbekmx.passwordvault.core.lock.flow
  *   shows `LockScreen.OlderPassword` until [answer] takes it down. A wrong master password names
  *   the replacement (`LockCore.replacedLine`).
  *
- * **What the core gives.** `core.visit` and its `olderPassword` (the copy that the old password
- * opens: `PasswordOpen.OlderPassword.generation`); `core.vault.putNewerAside`; `core.lockOf(vaultId)`
- * for `mp_change`, `max_generation`, `replaced` and the two slots; `core.vaults.showAside` for the
- * old vault's own lock screen; `core.unlock.completeUnlock`. For the question of F16b step 3:
- * `LockVisit.olderSet` (an `OlderSetQuestion`), which makes the lock screen show
- * `LockScreen.OpenOlderSet` until [answer] takes it off, and whose bytes `LockCore.closeVisit` zeroes
- * when the visit ends; and `core.vault.dropAside` for the vault that opened in place.
+ * **F16b after an ordinary change** (F8). While `mp_change` is set, the change did not finish, and
+ * the screen offers "Open my passwords from before the change". Its step 3 says that the vault then
+ * opens "with the VK just unwrapped": storage hands the lock no key (architecture.md §3.4), so this
+ * flow keeps a copy of the bytes that were typed ([olderPasswordTyped]) and, once storage has put the
+ * newer generations aside, checks them again as a master-password entry of the same visit. They are
+ * in memory for that screen only, like the PIN digits (§5.8): an answer or the end of the visit wipes
+ * them ([visitMayHaveEnded]).
+ *
+ * **F16b after a replacement** (F11). The passwords as they were are a vault of their own, put
+ * aside and marked `replaced`. Its master password opens it in place, on its own lock screen
+ * ([asideFromBeforeOpened]); the question "Open the older set instead?" is `LockVisit.olderSet`,
+ * which makes the lock screen `LockScreen.OpenOlderSet` until [answer] has the answer. Only "Open my
+ * passwords from 7 Oct" swaps the vaults (steps 4 to 6). "Cancel", and a visit that ends before an
+ * answer, drop the vault that opened in place (`VaultPort.dropAside`, I11).
  */
 internal class OlderCopies(private val core: LockCore) {
 
     /**
+     * What this flow keeps for the lock-screen visit [visit] until its screen is answered or the visit
+     * ends: [typed], a copy of the master-password bytes behind "This is an older master password"
+     * while the change is unfinished; or [question], whose vault is open in place in the vault port.
+     */
+    private class Kept(val visit: LockVisit, val typed: ByteArray?, val question: OlderSetQuestion?)
+
+    private var kept: Kept? = null
+
+    /**
+     * The typed master password [bytes] opens only a copy from before a change (F16b), and
+     * `LockVisit.olderPassword` of [visit] has storage's answer. While the change is marked unfinished
+     * on the current vault, a copy of [bytes] is kept for "Open my passwords from before the change";
+     * otherwise nothing is kept: the screen has only "OK" (the change was proven), or belongs to a
+     * vault put aside, where nothing is put aside for it.
+     */
+    fun olderPasswordTyped(visit: LockVisit, bytes: ByteArray) {
+        forget()
+        if (visit.target.aside != null || visit.target.lock.state?.mpChange == null) return
+        kept = Kept(visit, bytes.copyOf(), null)
+    }
+
+    /**
      * An answer on "This is an older master password" (F16b, after an ordinary change). TRY_AGAIN and
-     * OK: `LockVisit.olderPassword = null` and the field again. OPEN_FROM_BEFORE, only while
-     * `mp_change` is set: storage puts the generations above the copy that opened aside
-     * (`VaultPort.putNewerAside`), the old master password is asked for again, and the unlock that
-     * follows sets `mp_change = null` and `max_generation` to that copy (steps 2 and 3).
+     * OK: `LockVisit.olderPassword = null` and the field again. OPEN_FROM_BEFORE, after its question
+     * was answered with "Open", only on the current vault and only while `mp_change` is set:
+     *
+     * 2. storage puts the generations above the copy that opened aside (`VaultPort.putNewerAside`),
+     *    never deleting them; the step can be repeated after an interruption;
+     * 3. `max_generation` becomes that copy, so that opening it is not reported as "older than last
+     *    time" (F16c), and the password typed a moment ago is checked again as a master-password
+     *    entry of this visit (`UnlockFlows.checkOnLockScreen`): it now opens the newest copy, which
+     *    brings what every correct master password brings (§6.8 step 5), `mp_change = null` among it.
+     *    No shortcut is removed; the wraps for the abandoned key go by the rule of §5.4 at that
+     *    unlock. When the guard makes the field wait, or the bytes are gone, the field is shown: the
+     *    old master password, typed there, opens the vault.
      *
      * And the two answers on "Open the older set instead?" (`LockScreen.OpenOlderSet`, F16b after a
-     * replacement, step 3), only while `LockVisit.olderSet` is set. OPEN_OLDER_SET: steps 4 to 6 of
-     * [asideFromBeforeOpened]. KEEP_NEWER_SET ("Cancel"): nothing changes; the question is taken off
-     * the visit, its bytes are wiped and the vault that opened in place is dropped
-     * (`VaultPort.dropAside`). An answer that does not belong to the screen shown does nothing.
+     * replacement, step 3), only while `LockVisit.olderSet` is set. OPEN_OLDER_SET: steps 4 to 6.
+     * KEEP_NEWER_SET ("Cancel"): nothing changes; the question is taken off the visit, its bytes are
+     * wiped and the vault that opened in place is dropped (`VaultPort.dropAside`). An answer that
+     * does not belong to the screen shown does nothing.
      */
-    @Suppress("UNUSED_PARAMETER")
-    suspend fun answer(answer: OlderPasswordAnswer): Unit = notYet("F16b: an older master password")
+    suspend fun answer(answer: OlderPasswordAnswer) {
+        if (core.state.value !is LockState.Locked) return
+        val visit = core.visit?.takeIf { !it.place.hasEnded && !it.opening } ?: return
+        when (answer) {
+            OlderPasswordAnswer.TRY_AGAIN, OlderPasswordAnswer.OK -> {
+                if (visit.olderSet != null || visit.olderPassword == null) return
+                visit.olderPassword = null
+                forget()
+                core.showLockScreen()
+            }
+            OlderPasswordAnswer.OPEN_FROM_BEFORE -> if (visit.olderSet == null) openFromBefore(visit)
+            OlderPasswordAnswer.OPEN_OLDER_SET -> openOlderSet(visit)
+            OlderPasswordAnswer.KEEP_NEWER_SET -> keepNewerSet(visit)
+        }
+    }
+
+    /** F16b after an ordinary change, steps 2 and 3. */
+    private suspend fun openFromBefore(visit: LockVisit) {
+        val older = visit.olderPassword ?: return
+        val target = visit.target
+        val lock = target.lock
+        // `putNewerAside` acts on the current vault; and only an unfinished change may be given up.
+        if (target.aside != null || lock.state?.mpChange == null) return
+        if (!core.vault.putNewerAside(older.generation)) {
+            core.rescan()
+            core.showLockScreen() // nothing was put aside: the screen stays, with "Try again"
+            return
+        }
+        core.rescan()
+        lock.master.update { it.copy(maxGeneration = StateRecord.MaxGeneration(older.generation, core.clock.wallMs())) }
+        val typed = kept?.takeIf { it.visit === visit }?.typed
+        kept = null // the bytes are this call's from here on
+        visit.olderPassword = null
+        try {
+            core.showLockScreen()
+            if (typed != null) core.unlock.checkOnLockScreen(visit, typed)
+        } finally {
+            Bytes.wipe(typed)
+        }
+    }
+
+    /** F16b after a replacement, steps 4 to 6: "Open my passwords from 7 Oct". */
+    private suspend fun openOlderSet(visit: LockVisit) {
+        val question = visit.olderSet ?: return
+        val target = visit.target
+        if (target.aside == null) return
+        val lock = target.lock
+        visit.olderSet = null // from here on its bytes are this flow's, and so is the vault that opened in place
+        kept = null
+        try {
+            // Step 4: the current vault goes aside and the old one is current, in storage's one step.
+            if (!core.vault.swapIn(target.vaultId)) {
+                dropAsideHeld() // nothing changed: that vault's own lock screen again
+                if (core.visit === visit && !visit.place.hasEnded) core.showLockScreen()
+                core.publishSummary()
+                return
+            }
+            core.rescan()
+            core.retarget()
+            // Step 5: the old vault's records. A write that fails is made good by start-up (§5.11 step 3).
+            lock.startPin()
+            lock.pin.removeSlot(PinRecord.OffReason.REPLACED)
+            lock.fingerprint.removeSlot(FingerprintRecord.OffReason.REPLACED)
+            lock.master.update { it.copy(pendingMp = null, replaced = null) }
+            if (core.visit !== visit || visit.place.hasEnded) {
+                // The visit ended while the vaults changed places: the swap stands, and nothing opens (I11).
+                try {
+                    core.vault.lock()
+                } finally {
+                    core.unlock.relock()
+                }
+                return
+            }
+            // Step 6 comes with the unlock: "Choose a new PIN. Someone else may know the old one."
+            // (`off = replaced` in `pin.rec`), with the proof of the master password just typed.
+            core.unlock.completeUnlock(lock, UnlockBy.MASTER_PASSWORD, question.opened, question.proofBytes, pendingCancelled = false)
+        } finally {
+            Bytes.wipe(question.proofBytes)
+        }
+    }
+
+    /** F16b after a replacement, step 3: "Cancel". Nothing changes. */
+    private suspend fun keepNewerSet(visit: LockVisit) {
+        val question = visit.olderSet ?: return
+        visit.olderSet = null
+        kept = null
+        Bytes.wipe(question.proofBytes)
+        dropAsideHeld()
+        core.showLockScreen()
+        core.publishSummary()
+    }
 
     /**
      * "It wasn't me" on the "replaced" notice, or "Open my passwords from before 7 Oct" on the lock
      * screen (F16b, after a replacement, step 1): the old vault's own lock screen, which has only
-     * its master-password field. [oldVaultId] null: the master password was replaced more than
-     * once, and the list of the sheet is shown instead.
+     * its master-password field (`VaultFlows.showAside`; from the open app the open vault is locked
+     * first). The typed password is not tried against the old vault behind the user's back: nothing
+     * is typed here. [oldVaultId] null: the master password was replaced more than once, and the
+     * list of the "Forgot master password?" sheet names each; that sheet is the lock screen's, so the
+     * open app is locked for it, and on a lock screen nothing changes.
      */
-    @Suppress("UNUSED_PARAMETER")
-    suspend fun itWasntMe(oldVaultId: String?): Unit = notYet("F16b: open the passwords from before a replacement")
+    suspend fun itWasntMe(oldVaultId: String?) {
+        if (oldVaultId != null) {
+            core.vaults.showAside(oldVaultId)
+            return
+        }
+        if (core.state.value is LockState.Unlocked) core.unlock.lockFromInside()
+    }
 
     /**
      * The vault of [target], put aside and marked `replaced`, has opened in place with its own
@@ -63,13 +201,58 @@ internal class OlderCopies(private val core: LockCore) {
      * call puts an `OlderSetQuestion` on the visit (`LockVisit.olderSet`, with [opened] and a copy
      * of [proofBytes]), shows the lock screen again, which is then `LockScreen.OpenOlderSet`, and
      * returns null: the app stays locked until the answer. If the visit ends before an answer, the
-     * vault that opened in place is dropped (I11).
+     * vault that opened in place is dropped (I11): [visitMayHaveEnded].
      *
-     * @return the proof of [proofBytes] once the old vault is the current one, else null.
+     * @return null: the proof is made when the old vault is the current one, by the answer.
      */
-    @Suppress("UNUSED_PARAMETER")
-    suspend fun asideFromBeforeOpened(target: LockTarget, opened: OpenVault, proofBytes: ByteArray?): MasterProof? =
-        notYet("F16b steps 3 to 6: the passwords from before a replacement have opened")
+    suspend fun asideFromBeforeOpened(target: LockTarget, opened: OpenVault, proofBytes: ByteArray?): MasterProof? {
+        forget()
+        val visit = core.visit
+        val replaced = target.lock.state?.replaced
+        if (visit == null || visit.target !== target || visit.place.hasEnded || target.aside == null || replaced == null) {
+            dropAsideHeld() // no screen is there to ask on: the key is dropped (I11)
+            return null
+        }
+        val question = OlderSetQuestion(replaced.atMs, opened, proofBytes?.copyOf())
+        visit.mpError = null
+        visit.olderSet = question
+        kept = Kept(visit, null, question)
+        core.showLockScreen()
+        core.publishSummary()
+        return null
+    }
 
-    private fun notYet(what: String): Nothing = throw NotImplementedError("$what comes with build plan 4.4 (OlderCopies)")
+    /**
+     * What a visit that ended left behind goes (§5.8, I11): the bytes kept for "Open my passwords
+     * from before the change" are wiped, and the vault that opened in place for the question of F16b
+     * step 3 is dropped (`LockCore.closeVisit` has zeroed the question's own bytes, and cannot drop
+     * the vault, because it does not suspend). `LockEngine` calls it at the end of every step it runs
+     * under the mutex, so that it follows the end of the visit in the same turn, before anything else
+     * can open a vault in place. It does nothing while the screen it keeps things for is still shown.
+     */
+    suspend fun visitMayHaveEnded() {
+        val held = kept ?: return
+        val visit = held.visit
+        val shown = core.visit === visit && !visit.place.hasEnded &&
+            (if (held.question != null) visit.olderSet === held.question else visit.olderPassword != null)
+        if (shown) return
+        kept = null
+        Bytes.wipe(held.typed)
+        if (held.question != null) dropAsideHeld()
+    }
+
+    /** What was kept for a screen that is no longer the one to answer: wiped; nothing is open in place for it. */
+    private fun forget() {
+        kept?.let { Bytes.wipe(it.typed) }
+        kept = null
+    }
+
+    /** The vault put aside that is open in place in the vault port is dropped again, with its key (`VaultPort.dropAside`). */
+    private suspend fun dropAsideHeld() {
+        try {
+            core.vault.dropAside()
+        } catch (e: RuntimeException) {
+            // It cannot be reached: the next lock drops it with everything else.
+        }
+    }
 }
