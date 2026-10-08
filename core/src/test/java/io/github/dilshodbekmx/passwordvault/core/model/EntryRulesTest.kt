@@ -170,6 +170,43 @@ class EntryRulesTest {
         for ((raw, normal) in cases) assertEquals(raw, normal, EntryRules.normalizeUrl(raw))
     }
 
+    /**
+     * The review of 3.15: the rule's pattern `^[^\s/:]+\.\S+$` took time that grows with the square of
+     * a text in which white space follows many dots, and its `\s` is Unicode's White_Space on Android
+     * but ASCII only on the JVM. The check that replaces it means the same, with White_Space everywhere.
+     */
+    @Test
+    fun theWebsiteRuleReadsWhiteSpaceAsAndroidDoesInTimeThatGrowsWithTheText() {
+        // Unicode's White_Space: never host-like, on every platform.
+        val whiteSpace = listOf('\t', '\u000B', '\u000C', ' ', '\u0085', '\u00A0', '\u1680', '\u2003', '\u200A', '\u2028', '\u2029', '\u202F', '\u205F', '\u3000')
+        for (c in whiteSpace) {
+            val text = "gmail.com${c}x"
+            assertEquals(String.format(java.util.Locale.ROOT, "U+%04X", c.code), text, EntryRules.normalizeUrl(text))
+        }
+        // Characters that look like nothing but are not white space keep the text host-like.
+        for (c in listOf('\u200B', '\u180E', '\u001C', '\uFEFF')) {
+            assertEquals(String.format(java.util.Locale.ROOT, "U+%04X", c.code), "https://gmail.com${c}x", EntryRules.normalizeUrl("gmail.com${c}x"))
+        }
+
+        // On ASCII text, where the JVM's \s is White_Space too, the old pattern and the check agree.
+        val pattern = Regex("^[^\\s/:]+\\.\\S+$")
+        val alphabet = "ab.:/ \t-1"
+        val random = java.util.Random(310)
+        repeat(20_000) {
+            val text = String(CharArray(1 + random.nextInt(9)) { alphabet[random.nextInt(alphabet.length)] }).trim()
+            if (text.isEmpty() || text.contains("://")) return@repeat
+            val expected = if (pattern.matches(text)) "https://$text" else text
+            assertEquals("\"$text\"", expected, EntryRules.normalizeUrl(text))
+        }
+
+        // One pass: 200,002 characters of dots with a space before the last letter (the pattern: about a minute).
+        val long = "a.".repeat(100_000) + " b"
+        val started = System.nanoTime()
+        assertEquals(long, EntryRules.normalizeUrl(long))
+        val ms = (System.nanoTime() - started) / 1_000_000
+        assertTrue("$ms ms", ms < 2_000)
+    }
+
     @Test
     fun theDuplicateQuestionComparesNameAndLoginWithoutCase() {
         val gmail = entry(1, title = "Gmail", username = "aziz@example.com")
