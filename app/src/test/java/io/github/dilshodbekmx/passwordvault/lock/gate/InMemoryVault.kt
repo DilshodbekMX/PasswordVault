@@ -154,6 +154,8 @@ class InMemoryVault(private val clock: Clock) : VaultPort, VaultRepository {
         state.value = VaultState.Locked
     }
 
+    override suspend fun dropAside(): Unit = unsupported()
+
     override suspend fun createVault(vaultId: String, first: ByteArray, again: ByteArray, from: Vault?, putCurrentAside: Boolean): VaultWrite {
         log += "createVault"
         created += first.copyOf() to again.copyOf()

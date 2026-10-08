@@ -28,6 +28,8 @@ object StubVaultPort : VaultPort {
 
     override suspend fun lock(): Unit = missing()
 
+    override suspend fun dropAside(): Unit = missing()
+
     override suspend fun createVault(vaultId: String, first: ByteArray, again: ByteArray, from: Vault?, putCurrentAside: Boolean): VaultWrite =
         missing()
 

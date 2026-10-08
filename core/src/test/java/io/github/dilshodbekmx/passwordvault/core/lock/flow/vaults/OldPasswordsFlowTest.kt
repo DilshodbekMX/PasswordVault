@@ -26,6 +26,7 @@ import io.github.dilshodbekmx.passwordvault.core.lock.record.StateRecord
 import io.github.dilshodbekmx.passwordvault.core.model.Entry
 import io.github.dilshodbekmx.passwordvault.core.model.Vault
 import io.github.dilshodbekmx.passwordvault.testing.lock.FakeRecordFiles
+import io.github.dilshodbekmx.passwordvault.testing.lock.FakeVaultPort
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -170,6 +171,79 @@ class OldPasswordsFlowTest {
         assertEquals(emptyList<String>(), f.port.calls.filter { it.startsWith("openWithPassword") })
         assertEquals(0, f.stateRecord(OTHER_VAULT).mpGuard.failures)
         assertNotNull(f.port.vault(VAULT))
+    }
+
+    // ---- A check that opened that vault in place, and nothing came of it (§6.8 step 8, I11) ------------
+
+    @Test
+    fun aRightPasswordWhosePromptHasEnded_leavesNoVaultPutAsideOpenInMemory() {
+        phone()
+        openTheApp()
+        f.port.beforeCall = { call -> if (call == "openWithPassword aside $OTHER_VAULT") f.engine.core.endPromptsNow() } // as ON_STOP does
+
+        assertEquals(AsideOutcome.NotSaved, open(OTHER_VAULT, Secrets.OTHER))
+        assertNull("the vault put aside is still open in place", f.port.openAsideId)
+        assertEquals(AsideOutcome.NotSaved, delete(OTHER_VAULT, Secrets.OTHER))
+        assertNull("the vault put aside is still open in place", f.port.openAsideId)
+
+        f.port.beforeCall = null
+        // Only that vault was dropped: the app is open as before, on the current vault, and nothing was written.
+        assertTrue(f.state is LockState.Unlocked)
+        assertEquals(VAULT, f.port.openVaultId)
+        assertEquals(listOf("openWithPassword aside $OTHER_VAULT", "dropAside"), f.port.calls.takeLast(2))
+        assertEquals(emptyList<String>(), f.port.calls.filter { it == "lock" })
+        assertEquals(emptyList<String>(), f.port.writingCalls)
+    }
+
+    @Test
+    fun aMergeThatFails_leavesNoVaultPutAsideOpenInMemory_andTheNextTryTypesThePasswordAgain() {
+        phone()
+        openTheApp()
+        f.port.failWrites(FakeVaultPort.WriteFault.NOTHING_CHANGED)
+
+        assertEquals(AsideOutcome.NotSaved, open(OTHER_VAULT, Secrets.OTHER))
+
+        assertNull("the vault put aside is still open in place", f.port.openAsideId)
+        assertTrue(f.state is LockState.Unlocked)
+        assertEquals(VAULT, f.port.openVaultId)
+        assertEquals(listOf(current.id), f.port.current!!.content.entries.map { it.id })
+        // Another try goes through that vault's own guard again, and then merges.
+        assertEquals(AsideOutcome.Wrong, open(OTHER_VAULT, "not it"))
+        assertEquals(AsideOutcome.Done, open(OTHER_VAULT, Secrets.OTHER))
+        assertEquals(listOf(current.id, older.id), f.port.current!!.content.entries.map { it.id })
+        assertNull(f.port.openAsideId)
+    }
+
+    @Test
+    fun aDeleteThatFails_orIsRefused_leavesNoVaultPutAsideOpenInMemory() {
+        phone()
+        f.port.seedAside(THIRD_VAULT, bytes(Secrets.THIRD), putAsideAtMs = lockedOn + 1_000)
+        f.plantState(THIRD_VAULT)
+        openTheApp()
+
+        // Storage cannot delete it now.
+        f.port.failWrites(FakeVaultPort.WriteFault.REFUSED)
+        assertEquals(AsideOutcome.NotSaved, delete(OTHER_VAULT, Secrets.OTHER))
+        assertNull("the vault put aside is still open in place", f.port.openAsideId)
+        assertNotNull(f.port.vault(OTHER_VAULT))
+        assertTrue(f.files.hasDir(f.dirOf(OTHER_VAULT)))
+
+        // Refused before storage is asked: another vault's records cannot be read now, and may name it.
+        f.files.fail(FakeRecordFiles.Op.READ, times = -1, matches = { it.endsWith("/$THIRD_VAULT/state.rec") })
+        f.restart()
+        openTheApp()
+        val askedOfStorage = f.port.writingCalls.size
+        assertEquals(AsideOutcome.NotSaved, delete(OTHER_VAULT, Secrets.OTHER))
+        assertNull("the vault put aside is still open in place", f.port.openAsideId)
+        assertEquals("storage was not asked to delete", askedOfStorage, f.port.writingCalls.size)
+        assertTrue(f.state is LockState.Unlocked)
+        assertEquals(VAULT, f.port.openVaultId)
+
+        f.files.clearFaults()
+        f.restart()
+        openTheApp()
+        assertEquals(AsideOutcome.Done, delete(OTHER_VAULT, Secrets.OTHER))
+        assertNull(f.port.vault(OTHER_VAULT))
     }
 
     // ---- "Delete" -------------------------------------------------------------------------------------
