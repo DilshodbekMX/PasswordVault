@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Passwords list in night vault</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#F2B84B}a:hover{color:#FFD58A}
+input::placeholder{color:#9AA3AD}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; position: relative; display: flex; flex-direction: column; background: #0E1216; color: #E3E6EA; font-family: Roboto, system-ui, sans-serif; overflow: hidden">
+<div style="height: 64px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 8px 0 20px">
+<h1 style="margin: 0; font-size: 22px; font-weight: 400">Passwords</h1>
+<button type="button" aria-label="Lock now" style="width: 48px; height: 48px; border: 0; border-radius: 50%; background: transparent; color: #A7AFB8; display: flex; align-items: center; justify-content: center">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7.5a4 4 0 0 1 8 0V11"></path></svg>
+</button>
+</div>
+<label style="margin: 4px 16px 8px; height: 56px; flex-shrink: 0; box-sizing: border-box; border-radius: 28px; background: #1C232A; display: flex; align-items: center; gap: 14px; padding: 0 20px; color: #A7AFB8">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"></circle><path d="M20 20l-4.2-4.2"></path></svg>
+<input type="search" aria-label="Search accounts" placeholder="Search accounts" style="flex-grow: 1; min-width: 0; border: 0; background: transparent; outline: none; font-family: inherit; font-size: 16px; color: #E3E6EA">
+</label>
+<div style="flex-grow: 1; overflow: hidden">
+<div style="padding: 12px 20px 4px; font-size: 14px; font-weight: 500; color: #F2B84B">Favourites</div>
+<sc-for list="{{favourites}}" as="r" hint-placeholder-count="2">
+<div style="display: flex; align-items: center; gap: 16px; padding: 6px 8px 6px 20px; min-height: 60px">
+<span aria-hidden="true" style="width: 40px; height: 40px; flex-shrink: 0; border-radius: 50%; background: {{r.bg}}; color: {{r.fg}}; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 500">{{r.a}}</span>
+<div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 16px">{{r.t}}</span>
+<span style="font-size: 14px; color: #A7AFB8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{r.s}}</span>
+</div>
+<button type="button" aria-label="Copy password" style="width: 48px; height: 48px; flex-shrink: 0; border: 0; border-radius: 50%; background: transparent; color: #A7AFB8; display: flex; align-items: center; justify-content: center">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"></rect><path d="M5 15V6a1 1 0 0 1 1-1h9"></path></svg>
+</button>
+</div>
+</sc-for>
+<div style="padding: 16px 20px 4px; font-size: 14px; font-weight: 500; color: #F2B84B">All accounts · 12</div>
+<sc-for list="{{groups}}" as="g" hint-placeholder-count="5">
+<div style="padding: 10px 20px 2px; font-size: 14px; font-weight: 500; color: #A7AFB8">{{g.letter}}</div>
+<sc-for list="{{g.rows}}" as="r" hint-placeholder-count="1">
+<div style="display: flex; align-items: center; gap: 16px; padding: 6px 8px 6px 20px; min-height: 60px">
+<span aria-hidden="true" style="width: 40px; height: 40px; flex-shrink: 0; border-radius: 50%; background: {{r.bg}}; color: {{r.fg}}; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 500">{{r.a}}</span>
+<div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 16px">{{r.t}}</span>
+<span style="font-size: 14px; color: #A7AFB8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{r.s}}</span>
+</div>
+<button type="button" aria-label="Copy password" style="width: 48px; height: 48px; flex-shrink: 0; border: 0; border-radius: 50%; background: transparent; color: #A7AFB8; display: flex; align-items: center; justify-content: center">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"></rect><path d="M5 15V6a1 1 0 0 1 1-1h9"></path></svg>
+</button>
+</div>
+</sc-for>
+</sc-for>
+</div>
+<button type="button" style="position: absolute; right: 16px; bottom: 96px; height: 56px; padding: 0 22px 0 16px; border: 0; border-radius: 16px; background: #F2B84B; color: #2A1C00; display: flex; align-items: center; gap: 10px; font-family: inherit; font-size: 15px; font-weight: 500; box-shadow: 0 6px 16px rgba(0,0,0,0.45)">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+Add
+</button>
+<nav aria-label="Main" style="height: 80px; flex-shrink: 0; box-sizing: border-box; padding-top: 12px; background: #161C21; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr))">
+<button type="button" aria-current="page" style="border: 0; background: transparent; display: flex; flex-direction: column; align-items: center; gap: 4px; font-family: inherit; font-size: 12px; font-weight: 600; color: #E3E6EA">
+<span style="width: 64px; height: 32px; border-radius: 16px; background: #3A2D11; color: #FFDFA3; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="7.5" cy="15.5" r="3.5"></circle><path d="M10 13l9-9"></path><path d="M16 7l2.5 2.5"></path><path d="M14 9l2 2"></path></svg></span>
+Passwords
+</button>
+<button type="button" style="border: 0; background: transparent; display: flex; flex-direction: column; align-items: center; gap: 4px; font-family: inherit; font-size: 12px; font-weight: 500; color: #A7AFB8">
+<span style="width: 64px; height: 32px; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7.5 2.8V11c0 4.6-3.2 8-7.5 9.5C7.7 19 4.5 15.6 4.5 11V5.8z"></path></svg></span>
+Security
+</button>
+<button type="button" style="border: 0; background: transparent; display: flex; flex-direction: column; align-items: center; gap: 4px; font-family: inherit; font-size: 12px; font-weight: 500; color: #A7AFB8">
+<span style="width: 64px; height: 32px; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></span>
+Settings
+</button>
+</nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const tones = {
+      blue: ['#1F3450', '#C3D7F7'], rose: ['#46222C', '#F7BECA'], violet: ['#2F2852', '#D3C8FF'],
+      green: ['#1F3519', '#BFE0AC'], amber: ['#40300F', '#F6D08D'], teal: ['#143C37', '#A9E5DA'],
+    };
+    const row = (t, s, tone) => ({ t, s, a: t.charAt(0).toUpperCase(), bg: tones[tone][0], fg: tones[tone][1] });
+    return {
+      favourites: [row('Gmail', 'aziz.karimov@example.uz', 'rose'), row('Click', '+998 90 000 00 01', 'blue')],
+      groups: [
+        { letter: 'C', rows: [row('Click', '+998 90 000 00 01', 'blue')] },
+        { letter: 'G', rows: [row('Gmail', 'aziz.karimov@example.uz', 'rose')] },
+        { letter: 'I', rows: [row('Instagram', 'aziz_karimov', 'violet')] },
+        { letter: 'K', rows: [row('Kapitalbank', 'aziz.karimov', 'green')] },
+        { letter: 'P', rows: [row('Payme', '+998 90 000 00 01', 'teal')] },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>
