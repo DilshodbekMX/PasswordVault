@@ -29,7 +29,8 @@
 #                                 "SKIPPED NAME (reason)" and do not run it
 #   pv_summary                    print the counts; returns 1 if any step failed
 #   pv_reboot [SECONDS], pv_wait_booted [SECONDS], pv_unlock, pv_keyguard_showing, pv_focus, pv_ui_nodes,
-#   pv_ui_tap REGEX, pv_ui_wait REGEX SECONDS, pv_is_debuggable [PACKAGE], pv_has_root, pv_api
+#   pv_ui_nodes_all, pv_ui_tap REGEX, pv_ui_wait REGEX SECONDS, pv_is_debuggable [PACKAGE], pv_has_root,
+#   pv_api
 #
 # Every adb call names its device with -s. This file never runs "adb kill-server" and never
 # talks to emulator-5554 (the user's own device). See tools/emu/README.md.
@@ -426,10 +427,10 @@ pv_uidump_build() {
     return 1
 }
 
-# One reading with the dumper on the device: the nodes, or status 1.
-pv_uidump_once() {
+# One reading with the dumper on the device: the nodes, or status 1. With "all": every window's.
+pv_uidump_once() { # [all]
     local out
-    out=$(pv_adb shell "CLASSPATH=$PV_UIDUMP_ON_DEVICE:/system/framework/uiautomator.jar app_process /system/bin PvUiDump" 2>/dev/null | tr -d '\r')
+    out=$(pv_adb shell "CLASSPATH=$PV_UIDUMP_ON_DEVICE:/system/framework/uiautomator.jar app_process /system/bin PvUiDump${1:+ $1}" 2>/dev/null | tr -d '\r')
     case "$(printf '%s\n' "$out" | tail -n 1)" in
         "PVUIDUMP OK "*) printf '%s\n' "$out" | sed '$d'; return 0 ;;
     esac
@@ -439,15 +440,29 @@ pv_uidump_once() {
 # One reading; the jar is built when its source changed and pushed when the device has not got this
 # build of it (a marker per serial under $PV_RUN/uidump/; a device restarted since has no jar, and the
 # failed reading pushes it again).
-pv_uidump() {
+pv_uidump() { # [all]
     local marker=$PV_RUN/uidump/$PV_SERIAL
     if [ -f "$PV_UIDUMP_JAR" ] && [ ! "$PV_UIDUMP_SRC" -nt "$PV_UIDUMP_JAR" ] && [ -f "$marker" ] && [ ! "$PV_UIDUMP_JAR" -nt "$marker" ]; then
-        pv_uidump_once && return 0
+        pv_uidump_once "$@" && return 0
     fi
     pv_uidump_build || return 1
     pv_adb push "$PV_UIDUMP_JAR" "$PV_UIDUMP_ON_DEVICE" > /dev/null 2>&1 || return 1
     mkdir -p "$PV_RUN/uidump" && touch "$marker"
-    pv_uidump_once
+    pv_uidump_once "$@"
+}
+
+# The nodes of every window a user can touch, the top one first (one reading), in pv_ui_nodes' format
+# with the node's bounds added: text|content-desc|resource-id|clickable|enabled|x|y|left|top|right|bottom.
+# That includes a window that never takes the focus and so is not in the active window, such as the
+# floating toolbar of a text selection (its Copy). Up to three tries; nothing and status 1 when the
+# dumper cannot run.
+pv_ui_nodes_all() {
+    local i
+    for i in 1 2 3; do
+        pv_uidump all && return 0
+        pv_sleep 0.5
+    done
+    return 1
 }
 
 pv_ui_nodes_stock() {
