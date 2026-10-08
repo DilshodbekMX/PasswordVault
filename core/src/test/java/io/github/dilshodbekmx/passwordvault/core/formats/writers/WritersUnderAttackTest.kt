@@ -25,8 +25,9 @@ import org.junit.Test
 
 /**
  * The writers against the inputs of the break test (formats-review.md, "Writers under attack";
- * `prototypes/formats/attack/attack/Attack.kt` sections 2 to 7): every character class, a carriage
- * return without a line feed, very long websites, a thousand extra fields, passwords made of quotes.
+ * `prototypes/formats/attack/attack/Attack.kt` sections 2 to 7, removed by build-plan 3.15 and in the
+ * history at `wave-3B-merged`): every character class, a carriage return without a line feed, very
+ * long websites, a thousand extra fields, passwords made of quotes.
  * Whatever an entry holds, each writer writes it, and what our own readers read back is what was
  * written. Unpaired surrogates, the one thing a writer changes, are in the other tests (P7).
  */
