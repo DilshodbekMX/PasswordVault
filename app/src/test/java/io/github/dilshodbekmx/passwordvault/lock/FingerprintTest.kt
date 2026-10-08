@@ -449,7 +449,10 @@ class FingerprintTest {
     @Test
     fun theProofOfSetupIsTheOneTheStatePublishes() = runTest {
         val rig = LockRig(this)
-        val proof = rig.setUp()
-        assertSame(proof, rig.unlocked.proof)
+        val proof = rig.setUp() // what LockUiState.Unlocked.proof holds after setup
+        assertSame("D-9b compared that proof (architecture.md D-9b)", proof, rig.vault.matched.single().proof)
+        assertTrue("while it still lent its bytes", rig.vault.matched.single().bytesLent)
+        rig.fingerprintOn(proof) // F1 step 7 goes on with it (lock.md F9): the engine holds it as its own
+        assertEquals(FingerprintStatus.On, rig.status.fingerprint)
     }
 }
