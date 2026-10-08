@@ -4,6 +4,7 @@ import androidx.compose.foundation.text.input.TextFieldState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.dilshodbekmx.passwordvault.R
+import io.github.dilshodbekmx.passwordvault.core.lock.flow.ChoosePinReason
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.Notice
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.NoticeAnswer
 import io.github.dilshodbekmx.passwordvault.core.lock.record.Shortcut
@@ -18,6 +19,7 @@ import io.github.dilshodbekmx.passwordvault.lock.PinStatus
 import io.github.dilshodbekmx.passwordvault.nav.Route
 import io.github.dilshodbekmx.passwordvault.ui.common.clearSecret
 import io.github.dilshodbekmx.passwordvault.ui.common.readSecret
+import io.github.dilshodbekmx.passwordvault.ui.setup.PinSetupStart
 import java.util.TimeZone
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -42,9 +44,9 @@ import kotlinx.coroutines.launch
  *   now" the new master password, "Choose a new PIN" Set a PIN, "Turn on" Settings › App lock.
  * - **"Choose a PIN" with the proof of this unlock** has no dialog: the "Choose a new PIN" screen
  *   follows at once (lock.md F1 step 6, F5 step 4, F7 step 3; ux.md §5.9 "After an unlock through
- *   'Forgot PIN?' …"; `Notice.ChoosePin`'s KDoc). [choosePin] names it; [choosePinStep] opens that
- *   screen once and answers the notice when the PIN screens are left, so that the notices after it
- *   wait until then, and the PIN screens can still read why a PIN is asked for from the lock's state.
+ *   'Forgot PIN?' …"; `Notice.ChoosePin`'s KDoc). [choosePin] names it; [choosePinStep] leaves the
+ *   notice's reason for the PIN steps (`PinSetupStart`), opens that screen once and answers the
+ *   notice when the PIN screens are left, so that the notices after it wait until then.
  * - **"Type master password"** on the wrong-tries notice opens [prompt], the master password typed
  *   in the open app and checked as practice (`MpPurpose.PRACTICE`), with the lines of §13.3 for a
  *   wrong password, a wait, too little memory and an older password. Its field is [password], held
@@ -116,14 +118,18 @@ class NoticesViewModel(
 
     /**
      * One step of "Choose a PIN" with a proof, for the notice [id] while it is the first. The first
-     * time, [open] opens the "Choose a new PIN" screen; if it cannot, the offer is put off (LATER).
-     * Afterwards, once [onPinScreens] is false (the PIN screens were left), the notice is answered:
-     * CHOOSE_PIN when a PIN is set now, else LATER. [onPinScreens] null: the screen shown cannot be
-     * known, and the notice is answered as soon as the screen is open.
+     * time, [open] opens the "Choose a new PIN" screen, and just before it the notice's reason is
+     * left for the PIN steps (`PinSetupStart.offer`, build-plan.md §12, merge of R3 item 2); if it
+     * cannot open, no mark stays and the offer is put off (LATER). Afterwards, once [onPinScreens]
+     * is false (the PIN screens were left), the notice is answered: CHOOSE_PIN when a PIN is set now,
+     * else LATER. [onPinScreens] null: the screen shown cannot be known, and the notice is answered
+     * as soon as the screen is open.
      */
     fun choosePinStep(id: Long, onPinScreens: Boolean?, open: () -> Boolean) {
         if (id !in choosing) {
+            choosePinReason(id)?.let(PinSetupStart::offer)
             if (!open()) {
+                PinSetupStart.take() // not opened: nothing is left for a later opening
                 lock.send(LockIntent.NoticeAnswered(id, NoticeAnswer.LATER))
             } else if (onPinScreens == null) {
                 lock.send(LockIntent.NoticeAnswered(id, NoticeAnswer.CHOOSE_PIN))
@@ -181,6 +187,10 @@ class NoticesViewModel(
     private fun firstNow(): Notice? = (lock.state.value as? LockUiState.Unlocked)?.notices?.firstOrNull()
 
     private fun choosePinId(notice: Notice?): Long? = (notice as? Notice.ChoosePin)?.takeIf { !it.needsMasterPassword }?.id
+
+    /** The reason of the notice "Choose a PIN" [id] in the lock's state now, or null. */
+    private fun choosePinReason(id: Long): ChoosePinReason? =
+        (lock.state.value as? LockUiState.Unlocked)?.notices?.firstNotNullOfOrNull { (it as? Notice.ChoosePin)?.takeIf { notice -> notice.id == id } }?.reason
 
     private fun noticeUi(notice: Notice): NoticeUi? = NoticeTexts.of(notice, clock.wallMs(), zone)
 

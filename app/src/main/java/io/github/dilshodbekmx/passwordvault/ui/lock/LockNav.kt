@@ -30,9 +30,11 @@ fun EntryProviderScope<Route>.lockNav(graph: AppGraph, nav: Navigator) {
 /**
  * The notices after unlock (lock.md §13.4; ux.md §5.9), one at a time over the unlocked screens:
  * `UnlockedScaffold` calls this while the app is unlocked. A notice is a dialog whose answers go to
- * the lock and may open a screen; "Choose a PIN" with the proof of this unlock opens the "Choose a
- * new PIN" screen instead and is answered when the PIN screens are left; "Type master password"
- * opens the master-password prompt. [NoticesViewModel] belongs to the activity.
+ * the lock and may open a screen ("Change PIN" Change PIN, "Turn on" Settings › App lock); "Choose a
+ * PIN" with the proof of this unlock opens the "Choose a new PIN" screen instead, with the notice's
+ * reason left for the PIN steps just before (`PinSetupStart.offer`), and is answered when the PIN
+ * screens are left; "Type master password" opens the master-password prompt. [NoticesViewModel]
+ * belongs to the activity.
  */
 @Composable
 fun LockNotices(graph: AppGraph, nav: Navigator) {

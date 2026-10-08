@@ -24,6 +24,7 @@ import io.github.dilshodbekmx.passwordvault.lock.PinStatus
 import io.github.dilshodbekmx.passwordvault.nav.Route
 import io.github.dilshodbekmx.passwordvault.testing.FakeClock
 import io.github.dilshodbekmx.passwordvault.ui.lock.LockKit.text
+import io.github.dilshodbekmx.passwordvault.ui.setup.PinSetupStart
 import java.util.TimeZone
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -273,6 +274,22 @@ class NoticesViewModelTest {
         assertEquals(1, opened)
         assertEquals(listOf<LockIntent>(LockIntent.NoticeAnswered(5, NoticeAnswer.CHOOSE_PIN)), lock.sent)
         assertEquals(6L, vm.notice.value!!.id)
+    }
+
+    @Test
+    fun choosePinLeavesItsReasonForThePinSteps_justBeforeTheirScreenOpens() = runTest {
+        PinSetupStart.take() // nothing left by another test
+        val lock = FakeLockManager(initial = unlocked(Notice.ChoosePin(5, ChoosePinReason.SOMEONE_MAY_KNOW, false)))
+        val vm = vm(lock)
+        var taken: ChoosePinReason? = null
+        vm.choosePinStep(5, onPinScreens = false) { taken = PinSetupStart.take(); true }
+        assertEquals("the first step of the PIN screens takes the notice's reason (build-plan §12, merge of R3 item 2)", ChoosePinReason.SOMEONE_MAY_KNOW, taken)
+
+        // A screen that cannot open leaves no mark for a later opening.
+        lock.state.value = unlocked(Notice.ChoosePin(7, ChoosePinReason.FORGOTTEN, false))
+        runCurrent()
+        vm.choosePinStep(7, onPinScreens = false) { false }
+        assertNull(PinSetupStart.take())
     }
 
     @Test
