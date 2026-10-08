@@ -345,14 +345,15 @@ def report(name):
 # tests run once on FakeFiles and once on a temporary directory).
 packages = {
     "3.1": (["data.BackupAndRestoreTest", "data.ConcurrencyTest", "data.CreateAndOpenTest", "data.DraftTest",
-             "data.EditTest", "data.GenerationHeadersTest", "data.ListModelProviderTest", "data.LockTest",
+             "data.EditTest", "data.CreatedTimeTest", "data.ListModelProviderTest", "data.LockTest",
              "data.OlderCopyTest", "data.PurgeTest", "data.VaultsTest"], 124),
     "3.2": (["lock.gate.MasterPasswordGateTest", "session.AutoLockTest", "session.LockOrderTest"], 66),
     "3.3": (["ui.setup.SetupViewModelTest"], 25),
     "3.4": (["ui.lock.LockViewModelTest"], 25),
     "3.5": (["ui.list.PasswordsViewModelTest", "ui.list.ListBannersTest", "ui.list.RecentlyDeletedViewModelTest",
              "ui.list.EntryRowTest"], 39),
-    "3.6": (["ui.edit.EditViewModelTest", "ui.edit.GeneratorModelTest", "ui.edit.FieldInputTest"], 50),
+    "3.6": (["ui.edit.EditViewModelTest", "ui.edit.GeneratorModelTest", "ui.edit.FieldInputTest",
+             "ui.edit.NewAccountNameTest"], 50),
 }
 bad = 0
 for package, (classes, at_least) in packages.items():
@@ -450,6 +451,8 @@ expected = {
     "ui.list.PasswordsScreenTest": ("3.5", 9, 9, 9),
     "ui.edit.EditKeyboardRotationTest": ("3.6", 3, 4, 4),
     "ui.edit.EditScreenTest": ("3.6", 4, 4, 4),
+    "ui.list.ListFocusTest": ("w3B-carry", 2, 2, 2),
+    "data.StoredTextsTest": ("w3B-carry", 1, 1, 1),
 }
 # (device, class) -> [ran, failed, skipped]
 seen = collections.defaultdict(lambda: [0, 0, 0])
