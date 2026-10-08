@@ -137,7 +137,7 @@ class LockDebugImpl(private val access: KeystoreAccess, private val io: Coroutin
         val described = when {
             // The lock mutex is held by the check that is parked: asking the engine would wait for `release`.
             parked != null -> "engine: held at ${parked.id}, not asked"
-            else -> engine?.let { withTimeoutOrNull(ENGINE_WAIT_MS) { it.describe() } } ?: "engine: no answer in $ENGINE_WAIT_MS ms"
+            else -> describeEngine() ?: "engine: no answer in $ENGINE_WAIT_MS ms"
         }
         out.append(described).append('\n')
         out.append("hold: ").append(parked?.let { it.id + " (reached)" } ?: armedHold?.let { it.id + " (armed)" } ?: "none").append('\n')
@@ -157,8 +157,9 @@ class LockDebugImpl(private val access: KeystoreAccess, private val io: Coroutin
 
     /**
      * One of [COMMANDS] with the words that followed its name, answered as the debug receiver's
-     * handler answers it: one line that starts with the command's name, or for `status` the lines of
-     * [status].
+     * handler answers it, in one line (the receiver's answer is the `data` of `am broadcast`, which
+     * scripts read as one line): the command's name and what it did, or for `status` the lines of
+     * [status] joined with [LINE_SEPARATOR].
      *
      * @throws IllegalArgumentException for a name that is not a command of the lock, words a command
      *   does not take, or a `ks-fault` row that no fault has; the receiver answers "failed" then.
@@ -167,7 +168,7 @@ class LockDebugImpl(private val access: KeystoreAccess, private val io: Coroutin
         if (name == KS_FAULT) return ksFaultCommand(args)
         require(args.isEmpty()) { "usage: $name" }
         return when (name) {
-            STATUS -> status()
+            STATUS -> status().lineSequence().joinToString(LINE_SEPARATOR) { it.trim() }
             HOLD_AFTER_CHARGE -> {
                 holdAfterCharge()
                 "$name: armed; the next PIN entry stops when its charge is on disk, until release"
@@ -192,6 +193,23 @@ class LockDebugImpl(private val access: KeystoreAccess, private val io: Coroutin
                 "$name: ${before.size - left.size} of ${before.size} aliases deleted" + if (left.isEmpty()) "" else "; left: " + left.joinToString(" ")
             }
             else -> throw IllegalArgumentException("not a command of the lock")
+        }
+    }
+
+    /**
+     * The engine's own description, or null when it did not answer in [ENGINE_WAIT_MS]. The engine
+     * lists the shortcut aliases for it, which is a Keystore call: a fault that is armed is set aside
+     * meanwhile and armed again afterwards, so that looking does not spend it (`keystore-load` would
+     * strike here). A step of the lock that runs at the same moment does not meet it either.
+     */
+    private suspend fun describeEngine(): String? {
+        val engine = engine ?: return null
+        val fault = access.faults.pending
+        if (fault != null) access.faults.disarm()
+        try {
+            return withTimeoutOrNull(ENGINE_WAIT_MS) { engine.describe() }
+        } finally {
+            if (fault != null && access.faults.pending == null) access.faults.arm(fault)
         }
     }
 
@@ -255,5 +273,8 @@ class LockDebugImpl(private val access: KeystoreAccess, private val io: Coroutin
 
         /** What `ks-fault` takes to disarm, and what [status] prints when nothing is armed. */
         const val NO_FAULT = "none"
+
+        /** What stands between the lines of [status] in the one-line answer of the `status` command. */
+        const val LINE_SEPARATOR = "; "
     }
 }

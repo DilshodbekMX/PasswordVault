@@ -106,8 +106,11 @@ class LockDebugImplTest {
 
         val status = runBlocking { hooks.command("status", emptyList()) }
 
-        assertEquals("engine: held at after-charge, not asked", status.lines().first())
-        assertTrue(status, "hold: after-charge (reached)" in status.lines())
+        assertFalse("the command's answer is one line", '\n' in status)
+        val items = status.split(LockDebugImpl.LINE_SEPARATOR)
+        assertEquals("engine: held at after-charge, not asked", items.first())
+        assertTrue(status, "hold: after-charge (reached)" in items)
+        assertEquals("the same, in lines", items, runBlocking { hooks.status() }.lines())
         assertEquals("release: released after-charge (reached)", runBlocking { hooks.command("release", emptyList()) })
         writer.join(2_000)
         assertFalse(writer.isAlive)
@@ -219,10 +222,12 @@ class LockDebugImplTest {
         rig.answerNotices(NoticeAnswer.LATER)
         rig.lock()
         hooks.failNextWrite()
-        hooks.ksFault("getkey-null")
+        hooks.ksFault("keystore-load") // the fault that the engine's own listing of the aliases would meet
         hooks.holdBeforeHmac()
 
         val locked = hooks.status()
+        assertEquals("looking does not spend an armed fault", "keystore-load", faults.pending)
+        hooks.ksFault("getkey-null")
 
         val lines = locked.lines()
         assertEquals("state: locked: pad", lines.first())
@@ -232,7 +237,7 @@ class LockDebugImplTest {
         assertTrue("the shortcut aliases, as the engine lists them", lines.any { it.startsWith("aliases: pv_pin_") })
         assertTrue(locked, "hold: before-hmac (armed)" in lines)
         assertTrue(locked, "fail-next-write: armed" in lines)
-        assertTrue(locked, "ks-fault: getkey-null" in lines)
+        assertTrue(locked, "ks-fault: keystore-load" in lines)
         assertTrue(locked, "keystore: no alias listed" in lines)
         assertTrue(locked, "prompt: none, may open by itself: true" in lines)
         assertEquals("last PIN unlock: none", lines.last())

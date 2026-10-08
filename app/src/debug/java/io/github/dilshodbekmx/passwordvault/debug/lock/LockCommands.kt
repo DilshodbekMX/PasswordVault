@@ -20,7 +20,7 @@ import io.github.dilshodbekmx.passwordvault.lock.LockDebugImpl
  *
  * | `cmd` | What it does | Answer (`data` of the broadcast's result) |
  * |---|---|---|
- * | `status` | Nothing; it reads | Several lines: the lock engine's own description (the state, whether the app is visible, the visit and the outstanding fingerprint launch, `canAuthenticate`, the vaults, the row and the PIN state of lock.md §13.1, and for every lock directory the three records with their counts, then `aliases:` with the `pv_pin_…` and `pv_fp_…` aliases); then `hold:`, `fail-next-write:`, `ks-fault:`, `keystore:` (every alias, `pv_canary` among them), `prompt:` and `last PIN unlock:` (milliseconds from the sixth digit to the unlocked state). While a hold is reached the first line is `engine: held at …, not asked` |
+ * | `status` | Nothing; it reads | One line of items separated by `; `, in this order: the lock engine's own description (`state: …`, `visible: …, visit: …, launch outstanding: …`, `canAuthenticate: …, no secure hardware: …`, `vaults: …, put aside: …`, while locked `policy: row …, pin …, fingerprint usable …`, then for every lock directory `lock <vault_id>`, `pin.rec: …` with its slot, `off`, `charged`, `row`, `total` and `unseen`, `fingerprint.rec: …`, `state.rec: …`, and `aliases: …` with the `pv_pin_…` and `pv_fp_…` aliases); then `hold: …`, `fail-next-write: …`, `ks-fault: …`, `keystore: …` (every alias, `pv_canary` among them), `prompt: …, may open by itself: …` and `last PIN unlock: …` (milliseconds from the sixth digit to the unlocked state). While a hold is reached the first item is `engine: held at …, not asked` instead of the engine's description |
  * | `hold-after-charge` | The next PIN entry stops when its charge is on disk (lock.md §6.3 C), before anything is checked | `hold-after-charge: armed; …` |
  * | `hold-before-hmac` | The next PIN check stops just before it asks the Keystore (§6.3 E.3) | `hold-before-hmac: armed; …` |
  * | `release` | Lets a held check go on; disarms a hold that was not reached | `release: released after-charge (reached)` (or `before-hmac`, or `(armed)`), or `release: nothing was held` |
@@ -28,8 +28,8 @@ import io.github.dilshodbekmx.passwordvault.lock.LockDebugImpl
  * | `ks-fault ROW` | Arms the Keystore fault ROW for the next call that meets it: a name of `KeystoreFaults.rows`, or `prompt-error-<code>`; `none` disarms; without ROW it only reads | `ks-fault: ROW`, `ks-fault: none`, or without ROW `ks-fault: <armed or none>; rows: <every name>` |
  * | `drop-keys` | Deletes every alias of the app in the Keystore, the canary too | `drop-keys: N of M aliases deleted` and, when some stayed, `; left: …` |
  *
- * Every answer is also logged, line by line, under the tag [TAG] (the receiver logs it under
- * `PVDEBUG` as well). A name with words it does not take, or a `ks-fault` row that no fault has,
+ * Every answer is also logged under the tag [TAG], the items of `status` one per line (the receiver
+ * logs the answer under `PVDEBUG` as well). A name with words it does not take, or a `ks-fault` row that no fault has,
  * ends as the receiver's "failed" (result 3). No answer holds a secret: no digit, password, key or
  * entry text.
  *
@@ -70,7 +70,7 @@ object LockCommands {
                 Log.i(TAG, "$name: refused (" + e.message + ")") // the message is this code's own text
                 throw e
             }
-            answer.lineSequence().forEach { Log.i(TAG, it) }
+            if (name == LockDebugImpl.STATUS) answer.split(LockDebugImpl.LINE_SEPARATOR).forEach { Log.i(TAG, it) } else Log.i(TAG, answer)
             return answer
         }
     }
