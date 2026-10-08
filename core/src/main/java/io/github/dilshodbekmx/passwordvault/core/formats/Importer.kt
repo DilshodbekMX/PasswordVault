@@ -641,11 +641,13 @@ object Importer {
             val changes = Changes(given)
             val moved = ArrayList<String>()
 
-            // Websites: the shared rule, blank ones dropped, each once (formats-review P10).
+            // Websites: the shared rule, blank ones dropped, each once (formats-review P10). "Once" is a
+            // set, not a search through the list: a hostile item may list a million websites.
             val urls = ArrayList<String>()
+            val seen = HashSet<String>()
             for (u in raw.urls) {
                 val url = EntryRules.normalizeUrl(line(u))
-                if (url.isNotEmpty() && url !in urls) urls.add(url)
+                if (url.isNotEmpty() && seen.add(url)) urls.add(url)
             }
             var long = 0
             var beyond = 0

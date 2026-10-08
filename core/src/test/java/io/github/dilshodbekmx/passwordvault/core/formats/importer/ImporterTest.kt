@@ -238,6 +238,29 @@ class ImporterTest {
         println("a huge header over 10,000 short rows: a million columns read in $wideMs ms, a name of 50,000 characters in $longMs ms")
     }
 
+    /**
+     * One account may list any number of websites (a Bitwarden item's `uris`, the list in `login_uri`).
+     * Each was compared with every one before it: 80,000 of them, a file of 1 MB, took 13 s.
+     */
+    @Test
+    fun anAccountWithAHundredThousandWebsitesIsReadInTimeThatGrowsWithTheFile() {
+        val n = 100_000
+        val hosts = (1..n).map { "h$it.example" }
+        val json = """{"encrypted":false,"items":[{"type":1,"name":"Many","login":{"username":"u","password":"p","uris":[""" +
+            hosts.joinToString(",") { "{\"uri\":\"$it\"}" } + "]}}]}"
+        val csv = "name,login_uri,login_username,login_password\nMany,\"" + hosts.joinToString(",") + ",h7.example\",u,p\n"
+        for ((text, repeats) in listOf(json to 0, csv to 1)) {
+            val start = System.nanoTime()
+            val a = file(text).accounts.single()
+            val ms = (System.nanoTime() - start) / 1_000_000
+            assertEquals((1..10).map { "https://h$it.example" }, a.entry.urls)
+            // Each website once: the repeat in the CSV's list is neither kept nor moved.
+            assertEquals("[WEBSITES_MOVED×${n - 10}]", a.changes.filter { it.kind == ImportChange.Kind.WEBSITES_MOVED }.toString())
+            assertTrue(a.entry.notes.startsWith("https://h11.example\nhttps://h12.example\n"))
+            assertTrue("$ms ms with $repeats repeats", ms < 5_000)
+        }
+    }
+
     @Test
     fun tenThousandRowsAreReadAndOneMoreIsRefused() {
         val header = "name,url,username,password\n"
