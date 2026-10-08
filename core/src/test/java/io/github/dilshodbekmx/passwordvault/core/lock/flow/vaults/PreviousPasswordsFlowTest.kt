@@ -3,6 +3,7 @@ package io.github.dilshodbekmx.passwordvault.core.lock.flow.vaults
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.AsideLine
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.ChoosePinReason
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.CreateOutcome
+import io.github.dilshodbekmx.passwordvault.core.lock.flow.CurrentVault
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockScreen
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockState
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.MasterPasswordOutcome
@@ -425,6 +426,31 @@ class PreviousPasswordsFlowTest {
         assertTrue(f.state is LockState.Unlocked)
         assertEquals(VAULT, f.port.openVaultId)
         assertEquals(emptyList<String>(), f.port.writingCalls)
+    }
+
+    @Test
+    fun f17step4_whenTheVaultsCannotBeListed_theLockSaysSo_asEverywhereElse_andTryAgainBringsItsScreenBack() {
+        twoVaults()
+        f.startInFront()
+        await { f.engine.useMasterPassword() } // the "Forgot master password?" sheet lists the vault put aside
+        f.port.scanFails = true // storage cannot list the vaults now
+
+        await { f.engine.showAside(OTHER_VAULT) }
+
+        // A storage error, never a crash and never "no vault" (§5.11 step 2, F1 step 1): what start-up and
+        // every lock show when the vaults cannot be listed, with "Try again".
+        assertEquals(LockState.Unreadable(CurrentVault.Why.IO, emptyList()), f.state)
+        assertEquals(emptyList<String>(), f.port.writingCalls)
+        f.leaveAndReturn() // the lock screen is drawn again: nothing throws
+        assertFalse(await { f.engine.startEmpty() }) // nothing to put aside from that screen
+        f.port.scanFails = false
+        await { f.engine.refresh() } // "Try again"
+        assertTrue(f.screen is LockScreen.Pad)
+        await { f.engine.showAside(OTHER_VAULT) }
+        assertEquals(AsideLine.LockedOn(lockedOn), f.pad.aside)
+        f.type(Secrets.OTHER_PIN)
+        assertEquals(OTHER_VAULT, f.port.current!!.vaultId)
+        assertEquals(listOf("swapIn $OTHER_VAULT"), f.port.writingCalls)
     }
 
     @Test

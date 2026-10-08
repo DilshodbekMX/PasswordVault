@@ -153,7 +153,10 @@ internal class VaultFlows(private val core: LockCore) {
      * `replaced`).
      *
      * - The vaults are listed again; a [vaultId] that is not a vault put aside (any more) changes
-     *   nothing but the screen, which shows what is there now.
+     *   nothing but the screen, which shows what is there now. When they cannot be listed, that is
+     *   a storage error, never "no vault" (F1 step 1): a locked app shows what every lock shows for
+     *   it (`UnlockFlows.relock`: "Your passwords can't be opened", with "Try again"), because the
+     *   current vault's screen cannot be decided without the listing; the open app stays open.
      * - `core.target` becomes that vault, with its own `VaultLock`: its pad and fingerprint if their
      *   records and keys still work, otherwise its master-password field, without practice, and
      *   with the master password only for a vault marked `replaced` (`EntryPolicy` on that vault's
@@ -171,8 +174,12 @@ internal class VaultFlows(private val core: LockCore) {
     suspend fun showAside(vaultId: String) {
         if (core.state.value == LockState.Starting) return
         val listed = core.rescan()
-        val currentId = core.open?.vaultId ?: (listed?.current as? CurrentVault.Present)?.vaultId
-        val aside = listed?.aside?.firstOrNull { it.vaultId == vaultId }?.takeIf { vaultId != currentId }
+        if (listed == null) {
+            if (core.state.value is LockState.Unlocked) core.publishSummary() else core.unlock.relock()
+            return
+        }
+        val currentId = core.open?.vaultId ?: (listed.current as? CurrentVault.Present)?.vaultId
+        val aside = listed.aside.firstOrNull { it.vaultId == vaultId }?.takeIf { vaultId != currentId }
         if (aside == null) {
             if (core.state.value !is LockState.Unlocked) core.showLockScreen()
             core.publishSummary()
