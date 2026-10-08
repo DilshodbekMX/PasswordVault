@@ -25,6 +25,9 @@ import java.io.File
  * [FileTaskStore], which keeps and records it and hands it to the task's screen after the unlock.
  * The launchers are attached to the store until the activity is destroyed; a recreated activity
  * attaches its own.
+ *
+ * The hook also tells the store when the activity is resumed, which is what ends the grace of the
+ * share sheet (lock.md §10.3 item 3; [FileTaskStore.inFront]).
  */
 object DocumentLaunchers {
     /** The registry key of "Save as"; it must never change, or a result in a new process is lost. */
@@ -46,6 +49,8 @@ object DocumentLaunchers {
         store.attach(launcher)
         activity.lifecycle.addObserver(
             object : DefaultLifecycleObserver {
+                override fun onResume(owner: LifecycleOwner) = store.inFront()
+
                 override fun onDestroy(owner: LifecycleOwner) = store.detach(launcher)
             },
         )

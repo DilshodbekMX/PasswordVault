@@ -83,6 +83,9 @@ class FileTaskStore(
     /** The launchers of the activity that is there now; main thread. */
     private var launcher: PickerLauncher? = null
 
+    /** The share sheet was opened, and the app has not been in front since: its grace has not ended. Main thread. */
+    private var shareSheetOpen = false
+
     init {
         scope.launch(dispatchers.io) { sharing.clear() } // kept until the next app start (ux.md §5.19)
     }
@@ -146,9 +149,9 @@ class FileTaskStore(
 
     /**
      * Shares [bytes], an encrypted backup, as [name] through the share sheet titled [title] (ux.md
-     * §5.19 item 6), after `Session.beginExternal`; the grace ends when the app is in front again,
-     * because the share sheet returns no result. False, with nothing opened: no activity is there,
-     * the copy could not be written, or no app on the phone shows a share sheet.
+     * §5.19 item 6), after `Session.beginExternal`; the grace ends when the app is in front again
+     * ([inFront]), because the share sheet returns no result. False, with nothing opened: no activity
+     * is there, the copy could not be written, or no app on the phone shows a share sheet.
      */
     suspend fun share(bytes: ByteArray, name: String, title: CharSequence): Boolean = withContext(dispatchers.main) {
         if (launcher == null) return@withContext false
@@ -161,11 +164,27 @@ class FileTaskStore(
         session.beginExternal()
         try {
             now.share(file, title)
+            shareSheetOpen = true
             true
         } catch (e: RuntimeException) {
             session.endExternal()
             false
         }
+    }
+
+    /**
+     * The activity is in front again: it was resumed (main thread). That ends the grace of a share
+     * sheet (lock.md §10.3 item 3). The session cannot see it by itself: the share sheet covers the
+     * activity without stopping it, so when it is closed without a choice the process has never
+     * left, and without this the lock delay would not apply for the rest of the 10 minutes. While
+     * the user is in the app chosen in the sheet, the activity is stopped and is not resumed, so
+     * the grace holds as lock.md §10.3 means it to. A picker's grace ends with its result
+     * ([returned]) and is not touched here.
+     */
+    internal fun inFront() {
+        if (!shareSheetOpen) return
+        shareSheetOpen = false
+        session.endExternal()
     }
 
     /** The activity [now] is there to open the system screens (main thread). */

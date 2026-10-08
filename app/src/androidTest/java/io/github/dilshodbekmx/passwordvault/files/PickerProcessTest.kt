@@ -275,6 +275,34 @@ class PickerProcessTest {
         assertArrayEquals(bytes, copy.readBytes())
     }
 
+    @Test
+    fun afterAShareSheetClosedWithoutAChoiceLeavingTheAppLocksAsTheDelaySays() {
+        // lock.md §10.3 item 3: the grace ends when the app is visible again, because the share sheet
+        // returns no result. The share sheet covers the activity without stopping it, so the process
+        // never leaves and never comes back: only the activity's own resume says that it is closed.
+        // (When an app is chosen in the sheet, the activity is stopped without being resumed first,
+        // on Android 7 and 17 alike, and the grace goes on.)
+        setLockDelay(LockDelay.IMMEDIATELY)
+        try {
+            val activity = currentActivity()
+            openTheShareSheet(activity)
+            DocumentsRig.backTo(activity, "the app in front again") // the sheet closed without sending anything
+            DocumentsRig.pressHome()
+            DocumentsRig.await("the app left") { processState() == Lifecycle.State.CREATED }
+            DocumentsRig.await("\"Immediately\" locks the app that was left after the share sheet was closed", 5_000) { AppVault.state is LockUiState.Locked }
+        } finally {
+            setLockDelay(LockDelay.SETUP)
+        }
+    }
+
+    /** Shares a backup from [activity] through the system's own share sheet, and waits until the sheet is in front of it. */
+    private fun openTheShareSheet(activity: MainActivity) {
+        DocumentsRig.awaitFocus("the app in front", ofTheApp = true)
+        assertTrue(runBlocking { store().share("PVAULT01 shared".toByteArray(), DocumentNames.backup("2026-10-08"), "Send to another app") })
+        DocumentsRig.await("the app behind the share sheet") { activity in DocumentsRig.activities(MainActivity::class.java, Stage.PAUSED) }
+        DocumentsRig.awaitFocus("the share sheet in front", ofTheApp = false)
+    }
+
     private fun newActivity(old: MainActivity): MainActivity? =
         DocumentsRig.activities(MainActivity::class.java, Stage.PRE_ON_CREATE, Stage.CREATED, Stage.STARTED, Stage.RESUMED, Stage.PAUSED, Stage.STOPPED)
             .firstOrNull { it !== old }

@@ -359,6 +359,29 @@ class FileTaskStoreTest {
     }
 
     @Test
+    fun theGraceOfTheShareSheetEndsWhenTheAppIsInFrontAgain() = runTest {
+        // lock.md §10.3 item 3: the share sheet returns no result, and it covers the activity without
+        // stopping it, so the store ends the grace when the activity says that it is in front again.
+        val store = newStore()
+        store.inFront()
+        assertEquals("nothing was shared: nothing ends", 0, session.ended)
+
+        assertTrue(store.share(byteArrayOf(80, 86), "b.pvault", "Send"))
+        assertTrue("in the share sheet", session.external)
+        store.inFront()
+        assertFalse("the grace is over", session.external)
+        assertEquals(1, session.ended)
+        store.inFront()
+        assertEquals("once for each share sheet", 1, session.ended)
+
+        // The grace of a file picker ends with its result, not when the activity is in front.
+        store.create(FileTask(FileTask.Kind.BACKUP, 3, null), "b.pvault", DocumentTypes.BACKUP)
+        store.inFront()
+        assertTrue("the picker is still open", session.external)
+        assertEquals(1, session.ended)
+    }
+
+    @Test
     fun theCopiesOfAnEarlierProcessGoWhenAStoreIsMade() = runTest {
         sharedDir.mkdirs()
         File(sharedDir, "PasswordVault-backup-2026-10-01.pvault").writeBytes(ByteArray(10))

@@ -1,5 +1,6 @@
 package io.github.dilshodbekmx.passwordvault.files
 
+import android.accessibilityservice.AccessibilityService
 import android.app.Activity
 import android.app.Instrumentation
 import android.content.BroadcastReceiver
@@ -10,6 +11,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.HandlerThread
+import android.os.ParcelFileDescriptor
 import android.os.SystemClock
 import androidx.activity.ComponentActivity
 import androidx.core.app.ActivityCompat
@@ -123,6 +125,56 @@ internal object DocumentsRig {
             }
             return instrumentation.addMonitor(filter, null, true)
         }
+    }
+
+    /**
+     * Waits until the window with the input focus is the app's own ([ofTheApp]) or another app's (the
+     * share sheet, which is the system's). A Back goes to that window: the activity under a share
+     * sheet is paused as soon as the sheet is asked for, before the sheet is there to take it.
+     */
+    fun awaitFocus(what: String, ofTheApp: Boolean) {
+        var focus = ""
+        try {
+            await(what) {
+                focus = focusedWindow()
+                "Window{" in focus && (app.packageName + "/" in focus) == ofTheApp
+            }
+        } catch (e: AssertionError) {
+            throw AssertionError(e.message + " (the focus: " + focus + ")", e)
+        }
+    }
+
+    /** The window that has the input focus, as the window manager names it (`mCurrentFocus=Window{… package/activity}`). */
+    private fun focusedWindow(): String {
+        val out = instrumentation.uiAutomation.executeShellCommand("dumpsys window")
+        val text = ParcelFileDescriptor.AutoCloseInputStream(out).use { it.readBytes().toString(Charsets.UTF_8) }
+        return text.lineSequence().map { it.trim() }.firstOrNull { it.startsWith("mCurrentFocus=") }.orEmpty()
+    }
+
+    /**
+     * Closes what covers [activity] (the share sheet) with the system's Back, as a user does, and
+     * waits until the activity is in front again. A Back is sent only while another app's window has
+     * the focus, because one that reached the app's own first screen would leave the app; and it is
+     * sent again when nothing happened, because Android 7 loses one that comes while the sheet is
+     * still starting.
+     */
+    fun backTo(activity: Activity, what: String) {
+        val end = SystemClock.elapsedRealtime() + 20_000
+        fun inFront() = activity in activities(activity.javaClass, Stage.RESUMED)
+        while (!inFront()) {
+            if (SystemClock.elapsedRealtime() > end) fail("timed out waiting: $what (the focus: ${focusedWindow()})")
+            val focus = focusedWindow()
+            if ("Window{" in focus && app.packageName + "/" !in focus) {
+                if (!instrumentation.uiAutomation.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK)) fail("Back was not taken")
+            }
+            val retry = SystemClock.elapsedRealtime() + 1_500
+            while (!inFront() && SystemClock.elapsedRealtime() < retry) SystemClock.sleep(50)
+        }
+    }
+
+    /** The system's Home: the app is left as a user leaves it. */
+    fun pressHome() {
+        if (!instrumentation.uiAutomation.performGlobalAction(AccessibilityService.GLOBAL_ACTION_HOME)) fail("Home was not taken")
     }
 
     /** The activities of [type] in one of [stages]; main thread inside. */
