@@ -15,6 +15,7 @@ import io.github.dilshodbekmx.passwordvault.core.lock.flow.NoticeAnswer
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.Practice
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.PromptUse
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.core.LockFixture.Companion.PIN
+import io.github.dilshodbekmx.passwordvault.core.lock.flow.core.LockFixture.Companion.WRONG_PIN
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.core.LockFixture.Companion.await
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.core.LockFixture.Companion.bytes
 import io.github.dilshodbekmx.passwordvault.core.lock.policy.Ks
@@ -29,6 +30,7 @@ import io.github.dilshodbekmx.passwordvault.testing.lock.FakeVaultPort
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.yield
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -48,9 +50,14 @@ class FingerprintFlowTest {
 
     private val f = LockFixture()
 
-    /** Writes down what the engine asks of the fingerprint key, in order; [cancelWorks] false: `cancel()` reaches nothing. */
+    /**
+     * Writes down what the engine asks of the fingerprint key, in order, and keeps the bytes of every
+     * result that gave VK ([opened]), so that a test can see they were wiped; [cancelWorks] false:
+     * `cancel()` reaches nothing.
+     */
     private class Watched(private val inner: FingerprintKey) : FingerprintKey {
         val asked = ArrayList<String>()
+        val opened = ArrayList<ByteArray>()
         var cancelWorks = true
 
         override fun availability(): Int = inner.availability().also { asked += "availability" }
@@ -64,7 +71,7 @@ class FingerprintFlowTest {
 
         override suspend fun open(alias: String, nonce: ByteArray, ct: ByteArray, use: PromptUse, launch: Int): FingerprintResult {
             asked += "open $use $launch"
-            return inner.open(alias, nonce, ct, use, launch)
+            return inner.open(alias, nonce, ct, use, launch).also { result -> if (result is FingerprintResult.Ok) opened += result.bytes }
         }
 
         override fun cancel() {
@@ -465,6 +472,33 @@ class FingerprintFlowTest {
     }
 
     // ---- launch numbers (§9.2 rule 8), I11 ---------------------------------------------------------------
+
+    @Test
+    fun aPromptResultWhoseCallIsCancelledWhileItWaitsForTheMutex_isStillHandled_soVkIsWipedAndTheLaunchEnds() {
+        // The prompt has answered with the 32 bytes of VK, and the call that is to handle them waits for
+        // the lock mutex, which a PIN check holds for the age of its charge. The caller is cancelled
+        // then (its scope went away). The launch is still outstanding and its visit goes on, so the
+        // result counts (§9.2 rule 8), and VK is wiped whatever comes of it (§4.2, §5.8).
+        withFingerprint()
+        f.clock.autoAdvance = false
+        f.keys.holdPrompts = true
+        runBlocking {
+            val finger = launch(start = CoroutineStart.UNDISPATCHED) { f.engine.useFingerprint() }
+            assertEquals(1, f.engine.core.outstandingLaunch)
+            val typing = launch(start = CoroutineStart.UNDISPATCHED) { for (digit in WRONG_PIN) f.engine.digit(digit - '0') }
+            assertTrue(f.pad.opening) // the sixth digit waits for the age of its charge, and holds the mutex
+            f.keys.answer(FakeKeys.Prompt.Touch)
+            yield() // the result reaches the mutex, and waits there
+            finger.cancel()
+            f.clock.advance(1_000)
+            typing.join()
+            finger.join()
+        }
+        assertTrue("VK was not wiped", watched.opened.single().all { it == 0.toByte() })
+        assertEquals(0, f.engine.core.outstandingLaunch)
+        assertTrue(f.state is LockState.Unlocked) // the finger was the owner's: the vault opened with it
+        assertEquals(PinRecord.Guard(charged = false, row = 1, total = 1), f.pinRecord().guard) // the wrong PIN was counted
+    }
 
     @Test
     fun aSecondCallWhileAPromptIsOpenIsIgnored() {

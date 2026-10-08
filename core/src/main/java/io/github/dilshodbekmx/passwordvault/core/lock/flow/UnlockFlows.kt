@@ -18,6 +18,8 @@ import io.github.dilshodbekmx.passwordvault.core.lock.record.StateRecord
 import io.github.dilshodbekmx.passwordvault.core.model.Vault
 import io.github.dilshodbekmx.passwordvault.core.util.Bytes
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 
 /**
  * The lock screen and what opens the vault (lock.md §12, build plan 3.10):
@@ -293,7 +295,10 @@ internal class UnlockFlows(private val core: LockCore) {
         } catch (e: RuntimeException) {
             FingerprintResult.Temporary(null) // lock.md §14.3: any other exception is TEMPORARY
         }
-        core.locked { finish(launch, result, auto) }
+        // The prompt has answered: its result is handled to its end, also when the caller is cancelled
+        // while it waits for the mutex, so that VK is wiped (or opens the vault) and the launch ends
+        // (§9.2 rule 8). Only a lock or the end of the visit drops a result.
+        withContext(NonCancellable) { core.locked { finish(launch, result, auto) } }
     }
 
     private fun prepare(auto: Boolean): Launch? {
