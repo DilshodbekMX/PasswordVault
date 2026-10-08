@@ -378,7 +378,13 @@ class ExportViewModel(
 
     /** "Save as" for [file], with the name formats.md §2 rule 5 gives and the MIME type that keeps its extension. */
     private fun openPicker(file: ExportFile) {
-        val vault = openVault() ?: return
+        val vault = openVault()
+        if (vault == null) {
+            // Locked meanwhile: nothing opens, and the next try needs the master password again.
+            authorized = false
+            ui.value = ExportUiState.Password(file)
+            return
+        }
         ui.value = ExportUiState.Picking(file)
         work.launch {
             val parts = withContext(dispatchers.default) { ExportFiles.parts(file.format, vault) }

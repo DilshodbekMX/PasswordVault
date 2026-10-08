@@ -129,9 +129,15 @@ fun ExportScreen(vm: ExportViewModel, nav: Navigator) {
 @Composable
 fun ExportFrame(state: ExportUiState, password: TextFieldState, actions: ExportActions, onBack: () -> Unit) {
     val title = stringResource(R.string.export_title)
+    // Each step is a screen of its own for TalkBack, which says the new pane's title (ux.md §8).
+    val pane = when (state) {
+        is ExportUiState.Warning -> stringResource(R.string.export_warning_title)
+        is ExportUiState.Password -> stringResource(R.string.export_password_title)
+        else -> title
+    }
     Scaffold(
         modifier = Modifier.semantics {
-            paneTitle = title
+            paneTitle = pane
             testTagsAsResourceId = true
         },
         topBar = {
