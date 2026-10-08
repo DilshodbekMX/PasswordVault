@@ -653,6 +653,24 @@ class ExportViewModelTest {
     }
 
     @Test
+    fun aVaultClosedRightAfterTheMasterPasswordOpensNothingAndAsksAgain() = ExportKit.run {
+        val vm = screen()
+        toPassword(vm, ExportChoice.JSON)
+        repository.close() // the vault closes while the lock still says unlocked, for a moment
+        submit(vm)
+        val again = vm.shows<ExportUiState.Password>()
+        assertFalse("no spinner left", again.checking)
+        assertEquals(emptyList<Pair<String, String>>(), picker.creates)
+        repository.open()
+        settle()
+        vm.submitPassword() // the field is empty: nothing happens without typing it again
+        settle()
+        assertEquals(emptyList<Pair<String, String>>(), picker.creates)
+        submit(vm)
+        assertEquals(1, picker.creates.size)
+    }
+
+    @Test
     fun aTaskWhosePickerNeverAnsweredIsGivenUpWhenTheScreenOpens() = ExportKit.run {
         settings.fileTask.value = FileTask(FileTask.Kind.EXPORT, ExportFile(ExportFormat.CSV).step, null)
         newProcess()
