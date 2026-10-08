@@ -273,6 +273,20 @@ internal class VaultLock(
     val state: StateRecord? get() = master.record
 }
 
+/**
+ * What lock.md F16b step 3 keeps while "Open the older set instead?" is shown ([LockVisit.olderSet]):
+ * the vault from before a replacement as its master password opened it in place, and what the
+ * steps after "Open my passwords from 7 Oct" need.
+ */
+internal class OlderSetQuestion(
+    /** When the master password was replaced (`replaced.at`): the date the question names. */
+    val atMs: Long,
+    /** The vault as it opened in place. */
+    val opened: OpenVault,
+    /** A copy of the typed master-password bytes, for the proof of step 6 ("the master password just typed"); null: no proof. */
+    val proofBytes: ByteArray?,
+)
+
 /** The vault whose lock screen is shown: the current one, or one put aside (lock.md F17 step 4). */
 internal class LockTarget(
     val ref: VaultRef,
@@ -326,6 +340,20 @@ internal class LockVisit(val place: Place, val target: LockTarget) {
 
     /** The typed master password opens only a copy from before a change (F16b): its screen is shown until it is answered. */
     var olderPassword: PasswordOpen.OlderPassword? = null
+
+    /**
+     * The vault of this visit, one from before a replacement, has opened in place with its master
+     * password, and "Open the older set instead?" ([LockScreen.OpenOlderSet], F16b step 3) is shown
+     * until `OlderCopies` has the answer. While it is set, nothing can be typed on this visit.
+     *
+     * Its `proofBytes` are in memory for this visit only, like the PIN digits (lock.md §5.8):
+     * [LockCore.closeVisit] zeroes them. A flow that takes the question off the visit (the answer
+     * came) owns the bytes from then on and wipes them; it takes it off **before** it calls
+     * `UnlockFlows.completeUnlock`, which closes the visit first. The vault that is open in place in
+     * the vault port is the flow's to drop (`VaultPort.dropAside`) when the answer is "Cancel" or
+     * the visit ends before an answer (I11): `closeVisit` cannot, because it does not suspend.
+     */
+    var olderSet: OlderSetQuestion? = null
 
     /** What the entry policy decided last on this visit. */
     var decision: EntryPolicy.Decision.Locked? = null
@@ -532,7 +560,8 @@ internal class LockCore(
     /**
      * Holds the mutex: what the end of the visit does to the records and to memory (lock.md §6.3 A,
      * §5.8). A charge held there is refunded, the wrong tries of the visit are forgotten (they stay
-     * counted), the digits are zeroed.
+     * counted), the digits are zeroed, and so are the bytes kept for the question of F16b step 3
+     * ([LockVisit.olderSet]).
      */
     fun closeVisit() {
         val ended = visit ?: return
@@ -544,6 +573,8 @@ internal class LockCore(
         Bytes.wipe(ended.digits)
         ended.count = 0
         ended.afterUnlock = null
+        ended.olderSet?.proofBytes?.let { Bytes.wipe(it) }
+        ended.olderSet = null
         inputEpoch++
     }
 
@@ -665,6 +696,7 @@ internal class LockCore(
     }
 
     private fun screenOf(decision: EntryPolicy.Decision.Locked, visit: LockVisit?, target: LockTarget): LockScreen {
+        visit?.olderSet?.let { return LockScreen.OpenOlderSet(it.atMs, aside = decision.screen.aside) }
         val older = visit?.olderPassword
         if (older != null) {
             return LockScreen.OlderPassword(older.changedAtMs, unfinishedChange = target.lock.state?.mpChange != null, aside = decision.screen.aside)
@@ -676,7 +708,7 @@ internal class LockCore(
                 error = visit?.mpError,
                 opening = visit?.opening == true,
             )
-            is LockScreen.FingerprintOnly, is LockScreen.OlderPassword -> screen
+            is LockScreen.FingerprintOnly, is LockScreen.OlderPassword, is LockScreen.OpenOlderSet -> screen
         }
     }
 
@@ -1046,6 +1078,7 @@ internal class LockCore(
             is LockScreen.FingerprintOnly -> "fingerprint only"
             is LockScreen.MasterPassword -> "master password"
             is LockScreen.OlderPassword -> "older master password"
+            is LockScreen.OpenOlderSet -> "open the older set?"
         }
         is LockState.Unlocked -> "unlocked, " + now.notices.size + " notice(s)"
     }
