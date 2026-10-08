@@ -278,6 +278,40 @@ class PreviousPasswordsFlowTest {
     }
 
     @Test
+    fun f17step4_aPendingPasswordOfThatVault_isCancelledByItsMasterPassword_andTheNoticeSaysSo() {
+        val pending = StateRecord.PendingMp(
+            f.clock.wallMs(), Shortcut.PIN, 0L, f.clock.elapsedMs(), "00000000-0000-4000-8000-0000000000e1",
+            ByteArray(16) { 1 }, ByteArray(12) { 2 }, ByteArray(48) { 3 },
+        )
+        val withPending = StateRecord(
+            OTHER_VAULT, StateRecord.Practice(f.clock.wallMs(), 3, null), StateRecord.MpGuard(0, null, 0), null, pending, null,
+            StateRecord.MaxGeneration(1, f.clock.wallMs()),
+        )
+        twoVaults(otherState = withPending)
+        f.startInFront()
+
+        // Opened with its PIN: the request stands, and the notice of §13.4 item 2 follows the swap.
+        await { f.engine.showAside(OTHER_VAULT) }
+        f.type(Secrets.OTHER_PIN)
+        assertEquals(1, f.notices.filterIsInstance<Notice.Pending>().size)
+        assertNotNull(f.stateRecord(OTHER_VAULT).pendingMp)
+
+        // Back aside, and opened with its own master password: that cancels it (F11 step 9), and says so.
+        f.answerNotices()
+        f.lock()
+        await { f.engine.showAside(VAULT) }
+        f.type(PIN)
+        f.answerNotices()
+        f.lock()
+        await { f.engine.showAside(OTHER_VAULT) }
+        await { f.engine.useMasterPassword() }
+        assertTrue(f.unlockWith(Secrets.OTHER) is MasterPasswordOutcome.Right)
+        assertNull(f.stateRecord(OTHER_VAULT).pendingMp)
+        assertEquals(1, f.notices.filterIsInstance<Notice.PendingCancelled>().size)
+        assertEquals(0, f.notices.filterIsInstance<Notice.Pending>().size)
+    }
+
+    @Test
     fun f17step4_withoutAWorkingShortcut_itsMasterPasswordField_noPractice_thenChooseAPin() {
         val overdue = StateRecord(
             OTHER_VAULT, StateRecord.Practice(f.clock.wallMs() - 60 * PracticeSchedule.DAY_MS, 0, null),

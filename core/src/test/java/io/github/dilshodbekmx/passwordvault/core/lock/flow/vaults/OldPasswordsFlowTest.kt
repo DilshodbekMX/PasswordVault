@@ -364,6 +364,21 @@ class OldPasswordsFlowTest {
     }
 
     @Test
+    fun delete_aLockWhileTheMarkIsBeingSettled_settlesIt_butDeletesNothing() {
+        replacedInThisProcess()
+        val stateRec = "${f.dirOf(OTHER_VAULT)}/state.rec"
+        f.files.onBoundary = { _, at -> if (at == "replace $stateRec: after the directory sync") f.engine.core.endPromptsNow() } // the app locks now
+
+        assertEquals(AsideOutcome.NotSaved, delete(THIRD_VAULT, Secrets.THIRD))
+
+        f.files.onBoundary = null
+        assertNull(f.pinRecord(OTHER_VAULT).slot) // what was settled stays settled, as start-up would leave it
+        assertNotNull(f.port.vault(THIRD_VAULT)) // and nothing was deleted
+        assertTrue(f.files.hasDir(f.dirOf(THIRD_VAULT)))
+        assertEquals(emptyList<String>(), f.port.writingCalls)
+    }
+
+    @Test
     fun delete_isRefusedWhileTheSettlingCannotBeWritten_andWorksOnceItCan() {
         replacedInThisProcess()
         f.files.fail(FakeRecordFiles.Op.REPLACE, times = -1, matches = { it.contains("/$OTHER_VAULT/") })
