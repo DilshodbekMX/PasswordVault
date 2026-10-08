@@ -9,7 +9,8 @@ import java.io.IOException;
 /**
  * A stand-in for the system file picker, in the test APK's own process: started for a result by the
  * app's activity, with the request code of the app's own launcher, it creates the document it was
- * given (as "Save as" does when the user taps Save) and stays open until the test sends
+ * given (as "Save as" does when the user taps Save; with the content it was given, for a document
+ * to open) and stays open until the test sends
  * {@link TestDocuments#ACTION_FINISH_PICKER}. Then it finishes as the system picker does: with the
  * document and a read, write and persistable grant on it, or with no document. The system delivers
  * that result, and grants the permission, to the activity that started it, which the test may have
@@ -29,9 +30,10 @@ public final class FakePickerActivity extends Activity {
         setContentView(text);
         documentId = getIntent().getStringExtra(TestDocuments.EXTRA_ID);
         String name = getIntent().getStringExtra(TestDocuments.EXTRA_NAME);
+        byte[] content = getIntent().getByteArrayExtra(TestDocuments.EXTRA_CONTENT);
         if (documentId != null && !TestDocuments.file(this, documentId).exists()) {
             try {
-                TestDocuments.create(this, documentId, name, new byte[0]);
+                TestDocuments.create(this, documentId, name, content == null ? new byte[0] : content);
             } catch (IOException e) {
                 throw new IllegalStateException("the document could not be made", e);
             }

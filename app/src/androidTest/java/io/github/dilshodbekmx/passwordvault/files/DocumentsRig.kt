@@ -66,13 +66,15 @@ internal object DocumentsRig {
 
     /**
      * Starts the fake picker for a result from [activity], under the request code of the app's own
-     * launcher [key], as the system picker would be: it makes the document [id] named [name].
+     * launcher [key], as the system picker would be: it makes the document [id] named [name] with
+     * [content] (no document when [id] is null), and grants nothing until it finishes.
      */
-    fun openFakePicker(activity: Activity, key: String, id: String, name: String) {
+    fun openFakePicker(activity: Activity, key: String, id: String?, name: String, content: ByteArray? = null) {
         val intent = Intent()
             .setClassName(testPackage, FakePickerActivity::class.java.name)
-            .putExtra(TestDocuments.EXTRA_ID, id)
             .putExtra(TestDocuments.EXTRA_NAME, name)
+        if (id != null) intent.putExtra(TestDocuments.EXTRA_ID, id)
+        if (content != null) intent.putExtra(TestDocuments.EXTRA_CONTENT, content)
         instrumentation.runOnMainSync {
             ActivityCompat.startActivityForResult(activity, intent, requestCode(activity as ComponentActivity, key), null)
         }
