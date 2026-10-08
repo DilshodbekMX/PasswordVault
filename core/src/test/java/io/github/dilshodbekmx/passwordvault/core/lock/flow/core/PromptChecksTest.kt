@@ -153,6 +153,67 @@ class PromptChecksTest {
     }
 
     @Test
+    fun aProofMadeWhileTheAppStopsBeingVisibleOrLocks_isDroppedAllTheSame() {
+        // §5.8: a proof "is dropped when that flow ends, when the app stops being visible, and on lock".
+        // ON_STOP and a lock drop the proofs at once, before the mutex; a step that was running under
+        // the mutex then (an unlock, a check, setup) makes its proof after that drop. It must go too.
+
+        // The master password on the lock screen; ON_STOP while storage retires the old keys (F8 step 10).
+        f.seedVault()
+        f.plantState()
+        f.startInFront()
+        val atUnlock = runBlocking {
+            f.port.beforeCall = { call -> if (call == "retireOldKeys") launch(start = CoroutineStart.UNDISPATCHED) { f.engine.appStopped() } }
+            f.engine.unlockWithMasterPassword(PASSWORD.toCharArray())
+        }
+        f.port.beforeCall = null
+        assertDropped((atUnlock as MasterPasswordOutcome.Right).proof)
+        assertFalse(f.engine.core.holds(atUnlock.proof))
+
+        // The same with a lock that comes then (the screen-off lock arrives about 700 ms before ON_STOP).
+        val g = LockFixture()
+        g.seedVault()
+        g.plantState()
+        g.startInFront()
+        val beforeTheLock = runBlocking {
+            g.port.beforeCall = { call -> if (call == "retireOldKeys") launch(start = CoroutineStart.UNDISPATCHED) { g.engine.lock() } }
+            g.engine.unlockWithMasterPassword(PASSWORD.toCharArray())
+        }
+        assertTrue(g.state is LockState.Locked)
+        assertDropped((beforeTheLock as MasterPasswordOutcome.Right).proof)
+        assertFalse(g.engine.core.holds(beforeTheLock.proof))
+
+        // The master password in a prompt of the open app; ON_STOP after the check has found it in time,
+        // while the guard writes what a right password brings (§6.8 step 5).
+        val h = LockFixture()
+        openByPin(fixture = h)
+        val inApp = runBlocking {
+            var armed = false
+            h.port.beforeCall = { call -> if (call == "checkPassword") armed = true }
+            h.files.onBoundary = { _, at ->
+                if (armed && at == "replace " + h.dirOf(VAULT) + "/state.rec: before the temp write") {
+                    armed = false
+                    launch(start = CoroutineStart.UNDISPATCHED) { h.engine.appStopped() }
+                }
+            }
+            h.engine.checkMasterPassword(PASSWORD.toCharArray())
+        }
+        assertDropped((inApp as MasterPasswordOutcome.Right).proof)
+        assertFalse(h.engine.core.holds(inApp.proof))
+
+        // Setup (F1 step 6 uses the proof of step 3): ON_STOP while the vault is written and proven.
+        val k = LockFixture()
+        k.startInFront()
+        val atSetup = runBlocking {
+            k.port.beforeCall = { call -> if (call.startsWith("createVault")) launch(start = CoroutineStart.UNDISPATCHED) { k.engine.appStopped() } }
+            k.engine.createVault(PASSWORD.toCharArray(), PASSWORD.toCharArray())
+            (k.state as LockState.Unlocked).proof // as published, before the ON_STOP's work under the mutex has run
+        }
+        assertDropped(atSetup!!)
+        assertFalse(k.engine.core.holds(atSetup))
+    }
+
+    @Test
     fun aProofTheEngineDidNotMake_isNotOneOfItsOwn() {
         openByPin()
         assertFalse(f.engine.core.holds(MasterProof.forFakes(bytes(PASSWORD), VAULT)))

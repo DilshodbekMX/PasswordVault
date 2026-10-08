@@ -380,7 +380,8 @@ class LockEngine(
      * visit and every prompt of the open app end, so that a check that is running opens and proves
      * nothing (I11); an open fingerprint prompt is cancelled and its launch ended; the proofs are
      * dropped (§5.8). Then, under the mutex: a held charge is refunded (§6.3 A), the digits are
-     * zeroed, the credits observed. It does not lock: `AutoLock` decides that (§10.2). Only the
+     * zeroed, a proof that a step running meanwhile made is dropped too, the credits observed. It
+     * does not lock: `AutoLock` decides that (§10.2). Only the
      * visit it ended is closed: one that a later `ON_START` has begun meanwhile stays.
      */
     suspend fun appStopped() {
@@ -391,6 +392,10 @@ class LockEngine(
         core.locked {
             if (ended != null && core.visit === ended) core.closeVisit()
             core.promptsEnded(prompts)
+            // A step that held the mutex when the app stopped being visible (an unlock, a check, setup)
+            // made its proof after the drop above: it goes now (§5.8). The mutex is fair, so nothing
+            // that began after this ON_STOP has run yet.
+            core.dropProofs()
             core.observeCredits()
             val now = core.state.value
             if (now is LockState.Unlocked && now.proof != null) core.state.value = now.copy(proof = null)
@@ -402,8 +407,9 @@ class LockEngine(
     /**
      * Locks (lock.md §10.4; architecture.md §5.5 steps 3 and 4), called only by `AutoLock` after
      * its draft flush. At once: the prompts end, the proofs are dropped, a fingerprint prompt of the
-     * open app is cancelled. Under the mutex: the vault port drops its session (it waits for a save
-     * that is running), the vaults are listed again, the lock screen is chosen (§13.1), and a new
+     * open app is cancelled. Under the mutex: a proof that an unlock running meanwhile made is
+     * dropped too, the vault port drops its session (it waits for a save that is running), the
+     * vaults are listed again, the lock screen is chosen (§13.1), and a new
      * visit starts if the app is visible. It never writes vault data. While the app is not unlocked
      * it does nothing more.
      */
@@ -415,6 +421,7 @@ class LockEngine(
         core.locked {
             core.promptsEnded(prompts)
             if (core.state.value !is LockState.Unlocked) return@locked
+            core.dropProofs() // and the proof of an unlock that held the mutex when the lock came (§5.8, §10.4 step 2)
             try {
                 core.vault.lock()
             } finally {
