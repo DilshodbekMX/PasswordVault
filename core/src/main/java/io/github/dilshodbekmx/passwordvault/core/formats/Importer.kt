@@ -986,7 +986,12 @@ class ImportAccount(
     val position: Int,
     /** Not null: its row has the wrong number of values, and it is imported only if the user confirms it. */
     val wrongLength: ImportWrongLength?,
-    /** Its name came from the file; false when the importer made one from its website, username or the time. */
+    /**
+     * Its name came from the file; false when the importer made one from its website, username or the
+     * time. Reliable for CSV rows only: `BitwardenJson` names a JSON item without a name before the
+     * importer sees it, so a JSON account always says true (the review of 3.15). Only the joins of CSV
+     * rows use it.
+     */
     val titleFromFile: Boolean,
     /** What the importer changed to make it fit the model, each kind once. */
     val changes: List<ImportChange>,
