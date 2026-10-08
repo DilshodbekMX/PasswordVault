@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One account's screen and "Show in big letters" (ux.md §5.12, §5.13, §6, §8; build plan 3.7).
+     Every name starts with entry_. Shared words (Delete, Undo, Close, Try again, Show password,
+     Hide password) are in strings_common.xml. Sentence case, "you" and plain words (i18n.md §4,
+     ux.md §7). An account's name, a field's label and a website's name are texts the person typed:
+     where one stands in a sentence, write the sentence so that its ending never has to change. -->
+<resources>
+
+    <!-- ===== The top bar (ux.md §5.12) ===== -->
+
+    <!-- The back arrow in the top bar, read by TalkBack; also the button of a screen whose account is
+         gone. -->
+    <string name="entry_back">Back</string>
+    <!-- What TalkBack calls this screen while it has no account to show; one or two words. -->
+    <string name="entry_pane">Account</string>
+    <!-- The star in the top bar while the account is not a favourite, read by TalkBack. -->
+    <string name="entry_add_favourite">Add to favourites</string>
+    <!-- The same star while the account is a favourite. -->
+    <string name="entry_remove_favourite">Remove from favourites</string>
+    <!-- The pencil in the top bar, read by TalkBack, and the button of an account that has only a
+         name: opens the account's form. -->
+    <string name="entry_edit">Edit</string>
+    <!-- The ⋮ button in the top bar, read by TalkBack. -->
+    <string name="entry_more">More options</string>
+    <!-- Menu item and the button under a password: shows the value large, one character per box
+         (ux.md §5.13). The same words everywhere in the app. -->
+    <string name="entry_big_letters">Show in big letters</string>
+    <!-- Menu item: the security check will no longer report this account, for example because its
+         password is a bank card PIN that cannot be changed (ux.md §5.16). -->
+    <string name="entry_leave_out">Leave out of the security check</string>
+
+    <!-- ===== The rows (ux.md §5.12). Each label stands in small type above its value. ===== -->
+
+    <!-- Label of what the person signs in with: an email address, a phone number or a login name. -->
+    <string name="entry_username">Username</string>
+    <!-- Label of the account's password. Also the title of "Show in big letters" for it. -->
+    <string name="entry_password">Password</string>
+    <!-- Label of the password the website had before a password change that is not finished yet
+         (ux.md §5.17). -->
+    <string name="entry_old_password">Old password (the website may still use it)</string>
+    <!-- Label of the password the app created in a password change that is not finished yet. -->
+    <string name="entry_new_password">New password (not confirmed yet)</string>
+    <!-- Label of a website address of the account. -->
+    <string name="entry_website">Website</string>
+    <!-- Shown in place of a website address that belongs to a phone app, not a website; %1$s is the
+         app's technical name, for example “com.example.bank”. It cannot be opened. -->
+    <string name="entry_app">App: %1$s</string>
+    <!-- Label of the account's notes (free text). -->
+    <string name="entry_notes">Notes</string>
+    <!-- Button under notes of more than 12 lines: shows all of them. -->
+    <string name="entry_show_more">Show more</string>
+    <!-- The same button once all lines are shown: back to the first 12. -->
+    <string name="entry_show_less">Show less</string>
+
+    <!-- A hidden value as TalkBack reads it instead of the dots (ux.md §8). The length is never said. -->
+    <string name="entry_password_hidden">Password, hidden</string>
+    <!-- The same, for the old password while a change is not finished. -->
+    <string name="entry_old_password_hidden">Old password, hidden</string>
+    <!-- The same, for the new password while a change is not finished. -->
+    <string name="entry_new_password_hidden">New password, hidden</string>
+    <!-- The same, for one of the account's previous passwords. -->
+    <string name="entry_previous_hidden">Previous password, hidden</string>
+    <!-- The same, for an extra field whose value is hidden; %1$s is the field's label as the person
+         typed it, for example “PIN code”. The word for “hidden” must not depend on that label. -->
+    <string name="entry_field_hidden">%1$s, hidden</string>
+    <!-- Read by TalkBack after a password or another hidden value that is shown now (ux.md §8). -->
+    <string name="entry_shown_hint">Hides after 30&#160;seconds without a touch. For more time, use Show in big letters.</string>
+
+    <!-- What a tap on a row does, read by TalkBack after “Double-tap to”: it opens a small menu with
+         the row's actions (copy, show, show in big letters). Lower case, no full stop. -->
+    <string name="entry_row_options">show options</string>
+    <!-- Copy button of the username row, read by TalkBack; also an item of the row's menu. -->
+    <string name="entry_copy_username">Copy username</string>
+    <!-- Copy button of the password row, read by TalkBack; also an item of the row's menu. -->
+    <string name="entry_copy_password">Copy password</string>
+    <!-- The same for the old password while a change is not finished. -->
+    <string name="entry_copy_old_password">Copy old password</string>
+    <!-- The same for the new password while a change is not finished. -->
+    <string name="entry_copy_new_password">Copy new password</string>
+    <!-- The same for one of the previous passwords. -->
+    <string name="entry_copy_previous">Copy previous password</string>
+    <!-- Copy button of the notes, read by TalkBack: copies the whole text. -->
+    <string name="entry_copy_notes">Copy notes</string>
+    <!-- Copy button of a website row or of an extra field, read by TalkBack; %1$s is the website's
+         name, for example “mail.google.com”, or the field's label as the person typed it, for example
+         “PIN code”. If the ending of %1$s would have to change in your language, put it after a colon. -->
+    <string name="entry_copy_named">Copy %1$s</string>
+    <!-- Item of a row's menu when the row has one thing to copy and the row itself says what. -->
+    <string name="entry_copy">Copy</string>
+    <!-- The eye button of an extra field whose value is hidden, read by TalkBack; %1$s is the field's
+         label as the person typed it. If its ending would have to change, put it after a colon. -->
+    <string name="entry_show_named">Show %1$s</string>
+    <!-- The same button while the value is shown. -->
+    <string name="entry_hide_named">Hide %1$s</string>
+    <!-- Button of a website row, read by TalkBack; %1$s is the website's name, for example
+         “mail.google.com” (ux.md §8). -->
+    <string name="entry_open_in_browser">Open %1$s in browser</string>
+    <!-- Item of a website row's menu: opens the address in the browser. -->
+    <string name="entry_open_website">Open website</string>
+
+    <!-- ===== History and dates, in small type at the end (ux.md §5.12) ===== -->
+
+    <!-- When the password was last changed; %1$s says how long ago in words, already written for the
+         language, for example “3 days ago” or “yesterday”. -->
+    <string name="entry_password_changed">Password changed %1$s</string>
+    <!-- When the account was added; %1$s is a date, for example “Oct 1, 2026”. -->
+    <string name="entry_added">Added %1$s</string>
+    <!-- When the account was last changed; %1$s is a date, for example “Oct 5, 2026”. -->
+    <string name="entry_edited">Edited %1$s</string>
+    <!-- Button that shows or hides the account's earlier passwords; %1$s is how many there are
+         (1 to 5), written with the language's digits. -->
+    <string name="entry_previous">Previous passwords (%1$s)</string>
+    <!-- Label of one earlier password: the day it stopped being the account's password; %1$s is a
+         date, for example “Oct 5, 2026”. -->
+    <string name="entry_previous_until">Used until %1$s</string>
+
+    <!-- ===== Banners at the top of the account (ux.md §5.12, §5.17) ===== -->
+
+    <!-- Banner while a password change is not finished; %1$s is the day it started, for example
+         “Oct 6”. -->
+    <string name="entry_banner_change">You started changing this password on %1$s. Did the website accept the new one?</string>
+    <!-- Button on that banner: the website has the new password now. -->
+    <string name="entry_banner_change_yes">Yes, it\'s changed</string>
+    <!-- Button on that banner: the website still has the old password; the app takes it back. -->
+    <string name="entry_banner_change_no">No, put back the old password</string>
+    <!-- Banner on an account that the security check does not report. -->
+    <string name="entry_banner_left_out">This account is left out of the security check.</string>
+    <!-- Button on that banner: the security check reports the account again. -->
+    <string name="entry_banner_check_again">Check it again</string>
+    <!-- Warning banner on an account whose password is the same as the master password. -->
+    <string name="entry_banner_master">This password is also your master password. If this website leaks it, anyone with your backup file can open it. Choose a new master password.</string>
+    <!-- Button on that banner: opens the change of the master password. -->
+    <string name="entry_banner_master_choose">Choose a new master password</string>
+
+    <!-- ===== States (ux.md §5.12) ===== -->
+
+    <!-- Shown for an account that has a name and nothing else. -->
+    <string name="entry_empty">No details yet</string>
+    <!-- Shown in place of an account that is not in the app any more. -->
+    <string name="entry_gone">This account no longer exists.</string>
+    <!-- Shown in place of an account that was deleted and still waits in “Recently deleted”. -->
+    <string name="entry_gone_deleted">This account was deleted. For 30&#160;days you can restore it in Recently deleted.</string>
+    <!-- Button under that text: opens the list of deleted accounts. -->
+    <string name="entry_open_deleted">Open Recently deleted</string>
+    <!-- Short message at the bottom after the account was deleted here, with the button “Undo”;
+         %1$s is the account's name. -->
+    <string name="entry_deleted_message">%1$s deleted</string>
+    <!-- Shown on the screen while that message is up. -->
+    <string name="entry_deleted_body">This account is now in Recently deleted. It stays there for 30&#160;days.</string>
+
+    <!-- ===== Short messages at the bottom ===== -->
+
+    <!-- After a new account was saved and its screen opened (ux.md §5.14). One word if possible. -->
+    <string name="entry_saved">Saved</string>
+    <!-- When a change could not be saved. A “Try again” button goes with it. -->
+    <string name="entry_save_failed">Couldn\'t save. Your phone\'s storage may be full.</string>
+    <!-- When the passwords no longer fit in the one locked file (architecture.md §3.5). -->
+    <string name="entry_too_large">Your passwords no longer fit in one file. Delete accounts you don\'t need, or shorten very long notes.</string>
+    <!-- When no app on the phone can open a website. -->
+    <string name="entry_no_browser">No browser found on this phone.</string>
+    <!-- When the phone refused to copy (some phone makers' builds do, ux.md §6). -->
+    <string name="entry_copy_blocked">This phone blocked copying. Open the password with Show in big letters and type it.</string>
+
+    <!-- ===== What was copied, for the clipboard row at the bottom of the screen, for example
+         “Password for Gmail · clears in 0:52” (ux.md §6). %1$s is the account's name. ===== -->
+
+    <string name="entry_copied_username">Username for %1$s</string>
+    <!-- As above, for the password. -->
+    <string name="entry_copied_password">Password for %1$s</string>
+    <!-- As above, for the old password while a change is not finished. -->
+    <string name="entry_copied_old_password">Old password for %1$s</string>
+    <!-- As above, for the new password while a change is not finished. -->
+    <string name="entry_copied_new_password">New password for %1$s</string>
+    <!-- As above, for one of the previous passwords. -->
+    <string name="entry_copied_previous">Previous password for %1$s</string>
+    <!-- As above, for a website address. -->
+    <string name="entry_copied_website">Website for %1$s</string>
+    <!-- As above, for the whole notes. -->
+    <string name="entry_copied_notes">Notes for %1$s</string>
+    <!-- As above, for an extra field; %1$s is the field's label as the person typed it, for example
+         “PIN code”, and %2$s the account's name. -->
+    <string name="entry_copied_field">%1$s for %2$s</string>
+
+    <!-- ===== “Show in big letters” (ux.md §5.13) ===== -->
+
+    <!-- Title of “Show in big letters” for the old password while a change is not finished. Short:
+         one line in the top bar. -->
+    <string name="entry_big_old_password">Old password</string>
+    <!-- The same for the new password while a change is not finished. -->
+    <string name="entry_big_new_password">New password</string>
+    <!-- The same for one of the previous passwords. -->
+    <string name="entry_big_previous">Previous password</string>
+    <!-- Shown instead of the boxes for a value of more than 128 characters. -->
+    <string name="entry_big_too_long">Too long to show in big letters</string>
+    <!-- Under the boxes: how the screen helps and when it closes. -->
+    <string name="entry_big_hint">Tap a character to mark your place. This screen closes after 2&#160;minutes without a touch.</string>
+    <!-- What a tap on a box does, read by TalkBack after “Double-tap to”. Lower case, no full stop. -->
+    <string name="entry_big_mark">mark your place here</string>
+    <!-- Written small inside the box of a space character, so that nobody takes the box for empty. -->
+    <string name="entry_big_space">space</string>
+    <!-- Written small inside the box of a line break. -->
+    <string name="entry_big_line_break">new line</string>
+
+    <!-- A box as TalkBack reads it. %1$d is the character's place, counted from 1; %2$s is the
+         character itself. The kind is said because a voice does not tell “A” from “a”. -->
+    <string name="entry_big_cell_upper">Character %1$d: capital letter %2$s</string>
+    <!-- The same for a small letter. -->
+    <string name="entry_big_cell_lower">Character %1$d: small letter %2$s</string>
+    <!-- The same for a letter of a script that has no capital and small letters. -->
+    <string name="entry_big_cell_letter">Character %1$d: letter %2$s</string>
+    <!-- The same for a digit. -->
+    <string name="entry_big_cell_digit">Character %1$d: digit %2$s</string>
+    <!-- The same for a sign such as “!” or “@”. -->
+    <string name="entry_big_cell_symbol">Character %1$d: symbol %2$s</string>
+    <!-- The same for a space. %1$d is the character's place. -->
+    <string name="entry_big_cell_space">Character %1$d: space</string>
+    <!-- The same for a line break. %1$d is the character's place. -->
+    <string name="entry_big_cell_line_break">Character %1$d: new line</string>
+    <!-- The same for a character that cannot be seen; %2$s is its code, for example “U+200B”. -->
+    <string name="entry_big_cell_invisible">Character %1$d: invisible character %2$s</string>
+
+</resources>
