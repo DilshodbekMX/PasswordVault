@@ -4,6 +4,7 @@ import io.github.dilshodbekmx.passwordvault.core.model.Entry
 import io.github.dilshodbekmx.passwordvault.core.model.EntryRules
 import io.github.dilshodbekmx.passwordvault.core.model.Vault
 import io.github.dilshodbekmx.passwordvault.core.model.VaultEdits
+import io.github.dilshodbekmx.passwordvault.core.model.edits.Entries
 import io.github.dilshodbekmx.passwordvault.core.search.WebAddress
 import io.github.dilshodbekmx.passwordvault.core.util.Bytes
 import io.github.dilshodbekmx.passwordvault.core.util.RandomSource
@@ -11,6 +12,7 @@ import io.github.dilshodbekmx.passwordvault.core.vaultfile.BodyCodec
 import io.github.dilshodbekmx.passwordvault.core.vaultfile.HeaderCodec
 import io.github.dilshodbekmx.passwordvault.core.vaultfile.PasswordSlot
 import io.github.dilshodbekmx.passwordvault.core.vaultfile.VaultHeader
+import java.util.IdentityHashMap
 import java.util.Locale
 
 /**
@@ -39,7 +41,9 @@ import java.util.Locale
  * 4. **Repeats and conflicts** (formats.md §8.4). An account is *already here* when an account of the
  *    vault outside Recently deleted has the same username, a website host in common (or, when neither
  *    has a website, the same name), the same password, and nothing that the incoming one would add
- *    in its notes, its extra fields or a pending change's old password: it is skipped. The same within
+ *    in its notes, its extra fields or a pending change's old password: it is skipped. The name of an
+ *    account without a website is looked up as the file has it and as an import stores it: after "Tidy
+ *    names", and with "(from file)", so that the same file imported again adds nothing. The same within
  *    the file: an exact repeat of an account already planned is imported once. An account with the
  *    same website and username as one in the vault but another password is added beside it "so you
  *    can compare" ([ImportPlan.conflicts]); nothing combines the two. An account of our own JSON whose
@@ -84,6 +88,8 @@ object ImportPlanner {
         var accounts = joined.accounts
         var tidied = 0
         val examples = ArrayList<TidyExample>(2)
+        // The name in the file of each account that "Tidy names" renamed.
+        val nameInFile = IdentityHashMap<ImportAccount, String>()
         if (choices.tidyNames) {
             accounts = accounts.map { a ->
                 val tidy = tidyName(a.entry.title)
@@ -92,7 +98,7 @@ object ImportPlanner {
                 } else {
                     tidied++
                     if (examples.size < 2) examples.add(TidyExample(a.entry.title, tidy))
-                    a.renamed(tidy)
+                    a.renamed(tidy).also { nameInFile[it] = a.entry.title }
                 }
             }
         }
@@ -111,7 +117,7 @@ object ImportPlanner {
             val keys = loginKeys(e)
             var here = false
             var other: Entry? = null
-            here@ for (k in keys) {
+            here@ for (k in keysInVault(e, keys, nameInFile[a], fromFile)) {
                 for (v in inVault[k].orEmpty()) {
                     if (covers(v, e)) {
                         here = true
@@ -198,8 +204,29 @@ object ImportPlanner {
             val host = siteHost(url)
             if (host.isNotEmpty() && host !in hosts) hosts.add(host)
         }
-        if (hosts.isEmpty()) return listOf(user + SEPARATOR + NO_WEBSITE + e.title.trim().lowercase(Locale.ROOT))
+        if (hosts.isEmpty()) return listOf(nameKey(user, e.title))
         return hosts.map { user + SEPARATOR + it }
+    }
+
+    /** The login of an account without a website: its username and its name. */
+    private fun nameKey(user: String, title: String): String = user + SEPARATOR + NO_WEBSITE + title.trim().lowercase(Locale.ROOT)
+
+    /**
+     * The logins under which an account of the vault may be the incoming [e]: [keys], and for an account
+     * without a website, which only its name tells apart, also the names an import gives it. That is
+     * the name it has in the file when "Tidy names" changed it ([nameInFile]; the vault's own export
+     * holds that one), and each name with "(from file)", as `VaultEdits.addImported` names an account
+     * of our own JSON that it adds beside the one holding its id ([fromFile]).
+     */
+    private fun keysInVault(e: Entry, keys: List<String>, nameInFile: String?, fromFile: (String) -> String): List<String> {
+        if (e.urls.any { siteHost(it).isNotEmpty() }) return keys
+        val user = e.username.trim()
+        val all = LinkedHashSet<String>(keys)
+        for (name in listOfNotNull(e.title, nameInFile)) {
+            all.add(nameKey(user, name))
+            all.add(nameKey(user, Entries.titled(fromFile, name)))
+        }
+        return all.toList()
     }
 
     /** The host of a website, or `app:` and the package of an Android app. */

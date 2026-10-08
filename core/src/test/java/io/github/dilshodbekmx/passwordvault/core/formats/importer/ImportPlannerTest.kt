@@ -2,6 +2,7 @@ package io.github.dilshodbekmx.passwordvault.core.formats.importer
 
 import io.github.dilshodbekmx.passwordvault.core.crypto.JcaAesGcm
 import io.github.dilshodbekmx.passwordvault.core.formats.BitwardenJson
+import io.github.dilshodbekmx.passwordvault.core.formats.GoogleCsv
 import io.github.dilshodbekmx.passwordvault.core.formats.ImportPlanner
 import io.github.dilshodbekmx.passwordvault.core.formats.importer.ImportFixtures.DAY
 import io.github.dilshodbekmx.passwordvault.core.formats.importer.ImportFixtures.GENERATOR
@@ -200,6 +201,46 @@ class ImportPlannerTest {
         assertEquals(listOf(id(12), id(13), id(14), id(17)), plan.entries.map { it.id })
         assertEquals(listOf(1 to gmail.id), plan.conflicts.map { it.index to it.existingId })
         assertEquals(0, plan.withoutPassword)
+    }
+
+    /**
+     * An account without a website is known by its name, and the import itself changes names: "Tidy
+     * names", and "(from file)" for an account of our own JSON added beside the one that holds its id.
+     * Neither may make an exact repeat look new.
+     */
+    @Test
+    fun anAccountWithoutAWebsiteIsAlreadyHereWhateverTheImportDoesToItsName() {
+        // The vault's own export, imported into the same vault: nothing to add, with "Tidy names" on as it is by default.
+        val own = Vault(entries = listOf(entry(1, "gmail.com", "aziz", "G00gle!"), entry(2, "mail.ru", "ivan", "M@il1", listOf("https://mail.ru"))))
+        for (bytes in listOf(BitwardenJson.export(own, NOW, GENERATOR).bytes, GoogleCsv.export(own.entries).parts.single())) {
+            val plan = plan(own, file(bytes))
+            assertEquals(2, plan.found)
+            assertEquals(2, plan.alreadyHere)
+            assertTrue(plan.entries.map { it.title }.toString(), plan.accounts.isEmpty())
+        }
+        // The other password of the same name is still a conflict, found under the name the vault has.
+        val other = plan(own, file(BitwardenJson.export(listOf(entry(3, "gmail.com", "aziz", "0ther!")), NOW, GENERATOR).bytes))
+        assertEquals(listOf("Gmail"), other.entries.map { it.title })
+        assertEquals(listOf(id(1)), other.conflicts.map { it.existingId })
+
+        // formats-review P1 for an account without a website: export, change its password, import, and import once more.
+        val wifi = entry(4, "Home Wi-Fi", "", "W1fi-old")
+        val exported = BitwardenJson.export(listOf(wifi), NOW - DAY, GENERATOR).bytes
+        val edited = Vault(entries = listOf(wifi.copy(password = "W1fi-new")))
+        val first = plan(edited, file(exported))
+        assertEquals(listOf("W1fi-old"), first.entries.map { it.password }) // added beside it, to compare
+        val after = VaultEdits.addImported(first.entries, FakeRandom(11), Texts::fromFile)(edited, NOW).vault
+        assertEquals(listOf("Home Wi-Fi", "Home Wi-Fi (fayldan)"), after.entries.map { it.title })
+        val again = plan(after, file(exported))
+        assertEquals(1, again.alreadyHere) // the copy "(from file)" is this account
+        assertTrue(again.accounts.isEmpty())
+        // Both changes at once: a host-like name, tidied, then named "(from file)".
+        val site = entry(5, "example.org", "ali", "Ex-old")
+        val siteFile = file(BitwardenJson.export(listOf(site), NOW - DAY, GENERATOR).bytes)
+        val siteVault = Vault(entries = listOf(site.copy(password = "Ex-new")))
+        val siteAfter = VaultEdits.addImported(plan(siteVault, siteFile).entries, FakeRandom(12), Texts::fromFile)(siteVault, NOW).vault
+        assertEquals(listOf("example.org", "Example (fayldan)"), siteAfter.entries.map { it.title })
+        assertTrue(plan(siteAfter, siteFile).accounts.isEmpty())
     }
 
     @Test
