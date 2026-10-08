@@ -10,6 +10,7 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import io.github.dilshodbekmx.passwordvault.settings.StyleChoice
 
@@ -20,8 +21,9 @@ import io.github.dilshodbekmx.passwordvault.settings.StyleChoice
  * never asks which style is chosen; the colours are also `MaterialTheme.colorScheme`.
  *
  * [pinKeys], [fingerprintKeyTonal], [avatarShape] and [avatarTones] are drawn today (the PIN pad, the
- * list). [lockPanel], [cards] and [addButton] are the table's other rows, for the screens that own
- * the lock screen, the list and the account's screen: the looks' second step (build-plan.md §12,
+ * list). [lockPanel], [cards] and [addButton] are the table's other rows, and [barOutline] and
+ * [searchOutline] the two outlines of its colour table, for the screens that own the lock screen, the
+ * list, the account's screen and the frame of the tabs: the looks' second step (build-plan.md §12,
  * `w5-carry`).
  *
  * @property colors the Material 3 colour scheme.
@@ -31,9 +33,14 @@ import io.github.dilshodbekmx.passwordvault.settings.StyleChoice
  * @property avatarShape the shape of an account's badge in the list.
  * @property avatarTones the badge's [AVATAR_TONES] tones.
  * @property lockPanel the lock screen's icon, name, subtitle and dots sit on a panel in the primary
- *   colour with rounded lower corners.
+ *   colour with rounded lower corners. (The mock-up shows it in light; in Bank blue's dark scheme the
+ *   blue of that panel, #1D4E89, is `primaryContainer`.)
  * @property cards which rows of the list and of an account's screen lie on cards.
  * @property addButton how the list's "Add" button is drawn.
+ * @property barOutline the colour of a hairline along the navigation bar's upper edge, where the bar
+ *   has nearly the colour of the screen behind it (Emerald in light: white on the tinted screen);
+ *   null: none is drawn.
+ * @property searchOutline the colour of the search field's outline, for the same reason; null: none.
  */
 @Immutable
 class Look(
@@ -45,8 +52,13 @@ class Look(
     val lockPanel: Boolean,
     val cards: CardsLook,
     val addButton: AddButtonLook,
+    val barOutline: Color? = null,
+    val searchOutline: Color? = null,
 ) {
-    /** The same details with other colours: a style's other mode, or the wallpaper's scheme. */
+    /**
+     * The same details with other colours: a style's other mode, or the wallpaper's scheme. The two
+     * outlines belong to one scheme's colours, so they are given again or left out.
+     */
     internal fun copy(
         colors: ColorScheme = this.colors,
         avatarTones: List<AvatarTone> = this.avatarTones,
@@ -119,6 +131,9 @@ object Looks {
         lockPanel = false,
         cards = CardsLook.ROW_GROUPS,
         addButton = AddButtonLook.FILLED_ROUND,
+        // The README's "#FFFFFF with an outline #DCE5E1" and "#FFFFFF with an outline #BEC9C5".
+        barOutline = EmeraldLight.surfaceVariant,
+        searchOutline = EmeraldLight.outlineVariant,
     )
     private val emeraldDark = emeraldLight.copy(colors = EmeraldDark, avatarTones = EmeraldDarkTones)
 

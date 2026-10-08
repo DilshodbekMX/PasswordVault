@@ -47,6 +47,24 @@ class LooksTest {
         }
     }
 
+    /**
+     * The colour table's two outlines: only Emerald in light has a white bar and a white search field
+     * on a screen that is nearly white, so only it hands out their outlines.
+     */
+    @Test
+    fun onlyEmeraldInLightOutlinesTheBarAndTheSearchField() {
+        val emerald = Looks.of(StyleChoice.EMERALD, dark = false)
+        assertEquals("#DCE5E1", emerald.barOutline?.hex())
+        assertEquals("#BEC9C5", emerald.searchOutline?.hex())
+        assertEquals("#FFFFFF", emerald.colors.surfaceContainer.hex())
+        assertEquals("#FFFFFF", emerald.colors.surfaceContainerHigh.hex())
+        assertTrue("the bar alone is hard to tell from the screen", contrast(emerald.colors.surfaceContainer, emerald.colors.background) < 1.1)
+        for (scheme in OWN_LOOKS.filter { it.look !== emerald }) {
+            assertEquals("$scheme", null, scheme.look.barOutline)
+            assertEquals("$scheme", null, scheme.look.searchOutline)
+        }
+    }
+
     @Test
     fun everyStyleHasALightAndADarkSchemeOfItsOwn() {
         assertSame(BankBlueLight, Looks.of(StyleChoice.BANK_BLUE, dark = false).colors)
