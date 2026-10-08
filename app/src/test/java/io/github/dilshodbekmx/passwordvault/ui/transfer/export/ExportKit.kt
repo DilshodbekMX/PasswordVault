@@ -20,6 +20,8 @@ import io.github.dilshodbekmx.passwordvault.fake.FakeSecretClipboard
 import io.github.dilshodbekmx.passwordvault.fake.FakeSession
 import io.github.dilshodbekmx.passwordvault.fake.FakeVaultRepository
 import io.github.dilshodbekmx.passwordvault.files.BackupSharing
+import io.github.dilshodbekmx.passwordvault.files.DocRef
+import io.github.dilshodbekmx.passwordvault.files.DocumentIo
 import io.github.dilshodbekmx.passwordvault.files.FileTaskStore
 import io.github.dilshodbekmx.passwordvault.files.PickerLauncher
 import io.github.dilshodbekmx.passwordvault.lock.LockReason
@@ -38,6 +40,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestDispatcher
@@ -62,6 +66,22 @@ class ExportKit private constructor(val scope: TestScope, private val dispatcher
     val clock = FakeClock(autoAdvance = false)
     val settings = FakeAppSettings()
     val documents = FakeDocumentIo()
+
+    /** While true, every write waits (the screen shows "Saving…"); set it back to false to let them go on. */
+    var holdWrites: Boolean
+        get() = writesHeld.value
+        set(value) {
+            writesHeld.value = value
+        }
+    private val writesHeld = MutableStateFlow(false)
+
+    /** [documents], whose writes wait while [holdWrites] is true: what the store and the screen use. */
+    private val io: DocumentIo = object : DocumentIo by documents {
+        override suspend fun write(doc: DocRef, bytes: ByteArray): Boolean {
+            writesHeld.first { !it }
+            return documents.write(doc, bytes)
+        }
+    }
     val repository = FakeVaultRepository(vault) { clock.wallMs() }
     val lock = FakeLockManager(LockUiState.Unlocked(emptyList(), null), repository)
     val picker = RecordingPicker()
@@ -82,7 +102,7 @@ class ExportKit private constructor(val scope: TestScope, private val dispatcher
     private fun newStore(): FileTaskStore = FileTaskStore(
         settings = settings,
         session = FakeSession(work, lock, FakeSecretClipboard(), repository),
-        documents = documents,
+        documents = io,
         lockState = lock.state,
         scope = work,
         dispatchers = dispatchers,
@@ -97,7 +117,7 @@ class ExportKit private constructor(val scope: TestScope, private val dispatcher
                     repository = repository,
                     lock = lock,
                     store = store,
-                    documents = documents,
+                    documents = io,
                     clock = clock,
                     dispatchers = dispatchers,
                     work = work,

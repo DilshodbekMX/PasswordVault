@@ -303,8 +303,8 @@ class ExportViewModel(
 
     /**
      * Back, from the top bar or the system. True when the export took it: a step back within the
-     * export, "Cancel" on a paused task, or nothing while the picker is open or a file is saved
-     * (ux.md §4: Back is ignored while "Saving…" runs). False: the screen is left.
+     * export, "Cancel" on a paused task, no more waiting for a picker that is not in front, or nothing
+     * while a file is saved (ux.md §4: Back is ignored while "Saving…" runs). False: the screen is left.
      */
     fun back(): Boolean = when (val now = ui.value) {
         is ExportUiState.Warning -> {
@@ -325,7 +325,11 @@ class ExportViewModel(
                 true
             }
         }
-        is ExportUiState.Picking, is ExportUiState.Saving -> true
+        is ExportUiState.Picking -> {
+            stopPicking(now.file)
+            true
+        }
+        is ExportUiState.Saving -> true
         is ExportUiState.Ended -> now.cleanup == null
         else -> false
     }
@@ -387,6 +391,21 @@ class ExportViewModel(
                 authorized = false
                 ui.value = ExportUiState.Failed(file, ExportFailure.PICKER)
             }
+        }
+    }
+
+    /**
+     * The screen shows while "Save as" should be open, and the user goes back: the picker is gone
+     * without an answer (it was closed in a way that sent none). The task is given up; an answer that
+     * still comes finds no task, and the store removes the empty file it made. The next "Save as"
+     * needs the master password again, as after a closed picker.
+     */
+    private fun stopPicking(file: ExportFile) {
+        authorized = false
+        ui.value = ExportUiState.Password(file)
+        work.launch {
+            val task = store.task.value
+            if (task?.kind == FileTask.Kind.EXPORT && task.doc == null) store.abandon(FileTask.Kind.EXPORT)
         }
     }
 

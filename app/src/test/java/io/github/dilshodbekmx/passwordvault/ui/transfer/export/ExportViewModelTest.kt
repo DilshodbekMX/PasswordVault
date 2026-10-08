@@ -605,9 +605,27 @@ class ExportViewModelTest {
         submit(vm)
         vm.shows<ExportUiState.Picking>()
         assertTrue(vm.takesBack(vm.state.value))
+
+        // The screen shows while "Save as" should be open: Back stops waiting for it, and its task goes.
         assertTrue(vm.back())
-        vm.shows<ExportUiState.Picking>()
+        settle()
+        assertFalse(vm.shows<ExportUiState.Password>().paused)
+        assertNull(settings.fileTask.value)
+        pick() // an answer that still comes finds no task: its empty file is removed
+        assertFalse(DOC in documents.files)
+        vm.shows<ExportUiState.Password>()
+
+        // The master password again, then the file; while it is saved Back is taken and does nothing.
+        submit(vm)
+        holdWrites = true
         pick()
+        vm.shows<ExportUiState.Saving>()
+        assertTrue(vm.takesBack(vm.state.value))
+        assertTrue(vm.back())
+        vm.shows<ExportUiState.Saving>()
+        holdWrites = false
+        settle()
+        vm.shows<ExportUiState.Saved>()
         assertFalse("from the result Back leaves", vm.back())
         assertFalse(vm.takesBack(vm.state.value))
     }
