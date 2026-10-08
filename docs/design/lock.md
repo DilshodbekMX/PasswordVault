@@ -1347,9 +1347,10 @@ The look (layout, key sizes, haptics, landscape) is in ux.md §5.9 and §5.10. T
 | Fingerprint only | Title "PasswordVault", the status line, the buttons "Use fingerprint" and "Use master password". No pad and no dots | Fingerprint prompt, master password |
 | Fingerprint prompt | The system's prompt over the pad or over the fingerprint-only screen (9.2) | Unlocked, the screen behind it |
 | Master password, idle | Title "Type your master password", the reason as subtitle, the field, "Unlock", and the buttons of 13.3 | Opening, pad, forgot sheet |
-| Master password, opening | "Opening…" while Argon2id runs (0.3 to 1 s) | Unlocked, wrong, older password |
+| Master password, opening | "Opening…" while Argon2id runs (0.3 to 1 s) | Unlocked, wrong, older password, the question of F16b step 3 |
 | Master password, waiting | Field disabled, countdown from 0:30 | Idle |
 | Older master password | F16b | Idle, unlocked |
+| Open the older set? | On the lock screen of a vault from before a replacement, once its master password has opened it (F16b step 3): the title "Your passwords from before 7 Oct 2026", the question of F16b step 3, "Open my passwords from 7 Oct" and "Cancel". No field and no pad | Unlocked, with the two vaults changing places; that vault's master-password field again ("Cancel"); back to the current vault |
 | Forgot sheet | F17 step 1 | — |
 | A vault that was put aside | That vault's own pad, fingerprint-only or master-password screen, with its line (F17 step 4, F16b) | Unlocked, with the two vaults changing places; or back to the current vault |
 
