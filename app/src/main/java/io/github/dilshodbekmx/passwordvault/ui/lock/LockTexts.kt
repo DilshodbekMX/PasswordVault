@@ -138,6 +138,21 @@ internal object LockTexts {
         return UiText.of(if (unfinishedChange) R.string.lock_older_unfinished else R.string.lock_older_proven, day)
     }
 
+    // ---- "Open the older set instead?" (F16b step 3) ---------------------------------------------
+
+    /**
+     * The title over the question: "Your passwords from before 7 Oct 2026", as on the master-password
+     * field the question follows ([masterPasswordTitle] for `MpReason.FromBefore`); [atMs] is when
+     * the master password was replaced.
+     */
+    fun olderSetTitle(atMs: Long): UiText = UiText.of(R.string.lock_from_before, LockDate(atMs, LockDate.Style.DATE))
+
+    /** "These are your passwords as they were on 7 Oct. … Open the older set instead?" */
+    fun olderSet(atMs: Long): UiText = UiText.of(R.string.lock_older_set_text, LockDate(atMs, LockDate.Style.DAY_MONTH))
+
+    /** The button "Open my passwords from 7 Oct". */
+    fun olderSetOpen(atMs: Long): UiText = UiText.of(R.string.lock_older_set_open, LockDate(atMs, LockDate.Style.DAY_MONTH))
+
     // ---- "Your passwords can't be opened" -------------------------------------------------------
 
     fun unreadable(why: CurrentVault.Why): UiText = UiText.of(

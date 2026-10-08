@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- The lock screens (architecture.md §2.2 ui.lock): the master-password screen of build plan 3.4
      (ux.md §5.10; lock.md §13.2, §13.3), then every lock screen, the "Forgot master password?"
-     sheet and the notices after unlock (4.2; ux.md §5.9, §5.10; lock.md §13.3, §13.4, F16, F17).
-     Every name starts with lock_. The English wording is lock.md's and ux.md's; dates are formatted
+     sheet and the notices after unlock (4.2; ux.md §5.9, §5.10; lock.md §13.3, §13.4, F16, F17),
+     and the question of lock.md F16b step 3 (4.2b). Every name starts with lock_. The English wording is lock.md's and ux.md's; dates are formatted
      by the screen in the phone's own style (i18n.md §4.6), so "7 Oct" may read "Oct 7". -->
 <resources xmlns:tools="http://schemas.android.com/tools">
 
@@ -226,6 +226,20 @@
     <string name="lock_older_confirm_body">The copy made during the change stays on this phone but is no longer used.</string>
     <!-- The question's button that opens them. Short. -->
     <string name="lock_older_confirm_open">Open</string>
+
+    <!-- ===== "Open the older set instead?" (lock.md F16b step 3; ux.md §5.24): asked on the lock
+         screen of the passwords from before a replacement (title "Your passwords from before …",
+         lock_from_before), once their own master password has opened them and before anything
+         changes. Followed by the button below and "Cancel" (common_cancel), which changes
+         nothing ===== -->
+
+    <!-- The question. "The older set": these passwords, as they were when the master password was
+         replaced (glossary 143); "the newer set": the passwords used since then. Neither is
+         deleted, whatever the answer. %1$s is a day and a month, for example "Oct 7". -->
+    <string name="lock_older_set_text">These are your passwords as they were on %1$s. Passwords added or changed after that are in the newer set, which stays on this phone. Open the older set instead?</string>
+    <!-- Button: the app uses the older set from now on; the newer set stays on the phone, put
+         aside (compare glossary 145, which says "from before"). %1$s is a day and a month. -->
+    <string name="lock_older_set_open">Open my passwords from %1$s</string>
 
     <!-- ===== "Your passwords can't be opened" (ux.md §5.9; lock.md §13.1 row 2). Never an offer to
          delete ===== -->

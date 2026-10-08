@@ -17,10 +17,11 @@ import io.github.dilshodbekmx.passwordvault.nav.Route
 /**
  * The lock's one route, [Route.Locked], whose screen `LockUiState` decides (lock.md §13.1, §13.2):
  * the PIN pad, the fingerprint-only screen, the master-password screen, "This is an older master
- * password", or "Your passwords can't be opened"; each also as the screen of a vault put aside, with
- * its line. Over it, the "Forgot master password?" sheet and the questions asked once more. Its
- * [LockViewModel] belongs to the route's entry, so a rotation keeps it and an unlock clears it
- * (architecture.md §5.5 step 5). "Restore from a backup file" opens [Route.Restore] over it.
+ * password", "Open the older set instead?" (lock.md F16b step 3), or "Your passwords can't be
+ * opened"; each also as the screen of a vault put aside, with its line. Over it, the "Forgot master
+ * password?" sheet and the questions asked once more. Its [LockViewModel] belongs to the route's
+ * entry, so a rotation keeps it and an unlock clears it (architecture.md §5.5 step 5). "Restore from
+ * a backup file" opens [Route.Restore] over it.
  */
 fun EntryProviderScope<Route>.lockNav(graph: AppGraph, nav: Navigator) {
     entry<Route.Locked> { LockRoute(graph, nav) }
@@ -88,6 +89,7 @@ fun LockScreens(vm: LockViewModel, onRestore: () -> Unit) {
         is FingerprintOnlyUi -> FingerprintOnlyScreen(ui, onAction)
         is MasterPasswordUi -> MasterPasswordScreen(vm, ui, onAction = onAction, covered = sheet != null || confirm != null)
         is OlderPasswordUi -> OlderPasswordScreen(ui, onAction)
+        is OlderSetUi -> OlderSetScreen(ui, onAction)
         is UnreadableUi -> UnreadableScreen(ui, onAction)
     }
     sheet?.let { ForgotSheet(it, onAction) }

@@ -46,9 +46,9 @@ import kotlinx.coroutines.launch
 
 /**
  * The ViewModel of the lock route (build plan 3.4, then 4.2): every screen of lock.md §13.2 with the
- * texts of §13.3, the "Forgot master password?" sheet of ux.md §5.10 (lock.md F17 step 1), and the
- * two questions asked once more ("Start with an empty app?", "Open your passwords as they were before
- * …?").
+ * texts of §13.3, the "Forgot master password?" sheet of ux.md §5.10 (lock.md F17 step 1), the two
+ * questions asked once more ("Start with an empty app?", "Open your passwords as they were before
+ * …?"), and the lock's own question "Open the older set instead?" (lock.md F16b step 3, 4.2b).
  *
  * - **What it shows** is [screen]: the lock's `LockScreen`, or "Your passwords can't be opened",
  *   turned into [UiText]s (resource ids and arguments, never a finished sentence, architecture.md
@@ -83,6 +83,11 @@ import kotlinx.coroutines.launch
  *   backup file"; one entry for each vault put aside; "Start with an empty app…" only while no PIN
  *   and no fingerprint can be used now; "Try again". On the screen of a vault put aside, the first
  *   and the fourth are about the current vault and are left out.
+ * - **The lock's question** (`LockScreen.OpenOlderSet`, lock.md F16b step 3) is a screen of its own,
+ *   [OlderSetUi]: the passwords from before a replacement have opened with their master password,
+ *   and nothing changes until "Open my passwords from 7 Oct" is answered; "Cancel" changes nothing.
+ *   Both go straight to the lock (`LockIntent.OlderPasswordAnswer`), which asks no second time.
+ *   Nothing lies over it: a sheet or a question that was open when the lock asks is closed.
  *
  * @param testBuild `BuildConfig.ALLOW_SOFTWARE_KEYSTORE`: every lock screen shows "TEST BUILD: PIN
  *   keys are not protected" (lock.md §4.5, §13.3; architecture.md §7.2).
@@ -142,6 +147,12 @@ class LockViewModel(
                 if (state !is LockUiState.Locked && state !is LockUiState.Unreadable) password.clearSecret()
                 // No sheet or question outlives the lock screen it was asked on.
                 if (state !is LockUiState.Locked && overlay.value != Overlay()) overlay.value = Overlay()
+                // And none lies over the lock's own question (lock.md F16b step 3): the app is still
+                // locked, so the lock is told that the sheet closed, as on its "Try again".
+                if ((state as? LockUiState.Locked)?.screen is LockScreen.OpenOlderSet) {
+                    overlay.update { it.copy(confirm = null) }
+                    closeSheet()
+                }
                 val pad = (state as? LockUiState.Locked)?.screen as? LockScreen.Pad
                 val before = previousPad
                 if (pad != null && before != null && !pad.opening && LockTexts.isWrongPin(pad.status) &&
@@ -297,6 +308,7 @@ class LockViewModel(
             is LockScreen.FingerprintOnly -> fingerprintOnlyUi(screen)
             is LockScreen.MasterPassword -> masterPasswordUi(screen, inputs.local, inputs.status, now)
             is LockScreen.OlderPassword -> olderPasswordUi(screen)
+            is LockScreen.OpenOlderSet -> olderSetUi(screen)
         }
         is LockUiState.Unreadable -> unreadableUi(shown.why, shown.aside, inputs.status.replaced)
         else -> null
@@ -337,6 +349,22 @@ class LockViewModel(
         } else {
             listOf(LockButton(UiText.of(R.string.common_ok), olderAnswer(OlderPasswordChoice.OK), LockTags.OLDER_OK, ButtonStyle.FILLED))
         },
+        goesBack = screen.aside != null,
+    )
+
+    /**
+     * "Open the older set instead?" for [screen] (lock.md F16b step 3). The title names the passwords
+     * as their master-password field did, so the line of a vault from before a replacement is not
+     * said twice; the date of both sentences is `atMs`, when the master password was replaced.
+     */
+    private fun olderSetUi(screen: LockScreen.OpenOlderSet): OlderSetUi = OlderSetUi(
+        asideLine = screen.aside?.takeUnless { it is AsideLine.FromBefore }?.let(LockTexts::asideLine),
+        title = LockTexts.olderSetTitle(screen.atMs),
+        text = LockTexts.olderSet(screen.atMs),
+        buttons = listOf(
+            LockButton(LockTexts.olderSetOpen(screen.atMs), olderAnswer(OlderPasswordChoice.OPEN_OLDER_SET), LockTags.OLDER_SET_OPEN, ButtonStyle.FILLED),
+            LockButton(UiText.of(R.string.common_cancel), olderAnswer(OlderPasswordChoice.KEEP_NEWER_SET), LockTags.OLDER_SET_CANCEL, ButtonStyle.OUTLINED),
+        ),
         goesBack = screen.aside != null,
     )
 

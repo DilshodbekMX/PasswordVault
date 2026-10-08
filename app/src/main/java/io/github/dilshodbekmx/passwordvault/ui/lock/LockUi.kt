@@ -110,6 +110,28 @@ data class OlderPasswordUi(
 ) : LockScreenUi
 
 /**
+ * "Open the older set instead?" (lock.md F16b step 3, `LockScreen.OpenOlderSet`): the passwords from
+ * before a replacement have just opened with their own master password, on their own lock screen,
+ * and the app asks before the two sets change places. Nothing has changed yet.
+ *
+ * @property asideLine the line of a vault put aside when [title] does not say it already.
+ * @property title that screen's title, as on its master-password field: "Your passwords from before
+ *   7 Oct 2026".
+ * @property text the question: "These are your passwords as they were on 7 Oct. Passwords added or
+ *   changed after that are in the newer set, which stays on this phone. Open the older set instead?"
+ * @property buttons "Open my passwords from 7 Oct" (`OlderPasswordChoice.OPEN_OLDER_SET`) and
+ *   "Cancel" (`KEEP_NEWER_SET`: nothing changes). The screen is the question, so neither asks once
+ *   more.
+ */
+data class OlderSetUi(
+    override val asideLine: UiText?,
+    val title: UiText,
+    val text: UiText,
+    val buttons: List<LockButton>,
+    override val goesBack: Boolean,
+) : LockScreenUi
+
+/**
  * "Your passwords can't be opened" (lock.md §13.1 row 2; ux.md §5.9 "File damaged"): no generation
  * can be read. [body] says why; "Try again" only for an I/O error; "Restore from a backup file"; and
  * "Open my previous passwords (locked on …)" for each vault put aside. Never an offer to delete.
@@ -189,7 +211,7 @@ sealed interface LockAction {
     data object CancelConfirm : LockAction
 }
 
-/** The answer of [LockAction.Send] for an answer on "This is an older master password". */
+/** The answer of [LockAction.Send] for an answer on "This is an older master password" or on "Open the older set instead?". */
 internal fun olderAnswer(choice: OlderPasswordChoice): LockAction = LockAction.Send(LockIntent.OlderPasswordAnswer(choice))
 
 /**
@@ -256,6 +278,12 @@ object LockTags {
     const val OLDER_OK = "pv.lock.olderOk"
     const val OLDER_TRY_AGAIN = "pv.lock.olderTryAgain"
     const val OLDER_FROM_BEFORE = "pv.lock.olderFromBefore"
+
+    /** "Open the older set instead?" (lock.md F16b step 3): the screen, its question, "Open my passwords from 7 Oct" and "Cancel". */
+    const val OLDER_SET = "pv.lock.olderSet"
+    const val OLDER_SET_TEXT = "pv.lock.olderSetText"
+    const val OLDER_SET_OPEN = "pv.lock.olderSetOpen"
+    const val OLDER_SET_CANCEL = "pv.lock.olderSetCancel"
 
     /** "Your passwords can't be opened": the screen, its text, "Try again" and "Restore from a backup file". */
     const val UNREADABLE = "pv.lock.unreadable"
