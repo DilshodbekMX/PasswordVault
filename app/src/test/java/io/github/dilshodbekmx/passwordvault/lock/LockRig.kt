@@ -275,6 +275,9 @@ class LockRig(val test: TestScope, seed: Long = 1L) {
     var recordFiles: RecordFiles = files
     var pinKey: PinKey = keys.pin
 
+    /** The test hooks of lock.md §15.3, when the lock is to be built with them as a test build's is; set before [start]. */
+    var hooks: LockDebugImpl? = null
+
     var olderCopyAnswers = 0
         private set
 
@@ -308,8 +311,22 @@ class LockRig(val test: TestScope, seed: Long = 1L) {
             val shown = made?.state?.value
             shown is LockUiState.Locked && shown.screen is LockScreen.Pad
         }
-        engine = LockEngine(recordFiles, ROOT, clock, random, pinKey, fingerprintKey, keys.device, port, kdf, CryptoFactory.aead(), dispatcher)
-        val built = DefaultLockManager(engine, vault, settings, clock, scope, dispatcher, launcher, olderCopyAnswered = { olderCopyAnswers++ })
+        val hooks = hooks
+        engine = LockEngine(
+            hooks?.records(recordFiles) ?: recordFiles,
+            ROOT,
+            clock,
+            random,
+            hooks?.pinKey(pinKey) ?: pinKey,
+            fingerprintKey,
+            keys.device,
+            port,
+            kdf,
+            CryptoFactory.aead(),
+            dispatcher,
+        )
+        val built = DefaultLockManager(engine, vault, settings, clock, scope, dispatcher, launcher, olderCopyAnswered = { olderCopyAnswers++ }, debug = hooks)
+        hooks?.attach(engine, built)
         made = built
         launcher.attach(window)
         built.start(process.lifecycle)

@@ -39,17 +39,21 @@ import kotlinx.coroutines.withTimeoutOrNull
  * - **`status`** ([status]): the engine's own description (the inputs and the result of lock.md
  *   §13.1, the counts, the shortcut aliases), then what these hooks and the prompt hold.
  *
+ * [command] is the seven commands as the debug receiver's handlers answer them.
+ *
  * A hold parks the thread of the engine's dispatcher that reached it, under the lock mutex, as a
  * slow disk or a slow Keystore would: key presses, a lock and `ON_STOP` wait behind it, which is what
  * the checks want to see. [status] therefore never waits for the engine while a hold is reached. A
  * hold that nobody releases ends by itself after [HOLD_MAX_MS].
  *
  * Nothing here returns or keeps a secret: no digit, password, key or entry text.
+ *
+ * @param io the dispatcher of the Keystore calls of [dropKeys] and [status].
  */
 class LockDebugImpl(private val access: KeystoreAccess, private val io: CoroutineDispatcher) : LockDebug {
 
-    /** The two places a PIN check can be held at. */
-    private enum class Point(val id: String) { AFTER_CHARGE("after-charge"), BEFORE_HMAC("before-hmac") }
+    /** The two places a PIN check can be held at; [id] is how the commands and [status] name it. */
+    enum class Point(val id: String) { AFTER_CHARGE("after-charge"), BEFORE_HMAC("before-hmac") }
 
     private val guard = Any()
     private var armed: Point? = null // guarded by guard
@@ -60,6 +64,12 @@ class LockDebugImpl(private val access: KeystoreAccess, private val io: Coroutin
     @Volatile private var engine: LockEngine? = null
 
     @Volatile private var manager: DefaultLockManager? = null
+
+    /** The hold that is armed and not reached yet, or null. */
+    val armedHold: Point? get() = synchronized(guard) { armed }
+
+    /** The hold at which a PIN check is parked now, or null. */
+    val reachedHold: Point? get() = synchronized(guard) { reached }
 
     /** The lock these hooks belong to, once `LockModule` has built it over the wrapped ports. */
     fun attach(engine: LockEngine, manager: DefaultLockManager) {
@@ -108,11 +118,11 @@ class LockDebugImpl(private val access: KeystoreAccess, private val io: Coroutin
 
     /**
      * Arms the Keystore fault [row] in place of the one that was armed: a name of
-     * [KeystoreFaults.rows] or `prompt-error-<code>`. `none` (or an empty name) disarms. False, with
-     * nothing changed, when no fault has that name.
+     * [KeystoreFaults.rows] or `prompt-error-<code>`. `none` disarms. False, with nothing changed,
+     * when no fault has that name.
      */
     fun armFault(row: String): Boolean {
-        if (row.isEmpty() || row == NO_FAULT) {
+        if (row == NO_FAULT) {
             access.faults.disarm()
             return true
         }
@@ -123,35 +133,80 @@ class LockDebugImpl(private val access: KeystoreAccess, private val io: Coroutin
 
     override suspend fun status(): String {
         val out = StringBuilder()
-        val hold = holdState()
+        val parked = reachedHold
         val described = when {
-            // The engine's mutex is held by the check that is parked: asking would wait for `release`.
-            hold.endsWith(REACHED) -> null
-            else -> engine?.let { withTimeoutOrNull(ENGINE_WAIT_MS) { it.describe() } }
+            // The lock mutex is held by the check that is parked: asking the engine would wait for `release`.
+            parked != null -> "engine: held at ${parked.id}, not asked"
+            else -> engine?.let { withTimeoutOrNull(ENGINE_WAIT_MS) { it.describe() } } ?: "engine: no answer in $ENGINE_WAIT_MS ms"
         }
-        out.append(described ?: ("engine: " + if (hold.endsWith(REACHED)) "held, not asked" else "no answer in $ENGINE_WAIT_MS ms")).append('\n')
-        out.append("hold: ").append(hold).append('\n')
+        out.append(described).append('\n')
+        out.append("hold: ").append(parked?.let { it.id + " (reached)" } ?: armedHold?.let { it.id + " (armed)" } ?: "none").append('\n')
         out.append("fail-next-write: ").append(if (synchronized(guard) { failWrite }) "armed" else "no").append('\n')
         out.append("ks-fault: ").append(access.faults.pending ?: NO_FAULT).append('\n')
-        val all = withContext(io) { access.everyAlias() }.sorted()
-        out.append("keystore: ").append(if (all.isEmpty()) "no alias listed" else all.joinToString(" ")).append('\n')
+        val all = everyAlias()
+        out.append("keystore: ").append(if (all.isEmpty()) "no alias listed" else all.joinToString(" "))
         val manager = manager
         if (manager != null) {
             val prompt = manager.prompts.open
-            out.append("prompt: ").append(if (prompt == null) "none" else prompt.use.name + ", launch " + prompt.launch)
-            out.append(", may open by itself: ").append(manager.prompts.canOpenByItself).append('\n')
-            out.append("last PIN unlock: ").append(manager.lastPinOpenMs?.let { "$it ms from the sixth digit" } ?: "none")
+            out.append('\n').append("prompt: ").append(if (prompt == null) "none" else prompt.use.name + ", launch " + prompt.launch)
+            out.append(", may open by itself: ").append(manager.prompts.canOpenByItself)
+            out.append('\n').append("last PIN unlock: ").append(manager.lastPinOpenMs?.let { "$it ms from the sixth digit" } ?: "none")
         }
-        return out.toString().trimEnd()
+        return out.toString()
     }
+
+    /**
+     * One of [COMMANDS] with the words that followed its name, answered as the debug receiver's
+     * handler answers it: one line that starts with the command's name, or for `status` the lines of
+     * [status].
+     *
+     * @throws IllegalArgumentException for a name that is not a command of the lock, words a command
+     *   does not take, or a `ks-fault` row that no fault has; the receiver answers "failed" then.
+     */
+    suspend fun command(name: String, args: List<String>): String {
+        if (name == KS_FAULT) return ksFaultCommand(args)
+        require(args.isEmpty()) { "usage: $name" }
+        return when (name) {
+            STATUS -> status()
+            HOLD_AFTER_CHARGE -> {
+                holdAfterCharge()
+                "$name: armed; the next PIN entry stops when its charge is on disk, until release"
+            }
+            HOLD_BEFORE_HMAC -> {
+                holdBeforeHmac()
+                "$name: armed; the next PIN check stops before it asks the Keystore, until release"
+            }
+            RELEASE -> {
+                val was = reachedHold?.let { it.id + " (reached)" } ?: armedHold?.let { it.id + " (armed)" }
+                release()
+                "$name: " + (was?.let { "released $it" } ?: "nothing was held")
+            }
+            FAIL_NEXT_WRITE -> {
+                failNextWrite()
+                "$name: armed; the next write of a lock record fails"
+            }
+            DROP_KEYS -> {
+                val before = everyAlias()
+                dropKeys()
+                val left = everyAlias()
+                "$name: ${before.size - left.size} of ${before.size} aliases deleted" + if (left.isEmpty()) "" else "; left: " + left.joinToString(" ")
+            }
+            else -> throw IllegalArgumentException("not a command of the lock")
+        }
+    }
+
+    private fun ksFaultCommand(args: List<String>): String {
+        val rows = KeystoreFaults.rows.joinToString(" ") + " " + KeystoreFaults.PROMPT_ERROR + "<code> " + NO_FAULT
+        if (args.isEmpty()) return "$KS_FAULT: " + (access.faults.pending ?: NO_FAULT) + "; rows: " + rows
+        require(args.size == 1) { "usage: $KS_FAULT [ROW]" }
+        require(armFault(args[0])) { "no such row" }
+        return "$KS_FAULT: " + (access.faults.pending ?: NO_FAULT)
+    }
+
+    private suspend fun everyAlias(): List<String> = withContext(io) { access.everyAlias() }.sorted()
 
     private fun arm(point: Point) {
         synchronized(guard) { armed = point }
-    }
-
-    /** `armed`, `reached` or neither, as [status] prints it. */
-    private fun holdState(): String = synchronized(guard) {
-        reached?.let { it.id + REACHED } ?: armed?.let { it.id + " (armed)" } ?: "none"
     }
 
     /** Parks the calling thread at [point] while that hold is armed, until [release]. */
@@ -181,6 +236,17 @@ class LockDebugImpl(private val access: KeystoreAccess, private val io: Coroutin
     }
 
     companion object {
+        const val STATUS = "status"
+        const val HOLD_AFTER_CHARGE = "hold-after-charge"
+        const val HOLD_BEFORE_HMAC = "hold-before-hmac"
+        const val RELEASE = "release"
+        const val FAIL_NEXT_WRITE = "fail-next-write"
+        const val KS_FAULT = "ks-fault"
+        const val DROP_KEYS = "drop-keys"
+
+        /** The debug commands of lock.md §15.3, by the names the receiver takes. */
+        val COMMANDS: List<String> = listOf(STATUS, HOLD_AFTER_CHARGE, HOLD_BEFORE_HMAC, RELEASE, FAIL_NEXT_WRITE, KS_FAULT, DROP_KEYS)
+
         /** After this long a hold that nobody released lets its check go on. */
         const val HOLD_MAX_MS = 10L * 60_000L
 
@@ -189,7 +255,5 @@ class LockDebugImpl(private val access: KeystoreAccess, private val io: Coroutin
 
         /** What `ks-fault` takes to disarm, and what [status] prints when nothing is armed. */
         const val NO_FAULT = "none"
-
-        private const val REACHED = " (reached)"
     }
 }
