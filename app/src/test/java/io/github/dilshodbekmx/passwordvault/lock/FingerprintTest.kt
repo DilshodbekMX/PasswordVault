@@ -10,6 +10,7 @@ import io.github.dilshodbekmx.passwordvault.core.lock.flow.PromptUse
 import io.github.dilshodbekmx.passwordvault.core.lock.record.FingerprintRecord
 import io.github.dilshodbekmx.passwordvault.core.lock.record.RecordRead
 import io.github.dilshodbekmx.passwordvault.core.model.Vault
+import io.github.dilshodbekmx.passwordvault.testing.lock.FakeRecordFiles
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -199,7 +200,7 @@ class FingerprintTest {
         rig.settle()
         assertTrue(restored is CreateResult.Created)
         val proof = checkNotNull(rig.unlocked.proof)
-        assertTrue(rig.manager.setPin(LockRig.digits(LockRig.PIN), proof))
+        assertEquals(PinSetResult.Set, rig.manager.setPin(LockRig.digits(LockRig.PIN), proof))
         rig.settle()
         rig.fingerprintOn(proof)
         rig.answerNotices(NoticeAnswer.LATER)
@@ -454,5 +455,19 @@ class FingerprintTest {
         assertTrue("while it still lent its bytes", rig.vault.matched.single().bytesLent)
         rig.fingerprintOn(proof) // F1 step 7 goes on with it (lock.md F9): the engine holds it as its own
         assertEquals(FingerprintStatus.On, rig.status.fingerprint)
+    }
+
+    // ---- fingerprint turned on, its record write failing at the directory sync (lock.md F9 step 9; decision 4)
+
+    @Test
+    fun fingerprintOn_whoseRecordWriteFailsAfterItsRename_mayNotBeOn() = runTest {
+        val rig = LockRig(this)
+        val proof = rig.setUpWithPin()
+        rig.files.fail(FakeRecordFiles.Op.REPLACE, step = FakeRecordFiles.WriteStep.DIR_SYNC) { it.endsWith("/fingerprint.rec") }
+        val turnOn = backgroundScope.asyncOn { rig.manager.fingerprintOn(proof) }
+        rig.settle()
+        assertEquals("the prompt of F9 is open", PromptUse.TURN_ON, rig.prompt.use)
+        rig.touch()
+        assertEquals(FingerprintOnResult.MayNotBeOn, turnOn.getCompleted())
     }
 }

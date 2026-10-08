@@ -370,7 +370,7 @@ class MasterPasswordTest {
             assertNull("$reason: the vault's session is dropped", rig.port.openVaultId)
             assertThrows("$reason: the unlock's proof is zeroed", IllegalStateException::class.java) { ofTheUnlock.useBytes { } }
             assertThrows("$reason: and so is a prompt's", IllegalStateException::class.java) { ofAPrompt.useBytes { } }
-            assertFalse("$reason: a dropped proof sets no PIN", rig.manager.setPin(LockRig.digits("368014"), ofTheUnlock))
+            assertEquals("$reason: a dropped proof sets no PIN", PinSetResult.NotSet, rig.manager.setPin(LockRig.digits("368014"), ofTheUnlock))
             assertEquals(emptyList<Throwable>(), rig.crashes)
         }
     }

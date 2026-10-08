@@ -480,7 +480,7 @@ class LockRig(val test: TestScope, seed: Long = 1L) {
     /** Setup, then a PIN set with setup's proof (lock.md F1 step 6). */
     suspend fun setUpWithPin(pin: String = PIN, password: String = PASSWORD): MasterProof {
         val proof = setUp(password)
-        assertTrue("the PIN was set", manager.setPin(digits(pin), proof))
+        assertEquals("the PIN was set", PinSetResult.Set, manager.setPin(digits(pin), proof))
         settle()
         return proof
     }

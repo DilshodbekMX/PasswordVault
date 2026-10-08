@@ -5,7 +5,7 @@
      and the question of lock.md F16b step 3 (4.2b). Every name starts with lock_. The English
      wording is lock.md's and ux.md's; dates are formatted by the screen in the phone's own style
      (i18n.md §4.6), so "7 Oct" may read "Oct 7". -->
-<resources xmlns:tools="http://schemas.android.com/tools">
+<resources>
 
     <!-- ===== Titles and the line of a set of passwords put aside ===== -->
 
@@ -388,16 +388,23 @@
     <!-- The offer's button. Short. -->
     <string name="lock_notice_back_up">Back up now</string>
 
-    <!-- ===== The system's fingerprint prompt (lock.md §9.2; ux.md §5.7, §5.9), built by the lock
-         manager (build plan 4.1, which uses these from its own code; tools:ignore until then). Its
-         negative button is "Use PIN" (lock_mp_use_pin), "Use master password"
-         (lock_use_master_password) when no PIN is usable, or "Cancel" (common_cancel) ===== -->
+    <!-- ===== The system's fingerprint prompt (lock.md §9.2 rule 5; ux.md §5.7, §5.9), built by the
+         lock manager (build plan 4.1, BiometricHost). Its negative button is "Use PIN"
+         (lock_mp_use_pin), "Use master password" (lock_use_master_password) when no PIN is usable,
+         "Cancel" (common_cancel), or "Not now" (common_not_now) ===== -->
 
     <!-- Title of the phone's fingerprint prompt over the lock screen. The app's name is not
          translated (i18n.md §3). -->
-    <string name="lock_prompt_unlock_title" tools:ignore="UnusedResources">Open PasswordVault</string>
+    <string name="lock_prompt_unlock_title">Open PasswordVault</string>
     <!-- Title of the phone's fingerprint prompt that turns fingerprint unlock on (lock.md F9 step 6). -->
-    <string name="lock_prompt_turn_on_title" tools:ignore="UnusedResources">Turn on fingerprint unlock</string>
+    <string name="lock_prompt_turn_on_title">Turn on fingerprint unlock</string>
+    <!-- Title of the phone's fingerprint prompt after the master password was changed: one touch
+         keeps fingerprint unlock working with the new master password (lock.md F8 step 7). Its
+         button is "Not now". -->
+    <string name="lock_prompt_keep_title">Keep fingerprint unlock</string>
+    <!-- Title of the phone's fingerprint prompt that confirms the request for a new master password
+         on a phone without a PIN (lock.md F11 step 3). Its button is "Cancel". -->
+    <string name="lock_prompt_confirm_title">Confirm with your fingerprint</string>
 
     <!-- ===== "Type master password" from the notice about wrong PINs: the master password typed in
          the open app (title "Type your master password", lock_mp_title) ===== -->

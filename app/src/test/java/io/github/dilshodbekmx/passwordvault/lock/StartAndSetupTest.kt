@@ -12,6 +12,7 @@ import io.github.dilshodbekmx.passwordvault.core.model.Entry
 import io.github.dilshodbekmx.passwordvault.core.model.Vault
 import io.github.dilshodbekmx.passwordvault.settings.ClipDelay
 import io.github.dilshodbekmx.passwordvault.settings.LockDelay
+import io.github.dilshodbekmx.passwordvault.testing.lock.FakeRecordFiles
 import io.github.dilshodbekmx.passwordvault.testing.lock.FakeVaultPort
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
@@ -117,11 +118,45 @@ class StartAndSetupTest {
         assertTrue("F14 step 2: the directory and state.rec are made by this unlock", rig.stateOnDisk(VAULT) is RecordRead.Ok)
 
         // F6 with that proof: the PIN is set, and the next lock screen is the pad.
-        assertTrue(rig.manager.setPin(LockRig.digits(LockRig.PIN), unlocked.proof!!))
+        assertEquals(PinSetResult.Set, rig.manager.setPin(LockRig.digits(LockRig.PIN), unlocked.proof!!))
         rig.settle()
         assertEquals(PinStatus.On, rig.status.pin)
         rig.lock()
         assertTrue(rig.screen is LockScreen.Pad)
+    }
+
+    // ---- a new PIN whose record write fails at the directory sync (lock.md F6 step 8; decision 4) -------
+
+    @Test
+    fun setPin_whoseRecordWriteFailsAfterItsRename_mayNotBeSaved_andTheNewPinIsTheOneThatWorks() = runTest {
+        val rig = LockRig(this)
+        val proof = rig.setUp()
+        rig.files.fail(FakeRecordFiles.Op.REPLACE, step = FakeRecordFiles.WriteStep.DIR_SYNC) { it.endsWith("/pin.rec") }
+        assertEquals(PinSetResult.MayNotBeSaved, rig.manager.setPin(LockRig.digits(LockRig.PIN), proof))
+        rig.settle()
+        rig.lock()
+        rig.typePin(LockRig.PIN)
+        assertTrue("the lock went on with the record it read back: the new PIN opens", rig.isUnlocked)
+    }
+
+    @Test
+    fun changePin_whoseRecordWriteFailsAfterItsRename_mayNotBeSaved() = runTest {
+        val rig = LockRig(this)
+        rig.setUpWithPin()
+        // The charge and the right PIN's record are written first; the new PIN's write is the third (as 4.4's
+        // RecordWriteFailureTest arms it).
+        var writes = 0
+        rig.files.onBoundary = { _, at ->
+            if (at.endsWith("/pin.rec: after the directory sync") && ++writes == 2) {
+                rig.files.fail(FakeRecordFiles.Op.REPLACE, step = FakeRecordFiles.WriteStep.DIR_SYNC) { it.endsWith("/pin.rec") }
+            }
+        }
+        // The current PIN is a counted check (lock.md §6.3), which waits for its charge to age: the call runs on its own.
+        val change = backgroundScope.asyncOn { rig.manager.changePin(LockRig.digits(LockRig.PIN), LockRig.digits("368014")) }
+        rig.settle()
+        rig.advance(LockRig.CHARGE_AGE_MS)
+        rig.files.onBoundary = null
+        assertEquals(PinChange.MayNotBeSaved, change.getCompleted())
     }
 
     // ---- createVault (lock.md F1 steps 2 to 6, §10.1) ----------------------------------------------

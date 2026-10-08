@@ -18,6 +18,7 @@ import io.github.dilshodbekmx.passwordvault.core.lock.flow.MpReason
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.Notice
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.OlderPasswordAnswer
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.PinChangeOutcome
+import io.github.dilshodbekmx.passwordvault.core.lock.flow.PinSetOutcome
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.RequestOutcome
 import io.github.dilshodbekmx.passwordvault.core.lock.pin.PinBlocklist
 import io.github.dilshodbekmx.passwordvault.core.model.Vault
@@ -329,7 +330,12 @@ class DefaultLockManager(
 
     override fun pinProblem(pin: ByteArray): PinBlocklist.Reason? = PinBlocklist.reason(pin)
 
-    override suspend fun setPin(pin: ByteArray, proof: MasterProof): Boolean = engine.setPin(pin, proof)
+    override suspend fun setPin(pin: ByteArray, proof: MasterProof): PinSetResult =
+        when (engine.setPin(pin, proof)) {
+            PinSetOutcome.Set -> PinSetResult.Set
+            PinSetOutcome.NotSet -> PinSetResult.NotSet
+            PinSetOutcome.MayNotBeSaved -> PinSetResult.MayNotBeSaved
+        }
 
     override suspend fun changePin(current: ByteArray, new: ByteArray): PinChange =
         when (val outcome = engine.changePin(current, new)) {
@@ -340,6 +346,7 @@ class DefaultLockManager(
             PinChangeOutcome.CannotCheck -> PinChange.CannotCheck
             PinChangeOutcome.SameAsCurrent -> PinChange.SameAsCurrent
             PinChangeOutcome.NotSaved -> PinChange.NotSaved
+            PinChangeOutcome.MayNotBeSaved -> PinChange.MayNotBeSaved
         }
 
     override suspend fun fingerprintOn(proof: MasterProof): FingerprintOnResult =
@@ -350,6 +357,7 @@ class DefaultLockManager(
             FingerprintOnOutcome.NoSecureHardware -> FingerprintOnResult.NoSecureHardware
             FingerprintOnOutcome.Failed -> FingerprintOnResult.Failed
             FingerprintOnOutcome.NotShown -> FingerprintOnResult.NotShown
+            FingerprintOnOutcome.MayNotBeOn -> FingerprintOnResult.MayNotBeOn
         }
 
     override suspend fun fingerprintOff() = engine.fingerprintOff()
@@ -698,6 +706,7 @@ class DefaultLockManager(
             MasterPasswordOutcome.NoMemory -> MpResult.NoMemory
             is MasterPasswordOutcome.OlderPassword -> MpResult.OlderPassword(outcome.changedAtMs, outcome.unfinishedChange)
             MasterPasswordOutcome.TooLate -> MpResult.TooLate
+            MasterPasswordOutcome.NotFinished -> MpResult.NotFinished
         }
 
         fun causeOf(reason: LockReason): LockCause = when (reason) {
