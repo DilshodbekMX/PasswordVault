@@ -257,6 +257,16 @@ class ImporterTest {
         assertEquals(listOf(hidden("x".repeat(100), "c")), longFile.accounts.last().entry.fields)
         assertEquals("[FIELD_NAMES_CUT×1]", longFile.accounts.last().changes.toString())
         assertTrue("$longMs ms", longMs < 5_000)
+
+        // A long header is cleaned as before, every row counted: its control characters, its cut, and
+        // the whole name in front of a value that is too long for a field and goes to the notes.
+        val odd = "\u0001".repeat(300) + " Name " + "y".repeat(150) + "\u0002"
+        val oddFile = file(csv("name,password,\"$odd\"", "a,b,c", "d,e,${"v".repeat(1_001)}"))
+        assertEquals(listOf(visible("Name " + "y".repeat(95), "c")), oddFile.accounts[0].entry.fields)
+        assertEquals("[FIELD_NAMES_CUT×1]", oddFile.accounts[0].changes.toString())
+        assertEquals("Name " + "y".repeat(150) + ": " + "v".repeat(1_001), oddFile.accounts[1].entry.notes)
+        assertEquals("[LONG_FIELDS_MOVED×1]", oddFile.accounts[1].changes.toString())
+        assertEquals(2 * 301, oddFile.removedControls)
         println("a huge header over 10,000 short rows: a million columns read in $wideMs ms, a name of 50,000 characters in $longMs ms")
     }
 

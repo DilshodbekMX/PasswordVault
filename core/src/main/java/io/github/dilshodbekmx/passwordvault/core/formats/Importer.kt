@@ -436,8 +436,9 @@ object Importer {
 
         /**
          * The columns that are extra fields, in order, with the name and the hidden flag each one gives
-         * its fields. Worked out once, not once for every row: a hostile header may be most of the
-         * file, and the time and memory of a read must not grow with the header times the rows.
+         * its fields. Worked out once, not once for every row, and every row's field is named with the
+         * same string: a hostile header may be most of the file, and the time and memory of a read must
+         * not grow with the header times the rows (the cleaner, too, cleans a long name once).
          */
         private val fieldColumns: IntArray
         private val fieldLabels: Array<String>
@@ -460,8 +461,7 @@ object Importer {
                 val label = headers[k].replace("\uFEFF", "").trim()
                 fieldColumns[it] = k++
                 fieldSecret[it] = !HeaderAliases.isHarmless(label)
-                // The cleaner cuts a name to FIELD_NAME_MAX and lists it; no row needs more of it than this.
-                EntryRules.cut(label, LABEL_MAX)
+                label
             }
         }
 
@@ -542,12 +542,6 @@ object Importer {
         }
     }
 
-    /**
-     * As much of a column's header as a row's extra field is named with: twice [EntryRules.FIELD_NAME_MAX],
-     * so that a longer name is still cut by the cleaner and listed ([ImportChange.Kind.FIELD_NAMES_CUT]).
-     */
-    private const val LABEL_MAX = 2 * EntryRules.FIELD_NAME_MAX
-
     private fun isWeb(url: String): Boolean = url.startsWith("https://", ignoreCase = true) || url.startsWith("http://", ignoreCase = true)
 
     private fun hostOf(url: String): String = WebAddress.hostOf(website(url))
@@ -570,6 +564,9 @@ object Importer {
 
     /** U+0085, white space by Unicode's property though not by `Char.isWhitespace`. */
     private const val NEXT_LINE = '\u0085'
+
+    /** A field name longer than this many characters is cleaned once for every row that has it ([Cleaner]). */
+    private const val LONG_NAME = 2 * EntryRules.FIELD_NAME_MAX
 
     private val YES = setOf("1", "true", "yes", "y", "да", "ha", "ҳа")
 
@@ -648,6 +645,36 @@ object Importer {
         /** Text with line breaks (notes, a field's value): line feeds, no other control character. */
         private fun lines(text: String): String =
             TextHygiene.replaceUnpairedSurrogates(TextHygiene.removeControls(text, lineBreaks = true, counter = controls), surrogates)
+
+        /**
+         * A field's name as the model holds it: [name], made by [line] and trimmed; and [cut], that name
+         * cut to [EntryRules.FIELD_NAME_MAX] when it is longer, or null. [controls] and [surrogates] are
+         * what cleaning it removed and replaced.
+         */
+        private class FieldName(val name: String, val cut: String?, val controls: Int, val surrogates: Int)
+
+        /** The long names cleaned so far, by the string they came as: every row of a column has the same one. */
+        private val longNames = java.util.IdentityHashMap<String, FieldName>()
+
+        /**
+         * [raw] as a field's name ([FieldName]), every removal counted in [controls] and [surrogates]. A
+         * long name (a column's header, which every row of the file repeats) is cleaned once and then
+         * counted again for each row: a hostile header costs its length once, not once for every row.
+         */
+        private fun fieldName(raw: String): FieldName {
+            val clean = if (raw.length <= LONG_NAME) cleanName(raw) else longNames.getOrPut(raw) { cleanName(raw) }
+            controls.add(clean.controls)
+            surrogates.add(clean.surrogates)
+            return clean
+        }
+
+        private fun cleanName(raw: String): FieldName {
+            val c = TextHygiene.Counter()
+            val s = TextHygiene.Counter()
+            val name = TextHygiene.replaceUnpairedSurrogates(TextHygiene.removeControls(raw, lineBreaks = false, counter = c), s).trim()
+            val cut = if (EntryRules.length(name) > EntryRules.FIELD_NAME_MAX) EntryRules.cut(name, EntryRules.FIELD_NAME_MAX).trimEnd() else null
+            return FieldName(name, cut, c.count, s.count)
+        }
 
         fun clean(
             raw: Entry,
@@ -788,9 +815,10 @@ object Importer {
             val candidates = ArrayList<CustomField>(raw.size)
             var nameless = 0
             var longValues = 0
-            var longNames = 0
+            var cutNames = 0
             for (f in raw) {
-                var name = line(f.name).trim()
+                val clean = fieldName(f.name)
+                var name = clean.name
                 val value = lines(f.value)
                 if (name.isEmpty()) {
                     if (value.isBlank()) continue
@@ -803,15 +831,15 @@ object Importer {
                     longValues++
                     continue
                 }
-                if (EntryRules.length(name) > EntryRules.FIELD_NAME_MAX) {
-                    name = EntryRules.cut(name, EntryRules.FIELD_NAME_MAX).trimEnd()
-                    longNames++
+                if (clean.cut != null) {
+                    name = clean.cut
+                    cutNames++
                 }
                 candidates.add(if (name == f.name && value == f.value) f else CustomField(name, value, f.secret))
             }
             changes.add(ImportChange.Kind.NAMELESS_FIELDS_MOVED, nameless)
             changes.add(ImportChange.Kind.LONG_FIELDS_MOVED, longValues)
-            changes.add(ImportChange.Kind.FIELD_NAMES_CUT, longNames)
+            changes.add(ImportChange.Kind.FIELD_NAMES_CUT, cutNames)
             if (candidates.size <= EntryRules.FIELDS_MAX) return candidates
             // More than 20: the hidden values stay fields (masked), the visible ones go to the notes first.
             val keep = BooleanArray(candidates.size)
