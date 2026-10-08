@@ -51,6 +51,11 @@ import org.junit.Test
  * (both typings compared before anything is derived, then `AppSettings.writeDefaults`), unlocking
  * under the guard of lock.md §6.8, visits (I11), `lock(reason)`, and the flows it leaves to later
  * packages. The session's tests (T19) are in `APP-T/session/`.
+ *
+ * Since build plan 4.1 the gate is test code, the stand-in lock of the session's tests, and the app's
+ * lock is `DefaultLockManager` (`APP-T/lock/`). These tests stay with the gate as long as it is there:
+ * they keep the stand-in honest, and the skeleton's check counts them among 3.2's
+ * (`tools/emu/checks/3A.sh`, `package_tests`). They go with the gate.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class MasterPasswordGateTest {

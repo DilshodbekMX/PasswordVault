@@ -50,9 +50,11 @@ class RecordingSettings(private val inner: AppSettings, private val log: Mutable
 }
 
 /**
- * The gate as `LockModule` builds it, over an [InMemoryVault], with the fakes of `:testing` and
- * `APP/fake/` for the rest, on the test's scheduler: [clock] moves only when the test advances it,
- * and [settle] runs whatever the events queued.
+ * The master-password gate of build plan 3.2 over an [InMemoryVault], with the fakes of `:testing`
+ * and `APP/fake/` for the rest, on the test's scheduler: [clock] moves only when the test advances
+ * it, and [settle] runs whatever the events queued. Since build plan 4.1 the gate is no longer the
+ * app's lock (`DefaultLockManager` is; its rig is `LockRig`): this rig is kept for the session's
+ * tests (`APP-T/session/SessionRig`), which are package 3.2's and run on it.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class GateRig(val test: TestScope, base: AppSettings = FakeAppSettings()) {

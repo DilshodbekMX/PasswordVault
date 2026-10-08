@@ -27,6 +27,7 @@ import io.github.dilshodbekmx.passwordvault.core.lock.record.StateRecord
 import io.github.dilshodbekmx.passwordvault.core.model.Vault
 import io.github.dilshodbekmx.passwordvault.core.util.Clock
 import io.github.dilshodbekmx.passwordvault.core.util.RandomSource
+import io.github.dilshodbekmx.passwordvault.lock.gate.GateRig
 import io.github.dilshodbekmx.passwordvault.settings.AppSettings
 import java.io.IOException
 import kotlinx.coroutines.CancellationException
@@ -43,10 +44,20 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
 /**
- * The lock of the walking skeleton (build plan 3.2): a [LockManager] that knows only three states,
- * "no vault" (Welcome), "locked: master password" and "unlocked", until `DefaultLockManager` over
- * `LockEngine` (build plan 4.1) replaces it and removes this file. It has no PIN, no fingerprint,
- * no lock records and no vault put aside; the flows of those answer that nothing was done.
+ * The lock of the walking skeleton (build plan 3.2), which `DefaultLockManager` over `LockEngine`
+ * replaced in the app (build plan 4.1): a [LockManager] that knows only three states, "no vault"
+ * (Welcome), "locked: master password" and "unlocked". It has no PIN, no fingerprint, no lock records
+ * and no vault put aside; the flows of those answer that nothing was done.
+ *
+ * **It is test code now.** Package 4.1 took it out of the app and kept it here, in the test source
+ * set, only as the lock that the session's tests run on (`APP-T/session/`: `SessionRig`,
+ * `AutoLockTest`, `LockOrderTest`, with [GateRig] and `InMemoryVault`). Those tests are package
+ * 3.2's and name this class and its package; they assert the exact order of the calls a lock makes
+ * on a vault that logs them, which a lock that does only this much keeps short. It stays in the
+ * package `…passwordvault.lock`, where they import it from. The app's own lock is tested in
+ * `APP-T/lock/` on `DefaultLockManager`. Once the session's tests run on that manager, this file,
+ * `GateRig`, `InMemoryVault` and `MasterPasswordGateTest` can go (and the skeleton's check,
+ * `tools/emu/checks/3A.sh`, stops counting that test among 3.2's).
  *
  * - **Start** (lock.md §5.11 step 2): [state] is [LockUiState.Starting] until [VaultPort.vaults]
  *   has answered, off the main thread: [LockUiState.NoVault] for an empty phone (§13.1 row 1),
@@ -475,10 +486,10 @@ class MasterPasswordGate(
     /**
      * The proof of a master password that [VaultPort.openWithPassword] or [VaultPort.checkPassword]
      * has just found right ([bytes], copied), for the vault [id]. `MasterProof`'s constructor is
-     * `internal` to :core, and `LockEngine`, which makes the real proofs, comes only with build plan
-     * 3.10 and 4.1; until then this gate makes them with `MasterProof.forFakes`, but never without a
-     * right master password behind them. Build check R-15 lists this file for that reason, until 4.1
-     * removes it. Each one is dropped at the next lock or `ON_STOP` (lock.md §5.8).
+     * `internal` to :core, and only `LockEngine` makes the real proofs; this stand-in makes its own
+     * with `MasterProof.forFakes`, as test code may (build check R-15 does not scan the test source
+     * sets), but never without a right master password behind them. Each one is dropped at the next
+     * lock or `ON_STOP` (lock.md §5.8).
      */
     private fun proofOf(bytes: ByteArray, id: String): MasterProof = MasterProof.forFakes(bytes, id).also { proofs += it }
 
