@@ -141,13 +141,18 @@ internal class PasswordFlows(private val core: LockCore) {
      * - **Step 8** follows step 6 at once, before the fingerprint prompt, which can stay open for as
      *   long as the user likes: the change is proven, so `mp_change = null` (§5.6: "set exactly while
      *   the new copy is unproven", T15), practice step 0 and `last_ok` now, the counters and the PIN
-     *   guard at zero. Every proof made before goes, and `LockState.Unlocked` holds the proof of the
-     *   new master password, for "Choose a PIN" (step 3) and "Back up now" (step 9).
+     *   guard at zero, and no new master password pending (F11 step 9). Every proof made before goes,
+     *   and `LockState.Unlocked` holds the proof of the new master password, for "Choose a PIN" (step
+     *   3) and "Back up now" (step 9).
      * - **Step 7**, if a fingerprint slot exists and fingerprint can be used now (§13.1: a slot that
      *   cannot be used now is left alone): the prompt "Keep fingerprint unlock" on the existing key,
      *   with no mutex held; then `fingerprint.rec` keeps the wrap for the key before, drops any other
      *   and gains the wrap of VK2. "Not now", a closed prompt or a TEMPORARY error: the slot keeps
      *   only its old wrap. GONE: the slot is removed, as in F15a or F15b.
+     *
+     * [ChangeOutcome.Changed] says of each shortcut whether its record with the wrap for the new key
+     * is on disk. A record that could not be written loses that wrap again: the shortcut is then not
+     * kept, in this process as after the next start.
      *
      * A lock or `ON_STOP` before step 6 discards the flow, and nothing was changed (§10.1). From
      * step 6 on the change runs to its end, as a save does.
@@ -236,17 +241,26 @@ internal class PasswordFlows(private val core: LockCore) {
                     return nothing
                 }
                 VaultWrite.Unclear -> {
-                    unclearChange(open)
+                    unclearChange(lock, open)
                     return ChangeTurn.Ended(ChangeOutcome.Unclear)
                 }
                 is VaultWrite.Done -> {
                     // Step 8: the new master password has just been typed twice and has opened the
                     // new copy from disk, so it brings what every correct master password brings
-                    // (§6.8 step 5), with practice at step 0 (§8.3).
+                    // (§6.8 step 5), with practice at step 0 (§8.3). A new master password that is
+                    // still pending goes with it (F11 step 9): its wrap holds the key from before
+                    // this change, and could never finish. The screens ask for the current master
+                    // password in this flow (step 1), which cancels it there already; this is for a
+                    // proof that is older than the request.
+                    val pendingCancelled = lock.state?.pendingMp != null
                     if (lock.master.counts.failures != 0) lock.master.attempt(at) { MpCheck.RIGHT }
                     val practice = PracticeSchedule.newMasterPassword(core.clock.wallMs())
                     lock.master.update {
-                        it.copy(practice = StateRecord.Practice(practice.lastOkMs, practice.step, practice.snoozedUntilMs), mpChange = null)
+                        it.copy(
+                            practice = StateRecord.Practice(practice.lastOkMs, practice.step, practice.snoozedUntilMs),
+                            mpChange = null,
+                            pendingMp = null,
+                        )
                     }
                     lock.pin.masterPasswordCorrect()
                     core.dropProofs() // every proof made before holds the old master password
@@ -254,6 +268,10 @@ internal class PasswordFlows(private val core: LockCore) {
                     core.rescan()
                     (core.state.value as? LockState.Unlocked)?.let { now ->
                         core.state.value = now.copy(proof = if (at.hasEnded) null else core.newProof(againBytes, write.vaultId))
+                    }
+                    if (pendingCancelled) {
+                        removePendingNotices()
+                        core.addNotice { Notice.PendingCancelled(it) }
                     }
                     core.publishSummary()
                     return ChangeTurn.Done(Changed(lock, vkId1, vkId2, pinKept))
@@ -267,9 +285,12 @@ internal class PasswordFlows(private val core: LockCore) {
     /**
      * F8 step 5 for `pin.rec`: the wrap of VK2 for `vk_id2` under the `KEK_pin` that the right PIN
      * gave, with a fresh nonce, tested as F6 step 6 tests a new wrap (it opens under the same key and
-     * gives VK2), then written with every wrap but the current key's dropped (§5.4). Best effort, as
-     * `PinGuard.changeWraps`: true when the slot holds the new wrap in the record the lock means to
-     * have, which the next write stores if this one failed.
+     * gives VK2), then written with every wrap but the current key's dropped (§5.4).
+     *
+     * True when that record is on disk: the PIN is kept. When the write fails the PIN is not kept,
+     * and the wrap for the new key is taken off the record again, so that what the flow reports
+     * ("Choose a PIN" after step 6) is what a later start finds, and not a PIN that works until the
+     * process ends.
      */
     private fun keepPin(lock: VaultLock, kek: ByteArray, vkId1: String, vkId2: String, vk2: ByteArray): Boolean {
         val slot = lock.pin.record?.slot ?: return false
@@ -282,8 +303,9 @@ internal class PasswordFlows(private val core: LockCore) {
         val good = back != null && Bytes.equal(back, vk2)
         Bytes.wipe(back)
         if (!good) return false
-        lock.pin.changeWraps(vkId1, wrap)
-        return lock.pin.record?.slot?.wraps?.any { it.vkId == vkId2 } == true
+        if (lock.pin.changeWraps(vkId1, wrap)) return true
+        lock.pin.keepWrapsFor(setOf(vkId1))
+        return false
     }
 
     /**
@@ -293,7 +315,13 @@ internal class PasswordFlows(private val core: LockCore) {
      * port opens the new copy again, so that later saves do not bury it under the old key); when the
      * port has ended its session instead, the app is locked.
      */
-    private suspend fun unclearChange(open: OpenVault) {
+    private suspend fun unclearChange(lock: VaultLock, open: OpenVault) {
+        // A pending new master password wraps the key from before this change; whoever changed the
+        // master password knew the current one, which cancels it (F11 step 9). The mark stays.
+        if (lock.state?.pendingMp != null) {
+            lock.master.update { it.copy(pendingMp = null) }
+            removePendingNotices()
+        }
         core.dropProofs()
         core.rescan()
         val vkId = openKeyId()
@@ -345,8 +373,12 @@ internal class PasswordFlows(private val core: LockCore) {
         if (core.outstandingLaunch != 0) return null // §9.2 rule 4: one prompt at a time
         val slot = changed.lock.fingerprint.slot ?: return null // "Fingerprint, if a slot exists"
         // §13.1: while the phone says that fingerprint cannot be used, the key is not touched and the
-        // slot is left alone; Settings then shows "Fingerprint unlock: turn on again".
-        if (!KeystoreErrors.mayProbe(core.askAvailability())) return null
+        // slot is left alone; Settings shows the phone's reason (§9.4), and "Fingerprint unlock: turn
+        // on again" once fingerprint can be used again.
+        if (!KeystoreErrors.mayProbe(core.askAvailability())) {
+            core.publishSummary()
+            return null
+        }
         val vk = try {
             core.vault.withVaultKey { vkId, vk -> if (vkId == changed.vkId2 && vk.size == VK_SIZE) vk.copyOf() else null }
         } catch (e: RuntimeException) {
@@ -368,7 +400,12 @@ internal class PasswordFlows(private val core: LockCore) {
             when (result) {
                 is FingerprintResult.Ok -> {
                     if (result.bytes.size != RecordCodec.CT_LENGTH || result.nonce.size != RecordCodec.NONCE_LENGTH) return false
-                    keeper.changeWraps(changed.vkId1, KeyWrap(changed.vkId2, result.nonce.copyOf(), result.bytes.copyOf()))
+                    // Kept means on disk, as for the PIN: a wrap whose record could not be written is
+                    // taken off again, and Settings shows "Fingerprint unlock: turn on again". (A
+                    // slot that had no wrap for the key before the change has nothing to go back
+                    // to: it keeps the new wrap in memory, and the next write stores it.)
+                    val written = keeper.changeWraps(changed.vkId1, KeyWrap(changed.vkId2, result.nonce.copyOf(), result.bytes.copyOf()))
+                    if (!written && keeper.wrapFor(changed.vkId1) != null) keeper.keepWrapsFor(setOf(changed.vkId1))
                 }
                 is FingerprintResult.Gone -> { // the key was invalidated or is missing: F15a, F15b
                     keeper.removeSlot(
