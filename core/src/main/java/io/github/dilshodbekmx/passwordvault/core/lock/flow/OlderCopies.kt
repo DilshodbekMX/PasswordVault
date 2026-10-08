@@ -21,7 +21,10 @@ package io.github.dilshodbekmx.passwordvault.core.lock.flow
  * **What the core gives.** `core.visit` and its `olderPassword` (the copy that the old password
  * opens: `PasswordOpen.OlderPassword.generation`); `core.vault.putNewerAside`; `core.lockOf(vaultId)`
  * for `mp_change`, `max_generation`, `replaced` and the two slots; `core.vaults.showAside` for the
- * old vault's own lock screen; `core.unlock.completeUnlock`.
+ * old vault's own lock screen; `core.unlock.completeUnlock`. For the question of F16b step 3:
+ * `LockVisit.olderSet` (an `OlderSetQuestion`), which makes the lock screen show
+ * `LockScreen.OpenOlderSet` until [answer] takes it off, and whose bytes `LockCore.closeVisit` zeroes
+ * when the visit ends; and `core.vault.dropAside` for the vault that opened in place.
  */
 internal class OlderCopies(private val core: LockCore) {
 
@@ -31,6 +34,12 @@ internal class OlderCopies(private val core: LockCore) {
      * `mp_change` is set: storage puts the generations above the copy that opened aside
      * (`VaultPort.putNewerAside`), the old master password is asked for again, and the unlock that
      * follows sets `mp_change = null` and `max_generation` to that copy (steps 2 and 3).
+     *
+     * And the two answers on "Open the older set instead?" (`LockScreen.OpenOlderSet`, F16b after a
+     * replacement, step 3), only while `LockVisit.olderSet` is set. OPEN_OLDER_SET: steps 4 to 6 of
+     * [asideFromBeforeOpened]. KEEP_NEWER_SET ("Cancel"): nothing changes; the question is taken off
+     * the visit, its bytes are wiped and the vault that opened in place is dropped
+     * (`VaultPort.dropAside`). An answer that does not belong to the screen shown does nothing.
      */
     @Suppress("UNUSED_PARAMETER")
     suspend fun answer(answer: OlderPasswordAnswer): Unit = notYet("F16b: an older master password")
@@ -49,6 +58,12 @@ internal class OlderCopies(private val core: LockCore) {
      * master password (F16b steps 3 to 6): the question first; then the swap of F17 step 4, the old
      * vault's records (both slots removed if start-up has not, `pending_mp = null`,
      * `replaced = null`), and "Choose a new PIN. Someone else may know the old one."
+     *
+     * The question is a screen of its own, and its answer comes in a later call ([answer]): this
+     * call puts an `OlderSetQuestion` on the visit (`LockVisit.olderSet`, with [opened] and a copy
+     * of [proofBytes]), shows the lock screen again, which is then `LockScreen.OpenOlderSet`, and
+     * returns null: the app stays locked until the answer. If the visit ends before an answer, the
+     * vault that opened in place is dropped (I11).
      *
      * @return the proof of [proofBytes] once the old vault is the current one, else null.
      */

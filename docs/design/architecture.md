@@ -413,6 +413,10 @@ sealed interface LockScreen {                          // lock.md §13.2; declar
                                                        // under the reason (lock.md §13.3, ux.md §5.10)
     class OlderPassword(val changedAtMs: Long, val unfinishedChange: Boolean, override val aside: AsideLine? = null) : LockScreen
                                                        // F16b, the change that did or did not finish
+    class OpenOlderSet(val atMs: Long, override val aside: AsideLine?) : LockScreen
+                                                       // F16b step 3, after a replacement: that vault's master password has just opened it in
+                                                       // place, and "Open the older set instead?" is asked before the two vaults change
+                                                       // places; atMs: when the master password was replaced
 }
 // The parts of LockScreen and Notice, declared in core.lock.flow (LockScreen.kt, Notice.kt). They hold facts and numbers, never a
 // sentence: the screens pick the texts of lock.md §13.3 and §13.4 from them, so that the language can change under them.
@@ -453,7 +457,9 @@ interface LockManager {
                                                        // UseMasterPassword, UseFingerprint, NotNow, CantRemember, OpenForgotSheet, CloseSheet,
                                                        // OpenAside(vaultId), StartEmpty, RestoreFromFile, OlderPasswordAnswer(choice: OlderPasswordChoice),
                                                        // NoticeAnswered(id, answer), CancelPending, FinishPending, ItWasntMe, GoBack;
-                                                       // enum class OlderPasswordChoice { TRY_AGAIN, OPEN_FROM_BEFORE, OK }
+                                                       // enum class OlderPasswordChoice { TRY_AGAIN, OPEN_FROM_BEFORE, OK,
+                                                       //   OPEN_OLDER_SET, KEEP_NEWER_SET }: the last two are the buttons of
+                                                       //   LockScreen.OpenOlderSet, "Open my passwords from 7 Oct" and "Cancel"
     suspend fun lock(reason: LockReason)               // called only by AutoLock, after the draft flush of 5.5; never writes vault data
                                                        // enum class LockReason { LEFT, SCREEN_OFF, NO_TOUCH, EXTERNAL_TIMEOUT, LOCK_NOW }
     suspend fun submitMasterPassword(chars: CharArray, purpose: MpPurpose): MpResult        // the lock screen and every prompt; the guard of lock.md §6.8

@@ -371,6 +371,7 @@ class EntryPolicyTest {
             is LockScreen.FingerprintOnly -> fingerprintOnlySeen += screen.pinReason
             is LockScreen.MasterPassword -> reasonsSeen += screen.reason
             is LockScreen.OlderPassword -> throw AssertionError("the policy never chooses F16b's screen")
+            is LockScreen.OpenOlderSet -> throw AssertionError("the policy never chooses F16b's question")
         }
     }
 
