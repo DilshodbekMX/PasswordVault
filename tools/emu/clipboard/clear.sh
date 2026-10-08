@@ -246,7 +246,13 @@ clear_on_time() {
         [ "$CLIP_NOW" -lt $((DEADLINE + late)) ] || { pv_log "the app's clip is still there $((CLIP_NOW - DEADLINE)) ms after its time"; return 1; }
         pv_sleep 0.1
     done
-    note "the clip was gone at the reading $((CLIP_NOW - DEADLINE)) ms after its planned clear"
+    if [ $DEADLINE_KNOWN = 1 ]; then
+        note "the clip was gone at the reading $((CLIP_NOW - DEADLINE)) ms after its planned clear"
+    else
+        # Without run-as the planned clear is the first reading that saw the clip plus the delay: a
+        # few hundred ms after the app's own, so a clear on time can read as slightly early here.
+        note "the clip was gone at the reading $((CLIP_NOW - DEADLINE)) ms after its planned clear (estimated from the first reading of the clip)"
+    fi
     cleared
 }
 
