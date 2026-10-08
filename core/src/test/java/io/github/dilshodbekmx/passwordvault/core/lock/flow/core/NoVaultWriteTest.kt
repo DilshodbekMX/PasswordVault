@@ -49,7 +49,7 @@ class NoVaultWriteTest {
     @Test
     fun t17_aSpyVaultPortSeesNoWrite_in1000RandomSequencesOfLockEvents() {
         var events = 0
-        var unlocks = 0
+        val unlocks = IntArray(Way.entries.size)
         for (seed in 1L..1_000L) {
             val run = Sequence(seed)
             try {
@@ -58,17 +58,29 @@ class NoVaultWriteTest {
                 throw AssertionError("seed $seed failed after: " + run.log.joinToString(" > "), e)
             }
             events += run.log.size
-            unlocks += run.unlocks
+            for (way in Way.entries) unlocks[way.ordinal] += run.unlocks[way.ordinal]
         }
-        // The sequences are not idle: on average each opens the vault several times.
-        assertTrue("only $unlocks unlocks in $events events", unlocks >= 2_000)
+        // The sequences are not idle: each way in opens the vault many times. With these seeds the
+        // vault is opened 734 times with the PIN, 1,712 times with the master password and 101 times
+        // with the fingerprint, in 46,246 events. Most tries that do not open it meet a practice screen,
+        // which only the master password passes here ("Not now" is F10, package 3.13, and not a lock
+        // event of this test), or a screen that does not take that way in (a PIN typed while the
+        // master-password field shows, and the other way round). The floors are about 70 % of that.
+        val counts = Way.entries.joinToString { "${it.name.lowercase()} ${unlocks[it.ordinal]}" }
+        assertTrue("unlocks: $counts, in $events events", unlocks[Way.PIN.ordinal] >= 500)
+        assertTrue("unlocks: $counts, in $events events", unlocks[Way.MASTER_PASSWORD.ordinal] >= 1_200)
+        assertTrue("unlocks: $counts, in $events events", unlocks[Way.FINGERPRINT.ordinal] >= 70)
     }
+
+    /** How the event that opened the vault went in. */
+    private enum class Way { PIN, MASTER_PASSWORD, FINGERPRINT, OTHER }
 
     private class Sequence(seed: Long) {
         private val random = Random(seed)
         private val f = LockFixture(seed = seed)
         val log = ArrayList<String>()
-        var unlocks = 0
+        val unlocks = IntArray(Way.entries.size)
+        private var way = Way.OTHER
         private lateinit var filesBefore: String
         private var clockBudgetMs = 18 * 3_600_000L // a pending master password of this test never becomes ready (F11 is not a lock event here)
 
@@ -79,8 +91,9 @@ class NoVaultWriteTest {
             if (random.nextInt(10) != 0) comeToFront()
             repeat(30 + random.nextInt(30)) {
                 val wasOpen = f.state is LockState.Unlocked
+                way = Way.OTHER
                 event()
-                if (!wasOpen && f.state is LockState.Unlocked) unlocks++
+                if (!wasOpen && f.state is LockState.Unlocked) unlocks[way.ordinal]++
                 assertEquals("a write of vault data", emptyList<String>(), f.port.writes)
             }
             assertEquals(emptyList<String>(), f.port.writingCalls)
@@ -218,6 +231,7 @@ class NoVaultWriteTest {
             // Half of the time the user goes back to the pad first, when the screen offers that.
             if (random.nextBoolean()) usePin()
             note(what)
+            way = Way.PIN
             f.type(digits)
         }
 
@@ -228,6 +242,7 @@ class NoVaultWriteTest {
                 await { f.engine.useMasterPassword() }
             }
             note(what)
+            way = Way.MASTER_PASSWORD
             val outcome = f.unlockWith(password)
             if (outcome is MasterPasswordOutcome.Wait && random.nextBoolean()) { // the user waits the 30 seconds and types it again
                 val ms = (outcome.untilElapsedMs - f.clock.elapsedMs()).coerceIn(0, clockBudgetMs)
@@ -256,6 +271,7 @@ class NoVaultWriteTest {
             }
             note((if (auto) "prompt by itself" else "fingerprint key") + (prompt?.let { " ($it)" } ?: ""))
             if (prompt != null) f.keys.scriptPrompt(prompt)
+            way = Way.FINGERPRINT
             if (auto) await { f.engine.promptIfDue() } else await { f.engine.useFingerprint() }
         }
 

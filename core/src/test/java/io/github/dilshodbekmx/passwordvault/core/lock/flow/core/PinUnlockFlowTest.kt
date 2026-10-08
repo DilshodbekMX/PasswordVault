@@ -168,6 +168,34 @@ class PinUnlockFlowTest {
     }
 
     @Test
+    fun f2_thePadStaysWhileAPinIsTypedAndChecked_althoughTimeAloneWouldNowChooseAnotherScreen() {
+        withPin()
+        f.type(PIN.take(5))
+        // The clock goes back more than an hour before the last correct master password: practice is
+        // due at once (§8.3). The pad stays while the entry is typed, also through a refresh, and the
+        // sixth digit is checked as typed. (Before, the screen was decided again at each digit, and the
+        // check of the sixth was handed six zero bytes.)
+        f.clock.jumpWall(-2 * 3_600_000L)
+        await { f.engine.refresh() }
+        assertEquals(LockScreen.Pad(digits = 5, status = null, fingerprintKey = false, opening = false, aside = null), f.screen)
+        f.type(PIN.takeLast(1))
+        assertTrue(f.state is LockState.Unlocked)
+        assertEquals(1, f.keys.hmacCalls.size)
+        assertEquals(PinRecord.Guard(charged = false, row = 0, total = 0), f.pinRecord().guard)
+
+        // The next visit is decided afresh: practice is due.
+        f.lock()
+        assertEquals(MpReason.PracticeDue, f.field.reason)
+
+        // Without digits typed, a refresh decides again, as it must for a wait that is over.
+        val g = LockFixture()
+        withPin(fixture = g)
+        g.clock.jumpWall(-2 * 3_600_000L)
+        await { g.engine.refresh() }
+        assertEquals(MpReason.PracticeDue, g.field.reason)
+    }
+
+    @Test
     fun f2_keysPressedWhileThePinIsCheckedAreDropped() {
         val clock = FakeClock(elapsedMs = 3_600_000L, autoAdvance = false)
         val g = LockFixture(clock)

@@ -117,14 +117,20 @@ class CrashInjectionTest {
     private fun vaultFiles(f: LockFixture): String =
         (listOfNotNull(f.port.current) + f.port.asideVaults).joinToString("\n") { it.vaultId + (it.putAsideAtMs ?: "") + it.generations }
 
-    /** For every record on disk that names a key, that key is still in the Keystore. */
-    private fun assertNoNamedKeyWasDeleted(f: LockFixture, where: String) {
-        for (dir in f.files.log.asSequence().map { it }.toList().let { listOf(VAULT, OTHER_VAULT, THIRD_VAULT) }) {
+    /**
+     * For every record on disk that names a key, that key is still in the Keystore; except the keys in
+     * [removing], those of slots whose removal was under way (lock.md §5.7: a key whose slot is removed
+     * is deleted at once, and if the record write is then lost the next start removes the slot again).
+     */
+    private fun assertNoNamedKeyWasDeleted(f: LockFixture, where: String, removing: Set<String> = emptySet()) {
+        for (dir in listOf(VAULT, OTHER_VAULT, THIRD_VAULT)) {
             (f.pinOnDisk(dir) as? RecordRead.Ok)?.record?.slot?.let { slot ->
-                assertTrue("$where: pin.rec of $dir names a key that was deleted", PinWrap.alias(slot.id) in f.keys.aliases)
+                val alias = PinWrap.alias(slot.id)
+                assertTrue("$where: pin.rec of $dir names a key that was deleted", alias in f.keys.aliases || alias in removing)
             }
             (f.fingerprintOnDisk(dir) as? RecordRead.Ok)?.record?.slot?.let { slot ->
-                assertTrue("$where: fingerprint.rec of $dir names a key that was deleted", RecordCodec.FINGERPRINT_ALIAS_PREFIX + slot.id in f.keys.aliases)
+                val alias = RecordCodec.FINGERPRINT_ALIAS_PREFIX + slot.id
+                assertTrue("$where: fingerprint.rec of $dir names a key that was deleted", alias in f.keys.aliases || alias in removing)
             }
         }
     }
@@ -154,14 +160,20 @@ class CrashInjectionTest {
         return F5(f, pin, finger, "")
     }
 
-    /** F5 steps 1 to 4: the fifth wrong PIN in a row, the unlock that follows, its notices, and a lock. */
+    /**
+     * F5 steps 1 to 4: the fifth wrong PIN in a row turns the PIN off and the fingerprint-only screen
+     * shows (§6.5 step 3); the user opens the app with the fingerprint, or taps "Use master password"
+     * and types it; the notices are answered; the app is locked again.
+     */
     private fun f5Script(f: LockFixture, byFingerprint: Boolean) {
         f.startInFront()
         f.type(WRONG_PIN)
+        assertTrue("the fingerprint-only screen after the limit: ${f.state}", f.screen is LockScreen.FingerprintOnly)
         if (byFingerprint) {
             await { f.engine.promptIfDue() }
         } else {
-            f.unlockWith(PASSWORD)
+            await { f.engine.useMasterPassword() }
+            assertTrue(f.unlockWith(PASSWORD) is MasterPasswordOutcome.Right)
         }
         for (notice in (f.state as LockState.Unlocked).notices) await { f.engine.answerNotice(notice.id, NoticeAnswer.OK) }
         f.lock()
@@ -188,8 +200,10 @@ class CrashInjectionTest {
             assertEquals(where, PinRecord.OffReason.LIMIT, record.off?.reason)
             assertFalse("$where: the key survived the limit", PinWrap.alias(phone.pin.id) in f.keys.aliases)
         }
-        // The slot is gone exactly when a limit is reached (I6), and its key with it.
-        assertEquals(where, PinGuard.atLimit(record.guard), record.slot == null)
+        // The slot is gone exactly when the PIN was turned off at a limit (I6), and its key with it. A
+        // master password typed afterwards returns the counts to zero; the slot stays gone (§6.4).
+        assertEquals(where, record.off?.reason == PinRecord.OffReason.LIMIT, record.slot == null)
+        if (record.slot != null) assertFalse("$where: a slot at a limit", PinGuard.atLimit(record.guard))
         assertEquals(where, record.slot != null, PinWrap.alias(phone.pin.id) in f.keys.aliases)
         // I5: the counts never went down, unless the master password was typed.
         assertTrue("$where: row ${record.guard.row}", record.guard.row in 0..5 && record.guard.total in 0..10)
@@ -217,9 +231,13 @@ class CrashInjectionTest {
         f5Script(whole.f, byFingerprint)
         val fileBoundaries = whole.f.files.boundaries
         val portBoundaries = whole.f.port.boundaries
-        assertTrue("the script writes records: $fileBoundaries boundaries", fileBoundaries >= 16)
+        // Uninterrupted, the script deletes the stale temporary files (2 boundaries) and writes pin.rec
+        // three times at least: the charge, the limit, and the notice answered (4 boundaries each); the
+        // master password adds the writes of its guard.
+        assertTrue("the script writes records: $fileBoundaries boundaries", fileBoundaries >= 14)
         assertTrue("the script asks storage: $portBoundaries boundaries", portBoundaries >= 6)
         assertNull(whole.f.pinRecord().slot) // uninterrupted, it ends with the PIN turned off
+        assertEquals(listOf(PinRecord.OffReason.LIMIT), listOf(whole.f.pinRecord().off?.reason))
 
         for (how in Restart.entries) {
             for (k in 1..fileBoundaries) {
@@ -393,28 +411,72 @@ class CrashInjectionTest {
         }
     }
 
+    /** The keys of one phone of [t14_startUp_theSweepDeletesNoKeyThatARecordNames]: those start-up removes with their slots, the orphans, the rest. */
+    private class Keys(val removing: Set<String>, val orphans: Set<String>, val kept: Set<String>)
+
+    /**
+     * Steps 3, 4 and 5 of one start: a vault put aside whose replacement was carried out loses its two
+     * slots and its pending password (step 3), an orphan key of each kind is swept (step 4), and a
+     * charge found on the current vault reaches the limit (step 5). The current vault's fingerprint
+     * key, which its record names, must stay.
+     */
+    private fun sweepPhone(f: LockFixture): Keys {
+        val vault = f.seedVault()
+        val pin = f.plantPin(vault, row = 4, total = 7, charged = true)
+        val finger = f.plantFingerprint(vault)
+        f.plantState()
+        val old = f.port.seedAside(OTHER_VAULT, bytes("password of $OTHER_VAULT"))
+        val oldPin = f.plantPin(old)
+        val oldFinger = f.plantFingerprint(old)
+        f.plantState(OTHER_VAULT, pendingMp = pending(f, old.newestVkId), replaced = replaced(f, VAULT))
+        val orphanPin = RecordCodec.PIN_ALIAS_PREFIX + "00000000-0000-4000-8000-00000000aaaa"
+        f.keys.putPinKey(orphanPin, ByteArray(32) { 9 })
+        val orphanFinger = RecordCodec.FINGERPRINT_ALIAS_PREFIX + "00000000-0000-4000-8000-00000000bbbb"
+        check(f.keys.fingerprint.create(orphanFinger) == KeyCreate.Ok)
+        f.files.put(f.dirOf(VAULT), "pin.rec.tmp", byteArrayOf(1))
+        return Keys(
+            removing = setOf(PinWrap.alias(pin.id), PinWrap.alias(oldPin.id), RecordCodec.FINGERPRINT_ALIAS_PREFIX + oldFinger.id),
+            orphans = setOf(orphanPin, orphanFinger),
+            kept = setOf(RecordCodec.FINGERPRINT_ALIAS_PREFIX + finger.id),
+        )
+    }
+
     @Test
-    fun t14_startUp_theSweepNeverRunsAheadOfTheRecords() {
-        // A stop anywhere in a start-up that only sweeps: at the stopping point, every key a record names is there.
-        fun setUp(f: LockFixture) {
-            val vault = f.seedVault()
-            f.plantPin(vault)
-            f.plantFingerprint(vault)
-            f.plantState()
-            f.keys.putPinKey(RecordCodec.PIN_ALIAS_PREFIX + "00000000-0000-4000-8000-00000000aaaa", ByteArray(32) { 9 })
-            f.files.put(f.dirOf(VAULT), "pin.rec.tmp", byteArrayOf(1))
-        }
+    fun t14_startUp_theSweepDeletesNoKeyThatARecordNames() {
         val whole = phone()
-        setUp(whole)
+        val keys = sweepPhone(whole)
         await { whole.engine.start() }
-        val boundaries = whole.files.boundaries
-        assertEquals(2, whole.keys.aliases.size)
-        for (k in 1..boundaries) {
-            val f = phone()
-            setUp(f)
-            f.files.stopAt(k)
-            assertTrue(untilStopped { await { f.engine.start() } })
-            assertNoNamedKeyWasDeleted(f, "record boundary $k")
+        assertEquals(keys.kept, whole.keys.aliases.toSet()) // uninterrupted: the orphans and the removed slots' keys are gone
+        assertEquals(keys.removing + keys.orphans, whole.keys.deleted.toSet())
+        val fileBoundaries = whole.files.boundaries
+        val portBoundaries = whole.port.boundaries
+        assertTrue("start-up writes pin.rec twice, fingerprint.rec and state.rec: $fileBoundaries", fileBoundaries >= 18)
+
+        for (how in Restart.entries) {
+            for (k in 1..fileBoundaries + portBoundaries) {
+                val where = (if (k <= fileBoundaries) "record boundary $k" else "storage boundary ${k - fileBoundaries}") + ", $how"
+                val f = phone()
+                val planted = sweepPhone(f)
+                if (k <= fileBoundaries) f.files.stopAt(k) else f.port.stopAt(k - fileBoundaries)
+                assertTrue("no stop: $where", untilStopped { await { f.engine.start() } })
+                restart(f, how)
+
+                // At the stopping point: a record on disk names no deleted key, other than those whose
+                // slots start-up was removing; the current vault's fingerprint key is there.
+                assertNoNamedKeyWasDeleted(f, where, planted.removing)
+                assertTrue(where, planted.kept.all { it in f.keys.aliases })
+
+                await { f.engine.start() } // the next start runs to its end
+                assertNoNamedKeyWasDeleted(f, "$where, after the next start")
+                assertEquals(where, planted.kept, f.keys.aliases.toSet())
+                assertNull(where, f.pinRecord(OTHER_VAULT).slot)
+                assertNull(where, f.fingerprintRecord(OTHER_VAULT).slot)
+                assertNull(where, f.stateRecord(OTHER_VAULT).pendingMp)
+                assertNotNull(where, f.stateRecord(OTHER_VAULT).replaced)
+                assertEquals(where, PinRecord.OffReason.LIMIT, f.pinRecord().off?.reason)
+                assertEquals(where, emptyList<String>(), f.port.writes)
+                assertEveryVaultOpens(f, where)
+            }
         }
     }
 }

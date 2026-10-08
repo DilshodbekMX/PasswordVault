@@ -364,6 +364,39 @@ class FingerprintFlowTest {
         assertFalse("probe" in watched.asked)
     }
 
+    @Test
+    fun theFingerprintKeyOpensNothingWhereTheScreenDoesNotShowIt_thePracticeScreensAmongThem() {
+        // §8.3: on a practice screen the fingerprint comes only after "Not now", and past its grace not
+        // at all; §9.2 rule 7 and §13.2: only the pad's fingerprint key and the fingerprint-only screen
+        // open a prompt. Practice due within its grace (§13.1 row 4), then past it (row 3).
+        for (lastOkHoursAgo in listOf(36L, 30 * 24L)) {
+            val g = LockFixture()
+            val v = g.seedVault()
+            g.plantPin(v)
+            g.plantFingerprint(v)
+            g.plantState(practice = StateRecord.Practice(g.clock.wallMs() - lastOkHoursAgo * 3_600_000L, 0, null))
+            g.startInFront()
+            assertEquals("$lastOkHoursAgo h", MpReason.PracticeDue, g.field.reason)
+            await { g.engine.useFingerprint() }
+            await { g.engine.promptIfDue() }
+            assertEquals("$lastOkHoursAgo h", emptyList<FakeKeys.PromptCall>(), g.keys.prompts)
+            assertEquals("$lastOkHoursAgo h", MpReason.PracticeDue, g.field.reason)
+            assertNull("$lastOkHoursAgo h", g.port.openVaultId)
+        }
+
+        // The master-password screen the user chose on the pad ("Forgot PIN? Use master password").
+        withFingerprint()
+        await { f.engine.useMasterPassword() }
+        await { f.engine.useFingerprint() }
+        assertEquals(emptyList<FakeKeys.PromptCall>(), f.keys.prompts)
+        assertTrue(f.screen is LockScreen.MasterPassword)
+        // Back on the pad, its fingerprint key opens the prompt.
+        await { f.engine.usePin() }
+        await { f.engine.useFingerprint() }
+        assertEquals(1, f.keys.prompts.size)
+        assertTrue(f.state is LockState.Unlocked)
+    }
+
     // ---- launch numbers (§9.2 rule 8), I11 ---------------------------------------------------------------
 
     @Test

@@ -245,17 +245,43 @@ class MasterPasswordFlowTest {
     }
 
     @Test
-    fun aRightMasterPasswordAndNoCopyThatCanBeUsed_isNeverWrong() {
-        val vault = f.seedVault()
-        f.plantState()
-        f.startInFront()
-        vault.live.first().state = FakeVaultPort.FileState.UNREADABLE // since the screen was drawn
-        vault.save().state = FakeVaultPort.FileState.OK
-        vault.live.first().state = FakeVaultPort.FileState.UNREADABLE
-        assertEquals(MasterPasswordOutcome.TooLate, f.unlockWith(PASSWORD))
-        assertEquals(LockState.Unreadable(CurrentVault.Why.IO, emptyList()), f.state)
-        assertEquals(0, f.stateRecord().mpGuard.failures) // the slot opened: not wrong, not counted
-        assertTrue(f.port.writes.isEmpty())
+    fun aMasterPasswordAndNoCopyThatCanBeUsed_isNeitherRightNorWrong_andChangesNothing() {
+        // Storage says "damaged" (or "newer", "unreadable") when a slot opened and no copy under it can
+        // be read, and also when no slot was left to try: then the password was not checked at all.
+        // Either way the try is given back (§6.8 step 7: wrong only when no slot opened), and nothing
+        // that only a correct master password changes (step 5) is changed: the PIN's counts, the wrong
+        // tries in a row, practice, a pending new master password, the mark of a change.
+        for (case in listOf("no slot left to try, and a wrong password", "a slot opened, and no copy under it can be read")) {
+            val g = LockFixture()
+            val vault = g.seedVault()
+            g.plantPin(vault, row = 2, total = 6)
+            val practice = StateRecord.Practice(g.clock.wallMs() - 3_600_000L, 2, null)
+            val pending = StateRecord.PendingMp(
+                g.clock.wallMs(), Shortcut.PIN, 0L, g.clock.elapsedMs(), vault.newestVkId, ByteArray(16), ByteArray(12), ByteArray(48),
+            )
+            val change = StateRecord.MpChange("00000000-0000-4000-8000-0000000000c1", g.clock.wallMs())
+            g.plantState(practice = practice, mpGuard = StateRecord.MpGuard(3, g.clock.elapsedMs() - 120_000L, 1), mpChange = change, pendingMp = pending)
+            g.startInFront()
+            await { g.engine.useMasterPassword() }
+            val typed = if (case.startsWith("no slot")) {
+                vault.live.first().state = FakeVaultPort.FileState.DAMAGED // since the screen was drawn
+                "not the password"
+            } else {
+                vault.save().state = FakeVaultPort.FileState.UNREADABLE // above the copy whose slot opens
+                PASSWORD
+            }
+
+            assertEquals(case, MasterPasswordOutcome.TooLate, g.unlockWith(typed))
+            assertTrue(case, g.state is LockState.Unreadable)
+            assertNull(case, g.port.openVaultId)
+            assertEquals(case, PinRecord.Guard(charged = false, row = 2, total = 6), g.pinRecord().guard)
+            val after = g.stateRecord()
+            assertEquals(case, StateRecord.MpGuard(3, g.clock.elapsedMs() - 120_000L, 1), after.mpGuard)
+            assertEquals(case, practice, after.practice)
+            assertEquals(case, pending.requestedMs, after.pendingMp?.requestedMs)
+            assertEquals(case, change, after.mpChange)
+            assertTrue(case, g.port.writes.isEmpty())
+        }
     }
 
     @Test

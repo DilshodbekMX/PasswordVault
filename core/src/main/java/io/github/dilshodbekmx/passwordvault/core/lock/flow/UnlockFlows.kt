@@ -63,13 +63,20 @@ internal class UnlockFlows(private val core: LockCore) {
         core.publishSummary()
     }
 
-    /** Holds the mutex: `LockEngine.refresh`. */
+    /**
+     * Holds the mutex: `LockEngine.refresh`. While a PIN is being typed the pad is not decided
+     * again: time alone (practice falling due, a pending password becoming ready) does not take the
+     * pad away under the user's fingers; the next decision comes when the entry ends.
+     */
     fun refresh() {
         core.observeCredits()
         when (core.state.value) {
             LockState.Starting -> return
             is LockState.NoVault, is LockState.Unreadable -> relock() // "Try again"
-            is LockState.Locked -> core.showLockScreen()
+            is LockState.Locked -> {
+                val typing = core.visit?.takeIf { it.count > 0 }
+                if (typing != null) core.showAgain(typing) else core.showLockScreen()
+            }
             is LockState.Unlocked -> core.askAvailability()
         }
         core.publishSummary()
@@ -293,11 +300,16 @@ internal class UnlockFlows(private val core: LockCore) {
         val visit = lockScreenVisit() ?: return null
         if (core.outstandingLaunch != 0) return null // §9.2 rule 4: a second call while a prompt is open is ignored
         val decision = visit.decision ?: return null
+        // Only where the screen shows fingerprint (§9.2 rule 7, §13.2): the pad with its fingerprint
+        // key, or the fingerprint-only screen. Never a master-password screen: on a practice screen
+        // the fingerprint comes only after "Not now" (§8.3), so a fingerprint there would skip the
+        // practice that is due, or required.
+        val shown = (core.state.value as? LockState.Locked)?.screen
+        val offered = (shown is LockScreen.Pad && shown.fingerprintKey) || shown is LockScreen.FingerprintOnly
+        if (!offered || !decision.fingerprintUsable) return null
         if (auto) {
             if (visit.autoPromptDone || !decision.promptOpensItself) return null
             visit.autoPromptDone = true
-        } else if (!decision.fingerprintUsable) {
-            return null
         }
         val target = visit.target
         val vkId = core.newest(target)?.vkId ?: return null
@@ -433,8 +445,12 @@ internal class UnlockFlows(private val core: LockCore) {
                     }
                     is PasswordOpen.OlderPassword -> MpCheck.WRONG // §6.8 step 6: nothing is opened, and the try stays counted
                     PasswordOpen.NoMemory -> MpCheck.NOT_COUNTED
-                    // A slot opened, so the password is right (step 7: "wrong only when no slot opened").
-                    PasswordOpen.Damaged, PasswordOpen.Newer, PasswordOpen.Unreadable -> MpCheck.RIGHT
+                    // No generation can be used. Storage answers so when a slot opened and no copy under
+                    // it could be read, and also when no slot was left to try, and then the password was
+                    // never checked. Either way it is neither right (step 5: "a password slot opened and
+                    // the vault is open") nor wrong (step 7: "wrong only when no slot opened"): the try is
+                    // given back, and nothing that only a correct master password may change is changed.
+                    PasswordOpen.Damaged, PasswordOpen.Newer, PasswordOpen.Unreadable -> MpCheck.NOT_COUNTED
                 }
             }
             visit.opening = false
@@ -463,7 +479,7 @@ internal class UnlockFlows(private val core: LockCore) {
             return when (attempt.check) {
                 MpCheck.RIGHT -> MasterPasswordOutcome.TooLate
                 MpCheck.WRONG -> MasterPasswordOutcome.Wrong
-                MpCheck.NOT_COUNTED -> MasterPasswordOutcome.NoMemory
+                MpCheck.NOT_COUNTED -> if (opened == PasswordOpen.NoMemory) MasterPasswordOutcome.NoMemory else MasterPasswordOutcome.TooLate
             }
         }
         return when (opened) {

@@ -130,8 +130,9 @@ sealed interface MasterPasswordOutcome {
 
     /**
      * Nothing opens: the visit or prompt that asked has ended, although the password may have been
-     * right and was counted as usual (§6.8 step 8, I11); or there was nothing to check against;
-     * or the password was right and no generation could be used ([LockEngine.state] then says so).
+     * right and was counted as usual (§6.8 step 8, I11); or there was nothing to check against; or
+     * no generation of the vault could be used, which counts neither as right nor as wrong
+     * ([LockEngine.state] then says "Your passwords can't be opened").
      */
     data object TooLate : MasterPasswordOutcome
 }
@@ -421,7 +422,8 @@ class LockEngine(
 
     /**
      * Brings what depends on time and on the phone up to date. Locked: the lock screen is decided
-     * again (a wait that is over, a new master password that became ready). "Your passwords can't be
+     * again (a wait that is over, a new master password that became ready), except while a PIN is
+     * being typed, when the pad stays as it is until the entry ends. "Your passwords can't be
      * opened" or Welcome: the vaults are listed again ("Try again"). Unlocked: `canAuthenticate` is
      * asked again and the summary published, for Settings › App lock (§9.4) and the banners
      * (§13.4). The credits of §6.9 are observed in every case.
