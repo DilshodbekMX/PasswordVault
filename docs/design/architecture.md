@@ -1011,6 +1011,7 @@ Order: lock mutex, then vault mutex, then KDF gate. The repository never calls t
 - Every change to the vault is one call of `VaultRepository.edit` with a pure function from `core.model.VaultEdits`. A screen never holds a mutable entry.
 - The top-level state (setup, locked, unlocked) is `LockManager.state`. `NavState` shows the matching back stack and keeps the unlocked one, as ids, while the app is locked (ux.md §4). A ViewModel that holds account data or a secret drops it itself on `VaultState.Locked`, because after a lock in the background its screen leaves only when the activity starts again (5.5 step 5).
 - After a rotation the screen asks for the keyboard again on the field that had focus, because Android 17 no longer restores it [V-P7].
+- When a focused field leaves the composition (the lock screen at an unlock, a form that closes), Compose clears the activity view's focus, and Android 7 and 8 then hand the focus to the window's first focusable view even in touch mode (Android 9 and later only outside it, after a key); Compose passes that on to its first focusable node, a text field that then opens the keyboard. A screen whose first focusable node is a text field that must not take the focus by itself (the list's search field, ux.md §5.11) refuses, in touch mode, every focus that arrives with a direction: only a request without one (a tap, TalkBack, `requestFocus`) focuses it. Keyboard navigation is not affected.
 
 ### 5.5 What "lock" does, in order
 
