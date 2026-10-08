@@ -604,7 +604,7 @@ Behaviour:
 
 **States**:
 - **Empty vault**: the text "No accounts yet" and "Add your first account and its password, or bring your passwords from Chrome." Buttons "Add account" and `OutlinedButton` "Import from Google Password Manager".
-- **No search results** (after the layout retry): 'No accounts match "gmal".' and `TextButton` 'Add "gmal" as a new account', which opens Add with the title filled in.
+- **No search results** (after the layout retry): 'No accounts match "gmal".' and `TextButton` 'Add "gmal" as a new account', which opens Add with the title filled in. The name is where that form starts, not a change: Close or Back with nothing else typed asks nothing and keeps no draft.
 - **Many entries**: tested with 5,000; stable keys; no images; frame time within 16 ms on a mid-range phone.
 - **Long content**: titles wrap to 2 lines, then end with "…"; usernames take 1 line.
 - **Error**: a failed save shows the snackbar "Couldn't save. Your phone's storage may be full." with "Try again"; the screen keeps the user's data.

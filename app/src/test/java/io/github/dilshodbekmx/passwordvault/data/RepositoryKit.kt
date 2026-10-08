@@ -350,7 +350,6 @@ internal class Phone(
             clock = clock,
             settings = { settings },
             texts = TestTexts,
-            headers = GenerationHeaders(files, vaultsDir),
             scope = scope,
             dispatchers = AppDispatchers.single(dispatcher),
         )
@@ -362,7 +361,8 @@ internal class Phone(
     /** The names of [dir], sorted; empty when it does not exist. */
     fun names(dir: String): List<String> = (files.list(dir) ?: emptyList()).sorted()
 
-    fun pathOf(generation: Long, dir: String = liveDir): String = "$dir/" + GenerationHeaders.fileName(generation)
+    /** `vault-` + [generation] in ten ASCII digits + `.pvault` in [dir] (architecture.md §4.7). */
+    fun pathOf(generation: Long, dir: String = liveDir): String = "$dir/vault-" + generation.toString().padStart(10, '0') + ".pvault"
 
     /** The header of the generation file at [path]. */
     fun header(path: String): VaultHeader = (codec.check(files.read(path, DefaultVaultRepository.FILE_CAP)) as FileCheck.Ok).file.header

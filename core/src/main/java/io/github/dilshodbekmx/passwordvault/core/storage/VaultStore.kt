@@ -149,7 +149,7 @@ internal class VaultStore(
                     when (val body = openBody(gen.path, read.file!!, vk)) {
                         is BodyResult.Opened -> {
                             if (newerKey != null) return SlotOutcome.OlderPassword(changedAtMs(survey, newerKey, header.vaultId))
-                            val opened = OpenedVault(body.vault, header.vaultId, gen.number, header.vkId, newestOnDisk, vk, header.slot)
+                            val opened = OpenedVault(body.vault, header.vaultId, gen.number, header.vkId, header.createdMs, newestOnDisk, vk, header.slot)
                             noteOpened(target, opened, byPassword = true)
                             return SlotOutcome.Opened(opened)
                         }
@@ -196,7 +196,7 @@ internal class VaultStore(
                     val key = keys[header.vkId] ?: return OpenResult.NeedsOtherKey(gen.number, header.createdMs)
                     when (val body = openBody(gen.path, read.file!!, key)) {
                         is BodyResult.Opened -> {
-                            val opened = OpenedVault(body.vault, header.vaultId, gen.number, header.vkId, newestOnDisk, key.copyOf(), header.slot)
+                            val opened = OpenedVault(body.vault, header.vaultId, gen.number, header.vkId, header.createdMs, newestOnDisk, key.copyOf(), header.slot)
                             noteOpened(target, opened, byPassword = false)
                             return OpenResult.Opened(opened)
                         }
@@ -240,7 +240,7 @@ internal class VaultStore(
                 if (!placed.durable) {
                     CommitResult.NotDurable
                 } else {
-                    CommitResult.Saved(OpenedVault(vault, opened.vaultId, number, opened.vkId, number, opened.vk, opened.slot))
+                    CommitResult.Saved(OpenedVault(vault, opened.vaultId, number, opened.vkId, written.header.createdMs, number, opened.vk, opened.slot))
                 }
             }
         }
@@ -391,7 +391,7 @@ internal class VaultStore(
                     CommitResult.NotDurable
                 } else {
                     CommitResult.Saved(
-                        OpenedVault(work.vault, staged.vaultId, staged.generation, staged.vkId, staged.generation, work.vk, work.slot),
+                        OpenedVault(work.vault, staged.vaultId, staged.generation, staged.vkId, work.header.createdMs, staged.generation, work.vk, work.slot),
                     )
                 }
             }
@@ -458,7 +458,7 @@ internal class VaultStore(
         return if (!durable) {
             CommitResult.NotDurable
         } else {
-            CommitResult.Saved(OpenedVault(work.vault, staged.vaultId, staged.generation, staged.vkId, staged.generation, work.vk, work.slot))
+            CommitResult.Saved(OpenedVault(work.vault, staged.vaultId, staged.generation, staged.vkId, work.header.createdMs, staged.generation, work.vk, work.slot))
         }
     }
 

@@ -250,6 +250,7 @@ class AsideVault(val vaultId: String, val putAsideAtMs: Long, val newest: Genera
 class Staged internal constructor(val vaultId: String, val vkId: String, val generation: Long,
                                   val slotSalt: ByteArray /* as read back from disk */, internal val path: String)
 class OpenedVault internal constructor(val vault: Vault, val vaultId: String, val generation: Long, val vkId: String,
+                                       val createdMs: Long /* the header's `created` of `generation` */,
                                        val newestOnDisk: Long, internal val vk: ByteArray, internal val slot: PasswordSlot)
 class SlotRef internal constructor(val salt: ByteArray, val vkId: String, val generation: Long, internal val slot: PasswordSlot)
                                                        // one distinct slot (4.8 step 1): the caller derives the KEK with `salt`;
@@ -261,7 +262,7 @@ object VaultStores {                                   // the body throws NotImp
                                                        // build: the running app's, for the writer_version rule of 4.10
 ```
 
-`OpenedVault`, `Staged` and `SlotRef` keep VK, the slot and paths `internal` to `:core`, so `:app` can hold them but reach VK only through `useKey`. `olderCopyFirst` says that the newest generation was DAMAGED and an older one is the newest readable (the notice of ux.md §5.9, and the hold on automatic writes in 5.5).
+`OpenedVault`, `Staged` and `SlotRef` keep VK, the slot and paths `internal` to `:core`, so `:app` can hold them but reach VK only through `useKey`. `OpenedVault.createdMs` is the `created` of the generation it holds (4.2), taken from the header the store has just read or written: the one that opened, which is older than the newest on disk when an older copy opened, or the one `commit` or `publish` just placed. The repository hands it on as the `createdMs` of `VaultOpen.Opened`, `PasswordOpen.Opened` and `VaultWrite.Done` (3.4) and never reads a generation file itself. `olderCopyFirst` says that the newest generation was DAMAGED and an older one is the newest readable (the notice of ux.md §5.9, and the hold on automatic writes in 5.5).
 
 ### 3.4 Lock ports (`core.lock.record`, `core.lock.flow`)
 
@@ -628,6 +629,8 @@ class Data(val repository: VaultRepository, val port: VaultPort, val lists: List
 | `ui/security/ChangeNav.kt` | GuidedChange(entryId) | guided change |
 
 A screen that needs a new route asks for it as an interface request.
+
+**Values handed to the next screen.** A route key holds ids only and saved state no typed text (5.6), so a value one screen hands to the screen it opens waits in a one-time holder in memory, which the next screen takes when its ViewModel is made; a new process has none. `ui/edit/SavedNotice.kt`: Save of a new account marks its id, and the entry detail screen shows "Saved" (ux.md §5.14). `ui/edit/NewAccountName.kt`: the list's 'Add "gmal" as a new account' offers what was typed, and the new-account form takes it as its starting name, so a form with nothing else typed has no change to ask about and keeps no draft (ux.md §5.11); the list clears it for a plain "Add" and when the vault locks.
 
 **Debug commands.** `DebugCommandReceiver` (source sets `debug` and `staging`) looks up the command in `debug/DebugCommands.kt`, a list kept by the integrator. Each package that needs a command writes its handler in its own file under `debug/<area>/` and asks for the one line in the list.
 
@@ -1004,10 +1007,11 @@ Order: lock mutex, then vault mutex, then KDF gate. The repository never calls t
 
 - `VaultRepository.state`, `LockManager.state`, `LockManager.status`, `SecretClipboard.status`, `SecurityReports` and `AppSettings` are `StateFlow`s of immutable values. `Vault` is immutable; an edit builds a new one.
 - A ViewModel maps them to one `StateFlow<UiState>` with `stateIn(viewModelScope, WhileSubscribed(5_000), …)`; a composable reads it with `collectAsStateWithLifecycle()`.
-- UI state carries `UiText` (a resource id and arguments), never a finished sentence, so the language can change under it (i18n.md §1.4.4 rule 2). Nothing resolves a string with the application context. The few texts that are stored in the vault ("Untitled" and the time, "… (from backup)", "… (from file)") are resolved in `:app` and passed to `VaultEdits` through `EditTexts`.
+- UI state carries `UiText` (a resource id and arguments), never a finished sentence, so the language can change under it (i18n.md §1.4.4 rule 2). Nothing resolves a string with the application context. The few texts that are stored in the vault ("Untitled" and the time, "… (from backup)", "… (from file)") are resolved in `:app` and passed to `VaultEdits` through `EditTexts`. A screen resolves its own with the composition's resources. The repository's "… (from backup)" (`data_from_backup` in `strings_data.xml`, read by `StoredTexts`) is made away from any screen, so it is resolved under a configuration of the language the screens show (`ScreenLanguage`), never in the application context's own language.
 - Every change to the vault is one call of `VaultRepository.edit` with a pure function from `core.model.VaultEdits`. A screen never holds a mutable entry.
 - The top-level state (setup, locked, unlocked) is `LockManager.state`. `NavState` shows the matching back stack and keeps the unlocked one, as ids, while the app is locked (ux.md §4). A ViewModel that holds account data or a secret drops it itself on `VaultState.Locked`, because after a lock in the background its screen leaves only when the activity starts again (5.5 step 5).
 - After a rotation the screen asks for the keyboard again on the field that had focus, because Android 17 no longer restores it [V-P7].
+- When a focused field leaves the composition (the lock screen at an unlock, a form that closes), Compose clears the activity view's focus, and Android 7 and 8 then hand the focus to the window's first focusable view even in touch mode (Android 9 and later only outside it, after a key); Compose passes that on to its first focusable node, a text field that then opens the keyboard. A screen whose first focusable node is a text field that must not take the focus by itself (the list's search field, ux.md §5.11) refuses, in touch mode, every focus that arrives with a direction: only a request without one (a tap, TalkBack, `requestFocus`) focuses it. Keyboard navigation is not affected.
 
 ### 5.5 What "lock" does, in order
 

@@ -106,7 +106,6 @@ class DefaultVaultRepository internal constructor(
     private val clock: Clock,
     private val settings: () -> AppSettings,
     private val texts: EditTexts,
-    private val headers: GenerationHeaders,
     private val scope: CoroutineScope,
     private val dispatchers: AppDispatchers,
 ) : VaultRepository, VaultPort {
@@ -331,9 +330,8 @@ class DefaultVaultRepository internal constructor(
         when (val result = storage.open(PortTypes.refOf(target), keys)) {
             is OpenResult.Opened -> {
                 val opened = result.opened
-                val created = createdOf(target, opened)
                 if (take(target, opened, slot = null, caller, taken)) {
-                    VaultOpen.Opened(opened.vaultId, opened.generation, opened.vkId, created, olderCopyOf(opened))
+                    VaultOpen.Opened(opened.vaultId, opened.generation, opened.vkId, opened.createdMs, olderCopyOf(opened))
                 } else {
                     VaultOpen.Unreadable // never delivered: its caller was cancelled
                 }
@@ -381,9 +379,8 @@ class DefaultVaultRepository internal constructor(
             PasswordResult.SlotClosed -> null
             is PasswordResult.Opened -> {
                 val opened = result.opened
-                val created = createdOf(target, opened)
                 if (take(target, opened, slot, caller, taken)) {
-                    PasswordOpen.Opened(opened.vaultId, opened.generation, opened.vkId, created, olderCopyOf(opened))
+                    PasswordOpen.Opened(opened.vaultId, opened.generation, opened.vkId, opened.createdMs, olderCopyOf(opened))
                 } else {
                     PasswordOpen.Unreadable // never delivered: its caller was cancelled
                 }
@@ -598,10 +595,6 @@ class DefaultVaultRepository internal constructor(
     private suspend fun <R> underMutex(block: suspend () -> R): R = withContext(dispatchers.io + NonCancellable) { mutex.withLock { block() } }
 
     private fun olderCopyOf(opened: OpenedVault): Boolean = opened.newestOnDisk > opened.generation
-
-    /** The `created` of the generation [opened] holds, read before the session starts (it reads the file). */
-    private fun createdOf(target: LockVaultRef, opened: OpenedVault): Long =
-        headers.createdMs(PortTypes.refOf(target), opened.vaultId, opened.vkId, opened.generation) ?: UNKNOWN_CREATED
 
     /**
      * A vault opened from disk for [caller]: the current one becomes the session (and is shown), one
@@ -878,12 +871,7 @@ class DefaultVaultRepository internal constructor(
         return proven
     }
 
-    private fun done(opened: OpenedVault): VaultWrite.Done = VaultWrite.Done(
-        opened.vaultId,
-        opened.vkId,
-        opened.generation,
-        headers.createdMs(StoreVaultRef.Current, opened.vaultId, opened.vkId, opened.generation) ?: UNKNOWN_CREATED,
-    )
+    private fun done(opened: OpenedVault): VaultWrite.Done = VaultWrite.Done(opened.vaultId, opened.vkId, opened.generation, opened.createdMs)
 
     // ---------------------------------------------------------------------------------------------
     // The work of an unlock: the purge of Recently deleted (D-24)
@@ -957,9 +945,6 @@ class DefaultVaultRepository internal constructor(
     internal companion object {
         /** How long [flushDraft] waits for a running save before it gives up (architecture.md §5.5 step 2). */
         const val FLUSH_WAIT_MS = 2_000L
-
-        /** `created` when the header of a generation that was just opened or written cannot be read again now. */
-        const val UNKNOWN_CREATED = 0L
 
         /** The largest vault file and backup, 16,777,216 bytes (§4.1, [V-C4]). */
         const val FILE_CAP = 16_777_216

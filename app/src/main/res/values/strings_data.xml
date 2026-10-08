@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Texts that the vault's own changes store with an account (architecture.md §3.7, §5.4); build
+     plan 3.1 and 12. Every name starts with data_. Each is written into the vault in the language the
+     screens show when the change is made, and stays as it was written. -->
+<resources>
+
+    <!-- The name given to an account brought in from a backup, or from the passwords of a vault put
+         aside, when an account here has the same id but other content, so that both are kept
+         (ux.md §5.21): the account's own name, then "(from backup)". %1$s is the account's name, for
+         example "Gmail" in "Gmail (from backup)". "Backup" is the backup file (i18n.md glossary,
+         item 97). This text is stored with the account. -->
+    <string name="data_from_backup">%1$s (from backup)</string>
+</resources>

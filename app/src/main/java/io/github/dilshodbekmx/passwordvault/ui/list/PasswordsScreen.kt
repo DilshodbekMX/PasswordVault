@@ -4,6 +4,7 @@ import android.content.ActivityNotFoundException
 import android.content.Intent
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -46,13 +47,18 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.InputMode
+import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
@@ -90,7 +96,8 @@ fun PasswordsRoute(graph: AppGraph, nav: Navigator) {
  *
  * - **Back** clears a query first (ux.md §4); otherwise it is Navigation's (it leaves the app here).
  * - **The keyboard's search key** hides the keyboard; nothing is focused when the screen opens, so
- *   the keyboard does not cover the favourites (ux.md §5.11 "Focus").
+ *   the keyboard does not cover the favourites (ux.md §5.11 "Focus"): the search field refuses the
+ *   focus Android hands on in touch mode ([refusesHandedOnFocus]).
  * - **Saved state** holds only the scroll position (architecture.md §5.6); the query and the rest
  *   are in [viewModel], kept while an entry is open on top of this screen.
  */
@@ -104,6 +111,7 @@ fun PasswordsScreen(viewModel: PasswordsViewModel, nav: Navigator) {
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
     val keyboard = LocalSoftwareKeyboardController.current
+    val inputModes = LocalInputModeManager.current
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
 
@@ -228,7 +236,10 @@ fun PasswordsScreen(viewModel: PasswordsViewModel, nav: Navigator) {
                         contentDescription = if (addExpanded) null else stringResource(R.string.list_add_account_description),
                     )
                 },
-                onClick = { nav.go(Route.Edit()) },
+                onClick = {
+                    viewModel.addAccount()
+                    nav.go(Route.Edit())
+                },
                 expanded = addExpanded,
                 modifier = Modifier.testTag(ListTags.ADD),
             )
@@ -239,7 +250,11 @@ fun PasswordsScreen(viewModel: PasswordsViewModel, nav: Navigator) {
             VaultSearchField(
                 state = viewModel.query,
                 onSearch = { keyboard?.hide() },
-                modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 8.dp).testTag(ListTags.SEARCH),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 16.dp, end = 16.dp, bottom = 8.dp)
+                    .refusesHandedOnFocus(inputModes)
+                    .testTag(ListTags.SEARCH),
                 placeholder = { Text(stringResource(R.string.list_search_placeholder)) },
                 leadingIcon = { Icon(painterResource(R.drawable.ic_list_search), contentDescription = null) },
                 trailingIcon = if (hasQuery) {
@@ -259,7 +274,14 @@ fun PasswordsScreen(viewModel: PasswordsViewModel, nav: Navigator) {
                 rowActions = actions,
                 bannerActions = banners,
                 onShowAllFavourites = viewModel::showAllFavourites,
-                onAdd = { nav.go(Route.Edit()) },
+                onAdd = {
+                    viewModel.addAccount()
+                    nav.go(Route.Edit())
+                },
+                onAddAsNew = { typed ->
+                    viewModel.addAsNewAccount(typed)
+                    nav.go(Route.Edit())
+                },
                 onImport = { nav.go(Route.Import()) },
                 onRecentlyDeleted = { nav.go(Route.RecentlyDeleted) },
                 modifier = Modifier.nestedScroll(scrollWatch),
@@ -289,6 +311,7 @@ private fun ListContent(
     bannerActions: BannerActions,
     onShowAllFavourites: () -> Unit,
     onAdd: () -> Unit,
+    onAddAsNew: (typed: String) -> Unit,
     onImport: () -> Unit,
     onRecentlyDeleted: () -> Unit,
     modifier: Modifier = Modifier,
@@ -328,7 +351,7 @@ private fun ListContent(
             ListBody.Empty -> item(key = "empty") { EmptyVault(onAdd, onImport) }
             is ListBody.Browse -> browse(body, copiedKey, rowActions, onShowAllFavourites)
             is ListBody.Results -> results(body, copiedKey, rowActions)
-            is ListBody.NoResults -> item(key = "none") { NoResults(body.typed, onAdd) }
+            is ListBody.NoResults -> item(key = "none") { NoResults(body.typed, onAddAsNew) }
         }
         if (state.deletedCount > 0 && (body is ListBody.Browse || body is ListBody.Empty)) {
             item(key = "deleted", contentType = "deleted") { RecentlyDeletedRow(state.deletedCount, onRecentlyDeleted) }
@@ -449,16 +472,16 @@ private fun EmptyVault(onAdd: () -> Unit, onImport: () -> Unit) {
     }
 }
 
-/** 'No accounts match “gmal”.' and 'Add “gmal” as a new account' (ux.md §5.11). */
+/** 'No accounts match “gmal”.' and 'Add “gmal” as a new account', which opens the form with that name (ux.md §5.11). */
 @Composable
-private fun NoResults(typed: String, onAdd: () -> Unit) {
+private fun NoResults(typed: String, onAddAsNew: (typed: String) -> Unit) {
     Column(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 24.dp).testTag(ListTags.NO_RESULTS),
         verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(text = stringResource(R.string.list_no_results, typed), style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
-        TextButton(onClick = onAdd, modifier = Modifier.testTag(ListTags.ADD_AS_NEW)) {
+        TextButton(onClick = { onAddAsNew(typed) }, modifier = Modifier.testTag(ListTags.ADD_AS_NEW)) {
             Text(stringResource(R.string.list_add_as_new, typed), textAlign = TextAlign.Center)
         }
     }
@@ -483,6 +506,23 @@ private fun identityOf(body: ListBody): String = when (body) {
     is ListBody.Results -> "results:" + body.typed
     is ListBody.NoResults -> "none:" + body.typed
 }
+
+/**
+ * The search field takes the focus only when it is asked for: a tap, TalkBack or `requestFocus`,
+ * which come without a direction ([FocusDirection.Enter]). In touch mode a focus that arrives with a
+ * direction is refused: on Android 7 and 8 a view whose focus is cleared hands it to the window's
+ * first focusable view also in touch mode, and Compose clears it when a focused field leaves (the
+ * lock screen at an unlock, the form when it closes), then passes that focus on to this field, whose
+ * keyboard covered the list and its Add button (architecture.md §5.4). With a keyboard the focus
+ * moves as the user moves it, so it is not refused then.
+ */
+private fun Modifier.refusesHandedOnFocus(inputModes: InputModeManager): Modifier = this
+    .focusProperties {
+        onEnter = {
+            if (inputModes.inputMode == InputMode.Touch && requestedFocusDirection != FocusDirection.Enter) cancelFocusChange()
+        }
+    }
+    .focusGroup()
 
 /** The text of a save that did not happen (architecture.md §3.5). */
 private fun saveProblemText(problem: SaveProblem): Int =

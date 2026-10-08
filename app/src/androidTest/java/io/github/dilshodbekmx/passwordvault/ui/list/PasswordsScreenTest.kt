@@ -29,6 +29,7 @@ import io.github.dilshodbekmx.passwordvault.lock.LockStatus
 import io.github.dilshodbekmx.passwordvault.lock.MpPurpose
 import io.github.dilshodbekmx.passwordvault.nav.Route
 import io.github.dilshodbekmx.passwordvault.settings.ThemeChoice
+import io.github.dilshodbekmx.passwordvault.ui.edit.NewAccountName
 import io.github.dilshodbekmx.passwordvault.ui.theme.PasswordVaultTheme
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -88,6 +89,7 @@ class PasswordsScreenTest {
     @After
     fun closeRig() {
         rig?.close()
+        NewAccountName.clear()
     }
 
     private fun passwords(vault: Vault = Vault(entries = accounts)): Pair<ListRig, PasswordsViewModel> {
@@ -215,7 +217,9 @@ class PasswordsScreenTest {
         compose.waitUntil(TIMEOUT_MS) { compose.onAllNodesWithTagExists(ListTags.NO_RESULTS) }
         compose.onNodeWithText(text(R.string.list_no_results, "gmal")).assertIsDisplayed()
         compose.onNodeWithTag(ListTags.ADD_AS_NEW).assertTextContains(text(R.string.list_add_as_new, "gmal")).performClick()
+        // The form opens with no id in its key; the typed name waits for it in memory (architecture.md §3.6).
         assertEquals(Route.Edit(), rig.nav.routes.last())
+        assertEquals("gmal", NewAccountName.take())
     }
 
     @Test
@@ -223,7 +227,9 @@ class PasswordsScreenTest {
         val (rig, _) = passwords(Vault())
         compose.onNodeWithTag(ListTags.EMPTY).assertIsDisplayed()
         compose.onNodeWithText(text(R.string.list_empty_title)).assertIsDisplayed()
+        NewAccountName.offer("older offer")
         compose.onNodeWithTag(ListTags.EMPTY_ADD).performClick()
+        assertNull("a plain \"Add account\" hands no name over", NewAccountName.take())
         compose.onNodeWithTag(ListTags.EMPTY_IMPORT).performClick()
         assertEquals(listOf(Route.Edit(), Route.Import()), rig.nav.routes.toList())
         compose.onNodeWithTag(ListTags.RECENTLY_DELETED).assertDoesNotExist()
