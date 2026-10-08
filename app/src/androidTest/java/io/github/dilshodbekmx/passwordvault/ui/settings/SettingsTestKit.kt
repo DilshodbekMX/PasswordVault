@@ -21,6 +21,7 @@ import io.github.dilshodbekmx.passwordvault.nav.Navigator
 import io.github.dilshodbekmx.passwordvault.nav.Route
 import io.github.dilshodbekmx.passwordvault.platform.AndroidClock
 import io.github.dilshodbekmx.passwordvault.platform.AppDispatchers
+import io.github.dilshodbekmx.passwordvault.settings.StyleChoice
 import io.github.dilshodbekmx.passwordvault.settings.ThemeChoice
 import io.github.dilshodbekmx.passwordvault.ui.setup.PinSetupViewModel
 import io.github.dilshodbekmx.passwordvault.ui.theme.PasswordVaultTheme
@@ -73,11 +74,11 @@ class StepNavigator : Navigator {
     override fun tab(root: Route): Boolean = steps.add("tab ${root.name}")
 }
 
-/** The window policy and the theme around [content], as the app's root gives them. */
+/** The window policy and the theme around [content], as the app's root gives them: [style] in [theme]. */
 @Composable
-fun SettingsTestTheme(theme: ThemeChoice = ThemeChoice.LIGHT, content: @Composable () -> Unit) {
+fun SettingsTestTheme(theme: ThemeChoice = ThemeChoice.LIGHT, style: StyleChoice = StyleChoice.DEFAULT, content: @Composable () -> Unit) {
     WindowPolicy.Root {
-        PasswordVaultTheme(theme) { content() }
+        PasswordVaultTheme(style, theme) { content() }
     }
 }
 

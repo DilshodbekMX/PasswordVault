@@ -13,14 +13,16 @@ import io.github.dilshodbekmx.passwordvault.lock.LockUiState
 import io.github.dilshodbekmx.passwordvault.lock.PinStatus
 import io.github.dilshodbekmx.passwordvault.nav.HelpPage
 import io.github.dilshodbekmx.passwordvault.nav.Route
+import io.github.dilshodbekmx.passwordvault.settings.StyleChoice
 import io.github.dilshodbekmx.passwordvault.settings.ThemeChoice
 import io.github.dilshodbekmx.passwordvault.ui.setup.PinSetupViewModel
 
 /**
  * Every screen of build plan 4.3 in one composition, for the walks that a test can make only with
  * one `setContent`: the en-XA walk (build plan §1 rule 5) and the screenshots for the user. [shown]
- * picks the screen and [theme] the theme; the view models are made over [rig]'s fakes, and the walks
- * move them on with the same calls the screens make.
+ * picks the screen, [style] the colours and [theme] light or dark; the view models are made over
+ * [rig]'s fakes, and the walks move them on with the same calls the screens make. A choice in the
+ * dialog "Appearance" changes [style] and [theme], as the stored choice changes the app's.
  */
 class SettingsGallery(val rig: SettingsRig) {
     /** The screens. */
@@ -28,6 +30,7 @@ class SettingsGallery(val rig: SettingsRig) {
 
     var shown by mutableStateOf(Screen.SETTINGS)
     var theme by mutableStateOf(ThemeChoice.LIGHT)
+    var style by mutableStateOf(StyleChoice.DEFAULT)
 
     val settings: SettingsViewModel = rig.settingsViewModel()
     val pinSteps: PinSetupViewModel = rig.pinSetupViewModel(canAuthenticate = 0)
@@ -60,17 +63,24 @@ class SettingsGallery(val rig: SettingsRig) {
     fun typeChange(pin: String) = pin.forEach { changePin.digit(it - '0') }
 }
 
-/** The gallery's screen in its theme. */
+/** The gallery's screen in its style and theme. */
 @Composable
 fun GalleryHost(gallery: SettingsGallery) {
-    SettingsTestTheme(gallery.theme) {
+    SettingsTestTheme(gallery.theme, gallery.style) {
         when (gallery.shown) {
             SettingsGallery.Screen.SETTINGS -> SettingsScreen(gallery.settings, gallery.rig.nav)
             SettingsGallery.Screen.APP_LOCK -> AppLockPage(gallery.settings, gallery.rig.nav)
             SettingsGallery.Screen.THEME -> {
                 val ui by gallery.settings.ui.collectAsStateWithLifecycle()
                 SettingsScreen(gallery.settings, gallery.rig.nav)
-                ThemeDialog(current = ui.theme, onChoose = gallery.settings::setTheme, onDismiss = {})
+                AppearanceDialog(
+                    styles = ui.styles,
+                    style = gallery.style,
+                    theme = gallery.theme,
+                    onStyle = { gallery.style = it },
+                    onTheme = { gallery.theme = it },
+                    onDone = {},
+                )
             }
             SettingsGallery.Screen.PIN_STEPS -> PinStepsHost(gallery.pinSteps, gallery.rig.nav)
             SettingsGallery.Screen.PIN_STEPS_NO_PROOF -> PinStepsHost(gallery.pinStepsNoProof, gallery.rig.nav)

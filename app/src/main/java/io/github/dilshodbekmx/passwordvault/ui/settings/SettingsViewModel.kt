@@ -1,5 +1,6 @@
 package io.github.dilshodbekmx.passwordvault.ui.settings
 
+import android.os.Build
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.dilshodbekmx.passwordvault.AppGraph
@@ -26,6 +27,7 @@ import io.github.dilshodbekmx.passwordvault.settings.AppSettings
 import io.github.dilshodbekmx.passwordvault.settings.ClipDelay
 import io.github.dilshodbekmx.passwordvault.settings.LockDelay
 import io.github.dilshodbekmx.passwordvault.settings.SettingsEditor
+import io.github.dilshodbekmx.passwordvault.settings.StyleChoice
 import io.github.dilshodbekmx.passwordvault.settings.ThemeChoice
 import io.github.dilshodbekmx.passwordvault.ui.setup.MasterPasswordAsk
 import kotlin.coroutines.cancellation.CancellationException
@@ -44,13 +46,16 @@ import kotlinx.coroutines.launch
 
 /**
  * The view model of Settings (ux.md §5.18; build plan 4.3): the list's rows as facts and [UiText]s,
- * the dialogs of the lock delay and the clipboard delay, the theme, the backup reminder, and the
- * fingerprint switch.
+ * the dialogs of the lock delay and the clipboard delay, the two choices of "Appearance" (the
+ * colours, and light or dark; docs/design/looks/README.md), the backup reminder, and the fingerprint
+ * switch.
  *
- * - **What is shown is what is stored.** The delays, the theme and the reminder are the settings'
+ * - **What is shown is what is stored.** The delays, the look and the reminder are the settings'
  *   own flows, so the rows show what `AppSettings.writeDefaults` wrote at setup (30 seconds and
  *   1 minute), or the strictest values when nothing was written ("Immediately", 30 seconds; D-7).
  *   A choice is written at once, off the main thread; a write that fails changes nothing and says so.
+ * - **The colours offered** are those this phone has ([phoneColours]): "Phone's colours" only from
+ *   Android 12.
  * - **The App lock rows** follow `LockManager.status`: "Change PIN" or "Set a PIN" with why the PIN
  *   does not work (lock.md §13.3), and the fingerprint switch with the reasons of lock.md §9.4.
  *   Making the lock stricter needs nothing (lock.md §8.2): turning fingerprint off, "Lock now" and
@@ -70,7 +75,11 @@ class SettingsViewModel(
     private val clock: Clock,
     private val dispatchers: AppDispatchers,
     private val work: CoroutineScope,
+    phoneColours: Boolean = StyleChoice.hasPhoneColours(Build.VERSION.SDK_INT),
 ) : ViewModel() {
+
+    /** The choices of "Colours" on this phone, in the dialog's order. */
+    private val styles: List<StyleChoice> = StyleChoice.offered(phoneColours)
 
     /** The master password asked before fingerprint unlock is turned on (lock.md F9 step 2). */
     val fingerprintPassword = MasterPasswordAsk(lock, clock, MpPurpose.FINGERPRINT_ON, work, viewModelScope)
@@ -85,8 +94,8 @@ class SettingsViewModel(
         .flowOn(dispatchers.io)
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
-    private val stored = combine(settings.lockDelay, settings.clipDelay, settings.theme, settings.backupReminder) { lockDelay, clipDelay, theme, reminder ->
-        Stored(lockDelay, clipDelay, theme, reminder.on)
+    private val stored = combine(settings.lockDelay, settings.clipDelay, settings.theme, settings.style, settings.backupReminder) { lockDelay, clipDelay, theme, style, reminder ->
+        Stored(lockDelay, clipDelay, theme, style, reminder.on)
     }
 
     /** What the Settings list and the App lock page show. */
@@ -141,8 +150,13 @@ class SettingsViewModel(
         write { it.clipDelay = delay }
     }
 
-    /** A choice of the theme dialog: written at once; the theme follows the stored value. */
+    /** A choice of "Light or dark" in "Appearance": written at once; the app's look follows the stored value. */
     fun setTheme(theme: ThemeChoice) = write { it.theme = theme }
+
+    /** A choice of "Colours" in "Appearance": written at once; the app's look follows the stored value. */
+    fun setStyle(style: StyleChoice) {
+        if (style in styles) write { it.style = style }
+    }
 
     /** The "Backup reminders" switch. */
     fun setBackupReminder(on: Boolean) = write { it.backupReminder = it.backupReminder.copy(on = on) }
@@ -248,13 +262,14 @@ class SettingsViewModel(
         Place.PhoneStorage
     }
 
-    private fun storedNow() = Stored(settings.lockDelay.value, settings.clipDelay.value, settings.theme.value, settings.backupReminder.value.on)
+    private fun storedNow() =
+        Stored(settings.lockDelay.value, settings.clipDelay.value, settings.theme.value, settings.style.value, settings.backupReminder.value.on)
 
     /** What this view model keeps of its own. */
     private data class Local(val dialog: SettingsDialog? = null, val fingerprintBusy: Boolean = false, val message: UiText? = null)
 
     /** The stored settings the list shows. */
-    private data class Stored(val lockDelay: LockDelay, val clipDelay: ClipDelay, val theme: ThemeChoice, val backupReminder: Boolean)
+    private data class Stored(val lockDelay: LockDelay, val clipDelay: ClipDelay, val theme: ThemeChoice, val style: StyleChoice, val backupReminder: Boolean)
 
     private fun settingsUi(status: LockStatus, stored: Stored, backup: LastBackup?, local: Local) = SettingsUi(
         pin = pinRow(status.pin),
@@ -262,6 +277,8 @@ class SettingsViewModel(
         lockDelay = stored.lockDelay,
         clipDelay = stored.clipDelay,
         theme = stored.theme,
+        style = stored.style,
+        styles = styles,
         backupReminder = stored.backupReminder,
         lastBackup = backup,
         oldPasswords = status.aside.map { it.putAsideAtMs },
@@ -351,6 +368,20 @@ class SettingsViewModel(
             },
         )
 
+        /** "Bank blue", "Emerald", "Night vault", "Phone's colours". */
+        fun styleText(style: StyleChoice): UiText = UiText.of(
+            when (style) {
+                StyleChoice.BANK_BLUE -> R.string.settings_style_bank_blue
+                StyleChoice.EMERALD -> R.string.settings_style_emerald
+                StyleChoice.NIGHT_VAULT -> R.string.settings_style_night_vault
+                StyleChoice.PHONE_COLOURS -> R.string.settings_style_phone
+            },
+        )
+
+        /** The value of the row "Appearance": "Bank blue · System". */
+        fun appearanceText(style: StyleChoice, theme: ThemeChoice): UiText =
+            UiText.of(R.string.settings_appearance_value, styleText(style), themeText(theme))
+
         /** The view model over the app's graph. */
         fun from(graph: AppGraph): SettingsViewModel = SettingsViewModel(
             lock = graph.lock,
@@ -381,6 +412,10 @@ class SettingsViewModel(
  * What the Settings list and the App lock page show (ux.md §5.18). Facts and [UiText]s; the dates
  * and relative times are formatted by the screen in its own language.
  *
+ * @property theme light or dark: System, Light or Dark.
+ * @property style the colours chosen.
+ * @property styles the colours this phone offers, in the dialog's order: "Phone's colours" only from
+ *   Android 12.
  * @property oldPasswords when each vault that was put aside was put aside (wall clock): one "Old
  *   passwords (locked on …)" row each (lock.md F17).
  * @property dialog the dialog that is open.
@@ -393,6 +428,8 @@ data class SettingsUi(
     val lockDelay: LockDelay,
     val clipDelay: ClipDelay,
     val theme: ThemeChoice,
+    val style: StyleChoice,
+    val styles: List<StyleChoice>,
     val backupReminder: Boolean,
     val lastBackup: LastBackup?,
     val oldPasswords: List<Long>,
@@ -406,8 +443,8 @@ data class SettingsUi(
     /** The clipboard delay's row value. */
     val clipDelayText: UiText get() = SettingsViewModel.clipDelayText(clipDelay)
 
-    /** The theme's row value. */
-    val themeText: UiText get() = SettingsViewModel.themeText(theme)
+    /** The value of the row "Appearance": the colours and light or dark, "Bank blue · System". */
+    val appearanceText: UiText get() = SettingsViewModel.appearanceText(style, theme)
 }
 
 /** "Change PIN" or "Set a PIN", and why the PIN does not work now; [enabled] false when no PIN can be set on this phone. */

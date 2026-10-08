@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- The Settings tab (build plan 4.3; ux.md §5.18): the list with its four groups, the App lock page,
-     the dialogs of the lock delay, the clipboard delay and the theme, and the master-password question
-     before fingerprint unlock is turned on. The rows of later screens (backup, export, import, old
+     the dialogs of the lock delay, the clipboard delay and "Appearance" (the colours, and light or
+     dark; docs/design/looks/README.md), and the master-password question before fingerprint unlock is
+     turned on. The rows of later screens (backup, export, import, old
      passwords, language, help) have their texts here too; their screens bring their own. Every name
      starts with settings_. Sentence case for titles and rows (i18n.md §4.3). -->
 <resources>
@@ -127,13 +128,34 @@
     <!-- Under the language row (whose title is the same in every language, i18n.md §1.4.5): the app
          follows the phone's language. -->
     <string name="settings_language_system">System language</string>
-    <!-- Row: opens the theme dialog (glossary term 114). -->
-    <string name="settings_theme">Theme</string>
-    <!-- A choice of the theme, and the row's value: light or dark as the phone is set. -->
+    <!-- Row: opens the dialog "Appearance", where the user chooses the colours of the app and light or
+         dark. Also the title of that dialog. Short: one line. -->
+    <string name="settings_appearance">Appearance</string>
+    <!-- Under the row "Appearance": the two choices made. %1$s is the name of the colours, for example
+         "Bank blue"; %2$s is "System", "Light" or "Dark". -->
+    <string name="settings_appearance_value">%1$s · %2$s</string>
+    <!-- In the dialog "Appearance": the heading of the first choice, the colours of the app. -->
+    <string name="settings_colours">Colours</string>
+    <!-- A choice of "Colours": the app in dark blue and white, like a bank's app. A name of two
+         words; it need not be translated word for word. -->
+    <string name="settings_style_bank_blue">Bank blue</string>
+    <!-- A choice of "Colours": the app in dark green. A name; one word. -->
+    <string name="settings_style_emerald">Emerald</string>
+    <!-- A choice of "Colours": the app in black and gold, like a vault at night. A name of two words. -->
+    <string name="settings_style_night_vault">Night vault</string>
+    <!-- A choice of "Colours", only on Android 12 and later: the colours that Android takes from the
+         phone's wallpaper. -->
+    <string name="settings_style_phone">Phone’s colours</string>
+    <!-- Under "Phone's colours": where those colours come from. -->
+    <string name="settings_style_phone_body">From your wallpaper</string>
+    <!-- In the dialog "Appearance": the heading of the second choice, a light or a dark screen. -->
+    <string name="settings_light_or_dark">Light or dark</string>
+    <!-- A choice of "Light or dark", and part of the row's value: light or dark as the phone is set
+         (glossary term 115). -->
     <string name="settings_theme_system">System</string>
-    <!-- A choice of the theme (glossary term 116). -->
+    <!-- A choice of "Light or dark" (glossary term 116). -->
     <string name="settings_theme_light">Light</string>
-    <!-- A choice of the theme (glossary term 117). -->
+    <!-- A choice of "Light or dark" (glossary term 117). -->
     <string name="settings_theme_dark">Dark</string>
 
     <!-- ===== The group "Help" (ux.md §5.22). ===== -->

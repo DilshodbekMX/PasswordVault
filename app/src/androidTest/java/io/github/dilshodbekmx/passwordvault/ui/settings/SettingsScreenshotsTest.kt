@@ -73,7 +73,7 @@ class SettingsScreenshotsTest {
             gallery.settings.dismissDialog()
             gallery.settings.openClipDelay()
         }
-        step("06-theme-dialog") {
+        step("06-appearance-dialog") {
             gallery.settings.dismissDialog()
             gallery.shown = SettingsGallery.Screen.THEME
         }

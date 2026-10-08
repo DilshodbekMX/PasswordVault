@@ -115,7 +115,7 @@ class SettingsPseudoLocaleTest {
         }
         compose.waitForIdle()
         check("the fingerprint dialog after a wrong master password")
-        step("the theme dialog") {
+        step("the dialog Appearance") {
             gallery.settings.dismissDialog()
             gallery.shown = SettingsGallery.Screen.THEME
         }

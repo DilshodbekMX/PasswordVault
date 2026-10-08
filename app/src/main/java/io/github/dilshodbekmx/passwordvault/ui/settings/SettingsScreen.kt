@@ -52,6 +52,7 @@ import io.github.dilshodbekmx.passwordvault.nav.Navigator
 import io.github.dilshodbekmx.passwordvault.nav.Route
 import io.github.dilshodbekmx.passwordvault.settings.ClipDelay
 import io.github.dilshodbekmx.passwordvault.settings.LockDelay
+import io.github.dilshodbekmx.passwordvault.settings.StyleChoice
 import io.github.dilshodbekmx.passwordvault.settings.ThemeChoice
 import kotlinx.coroutines.launch
 
@@ -63,7 +64,7 @@ import kotlinx.coroutines.launch
  *   Drive"), the "Backup reminders" switch, "Export", "Import", and one "Old passwords (locked on …)"
  *   per vault put aside (lock.md F17).
  * - **Appearance & language**: the language (its title the same in every language, i18n.md §1.4.5)
- *   and the theme.
+ *   and "Appearance", which shows the colours and light or dark chosen and opens their dialog.
  * - **Help** (ux.md §5.22): the four help pages, "Open-source licences" and "Version".
  *
  * The rows of later screens open their routes, placeholders until those are built. A row that opens
@@ -157,8 +158,8 @@ fun SettingsScreen(vm: SettingsViewModel, nav: Navigator, modifier: Modifier = M
             }
             item(key = "theme") {
                 SettingsItem(
-                    title = stringResource(R.string.settings_theme),
-                    supporting = ui.themeText.resolve(),
+                    title = stringResource(R.string.settings_appearance),
+                    supporting = ui.appearanceText.resolve(),
                     icon = R.drawable.ic_settings_theme,
                     tag = SettingsTags.open(Route.Theme),
                     onClick = {
@@ -202,9 +203,9 @@ fun SettingsScreen(vm: SettingsViewModel, nav: Navigator, modifier: Modifier = M
 }
 
 /**
- * Where the Settings list was scrolled when "Theme" was tapped: the theme dialog's route draws the
- * list behind its dialog from the same place, so that nothing moves when the dialog opens or closes
- * (each route draws its own screen). In memory only; main thread only.
+ * Where the Settings list was scrolled when "Appearance" was tapped: the dialog's route (`Route.Theme`)
+ * draws the list behind its dialog from the same place, so that nothing moves when the dialog opens
+ * or closes (each route draws its own screen). In memory only; main thread only.
  */
 object ThemeBackdrop {
     private var index = 0
@@ -346,6 +347,7 @@ object SettingsTags {
     const val LOCK_NOW = "pv.action.lockNow"
     const val BACKUP_REMINDERS = "pv.settings.backupReminders"
     const val DIALOG_CANCEL = "pv.settings.dialog.cancel"
+    const val DIALOG_DONE = "pv.settings.dialog.done"
     const val BACK = "pv.settings.back"
 
     /** A row that opens [route]: the shell walk's `pv.open.<Route>`. */
@@ -360,8 +362,14 @@ object SettingsTags {
     /** The [index]th "Old passwords (locked on …)" row, from 0. */
     fun oldPasswords(index: Int): String = if (index == 0) "pv.open.OldPasswords" else "pv.open.OldPasswords.$index"
 
-    /** A choice of the theme dialog. */
+    /** A choice of "Light or dark" in the dialog "Appearance". */
     fun theme(choice: ThemeChoice): String = "pv.settings.theme.${choice.name}"
+
+    /** A choice of "Colours" in the dialog "Appearance". */
+    fun style(choice: StyleChoice): String = "pv.settings.style.${choice.name}"
+
+    /** The small preview of [choice] in its row. */
+    fun stylePreview(choice: StyleChoice): String = "pv.settings.style.${choice.name}.preview"
 
     /** A choice of the lock-delay dialog. */
     fun lockDelay(delay: LockDelay): String = "pv.settings.lockDelay.${delay.name}"

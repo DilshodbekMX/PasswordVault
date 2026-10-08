@@ -26,6 +26,7 @@ import io.github.dilshodbekmx.passwordvault.lock.PinStatus
 import io.github.dilshodbekmx.passwordvault.platform.AppDispatchers
 import io.github.dilshodbekmx.passwordvault.settings.ClipDelay
 import io.github.dilshodbekmx.passwordvault.settings.LockDelay
+import io.github.dilshodbekmx.passwordvault.settings.StyleChoice
 import io.github.dilshodbekmx.passwordvault.settings.ThemeChoice
 import io.github.dilshodbekmx.passwordvault.testing.FakeClock
 import kotlinx.coroutines.CoroutineScope
@@ -53,7 +54,8 @@ import org.junit.Test
  * `FakeAppSettings` and the other fakes: the defaults shown are those `writeDefaults` wrote (and the
  * strictest values before), the fingerprint switch by the availability table of lock.md §9.4, the PIN
  * row by the lock's status, turning fingerprint on asks for the master password first (lock.md §8.2)
- * while turning it off and the delays need nothing, "Lock now", and the last backup.
+ * while turning it off and the delays need nothing, "Lock now", and the last backup. Build plan §12,
+ * 4.3b: the two choices of "Appearance" (docs/design/looks/README.md).
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class SettingsViewModelTest {
@@ -83,9 +85,12 @@ class SettingsViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private fun TestScope.model(session: FakeSession = FakeSession(work, lock, FakeSecretClipboard(), repository)): SettingsViewModel {
+    private fun TestScope.model(
+        session: FakeSession = FakeSession(work, lock, FakeSecretClipboard(), repository),
+        phoneColours: Boolean = true,
+    ): SettingsViewModel {
         val factory = viewModelFactory {
-            initializer { SettingsViewModel(lock, settings, session, repository, files, clock, AppDispatchers.single(dispatcher), work) }
+            initializer { SettingsViewModel(lock, settings, session, repository, files, clock, AppDispatchers.single(dispatcher), work, phoneColours) }
         }
         val vm = ViewModelProvider(store, factory)["settings-${models++}", SettingsViewModel::class.java]
         runCurrent()
@@ -111,7 +116,12 @@ class SettingsViewModelTest {
         assertEquals(ClipDelay.SETUP, ui.clipDelay)
         assertEquals("1 minute", UiText.plural(R.plurals.settings_clip_delay_minutes, 1), ui.clipDelayText)
         assertEquals(ThemeChoice.SYSTEM, ui.theme)
-        assertEquals(UiText.of(R.string.settings_theme_system), ui.themeText)
+        assertEquals(StyleChoice.BANK_BLUE, ui.style)
+        assertEquals(
+            "Bank blue · System",
+            UiText.of(R.string.settings_appearance_value, UiText.of(R.string.settings_style_bank_blue), UiText.of(R.string.settings_theme_system)),
+            ui.appearanceText,
+        )
         assertTrue("backup reminders on by default", ui.backupReminder)
     }
 
@@ -173,9 +183,77 @@ class SettingsViewModelTest {
         vm.setBackupReminder(false)
         advanceUntilIdle()
         assertEquals(ThemeChoice.DARK, vm.ui.value.theme)
-        assertEquals(UiText.of(R.string.settings_theme_dark), vm.ui.value.themeText)
+        assertEquals(SettingsViewModel.appearanceText(StyleChoice.BANK_BLUE, ThemeChoice.DARK), vm.ui.value.appearanceText)
         assertFalse(vm.ui.value.backupReminder)
         assertFalse(settings.backupReminder.value.on)
+    }
+
+    // ---- Appearance: the colours, and light or dark ----------------------------------------------------
+
+    @Test
+    fun aStyleIsChosenAndWrittenAtOnce() = runTest {
+        val vm = model()
+        assertEquals(StyleChoice.entries, vm.ui.value.styles)
+        vm.setStyle(StyleChoice.NIGHT_VAULT)
+        advanceUntilIdle()
+        assertEquals(StyleChoice.NIGHT_VAULT, settings.style.value)
+        assertEquals(StyleChoice.NIGHT_VAULT, vm.ui.value.style)
+        assertEquals("light or dark is another choice", ThemeChoice.SYSTEM, vm.ui.value.theme)
+        vm.setTheme(ThemeChoice.LIGHT)
+        vm.setStyle(StyleChoice.PHONE_COLOURS)
+        advanceUntilIdle()
+        assertEquals(StyleChoice.PHONE_COLOURS, settings.style.value)
+        assertEquals(ThemeChoice.LIGHT, settings.theme.value)
+        assertEquals(
+            "Phone's colours · Light",
+            UiText.of(R.string.settings_appearance_value, UiText.of(R.string.settings_style_phone), UiText.of(R.string.settings_theme_light)),
+            vm.ui.value.appearanceText,
+        )
+        assertNull("the look is chosen in its own route, not in a dialog of the list", vm.ui.value.dialog)
+        assertNull(vm.ui.value.message)
+        assertTrue("no proof for the look (lock.md §8.2)", lock.purposes.isEmpty())
+    }
+
+    @Test
+    fun aStyleThatCouldNotBeWrittenIsNotShownAndSaysSo() = runTest {
+        val vm = model()
+        settings.failWrites = true
+        vm.setStyle(StyleChoice.EMERALD)
+        advanceUntilIdle()
+        assertEquals(StyleChoice.BANK_BLUE, vm.ui.value.style)
+        assertEquals(StyleChoice.BANK_BLUE, settings.style.value)
+        assertEquals(UiText.of(R.string.settings_not_saved), vm.ui.value.message)
+    }
+
+    @Test
+    fun aPhoneBeforeAndroid12OffersNoPhonesColours() = runTest {
+        val vm = model(phoneColours = false)
+        assertEquals(listOf(StyleChoice.BANK_BLUE, StyleChoice.EMERALD, StyleChoice.NIGHT_VAULT), vm.ui.value.styles)
+        val writes = settings.writes
+        vm.setStyle(StyleChoice.PHONE_COLOURS)
+        advanceUntilIdle()
+        assertEquals("a style the phone does not offer is not written", writes, settings.writes)
+        assertEquals(StyleChoice.BANK_BLUE, vm.ui.value.style)
+        vm.setStyle(StyleChoice.EMERALD)
+        advanceUntilIdle()
+        assertEquals(StyleChoice.EMERALD, vm.ui.value.style)
+    }
+
+    @Test
+    fun eachStyleAndEachThemeHasItsName() {
+        assertEquals(
+            listOf(
+                UiText.of(R.string.settings_style_bank_blue),
+                UiText.of(R.string.settings_style_emerald),
+                UiText.of(R.string.settings_style_night_vault),
+                UiText.of(R.string.settings_style_phone),
+            ),
+            StyleChoice.entries.map(SettingsViewModel::styleText),
+        )
+        assertEquals(
+            listOf(UiText.of(R.string.settings_theme_system), UiText.of(R.string.settings_theme_light), UiText.of(R.string.settings_theme_dark)),
+            ThemeChoice.entries.map(SettingsViewModel::themeText),
+        )
     }
 
     // ---- the App lock rows -------------------------------------------------------------------------------
@@ -363,7 +441,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun theThemeDialogsBackdropStartsWhereTheListWasOnce() {
+    fun theAppearanceDialogsBackdropStartsWhereTheListWasOnce() {
         ThemeBackdrop.take()
         ThemeBackdrop.mark(12, 34)
         assertEquals(12 to 34, ThemeBackdrop.take())
