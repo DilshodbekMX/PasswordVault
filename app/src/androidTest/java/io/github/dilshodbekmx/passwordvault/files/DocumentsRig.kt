@@ -1,5 +1,6 @@
 package io.github.dilshodbekmx.passwordvault.files
 
+import android.accessibilityservice.AccessibilityService
 import android.app.Activity
 import android.app.Instrumentation
 import android.content.BroadcastReceiver
@@ -10,6 +11,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.HandlerThread
+import android.os.ParcelFileDescriptor
 import android.os.SystemClock
 import androidx.activity.ComponentActivity
 import androidx.core.app.ActivityCompat
@@ -123,6 +125,72 @@ internal object DocumentsRig {
             }
             return instrumentation.addMonitor(filter, null, true)
         }
+    }
+
+    /** Waits until [activity]'s own window has the input focus: what the user does next goes to it. */
+    fun awaitInFront(activity: Activity) {
+        await("the app in front") { hasWindowFocus(activity) && activity.packageName + "/" in focusedWindow() }
+    }
+
+    /**
+     * Waits until the system's share sheet has the input focus. The activity under it is paused as
+     * soon as the sheet is asked for, before the sheet is there: a Back in between goes to the
+     * activity and leaves the app.
+     */
+    fun awaitShareSheet(activity: Activity) {
+        var focus = ""
+        try {
+            await("the share sheet in front") {
+                focus = focusedWindow()
+                shareSheetOver(activity, focus)
+            }
+        } catch (e: AssertionError) {
+            throw AssertionError(e.message + " (the focus: " + focus + ")", e)
+        }
+    }
+
+    /**
+     * Closes the share sheet over [activity] with the system's Back, as a user does, and waits until
+     * the activity is in front again. A Back is sent only while the sheet has the focus, and again
+     * when nothing happened: Android 7 loses one that comes while the sheet is still starting.
+     */
+    fun closeShareSheet(activity: Activity) {
+        val end = SystemClock.elapsedRealtime() + 20_000
+        fun inFront() = activity in activities(activity.javaClass, Stage.RESUMED)
+        while (!inFront()) {
+            val focus = focusedWindow()
+            if (SystemClock.elapsedRealtime() > end) fail("timed out waiting: the app in front again (the focus: $focus)")
+            if (shareSheetOver(activity, focus)) {
+                if (!instrumentation.uiAutomation.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK)) fail("Back was not taken")
+            }
+            val retry = SystemClock.elapsedRealtime() + 1_500
+            while (!inFront() && SystemClock.elapsedRealtime() < retry) SystemClock.sleep(50)
+        }
+    }
+
+    /**
+     * The share sheet has the input focus, and [activity]'s window has lost it: the window manager
+     * names the sheet's window ("…ChooserActivity" on Android 7 and 9, "…ChooserActivityLauncher" on
+     * Android 17), and the activity was told that its own focus is gone.
+     */
+    private fun shareSheetOver(activity: Activity, focus: String): Boolean = "Chooser" in focus && !hasWindowFocus(activity)
+
+    private fun hasWindowFocus(activity: Activity): Boolean {
+        var focused = false
+        instrumentation.runOnMainSync { focused = activity.hasWindowFocus() }
+        return focused
+    }
+
+    /** The window that has the input focus, as the window manager names it (`mCurrentFocus=Window{… package/activity}`). */
+    private fun focusedWindow(): String {
+        val out = instrumentation.uiAutomation.executeShellCommand("dumpsys window")
+        val text = ParcelFileDescriptor.AutoCloseInputStream(out).use { it.readBytes().toString(Charsets.UTF_8) }
+        return text.lineSequence().map { it.trim() }.firstOrNull { it.startsWith("mCurrentFocus=") }.orEmpty()
+    }
+
+    /** The system's Home: the app is left as a user leaves it. */
+    fun pressHome() {
+        if (!instrumentation.uiAutomation.performGlobalAction(AccessibilityService.GLOBAL_ACTION_HOME)) fail("Home was not taken")
     }
 
     /** The activities of [type] in one of [stages]; main thread inside. */

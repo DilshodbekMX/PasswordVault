@@ -4,6 +4,7 @@ import io.github.dilshodbekmx.passwordvault.core.formats.BitwardenJson
 import io.github.dilshodbekmx.passwordvault.core.formats.ColumnMeaning
 import io.github.dilshodbekmx.passwordvault.core.formats.GoogleCsv
 import io.github.dilshodbekmx.passwordvault.core.formats.ImportChange
+import io.github.dilshodbekmx.passwordvault.core.formats.ImportLeftOut
 import io.github.dilshodbekmx.passwordvault.core.formats.Importer
 import io.github.dilshodbekmx.passwordvault.core.formats.IsoTime
 import io.github.dilshodbekmx.passwordvault.core.formats.TextDecoding.Encoding
@@ -20,6 +21,7 @@ import io.github.dilshodbekmx.passwordvault.core.formats.importer.ImportFixtures
 import io.github.dilshodbekmx.passwordvault.core.formats.writers.WriterFixtures
 import io.github.dilshodbekmx.passwordvault.core.model.Entry
 import io.github.dilshodbekmx.passwordvault.core.model.HistoryItem
+import io.github.dilshodbekmx.passwordvault.core.util.Uuid
 import java.nio.charset.Charset
 import java.util.Random
 import org.junit.Assert.assertEquals
@@ -88,6 +90,26 @@ class ImporterTest {
         assertEquals("Plain line without a separator", jira.notes) // a value without a name is kept in the notes
         assertEquals(listOf(visible("Folder", "Work")), jira.fields)
         assertEquals("[NAMELESS_FIELDS_MOVED×1]", file.accounts[2].changes.toString())
+    }
+
+    /**
+     * Bitwarden writes a secure note's row with empty login columns (formats.md §8.3: `type=note` has no
+     * username or password). A row of type `note` that has them all the same, as an edited file may,
+     * keeps them: a password is never dropped on import but for its length (formats.md §8.4, D-10f).
+     */
+    @Test
+    fun aBitwardenNoteRowThatHasAPasswordKeepsIt() {
+        val file = file(
+            csv(
+                "folder,favorite,type,name,notes,fields,reprompt,login_uri,login_username,login_password,login_totp",
+                ",,note,Shopping list,\"milk, bread\",,0,,,,",
+                ",,note,Wi-Fi at home,router in the hall,,0,,admin,R0uter#Pass,",
+            ),
+        )
+        val (list, wifi) = file.accounts.map { it.entry }
+        assertEquals(listOf("", ""), listOf(list.username, list.password))
+        assertEquals(listOf("admin", "R0uter#Pass", "router in the hall"), listOf(wifi.username, wifi.password, wifi.notes))
+        assertTrue(file.accounts.all { it.changes.isEmpty() })
     }
 
     @Test
@@ -206,6 +228,111 @@ class ImporterTest {
         assertEquals(Importer.Result.NotText, read("name,url\u0000,username,password\n"))
     }
 
+    /**
+     * A file from outside may have any header. The time and the memory of a read grow with the size of
+     * the file, not with the header times the rows: a header of a million columns over 10,000 short rows
+     * (1 MB) took more than half a minute, and one column whose name has 50,000 characters over 10,000
+     * rows (110 KB) did not fit in 512 MB.
+     */
+    @Test
+    fun aHugeHeaderOverManyShortRowsIsReadInTimeAndMemoryThatGrowWithTheFile() {
+        val wide = StringBuilder("name,url,username,password").append(",".repeat(1_000_000)).append('\n')
+        repeat(10_000) { wide.append("a\n") }
+        var start = System.nanoTime()
+        val wideFile = file(wide.toString())
+        val wideMs = (System.nanoTime() - start) / 1_000_000
+        assertEquals(10_000, wideFile.accounts.size)
+        assertEquals(1_000_004, wideFile.columns!!.headers.size)
+        assertEquals(listOf("a", "", ""), wideFile.columns!!.samples.take(3))
+        assertEquals("a", wideFile.accounts.last().entry.title)
+        assertTrue("$wideMs ms", wideMs < 5_000)
+
+        val long = StringBuilder("name,password, ").append("x".repeat(50_000)).append('\n')
+        repeat(10_000) { long.append("a,b,c\n") }
+        start = System.nanoTime()
+        val longFile = file(long.toString())
+        val longMs = (System.nanoTime() - start) / 1_000_000
+        assertEquals(10_000, longFile.accounts.size)
+        // The column is an extra field as before: hidden, its name cut to 100 characters and listed.
+        assertEquals(listOf(hidden("x".repeat(100), "c")), longFile.accounts.last().entry.fields)
+        assertEquals("[FIELD_NAMES_CUT×1]", longFile.accounts.last().changes.toString())
+        assertTrue("$longMs ms", longMs < 5_000)
+
+        // A long header is cleaned as before, every row counted: its control characters, its cut, and
+        // the whole name in front of a value that is too long for a field and goes to the notes.
+        val odd = "\u0001".repeat(300) + " Name " + "y".repeat(150) + "\u0002"
+        val oddFile = file(csv("name,password,\"$odd\"", "a,b,c", "d,e,${"v".repeat(1_001)}"))
+        assertEquals(listOf(visible("Name " + "y".repeat(95), "c")), oddFile.accounts[0].entry.fields)
+        assertEquals("[FIELD_NAMES_CUT×1]", oddFile.accounts[0].changes.toString())
+        assertEquals("Name " + "y".repeat(150) + ": " + "v".repeat(1_001), oddFile.accounts[1].entry.notes)
+        assertEquals("[LONG_FIELDS_MOVED×1]", oddFile.accounts[1].changes.toString())
+        assertEquals(2 * 301, oddFile.removedControls)
+        println("a huge header over 10,000 short rows: a million columns read in $wideMs ms, a name of 50,000 characters in $longMs ms")
+    }
+
+    /**
+     * One account may list any number of websites (a Bitwarden item's `uris`, the list in `login_uri`).
+     * Each was compared with every one before it: 80,000 of them, a file of 1 MB, took 13 s.
+     */
+    @Test
+    fun anAccountWithAHundredThousandWebsitesIsReadInTimeThatGrowsWithTheFile() {
+        val n = 100_000
+        val hosts = (1..n).map { "h$it.example" }
+        val json = """{"encrypted":false,"items":[{"type":1,"name":"Many","login":{"username":"u","password":"p","uris":[""" +
+            hosts.joinToString(",") { "{\"uri\":\"$it\"}" } + "]}}]}"
+        val csv = "name,login_uri,login_username,login_password\nMany,\"" + hosts.joinToString(",") + ",h7.example\",u,p\n"
+        for ((text, repeats) in listOf(json to 0, csv to 1)) {
+            val start = System.nanoTime()
+            val a = file(text).accounts.single()
+            val ms = (System.nanoTime() - start) / 1_000_000
+            assertEquals((1..10).map { "https://h$it.example" }, a.entry.urls)
+            // Each website once: the repeat in the CSV's list is neither kept nor moved.
+            assertEquals("[WEBSITES_MOVED×${n - 10}]", a.changes.filter { it.kind == ImportChange.Kind.WEBSITES_MOVED }.toString())
+            assertTrue(a.entry.notes.startsWith("https://h11.example\nhttps://h12.example\n"))
+            assertTrue("$ms ms with $repeats repeats", ms < 5_000)
+        }
+    }
+
+    /**
+     * The shared website rule (`EntryRules.normalizeUrl`) asks whether a text looks like a host with a
+     * pattern whose time grows with the square of the text when a space follows many dots. An imported
+     * value may be megabytes long: one website of 200,000 such characters took 40 s to read, and 4,000
+     * accounts each with one of 2,000 characters, which the rule is asked about twice when the account
+     * has no name, half a minute.
+     */
+    @Test
+    fun aWebsiteOfDotsWithASpaceIsReadInTimeThatGrowsWithTheFile() {
+        val long = "a.".repeat(100_000) + " b"
+        val short = "a.".repeat(1_000) + " b"
+        val files = listOf(
+            // In the website column of an account with a name: too long for a website, so it goes to the notes.
+            csv("name,url,username,password", "Site,\"$long\",u,p"),
+            // Firefox's layout, which compares the host of the website with the host of the form.
+            csv("url,username,password,httpRealm,formActionOrigin", "\"$long\",u,p,,https://form.example"),
+            // An account that is left out (its password is too long) is listed by a name made from its website.
+            csv("name,url,username,password", ",\"$long\",,${"p".repeat(1_001)}"),
+            // Accounts without a name, each named after a website that is short enough to be kept.
+            csv("name,url,username,password", *Array(4_000) { ",\"$short\",u$it,p" }),
+        )
+        val times = ArrayList<Long>()
+        val read = files.map { text ->
+            val start = System.nanoTime()
+            file(text).also { times.add((System.nanoTime() - start) / 1_000_000) }
+        }
+        // What is read is what the rule gives: such a text is no host, so it is kept as written.
+        val a = read[0].accounts.single()
+        assertTrue(a.entry.urls.isEmpty())
+        assertEquals(long.substring(0, 10_000), a.entry.notes)
+        assertEquals("[LONG_WEBSITES_MOVED×1, NOTES_CUT×1]", a.changes.toString())
+        assertEquals("[LONG_WEBSITES_MOVED×1, NOTES_CUT×1]", read[1].accounts.single().changes.toString())
+        assertEquals(ImportLeftOut.Kind.PASSWORD_TOO_LONG, read[2].leftOut.single().kind)
+        assertEquals(long.substring(0, 200), read[2].leftOut.single().name)
+        assertEquals(4_000, read[3].accounts.size)
+        assertEquals(listOf(short), read[3].accounts.last().entry.urls)
+        assertEquals(short.substring(0, 200), read[3].accounts.last().entry.title) // the "host" of a text that is no address
+        assertTrue("$times ms", times.all { it < 5_000 })
+    }
+
     @Test
     fun tenThousandRowsAreReadAndOneMoreIsRefused() {
         val header = "name,url,username,password\n"
@@ -251,6 +378,34 @@ class ImporterTest {
         for (secret in listOf("Парол-2026!", "aziz", "Почта", "pochta", "шахсий", "Номи")) {
             assertTrue(texts.none { it.contains(secret) })
         }
+        // An account that is left out is listed by its name, which its toString hides too; so does the plan's.
+        val long = file(csv("name,url,username,password", "Zaxira,https://z.example,zafar,${"p".repeat(1_001)}", "accounts.google.com,https://accounts.google.com,gulnora,pw"))
+        assertEquals("Zaxira", long.leftOut.single().name)
+        val plan = ImportFixtures.plan(long)
+        assertEquals("accounts.google.com", plan.tidyExamples.single().before)
+        for (text in listOf(long.leftOut.toString(), long.toString(), plan.toString(), plan.accounts.toString(), plan.tidyExamples.toString(), plan.entries.toString())) {
+            for (secret in listOf("Zaxira", "zafar", "gulnora", "google", "Google")) assertFalse(text, text.contains(secret))
+        }
+    }
+
+    /**
+     * The id of an item of our own JSON is text of the file like any other: `Entry.toString` shows an
+     * id, so one that is no id is not kept (`VaultEdits.addImported` would give a new one anyway).
+     */
+    @Test
+    fun anIdThatIsNoIdIsNotKeptAndShowsInNoToString() {
+        val own = file(
+            """{"encrypted":false,"passwordVault":{"format":"passwordvault-export","version":1},"folders":[],"items":[""" +
+                """{"id":"S3cret-text-in-the-id","type":1,"name":"A","login":{"username":"u","password":"p"}},""" +
+                """{"id":"${ImportFixtures.id(7)}","type":1,"name":"B","login":{"username":"u","password":"q"}},""" +
+                """{"id":"00000000-0000-4000-8000-00000000000A","type":1,"name":"C","login":{"username":"u","password":"r"}}]}""",
+        )
+        assertEquals(Importer.Format.OWN_JSON, own.format)
+        assertFalse(own.accounts.toString(), own.accounts.toString().contains("S3cret"))
+        assertFalse(ImportFixtures.plan(own).entries.toString().contains("S3cret"))
+        assertTrue(own.accounts.all { Uuid.isValid(it.entry.id) })
+        assertEquals(ImportFixtures.id(7), own.accounts[1].entry.id) // an id that is one is kept as written
+        assertEquals(3, own.accounts.map { it.entry.id }.toSet().size)
     }
 
     @Test

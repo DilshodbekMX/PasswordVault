@@ -20,6 +20,14 @@
             </intent-filter>
         </provider>
 
+        <!-- A place that cannot be reached: in a process of its own, which never brings the provider
+             up (TestUnreachableProvider.java). -->
+        <provider
+            android:name="io.github.dilshodbekmx.passwordvault.files.TestUnreachableProvider"
+            android:authorities="io.github.dilshodbekmx.passwordvault.test.unreachable"
+            android:exported="true"
+            android:process=":unreachable" />
+
         <!-- Stands in for the system file picker: started for a result by the app's activity. -->
         <activity
             android:name="io.github.dilshodbekmx.passwordvault.files.FakePickerActivity"

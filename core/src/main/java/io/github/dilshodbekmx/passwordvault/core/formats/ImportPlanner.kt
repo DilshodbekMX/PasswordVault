@@ -4,6 +4,7 @@ import io.github.dilshodbekmx.passwordvault.core.model.Entry
 import io.github.dilshodbekmx.passwordvault.core.model.EntryRules
 import io.github.dilshodbekmx.passwordvault.core.model.Vault
 import io.github.dilshodbekmx.passwordvault.core.model.VaultEdits
+import io.github.dilshodbekmx.passwordvault.core.model.edits.Entries
 import io.github.dilshodbekmx.passwordvault.core.search.WebAddress
 import io.github.dilshodbekmx.passwordvault.core.util.Bytes
 import io.github.dilshodbekmx.passwordvault.core.util.RandomSource
@@ -11,6 +12,8 @@ import io.github.dilshodbekmx.passwordvault.core.vaultfile.BodyCodec
 import io.github.dilshodbekmx.passwordvault.core.vaultfile.HeaderCodec
 import io.github.dilshodbekmx.passwordvault.core.vaultfile.PasswordSlot
 import io.github.dilshodbekmx.passwordvault.core.vaultfile.VaultHeader
+import java.security.MessageDigest
+import java.util.IdentityHashMap
 import java.util.Locale
 
 /**
@@ -39,12 +42,15 @@ import java.util.Locale
  * 4. **Repeats and conflicts** (formats.md §8.4). An account is *already here* when an account of the
  *    vault outside Recently deleted has the same username, a website host in common (or, when neither
  *    has a website, the same name), the same password, and nothing that the incoming one would add
- *    in its notes, its extra fields or a pending change's old password: it is skipped. The same within
- *    the file: an exact repeat of an account already planned is imported once. An account with the
- *    same website and username as one in the vault but another password is added beside it "so you
- *    can compare" ([ImportPlan.conflicts]); nothing combines the two. An account of our own JSON whose
- *    id an account of the vault holds is added only when it differs from it in this sense, and then
- *    `VaultEdits.addImported` gives it a new id and the name "Gmail (from file)" (formats-review P1).
+ *    in its notes, its extra fields or a pending change's old password: it is skipped. The name of an
+ *    account without a website is looked up as the file has it and as an import stores it: with "Tidy
+ *    names" and without, and with "(from file)", so that the same file imported again adds nothing.
+ *    The same within the file: an exact repeat of an account already planned is imported once. An
+ *    account with the same website and username as one in the vault but another password is added
+ *    beside it "so you can compare" ([ImportPlan.conflicts]); nothing combines the two. An account of
+ *    our own JSON whose id an account of the vault holds is added only when it differs from it in this
+ *    sense, and then `VaultEdits.addImported` gives it a new id and the name "Gmail (from file)"
+ *    (formats-review P1).
  * 5. **The size** (architecture.md §3.5): the vault file after the import, estimated from the vault
  *    `VaultEdits.addImported` would make, sealed with the longest header a vault file can have. An
  *    import that would not fit ([ImportPlan.fits] false) is refused with "Your passwords no longer fit
@@ -52,7 +58,12 @@ import java.util.Locale
  *
  * **Speed** (formats-review P16): the vault and the accounts already planned are indexed by
  * (username, host) in hash maps, and each account's hosts are worked out once, so that the time grows
- * with the sizes added, not multiplied.
+ * with the sizes added, not multiplied. That holds for a hostile file too, in which thousands of
+ * accounts share one login: an account is compared only with those that have its login and its
+ * password, an exact copy is found without a comparison, one note is looked for inside another in
+ * time that grows with their lengths added, and the comparisons of one plan read at most [WORK_MAX]
+ * characters. After that only exact copies still count as repeats, so that an account whose notes
+ * merely stand inside another's is added once more; nothing is ever skipped for it.
  */
 object ImportPlanner {
     /** The largest vault file (architecture.md §4.1, [V-C4]). */
@@ -84,6 +95,8 @@ object ImportPlanner {
         var accounts = joined.accounts
         var tidied = 0
         val examples = ArrayList<TidyExample>(2)
+        // The name in the file of each account that "Tidy names" renamed.
+        val nameInFile = IdentityHashMap<ImportAccount, String>()
         if (choices.tidyNames) {
             accounts = accounts.map { a ->
                 val tidy = tidyName(a.entry.title)
@@ -92,16 +105,18 @@ object ImportPlanner {
                 } else {
                     tidied++
                     if (examples.size < 2) examples.add(TidyExample(a.entry.title, tidy))
-                    a.renamed(tidy)
+                    a.renamed(tidy).also { nameInFile[it] = a.entry.title }
                 }
             }
         }
 
-        // The vault's accounts outside Recently deleted, by login.
+        // The vault's accounts outside Recently deleted, and the accounts planned so far, by login.
+        val contents = Contents()
         val live = vault.entries.filter { it.deletedAt == null }
-        val inVault = HashMap<String, MutableList<Entry>>(live.size * 2)
-        for (e in live) for (k in loginKeys(e)) inVault.getOrPut(k) { ArrayList(1) }.add(e)
-        val inFile = HashMap<String, MutableList<Entry>>(accounts.size * 2)
+        val inVault = Known(live.size)
+        for (e in live) inVault.add(loginKeys(e), e, contents.of(e))
+        val inFile = Known(accounts.size)
+        val work = Work()
         val added = ArrayList<ImportAccount>(accounts.size)
         val conflicts = ArrayList<ImportConflict>()
         var alreadyHere = 0
@@ -109,28 +124,19 @@ object ImportPlanner {
         for (a in accounts) {
             val e = a.entry
             val keys = loginKeys(e)
-            var here = false
-            var other: Entry? = null
-            here@ for (k in keys) {
-                for (v in inVault[k].orEmpty()) {
-                    if (covers(v, e)) {
-                        here = true
-                        break@here
-                    }
-                    if (other == null && v.password != e.password) other = v
-                }
-            }
-            if (here) {
+            val vaultKeys = keysInVault(e, keys, nameInFile[a], fromFile)
+            val incoming = Incoming(e, contents.of(e))
+            if (inVault.anyCovers(vaultKeys, incoming, work)) {
                 alreadyHere++
                 continue
             }
-            if (keys.any { k -> inFile[k].orEmpty().any { covers(it, e) } }) {
+            if (inFile.anyCovers(keys, incoming, work)) {
                 repeated++
                 continue
             }
-            other?.let { conflicts.add(ImportConflict(added.size, it.id)) }
+            inVault.withAnotherPassword(vaultKeys, e.password)?.let { conflicts.add(ImportConflict(added.size, it.id)) }
             added.add(a)
-            for (k in keys) inFile.getOrPut(k) { ArrayList(1) }.add(e)
+            inFile.add(keys, e, incoming.digests)
         }
 
         return ImportPlan(
@@ -198,8 +204,30 @@ object ImportPlanner {
             val host = siteHost(url)
             if (host.isNotEmpty() && host !in hosts) hosts.add(host)
         }
-        if (hosts.isEmpty()) return listOf(user + SEPARATOR + NO_WEBSITE + e.title.trim().lowercase(Locale.ROOT))
+        if (hosts.isEmpty()) return listOf(nameKey(user, e.title))
         return hosts.map { user + SEPARATOR + it }
+    }
+
+    /** The login of an account without a website: its username and its name. */
+    private fun nameKey(user: String, title: String): String = user + SEPARATOR + NO_WEBSITE + title.trim().lowercase(Locale.ROOT)
+
+    /**
+     * The logins under which an account of the vault may be the incoming [e]: [keys], and for an account
+     * without a website, which only its name tells apart, also the names an import gives it. That is
+     * the name it has in the file when "Tidy names" changed it ([nameInFile]; the vault's own export
+     * holds that one), the name "Tidy names" gives it when it is off now and was on for an earlier
+     * import, and each name with "(from file)", as `VaultEdits.addImported` names an account of our own
+     * JSON that it adds beside the one holding its id ([fromFile]).
+     */
+    private fun keysInVault(e: Entry, keys: List<String>, nameInFile: String?, fromFile: (String) -> String): List<String> {
+        if (e.urls.any { siteHost(it).isNotEmpty() }) return keys
+        val user = e.username.trim()
+        val all = LinkedHashSet<String>(keys)
+        for (name in linkedSetOf(e.title, tidyName(e.title)).apply { nameInFile?.let(::add) }) {
+            all.add(nameKey(user, name))
+            all.add(nameKey(user, Entries.titled(fromFile, name)))
+        }
+        return all.toList()
     }
 
     /** The host of a website, or `app:` and the package of an Android app. */
@@ -209,11 +237,221 @@ object ImportPlanner {
     }
 
     /** [existing] already holds what [incoming] brings: the same password, and its notes, fields and old password. */
-    private fun covers(existing: Entry, incoming: Entry): Boolean =
-        existing.password == incoming.password &&
-            (incoming.notes.isBlank() || existing.notes.contains(incoming.notes.trim())) &&
-            existing.fields.containsAll(incoming.fields) &&
-            (incoming.pendingOldPassword == null || incoming.pendingOldPassword == existing.pendingOldPassword)
+    private fun covers(existing: Entry, incoming: Incoming): Boolean {
+        val e = incoming.entry
+        return existing.password == e.password &&
+            holds(existing.notes, incoming) &&
+            existing.fields.containsAll(e.fields) &&
+            (e.pendingOldPassword == null || e.pendingOldPassword == existing.pendingOldPassword)
+    }
+
+    /** Whether the notes [incoming] brings, trimmed, stand somewhere in [notes] (blank ones always do). */
+    private fun holds(notes: String, incoming: Incoming): Boolean {
+        val part = incoming.notes
+        return when {
+            part.isEmpty() -> true
+            part.length > notes.length -> false
+            part.length == notes.length -> part == notes
+            else -> {
+                val at = indexOf(notes, part, incoming.table)
+                at >= 0 && notes.regionMatches(at, part, 0, part.length) // the search's answer, checked
+            }
+        }
+    }
+
+    /**
+     * Where [part] first stands in [text], or -1: the search of Knuth, Morris and Pratt, whose time is
+     * the two lengths added whatever the texts hold. `String.contains` takes them multiplied when the
+     * texts begin alike again and again, which a file from outside can arrange. [table] is [tableOf] [part].
+     */
+    private fun indexOf(text: String, part: String, table: IntArray): Int {
+        var k = 0
+        for (i in text.indices) {
+            val c = text[i]
+            while (k > 0 && c != part[k]) k = table[k - 1]
+            if (c == part[k]) k++
+            if (k == part.length) return i - k + 1
+        }
+        return -1
+    }
+
+    /** For each start of [part], the length of its longest proper end that is also a start of [part]. */
+    private fun tableOf(part: String): IntArray {
+        val table = IntArray(part.length)
+        var k = 0
+        for (i in 1 until part.length) {
+            val c = part[i]
+            while (k > 0 && c != part[k]) k = table[k - 1]
+            if (c == part[k]) k++
+            table[i] = k
+        }
+        return table
+    }
+
+    /** An incoming account and what every comparison with it needs, worked out once. */
+    private class Incoming(val entry: Entry, /** [Contents.of] it. */ val digests: Digests) {
+        /** Its notes as they are looked for in another account's: trimmed. */
+        val notes: String = entry.notes.trim()
+
+        /** [tableOf] its notes, made when the first search needs it. */
+        val table: IntArray by lazy(LazyThreadSafetyMode.NONE) { tableOf(notes) }
+
+        /** The characters of its extra fields. */
+        val fieldsText: Int = fieldsText(entry)
+    }
+
+    /** The characters of the extra fields of [e]. */
+    private fun fieldsText(e: Entry): Int {
+        var n = 0
+        for (f in e.fields) n += f.name.length + f.value.length
+        return n
+    }
+
+    /**
+     * What [covers] of [existing] and [incoming] reads at most, in characters, for [Work]: the password
+     * (the two are equal), the notes when one may stand in the other, the fields, and a little for the
+     * comparison itself.
+     */
+    private fun costOf(existing: Entry, incoming: Incoming): Long {
+        val part = incoming.notes.length
+        val notes = if (part == 0 || part > existing.notes.length) 0 else existing.notes.length + part
+        return COMPARISON + incoming.entry.password.length + notes + incoming.fieldsText +
+            (incoming.entry.fields.size + 1).toLong() * fieldsText(existing)
+    }
+
+    /** What one comparison costs besides the text it reads ([costOf]). */
+    private const val COMPARISON = 64
+
+    /**
+     * The most characters the comparisons of one plan may read ([Work]): 200 million. A file made so
+     * that its comparisons read as much as they can reaches it in about 0.3 s on the desktop this was
+     * measured on and 0.5 s on its API 37 emulator. The files people make need far fewer, because few
+     * accounts share a login and a password.
+     */
+    internal const val WORK_MAX: Long = 200_000_000L
+
+    /** What the comparisons of one plan may still read; at 0, only exact copies are still found. */
+    private class Work(var left: Long = WORK_MAX)
+
+    /**
+     * Two short texts that stand for an account in the indexes of [Known], so that no key holds a
+     * password: [password] is the SHA-256 of its password, [content] that of everything [covers]
+     * compares (the password, the trimmed notes, the extra fields and the pending change's old
+     * password). Two accounts have the same [content] exactly when they are equal in all of that, and
+     * a key made of them has a hash that a file cannot choose.
+     */
+    private class Digests(val password: String, val content: String)
+
+    /** Makes the [Digests] of accounts. */
+    private class Contents {
+        private val sha256 = MessageDigest.getInstance("SHA-256")
+        private val buffer = ByteArray(4_096)
+        private var used = 0
+
+        /** How much of [buffer] holds text since it was last wiped. */
+        private var dirty = 0
+
+        fun of(e: Entry): Digests {
+            text(e.password)
+            val password = digest()
+            text(e.password)
+            text(e.notes.trim())
+            number(e.fields.size)
+            for (f in e.fields) {
+                text(f.name)
+                text(f.value)
+                number(if (f.secret) 1 else 0)
+            }
+            val old = e.pendingOldPassword
+            if (old == null) number(-1) else text(old)
+            return Digests(password, digest())
+        }
+
+        private fun digest(): String {
+            sha256.update(buffer, 0, used)
+            buffer.fill(0, 0, maxOf(used, dirty)) // it held a password
+            used = 0
+            dirty = 0
+            return Bytes.hex(sha256.digest())
+        }
+
+        /** The length, then every UTF-16 unit as it is: two texts never give the same bytes. */
+        private fun text(s: String) {
+            number(s.length)
+            for (c in s) {
+                if (used + 2 > buffer.size) flush()
+                buffer[used++] = (c.code shr 8).toByte()
+                buffer[used++] = c.code.toByte()
+            }
+        }
+
+        private fun number(n: Int) {
+            if (used + 4 > buffer.size) flush()
+            buffer[used++] = (n shr 24).toByte()
+            buffer[used++] = (n shr 16).toByte()
+            buffer[used++] = (n shr 8).toByte()
+            buffer[used++] = n.toByte()
+        }
+
+        private fun flush() {
+            sha256.update(buffer, 0, used)
+            if (used > dirty) dirty = used
+            used = 0
+        }
+    }
+
+    /**
+     * The accounts an incoming one is compared with (the vault's, or those of the file planned so far),
+     * found by login without looking through the others, also when thousands share one login:
+     * - by login and password, in their order: only these can hold what an account with that login and
+     *   that password brings;
+     * - by login and [Digests.content]: an exact copy, found at once;
+     * - by login, the first account and the first with another password than the first's: enough to
+     *   name the account that an incoming one with another password is added beside.
+     * Every key is a string, which the hash map keeps in a sorted tree when many keys share one hash.
+     */
+    private class Known(expected: Int) {
+        private val byPassword = HashMap<String, MutableList<Entry>>(expected * 2)
+        private val byContent = HashMap<String, Entry>(expected * 2)
+        private val first = HashMap<String, Entry>(expected * 2)
+        private val another = HashMap<String, Entry>()
+
+        /** Adds [e], which has the logins [keys] and the [digests] that [Contents.of] gives for it. */
+        fun add(keys: List<String>, e: Entry, digests: Digests) {
+            for (k in keys) {
+                byPassword.getOrPut(k + SEPARATOR + digests.password) { ArrayList(1) }.add(e)
+                byContent.putIfAbsent(k + SEPARATOR + digests.content, e)
+                val held = first.putIfAbsent(k, e)
+                if (held != null && held.password != e.password) another.putIfAbsent(k, e)
+            }
+        }
+
+        /** Whether one of these accounts with a login of [keys] already holds what [incoming] brings. */
+        fun anyCovers(keys: List<String>, incoming: Incoming, work: Work): Boolean {
+            for (k in keys) {
+                val copy = byContent[k + SEPARATOR + incoming.digests.content]
+                if (copy != null && covers(copy, incoming)) return true
+            }
+            for (k in keys) {
+                for (x in byPassword[k + SEPARATOR + incoming.digests.password].orEmpty()) {
+                    if (work.left <= 0) return false
+                    work.left -= costOf(x, incoming)
+                    if (covers(x, incoming)) return true
+                }
+            }
+            return false
+        }
+
+        /** The first of these accounts that has a login of [keys] and another password than [password], if any. */
+        fun withAnotherPassword(keys: List<String>, password: String): Entry? {
+            for (k in keys) {
+                val held = first[k] ?: continue
+                if (held.password != password) return held
+                another[k]?.let { return it }
+            }
+            return null
+        }
+    }
 
     // ------------------------------------------------------------------ the size
 
@@ -240,7 +478,7 @@ object ImportPlanner {
      * counted), its canonical body padded to whole blocks, and the longest header.
      */
     internal fun sealedSize(vault: Vault, entries: List<Entry>, fromFile: (String) -> String): Long {
-        val after = if (entries.isEmpty()) vault else VaultEdits.addImported(entries, SizingIds(), fromFile)(vault, 0L).vault
+        val after = if (entries.isEmpty()) vault else VaultEdits.addImported(entries, SizingIds(vault, entries), fromFile)(vault, 0L).vault
         return sealedSize(after)
     }
 
@@ -255,17 +493,29 @@ object ImportPlanner {
         }
     }
 
-    /** Ids for the size estimate only: distinct and valid, never random, never a real entry's. */
-    private class SizingIds : RandomSource {
+    /**
+     * Ids for the size estimate only: distinct and valid, never random, and never one that [vault] or
+     * [entries] has. A file in our own format can bring any valid id, these among them, and
+     * `VaultEdits.addImported` gives up after a hundred ids that are taken.
+     */
+    private class SizingIds(vault: Vault, entries: List<Entry>) : RandomSource {
+        private val taken = HashSet<String>((vault.entries.size + entries.size) * 2)
         private var next = 0L
+
+        init {
+            vault.entries.mapTo(taken) { it.id }
+            entries.mapTo(taken) { it.id }
+        }
 
         override fun bytes(n: Int): ByteArray = ByteArray(n)
 
         override fun int(bound: Int): Int = 0
 
         override fun uuid(): String {
-            val hex = (next++).toString(16).padStart(12, '0')
-            return "ffffffff-ffff-4fff-bfff-$hex"
+            while (true) {
+                val id = "ffffffff-ffff-4fff-bfff-" + (next++).toString(16).padStart(12, '0')
+                if (id !in taken) return id
+            }
         }
     }
 

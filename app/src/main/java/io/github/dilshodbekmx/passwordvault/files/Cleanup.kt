@@ -18,8 +18,11 @@ sealed interface Cleanup {
     data class Left(val doc: DocRef, val place: Place) : Cleanup
 
     /**
-     * It holds something this task did not write, or it could not be read: the user chose an existing
-     * file to replace. It is left as it was, and nothing is said about it.
+     * It holds something, or it could not be read, and no write of this task began (neither
+     * [FileTask.written], which [FileTaskStore.write] records, nor the caller's `written`): it is left
+     * as it was. That is an existing file the user chose to replace, and nothing is said about it.
+     * What a try of this task wrote before a lock or the end of the process cut it off is not
+     * [Kept]: the task's record says that its write began, and the document is removed.
      */
     data object Kept : Cleanup
 }

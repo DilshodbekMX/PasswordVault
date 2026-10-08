@@ -47,7 +47,8 @@ public final class TestDocumentsProvider extends DocumentsProvider {
 
     @Override
     public Cursor queryDocument(String documentId, String[] projection) throws FileNotFoundException {
-        MatrixCursor cursor = new MatrixCursor(projection != null ? projection : DOCUMENT_COLUMNS);
+        boolean own = projection == null || TestDocuments.ALL_COLUMNS.equals(TestDocuments.behaviour(documentId));
+        MatrixCursor cursor = new MatrixCursor(own ? DOCUMENT_COLUMNS : projection);
         addRow(cursor, documentId);
         return cursor;
     }
@@ -83,6 +84,9 @@ public final class TestDocumentsProvider extends DocumentsProvider {
             case TestDocuments.CUT:
             case TestDocuments.FLIP:
                 return brokenWriter(file, behaviour);
+            case TestDocuments.W_ONLY:
+                if (mode.indexOf('t') >= 0) throw new IllegalArgumentException("Bad mode: " + mode);
+                return ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_WRITE_ONLY);
             default:
                 return ParcelFileDescriptor.open(file, ParcelFileDescriptor.parseMode(mode));
         }

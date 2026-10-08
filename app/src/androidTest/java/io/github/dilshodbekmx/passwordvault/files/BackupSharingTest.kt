@@ -3,6 +3,7 @@ package io.github.dilshodbekmx.passwordvault.files
 import android.content.Intent
 import android.net.Uri
 import android.provider.OpenableColumns
+import androidx.core.content.FileProvider
 import androidx.core.content.IntentCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.io.File
@@ -67,6 +68,26 @@ class BackupSharingTest {
         assertArrayEquals(byteArrayOf(1), file.readBytes())
         sharing.clear()
         assertFalse(file.exists())
+    }
+
+    @Test
+    fun aCopyThatIsBeingReadStaysAsItWasWhenTheNextOneIsWritten() {
+        // "Send to another app…" twice on one day: the app chosen the first time may still be reading
+        // its copy (an upload on a slow line) when the second copy, of the same name, is written.
+        val name = DocumentNames.backup("2026-10-08")
+        val first = ByteArray(200_000) { (it % 251).toByte() }
+        val file = sharing.write(first, name)
+        val uri = FileProvider.getUriForFile(app, app.packageName + BackupSharing.AUTHORITY_SUFFIX, file)
+        val second = ByteArray(10) { 7 }
+        app.contentResolver.openInputStream(uri)!!.use { reading ->
+            val head = ByteArray(1_000)
+            var at = 0
+            while (at < head.size) at += reading.read(head, at, head.size - at).also { check(it > 0) }
+            sharing.write(second, name)
+            assertArrayEquals("the first reader gets the first copy, whole", first, head + reading.readBytes())
+        }
+        assertArrayEquals("the name now holds the second copy", second, file.readBytes())
+        assertArrayEquals(arrayOf(name), File(app.cacheDir, BackupSharing.DIR).list()!!.filter { !it.startsWith("pvtest") }.toTypedArray())
     }
 
     @Test
