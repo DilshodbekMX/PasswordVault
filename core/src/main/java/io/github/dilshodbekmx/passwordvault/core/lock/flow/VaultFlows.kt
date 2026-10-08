@@ -64,6 +64,14 @@ internal class VaultFlows(private val core: LockCore) {
      */
     private val pendingWhenShown = HashMap<String, Boolean>()
 
+    /**
+     * The entry (the proof of a typed master password) on which "Make a backup now?" was offered
+     * last ([offerBackup]): one offer per entry, because its bytes are kept only until the offer is
+     * answered (F12 step 2). Only compared by identity; the bytes are the proof's, which the engine
+     * drops at the next lock or `ON_STOP` as always.
+     */
+    private var backupOfferedOn: MasterProof? = null
+
     // ---------------------------------------------------------------------------------------------
     // F13 and F17 step 3: restore from a backup file
 
@@ -553,8 +561,10 @@ internal class VaultFlows(private val core: LockCore) {
      * the backup it starts uses that entry. Nothing is offered when there is no such proof (a PIN or
      * fingerprint unlock, or the app stopped being visible since), when it is not the open vault's,
      * while a new master password is pending (F11 step 10: "You can make a backup when your new
-     * master password has started working."), or when the offer is shown already. Nothing is
-     * written. Whether a backup is due is the app's to say (ux.md §5.19).
+     * master password has started working."), or when the offer was made on this entry already:
+     * shown now, or answered ("The typed bytes are kept only until the offer is answered", F12 step
+     * 2), so an entry is offered once. Nothing is written. Whether a backup is due is the app's to
+     * say (ux.md §5.19).
      */
     suspend fun offerBackup() {
         val now = core.state.value as? LockState.Unlocked ?: return
@@ -562,7 +572,8 @@ internal class VaultFlows(private val core: LockCore) {
         val open = core.open ?: return
         if (proof.vaultId != open.vaultId || !core.holds(proof)) return
         if (core.knownLock(open.vaultId)?.state?.pendingMp != null) return
-        if (now.notices.any { it is Notice.BackupNow }) return
+        if (backupOfferedOn === proof || now.notices.any { it is Notice.BackupNow }) return
+        backupOfferedOn = proof
         core.addNotice { Notice.BackupNow(it) }
     }
 

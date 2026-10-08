@@ -73,6 +73,29 @@ class BackupOfferFlowTest {
     }
 
     @Test
+    fun step2_anOfferThatWasAnswered_isNotMadeAgainOnTheSameEntry_butANewEntryGetsItsOwn() {
+        vaultWithPin()
+        f.startInFront()
+        await { f.engine.useMasterPassword() }
+        assertTrue(f.unlockWith(PASSWORD) is MasterPasswordOutcome.Right)
+        f.answerNotices()
+        await { f.engine.offerBackup() }
+        await { f.engine.answerNotice(backupNow().single().id, NoticeAnswer.LATER) }
+
+        // "The typed bytes are kept only until the offer is answered" (F12 step 2): that entry is not offered again.
+        await { f.engine.offerBackup() }
+        assertEquals(emptyList<Notice.BackupNow>(), backupNow())
+
+        // The next master password typed is a new entry, with an offer of its own.
+        f.lock()
+        await { f.engine.useMasterPassword() }
+        assertTrue(f.unlockWith(PASSWORD) is MasterPasswordOutcome.Right)
+        f.answerNotices()
+        await { f.engine.offerBackup() }
+        assertEquals(1, backupNow().size)
+    }
+
+    @Test
     fun step2_afterSetupOrARestore_theOfferUsesThatEntryToo() {
         f.startInFront()
         assertTrue(f.restoreBackup() is CreateOutcome.Created)
