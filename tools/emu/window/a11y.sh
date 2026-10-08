@@ -36,11 +36,11 @@
 #     lock.md §2.3 accepts: printed as KNOWN, which is not a failure (PV_A11Y_BEFORE_34=fail makes it
 #     one). What the tool service and uiautomator read of it is printed and fails nothing.
 # On the lock screen the tool service then does what a screen reader does with the masked field:
-# the accessibility focus offered, a double tap, the cursor moved back by character, a letter typed
-# and deleted at the cursor through the keyboard, the cursor put at the end, the text set; each
-# answer is checked (the field reports mask characters and the cursor where it is), no observer
-# reads any of it meanwhile, and the master password then opens the vault, so every edit landed
-# where it should.
+# the accessibility focus offered, a double tap, the text set twice, the cursor moved back by
+# character, a letter typed and deleted at the cursor through the keyboard, the cursor put at the
+# end; each answer is checked (the field reports mask characters and the cursor where it is), no
+# observer reads any of it meanwhile, and the master password then opens the vault, so every edit
+# landed where it should.
 # The controls are the helper app's own platform fields: the service that is not a tool reads the
 # text typed into a platform text field, as a node and in its events, so it is connected and
 # reading; and what each observer reads of a platform password field (Android's own dots, with
@@ -347,6 +347,11 @@ screen_reader() {
     # reader turns on and the helper's service does not (the script's taps must stay taps): the
     # action is offered above. A double tap is a click: the field takes the input focus.
     act click && act_expect "a double tap" result=true focused=true || return 1
+    # The text set twice, as a screen reader's paste or edit does; the field must then hold exactly
+    # the master password, which the unlock afterwards shows.
+    act settext --es text Wrongpass && act_expect "the text set to another one" result=true count=9 || return 1
+    act settext --es text "$WIN_MASTER" && act_expect "the text set to the master password" result=true count="$n" sel="$n,$n" || return 1
+    echo "  the text set twice, as a screen reader's paste does: $n mask characters, the cursor at the end"
     act prev --ei granularity 1 && act_expect "the cursor back by one character" result=true count="$n" sel="$((n - 1)),$((n - 1))" || return 1
     act prev --ei granularity 1 && act_expect "the cursor back by another character" result=true count="$n" sel="$((n - 2)),$((n - 2))" || return 1
     echo "  the cursor moved back by character twice: at $((n - 2)) of $n"
@@ -358,9 +363,7 @@ screen_reader() {
     act info && act_expect "the keyboard's delete" count="$n" sel="$((n - 2)),$((n - 2))" || return 1
     echo "  a letter typed at the cursor and deleted again through the keyboard"
     act select --ei start "$n" --ei end "$n" && act_expect "the cursor put at the end" result=true count="$n" sel="$n,$n" || return 1
-    act settext --es text Wrongpass && act_expect "the text set to another one" result=true count=9 || return 1
-    act settext --es text "$WIN_MASTER" && act_expect "the text set to the master password" result=true count="$n" || return 1
-    echo "  the cursor put at the end; the text set twice, as a screen reader's paste does"
+    echo "  the cursor put at the end"
 }
 
 # generated: GENERATED becomes the generator's suggestion, one without "/" (the reading of the
@@ -425,7 +428,7 @@ judge shown "the generator's sheet, the suggested password" pv.gen.preview "$GEN
 # ---- the lock screen ---------------------------------------------------------------------------
 pv_step "the sheet and the form closed, the app locked, the master password typed" -- eval 'pv_shell input keyevent KEYCODE_BACK >/dev/null; pv_sleep 1; win_close_form && win_lock && watch_type pv.lock.password "$WIN_MASTER"' || win_end
 judge hidden "the lock screen, the master password" pv.lock.password "$WIN_MASTER"
-pv_step "the lock screen: a screen reader focuses the masked field, moves its cursor by character, types and deletes at the cursor, puts the cursor and sets the text" -- eval 'win_a11y_wait 10 && mark && screen_reader' || win_end
+pv_step "the lock screen: a screen reader focuses the masked field, sets its text, moves its cursor by character, types and deletes at the cursor, puts the cursor" -- eval 'win_a11y_wait 10 && mark && screen_reader' || win_end
 judge hidden "the lock screen, the master password, while a screen reader moves the cursor and edits" pv.lock.password "$WIN_MASTER"
 pv_step "the lock screen: after the screen reader's edits the field holds exactly the master password: it opens the vault" -- pva_submit pv.lock.unlock pv.route.Passwords 90
 
