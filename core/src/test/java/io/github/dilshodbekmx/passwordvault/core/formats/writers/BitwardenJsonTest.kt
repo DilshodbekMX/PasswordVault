@@ -22,7 +22,9 @@ import io.github.dilshodbekmx.passwordvault.core.util.Uuid
 import io.github.dilshodbekmx.passwordvault.core.vaultfile.BodyCodec
 import io.github.dilshodbekmx.passwordvault.core.vaultfile.BodyResult
 import io.github.dilshodbekmx.passwordvault.testing.FakeRandom
+import java.io.File
 import java.util.Random
+import java.util.concurrent.TimeUnit
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
@@ -657,6 +659,25 @@ class BitwardenJsonTest {
         assertEquals(3, (read(file(3).toByteArray(), maxItems = 2) as Read.TooMany).items)
     }
 
+    /**
+     * A 10 MB file of 5,000,000 tiny items took 307 MB on Android 17 to be refused, because every
+     * element was in the tree before the limit was checked (the review of 3.15). Read here in a JVM
+     * of its own with 128 MB, it comes back as TooMany with its count: only the first 10,000 elements
+     * are kept while it is parsed.
+     */
+    @Test
+    fun p11_aFileOfMillionsOfTinyItemsIsRefusedInLittleMemory() {
+        val javaBin = File(System.getProperty("java.home"), "bin/java").path
+        val classPath = System.getProperty("java.class.path")
+        val process = ProcessBuilder(javaBin, "-Xmx128m", "-cp", classPath, TinyItems::class.java.name, "5000000")
+            .redirectErrorStream(true)
+            .start()
+        val out = process.inputStream.bufferedReader().readText()
+        assertTrue("finished", process.waitFor(5, TimeUnit.MINUTES))
+        assertEquals(out, 0, process.exitValue())
+        assertEquals(out, "TooMany items=5000000 limit=10000", out.trim().lines().last())
+    }
+
     @Test
     fun p11_anItemWithoutANameGetsATitleAsOnTheCsvPath() {
         val file = bitwarden(
@@ -937,5 +958,28 @@ class BitwardenJsonTest {
         val escaped = exportText(listOf(entry(1, "Own"))).replace("\"generator\": \"PasswordVault 1.0\"",
             "\"generator\": \"PasswordVault 1.0\",\n\"esc\": \"a\\ud800b\"")
         assertEquals(mapOf("esc" to "\"a�b\""), ok(escaped).vaultExtras)
+    }
+}
+
+/**
+ * Reads `{"items":[0,0,…]}` with as many zeros as its argument says, in a JVM of its own, and prints
+ * what [BitwardenJson.read] made of it ([BitwardenJsonTest.p11_aFileOfMillionsOfTinyItemsIsRefusedInLittleMemory]).
+ */
+internal object TinyItems {
+    @JvmStatic
+    fun main(args: Array<String>) {
+        val n = args[0].toInt()
+        val head = "{\"items\":[".toByteArray(Charsets.US_ASCII)
+        val bytes = ByteArray(head.size + 2 * n + 1)
+        head.copyInto(bytes)
+        var at = head.size
+        repeat(n) {
+            bytes[at++] = '0'.code.toByte()
+            bytes[at++] = ','.code.toByte()
+        }
+        bytes[at - 1] = ']'.code.toByte()
+        bytes[at] = '}'.code.toByte()
+        val read = BitwardenJson.read(bytes, T0, Texts, { id(1) })
+        println(if (read is Read.TooMany) "TooMany items=${read.items} limit=${read.limit}" else read.toString())
     }
 }

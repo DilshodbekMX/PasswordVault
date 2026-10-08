@@ -514,8 +514,11 @@ object BitwardenJson {
         }
         val marks = start / 3
         val body = if (start == 0) bytes else bytes.copyOfRange(start, bytes.size)
+        // At most maxItems elements of `items` are kept while the file is parsed; the rest are only
+        // counted (formats.md §5.2), so a file of millions of tiny items is refused in little memory.
+        val limit = StrictJson.ArrayLimit("items", maxItems)
         val root = try {
-            StrictJson.parseUtf8Object(body, MAX_DEPTH)
+            StrictJson.parseUtf8Object(body, MAX_DEPTH, limit)
         } catch (f: StrictJson.Failure) {
             return Read.Unreadable(ParseError(f.offset + start, f.reason.code))
         } catch (_: RuntimeException) { // any other failure of the reader, without its message
@@ -525,7 +528,7 @@ object BitwardenJson {
         }
         if (isTrue(root["encrypted"])) return Read.Encrypted(isTrue(root["passwordProtected"]))
         val items = root["items"] as? JsonArray ?: return Read.NotAnExport
-        if (items.size > maxItems) return Read.TooMany(items.size, maxItems)
+        if (limit.count > maxItems) return Read.TooMany(limit.count, maxItems)
 
         // Our own file says so in the top object's extension; only then is any extension read.
         val extension = (root[EXTENSION] as? JsonObject)?.takeIf { isText(it["format"], FORMAT) }
