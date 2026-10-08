@@ -367,12 +367,13 @@ class ImportFlowTest {
 
     @Test
     fun aWindows1251FileSaysSoAndCanBeReadAsUtf8() = ImportKit.run {
-        recorded("Название;Сайт;Логин;Пароль\nПочта;https://mail.ru;иван;Пароль-1251\n".toByteArray(charset("windows-1251")))
+        // "Пётр" and "Тўлов" hold byte pairs that are valid UTF-8 (the owner's decision 12).
+        recorded("Название;Сайт;Логин;Пароль\nПётр;https://mail.ru;Тўлов;Пароль-1251\n".toByteArray(charset("windows-1251")))
         val file = file()
         val decoding = checkNotNull(preview(file).decoding)
         assertEquals(TextDecoding.Encoding.WINDOWS_1251, decoding.encoding)
         assertEquals(TextDecoding.Encoding.UTF_8, decoding.alternative)
-        assertEquals(listOf("Почта" to "иван"), preview(file).samples.map { it.title to it.username })
+        assertEquals(listOf("Пётр" to "Тўлов"), preview(file).samples.map { it.title to it.username })
 
         file.readAs(TextDecoding.Encoding.UTF_8)
         settle()
@@ -380,6 +381,18 @@ class ImportFlowTest {
         // Read as UTF-8, the Cyrillic header is no longer a password column: the mapping is offered.
         assertTrue("$chosen", chosen is ImportScreen.NeedsColumns || chosen is ImportScreen.Preview)
         assertEquals(2, documents.reads)
+    }
+
+    @Test
+    fun aWindows1251PasswordIsImportedAsItWasWritten() = ImportKit.run {
+        recorded("Название;Сайт;Логин;Пароль\nЛёва;https://mail.ru;Ўзбекистон;Пароль-Ёж-1251\n".toByteArray(charset("windows-1251")))
+        val file = file()
+        file.importNow()
+        settle()
+        val entry = vault().entries.single()
+        assertEquals("Лёва", entry.title)
+        assertEquals("Ўзбекистон", entry.username)
+        assertEquals("Пароль-Ёж-1251", entry.password)
     }
 
     @Test
