@@ -296,10 +296,8 @@ object Importer {
             return Result.ChooseColumns(columns, decoding, table.rows.size)
         }
 
-        val cleaner = Cleaner(nowMs, texts)
         val reader = RowReader(format, headers, columns.meanings, nowMs)
-        val leftOut = ArrayList<ImportLeftOut>()
-        val accounts = ArrayList<ImportAccount>()
+        val rows = ArrayList<RawRow>(table.rows.size)
         var emptyRows = 0
         for (row in table.rows) {
             val values = row.values
@@ -307,14 +305,20 @@ object Importer {
                 emptyRows++
                 continue
             }
-            val raw = reader.entry(values, random.uuid())
             val wrong = if (values.size != headers.size) ImportWrongLength(values.size, headers.size) else null
-            when (val c = cleaner.clean(raw.entry, raw.titleFromFile, listOf(row.line), 0, emptyList(), wrong)) {
+            rows.add(reader.row(values, random.uuid(), row.line, wrong))
+        }
+        // Rule (a) on the rows as written, before the limits move anything: one account, all its websites.
+        val joined = if (format == Format.BITWARDEN_CSV) rows else joinAdjacent(rows)
+        val cleaner = Cleaner(nowMs, texts)
+        val leftOut = ArrayList<ImportLeftOut>()
+        val accounts = ArrayList<ImportAccount>(joined.size)
+        for (r in joined) {
+            when (val c = cleaner.clean(r.entry, r.titleFromFile, r.lines, 0, emptyList(), r.wrongLength)) {
                 is Cleaned.Account -> accounts.add(c.account)
                 is Cleaned.LeftOut -> leftOut.add(c.leftOut)
             }
         }
-        val joined = if (format == Format.BITWARDEN_CSV) accounts else joinAdjacent(accounts)
         return Result.Read(
             ImportFile(
                 format = format,
@@ -322,7 +326,7 @@ object Importer {
                 delimiter = table.delimiter,
                 delimiterFromSepLine = table.delimiterFrom == Csv.DelimiterFrom.SEP_LINE,
                 columns = columns,
-                accounts = joined,
+                accounts = accounts,
                 leftOut = leftOut,
                 emptyRows = emptyRows,
                 unclosedQuoteLine = table.unclosedQuoteLine,
@@ -397,8 +401,8 @@ object Importer {
         return ImportColumns(format, headers, samples, meanings, ambiguous, fromUser = given != null)
     }
 
-    /** One row as an entry, before the rules of every format are applied. */
-    private class RawRow(val entry: Entry, val titleFromFile: Boolean)
+    /** One row (or adjacent rows joined) as an entry, before the rules of every format are applied. */
+    private class RawRow(val entry: Entry, val titleFromFile: Boolean, val lines: List<Int>, val wrongLength: ImportWrongLength?)
 
     /** Turns the values of one row into an entry, by the meanings of the columns. */
     private class RowReader(
@@ -423,7 +427,7 @@ object Importer {
         private fun value(values: List<String>, meaning: ColumnMeaning): String =
             column[meaning]?.let { values.getOrNull(it) } ?: ""
 
-        fun entry(values: List<String>, id: String): RawRow {
+        fun row(values: List<String>, id: String, line: Int, wrongLength: ImportWrongLength?): RawRow {
             val note = value(values, ColumnMeaning.NOTES)
             // Our own CSV: a block at the end of the note, recognised only when it is ours (D-10a).
             val block = FieldsBlock.read(note)
@@ -431,7 +435,7 @@ object Importer {
             for (i in fieldColumns) {
                 val v = values.getOrNull(i) ?: continue
                 if (v.isEmpty()) continue
-                val label = headers[i].replace("﻿", "").trim()
+                val label = headers[i].replace("\uFEFF", "").trim()
                 fields.add(CustomField(label, v, secret = !HeaderAliases.isHarmless(label)))
             }
             if (ColumnMeaning.BITWARDEN_FIELDS in column) {
@@ -488,6 +492,8 @@ object Importer {
                     pendingOldPassword = block.oldPassword,
                 ),
                 titleFromFile = titleText.isNotBlank(),
+                lines = listOf(line),
+                wrongLength = wrongLength,
             )
         }
     }
@@ -511,20 +517,38 @@ object Importer {
     }
 
     /**
-     * Rule (a) of ux.md §5.21: an account whose row follows one equal to it except for the website is
-     * one account with both websites, up to [EntryRules.URLS_MAX]; then a new account starts
-     * (formats-review P5). A row with the wrong number of values is never joined.
+     * Rule (a) of ux.md §5.21: a row that follows one equal to it except for the website is the same
+     * account, with both websites, up to [EntryRules.URLS_MAX]; then a new account starts
+     * (formats-review P5). Rows are compared as written, before the limits move anything; their dates
+     * may differ (the earliest creation and the latest change are kept). A row with the wrong number
+     * of values is never joined.
      */
-    private fun joinAdjacent(accounts: List<ImportAccount>): List<ImportAccount> {
-        val out = ArrayList<ImportAccount>(accounts.size)
-        for (a in accounts) {
+    private fun joinAdjacent(rows: List<RawRow>): List<RawRow> {
+        val out = ArrayList<RawRow>(rows.size)
+        for (r in rows) {
             val last = out.lastOrNull()
-            if (last != null && sameAccount(last, a)) out[out.size - 1] = last.joinedWith(a) else out.add(a)
+            if (last == null || !sameAccount(last, r)) {
+                out.add(r)
+                continue
+            }
+            val a = last.entry
+            val b = r.entry
+            out[out.size - 1] = RawRow(
+                a.copy(
+                    urls = a.urls + b.urls,
+                    createdAt = minOf(a.createdAt, b.createdAt),
+                    updatedAt = maxOf(a.updatedAt, b.updatedAt),
+                    passwordChangedAt = listOfNotNull(a.passwordChangedAt, b.passwordChangedAt).maxOrNull(),
+                ),
+                last.titleFromFile,
+                last.lines + r.lines,
+                null,
+            )
         }
         return out
     }
 
-    private fun sameAccount(a: ImportAccount, b: ImportAccount): Boolean {
+    private fun sameAccount(a: RawRow, b: RawRow): Boolean {
         if (a.wrongLength != null || b.wrongLength != null) return false
         val x = a.entry
         val y = b.entry
@@ -532,8 +556,7 @@ object Importer {
         if (x.urls.size + y.urls.size > EntryRules.URLS_MAX) return false
         return x.title == y.title && x.username == y.username && x.password == y.password && x.notes == y.notes &&
             x.fields == y.fields && x.favourite == y.favourite && x.changePending == y.changePending &&
-            x.pendingOldPassword == y.pendingOldPassword && x.checkIgnored == y.checkIgnored &&
-            x.passwordHistory == y.passwordHistory && x.extras == y.extras
+            x.pendingOldPassword == y.pendingOldPassword
     }
 
     // ------------------------------------------------------------------ the rules of every format
@@ -976,7 +999,7 @@ class ImportFile(
      * ASCII (or a U+FFFD) first, so that garbled text shows, then the first others; in file order.
      */
     fun sample(count: Int = 3): List<Sample> {
-        fun telling(a: ImportAccount) = (a.entry.title + a.entry.username).any { it.code > 0x7F && (Character.isLetter(it) || it == '�') }
+        fun telling(a: ImportAccount) = (a.entry.title + a.entry.username).any { it.code > 0x7F && (Character.isLetter(it) || it == '\uFFFD') }
         val picked = accounts.filter(::telling).take(count).toMutableList()
         if (picked.size < count) picked += accounts.filterNot(::telling).take(count - picked.size)
         val order = accounts.withIndex().associate { (i, a) -> a to i }
