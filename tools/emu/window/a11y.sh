@@ -36,10 +36,11 @@
 #     lock.md §2.3 accepts: printed as KNOWN, which is not a failure (PV_A11Y_BEFORE_34=fail makes it
 #     one). What the tool service and uiautomator read of it is printed and fails nothing.
 # On the lock screen the tool service then does what a screen reader does with the masked field:
-# accessibility focus, a double tap, the cursor moved back by character, a letter typed and deleted
-# at the cursor through the keyboard, the cursor put at the end, the text set; each answer is
-# checked (the field reports mask characters and the cursor where it is), no observer reads any of
-# it meanwhile, and the master password then opens the vault, so every edit landed where it should.
+# the accessibility focus offered, a double tap, the cursor moved back by character, a letter typed
+# and deleted at the cursor through the keyboard, the cursor put at the end, the text set; each
+# answer is checked (the field reports mask characters and the cursor where it is), no observer
+# reads any of it meanwhile, and the master password then opens the vault, so every edit landed
+# where it should.
 # The controls are the helper app's own platform fields: the service that is not a tool reads the
 # text typed into a platform text field, as a node and in its events, so it is connected and
 # reading; and what each observer reads of a platform password field (Android's own dots, with
@@ -331,12 +332,14 @@ screen_reader() {
     act info && act_expect "the field as a screen reader finds it" password=true editable=true count="$n" sel="$n,$n" || return 1
     actions=",$(act_value actions),"
     granularities=$(act_value granularities)
-    for want in 2097152:ACTION_SET_TEXT 131072:ACTION_SET_SELECTION 256:ACTION_NEXT_AT_MOVEMENT_GRANULARITY 512:ACTION_PREVIOUS_AT_MOVEMENT_GRANULARITY 16:ACTION_CLICK; do
+    for want in 64:ACTION_ACCESSIBILITY_FOCUS 16:ACTION_CLICK 2097152:ACTION_SET_TEXT 131072:ACTION_SET_SELECTION 256:ACTION_NEXT_AT_MOVEMENT_GRANULARITY 512:ACTION_PREVIOUS_AT_MOVEMENT_GRANULARITY; do
         case "$actions" in *",${want%%:*},"*) ;; *) pv_log "the field does not offer ${want#*:} (actions $actions)"; return 1 ;; esac
     done
     [ $((granularities & 1)) -ne 0 ] || { pv_log "the field cannot be read by character (granularities $granularities)"; return 1; }
-    echo "  a screen reader finds a password field of $n mask characters, the cursor at the end, the actions to set the text, put the cursor and move it, granularities $granularities"
-    act focus && act_expect "accessibility focus" result=true a11yfocused=true || return 1
+    echo "  a screen reader finds a password field of $n mask characters, the cursor at the end, the actions to focus it, set the text, put the cursor and move it, granularities $granularities"
+    # Compose gives the accessibility focus itself only while touch exploration is on, which a screen
+    # reader turns on and the helper's service does not (the script's taps must stay taps): the
+    # action is offered above. A double tap is a click: the field takes the input focus.
     act click && act_expect "a double tap" result=true focused=true || return 1
     act prev --ei granularity 1 && act_expect "the cursor back by one character" result=true count="$n" sel="$((n - 1)),$((n - 1))" || return 1
     act prev --ei granularity 1 && act_expect "the cursor back by another character" result=true count="$n" sel="$((n - 2)),$((n - 2))" || return 1

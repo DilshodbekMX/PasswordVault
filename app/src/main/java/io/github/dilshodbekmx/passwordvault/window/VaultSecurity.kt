@@ -6,8 +6,10 @@ import android.app.Activity
 import android.content.pm.PackageManager
 import android.os.Build
 import android.view.View
+import android.view.ViewGroup
 import android.view.Window
 import android.view.WindowManager
+import android.view.accessibility.AccessibilityEvent
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
 import androidx.compose.foundation.layout.Box
@@ -72,10 +74,13 @@ object VaultSecurity {
      *    accessibility tools (TalkBack is one and still reads them) [V-P5].
      *  - API 31+: other apps' overlay windows are hidden while this one shows. The call throws
      *    without HIDE_OVERLAY_WINDOWS, hence the check.
+     *  - Every version: [MaskedFieldEvents] on the decor view, through which every accessibility
+     *    event of the window's content passes.
      */
     fun applyToWindow(window: Window, secure: Boolean = BuildConfig.SECURE_WINDOW) {
         if (secure) window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
         val decor = window.decorView
+        decor.accessibilityDelegate = MaskedFieldEvents
         decor.filterTouchesWhenObscured = true
         if (Build.VERSION.SDK_INT >= 26) {
             decor.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
@@ -88,6 +93,38 @@ object VaultSecurity {
             PackageManager.PERMISSION_GRANTED
         ) {
             window.setHideOverlayWindows(true)
+        }
+    }
+}
+
+/** The platform's mask character for password text (`PasswordTransformationMethod`), and Compose's. */
+internal const val PASSWORD_MASK_CHARACTER = '\u2022'
+
+/**
+ * The decor view's accessibility delegate: an event about a password field that the field reports
+ * as masked (its text is mask characters only) gets mask characters for its "before" text too.
+ *
+ * A `VaultSecureField` drawn as dots reports one mask character per character
+ * (`maskedForAccessibility`); shown, its text. When it is hidden again, Compose's accessibility
+ * delegate compares the old and the new text of the node and sends a text-changed event whose text
+ * is the mask characters and whose "before" text is the text that was shown until then; the
+ * platform's own password field sends mask characters only at that moment
+ * (tools/emu/window/a11y.sh). Every event of the window's content passes through the decor view on
+ * its way to the accessibility services, and this one is rewritten here. An event of a field that is
+ * shown, and every other event, passes unchanged.
+ */
+internal object MaskedFieldEvents : View.AccessibilityDelegate() {
+    override fun onRequestSendAccessibilityEvent(host: ViewGroup, child: View, event: AccessibilityEvent): Boolean {
+        maskBeforeText(event)
+        return super.onRequestSendAccessibilityEvent(host, child, event)
+    }
+
+    fun maskBeforeText(event: AccessibilityEvent) {
+        if (!event.isPassword) return
+        val before = event.beforeText ?: return
+        if (before.all { it == PASSWORD_MASK_CHARACTER }) return
+        if (event.text.all { text -> text == null || text.all { it == PASSWORD_MASK_CHARACTER } }) {
+            event.beforeText = PASSWORD_MASK_CHARACTER.toString().repeat(before.length)
         }
     }
 }

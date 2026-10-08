@@ -79,6 +79,8 @@ WEBSITE=https://bank.skeleton.example/login
 NOTE="Branch behind the bazaar"
 CYRILLIC=Почта
 KEPT=$(sed -n 's:.*<string name="edit_kept">\(.*\)</string>.*:\1:p' "$REPO/app/src/main/res/values/strings_edit.xml")
+SHOW_PASSWORD=$(sed -n 's:.*<string name="common_show_password">\(.*\)</string>.*:\1:p' "$REPO/app/src/main/res/values/strings_common.xml")
+HIDE_PASSWORD=$(sed -n 's:.*<string name="common_hide_password">\(.*\)</string>.*:\1:p' "$REPO/app/src/main/res/values/strings_common.xml")
 
 # ---- one device: the skeleton steps ---------------------------------------------------------
 step1() {
@@ -177,13 +179,30 @@ discard_form() {
     pva_need pv.edit.dialog.discard 10 && pva_tap pv.edit.dialog.discard && pva_on Passwords
 }
 
+# form_password: the form's password as "Show password" shows it; then it is hidden again. Drawn as
+# dots, a VaultSecureField reports one mask character per character to uiautomator, never its text
+# (architecture.md §8.4); shown, its text is on the screen and readable.
+form_password() {
+    local masked text
+    masked=$(pva_text pv.edit.password) || return 1
+    pva_hide_keyboard
+    pv_ui_tap "[|]$(pva_re "$SHOW_PASSWORD")[|]" >/dev/null || { pv_log "no button '$SHOW_PASSWORD'"; return 1; }
+    pv_sleep 1
+    text=$(pva_text pv.edit.password) || return 1
+    pv_ui_tap "[|]$(pva_re "$HIDE_PASSWORD")[|]" >/dev/null || { pv_log "no button '$HIDE_PASSWORD'"; return 1; }
+    pv_sleep 1
+    [ "$masked" = "$(printf '%*s' ${#text} '' | sed 's/ /•/g')" ] \
+        || { pv_log "pv.edit.password drawn as dots does not report ${#text} mask characters, one for each character"; return 1; }
+    printf '%s\n' "$text"
+}
+
 step7() {
     local generated shown message deadline
     pva_tap pv.list.add && pva_on Edit && pva_tap pv.edit.generateButton && pva_need pv.gen.preview || return 1
     generated=$(pva_text pv.gen.preview) || return 1
     # "Use this password" is below the fold of the sheet on a 1920-pixel screen: pva_tap scrolls to it.
     pva_tap pv.gen.use && pva_need pv.edit.strength || return 1
-    shown=$(pva_text pv.edit.password) || return 1
+    shown=$(form_password) || return 1
     [ -n "$generated" ] && [ "$shown" = "$generated" ] || { pv_log "the form's password is not the generated one"; return 1; }
     pva_screen_off 3 && pva_unlock Edit || return 1
     # The message is a snackbar that goes after a few seconds: read it from the first dump that has it.
@@ -196,7 +215,7 @@ step7() {
     pv_log "the message: $message"
     # The device's language is English here (step 8 changes it later): strings_edit.xml's edit_kept.
     [ "$message" = "$KEPT" ] || { pv_log "the message is not '$KEPT'"; return 1; }
-    shown=$(pva_text pv.edit.password) || return 1
+    shown=$(form_password) || return 1
     [ "$shown" = "$generated" ] || { pv_log "the reopened form does not hold the generated password"; return 1; }
     discard_form
 }

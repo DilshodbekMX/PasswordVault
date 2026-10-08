@@ -26,6 +26,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextDirection
 import io.github.dilshodbekmx.passwordvault.R
+import io.github.dilshodbekmx.passwordvault.window.PASSWORD_MASK_CHARACTER
 import io.github.dilshodbekmx.passwordvault.window.vaultTextField
 
 /**
@@ -114,15 +115,14 @@ fun VaultSecureField(
  * it is a password field and how many characters it holds. Its actions are untouched: a screen
  * reader still focuses it, types and deletes through the keyboard or sets its text, and moves the
  * cursor. Shown ("Show password"), the field reports its text again, which is then on the screen
- * for anybody to read (lock.md §2.3).
+ * for anybody to read (lock.md §2.3). The event that hiding it again sends would carry that text as
+ * its "before" text; the window's [io.github.dilshodbekmx.passwordvault.window.MaskedFieldEvents]
+ * masks it.
  */
 private fun Modifier.maskedForAccessibility(state: TextFieldState, masked: Boolean): Modifier =
     semantics {
-        if (masked) editableText = AnnotatedString(MASK_CHARACTER.toString().repeat(state.text.length))
+        if (masked) editableText = AnnotatedString(PASSWORD_MASK_CHARACTER.toString().repeat(state.text.length))
     }
-
-/** The platform's mask character for password text (`PasswordTransformationMethod`), and Compose's. */
-private const val MASK_CHARACTER = '•'
 
 /**
  * The show/hide button of a password field and of a stored password (ux.md §3, §5.12, §8): an
