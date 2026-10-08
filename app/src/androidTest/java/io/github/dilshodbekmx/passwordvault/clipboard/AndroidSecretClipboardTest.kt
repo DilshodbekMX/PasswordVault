@@ -493,15 +493,23 @@ class AndroidSecretClipboardTest {
     }
 
     @Test
-    fun aClockThatWasSetBackNeverPostponesTheClearBeyondTheLongestDelay() {
+    fun aClockThatWasSetBackNeverPostponesTheClearByMoreThanTheChosenDelay() {
+        // A copy with the 30-second delay; 12 s later the process ended (am kill, a swipe from
+        // Recents: its alarm stays set for the clip's time), the date was moved back an hour, and
+        // the app is opened again. The new process knows the clip only from the settings.
         val rig = ClipRig()
         rig.system.has = true
         rig.system.token = "t0"
-        rig.settings.pendingClip.value = PendingClip("t0", rig.clock.wallMs() + 3_600_000) // the date was moved back an hour
+        rig.settings.pendingClip.value = PendingClip("t0", rig.clock.wallMs() + 18_000)
+        rig.alarm.schedule("t0", 18_000)
+        rig.clock.jumpWall(-3_600_000)
         val clipboard = rig.make()
-        assertEquals(ClipDelay.MINUTES_5.ms, clipboard.status.value?.clearsAtElapsedMs)
-        rig.advance(ClipDelay.MINUTES_5.ms)
-        assertEquals(1, rig.system.clears)
+
+        val alarm = rig.alarm.set
+        assertTrue("the alarm is not put off beyond the chosen delay: $alarm", alarm != null && alarm.clearAtElapsedMs <= 30_000)
+        assertEquals(30_000L, clipboard.status.value?.clearsAtElapsedMs)
+        rig.advance(30_000)
+        assertEquals("cleared within the chosen delay", 1, rig.system.clears)
     }
 
     // ---- back in the app before the time ----------------------------------------------------------

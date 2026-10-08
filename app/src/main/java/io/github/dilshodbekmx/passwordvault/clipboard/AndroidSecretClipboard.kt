@@ -6,7 +6,6 @@ import io.github.dilshodbekmx.passwordvault.core.util.Clock
 import io.github.dilshodbekmx.passwordvault.core.util.RandomSource
 import io.github.dilshodbekmx.passwordvault.i18n.UiText
 import io.github.dilshodbekmx.passwordvault.settings.AppSettings
-import io.github.dilshodbekmx.passwordvault.settings.ClipDelay
 import io.github.dilshodbekmx.passwordvault.settings.PendingClip
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -201,12 +200,15 @@ internal class AndroidSecretClipboard(
 
     /**
      * A new process finds a clip of ours in the settings: it is pending again, with the time that is
-     * left on the wall clock (a clock that was set back never gives more than the longest delay).
+     * left on the wall clock, but never more than the chosen delay. A deadline further off than
+     * that can only come from a date moved back since the copy (or a delay shortened since); the
+     * plan made here replaces the alarm, which still knew the right time, so the chosen delay is the
+     * most a moved date can put the clear off by.
      * A clip that is overdue is left to [appCameToFront] and [alarmFired], which can check it.
      */
     private fun restore() {
         val saved = settings.pendingClip.value ?: return
-        val leftMs = (saved.deadlineMs - clock.wallMs()).coerceIn(0L, LONGEST_DELAY_MS)
+        val leftMs = (saved.deadlineMs - clock.wallMs()).coerceIn(0L, settings.clipDelay.value.ms)
         val clearAt = clock.elapsedMs() + leftMs
         pending = Pending(saved.token, clearAt)
         mutableStatus.value = ClipStatus(COPIED_TEXT, sensitive = true, clearsAtElapsedMs = clearAt, delayMs = leftMs)
@@ -345,9 +347,6 @@ internal class AndroidSecretClipboard(
 
         /** How long an overdue clip that `onResume` cannot read waits for the window focus before it is cleared anyway. */
         const val FOCUS_WAIT_MS = 2_000L
-
-        /** No plan made from a stored deadline is longer than the longest delay there is. */
-        val LONGEST_DELAY_MS: Long = ClipDelay.entries.maxOf { it.ms }
 
         /** What the row calls a clip of which only the token is known, and text copied from a selection (D-25). */
         val COPIED_TEXT: UiText = UiText.of(R.string.clipboard_copied_text)
