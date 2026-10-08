@@ -854,6 +854,7 @@ The app is stricter on locking because the user asked for a bank-like lock. It k
    - **Phone storage** (the Downloads provider, or the main storage root of the external-storage provider): "This copy is on this phone. If the phone is lost, this copy is lost too. Keep a copy somewhere else." `Button` "Send to another app…".
    - **Google Drive** (Drive's document provider [I: check its authority on a device]): "Saved to Google Drive. It is uploaded when the phone is online."
    - **Anywhere else** (SD card, USB drive, other apps): "Saved to <the place's name>." `OutlinedButton` "Send to another app…".
+   - **Every place that is not the phone** (Google Drive and anywhere else) adds a line: "This place may upload the file later. Open it there once to check that it arrived." The check after saving reads the copy the place keeps on this phone; whether the place has sent it on cannot be seen from here (build-plan §12, decision 8).
 6. **"Send to another app…"** (encrypted backup only) opens the share sheet with the file through a `FileProvider` (Telegram Saved Messages, email to yourself, Drive).
    - Text: "The file is locked with your master password. Keep your master password strong."
    - The shared copy is encrypted and is kept until the next app start, so a receiving app can still read it after this app has locked.
@@ -900,6 +901,7 @@ Exact file layouts are in formats.md. This section covers what the user sees.
   - `OutlinedButton` "Delete it now" (`DocumentsContract.deleteDocument`; possible when the provider reports `FLAG_SUPPORTS_DELETE` [V: Android "documents and files" guide]).
 
   The primary button is "Done" because the user just asked for this file.
+- **A place that is not the phone** (Google Drive or any other) adds the line of §5.19 step 5: "This place may upload the file later. Open it there once to check that it arrived." (build-plan §12, decision 8).
 - **The banner.** The app takes a persistable permission on the file and stores its location inside the vault. Until the user deletes the file or chooses "I deleted it myself", a banner on Passwords says "You have an unprotected file with your passwords: passwords-2026-10-06.xlsx (saved 2 hours ago)." Buttons "Delete" and "I deleted it myself".
 - If deletion is not supported: "This place doesn't let apps delete files. Delete it yourself in your Files app."
 
@@ -959,7 +961,7 @@ Time in the picker counts as time in the app (§4).
 - **Text decoding** (formats.md §8.2, formats-review P2 and P12). The app never switches a file's encoding silently.
   - Text that is mostly UTF-8 is read as UTF-8, with or without a byte-order mark; a few damaged bytes become "�" and the preview lists those lines. Chrome writes UTF-8 without a BOM.
   - UTF-16 is recognised by its byte-order mark, or by a NUL in every other byte.
-  - Only a file with no valid UTF-8 sequence at all is read as Windows-1251, which Russian-language Excel writes [I]. The preview says which was chosen and why.
+  - A file with bytes that are not UTF-8 is read as UTF-8 only when its valid UTF-8 letters (multi-byte sequences) outnumber those bytes, and otherwise as Windows-1251, which Russian-language Excel writes [I] (build-plan §12, decision 12): "Пётр" or "Тўлов" written by Excel must not come out as "�". The preview says which was chosen and why.
 - The delimiter is detected among `,`, `;` and tab; Excel's first line `sep=;` is honoured and skipped.
 - Header aliases cover Chrome, Bitwarden, KeePassXC (whatever the case) and Firefox, plus Russian and Uzbek headers in both scripts; apostrophes and unusual spaces in a header are ignored, so "Oʻzgartirilgan" and "O‘zgartirilgan" are one header.
 - **The column-mapping screen** opens whenever no password column is recognised, and when a column is ambiguous. Each column is shown with its first value and an `ExposedDropdownMenuBox`: Name · Website · Username · Password · Notes · Skip.
@@ -976,6 +978,8 @@ Time in the picker counts as time in the app (§4).
   - "1 row was skipped: password longer than 1,000 characters." Only a password over the limit leaves an account out (architecture.md D-10f).
   - "1 note was longer than 10,000 characters and was shortened." Other values over a limit move into the notes or the extra fields and are listed ("Gmail: 3 websites moved to notes").
   - Passwords are never changed: an account whose password holds a tab or another invisible character is imported as it is and listed ("Gmail: the password contains a tab") (formats-review P14).
+  - A hidden value without a name is kept as a hidden field named "Hidden value 1", "Hidden value 2", in the file's order; it is never moved into the notes, where it would show (build-plan §12, decision 11).
+  - Our own JSON from a newer version of the app, with data this version does not know at the top of the file: "Some data from a newer version of the app will not be imported." That data is not kept (build-plan §12, decision 9).
 - **Exact repeats.** Rows that repeat exactly (same website, username and password) are imported once.
 - **Same login on related websites** [E: critique M6; V-A6]. Chrome writes one row per affiliated domain, so one login can arrive as several rows. Rows with the same username and password are kept as **one account with all its websites** only when:
   - (a) they are adjacent rows equal except the website (formats.md §8.3);
@@ -983,7 +987,7 @@ Time in the picker counts as time in the app (§4).
   - (c) both sites are in one fixed sign-on family: Google (google.com, youtube.com, gmail.com), Microsoft (live.com, outlook.com, hotmail.com, microsoft.com), Yandex (yandex.ru, yandex.uz, yandex.com, ya.ru), Apple (apple.com, icloud.com).
 
   Nothing else is joined: Facebook and Instagram stay apart, because that kind of sharing is the reuse this app exists to fix. The preview says "6 rows were the same login on related websites and were kept together as 2 accounts." with `TextButton` "Keep them separate".
-- **Tidy names** (`Switch`, on). Chrome makes up names such as "accounts.google.com" [E: V-A6].
+- **Tidy names** (`Switch`): on for other apps' files, off for this app's own files (our JSON, and our CSV with its fields block), which already hold the names the user chose (build-plan §12, decision 10; `ImportFile.fromThisApp`). Chrome makes up names such as "accounts.google.com" [E: V-A6].
   - The rule: strip "www.", "m.", "mobile.", "accounts.", "account.", "login." and "passport."; then drop ".com", ".ru", ".uz", ".org" or ".net" when one word is left, and capitalise that word.
   - Examples: accounts.google.com → Google, m.facebook.com → Facebook, passport.yandex.ru → Yandex. my.gov.uz stays my.gov.uz.
   - Two examples from the file are shown before and after.
