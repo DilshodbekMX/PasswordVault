@@ -324,10 +324,10 @@ class MasterPasswordAsk(
 
     /**
      * "Next" (or the keyboard's Done): when nothing is checked, nothing waits and something was
-     * typed, the characters go to the lock and the field is emptied. [onRight] receives the proof of
-     * a right master password on the main thread.
+     * typed, the characters go to the lock for [purpose] and the field is emptied. [onRight] receives
+     * the proof of a right master password on the main thread.
      */
-    fun submit(onRight: (MasterProof) -> Unit) {
+    fun submit(purpose: MpPurpose = this.purpose, onRight: (MasterProof) -> Unit) {
         val now = state.value
         if (!now.enabled || field.text.isEmpty()) return
         val chars = field.readSecret()

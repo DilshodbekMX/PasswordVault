@@ -90,8 +90,6 @@
     <string name="settings_change_master_password">Change master password</string>
     <!-- Row: locks the app at once (ux.md §4). -->
     <string name="settings_lock_now">Lock now</string>
-    <!-- Under "Lock now". -->
-    <string name="settings_lock_now_body">The PIN, your fingerprint or the master password opens it again.</string>
 
     <!-- ===== The group "Backup & transfer". ===== -->
 

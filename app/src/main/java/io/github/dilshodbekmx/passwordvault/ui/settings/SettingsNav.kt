@@ -1,46 +1,59 @@
 package io.github.dilshodbekmx.passwordvault.ui.settings
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.runtime.EntryProviderScope
 import io.github.dilshodbekmx.passwordvault.AppGraph
-import io.github.dilshodbekmx.passwordvault.R
-import io.github.dilshodbekmx.passwordvault.nav.HelpPage
 import io.github.dilshodbekmx.passwordvault.nav.Navigator
 import io.github.dilshodbekmx.passwordvault.nav.Route
-import io.github.dilshodbekmx.passwordvault.ui.shell.RoutePlaceholder
-import io.github.dilshodbekmx.passwordvault.ui.shell.openAction
-import io.github.dilshodbekmx.passwordvault.ui.shell.placeholderAction
 
 /**
- * The routes of Settings (ux.md §5.18): Settings, the App lock page, ChangePin and the Theme dialog.
- * Placeholders until the PIN and fingerprint setup and Settings package (build plan 4.3) replaces
- * this body. The placeholder of Settings opens every route reached from Settings, and "Lock now".
+ * The routes of Settings (ux.md §5.18; build plan 4.3): the Settings list ([SettingsScreen]), the App
+ * lock page ([AppLockPage]), "Change PIN" or "Set a PIN" ([ChangePinScreen]) and the theme dialog
+ * ([ThemeDialog]). Each has its own view model, which Navigation 3 clears when the route leaves the
+ * back stack or the app locks (architecture.md §5.5 step 5).
+ *
+ * The theme dialog is a route of its own (it is not kept across a lock, `NavState.keptAcrossLock`):
+ * it is drawn over the Settings list, as a dialog opened from the list would be.
  */
 fun EntryProviderScope<Route>.settingsNav(graph: AppGraph, nav: Navigator) {
-    entry<Route.Settings> { route ->
-        RoutePlaceholder(
-            route,
-            nav,
-            listOf(
-                openAction(nav, Route.AppLock),
-                openAction(nav, Route.Backup),
-                openAction(nav, Route.Export()),
-                openAction(nav, Route.Import()),
-                openAction(nav, Route.OldPasswords),
-                openAction(nav, Route.Language),
-                openAction(nav, Route.Theme),
-                openAction(nav, Route.Help(HelpPage.PROTECTION)),
-                openAction(nav, Route.Licences),
-                placeholderAction("lockNow", R.string.shell_placeholder_lock_now) { graph.session.lockNow() },
-            ),
-        )
-    }
-    entry<Route.AppLock> { route ->
-        RoutePlaceholder(
-            route,
-            nav,
-            listOf(openAction(nav, Route.ChangePin), openAction(nav, Route.CreatePin), openAction(nav, Route.ChangeMasterPassword)),
-        )
-    }
-    entry<Route.ChangePin> { route -> RoutePlaceholder(route, nav) }
-    entry<Route.Theme> { route -> RoutePlaceholder(route, nav) }
+    entry<Route.Settings> { SettingsRoute(graph, nav) }
+    entry<Route.AppLock> { AppLockRoute(graph, nav) }
+    entry<Route.ChangePin> { ChangePinRoute(graph, nav) }
+    entry<Route.Theme> { ThemeRoute(graph, nav) }
+}
+
+@Composable
+private fun SettingsRoute(graph: AppGraph, nav: Navigator) {
+    val vm = viewModel { SettingsViewModel.from(graph) }
+    SettingsScreen(vm, nav)
+}
+
+@Composable
+private fun AppLockRoute(graph: AppGraph, nav: Navigator) {
+    val vm = viewModel { SettingsViewModel.from(graph) }
+    AppLockPage(vm, nav)
+}
+
+@Composable
+private fun ChangePinRoute(graph: AppGraph, nav: Navigator) {
+    val vm = viewModel { ChangePinViewModel.from(graph) }
+    ChangePinScreen(vm, nav)
+}
+
+@Composable
+private fun ThemeRoute(graph: AppGraph, nav: Navigator) {
+    val vm = viewModel { SettingsViewModel.from(graph) }
+    val ui by vm.ui.collectAsStateWithLifecycle()
+    SettingsScreen(vm, nav)
+    ThemeDialog(
+        current = ui.theme,
+        onChoose = { choice ->
+            vm.setTheme(choice)
+            nav.back()
+        },
+        onDismiss = { nav.back() },
+    )
 }
