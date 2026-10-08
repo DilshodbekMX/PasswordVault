@@ -86,6 +86,22 @@ internal fun LockFixture.passTime(ms: Long) {
     await { engine.refresh() }
 }
 
+/**
+ * F11 from the open app, as the owner goes through it: "Proof now" with [pin] (null: the fingerprint,
+ * where there is no PIN), the new master password [new] typed twice, 24 credited hours with the phone
+ * on, then "Finish now" with [new]. Returns the id of vault N, which is open now.
+ */
+internal fun LockFixture.replaceMasterPassword(new: String = NEW_PASSWORD, pin: String? = LockFixture.PIN): String {
+    val proven = prove(pin)
+    assertTrue("the proof of F11 step 3 gave $proven", proven is ProofOutcome.Proven)
+    val asked = request(new)
+    assertTrue("the request gave $asked", asked is RequestOutcome.Requested)
+    passTime(EntryPolicy.PENDING_WAIT_MS)
+    val finished = finish(new)
+    assertTrue("Finish now gave $finished", finished is MasterPasswordOutcome.Right)
+    return port.current!!.vaultId
+}
+
 /** Every notice shown is answered with LATER where it offers that, otherwise OK. */
 internal fun LockFixture.answerAll() {
     for (notice in (state as LockState.Unlocked).notices) {
