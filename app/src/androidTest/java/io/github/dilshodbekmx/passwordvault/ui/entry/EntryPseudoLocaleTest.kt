@@ -29,6 +29,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import io.github.dilshodbekmx.passwordvault.R
 import io.github.dilshodbekmx.passwordvault.core.model.Vault
+import io.github.dilshodbekmx.passwordvault.i18n.AppLanguages
+import io.github.dilshodbekmx.passwordvault.i18n.Formatters
 import io.github.dilshodbekmx.passwordvault.settings.ThemeChoice
 import io.github.dilshodbekmx.passwordvault.ui.entry.EntryRig.Companion.BANK
 import io.github.dilshodbekmx.passwordvault.ui.entry.EntryRig.Companion.GMAIL
@@ -157,7 +159,10 @@ class EntryPseudoLocaleTest {
         compose.onNodeWithTag(EntryTags.PREVIOUS).performClick()
         compose.waitUntil(TIMEOUT_MS) { (vm.state.value as EntryUiState.Shown).details.previous.size == 2 }
         scrollTo("previous.1")
-        compose.onNodeWithText(res.getString(R.string.entry_previous, "2"), substring = true, useUnmergedTree = true).assertExists()
+        // The count in the language's digits, as the screen writes it: ar-XB has Arabic-Indic digits
+        // on Android 7 (ICU 56) and Latin ones from Android 9 on.
+        val two = Formatters(AppLanguages.screenLocale(AppLanguages.localesOf(context.resources.configuration)), hour24 = false).number(2)
+        compose.onNodeWithText(res.getString(R.string.entry_previous, two), substring = true, useUnmergedTree = true).assertExists()
         save("dates-$tag")
 
         // A row's menu, and the top bar's.
