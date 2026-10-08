@@ -167,7 +167,7 @@ internal class ImportColumnsViewModel(
     private fun show(columns: ImportColumns, reason: MappingReason, earlier: List<ColumnMeaning>?) {
         val shown = columns.headers.indices.map { i ->
             val meaning = earlier?.getOrNull(i) ?: columns.meanings[i]
-            MappingColumn(columns.headers[i].replace("﻿", "").trim(), columns.samples.getOrElse(i) { "" }.trim(), meaning, optionsFor(meaning))
+            MappingColumn(columns.headers[i].replace("\uFEFF", "").trim(), columns.samples.getOrElse(i) { "" }.trim(), meaning, optionsFor(meaning))
         }
         set(ColumnsScreen.Shown(shown, reason))
     }

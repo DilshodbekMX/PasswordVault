@@ -337,7 +337,7 @@ private fun changeText(row: ImportPreview.ChangeRow): String = when (row.kind) {
     ImportChange.Kind.NAMELESS_FIELDS_MOVED -> pluralStringResource(R.plurals.import_change_nameless, row.count, row.count)
     ImportChange.Kind.FIELD_NAMES_CUT -> pluralStringResource(R.plurals.import_change_field_names, row.count, row.count)
     ImportChange.Kind.NOTES_CUT -> stringResource(R.string.import_change_notes_cut)
-    ImportChange.Kind.PREVIOUS_PASSWORDS_CUT -> stringResource(R.string.import_change_history_cut, EntryRules.HISTORY_MAX)
+    ImportChange.Kind.PREVIOUS_PASSWORDS_CUT -> pluralStringResource(R.plurals.import_change_history_cut, EntryRules.HISTORY_MAX, EntryRules.HISTORY_MAX)
     ImportChange.Kind.PASSKEYS_NOT_IMPORTED -> stringResource(R.string.import_change_passkeys)
     ImportChange.Kind.LINKED_FIELDS_NOT_IMPORTED -> stringResource(R.string.import_change_linked)
     ImportChange.Kind.UNKNOWN_DATA_NOT_KEPT -> stringResource(R.string.import_change_unknown)

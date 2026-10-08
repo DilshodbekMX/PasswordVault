@@ -186,7 +186,7 @@ internal data class ImportPreview(
          */
         fun samples(accounts: List<ImportAccount>): List<SampleRow> {
             val sure = accounts.filter { it.wrongLength == null }
-            fun telling(a: ImportAccount) = (a.entry.title + a.entry.username).any { it.code > 0x7F && (Character.isLetter(it) || it == '�') }
+            fun telling(a: ImportAccount) = (a.entry.title + a.entry.username).any { it.code > 0x7F && (Character.isLetter(it) || it == '\uFFFD') }
             val picked = sure.filter(::telling).take(SAMPLE_SIZE).toMutableList()
             if (picked.size < SAMPLE_SIZE) picked += sure.filterNot(::telling).take(SAMPLE_SIZE - picked.size)
             val order = sure.withIndex().associate { (i, a) -> a to i }

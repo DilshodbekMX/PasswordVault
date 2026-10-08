@@ -323,7 +323,10 @@
     <!-- The notes were too long. -->
     <string name="import_change_notes_cut">the notes were shortened</string>
     <!-- More previous passwords than are kept. %1$d is how many are kept (5). -->
-    <string name="import_change_history_cut">only the %1$d newest previous passwords were kept</string>
+    <plurals name="import_change_history_cut">
+        <item quantity="one">only the newest previous password (%1$d) was kept</item>
+        <item quantity="other">only the %1$d newest previous passwords were kept</item>
+    </plurals>
     <!-- Passkeys of the account (Bitwarden) are not imported. -->
     <string name="import_change_passkeys">passkeys are not imported</string>
     <!-- Linked fields (Bitwarden) are not imported. -->

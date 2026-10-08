@@ -215,7 +215,7 @@ internal class ImportViewModel(
             Importer.Result.NotText -> problem(ImportProblem.UNREADABLE)
             is Importer.Result.Unreadable -> problem(
                 when {
-                    result.error.reason == ImportDefaults.REASON_OUT_OF_MEMORY -> ImportProblem.NO_MEMORY
+                    result.error.reason == Importer.REASON_OUT_OF_MEMORY -> ImportProblem.NO_MEMORY
                     kind == FileKind.JSON -> ImportProblem.BAD_JSON
                     else -> ImportProblem.UNREADABLE
                 },
@@ -609,13 +609,6 @@ internal class ImportViewModel(
 
 /** The import's rules that are not the importer's (ux.md §5.21; the owner's decision 10 of 2026-10-08). */
 internal object ImportDefaults {
-    /**
-     * The reason of `Importer.Result.Unreadable` when the phone ran out of memory reading the file:
-     * "This file is too large to read on this phone." (`Importer.REASON_OUT_OF_MEMORY`, asked for in
-     * the review of 3.15; this is its value until that constant is there).
-     */
-    const val REASON_OUT_OF_MEMORY: String = "out-of-memory"
-
     /** "Many of these accounts share a password": at least this many of the imported accounts do. */
     const val MANY_SHARED: Int = 3
 
