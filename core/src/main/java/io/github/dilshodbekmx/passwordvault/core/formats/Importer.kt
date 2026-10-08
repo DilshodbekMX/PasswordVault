@@ -251,6 +251,10 @@ object Importer {
                 }
             }
         }
+        // Our own file's data of a newer version at the top: listed once, never kept (build-plan §12, decision 9).
+        if (ok.vaultExtras.isNotEmpty() && leftOut.none { it.kind == ImportLeftOut.Kind.UNKNOWN_DATA && it.position == 0 }) {
+            leftOut.add(0, ImportLeftOut(ImportLeftOut.Kind.UNKNOWN_DATA, null, 0, 0))
+        }
         val accounts = ArrayList<ImportAccount>(ok.entries.size)
         var position = 0
         for (entry in ok.entries) {
@@ -1093,7 +1097,11 @@ class ImportLeftOut(
         /** JSON: an item in Bitwarden's trash. */
         IN_TRASH,
 
-        /** Our JSON: data of a later version at the top of the file that nests deeper than a vault file holds. */
+        /**
+         * Our JSON: data of a later version at the top of the file (keys of its top `passwordVault` object
+         * that this version does not know), listed once at position 0 and never kept: "Some data from a
+         * newer version of the app will not be imported." (build-plan §12, decision 9).
+         */
         UNKNOWN_DATA,
     }
 
@@ -1125,7 +1133,10 @@ class ImportFile(
     val replacedCharacters: Int,
     /** Our own JSON, written by a later version of the app. */
     val newerVersion: Boolean,
-    /** Our own JSON: the unknown keys of the file's top `passwordVault` object (formats-review P11). */
+    /**
+     * Our own JSON: the unknown keys of the file's top `passwordVault` object (formats-review P11). They
+     * are not imported: [leftOut] lists them as [ImportLeftOut.Kind.UNKNOWN_DATA] (build-plan §12, decision 9).
+     */
     val vaultExtras: Map<String, String>,
 ) {
     /**
