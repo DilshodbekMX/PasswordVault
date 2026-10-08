@@ -469,6 +469,10 @@
     <!-- The name of an imported account whose id is held by an account here with other content (formats.md
          §5.2): its own name, then "(from file)". %1$s is the name, for example "Gmail". Stored with the account. -->
     <string name="import_from_file">%1$s (from file)</string>
+    <!-- The name of a hidden value that came without a name in an imported file (formats.md §8.4):
+         "Hidden value 1", "Hidden value 2", numbered within the account. %1$d is the number. Stored
+         with the account as the name of its hidden field. -->
+    <string name="import_hidden_value">Hidden value %1$d</string>
     <!-- The same for an account of a backup file (ux.md §5.21): "Gmail (from backup)". Stored with the account. -->
     <string name="import_from_backup">%1$s (from backup)</string>
 </resources>

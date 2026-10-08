@@ -186,20 +186,20 @@ internal class ImportViewModel(
                 set(ImportScreen.BackupPassword())
                 return@launch
             }
-            val (ours, result) = withContext(dispatchers.default) {
+            val result = withContext(dispatchers.default) {
                 try {
-                    ImportDefaults.hasOwnBlock(bytes) to Importer.read(bytes, clock.wallMs(), texts, random, with)
+                    Importer.read(bytes, clock.wallMs(), texts, random, with)
                 } catch (e: OutOfMemoryError) {
-                    false to null
+                    null
                 } finally {
                     Bytes.wipe(bytes)
                 }
             }
-            readDone(d, kind, ours, result)
+            readDone(d, kind, result)
         }
     }
 
-    private fun readDone(d: DocRef, kind: FileKind, ours: Boolean, result: Importer.Result?) {
+    private fun readDone(d: DocRef, kind: FileKind, result: Importer.Result?) {
         when (result) {
             null -> problem(ImportProblem.NO_MEMORY)
             is Importer.Result.NotForImport -> problem(
@@ -230,7 +230,7 @@ internal class ImportViewModel(
             }
             is Importer.Result.Read -> {
                 file = result.file
-                tidyByDefault = ImportDefaults.tidyNames(result.file.format, ours)
+                tidyByDefault = ImportDefaults.tidyNames(result.file)
                 val columns = result.file.columns
                 // A column whose meaning another one took is an ambiguity the user should see (formats.md §8.3).
                 if (columns != null && columns.ambiguous.isNotEmpty() && !columns.fromUser && !memory.choicesFor(d).columnsShown) {
@@ -625,44 +625,11 @@ internal object ImportDefaults {
     const val MANY_SHARED: Int = 3
 
     /**
-     * The start of the marker of our CSV's fields block (`FieldsBlock`, formats.md §4.4), which stays
-     * in English in every language.
+     * "Tidy names" starts switched off for this app's own files, our JSON and our CSV with its fields
+     * block, and on for other apps' files (the owner's decision 10 of 2026-10-08): our names are the
+     * user's.
      */
-    private const val OWN_BLOCK_MARKER = "--- PasswordVault ("
-
-    /**
-     * "Tidy names" starts switched off for our own files, our JSON and our CSV with its fields block,
-     * and on for other apps' files (the owner's decision 10 of 2026-10-08): our names are the user's.
-     */
-    fun tidyNames(format: Importer.Format, ownBlock: Boolean): Boolean = when (format) {
-        Importer.Format.OWN_JSON -> false
-        Importer.Format.GOOGLE_CSV -> !ownBlock
-        else -> true
-    }
-
-    /** Whether [bytes], a CSV file as UTF-8, UTF-16 or Windows-1251, hold the marker of our fields block. */
-    fun hasOwnBlock(bytes: ByteArray): Boolean {
-        val ascii = OWN_BLOCK_MARKER.toByteArray(Charsets.US_ASCII)
-        if (indexOf(bytes, ascii) >= 0) return true
-        return indexOf(bytes, OWN_BLOCK_MARKER.toByteArray(Charsets.UTF_16LE)) >= 0 ||
-            indexOf(bytes, OWN_BLOCK_MARKER.toByteArray(Charsets.UTF_16BE)) >= 0
-    }
-
-    private fun indexOf(bytes: ByteArray, part: ByteArray): Int {
-        if (part.isEmpty() || bytes.size < part.size) return -1
-        val first = part[0]
-        var i = 0
-        val last = bytes.size - part.size
-        while (i <= last) {
-            if (bytes[i] == first) {
-                var k = 1
-                while (k < part.size && bytes[i + k] == part[k]) k++
-                if (k == part.size) return i
-            }
-            i++
-        }
-        return -1
-    }
+    fun tidyNames(file: ImportFile): Boolean = !file.fromThisApp
 
     /**
      * Every account the file holds is already here, and no account of it was left out (a password

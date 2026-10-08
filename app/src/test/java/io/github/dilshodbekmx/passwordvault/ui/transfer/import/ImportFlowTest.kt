@@ -398,6 +398,23 @@ class ImportFlowTest {
     }
 
     @Test
+    fun aHiddenValueWithoutANameIsKeptHiddenUnderTheScreensName() = ImportKit.run {
+        // The owner's decision 11: never moved into the notes, where it would show.
+        recorded(
+            utf8(
+                """{"encrypted": false, "items": [{"type": 1, "name": "Bank", "fields": [{"name": "", "value": "4071", "type": 1}],
+                   "login": {"username": "aziz", "password": "Pw-Bank", "uris": [{"uri": "https://bank.uz"}]}}]}""",
+            ),
+        )
+        val file = file()
+        file.importNow()
+        settle()
+        val bank = vault().entries.single()
+        assertEquals(listOf(CustomField("Hidden value #1", "4071", secret = true)), bank.fields)
+        assertFalse(bank.notes.contains("4071"))
+    }
+
+    @Test
     fun dataOfANewerVersionIsSaidNotToBeImported() = ImportKit.run {
         val entries = listOf(account("66666666-6666-4666-8666-666666666666", "Mail", "u", "P-1", "https://mail.uz"))
         val json = BitwardenJson.export(entries, NOW_MS, "PasswordVault 2.0", mapOf("futureThing" to "{\"a\":1}")).bytes

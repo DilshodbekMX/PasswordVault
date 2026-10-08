@@ -250,6 +250,9 @@ internal class ImportKit private constructor(val scope: TestScope, private val d
             override fun fromBackup(title: String): String = "$title (from backup)"
 
             override fun fromFile(title: String): String = "$title (from file)"
+
+            /** Not the English default, so that a test sees the screen's texts used. */
+            override fun hiddenValue(number: Int): String = "Hidden value #$number"
         }
 
         /** Runs [test] with a test dispatcher of its own as the main one, and an open vault [vault]. */

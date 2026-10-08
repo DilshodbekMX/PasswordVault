@@ -16,6 +16,8 @@ import io.github.dilshodbekmx.passwordvault.i18n.Formatters
  *   ("Gmail (from file)", formats.md §5.2, formats-review P1).
  * - [fromBackup]: an account of a backup file whose id an account here holds with other content
  *   ("Gmail (from backup)", ux.md §5.21, "Backup file into an existing vault").
+ * - [hiddenValue]: the name of a hidden value that came without one ("Hidden value 1", formats.md
+ *   §8.4; build-plan §12, decision 11).
  */
 internal class ImportTexts(private val resources: Resources, private val formatters: Formatters) : EditTexts {
     override fun untitled(nowMs: Long): String = resources.getString(R.string.import_untitled, formatters.dateTime(nowMs))
@@ -23,4 +25,6 @@ internal class ImportTexts(private val resources: Resources, private val formatt
     override fun fromBackup(title: String): String = resources.getString(R.string.import_from_backup, title)
 
     override fun fromFile(title: String): String = resources.getString(R.string.import_from_file, title)
+
+    override fun hiddenValue(number: Int): String = resources.getString(R.string.import_hidden_value, number)
 }
