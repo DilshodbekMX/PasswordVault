@@ -28,8 +28,7 @@ sealed interface LockIntent {
     /**
      * "Forgot PIN? Use master password", "Use master password" (lock.md F7, §13.2). Also "Try again"
      * on "Your passwords can't be opened" (`LockUiState.Unreadable` with `CurrentVault.Why.IO`): the
-     * lock lists the vaults again (`LockEngine.refresh`), as `MasterPasswordGate` (build plan 3.2)
-     * does.
+     * lock lists the vaults again (`LockEngine.refresh`), as `DefaultLockManager` does.
      */
     data object UseMasterPassword : LockIntent
 

@@ -7,8 +7,7 @@ import kotlinx.coroutines.flow.StateFlow
 
 /**
  * The lock as the app sees it (architecture.md §3.5; lock.md): `DefaultLockManager` (build plan 4.1)
- * over `LockEngine`, before it the master-password gate of package 3.2, and `FakeLockManager` until
- * then. It owns the PIN digits, the charge, the visit, the outstanding fingerprint launch,
+ * over `LockEngine`, and `FakeLockManager` for the shell's previews and the screens' tests. It owns the PIN digits, the charge, the visit, the outstanding fingerprint launch,
  * `MasterProof` and the in-memory lock records, behind the lock mutex (§5.1, §5.2). Nothing of it
  * lives in the activity, so a rotation or a language change neither locks nor loses digits (lock.md
  * §11).
