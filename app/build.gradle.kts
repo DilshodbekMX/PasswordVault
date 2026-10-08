@@ -143,10 +143,14 @@ android {
         }
     }
     lint {
+        // i18n.md §1.1 makes these errors. MissingTranslation is a warning from round R3 until the
+        // integration check of wave 6 (build-plan.md §8, "Before 6A starts"): 6.1 brings the first
+        // files under values-uz and values-ru, and the other translations come only in 6B.
         error += listOf(
-            "MissingTranslation", "ExtraTranslation", "MissingQuantity",
+            "ExtraTranslation", "MissingQuantity",
             "StringFormatMatches", "StringFormatInvalid", "TypographyEllipsis",
         )
+        warning += "MissingTranslation"
     }
 }
 
