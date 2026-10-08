@@ -136,6 +136,12 @@ internal class ImportKit private constructor(val scope: TestScope, private val d
         return DocRef(uri)
     }
 
+    /** The open picker answers with [uri] (null: it was closed without a file), as the activity's launcher hands it to the store. */
+    fun answer(uri: String?) {
+        store.returned(FileTaskStore.Action.OPEN, uri)
+        settle()
+    }
+
     /** The task recorded for a file chosen before this test's screens: as after a lock or in a new process. */
     fun recorded(bytes: ByteArray, name: String = "Chrome Passwords.csv", uri: String = DOC): DocRef {
         fake.files[uri] = bytes
@@ -144,6 +150,11 @@ internal class ImportKit private constructor(val scope: TestScope, private val d
         check(settings.update { it.fileTask = task })
         store = newStore()
         return DocRef(uri)
+    }
+
+    /** No activity is there to open the picker (the store has no launcher). */
+    fun noActivity() {
+        store.detach(launcher)
     }
 
     /** The open vault now. */
