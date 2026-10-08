@@ -39,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -527,10 +528,15 @@ fun PinStepPage(
         }
         buttons()
     }
+    // The page has no text field: a keyboard left open by the step before (the master password)
+    // goes, so that it covers nothing.
+    val keyboard = LocalSoftwareKeyboardController.current
+    LaunchedEffect(keyboard) { keyboard?.hide() }
+    // The layout is chosen from the page's whole size, not from the part above a keyboard, so that a
+    // keyboard still closing never turns a phone held upright into the landscape layout.
     BoxWithConstraints(
         modifier
             .fillMaxSize()
-            .safeDrawingPadding()
             .semantics {
                 paneTitle = title
                 testTagsAsResourceId = true
@@ -539,7 +545,7 @@ fun PinStepPage(
     ) {
         val landscape = maxWidth > maxHeight && maxHeight < LANDSCAPE_MAX_HEIGHT
         if (landscape) {
-            Row(Modifier.fillMaxSize().padding(horizontal = 24.dp), horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+            Row(Modifier.fillMaxSize().safeDrawingPadding().padding(horizontal = 24.dp), horizontalArrangement = Arrangement.spacedBy(24.dp)) {
                 Column(
                     modifier = Modifier.weight(1f).fillMaxHeight().verticalScroll(rememberScrollState()).padding(vertical = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -555,6 +561,7 @@ fun PinStepPage(
         } else {
             Column(
                 modifier = Modifier
+                    .safeDrawingPadding()
                     .widthIn(max = 640.dp)
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
