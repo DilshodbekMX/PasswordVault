@@ -989,6 +989,12 @@ class ImportFile(
     /** Our own JSON: the unknown keys of the file's top `passwordVault` object (formats-review P11). */
     val vaultExtras: Map<String, String>,
 ) {
+    /**
+     * The rows with the wrong number of values (formats-review P4), for the preview's list: "Line 2 has
+     * 7 values; the header has 5. Is there a comma inside a password? Put that value in quotes."
+     */
+    val wrongLengthRows: List<ImportAccount> get() = accounts.filter { it.wrongLength != null }
+
     /** One account of the preview's sample: never its password (ux.md §5.21). */
     class Sample(val title: String, val username: String) {
         override fun toString(): String = "Sample(texts hidden)"

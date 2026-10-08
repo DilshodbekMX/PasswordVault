@@ -466,6 +466,12 @@ class ImportPlan(
     /** What `VaultEdits.addImported` takes. */
     val entries: List<Entry> get() = accounts.map { it.entry }
 
+    /** The accounts to add that the importer changed to fit the model: the preview lists them ("Gmail: 3 websites moved to notes"). */
+    val changed: List<ImportAccount> get() = accounts.filter { it.changes.isNotEmpty() }
+
+    /** How many accounts to add have a change of [kind]: "1 note was longer than 10,000 characters and was shortened." */
+    fun count(kind: ImportChange.Kind): Int = accounts.count { a -> a.changes.any { it.kind == kind } }
+
     /**
      * The vault still fits in one file after the import. When false, the import is refused: "Your
      * passwords no longer fit in one file. Delete accounts you don't need, or shorten very long notes."

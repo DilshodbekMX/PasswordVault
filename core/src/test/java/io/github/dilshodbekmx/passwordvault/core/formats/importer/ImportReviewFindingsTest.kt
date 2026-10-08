@@ -180,7 +180,7 @@ class ImportReviewFindingsTest {
                 "Mail,https://mail.ru,ivan,\"pa,ss\",ok",
             ),
         )
-        val wrong = file.accounts.filter { it.wrongLength != null }
+        val wrong = file.wrongLengthRows
         assertEquals(listOf(listOf(2), listOf(3)), wrong.map { it.lines })
         assertEquals(listOf(7 to 5, 3 to 5), wrong.map { it.wrongLength!!.values to it.wrongLength!!.expected })
         assertEquals(listOf("Gmail", "Bank"), wrong.map { it.entry.title }) // the preview can name them
@@ -244,6 +244,9 @@ class ImportReviewFindingsTest {
         val noted = file(BitwardenJson.export(listOf(entry(2, "Long note", "u", "pw", notes = note)), NOW, GENERATOR).bytes)
         assertEquals(note.substring(0, 10_000), noted.accounts.single().entry.notes)
         assertEquals("[NOTES_CUT×1]", noted.accounts.single().changes.toString())
+        val notedPlan = plan(noted)
+        assertEquals(1, notedPlan.count(ImportChange.Kind.NOTES_CUT)) // "1 note was longer than 10,000 characters and was shortened."
+        assertEquals(notedPlan.accounts, notedPlan.changed)
 
         // Only a password over 1,000 characters leaves an account out, listed by name and line.
         val longPassword = "p".repeat(1_001)
