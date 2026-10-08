@@ -320,6 +320,8 @@
         <item quantity="one">%1$d long field name was shortened</item>
         <item quantity="other">%1$d long field names were shortened</item>
     </plurals>
+    <!-- A password in the file that is not text (a list, true or false) was not imported; the account was. -->
+    <string name="import_change_password_not_text">the password in the file is not text and was not imported</string>
     <!-- The notes were too long. -->
     <string name="import_change_notes_cut">the notes were shortened</string>
     <!-- More previous passwords than are kept. %1$d is how many are kept (5). -->

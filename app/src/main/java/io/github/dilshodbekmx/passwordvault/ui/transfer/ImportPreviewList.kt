@@ -340,6 +340,7 @@ private fun changeText(row: ImportPreview.ChangeRow): String = when (row.kind) {
     ImportChange.Kind.PREVIOUS_PASSWORDS_CUT -> pluralStringResource(R.plurals.import_change_history_cut, EntryRules.HISTORY_MAX, EntryRules.HISTORY_MAX)
     ImportChange.Kind.PASSKEYS_NOT_IMPORTED -> stringResource(R.string.import_change_passkeys)
     ImportChange.Kind.LINKED_FIELDS_NOT_IMPORTED -> stringResource(R.string.import_change_linked)
+    ImportChange.Kind.PASSWORD_NOT_IMPORTED -> stringResource(R.string.import_change_password_not_text)
     ImportChange.Kind.UNKNOWN_DATA_NOT_KEPT -> stringResource(R.string.import_change_unknown)
 }
 
