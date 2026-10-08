@@ -103,9 +103,11 @@ class MasterPasswordScreenTest {
     }
 
     /**
-     * The field's own node holds what was typed (its editable text), marked as a password and as
-     * sensitive data, which is what keeps it from accessibility services (lock.md §13.5); no other
-     * text or label of the screen repeats any of it.
+     * The field's own node holds one mask character for each typed character as its editable text,
+     * never what was typed (what accessibility services read, on every version of Android:
+     * architecture.md §8.4, lock.md §13.5), and is marked as a password and as sensitive data, which
+     * keeps it from the services that are not accessibility tools from Android 14 on; no other text
+     * or label of the screen repeats any of it.
      */
     @Test
     fun noTextOrLabelHoldsTheTypedPasswordAndTheFieldIsMarked() {
@@ -115,6 +117,7 @@ class MasterPasswordScreenTest {
         val field = compose.onNodeWithTag(LockTags.FIELD).fetchSemanticsNode().config
         assertTrue("the field is a password field", SemanticsProperties.Password in field)
         assertEquals(true, field.getOrNull(SemanticsProperties.IsSensitiveData))
+        assertEquals("the field's editable text", "\u2022".repeat(SECRET.length), field.getOrNull(SemanticsProperties.EditableText)?.text)
         val shown = mutableListOf<String>()
         fun walk(node: SemanticsNode) {
             node.config.getOrNull(SemanticsProperties.Text)?.forEach { shown += it.text }

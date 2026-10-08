@@ -270,9 +270,12 @@ type_again_has_the_focus() {
     pv_shell input text "$WORDS" >/dev/null
     pv_sleep 1
     on TypeAgain || return 1
+    # Drawn as dots, the field reports one mask character per character it holds, never its text
+    # (VaultSecureField; architecture.md §8.4): as many as the words have.
     local typed
     typed=$(text_of pv.setup.again) || return 1
-    [ "$typed" = "$WORDS" ] || { pv_log "the field holds '$typed'"; return 1; }
+    [ "$typed" = "$(printf '%*s' ${#WORDS} '' | sed 's/ /•/g')" ] \
+        || { pv_log "the field does not report ${#WORDS} mask characters, one for each character of the words"; return 1; }
 }
 
 unlocked_after() { # how: button | done
