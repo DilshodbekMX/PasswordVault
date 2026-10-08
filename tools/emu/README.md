@@ -224,6 +224,10 @@ says `Found systemPath /home/asus/pvlab/sysimg/...`).
   Tab cannot leave the form's notes field. `pv_ui_nodes` therefore reads the nodes with `uidump/`.
   Only nodes that are shown are reported: a button below the fold of a short screen (1920 pixels on
   API 24 and 28) must be scrolled to (`pva_reveal`, `pva_tap`).
+- `uiautomator events` prints the events of the window in front (its state and its focus) 0.3 to 0.4 s
+  after it starts on API 24, as UiAutomation connects; on a loaded machine (2026-10-08, a load of 40)
+  one run had printed nothing six seconds after its start. `window/a11y-old.sh` therefore types only
+  once its recorder has printed a first line.
 - A screen that is not laid out around the keyboard keeps reporting the nodes behind it (the list's
   Add button): a tap at such a node types a letter. `pva_tap` closes the keyboard first.
 - A key event (`input keyevent`, `input text`) ends touch mode: when the screen then changes, its
@@ -255,6 +259,20 @@ says `Found systemPath /home/asus/pvlab/sysimg/...`).
   documents provider "PV test documents", a stand-in picker and a receiver); a run that was cut off
   can leave it there (`pm path io.github.dilshodbekmx.passwordvault.test`; `checks/3C.sh` removes it
   before the skeleton steps).
+- Android 17 freezes a cached process ten seconds after it became one (`dumpsys activity`:
+  `use_freezer=true`, `freeze_debounce_timeout=10000`; `am isfrozen PROCESS`). The window helper adds
+  its overlay from a broadcast receiver, so while the app's windows hide that overlay the helper is
+  such a process, and its hidden window still gets an input event at every change of the touch mode,
+  which a tap followed by a navigation or typing key is (`pva_type` sends MOVE_END). Frozen, it does
+  not answer, and the system ends it: `dumpsys activity exit-info PACKAGE` says `reason=6 (ANR) ...
+  bg anr: Input dispatching timed out (... PvWinOverlay is not responding. Waited 5000ms for
+  TouchModeEvent(inTouchMode=false))`, and the overlay goes with the process. So `window/overlay.sh`
+  lost its overlay when its steps were slow (2026-10-08, API 37, the debug build, a loaded machine);
+  it now keeps the helper unfrozen with `am unfreeze --sticky PROCESS` (the command is there from
+  Android 14 on). A script's helper that must stay alive with nothing on the screen and no bound
+  service needs the same. `exit-info` (Android 11 and newer) is the first place to look when a
+  helper or the app is gone for no visible reason: it keeps the reason of each of a package's last
+  process ends.
 - Android 9's Recents (the AOSP image's Launcher3 Quickstep) gives a task's card, its snapshot and
   its icon no text and no description; after Home, the newest task is the card in the middle.
   Android 17's card has a snapshot node with the app's name; Android 7's stack has a title.
