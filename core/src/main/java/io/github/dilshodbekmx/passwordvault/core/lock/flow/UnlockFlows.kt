@@ -586,13 +586,15 @@ internal class UnlockFlows(private val core: LockCore) {
      * What comes back is the guard's outcome, with two additions: [PinOutcome.CannotCheck] also when
      * the charge could not be written, and [PinOutcome.NotCharged] when no PIN can be typed now.
      * The receiver wipes the keys of [PinOutcome.Right] and decides what a right PIN proves
-     * (`LockCore.vault.withVaultKey` gives the open vault's key to compare with, F6 step 2).
+     * (`LockCore.vault.withVaultKey` gives the open vault's key to compare with, F6 step 2). When the
+     * receiver is cancelled before the result reaches it, the keys are wiped here.
      *
      * @param useKek F8 step 3 only: receives a copy of `KEK_pin` after a right PIN, to wrap the new
      *   key in F8 step 5; the receiver wipes it.
      */
     suspend fun pinInPrompt(pin: ByteArray, useKek: ((ByteArray) -> Unit)? = null): PinOutcome {
         val at = core.openPrompt() // before the mutex: it belongs to the app as it is open now
+        var made: PinOutcome? = null
         try {
             return core.locked {
                 val open = core.open
@@ -609,8 +611,13 @@ internal class UnlockFlows(private val core: LockCore) {
                 val outcome = lock.pin.check(pin, null, useKek)
                 if (outcome is PinOutcome.Right) lock.pin.flush()
                 core.publishSummary()
+                made = outcome
                 outcome
             }
+        } catch (e: CancellationException) {
+            // The step ran to its end, and its caller, who was to wipe the keys, is gone (§4.2).
+            (made as? PinOutcome.Right)?.keys?.values?.forEach { Bytes.wipe(it) }
+            throw e
         } finally {
             core.closePrompt(at)
         }

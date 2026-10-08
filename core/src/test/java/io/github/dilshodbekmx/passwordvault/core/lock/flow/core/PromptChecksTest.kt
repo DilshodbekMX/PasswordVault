@@ -1,5 +1,6 @@
 package io.github.dilshodbekmx.passwordvault.core.lock.flow.core
 
+import io.github.dilshodbekmx.passwordvault.core.crypto.Aead
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockState
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockSummary
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.MasterPasswordOutcome
@@ -323,6 +324,34 @@ class PromptChecksTest {
         assertEquals(hmacs + 1, g.keys.hmacCalls.size)
         assertFalse(g.pinRecord().guard.charged)
         assertTrue(g.state is LockState.Locked)
+    }
+
+    @Test
+    fun aRightPinInAPromptWhoseCallerIsCancelledMeanwhile_wipesTheKeysNobodyReceived() {
+        // The flow that asked for the current PIN (F6 step 2, F8 step 3) is cancelled while the check
+        // waits for the age of its charge (the user went back, and its scope went with it). The check
+        // runs to its end under the mutex, as every step does, and finds the PIN right. The keys it
+        // opened are for its caller to wipe, and that caller never receives them: they are wiped here.
+        val clock = FakeClock(elapsedMs = 3_600_000L)
+        val g = LockFixture(clock)
+        val opened = ArrayList<ByteArray>()
+        g.aeadPort = object : Aead by g.aead {
+            override fun open(key: ByteArray, nonce: ByteArray, ciphertext: ByteArray, aad: ByteArray?): ByteArray? =
+                g.aead.open(key, nonce, ciphertext, aad)?.also { opened += it }
+        }
+        g.rebuild()
+        openByPin(fixture = g)
+        opened.clear()
+        clock.autoAdvance = false
+        runBlocking {
+            val asking = launch(start = CoroutineStart.UNDISPATCHED) { g.engine.core.unlock.pinInPrompt(digits(PIN)) }
+            asking.cancel()
+            clock.advance(1_000)
+            asking.join()
+        }
+        assertEquals(1, opened.size) // the wrap opened: the PIN was checked, and right
+        assertTrue("VK was not wiped", opened.single().all { it == 0.toByte() })
+        assertEquals(PinRecord.Guard(false, 0, 0), g.pinRecord().guard)
     }
 
     @Test

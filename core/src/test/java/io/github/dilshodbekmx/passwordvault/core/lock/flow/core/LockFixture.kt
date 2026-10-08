@@ -1,5 +1,6 @@
 package io.github.dilshodbekmx.passwordvault.core.lock.flow.core
 
+import io.github.dilshodbekmx.passwordvault.core.crypto.Aead
 import io.github.dilshodbekmx.passwordvault.core.crypto.CryptoFactory
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.DeviceKeys
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.FingerprintKey
@@ -58,12 +59,13 @@ internal class LockFixture(val clock: FakeClock = FakeClock(elapsedMs = 3_600_00
     var pinKey: PinKey = keys.pin
     var fingerprintKey: FingerprintKey = keys.fingerprint
     var deviceKeys: DeviceKeys = keys.device
+    var aeadPort: Aead = aead
 
     var engine: LockEngine = newEngine()
         private set
 
     private fun newEngine(): LockEngine =
-        LockEngine(recordFiles, ROOT, clock, random, pinKey, fingerprintKey, deviceKeys, port, kdf, aead, Dispatchers.Unconfined)
+        LockEngine(recordFiles, ROOT, clock, random, pinKey, fingerprintKey, deviceKeys, port, kdf, aeadPort, Dispatchers.Unconfined)
 
     /** A new engine over the ports as they are set now, before anything has run. */
     fun rebuild(): LockEngine {
