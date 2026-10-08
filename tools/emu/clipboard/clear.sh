@@ -371,11 +371,21 @@ toast_watch_works() {
 }
 
 # ---- the cases ------------------------------------------------------------------------------------
+# The watch runs from before the tap until 4 s after the clip was there: a short toast lasts 2 s, and
+# a watch that began only once `copy` had seen the clip and read pv_settings could miss it.
 copy_shows_no_toast() {
-    local seen
-    copy || return 1
-    seen=$(pvc_watch_toasts 4)
-    [ -z "$seen" ] || { pv_log "a toast was shown after the copy: $seen"; return 1; }
+    local dir watch seen rc=0
+    dir=$(mktemp -d) || return 1
+    pvc_watch_toasts 90 "$dir/stop" > "$dir/seen" &
+    watch=$!
+    copy || rc=1
+    [ $rc != 0 ] || pv_sleep 4
+    touch "$dir/stop"
+    wait "$watch"
+    seen=$(cat "$dir/seen")
+    rm -rf "$dir"
+    [ $rc = 0 ] || return 1
+    [ -z "$seen" ] || { pv_log "a toast was shown during the copy or in the 4 s after it: $seen"; return 1; }
 }
 
 copy_is_marked() {
@@ -466,12 +476,24 @@ lock_does_not_clear() {
     [ "$CLIP_NOW" -lt "$DEADLINE" ] || { pv_log "the clip's time has passed meanwhile; nothing is shown by its being there"; return 1; }
 }
 
+# plan_there: the app still plans to clear the clip TOKEN. On a debug build: its token is in
+# pv_settings, which the app empties right after the clear. Without run-as only the alarm can be
+# seen, and that is not the whole plan: an alarm that is not exact (API 31 and later) may come a few
+# seconds early, and the receiver then waits for the time with no alarm listed.
+plan_there() {
+    if [ $DEBUGGABLE = 1 ]; then
+        [ "$(prefs_token)" = "$TOKEN" ]
+    else
+        [ -n "$(pvc_alarm | head -n 1)" ]
+    fi
+}
+
 # The clear with the screen off and the phone locked. Nobody can read the clipboard then, so the time
-# of the clear is the moment the app's plan goes: the alarm, and on a debug build the token in
-# pv_settings, which the app removes when it has cleared. The clipboard itself is read after the
+# of the clear is the moment the app's plan goes (plan_there); without run-as, an alarm gone before
+# the clip's time is taken for a receiver waiting for it. The clipboard itself is read after the
 # phone is unlocked.
 screen_off_clears() {
-    local rc=0 planned gone_at=""
+    local rc=0 gone_at=""
     copy || return 1
     pv_sleep 1
     pv_shell input keyevent KEYCODE_SLEEP >/dev/null || return 1
@@ -480,18 +502,20 @@ screen_off_clears() {
         pv_log "the screen did not go off"
         rc=1
     elif until_device $((DEADLINE - 2500)); then
-        planned=$(pvc_alarm | head -n 1)
-        if [ -z "$planned" ] || { [ $DEBUGGABLE = 1 ] && [ "$(prefs_token)" != "$TOKEN" ]; }; then
-            pv_log "2.5 s before the clip's time its plan is gone: alarm '$planned', pending_clip_token '$([ $DEBUGGABLE = 0 ] || prefs_token)'"
+        if [ $DEBUGGABLE = 1 ] && ! plan_there; then
+            pv_log "2.5 s before the clip's time its plan is gone: pending_clip_token '$(prefs_token)', alarm '$(pvc_alarm | head -n 1)'"
             rc=1
         fi
         while [ $rc = 0 ]; do
-            if [ -z "$(pvc_alarm | head -n 1)" ] && { [ $DEBUGGABLE = 0 ] || [ "$(prefs_token)" != "$TOKEN" ]; }; then
+            if ! plan_there; then
                 clip_read || { rc=1; break; }
-                gone_at=$CLIP_NOW
-                break
+                if [ $DEBUGGABLE = 1 ] || [ "$CLIP_NOW" -ge "$DEADLINE" ]; then
+                    gone_at=$CLIP_NOW
+                    break
+                fi
+            else
+                clip_read || { rc=1; break; }
             fi
-            clip_read || { rc=1; break; }
             [ "$CLIP_NOW" -lt $((DEADLINE + 4000)) ] || { pv_log "the plan is still there $((CLIP_NOW - DEADLINE)) ms after the clip's time: the clear has not run"; rc=1; }
         done
         [ -z "$gone_at" ] || note "the plan was seen gone by $((gone_at - DEADLINE)) ms after the planned clear, the screen off"

@@ -20,7 +20,7 @@
 #   pvc_toast TEXT          shows a toast of the shell's for about 4 s (the control of a toast watch)
 #   pvc_toasts              the toasts shown or waiting now, one line each (dumpsys notification's
 #                           "Toast Queue", which names each toast's package, on API 24 to 37)
-#   pvc_watch_toasts S      every toast seen during S seconds, each once
+#   pvc_watch_toasts S [F]  every toast seen during S seconds, each once; with F, until file F exists
 #   pvc_alarm               the app's clear alarm as dumpsys alarm lists it among the alarms that
 #                           are set (its tag line and the lines after it); nothing when none is set
 # Every function returns 0 on success; pvc_describe, pvc_get, pvc_set, pvc_clear and pvc_toast fail
@@ -95,9 +95,11 @@ pvc_toasts() {
         | awk '/^ *Toast Queue:/ { on = 1; next } on && /ToastRecord/ { sub(/^ */, ""); print; next } on { exit }'
 }
 
-# Every toast seen during SECONDS, each once, without the parts that differ between readings.
-pvc_watch_toasts() { # SECONDS
-    local deadline=$((SECONDS + $1)) seen="" now line
+# Every toast seen during SECONDS, each once, without the parts that differ between readings. With
+# STOPFILE it ends earlier, after the first reading made once STOPFILE exists: run it in the
+# background before the action to be watched, and create STOPFILE when the action is over.
+pvc_watch_toasts() { # SECONDS [STOPFILE]
+    local deadline=$((SECONDS + $1)) stop=${2:-} seen="" now line
     while :; do
         now=$(pvc_toasts | sed -E 's/ToastRecord\{[0-9a-f]+ /ToastRecord{/; s/ token=[^ ]*//; s/ callback=[^ ]*//')
         while IFS= read -r line; do
@@ -105,6 +107,7 @@ pvc_watch_toasts() { # SECONDS
             case "$seen" in *"$line"*) ;; *) seen="$seen$line"$'\n' ;; esac
         done <<< "$now"
         [ $SECONDS -lt $deadline ] || break
+        [ -z "$stop" ] || [ ! -e "$stop" ] || break
         pv_sleep 0.2
     done
     printf '%s' "$seen"
