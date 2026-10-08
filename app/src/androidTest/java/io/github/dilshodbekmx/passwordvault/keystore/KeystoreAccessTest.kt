@@ -258,11 +258,17 @@ class KeystoreAccessTest {
         assertEquals(refusedOrOk, strict.ensureCanary())
         assertEquals("a refused canary is deleted", !software, kit.hasCanary)
 
-        // A canary that was there, made by a build that allows software keys, is judged too.
+        // A canary that was there, made by a build that allows software keys, is judged too, and
+        // kept: the app never deletes the canary (lock.md §4.2, §5.7). Only a key that was made
+        // just now and refused is deleted again (§4.5).
         assertEquals(KeyCreate.Ok, access.ensureCanary())
         assertTrue(kit.hasCanary)
+        val canaryBefore = canaryHmac()
         assertEquals(refusedOrOk, strict.ensureCanary())
-        assertEquals(!software, kit.hasCanary)
+        assertTrue("a canary that was there is kept", kit.hasCanary)
+        assertArrayEquals("and is the same key", canaryBefore, canaryHmac())
+        assertEquals("judged the same way every time", refusedOrOk, strict.ensureCanary())
+        assertTrue(kit.hasCanary)
 
         val pinAlias = kit.pinAlias()
         assertEquals(refusedOrOk, KeystorePinKey(strict).create(pinAlias))

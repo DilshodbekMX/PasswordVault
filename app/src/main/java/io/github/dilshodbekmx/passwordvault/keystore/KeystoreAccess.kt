@@ -64,10 +64,14 @@ class KeystoreAccess(
 
     /**
      * Makes `pv_canary` when it is missing, and checks it by lock.md §4.5 whether it was there or
-     * not: [KeyCreate.Ok] for a canary that may be used; [KeyCreate.NoSecureHardware] when it is in
-     * software and the build refuses that (it is deleted, F18); [KeyCreate.NotNow] when the Keystore
-     * does not answer, the canary cannot be read or made, or its `KeyInfo` cannot be read. A canary
-     * that is there is never made again here.
+     * not (F1 step 5): [KeyCreate.Ok] for a canary that may be used; [KeyCreate.NoSecureHardware]
+     * when it is in software and the build refuses that (F18); [KeyCreate.NotNow] when the Keystore
+     * does not answer, the canary cannot be read or made, or its `KeyInfo` cannot be read.
+     *
+     * A canary that is there is never made again here, and never deleted, whatever its check says:
+     * the app never deletes `pv_canary` (lock.md §4.2, §5.7), and §14.2 needs it to tell a key that
+     * is gone from a Keystore that is not answering. Only a canary that was made just now and is
+     * refused is deleted again (§4.5).
      */
     override fun ensureCanary(): KeyCreate {
         val keyStore = try {
@@ -76,14 +80,10 @@ class KeystoreAccess(
             return KeyCreate.NotNow
         }
         return when (val found = lookup(keyStore, CANARY)) {
-            is Lookup.Found -> {
-                val judged = try {
-                    KeystoreErrors.created(insideSecureHardware(found.key), allowSoftwareKeys)
-                } catch (e: Exception) {
-                    return KeyCreate.NotNow
-                }
-                if (judged != KeyCreate.Ok) remove(CANARY)
-                judged
+            is Lookup.Found -> try {
+                KeystoreErrors.created(insideSecureHardware(found.key), allowSoftwareKeys)
+            } catch (e: Exception) {
+                KeyCreate.NotNow
             }
             is Lookup.Failed -> if (found.failure == KeystoreFailure.NullKey) makeCanary() else KeyCreate.NotNow
         }
