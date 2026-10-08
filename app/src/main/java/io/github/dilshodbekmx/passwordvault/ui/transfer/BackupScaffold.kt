@@ -1,14 +1,19 @@
 package io.github.dilshodbekmx.passwordvault.ui.transfer
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -65,6 +70,7 @@ import kotlinx.coroutines.flow.first
 @OptIn(ExperimentalMaterial3Api::class) // TopAppBar's signature names TopAppBarScrollBehavior (ux.md §10)
 @Composable
 fun BackupScaffold(title: String, onBack: () -> Unit, modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+    KeyboardFirstOnBack()
     Scaffold(
         modifier = modifier.semantics {
             paneTitle = title
@@ -86,6 +92,7 @@ fun BackupScaffold(title: String, onBack: () -> Unit, modifier: Modifier = Modif
                 .fillMaxSize()
                 .padding(padding)
                 .consumeWindowInsets(padding)
+                .imePadding() // the field's step scrolls above the keyboard, its buttons too
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp, vertical = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -97,6 +104,21 @@ fun BackupScaffold(title: String, onBack: () -> Unit, modifier: Modifier = Modif
             )
         }
     }
+}
+
+/**
+ * Back while the keyboard is up closes the keyboard, and does nothing else. On Android 13 and newer
+ * Back reaches the app's own callbacks before the keyboard's when the app registered its callback
+ * after the keyboard was shown, which happens when a screen opens over a field that kept the
+ * keyboard (the master password of an unlock, then a paused backup: measured on Android 17, where
+ * one Back gave the paused backup up). The screen's own Back, which may give a task up, then waits
+ * for a second Back. Composed after the screen's own BackHandler, so that it comes first.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun KeyboardFirstOnBack() {
+    val keyboard = LocalSoftwareKeyboardController.current
+    BackHandler(enabled = WindowInsets.isImeVisible) { keyboard?.hide() }
 }
 
 /** A paragraph of these screens; [alert] draws it in the error colour (a message about something that went wrong). */

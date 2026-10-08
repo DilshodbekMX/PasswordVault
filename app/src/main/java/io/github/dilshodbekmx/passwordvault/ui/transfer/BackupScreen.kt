@@ -1,23 +1,33 @@
 package io.github.dilshodbekmx.passwordvault.ui.transfer
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.dilshodbekmx.passwordvault.R
 import io.github.dilshodbekmx.passwordvault.files.Place
 import io.github.dilshodbekmx.passwordvault.i18n.UiText
 import io.github.dilshodbekmx.passwordvault.i18n.rememberFormatters
+import io.github.dilshodbekmx.passwordvault.i18n.resolve
 import io.github.dilshodbekmx.passwordvault.nav.Navigator
 
 /**
@@ -124,7 +134,16 @@ fun BackupContent(ui: BackupUi, vm: BackupViewModel, done: () -> Unit) {
 private fun SavedContent(step: BackupStep.Saved, vm: BackupViewModel, done: () -> Unit) {
     val formatters = rememberFormatters()
     val resources = LocalResources.current
-    BackupTexts.saved(step).forEachIndexed { index, line -> BackupLine(line, BackupTags.line(index), formatters = formatters) }
+    val lines = BackupTexts.saved(step)
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Icon(painterResource(R.drawable.ic_common_check), contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+        Text(
+            text = lines.first().withDates(formatters).resolve(),
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.weight(1f).semantics { heading() }.testTag(BackupTags.line(0)),
+        )
+    }
+    lines.drop(1).forEachIndexed { index, line -> BackupLine(line, BackupTags.line(index + 1), formatters = formatters) }
     if (step.sendFailed) BackupLine(UiText.of(R.string.backup_send_failed), BackupTags.ERROR, alert = true, formatters = formatters)
     val send = { vm.send(resources.getString(R.string.backup_send_title)) }
     when (step.place) {

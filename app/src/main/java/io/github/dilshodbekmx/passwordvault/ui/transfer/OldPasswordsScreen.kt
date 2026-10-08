@@ -64,7 +64,7 @@ private fun OldList(step: OldStep.List, vaults: List<AsideVault>, vm: OldPasswor
     Column(Modifier.fillMaxWidth().testTag(BackupTags.OLD_LIST), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         for (vault in vaults) {
             OutlinedCard(Modifier.fillMaxWidth().testTag(BackupTags.oldItem(vault.vaultId))) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(Modifier.padding(start = 16.dp, top = 16.dp, end = 8.dp, bottom = 4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
                         text = BackupTexts.oldItem(vault.putAsideAtMs).withDates(formatters).resolve(),
                         style = MaterialTheme.typography.titleMedium,

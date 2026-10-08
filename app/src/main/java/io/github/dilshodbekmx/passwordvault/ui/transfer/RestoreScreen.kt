@@ -1,20 +1,30 @@
 package io.github.dilshodbekmx.passwordvault.ui.transfer
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.dilshodbekmx.passwordvault.R
 import io.github.dilshodbekmx.passwordvault.i18n.UiText
 import io.github.dilshodbekmx.passwordvault.i18n.rememberFormatters
+import io.github.dilshodbekmx.passwordvault.i18n.resolve
 import io.github.dilshodbekmx.passwordvault.nav.Navigator
 
 /**
@@ -72,7 +82,17 @@ fun RestoreContent(step: RestoreStep, vm: RestoreViewModel) {
             }
         }
         is RestoreStep.Summary -> {
-            BackupLine(BackupTexts.summary(step), BackupTags.SUMMARY, formatters = formatters)
+            // The summary card (ux.md §5.2 step 4).
+            OutlinedCard(Modifier.fillMaxWidth()) {
+                Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Icon(painterResource(R.drawable.ic_common_key), contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Text(
+                        text = BackupTexts.summary(step).withDates(formatters).resolve(),
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.weight(1f).testTag(BackupTags.SUMMARY),
+                    )
+                }
+            }
             if (step.overCurrent) BackupLine(UiText.of(R.string.backup_restore_stays), BackupTags.STAYS, formatters = formatters)
             step.problem?.let { BackupLine(BackupTexts.restoreProblem(it), BackupTags.ERROR, alert = true, formatters = formatters) }
             if (step.restoring) {
