@@ -27,9 +27,9 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * The checks of the export prototype (`prototypes/formats/test/FormatsTest.kt`) on version 1's
- * writers, over the prototype's awkward entries, the cases version 1 added and 5,000 generated
- * entries; and the sample files of version 1.
+ * The checks of the export prototype (`prototypes/formats/test/FormatsTest.kt`, removed by build-plan
+ * 3.15 and in the history at `wave-3B-merged`) on version 1's writers, over the prototype's awkward
+ * entries, the cases version 1 added and 5,000 generated entries; and the sample files of version 1.
  *
  * [theSampleFilesAreWrittenForTheOutsideChecks] writes the three exports of that one vault, with the
  * app's own file names, into `core/build/samples/`, where `tools/validate/run.sh core/build/samples`
