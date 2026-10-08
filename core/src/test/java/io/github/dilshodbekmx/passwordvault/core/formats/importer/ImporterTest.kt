@@ -206,6 +206,38 @@ class ImporterTest {
         assertEquals(Importer.Result.NotText, read("name,url\u0000,username,password\n"))
     }
 
+    /**
+     * A file from outside may have any header. The time and the memory of a read grow with the size of
+     * the file, not with the header times the rows: a header of a million columns over 10,000 short rows
+     * (1 MB) took more than half a minute, and one column whose name has 50,000 characters over 10,000
+     * rows (110 KB) did not fit in 512 MB.
+     */
+    @Test
+    fun aHugeHeaderOverManyShortRowsIsReadInTimeAndMemoryThatGrowWithTheFile() {
+        val wide = StringBuilder("name,url,username,password").append(",".repeat(1_000_000)).append('\n')
+        repeat(10_000) { wide.append("a\n") }
+        var start = System.nanoTime()
+        val wideFile = file(wide.toString())
+        val wideMs = (System.nanoTime() - start) / 1_000_000
+        assertEquals(10_000, wideFile.accounts.size)
+        assertEquals(1_000_004, wideFile.columns!!.headers.size)
+        assertEquals(listOf("a", "", ""), wideFile.columns!!.samples.take(3))
+        assertEquals("a", wideFile.accounts.last().entry.title)
+        assertTrue("$wideMs ms", wideMs < 5_000)
+
+        val long = StringBuilder("name,password, ").append("x".repeat(50_000)).append('\n')
+        repeat(10_000) { long.append("a,b,c\n") }
+        start = System.nanoTime()
+        val longFile = file(long.toString())
+        val longMs = (System.nanoTime() - start) / 1_000_000
+        assertEquals(10_000, longFile.accounts.size)
+        // The column is an extra field as before: hidden, its name cut to 100 characters and listed.
+        assertEquals(listOf(hidden("x".repeat(100), "c")), longFile.accounts.last().entry.fields)
+        assertEquals("[FIELD_NAMES_CUT×1]", longFile.accounts.last().changes.toString())
+        assertTrue("$longMs ms", longMs < 5_000)
+        println("a huge header over 10,000 short rows: a million columns read in $wideMs ms, a name of 50,000 characters in $longMs ms")
+    }
+
     @Test
     fun tenThousandRowsAreReadAndOneMoreIsRefused() {
         val header = "name,url,username,password\n"

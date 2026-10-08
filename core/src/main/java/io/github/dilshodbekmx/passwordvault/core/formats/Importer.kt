@@ -403,8 +403,21 @@ object Importer {
             }
         }
         ambiguous.sort()
-        val samples = headers.indices.map { i -> rows.firstNotNullOfOrNull { r -> r.values.getOrNull(i)?.takeIf { it.isNotBlank() } } ?: "" }
-        return ImportColumns(format, headers, samples, meanings, ambiguous, fromUser = given != null)
+        // The first value of each column that is not blank, in one pass over the rows: a hostile file
+        // may have a million columns over ten thousand short rows.
+        val samples = arrayOfNulls<String>(headers.size)
+        var missing = headers.size
+        for (row in rows) {
+            if (missing == 0) break
+            val values = row.values
+            for (i in 0 until minOf(values.size, headers.size)) {
+                if (samples[i] == null && values[i].isNotBlank()) {
+                    samples[i] = values[i]
+                    missing--
+                }
+            }
+        }
+        return ImportColumns(format, headers, samples.map { it ?: "" }, meanings, ambiguous, fromUser = given != null)
     }
 
     /** One row (or adjacent rows joined) as an entry, before the rules of every format are applied. */
@@ -418,15 +431,35 @@ object Importer {
         private val nowMs: Long,
     ) {
         private val column = HashMap<ColumnMeaning, Int>()
-        private val fieldColumns = ArrayList<Int>()
+
+        /**
+         * The columns that are extra fields, in order, with the name and the hidden flag each one gives
+         * its fields. Worked out once, not once for every row: a hostile header may be most of the
+         * file, and the time and memory of a read must not grow with the header times the rows.
+         */
+        private val fieldColumns: IntArray
+        private val fieldLabels: Array<String>
+        private val fieldSecret: BooleanArray
 
         init {
+            var fields = 0
             meanings.forEachIndexed { i, m ->
                 when (m) {
-                    ColumnMeaning.FIELD -> fieldColumns.add(i)
+                    ColumnMeaning.FIELD -> fields++
                     ColumnMeaning.SKIP -> Unit
                     else -> column.putIfAbsent(m, i)
                 }
+            }
+            fieldColumns = IntArray(fields)
+            fieldSecret = BooleanArray(fields)
+            var k = 0
+            fieldLabels = Array(fields) {
+                while (meanings[k] != ColumnMeaning.FIELD) k++
+                val label = headers[k].replace("\uFEFF", "").trim()
+                fieldColumns[it] = k++
+                fieldSecret[it] = !HeaderAliases.isHarmless(label)
+                // The cleaner cuts a name to FIELD_NAME_MAX and lists it; no row needs more of it than this.
+                EntryRules.cut(label, LABEL_MAX)
             }
         }
 
@@ -438,11 +471,12 @@ object Importer {
             // Our own CSV: a block at the end of the note, recognised only when it is ours (D-10a).
             val block = FieldsBlock.read(note)
             val fields = ArrayList<CustomField>(block.fields)
-            for (i in fieldColumns) {
-                val v = values.getOrNull(i) ?: continue
+            for (k in fieldColumns.indices) {
+                val i = fieldColumns[k]
+                if (i >= values.size) break // the columns are in order: this row has no value for the rest
+                val v = values[i]
                 if (v.isEmpty()) continue
-                val label = headers[i].replace("\uFEFF", "").trim()
-                fields.add(CustomField(label, v, secret = !HeaderAliases.isHarmless(label)))
+                fields.add(CustomField(fieldLabels[k], v, fieldSecret[k]))
             }
             if (ColumnMeaning.BITWARDEN_FIELDS in column) {
                 for (line in TextHygiene.normalizeLineBreaks(value(values, ColumnMeaning.BITWARDEN_FIELDS)).split('\n')) {
@@ -503,6 +537,12 @@ object Importer {
             )
         }
     }
+
+    /**
+     * As much of a column's header as a row's extra field is named with: twice [EntryRules.FIELD_NAME_MAX],
+     * so that a longer name is still cut by the cleaner and listed ([ImportChange.Kind.FIELD_NAMES_CUT]).
+     */
+    private const val LABEL_MAX = 2 * EntryRules.FIELD_NAME_MAX
 
     private fun isWeb(url: String): Boolean = url.startsWith("https://", ignoreCase = true) || url.startsWith("http://", ignoreCase = true)
 
