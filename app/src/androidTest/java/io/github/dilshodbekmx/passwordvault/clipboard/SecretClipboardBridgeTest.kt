@@ -6,6 +6,8 @@ import androidx.compose.foundation.text.contextmenu.data.TextContextMenuKeys
 import androidx.compose.foundation.text.contextmenu.provider.LocalTextContextMenuToolbarProvider
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -26,7 +28,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.github.dilshodbekmx.passwordvault.i18n.UiText
 import io.github.dilshodbekmx.passwordvault.settings.ThemeChoice
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultDialog
-import io.github.dilshodbekmx.passwordvault.ui.common.VaultSheet
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultTextField
 import io.github.dilshodbekmx.passwordvault.ui.theme.PasswordVaultTheme
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -184,13 +185,18 @@ class SecretClipboardBridgeTest {
         assertTrue("inside ClipboardWindow it has the bridge", wrapped is SecretClipboardBridge)
     }
 
-    /** A bottom sheet is a window of its own too, drawn by its own ComposeView: as with a dialog. */
+    /**
+     * A bottom sheet is a window of its own too, drawn by its own ComposeView: as with a dialog.
+     * Material 3's sheet itself, as the dialog above is Compose's own: `VaultSheet` is to wrap its
+     * content in [ClipboardWindow] (this package's interface request), and then has the bridge.
+     */
+    @OptIn(ExperimentalMaterial3Api::class)
     @Test
     fun aSheetGetsTheBridgeOnlyThroughClipboardWindow() {
         var plain: Clipboard? = null
         var wrapped: Clipboard? = null
         show(focused = false) {
-            VaultSheet(onDismissRequest = {}) {
+            ModalBottomSheet(onDismissRequest = {}) {
                 plain = LocalClipboard.current
                 ClipboardWindow { wrapped = LocalClipboard.current }
             }
