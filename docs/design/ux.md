@@ -813,7 +813,7 @@ A `LazyColumn` of `ListItem`s grouped under headings.
 | | Import | screen | — |
 | | Old passwords (locked on 6 Oct 2026) | only when an archived vault exists: "Open" · "Delete" (§5.10) | — |
 | Appearance & language | Language | dialog: System language · Oʻzbekcha · Ўзбекча · English · Русский | System language |
-| | Theme | System · Light · Dark | System |
+| | Appearance | dialog with two choices of `RadioButton`s ([looks/README.md](looks/README.md)). **Colours**: Bank blue · Emerald · Night vault · Phone's colours (the colours of the wallpaper; on Android 12 and later only), each with a small preview in its own colours. **Light or dark**: System · Light · Dark. A choice is applied at once, to the dialog too, which stays open until "Done". The row shows both choices ("Bank blue · System") | **Bank blue** and **System**; a stored style that is missing or unknown counts as Bank blue |
 | Help | How your passwords are protected · If you lose your phone or move to a new one · If you forget your master password · If you forget your PIN · Open-source licences · Version | screens | — |
 
 The group is called "App lock" (glossary term 69 in i18n.md), so that "Security" means only the tab.
@@ -1188,7 +1188,7 @@ Rules for all text:
   - Every screen is tested at 200 % and with the largest display size.
 - **Contrast.**
   - WCAG 2.2 AA: 4.5:1 for text; 3:1 for large text, icons, the strength meter and focus indicators. Material 3 colour roles meet this when used as pairs.
-  - Dynamic colour on Android 12+, a fixed scheme below.
+  - The app's own styles (Bank blue, Emerald, Night vault; [looks/README.md](looks/README.md)) are fixed colour schemes, each in light and in dark. In each of the six, every pair that text is drawn in has at least 4.5:1, every icon and every outline that carries meaning at least 3:1, and the letter of every avatar tone 4.5:1; a test checks every pair (`SchemeContrastTest`, `LooksTest`). "Phone's colours" is Material 3's dynamic colour, on Android 12 and later.
   - Colour is never the only signal (strength words, warning icons).
 - **Motion and time.**
   - "Remove animations" is respected: no shake; text and haptics remain.

@@ -30,6 +30,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.dp
+import androidx.core.view.WindowCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.github.dilshodbekmx.passwordvault.fake.FakeAppSettings
 import io.github.dilshodbekmx.passwordvault.settings.StyleChoice
@@ -58,9 +59,9 @@ import org.junit.runner.RunWith
  * and "light or dark" are then changed, as Settings › Appearance changes them, and after each change
  * the test reads the screen's real pixels: the screen behind, the window's own colour (Material 3
  * draws a dialog on `surfaceContainerHigh` and a sheet on `surfaceContainerLow`), and a patch of the
- * primary colour inside the window. The style's details reach the window too ([LocalLook]). Nothing
- * is made again on the way: the activity is the same one, and the window's content was composed
- * once.
+ * primary colour inside the window. The style's details reach the window too ([LocalLook]), and
+ * the status bar's icons follow light or dark. Nothing is made again on the way: the activity is the
+ * same one, and the window's content was composed once.
  */
 @RunWith(AndroidJUnit4::class)
 class StyleReachesWindowsTest {
@@ -152,6 +153,11 @@ class StyleReachesWindowsTest {
             val container = if (open == Window.DIALOG) c.surfaceContainerHigh else c.surfaceContainerLow
             compose.awaitPixel(CONTAINER, container, "$what: the window's own colour")
             assertEquals("$what: the style's details in the window", look.pinKeys.name, compose.node(CONTAINER).config[SemanticsProperties.StateDescription])
+            // The system bars' icons follow light or dark: dark icons over a light screen.
+            compose.runOnIdle {
+                val bars = WindowCompat.getInsetsController(activity.window, activity.window.decorView)
+                assertEquals("$what: dark status bar icons", theme == ThemeChoice.LIGHT, bars.isAppearanceLightStatusBars)
+            }
         }
         // Without a restart: the same activity, and the open window's content was never composed anew.
         assertSame(activity, compose.activity)
