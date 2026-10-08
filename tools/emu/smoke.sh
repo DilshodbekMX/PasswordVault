@@ -155,17 +155,17 @@ SMOKE_ENTRY=""
 
 smoke_set_up() { pva_set_up && pva_need pv.list.empty 10; }
 
-# An account; Save shows its screen, whose placeholder title names the route with the entry's id.
+# An account; Save shows its screen, whose first line is the account's name (pv.entry.title, build plan 3.7).
 smoke_add() {
     pva_add_account Smoketest smoke.user@example.uz Hv4Nc8Rt2Wq6Yz3 https://smoke.example/login "Smoke note" || return 1
-    SMOKE_ENTRY=$(pva_text pv.title.Entry) && [ -n "$SMOKE_ENTRY" ] || return 1
+    SMOKE_ENTRY=$(pva_text pv.entry.title) && [ -n "$SMOKE_ENTRY" ] || return 1
     pv_log "the account's screen: $SMOKE_ENTRY"
 }
 
 same_entry() {
     local title
     pva_on Entry 20 || return 1
-    title=$(pva_text pv.title.Entry) || return 1
+    title=$(pva_text pv.entry.title) || return 1
     [ "$title" = "$SMOKE_ENTRY" ] || { pv_log "the screen shows '$title', not '$SMOKE_ENTRY'"; return 1; }
 }
 
