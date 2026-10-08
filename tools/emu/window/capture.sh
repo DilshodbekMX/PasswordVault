@@ -21,7 +21,8 @@
 #   - The app, installed afresh, the own master password typed into the setup's masked field: nothing
 #     of the app may reach the service, in no event a character of the password. On these images
 #     Android gives a temporary service no other package than its own ("Ignoring package ... while
-#     using temporary service ...", printed when the log has it), so nothing of the app arrives at all.
+#     using temporary service ...", printed when the log has it), so nothing of the app arrives at all:
+#     without a session of the app the step cannot judge anything and prints SKIPPED, not PASS.
 #   - The device's own service again (the temporary one reset), the app started again and the
 #     password typed again: whether the app's activity has a content capture session at all
 #     (dumpsys activity top, its ContentCaptureManager) is printed, not judged: the device's service
@@ -140,6 +141,9 @@ print("%d %d %d %d" % (len(sessions), events, field_events, leaks))
     [ "${APP_LEAKS:-1}" -eq 0 ]
 }
 
+# app_typed: 0 when the service had a session of the app and got no character of the password; 1 when
+# it got one, or the step could not be done; 3 when the service got no session of the app at all, so
+# that nothing of the app could be observed and an empty record proves nothing.
 app_typed() {
     local since
     since=$(pv_shell date +%m-%d\\ %H:%M:%S.000 2>/dev/null | tr -d '\r')
@@ -151,6 +155,7 @@ app_typed() {
     if pv_shell logcat -d -T "'$since'" -s ContentCaptureManagerService:W 2>/dev/null | tr -d '\r' | grep -q "Ignoring package $PV_PACKAGE while using temporary service"; then
         echo "  Android: \"Ignoring package $PV_PACKAGE while using temporary service $WIN_HELPER\" (only the temporary service's own package is captured)"
     fi
+    [ "${APP_SESSIONS:-0}" -gt 0 ] || return 3
 }
 
 # The app with the device's own service: its activity's content capture state, printed.
@@ -173,7 +178,14 @@ app_default() {
 pv_step "capture: the helper's capture service is the device's content capture service" -- capture_on || win_end
 pv_step "capture: control: the text typed into a platform field reaches it" -- control || win_end
 pv_step "capture: control: with FLAG_SECURE nothing typed reaches it" -- control_secure
-pv_step "capture: the app: nothing of the masked master password reaches it" -- app_typed || win_end
+APP_STEP="capture: the app: nothing of the masked master password reaches it"
+app_typed
+APP_RC=$?
+case $APP_RC in
+    0) pv_report PASS "$APP_STEP" ;;
+    3) pv_report SKIPPED "$APP_STEP" "the service got no content capture session of the app, so nothing of it could be observed" ;;
+    *) pv_report FAIL "$APP_STEP" "exit $APP_RC"; win_end ;;
+esac
 echo "capture.sh: the $VARIANT build"
 pv_step "capture: the app with the device's own service: its content capture state read" -- app_default
 win_end
