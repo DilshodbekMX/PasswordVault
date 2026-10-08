@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Backup, restore and old passwords (build plan 5.2; ux.md §5.2, §5.10, §5.18, §5.19, §5.21;
+     lock.md F12, F13, F17). Every name starts with backup_. Shared words (OK, Cancel, Close, Try
+     again, Delete, Done, Show password) are in strings_common.xml. Plain words at B1 level, "you"
+     and "your" (ux.md §7). A backup is a locked copy of all the passwords in one file; it opens only
+     with the master password (glossary 96 to 99). A file name or a place's name in a sentence is
+     text the app does not choose: write the sentence so that its ending never has to change. -->
+<resources>
+
+    <!-- ===== Make a backup (ux.md §5.19) ===== -->
+
+    <!-- The title of the backup screen, and what TalkBack calls it. -->
+    <string name="backup_title">Make a backup</string>
+    <!-- The back arrow in the top bar of the backup, restore and old-passwords screens, read by
+         TalkBack. -->
+    <string name="backup_back">Back</string>
+    <!-- Step 1, shown only the first time a backup is made: what a backup is. -->
+    <string name="backup_explain">A backup is a locked copy of all your passwords. It opens only with your master password, on any phone.</string>
+    <!-- The button under that explanation: goes on to the master password. -->
+    <string name="backup_explain_continue">Continue</string>
+    <!-- Shown instead of the master-password field while a new master password, asked for with the
+         PIN or fingerprint, is waiting for its 24 hours (lock.md F11 step 10). A backup made now
+         would need a password the user does not know. -->
+    <string name="backup_pending">You can make a backup when your new master password has started working.</string>
+    <!-- Step 2: above the master-password field. The backup will open only with this password. -->
+    <string name="backup_password_text">Type your master password. This checks that you still know the password this backup will need.</string>
+    <!-- The label of the master-password field. -->
+    <string name="backup_password_field">Master password</string>
+    <!-- Above the field when a backup was interrupted by the app locking and continues now (ux.md §4). -->
+    <string name="backup_paused">This was paused when the app locked.</string>
+    <!-- The button under the master-password field: checks it and makes the backup. -->
+    <string name="backup_make">Make backup</string>
+    <!-- Shown while the master password is checked (about one second). -->
+    <string name="backup_checking">Checking…</string>
+    <!-- After a wrong master password (lock.md §13.3). -->
+    <string name="backup_wrong">That\'s not the right master password. Check the keyboard language (Latin or Cyrillic) and capital letters.</string>
+    <!-- After several wrong master passwords the field waits 30 seconds (lock.md §6.8). -->
+    <string name="backup_wait">Wait 30 seconds, then try again. Take your time and look at your paper.</string>
+    <!-- The countdown of that wait, once a second. -->
+    <plurals name="backup_wait_seconds">
+        <item quantity="one">Try again in %d&#160;second</item>
+        <item quantity="other">Try again in %d&#160;seconds</item>
+    </plurals>
+    <!-- The phone has too little free memory to check the master password (about 64 MiB). It is
+         not counted as a wrong try. -->
+    <string name="backup_no_memory">Your phone doesn\'t have enough free memory to check your master password. Close other apps or restart the phone, then try again.</string>
+    <!-- The typed password is the master password from before a change (lock.md F16b). %1$s is the
+         date of the change, for example "Oct 7". -->
+    <string name="backup_older">You changed your master password on %1$s. Type the new one.</string>
+    <!-- The same while that change may not have finished (lock.md F16b). %1$s is its date. -->
+    <string name="backup_older_unfinished">Your master password change on %1$s may not have finished. Type your new master password.</string>
+    <!-- Shown while the backup file is made and opened once with the master password, before the
+         list of places opens (one to three seconds). -->
+    <string name="backup_making">Making the backup…</string>
+    <!-- Step 3: shown behind the system's list of places, and again when that list was closed
+         without a place (ux.md §5.19). -->
+    <string name="backup_choose_text">Choose where to save the backup file. Google Drive is in the list when its app is on this phone.</string>
+    <!-- The button that opens the system's list of places to save the file. -->
+    <string name="backup_choose">Choose a place</string>
+    <!-- The system's list of places could not be opened. -->
+    <string name="backup_picker_failed">The list of places could not be opened. Try again.</string>
+    <!-- Step 4: while the file is written. -->
+    <string name="backup_saving">Saving…</string>
+    <!-- Step 4: while the saved file is read back and compared. -->
+    <string name="backup_checking_file">Checking the saved file…</string>
+    <!-- While a backup that was stopped is given up and its empty file removed. -->
+    <string name="backup_stopping">Removing the empty file…</string>
+    <!-- Step 5: the result. %1$d is the number of accounts in the backup; %2$s is the file's name as
+         the place shows it, for example "PasswordVault-backup-2026-10-06.pvault". -->
+    <plurals name="backup_saved">
+        <item quantity="one">Backup saved: %2$s (%1$d account).</item>
+        <item quantity="other">Backup saved: %2$s (%1$d accounts).</item>
+    </plurals>
+    <!-- Under the result when the place is the phone's own storage (Downloads and the like). -->
+    <string name="backup_place_phone">This copy is on this phone. If the phone is lost, this copy is lost too. Keep a copy somewhere else.</string>
+    <!-- Under the result when the place is Google Drive. -->
+    <string name="backup_place_drive">Saved to Google Drive. It is uploaded when the phone is online.</string>
+    <!-- Under the result for any other place; %1$s is the place's name as the phone shows it, for
+         example "SD card" or the name of another app. -->
+    <string name="backup_place_other">Saved to %1$s.</string>
+    <!-- After the line above for Google Drive and any place that is not the phone: the app can read
+         the file back but cannot see whether it was uploaded. -->
+    <string name="backup_upload_later">This place may upload the file later. Open it there once to check that it arrived.</string>
+    <!-- Button: opens the phone's list of apps to send the backup file to (Telegram Saved
+         Messages, email to yourself, Drive). The file stays locked. -->
+    <string name="backup_send">Send to another app…</string>
+    <!-- Next to that button. -->
+    <string name="backup_send_text">The file is locked with your master password. Keep your master password strong.</string>
+    <!-- The title of the phone's list of apps to send the backup to. -->
+    <string name="backup_send_title">Send the backup</string>
+    <!-- The phone's list of apps could not be opened. -->
+    <string name="backup_send_failed">The list of apps could not be opened. Try again.</string>
+
+    <!-- What went wrong (ux.md §5.19 "Errors"). -->
+
+    <!-- The place did not take the file. -->
+    <string name="backup_write_failed">Couldn\'t save to this place. Try another folder.</string>
+    <!-- The file was saved, but what was read back differs from the backup. -->
+    <string name="backup_check_failed">The saved file could not be checked. Try again or choose another place.</string>
+    <!-- The backup could not be made in the app (before any place was chosen). -->
+    <string name="backup_not_made">Couldn\'t make the backup. Try again.</string>
+    <!-- The phone has too little free memory to make the backup (it needs about 64 MiB). -->
+    <string name="backup_no_memory_make">Your phone doesn\'t have enough free memory to make the backup. Close other apps or restart the phone, then try again.</string>
+    <!-- Button after a place did not take the file or the check failed: opens the list of places
+         again. -->
+    <string name="backup_choose_other">Choose another place</string>
+
+    <!-- What became of the file the list of places made, after a failure (ux.md §4 item 3). -->
+
+    <!-- The file was deleted. -->
+    <string name="backup_file_removed">The file was removed.</string>
+    <!-- The file could not be deleted from the phone's storage; %1$s is its name. -->
+    <string name="backup_file_left_phone">Delete the file %1$s from this phone\'s storage yourself.</string>
+    <!-- The same for Google Drive. -->
+    <string name="backup_file_left_drive">Delete the file %1$s in Google Drive yourself.</string>
+    <!-- The same for another place; %1$s is the file's name, %2$s the place's name as the phone shows it. -->
+    <string name="backup_file_left_other">Delete the file %1$s in %2$s yourself.</string>
+
+    <!-- When the user stops a backup whose place was already chosen (ux.md §4 item 3). -->
+
+    <!-- The empty file the list of places made was deleted. -->
+    <string name="backup_stopped_removed">No backup was made. The empty file was removed.</string>
+    <!-- It could not be deleted from the phone's storage; %1$s is its name. -->
+    <string name="backup_stopped_left_phone">No backup was made. Delete the empty file %1$s from this phone\'s storage yourself.</string>
+    <!-- The same for Google Drive. -->
+    <string name="backup_stopped_left_drive">No backup was made. Delete the empty file %1$s in Google Drive yourself.</string>
+    <!-- The same for another place; %1$s is the file's name, %2$s the place's name as the phone shows it. -->
+    <string name="backup_stopped_left_other">No backup was made. Delete the empty file %1$s in %2$s yourself.</string>
+
+    <!-- ===== Restore from a backup file (ux.md §5.2, §5.10 "Forgot master password?") ===== -->
+
+    <!-- The title of the restore screen, and what TalkBack calls it. -->
+    <string name="backup_restore_title">Restore from a backup file</string>
+    <!-- Step 1: before the system's list of files opens. -->
+    <string name="backup_restore_intro">Choose a backup file that this app saved. Its name starts with PasswordVault-backup.</string>
+    <!-- The button that opens the system's list of files. -->
+    <string name="backup_restore_choose">Choose file</string>
+    <!-- The same button after a file could not be used. -->
+    <string name="backup_restore_choose_other">Choose another file</string>
+    <!-- The system's list of files could not be opened. -->
+    <string name="backup_restore_picker_failed">The list of files could not be opened. Try again.</string>
+    <!-- Shown while the chosen file is read. -->
+    <string name="backup_restore_reading">Reading the file…</string>
+    <!-- The chosen file cannot be read (it was moved, or the place cannot be reached). -->
+    <string name="backup_restore_unreadable">This file can\'t be read. Try another backup file.</string>
+    <!-- Step 2: above the field. -->
+    <string name="backup_restore_password_text">Type the master password you had when you made this backup.</string>
+    <!-- The label of that field. -->
+    <string name="backup_restore_field">Master password of the backup</string>
+    <!-- The button under the field. -->
+    <string name="backup_restore_open">Open backup</string>
+    <!-- Step 3: while the backup is opened (about one second). -->
+    <string name="backup_restore_opening">Opening…</string>
+    <!-- Step 4: what the backup holds. %1$d is the number of accounts, %2$s the date the backup was
+         made, for example "Oct 3, 2026". -->
+    <plurals name="backup_restore_summary">
+        <item quantity="one">%1$d account, backup made on %2$s.</item>
+        <item quantity="other">%1$d accounts, backup made on %2$s.</item>
+    </plurals>
+    <!-- Step 4's button on a phone without passwords: the backup becomes the app's passwords. -->
+    <string name="backup_restore_restore">Restore</string>
+    <!-- Step 4 when passwords are on this phone (restore from the lock screen): they are put aside,
+         never deleted (ux.md §5.10). -->
+    <string name="backup_restore_stays">Your current passwords stay on this phone, locked.</string>
+    <!-- Step 4's button in that case. -->
+    <string name="backup_restore_use">Use this backup</string>
+    <!-- While the backup is written as this phone's passwords and checked (one to three seconds). -->
+    <string name="backup_restore_restoring">Restoring…</string>
+
+    <!-- The restore's messages (ux.md §5.2 "States and messages"). -->
+
+    <!-- The file is not a backup of this app, on the first run. -->
+    <string name="backup_restore_not_ours">This is not a PasswordVault backup. To bring passwords from Chrome or another app, finish setup first, then use Settings › Import.</string>
+    <!-- The same when the restore was opened from the lock screen. -->
+    <string name="backup_restore_not_ours_locked">This is not a PasswordVault backup. Choose a backup file that this app saved.</string>
+    <!-- The password does not open the backup. The user may try again. -->
+    <string name="backup_restore_wrong">This password does not open this backup. Try the master password you used when you made it.</string>
+    <!-- The password did not open the backup, and the end of the file is damaged too: either may
+         be the reason. The user may try again (architecture.md §4.4). -->
+    <string name="backup_restore_wrong_or_damaged">This file may be damaged, or the password is wrong.</string>
+    <!-- The backup is damaged. -->
+    <string name="backup_restore_damaged">This backup file is damaged and cannot be opened. Try another backup file.</string>
+    <!-- The backup was made by a newer version of this app. -->
+    <string name="backup_restore_newer">This backup was made by a newer version of the app. Install the newest version of PasswordVault and try again.</string>
+    <!-- The phone has too little free memory to open the backup (about 64 MiB). -->
+    <string name="backup_restore_no_memory">Your phone does not have enough free memory to open the file. Close other apps and try again.</string>
+    <!-- The backup could not be written as this phone's passwords. Nothing changed. -->
+    <string name="backup_restore_not_saved">Couldn\'t save. Your phone\'s storage may be full.</string>
+
+    <!-- ===== Settings › Old passwords (ux.md §5.10 "Archived vaults", §5.18; lock.md F17 step 5) ===== -->
+
+    <!-- The title of the screen, and what TalkBack calls it. -->
+    <string name="backup_old_title">Old passwords</string>
+    <!-- At the top of the screen: what old passwords are. -->
+    <string name="backup_old_intro">These passwords were put aside on this phone. They stay locked with the master password you used for them. Open adds their accounts to your current passwords.</string>
+    <!-- One set of old passwords; %1$s is the date it was put aside, for example "Oct 6, 2026". -->
+    <string name="backup_old_item">Locked on %1$s</string>
+    <!-- Under a set whose files cannot be read now. -->
+    <string name="backup_old_unreadable">Its files can\'t be read now.</string>
+    <!-- Button of a set: adds its accounts to the current passwords. -->
+    <string name="backup_old_open">Open</string>
+    <!-- Shown when no set of old passwords is left on the phone. -->
+    <string name="backup_old_none">There are no old passwords on this phone.</string>
+    <!-- The title of the step that opens a set. %1$s is the date it was put aside. -->
+    <string name="backup_old_open_title">Open the passwords locked on %1$s</string>
+    <!-- Under that title. -->
+    <string name="backup_old_open_text">Type the master password you used for these passwords. Their accounts are added to your current passwords. Nothing is overwritten.</string>
+    <!-- The button of that step. -->
+    <string name="backup_old_open_button">Add the accounts</string>
+    <!-- The title of the step that deletes a set. %1$s is the date it was put aside. -->
+    <string name="backup_old_delete_title">Delete the passwords locked on %1$s?</string>
+    <!-- Under that title. Only that set's own master password deletes it (ux.md §5.10). -->
+    <string name="backup_old_delete_text">They are deleted from this phone for good. Only the master password you used for them can delete them. Your current master password does not.</string>
+    <!-- The button of that step. -->
+    <string name="backup_old_delete_button">Delete for good</string>
+    <!-- The label of the field in both steps. -->
+    <string name="backup_old_field">Their master password</string>
+    <!-- While a set is opened and its accounts are added. -->
+    <string name="backup_old_adding">Adding the accounts…</string>
+    <!-- While a set is deleted (up to two seconds). -->
+    <string name="backup_old_deleting">Deleting…</string>
+    <!-- After a set was opened. -->
+    <string name="backup_old_added">Their accounts were added to your passwords.</string>
+    <!-- After a set was deleted. -->
+    <string name="backup_old_deleted">The old passwords were deleted.</string>
+    <!-- The typed password is not the master password of that set. -->
+    <string name="backup_old_wrong">That\'s not the master password of these passwords. Check the keyboard language (Latin or Cyrillic) and capital letters.</string>
+    <!-- The phone has too little free memory to check it. Not counted as a wrong try. -->
+    <string name="backup_old_no_memory">Your phone doesn\'t have enough free memory to open these passwords. Close other apps or restart the phone, then try again.</string>
+    <!-- The accounts could not be added. -->
+    <string name="backup_old_not_added">Couldn\'t add the accounts. Nothing was changed. Try again.</string>
+    <!-- The set could not be deleted. -->
+    <string name="backup_old_not_deleted">Couldn\'t delete these passwords. Nothing was deleted. Try again.</string>
+
+</resources>
