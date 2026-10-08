@@ -669,7 +669,7 @@ Declared by the contracts package (build plan 1.1) so that earlier waves can nam
 | `GeneratorOptions` (kind, length, character sets, words, separator) | `core.generator` | the generator package |
 | `SecurityReport` (groups of reused passwords, weak, pending, left out, same as the master password) | `core.strength` | the strength package |
 | `PinRecord`, `FingerprintRecord`, `StateRecord`, `RecordRead` | `core.lock.record` | lock.md §5.3 to §5.6 as revised by its audit: no `trouble_boots`, no `udr`; `unseen` with `count`, `last_at`, `interrupted`; `mp_guard.unseen`; `mp_change`; `pending_mp` and `replaced` with `credited_ms` and `seen_elapsed_ms`. `RecordRead.Damaged` carries the `ParseError` of the rule that failed (5.6) |
-| `EditTexts` (`untitled(nowMs)`, `fromBackup(title)`, `fromFile(title)`) | `core.model` | `:app` passes the resource texts in, so that stored titles are in the user's language |
+| `EditTexts` (`untitled(nowMs)`, `fromBackup(title)`, `fromFile(title)`, `hiddenValue(number)`) | `core.model` | `:app` passes the resource texts in, so that stored titles are in the user's language. `hiddenValue` names a hidden value that an imported file gives without a name ("Hidden value 1", build-plan §12 decision 11); its default is English, and the import screen's texts give it from `strings_import.xml` |
 
 ### 3.8 Import (`core.formats`)
 

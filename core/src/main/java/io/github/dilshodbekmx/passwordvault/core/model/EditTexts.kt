@@ -20,4 +20,13 @@ interface EditTexts {
      * "(from file)" (formats.md §5.2, ux.md §5.21). `VaultEdits.addImported` takes it as `texts::fromFile`.
      */
     fun fromFile(title: String): String
+
+    /**
+     * The name of a hidden value that came without one in an imported file: "Hidden value 1", "Hidden
+     * value 2", numbered from 1 in the file's order within its account (formats.md §8.4; build-plan
+     * §12, decision 11), so that the value stays a hidden field and is never moved into the notes,
+     * where it would show. The import screen's texts give it in the screen's language
+     * (`strings_import.xml`); this English default is for texts that never import.
+     */
+    fun hiddenValue(number: Int): String = "Hidden value $number"
 }
