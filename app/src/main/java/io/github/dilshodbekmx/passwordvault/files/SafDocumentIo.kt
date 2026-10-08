@@ -1,10 +1,12 @@
 package io.github.dilshodbekmx.passwordvault.files
 
+import android.content.ContentProviderClient
 import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ProviderInfo
 import android.net.Uri
+import android.os.RemoteException
 import android.os.storage.StorageManager
 import android.provider.DocumentsContract
 import android.provider.OpenableColumns
@@ -21,7 +23,9 @@ import kotlinx.coroutines.withContext
 
 /**
  * [DocumentIo] over the Storage Access Framework (architecture.md §3.5, §4.12; formats.md §2 rules 2
- * and 3; ux.md §4 item 3, §5.19). The only place where a [DocRef] becomes an `android.net.Uri`.
+ * and 3; ux.md §4 item 3, §5.19). The only place where a [DocRef] becomes an `android.net.Uri`. It
+ * writes, reads, keeps and deletes only another app's documents (`content://`, from a provider that
+ * is not this app's): a `file://` address or the app's own provider would reach the app's own storage.
  *
  * - **Write** goes straight into the document, opened with mode "wt" (never through a plain
  *   temporary file in the app's own storage), hashing what it writes, then syncs it where the
@@ -29,17 +33,22 @@ import kotlinx.coroutines.withContext
  *   and counted up to one byte more than was written, and the two SHA-256 sums and byte counts are
  *   compared: providers have reported success after writing 0 bytes, and have cut files [V-S6]. A
  *   provider that refuses the mode "wt" (some take only "w") is written with "w": a longer old
- *   content that "w" leaves behind fails the comparison.
+ *   content that "w" leaves behind fails the comparison. What the read-back shows is what the
+ *   provider gives back on this phone. A provider that keeps the bytes in a copy of its own and
+ *   sends them on later (a cloud app) answers from that copy: whether they ever reach its server
+ *   is not checked here and cannot be, which is why the result line for Google Drive says "It is
+ *   uploaded when the phone is online" (ux.md §5.19).
  * - **Read** reads at most `maxBytes + 1` bytes, so that the caller can tell "too long"; anything
  *   that keeps the document from being read, a missing permission included, is an [IOException].
  * - **Keep** takes the persistable permission that the picker's result granted, read and write
  *   where both were granted, so that a task continues in a new process (ux.md §4 item 1).
  * - **Delete** asks the provider (`DocumentsContract.deleteDocument`, API 19). False where the place
- *   does not allow it or the document is still there; true when it is gone, also when it was gone
- *   already.
+ *   does not allow it, cannot be reached, or the document is still there; true when it is gone, also
+ *   when it was gone already.
  * - **Place** by the provider ([Places]); another place is named by the label of its provider, or for
  *   an SD card or USB drive by its volume's description ("SanDisk SD card").
- * - **Name** asks the provider for the document's display name.
+ * - **Name** asks the provider for the document's display name. That name, and the name of another
+ *   place, come from another app: both are made safe to show first ([ShownName]).
  *
  * Everything that reads or writes runs on [io] (architecture.md §5.3); [keep], [delete], [place],
  * [name] and [nameOf] are binder calls of their own, made by their callers off the main thread.
@@ -48,7 +57,7 @@ class SafDocumentIo(private val context: Context, private val io: CoroutineDispa
     private val resolver: ContentResolver get() = context.contentResolver
 
     override suspend fun write(doc: DocRef, bytes: ByteArray): Boolean = withContext(io) {
-        val uri = Uri.parse(doc.uri)
+        val uri = othersDocument(doc) ?: return@withContext false
         val wrote = MessageDigest.getInstance(SHA_256)
         try {
             openForWriting(uri).use { out ->
@@ -78,11 +87,12 @@ class SafDocumentIo(private val context: Context, private val io: CoroutineDispa
 
     override suspend fun read(doc: DocRef, maxBytes: Int): ByteArray = withContext(io) {
         require(maxBytes >= 0) { "maxBytes must not be negative" }
-        readAtMost(Uri.parse(doc.uri), maxBytes.toLong() + 1)
+        val uri = othersDocument(doc) ?: throw FileNotFoundException("not another app's document")
+        readAtMost(uri, maxBytes.toLong() + 1)
     }
 
     override fun keep(doc: DocRef) {
-        val uri = Uri.parse(doc.uri)
+        val uri = othersDocument(doc) ?: return
         for (flags in KEEP_FLAGS) {
             try {
                 resolver.takePersistableUriPermission(uri, flags)
@@ -94,26 +104,39 @@ class SafDocumentIo(private val context: Context, private val io: CoroutineDispa
     }
 
     override fun delete(doc: DocRef): Boolean {
-        val uri = Uri.parse(doc.uri)
-        val deleted = try {
-            DocumentsContract.deleteDocument(resolver, uri)
-        } catch (e: FileNotFoundException) {
-            false // from Android 10 the call throws where it returned false before
-        } catch (e: RuntimeException) {
-            false // the place does not allow it, or no permission
+        val uri = othersDocument(doc) ?: return false
+        // The provider must be there to say what became of the document. One that cannot be reached
+        // (its app is installed and does not come up) has deleted nothing and tells nothing. It is
+        // looked for first, through a link that may break: from Android 10 the request to delete
+        // holds on to the provider, and Android ends this app when that provider's process dies.
+        val provider = providerOf(uri) ?: return false
+        try {
+            val deleted = try {
+                DocumentsContract.deleteDocument(resolver, uri)
+            } catch (e: FileNotFoundException) {
+                false // from Android 10 the call throws where it returned false before
+            } catch (e: RuntimeException) {
+                false // the place does not allow it, or no permission
+            }
+            return deleted || isGone(provider, uri)
+        } finally {
+            provider.close()
         }
-        return deleted || isGone(uri)
     }
 
     override fun place(doc: DocRef): Place = Places.of(doc.uri, ::nameOf)
 
     /**
      * The name the provider shows for [doc] (`OpenableColumns.DISPLAY_NAME`), which may differ from
-     * the one the picker suggested ("(1)" added on a clash); null when it cannot be read.
+     * the one the picker suggested ("(1)" added on a clash); null when it cannot be read. The column
+     * is found by its name: a provider may answer with other columns than the one asked for, and the
+     * first of those is often the document's id. The place is another app, so its name is made safe
+     * to show and to keep ([ShownName]).
      */
     override fun name(doc: DocRef): String? = try {
         resolver.query(Uri.parse(doc.uri), arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
-            if (cursor.moveToFirst() && !cursor.isNull(0)) cursor.getString(0) else null
+            val column = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+            if (column >= 0 && cursor.moveToFirst() && !cursor.isNull(column)) ShownName.of(cursor.getString(column)) else null
         }
     } catch (e: RuntimeException) {
         null
@@ -194,20 +217,41 @@ class SafDocumentIo(private val context: Context, private val io: CoroutineDispa
     }
 
     /**
-     * True only when the provider, which is there, says the document is not: a query that finds no
-     * row, or none at all (a documents provider answers a missing document so). A provider that is
-     * not installed, or a permission that is gone, tells nothing, and the document is taken to be
-     * there.
+     * [doc] as the address of another app's document: `content://`, with the provider of another app.
+     * The picker is whatever app answers the request (Android 7 asks the user which one), and its
+     * answer is an address that ContentResolver would open with this app's own rights: a `file://`
+     * address, or one of this app's own providers, is the app's own storage (the vault's files, the
+     * lock records, the settings). Null for those: nothing is written there, read or deleted.
      */
-    private fun isGone(uri: Uri): Boolean {
-        val authority = uri.authority ?: return false
-        if (providerInfo(authority) == null) return false
-        return try {
-            resolver.query(uri, arrayOf(DocumentsContract.Document.COLUMN_DOCUMENT_ID), null, null, null)
-                ?.use { it.count == 0 } ?: true
-        } catch (e: RuntimeException) {
-            false // SecurityException: no permission any more, nothing is known
-        }
+    private fun othersDocument(doc: DocRef): Uri? {
+        val uri = Uri.parse(doc.uri)
+        if (uri.scheme != ContentResolver.SCHEME_CONTENT) return null
+        val authority = uri.authority?.substringAfterLast('@')?.takeIf { it.isNotEmpty() } ?: return null
+        if (providerInfo(authority)?.packageName == context.packageName) return null
+        return uri
+    }
+
+    /** The provider of [uri], reached now; null when there is none or it does not come up. */
+    private fun providerOf(uri: Uri): ContentProviderClient? = try {
+        uri.authority?.let { resolver.acquireUnstableContentProviderClient(it) }
+    } catch (e: RuntimeException) {
+        null // SecurityException: a provider this app may not reach
+    }
+
+    /**
+     * True only when [provider] itself says the document is not there: its answer to a query finds
+     * no row, or is none at all (a documents provider answers a missing document so). A provider
+     * that dies while it is asked, or a permission that is gone, tells nothing, and the document is
+     * taken to be there. `ContentResolver.query` would not do: it also answers with nothing when the
+     * provider could not be reached.
+     */
+    private fun isGone(provider: ContentProviderClient, uri: Uri): Boolean = try {
+        provider.query(uri, arrayOf(DocumentsContract.Document.COLUMN_DOCUMENT_ID), null, null, null)
+            ?.use { it.count == 0 } ?: true
+    } catch (e: RemoteException) {
+        false // the provider's process died
+    } catch (e: RuntimeException) {
+        false // SecurityException: no permission any more, nothing is known
     }
 
     private fun volumeDescription(uuid: String): String? = try {

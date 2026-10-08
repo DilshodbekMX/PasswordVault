@@ -223,6 +223,7 @@ class PrefsAppSettings(private val prefs: SharedPreferences) : AppSettings {
                     put(TASK_KIND, task?.kind?.stored)
                     put(TASK_STEP, task?.step)
                     put(TASK_DOC, task?.doc?.uri)
+                    put(TASK_WRITTEN, if (task?.written == true) true else null)
                 }
                 if (new.oneTime != old.oneTime) put(ONE_TIME, new.oneTime.map { it.stored }.toSet())
                 if (new.purgeArm != old.purgeArm) {
@@ -288,12 +289,15 @@ class PrefsAppSettings(private val prefs: SharedPreferences) : AppSettings {
                 GeneratorOptions.Kind.WORDS -> KIND_WORDS
             }
 
-            /** A task needs its kind and a step of 0 or more; the document is optional. */
+            /**
+             * A task needs its kind and a step of 0 or more; the document is optional. That its write
+             * began is kept only while it is true, and means something only with a document.
+             */
             private fun readFileTask(entries: Map<String, *>): FileTask? {
                 val kind = FileTask.Kind.entries.firstOrNull { it.stored == entries[TASK_KIND] } ?: return null
                 val step = (entries[TASK_STEP] as? Int)?.takeIf { it >= 0 } ?: return null
                 val doc = (entries[TASK_DOC] as? String)?.takeIf { it.isNotEmpty() }?.let(::DocRef)
-                return FileTask(kind, step, doc)
+                return FileTask(kind, step, doc, written = doc != null && entries[TASK_WRITTEN] == true)
             }
 
             /** All four parts, or not armed: a purge is never carried out on half a record. */
@@ -337,6 +341,7 @@ class PrefsAppSettings(private val prefs: SharedPreferences) : AppSettings {
         const val TASK_KIND = "file_task_kind"
         const val TASK_STEP = "file_task_step"
         const val TASK_DOC = "file_task_doc"
+        const val TASK_WRITTEN = "file_task_written"
         const val ONE_TIME = "one_time"
         const val PURGE_VAULT = "purge_arm_vault_id"
         const val PURGE_ARMED_AT = "purge_arm_armed_at_ms"

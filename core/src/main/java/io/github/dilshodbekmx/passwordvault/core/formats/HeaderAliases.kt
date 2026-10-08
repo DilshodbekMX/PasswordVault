@@ -43,7 +43,10 @@ enum class ColumnMeaning {
     /** Bitwarden's `fields`: one extra field per line, `name: value`. Only in Bitwarden's CSV. */
     BITWARDEN_FIELDS,
 
-    /** Bitwarden's `type`: `note` is a secure note, without username and password. Only in Bitwarden's CSV. */
+    /**
+     * Bitwarden's `type` (`login`, `note`): not imported. A secure note's row has empty login columns;
+     * one that has a username or a password keeps them. Only in Bitwarden's CSV.
+     */
     BITWARDEN_TYPE,
 
     /** An extra field named by the column's header. */
@@ -107,12 +110,16 @@ object HeaderAliases {
      * Whether an extra field labelled [label] may be shown: true when one of its words is a harmless
      * one (email, phone, question, folder, website, address, login, name, date, note…) and none is
      * a secret one (password, PIN, code, answer, key, token…). Every other label is hidden (ux.md §2).
+     *
+     * A secret word counts wherever it stands in a word: "EmailPassword", "userpin" and "ПочтаПароль"
+     * are one word each, and their columns hold passwords. A harmless word counts at the start of a
+     * word only, and a number is no name: "Номер карты" and "Karta nomeri" are not "ном…" and "nom…".
      */
     fun isHarmless(label: String): Boolean {
         var harmless = false
         for (word in words(label)) {
-            if (SECRET.any { word.startsWith(it) }) return false
-            if (!harmless && HARMLESS.any { word.startsWith(it) }) harmless = true
+            if (SECRET.any { it in word }) return false
+            if (!harmless && NUMBER.none { word.startsWith(it) } && HARMLESS.any { word.startsWith(it) }) harmless = true
         }
         return harmless
     }
@@ -196,7 +203,10 @@ object HeaderAliases {
         "эслатма",
     )
 
-    /** Word starts that make a label secret, whatever else it says. */
+    /** Word starts that are a number, not the name that [HARMLESS]'s "nom" and "ном" mean. */
+    private val NUMBER = listOf("nomer", "номер")
+
+    /** Words that make a label secret wherever they stand in it, whatever else it says. */
     private val SECRET = listOf(
         "pass", "пароль", "парол", "parol", "pin", "пин", "code", "kod", "код", "secret", "секрет", "maxfiy", "махфий",
         "answer", "ответ", "javob", "жавоб", "cvv", "cvc", "key", "ключ", "kalit", "калит", "token", "totp", "otp", "ssn",

@@ -26,6 +26,7 @@ import io.github.dilshodbekmx.passwordvault.settings.PrefsAppSettings.Companion.
 import io.github.dilshodbekmx.passwordvault.settings.PrefsAppSettings.Companion.TASK_DOC
 import io.github.dilshodbekmx.passwordvault.settings.PrefsAppSettings.Companion.TASK_KIND
 import io.github.dilshodbekmx.passwordvault.settings.PrefsAppSettings.Companion.TASK_STEP
+import io.github.dilshodbekmx.passwordvault.settings.PrefsAppSettings.Companion.TASK_WRITTEN
 import io.github.dilshodbekmx.passwordvault.settings.PrefsAppSettings.Companion.THEME
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -227,6 +228,29 @@ class PrefsAppSettingsTest {
         assertTrue(settings.update { it.fileTask = null })
         assertNull(start().fileTask.value)
         assertTrue(file.stored.keys.none { it.startsWith("file_task") })
+    }
+
+    @Test
+    fun thatATasksWriteBeganSurvivesARestart() {
+        // FileTaskStore.write records it before it writes, so that a new process that gives the task up
+        // removes what was written (architecture.md §3.5).
+        val doc = DocRef("content://com.android.providers.downloads.documents/document/41")
+        val settings = start()
+        assertTrue(settings.update { it.fileTask = FileTask(FileTask.Kind.EXPORT, 2, doc) })
+        assertFalse("kept only while true", TASK_WRITTEN in file.stored)
+        assertTrue(settings.update { it.fileTask = FileTask(FileTask.Kind.EXPORT, 2, doc, written = true) })
+        assertEquals("file_task_written", TASK_WRITTEN)
+        assertEquals(true, file.stored[TASK_WRITTEN])
+        assertEquals(FileTask(FileTask.Kind.EXPORT, 2, doc, written = true), start().fileTask.value)
+
+        assertTrue(settings.update { it.fileTask = null })
+        assertTrue(file.stored.keys.none { it.startsWith("file_task") })
+
+        // Without a document there is nothing it could have written into; anything but true is false.
+        file.stored = mapOf(TASK_KIND to "backup", TASK_STEP to 3, TASK_WRITTEN to true)
+        assertEquals(FileTask(FileTask.Kind.BACKUP, 3, null), start().fileTask.value)
+        file.stored = mapOf(TASK_KIND to "backup", TASK_STEP to 3, TASK_DOC to doc.uri, TASK_WRITTEN to "true")
+        assertEquals(FileTask(FileTask.Kind.BACKUP, 3, doc), start().fileTask.value)
     }
 
     @Test

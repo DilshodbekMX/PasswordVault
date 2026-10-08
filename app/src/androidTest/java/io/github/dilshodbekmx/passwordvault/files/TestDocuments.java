@@ -29,6 +29,9 @@ final class TestDocuments {
     /** The provider's authority (the test APK's own: the app's id with ".test"). */
     static final String AUTHORITY = "io.github.dilshodbekmx.passwordvault.test.documents";
 
+    /** The authority of {@link TestUnreachableProvider}, a place that cannot be reached. */
+    static final String UNREACHABLE_AUTHORITY = "io.github.dilshodbekmx.passwordvault.test.unreachable";
+
     /** The app the documents are granted to. */
     static final String APP_PACKAGE = "io.github.dilshodbekmx.passwordvault";
 
@@ -49,6 +52,10 @@ final class TestDocuments {
     static final String NO_DELETE = "nodelete";
     /** Cannot open the document for reading. */
     static final String NO_READ = "noread";
+    /** Refuses the mode "wt" as a bad mode, and with "w" writes over the old content without cutting it. */
+    static final String W_ONLY = "wonly";
+    /** Answers a query with all its columns, in its own order, whatever columns were asked for. */
+    static final String ALL_COLUMNS = "allcolumns";
 
     /** The receiver's commands; see {@link TestDocumentsReceiver}. */
     static final String ACTION_CREATE = "io.github.dilshodbekmx.passwordvault.test.documents.CREATE";

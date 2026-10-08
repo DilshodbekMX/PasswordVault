@@ -116,4 +116,27 @@ class HeaderAliasesTest {
         )
         assertEquals("eslatma", file.accounts.single().entry.notes)
     }
+
+    /**
+     * A label that names a secret is hidden wherever the word stands in it: written as one word after a
+     * harmless one ("EmailPassword", "UserPin") it was taken for harmless, and the column's passwords were
+     * imported as visible extra fields. And a number is no name: "Номер карты" passed for "ном…".
+     */
+    @Test
+    fun aSecretWordInsideALongerWordHidesTheFieldAndANumberIsNoName() {
+        for (label in listOf("EmailPassword", "UserPass", "LoginPassword", "userpassword", "mailpass", "loginPin", "UserPin2", "SiteKey",
+            "WebToken", "UserSecret", "TelegramCode", "PochtaParoli", "ПочтаПароль", "ЛогинКод", "Номер карты", "Номер", "Karta nomeri",
+            "Nomer")) {
+            assertFalse(label, HeaderAliases.isHarmless(label))
+        }
+        // A phone number is still harmless, by its other word; and the names are what they were.
+        for (label in listOf("Номер телефона", "Telefon nomeri", "Nomi", "Номи", "Ном", "Foydalanuvchi nomi", "User name", "E-mail")) {
+            assertTrue(label, HeaderAliases.isHarmless(label))
+        }
+        val file = file(csv("Site,Login,Password,Email,EmailPassword,Номер карты", "bank.uz,ali,pw,a@x.uz,Em@il-Pw1,8600123412341234"))
+        assertEquals(
+            listOf(visible("Email", "a@x.uz"), hidden("EmailPassword", "Em@il-Pw1"), hidden("Номер карты", "8600123412341234")),
+            file.accounts.single().entry.fields,
+        )
+    }
 }

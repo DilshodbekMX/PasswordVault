@@ -33,6 +33,32 @@ overlay_on() {
     win_cmd overlay-add >/dev/null || return 1
     WIN_OVERLAY=1
     pv_sleep 1
+    keep_helper_unfrozen
+}
+
+# keep_helper_unfrozen: the helper adds its overlay from a broadcast receiver, so once the app's
+# windows hide the overlay (Android 12 and newer) nothing makes the helper's process important. It
+# becomes a cached process, at once or about a minute after its control screen was in front, and ten
+# seconds later the system freezes it (`dumpsys activity`: use_freezer=true,
+# freeze_debounce_timeout=10000; `am isfrozen`). A frozen process answers no input event, and its
+# hidden overlay window still gets one whenever the touch mode changes, as it does at the key MOVE_END
+# that pva_type sends before it types: five seconds later the system ends the helper as not responding
+# (`dumpsys activity exit-info`: "bg anr: Input dispatching timed out (... PvWinOverlay is not
+# responding. Waited 5000ms for TouchModeEvent(inTouchMode=false))"), and the overlay goes with its
+# process. The last step then finds no overlay, though the app removed nothing. Seen at the device
+# check of round R2 on API 37 with the debug build, whose steps took longer than that minute on a
+# loaded machine, and reproduced by hand there. `am unfreeze --sticky` (Android 14 and newer) keeps
+# the process unfrozen for its lifetime; a device without the command answers with an error, and
+# nothing is lost.
+keep_helper_unfrozen() {
+    [ "$API" -ge 31 ] || return 0
+    pv_shell am unfreeze --sticky "$WIN_HELPER" >/dev/null 2>&1
+    return 0
+}
+
+# helper_end: how the helper's process last ended (Android 11 and newer), for a message.
+helper_end() {
+    pv_shell dumpsys activity exit-info "$WIN_HELPER" 2>/dev/null | tr -d '\r' | grep -m 2 -E 'reason=|description=' | sed 's/^ *//' | tr '\n' ' ' | cut -c1-300
 }
 
 overlay_off() {
@@ -99,12 +125,25 @@ control() {
 # each with HIDE_NON_SYSTEM_OVERLAY_WINDOWS.
 hidden() {
     local windows
-    overlay_exists || { pv_log "the overlay window is gone"; return 1; }
+    overlay_exists || { pv_log "the overlay window is gone; the helper's process ended so: $(helper_end)"; return 1; }
     ! overlay_visible || { pv_log "the overlay is on the screen over the app"; return 1; }
     windows=$(app_windows)
     echo "  the app's visible windows: $(printf '%s' "$windows" | paste -sd, -)"
     [ "$(printf '%s\n' "$windows" | grep -c .)" -eq "$1" ] || { pv_log "not $1 visible windows of the app"; return 1; }
     ! printf '%s\n' "$windows" | grep -q ' shows$' || { pv_log "a window of the app does not hide overlays"; return 1; }
+}
+
+# back_when_away: with the app away the overlay is on the screen again. When it is not, says whether
+# its window is still there, and how the helper's process ended when it is gone: then nothing shows
+# that the overlay was there all the time (keep_helper_unfrozen).
+back_when_away() {
+    overlay_visible && return 0
+    if overlay_exists; then
+        pv_log "the overlay is still hidden with the app away; the focus: $(pv_focus)"
+    else
+        pv_log "the overlay window is gone; the helper's process ended so: $(helper_end)"
+    fi
+    return 1
 }
 
 # ---- Android 8 to 11: the tap through the overlay is dropped ---------------------------------------
@@ -163,7 +202,7 @@ if [ "$API" -ge 31 ]; then
     pv_step "the master password opens the app with the overlay still added" -- win_unlock
     pv_shell input keyevent KEYCODE_HOME >/dev/null
     pv_sleep 2
-    pv_step "overlay: with the app away the overlay is on the screen again (it was there all the time)" -- overlay_visible
+    pv_step "overlay: with the app away the overlay is on the screen again (it was there all the time)" -- back_when_away
     overlay_off
 else
     pv_step "overlay: Welcome (the activity's window): the tap on Start through the overlay is dropped" -- dropped pv.open.CreateMasterPassword pv.route.Welcome

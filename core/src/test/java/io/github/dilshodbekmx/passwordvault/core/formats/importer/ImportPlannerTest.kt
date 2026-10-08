@@ -2,6 +2,7 @@ package io.github.dilshodbekmx.passwordvault.core.formats.importer
 
 import io.github.dilshodbekmx.passwordvault.core.crypto.JcaAesGcm
 import io.github.dilshodbekmx.passwordvault.core.formats.BitwardenJson
+import io.github.dilshodbekmx.passwordvault.core.formats.GoogleCsv
 import io.github.dilshodbekmx.passwordvault.core.formats.ImportPlanner
 import io.github.dilshodbekmx.passwordvault.core.formats.importer.ImportFixtures.DAY
 import io.github.dilshodbekmx.passwordvault.core.formats.importer.ImportFixtures.GENERATOR
@@ -99,6 +100,25 @@ class ImportPlannerTest {
         // Other notes or fields: not the same login, never joined.
         val notes = plan(file(csv(header, "gmail.com,https://gmail.com/,aziz@gmail.com,G00gle!,work", "youtube.com,https://youtube.com/,aziz@gmail.com,G00gle!,")))
         assertEquals(2, notes.entries.size)
+    }
+
+    /** Rules (b) and (c) join rows whatever their stars: the account they make is a favourite when one of them was. */
+    @Test
+    fun aJoinKeepsTheStarOfARowItTakesIn() {
+        val file = file(
+            csv(
+                "name,url,username,password,favorite",
+                "google.com,https://accounts.google.com/,aziz,G00gle!,",
+                "youtube.com,https://youtube.com/,aziz,G00gle!,1",
+                "instagram.com,https://instagram.com/,aziz,In5ta!,1",
+                "com.instagram.android,android://AbC==@com.instagram.android/,aziz,In5ta!,",
+                "mail.ru,https://mail.ru/,aziz,M@il,",
+            ),
+        )
+        val plan = plan(file)
+        assertEquals(listOf("Google", "Instagram", "Mail"), plan.entries.map { it.title })
+        assertEquals(listOf(2, 2, 1), plan.entries.map { it.urls.size })
+        assertEquals(listOf(true, true, false), plan.entries.map { it.favourite })
     }
 
     @Test
@@ -202,6 +222,126 @@ class ImportPlannerTest {
         assertEquals(0, plan.withoutPassword)
     }
 
+    /**
+     * An account without a website is known by its name, and the import itself changes names: "Tidy
+     * names", and "(from file)" for an account of our own JSON added beside the one that holds its id.
+     * Neither may make an exact repeat look new.
+     */
+    @Test
+    fun anAccountWithoutAWebsiteIsAlreadyHereWhateverTheImportDoesToItsName() {
+        // The vault's own export, imported into the same vault: nothing to add, with "Tidy names" on as it is by default.
+        val own = Vault(entries = listOf(entry(1, "gmail.com", "aziz", "G00gle!"), entry(2, "mail.ru", "ivan", "M@il1", listOf("https://mail.ru"))))
+        for (bytes in listOf(BitwardenJson.export(own, NOW, GENERATOR).bytes, GoogleCsv.export(own.entries).parts.single())) {
+            val plan = plan(own, file(bytes))
+            assertEquals(2, plan.found)
+            assertEquals(2, plan.alreadyHere)
+            assertTrue(plan.entries.map { it.title }.toString(), plan.accounts.isEmpty())
+        }
+        // The other password of the same name is still a conflict, found under the name the vault has.
+        val other = plan(own, file(BitwardenJson.export(listOf(entry(3, "gmail.com", "aziz", "0ther!")), NOW, GENERATOR).bytes))
+        assertEquals(listOf("Gmail"), other.entries.map { it.title })
+        assertEquals(listOf(id(1)), other.conflicts.map { it.existingId })
+
+        // formats-review P1 for an account without a website: export, change its password, import, and import once more.
+        val wifi = entry(4, "Home Wi-Fi", "", "W1fi-old")
+        val exported = BitwardenJson.export(listOf(wifi), NOW - DAY, GENERATOR).bytes
+        val edited = Vault(entries = listOf(wifi.copy(password = "W1fi-new")))
+        val first = plan(edited, file(exported))
+        assertEquals(listOf("W1fi-old"), first.entries.map { it.password }) // added beside it, to compare
+        val after = VaultEdits.addImported(first.entries, FakeRandom(11), Texts::fromFile)(edited, NOW).vault
+        assertEquals(listOf("Home Wi-Fi", "Home Wi-Fi (fayldan)"), after.entries.map { it.title })
+        val again = plan(after, file(exported))
+        assertEquals(1, again.alreadyHere) // the copy "(from file)" is this account
+        assertTrue(again.accounts.isEmpty())
+        // Both changes at once: a host-like name, tidied, then named "(from file)".
+        val site = entry(5, "example.org", "ali", "Ex-old")
+        val siteFile = file(BitwardenJson.export(listOf(site), NOW - DAY, GENERATOR).bytes)
+        val siteVault = Vault(entries = listOf(site.copy(password = "Ex-new")))
+        val siteAfter = VaultEdits.addImported(plan(siteVault, siteFile).entries, FakeRandom(12), Texts::fromFile)(siteVault, NOW).vault
+        assertEquals(listOf("example.org", "Example (fayldan)"), siteAfter.entries.map { it.title })
+        assertTrue(plan(siteAfter, siteFile).accounts.isEmpty())
+        // Imported once with "Tidy names" on, then again with it off: the tidied name is this account.
+        val tidied = VaultEdits.addImported(plan(Vault(), file(exportedOwn(own))).entries, FakeRandom(13), Texts::fromFile)(Vault(), NOW).vault
+        assertEquals(listOf("Gmail", "Mail"), tidied.entries.map { it.title })
+        val off = plan(tidied, file(exportedOwn(own)), ImportPlanner.Choices(tidyNames = false))
+        assertEquals(2, off.alreadyHere)
+        assertTrue(off.entries.map { it.title }.toString(), off.accounts.isEmpty())
+    }
+
+    private fun exportedOwn(vault: Vault): ByteArray = BitwardenJson.export(vault, NOW, GENERATOR).bytes
+
+    /**
+     * Many accounts of one login and one password are the planner's worst case: each was compared with
+     * every one before it, and looking for one note inside another took the two lengths multiplied when
+     * the notes begin alike. 800 such rows, a file of 3 MB, took 112 s to plan, and 9,950 rows with
+     * notes of 900 characters 14 s.
+     */
+    @Test
+    fun manyAccountsOfOneLoginArePlannedInTimeThatGrowsWithTheFile() {
+        // Notes made to defeat the search: none holds another, and each begins like every other.
+        val long = "a".repeat(5_000)
+        val short = "a".repeat(2_500)
+        val hard = file(csv(header, *Array(800) { i -> "Site,https://site.example,user,pw," + (if (i % 2 == 0) long + "d" + i else short + "c" + i) }))
+        var start = System.nanoTime()
+        val hardPlan = plan(hard)
+        val hardMs = (System.nanoTime() - start) / 1_000_000
+        assertEquals(800, hardPlan.accounts.size)
+        assertEquals(0, hardPlan.repeatedInFile)
+        assertTrue("$hardMs ms", hardMs < 5_000)
+
+        // 9,900 accounts of one login and password, each with a note of its own; then 50 of them once more, exactly.
+        val note = "n".repeat(900)
+        val rows = Array(9_900) { "Site,https://site.example,user,pw,$note$it" } + Array(50) { "Site,https://site.example,user,pw,$note${it * 100}" }
+        val many = file(csv(header, *rows))
+        assertEquals(9_950, many.accounts.size)
+        start = System.nanoTime()
+        val manyPlan = plan(many)
+        val manyMs = (System.nanoTime() - start) / 1_000_000
+        assertEquals(9_900, manyPlan.accounts.size)
+        assertEquals(50, manyPlan.repeatedInFile) // an exact repeat is found however many accounts share its login
+        assertTrue("$manyMs ms", manyMs < 5_000)
+        // Imported, and the same file once more: every account is already here.
+        val after = VaultEdits.addImported(manyPlan.entries, FakeRandom(21), Texts::fromFile)(Vault(), NOW).vault
+        start = System.nanoTime()
+        val again = plan(after, many)
+        val againMs = (System.nanoTime() - start) / 1_000_000
+        assertEquals(9_950, again.alreadyHere)
+        assertTrue(again.accounts.isEmpty())
+        assertTrue("$againMs ms", againMs < 5_000)
+        println("many accounts of one login: planned in $hardMs ms (notes that begin alike), $manyMs ms and $againMs ms (9,950 rows, new and again)")
+    }
+
+    /** "Nothing new in its notes": the incoming notes, trimmed, stand somewhere in the notes the vault has. */
+    @Test
+    fun notesThatTheVaultsAccountHoldsAreNothingNew() {
+        val cases = listOf(
+            // the vault's notes, the incoming notes, already here
+            Triple("aaab", "aab", true),
+            Triple("aabababc", "ababc", true),
+            Triple("abcabcabd", "abcabd", true),
+            Triple("personal\nsecond line", " second line \n", true),
+            Triple("xyz", "xyz", true),
+            Triple("xyz", "", true),
+            Triple("xyz", " \n ", true),
+            Triple("", "", true),
+            Triple("aaab", "aaaa", false),
+            Triple("abcabcabd", "abcabe", false),
+            Triple("xyz", "xyzz", false),
+            Triple("xyz", "wxyz", false),
+            Triple("", "x", false),
+            Triple("ab", "abc", false),
+            Triple("Oʻzbek‘ matni 😀 ёж", "matni 😀 ё", true),
+            Triple("Oʻzbek‘ matni 😀 ёж", "matni 😃", false),
+        )
+        for ((had, brings, here) in cases) {
+            val vault = Vault(entries = listOf(entry(1, "Gmail", "aziz", "G00gle!", listOf("https://mail.google.com"), had)))
+            val incoming = entry(2, "Gmail", "aziz", "G00gle!", listOf("https://mail.google.com"), brings)
+            val plan = plan(vault, file(BitwardenJson.export(listOf(incoming), NOW, GENERATOR).bytes))
+            assertEquals("[$had] holds [$brings]", if (here) 1 else 0, plan.alreadyHere)
+            assertEquals("[$had] holds [$brings]", if (here) 0 else 1, plan.accounts.size)
+        }
+    }
+
     @Test
     fun theEstimateIsTheSealedFileAtMost() {
         val vault = Vault(entries = WriterFixtures.bulkEntries(800))
@@ -216,6 +356,32 @@ class ImportPlannerTest {
         val sealed = codec.seal(after, ByteArray(32) { 7 }, id(1), id(2), 1, PasswordSlot(ByteArray(16), ByteArray(12), ByteArray(48)))
         assertTrue("${plan.sealedBytes} < ${sealed.size}", plan.sealedBytes >= sealed.size)
         assertTrue("${plan.sealedBytes} - ${sealed.size}", plan.sealedBytes - sealed.size < 128) // only the header's widest numbers
+    }
+
+    /**
+     * The size is estimated with ids of the planner's own in place of the new ids an import would draw.
+     * They were `ffffffff-ffff-4fff-bfff-000000000000` and up: valid ids, which an earlier import of a
+     * file in our own format keeps as they are. With a hundred of them in the vault, no plan could be
+     * made any more for a file with an id that is taken (formats-review P1's own case).
+     */
+    @Test
+    fun theIdsOfTheSizeEstimateAreNeverIdsOfTheVault() {
+        val planted = List(100) { i -> entry(1, "Planted $i", "u$i", "p$i").copy(id = "ffffffff-ffff-4fff-bfff-" + i.toString(16).padStart(12, '0')) }
+        val gmail = entry(140, "Gmail", "aziz@gmail.com", "G00gle#2025", listOf("https://mail.google.com"))
+        // The hostile file is an ordinary import: its ids are valid and free, so they are kept.
+        val hostile = file(BitwardenJson.export(planted, NOW, GENERATOR).bytes)
+        val start = Vault(entries = listOf(gmail.copy(password = "N3w#Gmail")))
+        val vault = VaultEdits.addImported(plan(start, hostile).entries, FakeRandom(4), Texts::fromFile)(start, NOW).vault
+        assertEquals(planted.map { it.id }, vault.entries.drop(1).map { it.id })
+
+        // The vault's own older export, whose Gmail has the id that the vault's Gmail holds.
+        val plan = plan(vault, file(BitwardenJson.export(listOf(gmail), NOW - DAY, GENERATOR).bytes))
+        assertEquals(listOf("G00gle#2025"), plan.entries.map { it.password })
+        assertTrue(plan.fits)
+        val after = VaultEdits.addImported(plan.entries, FakeRandom(9), Texts::fromFile)(vault, NOW).vault
+        val codec = VaultCodecs.create(JcaAesGcm(), FakeRandom(1), FakeClock(), BuildInfo(GENERATOR, 1))
+        val sealed = codec.seal(after, ByteArray(32) { 7 }, id(1), id(2), 1, PasswordSlot(ByteArray(16), ByteArray(12), ByteArray(48)))
+        assertTrue("${plan.sealedBytes} < ${sealed.size}", plan.sealedBytes >= sealed.size)
     }
 
     @Test
