@@ -253,7 +253,6 @@ internal class ShortcutFlows(private val core: LockCore) {
     /** What [fingerprintOn] holds between its two turns under the mutex: the new key and a copy of VK. */
     private class TurnOn(
         val proof: MasterProof,
-        val open: OpenVault,
         val lock: VaultLock,
         val slotId: String,
         val alias: String,
@@ -352,16 +351,17 @@ internal class ShortcutFlows(private val core: LockCore) {
             deleteQuietly(alias)
             return Prepared.Done(FingerprintOnOutcome.Failed)
         }
-        return Prepared.Ready(TurnOn(proof, open, lock, slotId, alias, key.first, key.second, core.newLaunch()))
+        return Prepared.Ready(TurnOn(proof, lock, slotId, alias, key.first, key.second, core.newLaunch()))
     }
 
     /** Holds the mutex: F9 steps 7 to 9, with what the prompt of [turnOn] came to. */
-    private fun finishTurnOn(turnOn: TurnOn, result: FingerprintResult): FingerprintOnOutcome {
+    private suspend fun finishTurnOn(turnOn: TurnOn, result: FingerprintResult): FingerprintOnOutcome {
         val sealed = result as? FingerprintResult.Ok
         try {
-            // Dropped: no launch is outstanding (a lock or ON_STOP ended it), or the app it was for is gone.
-            val current = core.launchEnded(turnOn.launch) && core.state.value is LockState.Unlocked &&
-                core.open === turnOn.open && core.holds(turnOn.proof)
+            // Dropped: no launch is outstanding (a lock or ON_STOP ended it), the proof of the flow is gone
+            // with it, or the key that was sealed is no longer the open vault's.
+            val current = core.launchEnded(turnOn.launch) && openVault()?.vaultId == turnOn.lock.vaultId &&
+                core.holds(turnOn.proof) && openKeyIs(turnOn.vkId)
             if (!current) {
                 deleteQuietly(turnOn.alias)
                 return FingerprintOnOutcome.Cancelled
@@ -471,6 +471,14 @@ internal class ShortcutFlows(private val core: LockCore) {
 
     /** Holds the mutex: the open vault, while the app is unlocked; null otherwise. */
     private fun openVault(): OpenVault? = core.open?.takeIf { core.state.value is LockState.Unlocked }
+
+    /** Holds the mutex: whether the vault port's open vault is under the key [vkId] now. */
+    private suspend fun openKeyIs(vkId: String): Boolean =
+        try {
+            core.vault.withVaultKey { openVkId, _ -> openVkId == vkId }
+        } catch (e: RuntimeException) {
+            false // no vault is open
+        }
 
     /** Deletes [alias]; errors are ignored, and the sweep retries (lock.md §5.7). */
     private fun deleteQuietly(alias: String) {
