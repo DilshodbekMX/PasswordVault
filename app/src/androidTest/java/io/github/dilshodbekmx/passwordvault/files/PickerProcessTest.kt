@@ -32,7 +32,7 @@ import org.junit.runner.RunWith
 
 /**
  * Build plan 5.1, [device], on API 24 and 37: the picker's plumbing in the running app, with its
- * real activity, its real lock (the master-password gate of build plan 3.2 until 4.1) and its real
+ * real activity, its real lock (`DefaultLockManager`, build plan 4.1, through [AppVault]) and its real
  * settings file, and a picker that is another app's activity: [FakePickerActivity], in the test
  * APK's process, started under the request code of the app's own launcher in place of the system
  * picker, which the test keeps from opening ([DocumentsRig.SystemScreens]).

@@ -2,7 +2,9 @@ package io.github.dilshodbekmx.passwordvault.files
 
 import io.github.dilshodbekmx.passwordvault.AppGraph
 import io.github.dilshodbekmx.passwordvault.PasswordVaultApp
+import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockScreen
 import io.github.dilshodbekmx.passwordvault.lock.CreateResult
+import io.github.dilshodbekmx.passwordvault.lock.LockIntent
 import io.github.dilshodbekmx.passwordvault.lock.LockUiState
 import io.github.dilshodbekmx.passwordvault.lock.MpPurpose
 import io.github.dilshodbekmx.passwordvault.lock.MpResult
@@ -12,9 +14,14 @@ import kotlinx.coroutines.withTimeout
 import org.junit.Assert.fail
 
 /**
- * The app's own vault and lock, as the running app has them: until build plan 4.1 the lock is the
- * master-password gate of 3.2. These tests make the vault on a phone that has none, with
- * [PASSWORD]; a vault that another test made with another password cannot be opened here.
+ * The app's own vault and lock, as the running app has them: the lock is `DefaultLockManager` (build
+ * plan 4.1). These tests make the vault on a phone that has none, with [PASSWORD]; a vault that
+ * another test made with another password cannot be opened here.
+ *
+ * While the vault has no PIN, the lock publishes "Choose a PIN" after setup and after every
+ * master-password unlock (lock.md F1 step 6), and the notices open the PIN steps over the app. These
+ * tests act on the file tasks, not on the screens, so the steps are left open, as a user who has not
+ * answered them yet leaves them; the next lock takes them away.
  */
 internal object AppVault {
     /** The master password of the vault these tests make. */
@@ -39,7 +46,14 @@ internal object AppVault {
                 if (made !is CreateResult.Created) fail("the test vault could not be made: $made")
             }
             is LockUiState.Locked -> {
-                // A visit opens when the lock screen is shown while the app is in front; the gate may
+                // With a PIN or a fingerprint on this phone the lock screen is the pad or the
+                // fingerprint-only screen, where a master password is not taken: "Use master
+                // password" first (lock.md F7 step 1), as a user would.
+                if (state.screen !is LockScreen.MasterPassword) {
+                    DocumentsRig.instrumentation.runOnMainSync { lock.send(LockIntent.UseMasterPassword) }
+                    withTimeout(STARTUP_MS) { lock.state.first { (it as? LockUiState.Locked)?.screen is LockScreen.MasterPassword } }
+                }
+                // A visit opens when the lock screen is shown while the app is in front; the lock may
                 // still be showing it.
                 var result: MpResult = MpResult.TooLate
                 val end = System.currentTimeMillis() + STARTUP_MS
