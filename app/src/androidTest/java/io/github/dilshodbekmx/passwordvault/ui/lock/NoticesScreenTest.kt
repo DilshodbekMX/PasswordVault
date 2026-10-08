@@ -93,6 +93,7 @@ class NoticesScreenTest {
 
     @Test
     fun aNoticeShowsItsTextsAndEachAnswerGoesToTheLockAndOpensItsScreen() {
+        LockShots.touchMode()
         val nav = Recorder()
         val lock = show(
             Notice.WrongTries(1, wrongPins = 3, lastWrongPinAtMs = null, interrupted = true, pinsBeforeOff = null, offerNewMasterPassword = false, wrongMasterPasswords = 0),

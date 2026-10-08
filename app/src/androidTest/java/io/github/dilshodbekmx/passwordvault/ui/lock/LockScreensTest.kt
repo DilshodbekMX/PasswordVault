@@ -54,6 +54,7 @@ class LockScreensTest {
 
     @Test
     fun theFingerprintOnlyScreenShowsItsLinesAndItsTwoButtons() {
+        LockShots.touchMode()
         val lock = show(LockUiState.Locked(LockScreen.FingerprintOnly(FingerprintLine.NoneSaved, PinReason.LIMIT, null)))
         compose.onNodeWithTag(LockTags.FINGERPRINT_ONLY).assertExists()
         compose.onNodeWithTag(LockTags.TITLE).assertTextEquals(resources.getString(R.string.app_name))
@@ -121,6 +122,7 @@ class LockScreensTest {
 
     @Test
     fun yourPasswordsCantBeOpenedOffersTryAgainRestoreAndThePreviousPasswords() {
+        LockShots.touchMode()
         val aside = AsideVault(VAULT, ASIDE_AT, null)
         val lock = show(LockUiState.Unreadable(CurrentVault.Why.IO, listOf(aside)))
         compose.onNodeWithTag(LockTags.TITLE).assertTextEquals(resources.getString(R.string.lock_unreadable_title))

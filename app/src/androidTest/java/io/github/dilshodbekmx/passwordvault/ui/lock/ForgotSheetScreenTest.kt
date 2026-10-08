@@ -57,6 +57,7 @@ class ForgotSheetScreenTest {
 
     @Test
     fun theSheetShowsItsTextsAndTheEntriesThatApply() {
+        LockShots.touchMode()
         val lock = show(LockStatus.NONE.copy(pin = PinStatus.On, aside = listOf(AsideVault(VAULT, ASIDE_AT, null))))
         openSheet()
         compose.onNode(hasText(resources.getString(R.string.lock_sheet_title))).assertExists()
@@ -82,6 +83,7 @@ class ForgotSheetScreenTest {
 
     @Test
     fun startWithAnEmptyAppIsAskedOnceMore() {
+        LockShots.touchMode()
         val lock = show(LockStatus.NONE)
         openSheet()
         compose.onNode(hasText(resources.getString(R.string.lock_sheet_empty_text))).performScrollTo()

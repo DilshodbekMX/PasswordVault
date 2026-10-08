@@ -47,11 +47,12 @@ import org.junit.runner.RunWith
  *   PINs of the same length; the only digits in them are the keys' own labels.
  * - **The dots read "PIN, 3 of 6 digits entered"**, in Compose's tree and in the platform's.
  * - **Every key is reachable and labelled**: in the platform's tree, as an accessibility service
- *   (TalkBack, Switch Access) gets it, each of the ten digits, ⌫ and the fingerprint key is a
- *   visible, enabled, clickable node with its label, and its click action, performed through that
- *   tree, reaches the lock; ⌫'s long press clears; "Forgot PIN? Use master password" too. From API 34
- *   the keys and the dots are marked sensitive to accessibility, so that only accessibility tools
- *   see them (lock.md §13.5).
+ *   (TalkBack, Switch Access) gets it, each of the ten digits, ⌫, the fingerprint key and "Forgot
+ *   PIN? Use master password" is one visible, enabled, focusable, clickable node, labelled as a
+ *   screen reader reads it (its own text, or that of its children that take no focus: Compose 1.12
+ *   puts the label there), and its click action, performed through that tree, reaches the lock; ⌫'s
+ *   long press clears. From API 34 the keys and the dots are marked sensitive to accessibility, so
+ *   that only accessibility tools see them (lock.md §13.5).
  * - A hardware keyboard's digits and Backspace work; "Opening…" replaces the keypad; the status line
  *   and the test build's line are drawn; Back on a vault put aside goes back to the current vault.
  */
@@ -112,28 +113,30 @@ class PadScreenTest {
     @Test
     fun everyKeyIsReachableAndLabelled() {
         val lock = show(pad(fingerprintKey = true))
-        val labels = (0..9).map { it.toString() to LockIntent.Digit(it) } +
+        val keys = (0..9).map { Triple(PinPadTags.key(it), it.toString(), LockIntent.Digit(it)) } +
             listOf(
-                resources.getString(R.string.common_pin_delete) to LockIntent.DeleteDigit,
-                resources.getString(R.string.common_pin_fingerprint) to LockIntent.UseFingerprint,
-                resources.getString(R.string.lock_pad_forgot) to LockIntent.UseMasterPassword,
+                Triple(PinPadTags.DELETE, resources.getString(R.string.common_pin_delete), LockIntent.DeleteDigit),
+                Triple(PinPadTags.FINGERPRINT, resources.getString(R.string.common_pin_fingerprint), LockIntent.UseFingerprint),
+                Triple(LockTags.FORGOT_PIN, resources.getString(R.string.lock_pad_forgot), LockIntent.UseMasterPassword),
             )
-        for ((label, intent) in labels) {
-            val node = platformNode(label)
-            assertTrue("$label is shown", node.isVisibleToUser)
-            assertTrue("$label is enabled", node.isEnabled)
-            assertTrue("$label is clickable", node.isClickable)
-            assertTrue("$label has a click action", node.actionList.contains(AccessibilityAction.ACTION_CLICK))
-            if (Build.VERSION.SDK_INT >= 34 && intent !is LockIntent.UseMasterPassword) {
-                assertTrue("$label is sensitive to accessibility", node.isAccessibilityDataSensitive)
+        for ((id, label, intent) in keys) {
+            val node = platformNodeById(id)
+            assertTrue("$id is shown: $node", node.isVisibleToUser)
+            assertTrue("$id is enabled: $node", node.isEnabled)
+            assertTrue("$id is clickable: $node", node.isClickable)
+            assertTrue("$id takes a screen reader's or a switch's focus: $node", node.isFocusable)
+            assertTrue("$id has a click action: $node", node.actionList.contains(AccessibilityAction.ACTION_CLICK))
+            assertEquals("$id is labelled as a screen reader reads it", label, labelOf(node))
+            if (Build.VERSION.SDK_INT >= 34 && id != LockTags.FORGOT_PIN) {
+                assertTrue("$id is sensitive to accessibility: $node", node.isAccessibilityDataSensitive)
             }
             val before = lock.fake.sent.size
-            assertTrue("$label: the click action is performed", node.performAction(AccessibilityNodeInfo.ACTION_CLICK))
-            waitFor("$label reaches the lock") { lock.fake.sent.size > before }
-            assertEquals(label, intent, lock.fake.sent.last())
+            assertTrue("$id: the click action is performed", node.performAction(AccessibilityNodeInfo.ACTION_CLICK))
+            waitFor("$id reaches the lock") { lock.fake.sent.size > before }
+            assertEquals(id, intent, lock.fake.sent.last())
         }
         // ⌫'s long press, through the same tree, clears every digit.
-        val delete = platformNode(resources.getString(R.string.common_pin_delete))
+        val delete = platformNodeById(PinPadTags.DELETE)
         assertTrue(delete.actionList.contains(AccessibilityAction.ACTION_LONG_CLICK))
         assertTrue(delete.performAction(AccessibilityNodeInfo.ACTION_LONG_CLICK))
         waitFor("the long press reaches the lock") { lock.fake.sent.last() == LockIntent.ClearDigits }
@@ -156,6 +159,7 @@ class PadScreenTest {
 
     @Test
     fun theTextsTheStatusLineAndTheTestBuildLineAreDrawn() {
+        LockShots.touchMode()
         show(pad(digits = 2, status = PadStatus.WrongPin(4), fingerprintKey = true))
         compose.onNodeWithTag(LockTags.TITLE).assertTextEquals(resources.getString(R.string.app_name))
         compose.onNodeWithTag(LockTags.SUBTITLE).assertTextEquals(resources.getString(R.string.lock_pad_subtitle))
@@ -168,7 +172,7 @@ class PadScreenTest {
 
     @Test
     fun withoutFingerprintOrOutsideATestBuildTheirPartsAreNotDrawn() {
-        show(pad(), testBuild = false)
+        show(pad(fingerprintKey = false), testBuild = false)
         compose.onNodeWithTag(PinPadTags.FINGERPRINT).assertDoesNotExist()
         compose.onNodeWithTag(LockTags.TEST_BUILD).assertDoesNotExist()
         compose.onNodeWithTag(LockTags.STATUS).assertDoesNotExist()
@@ -238,15 +242,28 @@ class PadScreenTest {
         }
     }
 
-    /** The node whose text or description is [label], as a service finds it. */
-    private fun platformNode(label: String): AccessibilityNodeInfo {
+    /** The node of the test tag [id] (a resource id under the host), as a service finds it. */
+    private fun platformNodeById(id: String): AccessibilityNodeInfo {
         val deadline = SystemClock.uptimeMillis() + TIMEOUT_MS
         while (true) {
-            val node = platformNodes().firstOrNull { it.text?.toString() == label || it.contentDescription?.toString() == label }
+            val node = platformNodes().firstOrNull { it.viewIdResourceName == id }
             if (node != null) return node
-            if (SystemClock.uptimeMillis() > deadline) throw AssertionError("no node labelled \"$label\" in the accessibility tree")
+            if (SystemClock.uptimeMillis() > deadline) throw AssertionError("no node $id in the accessibility tree")
             SystemClock.sleep(200)
         }
+    }
+
+    /**
+     * What a screen reader reads for [node]: its own description or text, else those of its children
+     * that take no focus of their own (Compose 1.12 puts a clickable node's label there).
+     */
+    private fun labelOf(node: AccessibilityNodeInfo): String? {
+        node.contentDescription?.let { return it.toString() }
+        node.text?.let { return it.toString() }
+        val parts = (0 until node.childCount).mapNotNull { node.getChild(it) }
+            .filter { !it.isFocusable && !it.isClickable }
+            .mapNotNull { labelOf(it) }
+        return parts.joinToString(" ").ifEmpty { null }
     }
 
     /** What a service learns from each node, in tree order: its class, texts, state and actions; never its bounds or focus. */

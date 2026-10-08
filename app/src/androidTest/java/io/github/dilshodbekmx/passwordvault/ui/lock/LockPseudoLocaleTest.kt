@@ -87,10 +87,11 @@ class LockPseudoLocaleTest {
         for (field in plurals) {
             val id = field.getInt(null)
             for (n in listOf(1, 3)) {
+                // A second argument (a date) for the plurals that take one; Formatter ignores it elsewhere.
                 assertNotEquals(
                     "lock plural ${field.name} ($n)",
-                    english.resources.getQuantityString(id, n, n),
-                    pseudo.resources.getQuantityString(id, n, n),
+                    english.resources.getQuantityString(id, n, n, "x"),
+                    pseudo.resources.getQuantityString(id, n, n, "x"),
                 )
             }
         }
@@ -263,9 +264,21 @@ class LockPseudoLocaleTest {
         assertTrue("$what shows texts: $texts", texts.size >= atLeast)
         val appName = compose.activity.getString(R.string.app_name)
         for (text in texts) {
-            if (text == appName || text.all(Char::isDigit)) continue
+            if (text == appName || text.all(Char::isDigit) || text in materialLabels) continue
             assertTrue("\"$text\" stayed plain English in en-XA ($what)", text.any { it.code > 0x7F })
         }
+    }
+
+    /**
+     * Compose's and Material 3's own labels (the sheet's "Close sheet" and the like), in English: the
+     * libraries' resources, which the app neither writes nor pseudo-localizes.
+     */
+    private val materialLabels: Set<String> by lazy {
+        listOf("androidx.compose.ui.R\$string", "androidx.compose.material3.R\$string", "androidx.compose.foundation.R\$string")
+            .mapNotNull { runCatching { Class.forName(it) }.getOrNull() }
+            .flatMap { it.fields.toList() }
+            .mapNotNull { field -> runCatching { compose.activity.getString(field.getInt(null)) }.getOrNull() }
+            .toSet()
     }
 
     /** Every text and label of the screen, as an accessibility service reads them. */

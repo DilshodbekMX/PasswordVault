@@ -103,8 +103,19 @@ class PadLock(val fake: FakeLockManager) : LockManager by fake {
 object LockShots {
     const val DIR = "/data/local/tmp/shots-4A"
 
+    private val enabled: Boolean get() = InstrumentationRegistry.getArguments().getString("pvShots") != null
+
+    /**
+     * For a screenshot run, before the screen is shown: the phone in touch mode, as a finger leaves
+     * it (Compose's test clicks reach the view directly and leave the window in keyboard mode), so
+     * that no button of a dialog or sheet is drawn with a keyboard's focus.
+     */
+    fun touchMode() {
+        if (enabled) InstrumentationRegistry.getInstrumentation().setInTouchMode(true)
+    }
+
     fun take(name: String) {
-        if (InstrumentationRegistry.getArguments().getString("pvShots") == null) return
+        if (!enabled) return
         SystemClock.sleep(700) // the sheet's and the dialog's own windows settle
         shell("mkdir -p $DIR")
         shell("screencap -p $DIR/$name-api${android.os.Build.VERSION.SDK_INT}.png")
