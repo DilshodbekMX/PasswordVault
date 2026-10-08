@@ -141,12 +141,14 @@ print("%d %d %d %d" % (len(sessions), events, field_events, leaks))
 }
 
 app_typed() {
+    local since
+    since=$(pv_shell date +%m-%d\\ %H:%M:%S.000 2>/dev/null | tr -d '\r')
     temporary || return 1
     win_app_fresh && win_to_own && typed_into pv.setup.own "$WIN_MASTER" || return 1
     pv_sleep 8
     record >"$WIN_OUT/capture-$VARIANT.log"
     app_sent || return 1
-    if pv_shell logcat -d -s ContentCaptureManagerService:W 2>/dev/null | tr -d '\r' | grep -q "Ignoring package $PV_PACKAGE while using temporary service"; then
+    if pv_shell logcat -d -T "'$since'" -s ContentCaptureManagerService:W 2>/dev/null | tr -d '\r' | grep -q "Ignoring package $PV_PACKAGE while using temporary service"; then
         echo "  Android: \"Ignoring package $PV_PACKAGE while using temporary service $WIN_HELPER\" (only the temporary service's own package is captured)"
     fi
 }
