@@ -2,6 +2,7 @@ package io.github.dilshodbekmx.passwordvault.files
 
 import androidx.annotation.VisibleForTesting
 import io.github.dilshodbekmx.passwordvault.AppGraph
+import io.github.dilshodbekmx.passwordvault.core.formats.FileKind
 import io.github.dilshodbekmx.passwordvault.lock.LockUiState
 import io.github.dilshodbekmx.passwordvault.platform.AppDispatchers
 import io.github.dilshodbekmx.passwordvault.session.Session
@@ -208,10 +209,13 @@ class FileTaskStore(
      * §5.19 item 6), after `Session.beginExternal`; the grace ends when the app is in front again
      * ([inFront]), because the share sheet returns no result. [name] may be the name a place shows
      * for the backup: a "/" in it becomes "_" in the copy's file name ([BackupSharing.fileName]).
-     * False, with nothing opened: no activity is there, the copy could not be written (also: [name]
-     * is no name, or too long for a file), or no app on the phone shows a share sheet.
+     * False, with nothing written or opened: [bytes] are not a backup (`FileKind.of` is not
+     * `BACKUP`: only the encrypted backup ever reaches the share sheet, D-12 and formats.md §2 rule
+     * 6, whatever a caller hands over), no activity is there, the copy could not be written (also:
+     * [name] is no name, or too long for a file), or no app on the phone shows a share sheet.
      */
     suspend fun share(bytes: ByteArray, name: String, title: CharSequence): Boolean = withContext(dispatchers.main) {
+        if (FileKind.of(bytes) != FileKind.BACKUP) return@withContext false
         if (launcher == null) return@withContext false
         val file = try {
             withContext(NonCancellable + dispatchers.io) { sharing.write(bytes, BackupSharing.fileName(name)) }

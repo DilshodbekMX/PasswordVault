@@ -472,7 +472,7 @@ class FileTaskStoreTest {
         store.inFront()
         assertEquals("nothing was shared: nothing ends", 0, session.ended)
 
-        assertTrue(store.share(byteArrayOf(80, 86), "b.pvault", "Send"))
+        assertTrue(store.share(byteArrayOf(80, 86, 65, 85, 76, 84, 48, 49), "b.pvault", "Send")) // "PVAULT01": a backup
         assertTrue("in the share sheet", session.external)
         store.inFront()
         assertFalse("the grace is over", session.external)
