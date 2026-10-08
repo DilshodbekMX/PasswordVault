@@ -217,7 +217,9 @@ private fun BottomButton(vm: ImportViewModel, screen: ImportScreen) {
     if (button == null) return
     Surface(tonalElevation = 3.dp) {
         Column(
-            modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp, vertical = 12.dp),
+            // 24 dp under the button keeps its middle above the band where the navigation bar may be,
+            // which the emulator scripts do not tap (tools/emu/app.sh, pva_tap).
+            modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(start = 16.dp, top = 12.dp, end = 16.dp, bottom = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             button()
