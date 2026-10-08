@@ -32,13 +32,24 @@ win_undo "pkill -x uiautomator"
 RECORDER_PID=""
 STATION=0
 
-# record_start: `uiautomator events` runs, its output going to the next station's file.
+# record_start: `uiautomator events` runs, its output going to the next station's file, and it is
+# listening. When an accessibility client connects, the window in front sends its state and its focus
+# (the two events of the app that every station records: the control), so the recorder listens once
+# it has printed something. That takes 0.3 to 0.4 s, and it used to be given three seconds; at the
+# device check of round R2, on a machine with a load of 40, one station's recorder had printed
+# nothing six seconds after its start, and the control failed. Now the typing waits for the first
+# line, for up to 30 s.
 record_start() {
+    local i
     STATION=$((STATION + 1))
     EVENTS=$WIN_OUT/a11y-old-$VARIANT-$(printf '%02d' "$STATION")-events.txt
     PV_ADB_TIMEOUT=300 pv_adb shell uiautomator events >"$EVENTS" 2>&1 &
     RECORDER_PID=$!
-    pv_sleep 3
+    for i in $(seq 1 60); do
+        [ -s "$EVENTS" ] && break
+        pv_sleep 0.5
+    done
+    pv_sleep 1
 }
 
 # record_stop: the recorder ends, on the host and on the device.
