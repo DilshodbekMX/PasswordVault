@@ -61,6 +61,18 @@ class PlacesTest {
     }
 
     @Test
+    fun theNameOfAnotherPlaceIsMadeSafeToShow() {
+        // The label of another app's provider, shown in "Saved to …" and "Delete the empty file … in … yourself".
+        val hostile = "Drive\n\u202EevirD elgooG\u200B" + "y".repeat(3_000)
+        val place = Places.of("content://org.example.files/document/1") { _, _ -> hostile } as Place.Other
+        assertTrue(place.name.length <= 255)
+        assertTrue(place.name, place.name.startsWith("Drive evirD elgooGyyy"))
+        assertTrue(place.name.none { Character.getType(it) == Character.CONTROL.toInt() || Character.getType(it) == Character.FORMAT.toInt() })
+        assertEquals(Place.Other("SanDisk SD card"), Places.of("content://org.example.files/document/1") { _, _ -> "SanDisk SD card" })
+        assertEquals("nothing left to show: the authority", Place.Other("org.example.files"), Places.of("content://org.example.files/document/1") { _, _ -> "\u200B\n" })
+    }
+
+    @Test
     fun anAddressIsTakenApart() {
         assertEquals("com.android.externalstorage.documents", Places.authorityOf("content://10@com.android.externalstorage.documents/document/primary%3Ax"))
         assertEquals("a.b", Places.authorityOf("content://a.b"))

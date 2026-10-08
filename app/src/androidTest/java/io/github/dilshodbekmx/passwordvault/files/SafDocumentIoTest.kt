@@ -181,5 +181,31 @@ class SafDocumentIoTest {
         assertEquals("PasswordVault-backup-2026-10-08 (1).pvault", io.name(doc))
     }
 
+    @Test
+    fun aNameFromAPlaceIsMadeSafeToShow() {
+        // The place is another app, and its name for a document is shown in the app's own sentences
+        // ("Backup saved: …") and kept in the vault: no line breaks, nothing that turns the text
+        // around or hides in it, and not without end.
+        val hostile = "passwords.csv\n\nYour passwords were NOT saved.\r\nCall +998 00 000 00 00\u007F\u2028\u202Egnp.exe\u200B\u2066" + "x".repeat(5_000)
+        val id = DocumentsRig.newId(TestDocuments.PLAIN)
+        val doc = DocumentsRig.newDocument(id, name = hostile).also { made += it }
+        val shown = io.name(doc)!!
+        assertTrue("not without end: ${shown.length}", shown.length <= 255)
+        assertTrue("one line, no control characters", shown.none { Character.getType(it) == Character.CONTROL.toInt() })
+        assertTrue("no line or paragraph separator", shown.none { it == '\u2028' || it == '\u2029' })
+        assertTrue("nothing that turns text around or hides in it", shown.none { Character.getType(it) == Character.FORMAT.toInt() })
+        assertTrue(shown, shown.startsWith("passwords.csv  Your passwords were NOT saved.  Call +998 00 000 00 00  gnp.exexxx"))
+        assertTrue("cut with a mark", shown.endsWith("\u2026"))
+
+        // What a place really shows stays as it is: Uzbek and Cyrillic letters, "(1)" on a clash.
+        for (plain in listOf("PasswordVault-backup-2026-10-08 (1).pvault", "Oʻzbekcha parollar.csv", "Пароли ўзбекча 2026.xlsx", "passwords – копия.json")) {
+            val other = DocumentsRig.newDocument(DocumentsRig.newId(TestDocuments.PLAIN), name = plain).also { made += it }
+            assertEquals(plain, io.name(other))
+        }
+        // Nothing left to show is no name.
+        val blank = DocumentsRig.newDocument(DocumentsRig.newId(TestDocuments.PLAIN), name = " \n\u200B\u202E ").also { made += it }
+        assertNull(io.name(blank))
+    }
+
     private fun payload(size: Int, seed: Int = 1): ByteArray = ByteArray(size) { ((it * 31 + seed * 7) xor (it ushr 8)).toByte() }
 }

@@ -39,7 +39,8 @@ import kotlinx.coroutines.withContext
  *   already.
  * - **Place** by the provider ([Places]); another place is named by the label of its provider, or for
  *   an SD card or USB drive by its volume's description ("SanDisk SD card").
- * - **Name** asks the provider for the document's display name.
+ * - **Name** asks the provider for the document's display name. That name, and the name of another
+ *   place, come from another app: both are made safe to show first ([ShownName]).
  *
  * Everything that reads or writes runs on [io] (architecture.md §5.3); [keep], [delete], [place],
  * [name] and [nameOf] are binder calls of their own, made by their callers off the main thread.
@@ -111,12 +112,13 @@ class SafDocumentIo(private val context: Context, private val io: CoroutineDispa
      * The name the provider shows for [doc] (`OpenableColumns.DISPLAY_NAME`), which may differ from
      * the one the picker suggested ("(1)" added on a clash); null when it cannot be read. The column
      * is found by its name: a provider may answer with other columns than the one asked for, and the
-     * first of those is often the document's id.
+     * first of those is often the document's id. The place is another app, so its name is made safe
+     * to show and to keep ([ShownName]).
      */
     override fun name(doc: DocRef): String? = try {
         resolver.query(Uri.parse(doc.uri), arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
             val column = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-            if (column >= 0 && cursor.moveToFirst() && !cursor.isNull(column)) cursor.getString(column) else null
+            if (column >= 0 && cursor.moveToFirst() && !cursor.isNull(column)) ShownName.of(cursor.getString(column)) else null
         }
     } catch (e: RuntimeException) {
         null
