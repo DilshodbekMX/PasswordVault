@@ -186,16 +186,18 @@ setup_routes() {
         && pva_submit pv.action.createVault pv.route.Passwords 120 && on Passwords
 }
 
-# The list is real: an account is added through the form (Save shows its screen, a placeholder until
-# build plan 3.7, from which big letters and the account's form open); a second account comes from
-# the debug command `entry add`, so that the list is not empty after the first is deleted through its
-# row's menu (long press; "Delete" is the menu's last item), and "Recently deleted" is its last row.
+# The list is real: an account with a name and a password is added through the form (Save shows its
+# screen, build plan 3.7: "Show in big letters", under the password, and the top bar's Edit open from
+# it; an account with only a name has no password row and so no big letters); a second account comes
+# from the debug command `entry add`, so that the list is not empty after the first is deleted through
+# its row's menu (long press; "Delete" is the menu's last item), and "Recently deleted" is its last row.
 passwords_routes() {
     local row nodes last
     present pv.tab.Passwords && pva_tap pv.list.emptyAdd && on Edit \
-        && pva_type pv.edit.name Walk && pva_hide_keyboard && pva_tap pv.edit.save && on Entry \
-        && open BigLetters && back Entry \
-        && open Edit && back Entry \
+        && pva_type pv.edit.name Walk && pva_type pv.edit.password Wk7Pq2Nz9Rt4Lm8 && pva_hide_keyboard \
+        && pva_tap pv.edit.save && on Entry \
+        && tap pv.entry.password.big && on BigLetters && back Entry \
+        && tap pv.entry.edit && on Edit && back Entry \
         && back Passwords || return 1
     pva_debug entry add Second >/dev/null && pva_row_with Second 10 || return 1
     row=$(pv_ui_nodes | awk -F'|' '$3 ~ /^pv[.]list[.]row[.]/ { f = 1; x = $6; y = $7; next } f && $1 == "Walk" { print x, y; exit } f && $1 != "" { f = 0 }')
