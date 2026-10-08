@@ -292,6 +292,7 @@ object Importer {
                 replacedCharacters = cleaner.surrogates.count,
                 newerVersion = ok.newerVersion,
                 vaultExtras = ok.vaultExtras,
+                fromThisApp = ok.ownFormat,
             ),
         )
     }
@@ -358,6 +359,7 @@ object Importer {
                 replacedCharacters = cleaner.surrogates.count,
                 newerVersion = false,
                 vaultExtras = emptyMap(),
+                fromThisApp = reader.foundBlock,
             ),
         )
     }
@@ -463,6 +465,10 @@ object Importer {
         private val fieldLabels: Array<String>
         private val fieldSecret: BooleanArray
 
+        /** A note of a row held a fields block of ours (D-10a): the file is this app's own CSV. */
+        var foundBlock = false
+            private set
+
         init {
             var fields = 0
             meanings.forEachIndexed { i, m ->
@@ -491,6 +497,7 @@ object Importer {
             val note = value(values, ColumnMeaning.NOTES)
             // Our own CSV: a block at the end of the note, recognised only when it is ours (D-10a).
             val block = FieldsBlock.read(note)
+            if (block.found) foundBlock = true
             val fields = ArrayList<CustomField>(block.fields)
             for (k in fieldColumns.indices) {
                 val i = fieldColumns[k]
@@ -1138,6 +1145,12 @@ class ImportFile(
      * are not imported: [leftOut] lists them as [ImportLeftOut.Kind.UNKNOWN_DATA] (build-plan §12, decision 9).
      */
     val vaultExtras: Map<String, String>,
+    /**
+     * This app's own file: our JSON ([Importer.Format.OWN_JSON]), or a CSV in which a note held a fields
+     * block of ours (D-10a). It already holds the names the user chose, so the preview starts "Tidy
+     * names" off for it, and on for every other file (build-plan §12, decision 10).
+     */
+    val fromThisApp: Boolean = false,
 ) {
     /**
      * The rows with the wrong number of values (formats-review P4), for the preview's list: "Line 2 has
@@ -1165,5 +1178,5 @@ class ImportFile(
     override fun toString(): String =
         "ImportFile($format, $decoding, accounts=${accounts.size}, leftOut=${leftOut.size}, emptyRows=$emptyRows, " +
             "unclosedQuoteLine=$unclosedQuoteLine, removedControls=$removedControls, replacedCharacters=$replacedCharacters, " +
-            "newerVersion=$newerVersion)"
+            "newerVersion=$newerVersion, fromThisApp=$fromThisApp)"
 }
