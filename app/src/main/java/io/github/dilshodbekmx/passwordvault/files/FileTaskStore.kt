@@ -23,6 +23,8 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
 /**
@@ -86,6 +88,15 @@ class FileTaskStore(
     /** The share sheet was opened, and the app has not been in front since: its grace has not ended. Main thread. */
     private var shareSheetOpen = false
 
+    /**
+     * One change of the record at a time. A new task, a picker's result, [finish] and [abandon] each
+     * wait in the middle of what they do, for the settings file and some for the place. Without this
+     * a result that was being recorded came back after its task had been given up, and a task begun
+     * while the one before was still being given up lost its record with its picker open. It is
+     * never held while a picker is open (architecture.md §5.2).
+     */
+    private val changes = Mutex()
+
     init {
         scope.launch(dispatchers.io) { sharing.clear() } // kept until the next app start (ux.md §5.19)
     }
@@ -127,7 +138,9 @@ class FileTaskStore(
     /** Forgets the task of [kind]: it is done. Nothing happens to its document. */
     suspend fun finish(kind: FileTask.Kind) {
         withContext(dispatchers.main) {
-            if (recorded.value?.kind == kind) record(null)
+            changes.withLock {
+                if (recorded.value?.kind == kind) record(null)
+            }
         }
     }
 
@@ -144,11 +157,13 @@ class FileTaskStore(
      * off, counts as "something else" and is kept ([Cleanup.Kept]).
      */
     suspend fun abandon(kind: FileTask.Kind, written: Boolean = false): Cleanup = withContext(dispatchers.main) {
-        val task = recorded.value?.takeIf { it.kind == kind } ?: return@withContext Cleanup.NoDocument
-        val doc = task.doc
-        val cleanup = if (doc == null || kind.action != Action.CREATE) Cleanup.NoDocument else withContext(NonCancellable) { remove(doc, written) }
-        record(null)
-        cleanup
+        changes.withLock {
+            val task = recorded.value?.takeIf { it.kind == kind } ?: return@withLock Cleanup.NoDocument
+            val doc = task.doc
+            val cleanup = if (doc == null || kind.action != Action.CREATE) Cleanup.NoDocument else withContext(NonCancellable) { remove(doc, written) }
+            record(null)
+            cleanup
+        }
     }
 
     /**
@@ -211,49 +226,55 @@ class FileTaskStore(
      */
     internal fun returned(action: Action, uri: String?) {
         session.endExternal()
-        val waiting = recorded.value?.takeIf { it.doc == null && it.kind.action == action }
-        if (uri == null) {
-            if (waiting != null) {
-                scope.launch {
-                    record(null)
-                    cancels.emit(waiting)
+        scope.launch {
+            var closed: FileTask? = null // the task whose picker was closed without a document
+            var nobodys: DocRef? = null // a document that "Save as" made and that no task waits for
+            changes.withLock {
+                // Which task waits is looked up here, after whatever was changing the record before:
+                // a task given up meanwhile no longer waits.
+                val waiting = recorded.value?.takeIf { it.doc == null && it.kind.action == action }
+                if (uri == null) {
+                    if (waiting != null) {
+                        record(null)
+                        closed = waiting
+                    }
+                } else if (waiting == null) {
+                    if (action == Action.CREATE) nobodys = DocRef(uri)
+                } else {
+                    val doc = DocRef(uri)
+                    withContext(NonCancellable + dispatchers.io) { documents.keep(doc) }
+                    record(waiting.copy(doc = doc))
                 }
             }
-            return
-        }
-        val doc = DocRef(uri)
-        if (waiting == null) {
-            // No task waits for it. A document the picker created for us is removed while still empty;
-            // one the user chose to open is never touched.
-            if (action == Action.CREATE) scope.launch { removeIfEmpty(doc) }
-            return
-        }
-        scope.launch {
-            withContext(NonCancellable + dispatchers.io) { documents.keep(doc) }
-            record(waiting.copy(doc = doc))
+            closed?.let { cancels.emit(it) }
+            // A document the picker created for us is removed while still empty; one the user chose to
+            // open is never touched.
+            nobodys?.let { removeIfEmpty(it) }
         }
     }
 
     private suspend fun launch(task: FileTask, start: (PickerLauncher) -> Unit): Boolean = withContext(dispatchers.main) {
-        if (launcher == null) return@withContext false
-        val before = recorded.value
-        if (!record(task.copy(doc = null))) {
-            recorded.value = before // not recorded, so the picker does not open
-            return@withContext false
-        }
-        val now = launcher
-        if (now == null) { // the activity went while the task was written
-            record(before)
-            return@withContext false
-        }
-        session.beginExternal()
-        try {
-            start(now)
-            true
-        } catch (e: RuntimeException) { // ActivityNotFoundException, or a launcher already unregistered
-            session.endExternal()
-            record(before)
-            false
+        changes.withLock {
+            if (launcher == null) return@withLock false
+            val before = recorded.value
+            if (!record(task.copy(doc = null))) {
+                recorded.value = before // not recorded, so the picker does not open
+                return@withLock false
+            }
+            val now = launcher
+            if (now == null) { // the activity went while the task was written
+                record(before)
+                return@withLock false
+            }
+            session.beginExternal()
+            try {
+                start(now)
+                true
+            } catch (e: RuntimeException) { // ActivityNotFoundException, or a launcher already unregistered
+                session.endExternal()
+                record(before)
+                false
+            }
         }
     }
 
