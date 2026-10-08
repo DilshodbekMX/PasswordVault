@@ -445,7 +445,7 @@ fun ChangePinScreen(vm: ChangePinViewModel, nav: Navigator, modifier: Modifier =
         topBar = {
             TopAppBar(
                 title = { Text(title, modifier = Modifier.semantics { heading() }) },
-                navigationIcon = { BackArrow(nav) },
+                navigationIcon = { BackArrow(nav, enabled = ui.stage != ChangePinViewModel.Stage.SAVING) },
             )
         },
     ) { padding ->

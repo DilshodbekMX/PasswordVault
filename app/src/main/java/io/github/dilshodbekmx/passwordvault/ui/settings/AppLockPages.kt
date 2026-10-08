@@ -234,10 +234,10 @@ private fun FingerprintOnDialog(ask: MasterPasswordAsk, onSubmit: () -> Unit, on
     )
 }
 
-/** The top bar's back arrow of a Settings page. */
+/** The top bar's back arrow of a Settings page; [enabled] false while a step that must not be cut short runs. */
 @Composable
-internal fun BackArrow(nav: Navigator) {
-    IconButton(onClick = { nav.back() }, modifier = Modifier.testTag(SettingsTags.BACK)) {
+internal fun BackArrow(nav: Navigator, enabled: Boolean = true) {
+    IconButton(onClick = { nav.back() }, enabled = enabled, modifier = Modifier.testTag(SettingsTags.BACK)) {
         Icon(painterResource(R.drawable.ic_settings_back), contentDescription = stringResource(R.string.settings_back))
     }
 }
