@@ -33,3 +33,6 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "pv-window-helper"
+
+// Compile-time stand-ins of system API classes (content capture), never in the APK: stubs/build.gradle.kts.
+include(":stubs")

@@ -73,6 +73,19 @@
                 android:resource="@xml/lab_a11y_tool" />
         </service>
 
+        <!-- Writes down what apps send to content capture (Android 10 and newer): made the device's
+             temporary content capture service by capture.sh. A system API service, bound only
+             with the permission below, which only the system holds. -->
+        <service
+            android:name=".LabCaptureService"
+            android:exported="true"
+            android:label="LabCapture"
+            android:permission="android.permission.BIND_CONTENT_CAPTURE_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.contentcapture.ContentCaptureService" />
+            </intent-filter>
+        </service>
+
         <!-- The scripts' commands (overlay, accessibility dump, clipboard): "am broadcast -n
              io.github.dilshodbekmx.pvlab.window/.LabCommandReceiver" with the extra "cmd". Exported so
              that adb can reach it, behind DUMP, which adb shell holds and other apps do not. -->

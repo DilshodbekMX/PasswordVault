@@ -17,6 +17,7 @@ import java.nio.charset.StandardCharsets;
  */
 final class LabFiles {
     static final String AUTOFILL = "autofill.log";
+    static final String CAPTURE = "capture.log";
 
     private static final Object LOCK = new Object();
 

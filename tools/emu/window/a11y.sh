@@ -44,8 +44,8 @@
 # The controls are the helper app's own platform fields: the service that is not a tool reads the
 # text typed into a platform text field, as a node and in its events, so it is connected and
 # reading; and what each observer reads of a platform password field (Android's own dots, with
-# "Show passwords" on as it is by default, then off), and of its hide after a show, is printed for
-# comparison.
+# "Show passwords" on as it is by default, then off before Android 17), and of its hide after a
+# show, is printed for comparison.
 # While the app is used, the screen is read through the helper's tool service instead of
 # UiAutomation, which would disconnect both services at every reading and lose their events.
 # Prints PASS, FAIL or KNOWN per secret and a summary; exit 0 when no step failed, 1 otherwise, 2 for
@@ -220,7 +220,13 @@ control() {
     pv_sleep 1
     seen --masked "$WIN_HELPER" "control: a platform password field hidden again after a show" control_password "$CONTROL_SECRET" || return 1
     PLATFORM_HIDE="the service that is not a tool: $SEEN_PLAIN, the tool service: $SEEN_TOOL, uiautomator: $SEEN_UI"
-    # And with "Show passwords" off: typed again into the emptied field.
+    # And with "Show passwords" off: typed again into the emptied field. Android 17 keeps that switch
+    # elsewhere (android.text.ShowSecretsSetting, for touch and for physical keys), not in
+    # TEXT_SHOW_PASSWORD, so it is varied only before.
+    if [ "$API" -ge 37 ]; then
+        PLATFORM_NO_SHOW="not varied on Android 17"
+        return 0
+    fi
     control_clear control_password ${#CONTROL_SECRET} || return 1
     control_show_passwords 0 || return 1
     watch_type control_password "$CONTROL_SECRET" || return 1

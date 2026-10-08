@@ -13,6 +13,8 @@
 #   win_cmd NAME [EXTRAS...]     a command of the helper's LabCommandReceiver; prints its answer
 #   win_file NAME, win_file_rm NAME...   a record in the helper's files directory
 #   win_setting_set NAMESPACE KEY VALUE  a device setting, put back when the script ends
+#   win_undo COMMAND             a shell command for the device, run when the script ends (after the
+#                                settings are put back, the last one first)
 #   win_app_fresh, win_to_own, win_use_own, win_reuse_no, win_to_again, win_create_vault,
 #   win_set_up, win_open_form, win_lock, win_unlock, win_field_dialog, ...   the walk (below)
 #
@@ -68,6 +70,7 @@ win_begin() {
     WIN_OUT=$REPO/build/window/$SERIAL
     mkdir -p "$WIN_OUT"
     WIN_RESTORE=()
+    WIN_UNDO=()
     WIN_OVERLAY=0
     WIN_INSTRUMENTED=0
     echo "$WIN_NAME on $SERIAL (API $API): $APK"
@@ -105,6 +108,9 @@ win_cleanup() {
         else
             pv_shell settings put "$ns" "$key" "$value" >/dev/null 2>&1
         fi
+    done
+    for ((i = ${#WIN_UNDO[@]} - 1; i >= 0; i--)); do
+        pv_shell "${WIN_UNDO[$i]}" >/dev/null 2>&1
     done
     [ "$WIN_INSTRUMENTED" = 0 ] || pv_shell am force-stop "$PV_PACKAGE" >/dev/null 2>&1
     pv_shell am force-stop "$WIN_HELPER" >/dev/null 2>&1
@@ -169,6 +175,9 @@ win_setting_set() {
     WIN_RESTORE+=("$1|$2|${old:-null}")
     pv_shell settings put "$1" "$2" "$3" >/dev/null || return 1
 }
+
+# win_undo COMMAND: COMMAND (one string, for the device's shell) runs when the script ends.
+win_undo() { WIN_UNDO+=("$1"); }
 
 # The helper's control screen (ControlActivity) in front.
 win_control_start() {

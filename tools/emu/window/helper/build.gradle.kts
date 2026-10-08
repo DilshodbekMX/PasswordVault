@@ -33,3 +33,8 @@ android {
         checkReleaseBuilds = false
     }
 }
+
+dependencies {
+    // The system API classes of content capture, for LabCaptureService: compile time only.
+    compileOnly(project(":stubs"))
+}
