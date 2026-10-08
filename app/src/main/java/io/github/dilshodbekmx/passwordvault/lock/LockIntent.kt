@@ -25,7 +25,12 @@ sealed interface LockIntent {
     /** "Use PIN", or "Not now: use PIN" on a practice screen within its grace (lock.md §8.3). */
     data object UsePin : LockIntent
 
-    /** "Forgot PIN? Use master password", "Use master password" (lock.md F7, §13.2). */
+    /**
+     * "Forgot PIN? Use master password", "Use master password" (lock.md F7, §13.2). Also "Try again"
+     * on "Your passwords can't be opened" (`LockUiState.Unreadable` with `CurrentVault.Why.IO`): the
+     * lock lists the vaults again (`LockEngine.refresh`), as `MasterPasswordGate` (build plan 3.2)
+     * does.
+     */
     data object UseMasterPassword : LockIntent
 
     /** The fingerprint key, or "Use fingerprint" on the fingerprint-only screen: opens the prompt again (lock.md §9.2 rule 7). */
@@ -34,13 +39,26 @@ sealed interface LockIntent {
     /** "Not now: use fingerprint" on a practice screen within its grace. */
     data object NotNow : LockIntent
 
-    /** "I can't remember it" on a practice screen (lock.md F10 step 4, F11). */
+    /**
+     * "I can't remember it" on a practice screen, and "Use my PIN" or "Use my fingerprint" on the
+     * "Forgot master password?" sheet (lock.md F10 step 4, F11 step 1, F17 step 1): F11 from the lock
+     * screen (`LockEngine.cantRemember`).
+     */
     data object CantRemember : LockIntent
 
-    /** "Forgot master password?" (ux.md §5.10, lock.md F17 step 1), or "I forgot it". */
+    /**
+     * "Forgot master password?" (ux.md §5.10, lock.md F17 step 1), "I forgot it", or "Open my
+     * passwords from before …" when the master password was replaced more than once
+     * (`ReplacedLine.oldVaultId` is null). The sheet belongs to the screen: `LockUiState` has no field
+     * for it. This intent and [CloseSheet] tell the lock when the sheet covers the lock screen, so
+     * that no fingerprint prompt opens by itself under it (lock.md §9.2 rule 7).
+     */
     data object OpenForgotSheet : LockIntent
 
-    /** The sheet's "Try again", or the sheet dismissed. */
+    /**
+     * The sheet's "Try again", the sheet dismissed, or the sheet closing because one of its options
+     * was chosen; in that case it is sent before the option's own intent.
+     */
     data object CloseSheet : LockIntent
 
     /** "Open my previous passwords (locked on …)" for the vault [vaultId] put aside: its own lock screen (lock.md F17 step 4). */
@@ -49,7 +67,10 @@ sealed interface LockIntent {
     /** "Start with an empty app" confirmed (lock.md F17 step 2). */
     data object StartEmpty : LockIntent
 
-    /** "Restore from a backup file" on the sheet (lock.md F17 step 3); the restore screens follow. */
+    /**
+     * "Restore from a backup file" on the sheet (lock.md F17 step 3) or on "Your passwords can't be
+     * opened"; the screen that sent it then opens the restore screens (`Route.Restore`).
+     */
     data object RestoreFromFile : LockIntent
 
     /** An answer on "This is an older master password" (lock.md F16b). */

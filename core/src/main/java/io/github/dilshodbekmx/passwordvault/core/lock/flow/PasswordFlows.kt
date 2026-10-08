@@ -54,6 +54,11 @@ internal class PasswordFlows(private val core: LockCore) {
      * screen. Practice is skipped for this visit (`LockVisit.practiceSkipped`), so that the PIN, or
      * the fingerprint when no PIN exists, opens the app as an ordinary entry of the visit (F11 step
      * 3); `LockVisit.afterUnlock` says how it was opened.
+     *
+     * The first option of the "Forgot master password?" sheet, "Use my PIN" or "Use my fingerprint"
+     * (F11 step 1, F17 step 1), arrives here too: the screens send the same intent
+     * (`LockIntent.CantRemember`) from any master-password screen of the current vault, a practice
+     * screen or not.
      */
     suspend fun cantRemember(): Unit = notYet("F10 step 4, F11: I can't remember it")
 
