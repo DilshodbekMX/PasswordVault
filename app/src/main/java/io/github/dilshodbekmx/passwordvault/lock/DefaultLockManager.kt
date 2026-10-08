@@ -128,11 +128,19 @@ class DefaultLockManager(
     private var sheetOpen = false
 
     /**
-     * The lock screen is not what the user is looking at, or not as a way in: the restore screens
-     * were opened over it, or "Finish now" asked for the master-password field. No prompt opens by
-     * itself until the lock screen is used again or the app has been unlocked.
+     * The lock screen is not what the user is looking at: the restore screens were opened over it.
+     * No prompt opens by itself until the lock screen is used again or the app has been unlocked;
+     * the file picker in between ends visits, and the restore screens are still there after it.
      */
     private var setAside = false
+
+    /**
+     * "Finish now" or "It wasn't me" locked the open app for a screen of their own (the
+     * master-password field, the old vault's lock screen): no prompt opens by itself over the lock
+     * screen that this lock shows. It belongs to that visit (lock.md §9.2 rule 7, "once per visit"):
+     * it ends when the lock screen is used, the app is unlocked, or the app stops being visible.
+     */
+    private var lockedForAScreen = false
 
     /** What an intent of the open app does once the lock it asked the session for has come ([lockThen]). */
     private var afterLock: (suspend () -> Unit)? = null
@@ -167,6 +175,7 @@ class DefaultLockManager(
             // The screens went with their activity, and whatever lay over the lock screen with them.
             sheetOpen = false
             setAside = false
+            lockedForAScreen = false
         }
         scope.launch { watchState() }
         scope.launch { watchTime() }
@@ -259,7 +268,7 @@ class DefaultLockManager(
                 // password?" sheet then lists each, and the engine changes nothing there.
                 val old = (engine.summary.value.replaced ?: return).oldVaultId
                 if (engine.state.value is LockState.Unlocked) {
-                    setAside = true // the lock screen that the lock shows first is not where this leads: no prompt over it
+                    lockedForAScreen = true // the lock screen that the lock shows first is not where this leads: no prompt over it
                     lockThen { engine.itWasntMe(old) }
                 } else {
                     act { engine.itWasntMe(old) }
@@ -382,6 +391,7 @@ class DefaultLockManager(
 
     private fun wentAway() {
         visible.value = false
+        lockedForAScreen = false // the visit it was for has ended: the next one opens its prompt as any visit does
         act { engine.appStopped() }
     }
 
@@ -410,7 +420,10 @@ class DefaultLockManager(
         // A sheet belongs to the lock screen it was opened on; the screens close it without a word.
         if (now !is LockState.Locked) sheetOpen = false
         // The lock screen was left behind: whatever lay over it is gone.
-        if ((now is LockState.Unlocked || now is LockState.NoVault) && (before is LockState.Locked || before is LockState.Unreadable)) setAside = false
+        if ((now is LockState.Unlocked || now is LockState.NoVault) && (before is LockState.Locked || before is LockState.Unreadable)) {
+            setAside = false
+            lockedForAScreen = false
+        }
         val proof = (now as? LockState.Unlocked)?.proof
         if (proof !== stateProof) {
             stateProof = proof
@@ -459,6 +472,7 @@ class DefaultLockManager(
     /** An intent that only a lock screen sends arrived: the lock screen is what the user is using. */
     private fun lockScreenUsed() {
         setAside = false
+        lockedForAScreen = false
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -490,7 +504,8 @@ class DefaultLockManager(
         }
     }
 
-    private fun mayPrompt(): Boolean = !sheetOpen && !setAside && offersFingerprint(engine.state.value) && prompts.canOpenByItself
+    private fun mayPrompt(): Boolean =
+        !sheetOpen && !setAside && !lockedForAScreen && offersFingerprint(engine.state.value) && prompts.canOpenByItself
 
     // ---------------------------------------------------------------------------------------------
     // "Finish now" (lock.md F11 step 13)
@@ -510,7 +525,7 @@ class DefaultLockManager(
      */
     private fun finishPending() {
         if (engine.state.value !is LockState.Unlocked || engine.summary.value.pending?.ready != true) return
-        setAside = true
+        lockedForAScreen = true
         lockThen { engine.useMasterPassword() }
     }
 

@@ -326,6 +326,27 @@ class VaultsAndNoticesTest {
     }
 
     @Test
+    fun afterFinishNow_theNextVisitsPromptOpensByItselfAgain() = runTest {
+        val rig = LockRig(this)
+        withAPendingPassword(rig, creditedMs = DAY_MS, fingerprint = true)
+        rig.promptError(10) // this visit's own prompt
+        rig.typePin()
+        rig.send(LockIntent.FinishPending)
+        assertTrue(rig.screen is LockScreen.MasterPassword)
+        val before = rig.window.shows.count { it.use == PromptUse.UNLOCK }
+
+        rig.away() // the owner leaves before typing the new master password
+        rig.toFront() // a new visit, on the pad
+
+        assertTrue(rig.pad.fingerprintKey)
+        assertEquals(
+            "lock.md §9.2 rule 7: once per visit the prompt opens by itself; \"Finish now\" kept it off its own lock screen only",
+            before + 1,
+            rig.window.shows.count { it.use == PromptUse.UNLOCK },
+        )
+    }
+
+    @Test
     fun cancelItGoesToTheEngine_fromTheBannerAndFromSettings() = runTest {
         val rig = LockRig(this)
         withAPendingPassword(rig, creditedMs = 0)
