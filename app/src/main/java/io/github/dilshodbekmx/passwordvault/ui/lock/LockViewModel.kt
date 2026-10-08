@@ -3,9 +3,11 @@ package io.github.dilshodbekmx.passwordvault.ui.lock
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import io.github.dilshodbekmx.passwordvault.BuildConfig
 import io.github.dilshodbekmx.passwordvault.R
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.AsideLine
-import io.github.dilshodbekmx.passwordvault.core.lock.flow.FingerprintLine
+import io.github.dilshodbekmx.passwordvault.core.lock.flow.AsideVault
+import io.github.dilshodbekmx.passwordvault.core.lock.flow.CurrentVault
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockScreen
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.MpError
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.MpReason
@@ -21,7 +23,10 @@ import io.github.dilshodbekmx.passwordvault.lock.LockStatus
 import io.github.dilshodbekmx.passwordvault.lock.LockUiState
 import io.github.dilshodbekmx.passwordvault.lock.MpPurpose
 import io.github.dilshodbekmx.passwordvault.lock.MpResult
+import io.github.dilshodbekmx.passwordvault.lock.OlderPasswordChoice
 import io.github.dilshodbekmx.passwordvault.lock.PinStatus
+import io.github.dilshodbekmx.passwordvault.lock.ReplacedNotice
+import io.github.dilshodbekmx.passwordvault.ui.common.PIN_LENGTH
 import io.github.dilshodbekmx.passwordvault.ui.common.clearSecret
 import io.github.dilshodbekmx.passwordvault.ui.common.readSecret
 import kotlinx.coroutines.CoroutineScope
@@ -40,14 +45,20 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**
- * The ViewModel of the lock route (build plan 3.4): the master-password screen of ux.md §5.10 with
- * the states and texts of lock.md §13.2 and §13.3. The lock screens package (4.2) adds the others.
+ * The ViewModel of the lock route (build plan 3.4, then 4.2): every screen of lock.md §13.2 with the
+ * texts of §13.3, the "Forgot master password?" sheet of ux.md §5.10 (lock.md F17 step 1), and the
+ * two questions asked once more ("Start with an empty app?", "Open your passwords as they were before
+ * …?").
  *
- * - **What it shows** is [masterPassword]: the lock's `LockScreen.MasterPassword` turned into
- *   [UiText]s (resource ids and arguments, never a finished sentence, architecture.md §5.4), so
- *   that the language can change under it. A date is a [LockDate] argument, which the screen
- *   formats in its own language. While the lock shows another screen it is null; once the app is
- *   unlocked it keeps the last screen until the route leaves, so that nothing flashes.
+ * - **What it shows** is [screen]: the lock's `LockScreen`, or "Your passwords can't be opened",
+ *   turned into [UiText]s (resource ids and arguments, never a finished sentence, architecture.md
+ *   §5.4), so that the language can change under it. A date is a [LockDate] argument, which the screen
+ *   formats in its own language. Once the app is unlocked (or back on Welcome) it keeps the last
+ *   screen until the route leaves, so that nothing flashes. [masterPassword] is the same while it is
+ *   the master-password screen.
+ * - **The pad** holds no digit: the lock does (lock.md §5.8). The keys go to the lock as intents
+ *   ([onDigit]); the screen gets back only how many digits there are. [PadUi.wrongTries] counts the
+ *   wrong PINs answered while this ViewModel lives, so that each one shakes the dots once.
  * - **The field** is [password], a `TextFieldState` held here and never in saved state (lock.md
  *   §5.8, architecture.md §5.6): a rotation keeps it, and nothing of it reaches the saved Bundle.
  *   [submit] takes the characters out and empties the field and its undo history at once; the
@@ -62,43 +73,83 @@ import kotlinx.coroutines.launch
  *   `Wait` and leaves its screen as it was, that answer is shown instead, until the lock publishes
  *   another screen; so a lock that reports a try only by its result still gives the message.
  * - **The wait** counts down on [clock]'s elapsed time (`elapsedRealtime()`), once a second.
+ * - **The sheet** ([sheet]) is this screen's own: `LockUiState` has no place for it. Opening it and
+ *   closing it tell the lock (`LockIntent.OpenForgotSheet`, `CloseSheet`), so that the lock knows no
+ *   sheet covers the screen before it opens a fingerprint prompt by itself (lock.md §9.2 rule 7); an
+ *   option of the sheet closes it first, then sends its own intent. A lock that leaves the locked
+ *   state closes it without a word. Its options come from the lock's screen and [LockManager.status]
+ *   (F17 step 1, F11 step 3): "Use my PIN" while a PIN exists, else "Use my fingerprint" while
+ *   fingerprint works (both `LockIntent.CantRemember`, F11 from the lock screen); "Restore from a
+ *   backup file"; one entry for each vault put aside; "Start with an empty app…" only while no PIN
+ *   and no fingerprint can be used now; "Try again". On the screen of a vault put aside, the first
+ *   and the fourth are about the current vault and are left out.
+ *
+ * @param testBuild `BuildConfig.ALLOW_SOFTWARE_KEYSTORE`: every lock screen shows "TEST BUILD: PIN
+ *   keys are not protected" (lock.md §4.5, §13.3; architecture.md §7.2).
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class LockViewModel(
     private val lock: LockManager,
     private val clock: Clock,
     private val submitScope: CoroutineScope,
+    private val testBuild: Boolean = BuildConfig.ALLOW_SOFTWARE_KEYSTORE,
 ) : ViewModel() {
 
     /** The master-password field. Read and emptied by [submit] only. */
     val password = TextFieldState()
 
     private val local = MutableStateFlow(Local())
+    private val overlay = MutableStateFlow(Overlay())
+    private val wrongTries = MutableStateFlow(0)
 
-    /** The lock's master-password screen as it was last shown; null while it shows another screen. */
-    private val shown: Flow<LockScreen.MasterPassword?> = flow {
-        var last: LockScreen.MasterPassword? = null
+    /** The lock's state as it was last shown on this route: a lock screen or "can't be opened"; kept while the app is not locked. */
+    private val shown: Flow<LockUiState?> = flow {
+        var last: LockUiState? = null
         lock.state.collect { state ->
-            last = masterPasswordOf(state, last)
+            last = shownOf(state, last)
             emit(last)
         }
     }
 
-    /** The master-password screen, or null while the lock shows another screen. */
-    val masterPassword: StateFlow<MasterPasswordUi?> = combine(shown, local, lock.status) { screen, local, status ->
-        Inputs(screen, local, status)
+    /** The screen of the route, or null before the lock has shown one. */
+    val screen: StateFlow<LockScreenUi?> = combine(shown, local, lock.status, wrongTries) { shown, local, status, wrong ->
+        Inputs(shown, local, status, wrong)
     }.flatMapLatest { inputs ->
-        val screen = inputs.screen ?: return@flatMapLatest flowOf(null)
-        val until = waitUntil(screen, inputs.local)
-        if (until == null) flowOf(masterPasswordUi(screen, inputs.local, inputs.status, clock.elapsedMs()))
-        else countdown(until).map { now -> masterPasswordUi(screen, inputs.local, inputs.status, now) }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), initialUi())
+        val mp = (inputs.shown as? LockUiState.Locked)?.screen as? LockScreen.MasterPassword
+        val until = mp?.let { waitUntil(it, inputs.local) }
+        if (until == null) flowOf(screenUi(inputs, clock.elapsedMs()))
+        else countdown(until).map { now -> screenUi(inputs, now) }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), initialScreen())
+
+    /** The master-password screen, or null while the lock shows another screen. */
+    val masterPassword: StateFlow<MasterPasswordUi?> =
+        screen.map { it as? MasterPasswordUi }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), screen.value as? MasterPasswordUi)
+
+    /** The "Forgot master password?" sheet while it is open, else null. */
+    val sheet: StateFlow<ForgotSheetUi?> = combine(lock.state, lock.status, overlay) { state, status, overlay ->
+        if (overlay.sheetOpen) sheetUi(state, status) else null
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    /** The question asked once more, or null. */
+    val confirm: StateFlow<LockConfirm?> =
+        overlay.map { it.confirm }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     init {
-        // Unlocked by any means, or back to setup: nothing typed stays behind (architecture.md §5.6).
         viewModelScope.launch {
+            var previousPad: LockScreen.Pad? = null
             lock.state.collect { state ->
+                // Unlocked by any means, or back to setup: nothing typed stays behind (architecture.md §5.6).
                 if (state !is LockUiState.Locked && state !is LockUiState.Unreadable) password.clearSecret()
+                // No sheet or question outlives the lock screen it was asked on.
+                if (state !is LockUiState.Locked && overlay.value != Overlay()) overlay.value = Overlay()
+                val pad = (state as? LockUiState.Locked)?.screen as? LockScreen.Pad
+                val before = previousPad
+                if (pad != null && before != null && !pad.opening && LockTexts.isWrongPin(pad.status) &&
+                    (before.opening || before.digits >= PIN_LENGTH)
+                ) {
+                    wrongTries.update { it + 1 }
+                }
+                previousPad = pad
             }
         }
     }
@@ -110,7 +161,7 @@ class LockViewModel(
      * with its undo history. Otherwise nothing happens.
      */
     fun submit() {
-        val screen = masterPasswordOf(lock.state.value, null) ?: return
+        val screen = masterPasswordOf(lock.state.value) ?: return
         val now = local.value
         if (now.submitting || screen.opening || waiting(screen, now, clock.elapsedMs()) || password.text.isEmpty()) return
         val chars = password.readSecret()
@@ -127,14 +178,52 @@ class LockViewModel(
         }
     }
 
-    /** A button of the screen ([MasterPasswordUi.buttons], [MpLine.button]). */
-    fun onAction(action: MpAction) {
+    /** A digit key of the pad, or a digit on a hardware keyboard: the lock appends it (it never stays here). */
+    fun onDigit(digit: Int) = lock.send(LockIntent.Digit(digit))
+
+    /** ⌫ on the pad, or Backspace. */
+    fun onDelete() = lock.send(LockIntent.DeleteDigit)
+
+    /** A long press on ⌫: every digit typed so far goes. */
+    fun onClear() = lock.send(LockIntent.ClearDigits)
+
+    /** A button of a screen, of the sheet or of a question ([LockButton.action], [LockLine.button]). */
+    fun onAction(action: LockAction) {
         when (action) {
-            is MpAction.Send -> lock.send(action.intent)
-            MpAction.TryAgain -> {
-                val screen = masterPasswordOf(lock.state.value, null)
+            is LockAction.Send -> {
+                if (action.intent == LockIntent.OpenForgotSheet) return openSheet()
+                // A button behind the sheet cannot be reached while it is open: this is an option of the sheet.
+                closeSheet()
+                lock.send(action.intent)
+            }
+            LockAction.TryAgain -> {
+                val screen = masterPasswordOf(lock.state.value)
                 local.update { it.copy(error = null, dismissedOn = screen) }
             }
+            LockAction.OpenSheet -> openSheet()
+            LockAction.CloseSheet -> closeSheet()
+            LockAction.Restore -> {
+                closeSheet()
+                lock.send(LockIntent.RestoreFromFile)
+            }
+            LockAction.AskStartEmpty -> overlay.update { it.copy(confirm = LockConfirm.StartEmpty) }
+            LockAction.AskOpenFromBefore -> {
+                val older = (lock.state.value as? LockUiState.Locked)?.screen as? LockScreen.OlderPassword ?: return
+                overlay.update { it.copy(confirm = LockConfirm.OpenFromBefore(LockDate(older.changedAtMs, LockDate.Style.DAY_MONTH))) }
+            }
+            LockAction.Confirm -> when (overlay.value.confirm) {
+                LockConfirm.StartEmpty -> {
+                    overlay.update { it.copy(confirm = null) }
+                    closeSheet()
+                    lock.send(LockIntent.StartEmpty)
+                }
+                is LockConfirm.OpenFromBefore -> {
+                    overlay.update { it.copy(confirm = null) }
+                    lock.send(LockIntent.OlderPasswordAnswer(OlderPasswordChoice.OPEN_FROM_BEFORE))
+                }
+                null -> Unit
+            }
+            LockAction.CancelConfirm -> overlay.update { it.copy(confirm = null) }
         }
     }
 
@@ -142,7 +231,19 @@ class LockViewModel(
         password.clearSecret()
     }
 
-    /** What this screen keeps of its own: a check under way, the last answer of the lock, a dismissed line. */
+    private fun openSheet() {
+        if (overlay.value.sheetOpen) return
+        overlay.update { it.copy(sheetOpen = true) }
+        lock.send(LockIntent.OpenForgotSheet)
+    }
+
+    private fun closeSheet() {
+        if (!overlay.value.sheetOpen) return
+        overlay.update { it.copy(sheetOpen = false) }
+        lock.send(LockIntent.CloseSheet)
+    }
+
+    /** What the master-password screen keeps of its own: a check under way, the last answer of the lock, a dismissed line. */
     private data class Local(
         val submitting: Boolean = false,
         /** The line of the last answer: `MpResult.Wrong` or `NoMemory`; never the proof of a right one. */
@@ -155,10 +256,13 @@ class LockViewModel(
         val dismissedOn: LockScreen.MasterPassword? = null,
     )
 
-    private class Inputs(val screen: LockScreen.MasterPassword?, val local: Local, val status: LockStatus)
+    /** What lies over the screen: the sheet, and a question asked once more. */
+    private data class Overlay(val sheetOpen: Boolean = false, val confirm: LockConfirm? = null)
+
+    private class Inputs(val shown: LockUiState?, val local: Local, val status: LockStatus, val wrongTries: Int)
 
     private fun afterResult(result: MpResult?): Local {
-        val screen = masterPasswordOf(lock.state.value, null)
+        val screen = masterPasswordOf(lock.state.value)
         return when (result) {
             MpResult.Wrong -> Local(error = MpError.Wrong(offerForgot = false, replaced = null), resultFor = screen)
             MpResult.NoMemory -> Local(error = MpError.NoMemory, resultFor = screen)
@@ -167,8 +271,8 @@ class LockViewModel(
         }
     }
 
-    private fun initialUi(): MasterPasswordUi? =
-        masterPasswordOf(lock.state.value, null)?.let { masterPasswordUi(it, Local(), lock.status.value, clock.elapsedMs()) }
+    private fun initialScreen(): LockScreenUi? =
+        screenUi(Inputs(shownOf(lock.state.value, null), Local(), lock.status.value, 0), clock.elapsedMs())
 
     /** The elapsed time now, then at every change of the shown seconds, until [until]. */
     private fun countdown(until: Long): Flow<Long> = flow {
@@ -187,6 +291,70 @@ class LockViewModel(
     private fun waiting(screen: LockScreen.MasterPassword, local: Local, now: Long): Boolean =
         waitUntil(screen, local)?.let { now < it } == true
 
+    private fun screenUi(inputs: Inputs, now: Long): LockScreenUi? = when (val shown = inputs.shown) {
+        is LockUiState.Locked -> when (val screen = shown.screen) {
+            is LockScreen.Pad -> padUi(screen, inputs.wrongTries)
+            is LockScreen.FingerprintOnly -> fingerprintOnlyUi(screen)
+            is LockScreen.MasterPassword -> masterPasswordUi(screen, inputs.local, inputs.status, now)
+            is LockScreen.OlderPassword -> olderPasswordUi(screen)
+        }
+        is LockUiState.Unreadable -> unreadableUi(shown.why, shown.aside, inputs.status.replaced)
+        else -> null
+    }
+
+    private fun padUi(screen: LockScreen.Pad, wrong: Int): PadUi = PadUi(
+        asideLine = screen.aside?.let(LockTexts::asideLine),
+        digits = screen.digits.coerceIn(0, PIN_LENGTH),
+        status = screen.status?.let { LockLine(LockTexts.padStatus(it, screen.fingerprintKey), alert = LockTexts.padAlert(it)) },
+        fingerprintKey = screen.fingerprintKey,
+        opening = screen.opening,
+        wrongTries = wrong,
+        buttons = listOf(LockButton(UiText.of(R.string.lock_pad_forgot), LockAction.Send(LockIntent.UseMasterPassword), LockTags.FORGOT_PIN)),
+        testBuild = testBuild,
+        goesBack = screen.aside != null,
+    )
+
+    private fun fingerprintOnlyUi(screen: LockScreen.FingerprintOnly): FingerprintOnlyUi = FingerprintOnlyUi(
+        asideLine = screen.aside?.let(LockTexts::asideLine),
+        status = screen.status?.let { LockLine(LockTexts.fingerprintOnlyStatus(it), alert = LockTexts.padAlert(it)) },
+        pinReason = screen.pinReason?.let(LockTexts::fingerprintOnlyPinReason),
+        buttons = listOf(
+            LockButton(UiText.of(R.string.lock_use_fingerprint), LockAction.Send(LockIntent.UseFingerprint), LockTags.USE_FINGERPRINT, ButtonStyle.FILLED),
+            LockButton(UiText.of(R.string.lock_use_master_password), LockAction.Send(LockIntent.UseMasterPassword), LockTags.USE_MASTER_PASSWORD, ButtonStyle.OUTLINED),
+        ),
+        testBuild = testBuild,
+        goesBack = screen.aside != null,
+    )
+
+    private fun olderPasswordUi(screen: LockScreen.OlderPassword): OlderPasswordUi = OlderPasswordUi(
+        asideLine = screen.aside?.let(LockTexts::asideLine),
+        text = LockTexts.olderPassword(screen.changedAtMs, screen.unfinishedChange),
+        buttons = if (screen.unfinishedChange) {
+            listOf(
+                LockButton(UiText.of(R.string.common_try_again), olderAnswer(OlderPasswordChoice.TRY_AGAIN), LockTags.OLDER_TRY_AGAIN, ButtonStyle.FILLED),
+                LockButton(UiText.of(R.string.lock_older_open_from_before), LockAction.AskOpenFromBefore, LockTags.OLDER_FROM_BEFORE, ButtonStyle.OUTLINED),
+            )
+        } else {
+            listOf(LockButton(UiText.of(R.string.common_ok), olderAnswer(OlderPasswordChoice.OK), LockTags.OLDER_OK, ButtonStyle.FILLED))
+        },
+        goesBack = screen.aside != null,
+    )
+
+    private fun unreadableUi(why: CurrentVault.Why, aside: List<AsideVault>, replaced: ReplacedNotice?): UnreadableUi = UnreadableUi(
+        body = LockTexts.unreadable(why),
+        buttons = buildList {
+            if (why == CurrentVault.Why.IO) {
+                // "Try again" lists the vaults again (LockEngine.refresh); the lock takes it as the gate of 3.2 does.
+                add(LockButton(UiText.of(R.string.common_try_again), LockAction.Send(LockIntent.UseMasterPassword), LockTags.UNREADABLE_TRY_AGAIN, ButtonStyle.FILLED))
+            }
+            val restoreStyle = if (why == CurrentVault.Why.IO) ButtonStyle.OUTLINED else ButtonStyle.FILLED
+            add(LockButton(UiText.of(R.string.lock_restore), LockAction.Restore, LockTags.RESTORE, restoreStyle))
+            for (vault in newestFirst(aside)) {
+                add(LockButton(LockTexts.openAside(vault, replaced), LockAction.Send(LockIntent.OpenAside(vault.vaultId)), LockTags.openAside(vault.vaultId), ButtonStyle.OUTLINED))
+            }
+        },
+    )
+
     /** The screen of ux.md §5.10 for [screen] at the elapsed time [now]. */
     private fun masterPasswordUi(screen: LockScreen.MasterPassword, local: Local, status: LockStatus, now: Long): MasterPasswordUi {
         val answer = local.takeIf { it.resultFor == screen }
@@ -196,26 +364,26 @@ class LockViewModel(
         val lines = buildList {
             when (error) {
                 is MpError.Wrong -> {
-                    add(MpLine(UiText.of(R.string.lock_mp_wrong), alert = true))
+                    add(LockLine(UiText.of(R.string.lock_mp_wrong), alert = true))
                     if (error.offerForgot) add(forgotLine(status))
                     error.replaced?.let { add(replacedLine(it)) }
                 }
                 MpError.NoMemory -> add(
-                    MpLine(
+                    LockLine(
                         UiText.of(R.string.lock_mp_no_memory),
-                        MpButton(UiText.of(R.string.common_try_again), MpAction.TryAgain, LockTags.TRY_AGAIN),
+                        LockButton(UiText.of(R.string.common_try_again), LockAction.TryAgain, LockTags.TRY_AGAIN),
                         alert = true,
                     ),
                 )
                 null -> Unit
             }
-            if (waitLeft != null) add(MpLine(UiText.of(R.string.lock_mp_wait)))
+            if (waitLeft != null) add(LockLine(UiText.of(R.string.lock_mp_wait)))
         }
         return MasterPasswordUi(
             asideLine = asideLine(screen),
-            title = title(screen.reason),
-            reason = screen.reason?.let(::reasonText),
-            fingerprintLine = screen.fingerprintLine?.let(::fingerprintText),
+            title = LockTexts.masterPasswordTitle(screen.reason),
+            reason = screen.reason?.let(LockTexts::masterPasswordReason),
+            fingerprintLine = screen.fingerprintLine?.let(LockTexts::fingerprintWithMasterPassword),
             fieldEnabled = waitLeft == null,
             fieldError = error is MpError.Wrong,
             pending = screen.pendingReadyInMs?.let { UiText.plural(R.plurals.lock_mp_pending_hours, hoursLeft(it)) },
@@ -225,19 +393,68 @@ class LockViewModel(
             canSubmit = !opening && waitLeft == null,
             buttons = buttons(screen),
             goesBack = screen.aside != null,
+            testBuild = testBuild,
         )
+    }
+
+    /**
+     * The options of the sheet for the lock screen of [state] (lock.md F17 step 1; ux.md §5.10), in
+     * order and only those that apply; null when the app is not locked.
+     */
+    private fun sheetUi(state: LockUiState, status: LockStatus): ForgotSheetUi? {
+        val screen = (state as? LockUiState.Locked)?.screen ?: return null
+        val mp = screen as? LockScreen.MasterPassword
+        val current = screen.aside == null
+        val fingerprintWorks = status.fingerprint == FingerprintStatus.On && mp?.fingerprintLine == null
+        val options = buildList {
+            // 1. F11 with the proof F11 step 3 accepts: the PIN whenever there is one, else a fingerprint.
+            if (current && pinExists(status, mp)) {
+                add(SheetOption(UiText.of(R.string.lock_sheet_pin_text), LockButton(UiText.of(R.string.lock_sheet_use_pin), LockAction.Send(LockIntent.CantRemember), LockTags.SHEET_USE_PIN, ButtonStyle.FILLED)))
+            } else if (current && fingerprintWorks) {
+                add(SheetOption(UiText.of(R.string.lock_sheet_fingerprint_text), LockButton(UiText.of(R.string.lock_sheet_use_fingerprint), LockAction.Send(LockIntent.CantRemember), LockTags.SHEET_USE_FINGERPRINT, ButtonStyle.FILLED)))
+            }
+            // 2. An older backup.
+            add(SheetOption(UiText.of(R.string.lock_sheet_restore_text), LockButton(UiText.of(R.string.lock_restore), LockAction.Restore, LockTags.SHEET_RESTORE, ButtonStyle.OUTLINED)))
+            // 3. One entry for each vault put aside, newest first.
+            for (vault in newestFirst(status.aside)) {
+                add(SheetOption(null, LockButton(LockTexts.openAside(vault, status.replaced), LockAction.Send(LockIntent.OpenAside(vault.vaultId)), LockTags.sheetAside(vault.vaultId), ButtonStyle.OUTLINED)))
+            }
+            // 4. Only while no PIN and no fingerprint can be used now.
+            val shortcutNow = status.pin == PinStatus.On || mp?.canUsePin == true || fingerprintWorks || mp?.practice != null
+            if (current && !shortcutNow) {
+                add(SheetOption(UiText.of(R.string.lock_sheet_empty_text), LockButton(UiText.of(R.string.lock_sheet_empty), LockAction.AskStartEmpty, LockTags.SHEET_EMPTY)))
+            }
+            // 5. Back to the field.
+            add(SheetOption(null, LockButton(UiText.of(R.string.common_try_again), LockAction.CloseSheet, LockTags.SHEET_TRY_AGAIN)))
+        }
+        return ForgotSheetUi(options)
     }
 
     private companion object {
         const val SECOND_MS = 1_000L
         const val HOUR_MS = 3_600_000L
 
-        /** The lock's master-password screen in [state]; [last] while the app is not locked; null for another screen. */
-        fun masterPasswordOf(state: LockUiState, last: LockScreen.MasterPassword?): LockScreen.MasterPassword? = when (state) {
-            is LockUiState.Locked -> state.screen as? LockScreen.MasterPassword
-            is LockUiState.Unreadable -> null
+        /** What the route shows for [state]: a lock screen or "can't be opened"; [last] while the app is not locked. */
+        fun shownOf(state: LockUiState, last: LockUiState?): LockUiState? = when (state) {
+            is LockUiState.Locked, is LockUiState.Unreadable -> state
             else -> last
         }
+
+        /** The lock's master-password screen in [state], or null. */
+        fun masterPasswordOf(state: LockUiState): LockScreen.MasterPassword? = (state as? LockUiState.Locked)?.screen as? LockScreen.MasterPassword
+
+        /**
+         * A PIN exists on this phone, whether or not it can be checked now (lock.md F11 step 3): then
+         * it is the only proof F11 accepts, never a fingerprint in its place.
+         */
+        fun pinExists(status: LockStatus, mp: LockScreen.MasterPassword?): Boolean =
+            mp?.canUsePin == true || when (val pin = status.pin) {
+                PinStatus.On, PinStatus.CannotCheck -> true
+                is PinStatus.Off -> pin.reason == PinReason.STORAGE_FULL
+                PinStatus.NotSet, PinStatus.NoSecureHardware -> false
+            }
+
+        fun newestFirst(aside: List<AsideVault>): List<AsideVault> = aside.distinctBy { it.vaultId }.sortedByDescending { it.putAsideAtMs }
 
         /** Whole seconds left, rounded up: 30 at the start of the wait, 1 in its last second. */
         fun secondsLeft(ms: Long): Int = ((ms + SECOND_MS - 1) / SECOND_MS).toInt()
@@ -245,62 +462,27 @@ class LockViewModel(
         /** "About N hours", rounded up and at least 1, so that the last minutes never read "about 0 hours". */
         fun hoursLeft(ms: Long): Int = maxOf(1L, (ms + HOUR_MS - 1) / HOUR_MS).toInt()
 
-        fun title(reason: MpReason?): UiText = when (reason) {
-            MpReason.WelcomeBack -> UiText.of(R.string.lock_mp_title_welcome_back)
-            is MpReason.FromBefore -> UiText.of(R.string.lock_from_before, LockDate(reason.atMs, LockDate.Style.DATE))
-            else -> UiText.of(R.string.lock_mp_title)
-        }
-
         /** The line of a vault put aside; none when the title already says it (a vault from before a replacement). */
-        fun asideLine(screen: LockScreen.MasterPassword): UiText? = when (val aside = screen.aside) {
-            null -> null
-            is AsideLine.LockedOn -> UiText.of(R.string.lock_aside_locked_on, LockDate(aside.atMs, LockDate.Style.DATE))
-            is AsideLine.FromBefore ->
-                if (screen.reason is MpReason.FromBefore) null
-                else UiText.of(R.string.lock_from_before, LockDate(aside.atMs, LockDate.Style.DATE))
+        fun asideLine(screen: LockScreen.MasterPassword): UiText? {
+            val aside = screen.aside ?: return null
+            return if (aside is AsideLine.FromBefore && screen.reason is MpReason.FromBefore) {
+                null
+            } else {
+                LockTexts.asideLine(aside)
+            }
         }
-
-        fun reasonText(reason: MpReason): UiText = when (reason) {
-            MpReason.PracticeDue -> UiText.of(R.string.lock_mp_reason_practice)
-            MpReason.WelcomeBack -> UiText.of(R.string.lock_mp_reason_welcome_back)
-            is MpReason.FromBefore -> UiText.of(R.string.lock_mp_reason_from_before)
-            is MpReason.Pin -> UiText.of(
-                when (reason.reason) {
-                    PinReason.LIMIT -> R.string.lock_mp_reason_pin_limit
-                    PinReason.CANNOT_CHECK -> R.string.lock_mp_reason_pin_cannot_check
-                    PinReason.STOPPED_WORKING -> R.string.lock_mp_reason_pin_stopped_working
-                    PinReason.STORAGE_FULL -> R.string.lock_mp_reason_pin_storage_full
-                    PinReason.NEWER_APP -> R.string.lock_mp_reason_pin_newer_app
-                },
-            )
-            MpReason.MasterChanged -> UiText.of(R.string.lock_mp_reason_master_changed)
-            is MpReason.OlderCopy -> UiText.of(R.string.lock_mp_reason_older_copy, LockDate(reason.createdMs, LockDate.Style.DAY_MONTH))
-            MpReason.NoSecureHardware -> UiText.of(R.string.lock_mp_reason_no_secure_hardware)
-        }
-
-        fun fingerprintText(line: FingerprintLine): UiText = UiText.of(
-            when (line) {
-                FingerprintLine.TurnedOff -> R.string.lock_fingerprint_turned_off_master
-                FingerprintLine.Locked -> R.string.lock_fingerprint_locked_master
-                FingerprintLine.DidNotOpen -> R.string.lock_fingerprint_did_not_open_master
-                FingerprintLine.NotForApps -> R.string.lock_fingerprint_not_for_apps_master
-                FingerprintLine.NoneSaved -> R.string.lock_fingerprint_none_saved_master
-                FingerprintLine.UpdateNeeded -> R.string.lock_fingerprint_update_needed_master
-                FingerprintLine.CannotCheck -> R.string.lock_fingerprint_cannot_check_master
-            },
-        )
 
         /**
          * "Can't remember it? Open the app with your PIN, …" with "I forgot it". It names the
          * fingerprint when fingerprint is the shortcut that still works, because no PIN is set on
          * this phone (lock.md F11 step 2: "PIN" reads "fingerprint" when no PIN exists).
          */
-        fun forgotLine(status: LockStatus): MpLine {
+        fun forgotLine(status: LockStatus): LockLine {
             val fingerprintOnly = status.fingerprint == FingerprintStatus.On &&
                 status.pin != PinStatus.On && status.pin != PinStatus.CannotCheck
-            return MpLine(
+            return LockLine(
                 UiText.of(if (fingerprintOnly) R.string.lock_mp_wrong_forgot_fingerprint else R.string.lock_mp_wrong_forgot_pin),
-                MpButton(UiText.of(R.string.lock_mp_i_forgot), MpAction.Send(LockIntent.OpenForgotSheet), LockTags.I_FORGOT),
+                LockButton(UiText.of(R.string.lock_mp_i_forgot), LockAction.OpenSheet, LockTags.I_FORGOT),
             )
         }
 
@@ -309,11 +491,11 @@ class LockViewModel(
          * before 7 Oct": that vault's own lock screen, or the sheet's list when it was replaced more
          * than once (lock.md §13.3, F16b).
          */
-        fun replacedLine(replaced: ReplacedLine): MpLine {
+        fun replacedLine(replaced: ReplacedLine): LockLine {
             val date = LockDate(replaced.atMs, LockDate.Style.DAY_MONTH)
             val text = if (replaced.by == Shortcut.FINGERPRINT) R.string.lock_mp_wrong_replaced_fingerprint else R.string.lock_mp_wrong_replaced_pin
-            val intent = replaced.oldVaultId?.let { LockIntent.OpenAside(it) } ?: LockIntent.OpenForgotSheet
-            return MpLine(UiText.of(text, date), MpButton(UiText.of(R.string.lock_mp_open_from_before, date), MpAction.Send(intent), LockTags.FROM_BEFORE))
+            val action = replaced.oldVaultId?.let { LockAction.Send(LockIntent.OpenAside(it)) } ?: LockAction.OpenSheet
+            return LockLine(UiText.of(text, date), LockButton(UiText.of(R.string.lock_mp_open_from_before, date), action, LockTags.FROM_BEFORE))
         }
 
         /**
@@ -322,115 +504,19 @@ class LockViewModel(
          * on a practice day whose shortcut is fingerprint, "I can't remember it" on a practice
          * screen, and "Forgot master password?" always.
          */
-        fun buttons(screen: LockScreen.MasterPassword): List<MpButton> = buildList {
+        fun buttons(screen: LockScreen.MasterPassword): List<LockButton> = buildList {
             val notNow = screen.practice?.notNow
             if (screen.canUsePin || notNow == Shortcut.PIN) {
                 val label = if (notNow == Shortcut.PIN) R.string.lock_mp_not_now_pin else R.string.lock_mp_use_pin
-                add(MpButton(UiText.of(label), MpAction.Send(LockIntent.UsePin), LockTags.USE_PIN))
+                add(LockButton(UiText.of(label), LockAction.Send(LockIntent.UsePin), LockTags.USE_PIN))
             }
             if (notNow == Shortcut.FINGERPRINT) {
-                add(MpButton(UiText.of(R.string.lock_mp_not_now_fingerprint), MpAction.Send(LockIntent.NotNow), LockTags.NOT_NOW))
+                add(LockButton(UiText.of(R.string.lock_mp_not_now_fingerprint), LockAction.Send(LockIntent.NotNow), LockTags.NOT_NOW))
             }
             if (screen.practice != null) {
-                add(MpButton(UiText.of(R.string.lock_mp_cant_remember), MpAction.Send(LockIntent.CantRemember), LockTags.CANT_REMEMBER))
+                add(LockButton(UiText.of(R.string.lock_mp_cant_remember), LockAction.Send(LockIntent.CantRemember), LockTags.CANT_REMEMBER))
             }
-            add(MpButton(UiText.of(R.string.lock_mp_forgot), MpAction.Send(LockIntent.OpenForgotSheet), LockTags.FORGOT))
+            add(LockButton(UiText.of(R.string.lock_mp_forgot), LockAction.OpenSheet, LockTags.FORGOT))
         }
     }
-}
-
-/**
- * What the master-password screen shows (ux.md §5.10; lock.md §13.2, §13.3). Texts only as
- * [UiText]; nothing typed is ever in it.
- *
- * @property asideLine "Passwords locked on 6 Oct 2026" on the screen of a vault put aside.
- * @property title "Type your master password", "Welcome back", or "Your passwords from before …".
- * @property reason the subtitle: why the master password is needed now; null when none applies.
- * @property fingerprintLine fingerprint unlock is on and cannot be used now, with "Use your master
- *   password", under the reason.
- * @property fieldEnabled false while the field waits (lock.md §6.8).
- * @property fieldError the field is marked wrong (the last try was a wrong master password).
- * @property pending under the field: "Your new master password starts working in about N hours."
- * @property lines after the last try, in order: "That's not the right master password. …" with its
- *   additions, or "not enough memory" with "Try again"; then, during a wait, "Wait 30 seconds …".
- * @property countdown the wait's countdown: "Try again in N seconds".
- * @property opening "Opening…" with a spinner in place of "Unlock": the master password is checked.
- * @property canSubmit "Unlock" works once something is typed: nothing is checked and nothing waits.
- * @property buttons the text buttons under "Unlock".
- * @property goesBack the screen of a vault put aside: Back returns to the current vault
- *   (`LockIntent.GoBack`, lock.md F17 step 4) instead of leaving the app.
- */
-data class MasterPasswordUi(
-    val asideLine: UiText?,
-    val title: UiText,
-    val reason: UiText?,
-    val fingerprintLine: UiText?,
-    val fieldEnabled: Boolean,
-    val fieldError: Boolean,
-    val pending: UiText?,
-    val lines: List<MpLine>,
-    val countdown: UiText?,
-    val opening: Boolean,
-    val canSubmit: Boolean,
-    val buttons: List<MpButton>,
-    val goesBack: Boolean,
-)
-
-/**
- * A line after a try (lock.md §13.3 "When"), with the button that belongs to it. [alert]: what went
- * wrong ("That's not the right master password. …", "not enough memory"), drawn in the error colour;
- * the lines that add a way out and the wait are not.
- */
-data class MpLine(val text: UiText, val button: MpButton? = null, val alert: Boolean = false)
-
-/** A button of the master-password screen: its label, what it does, and its test tag ([LockTags]). */
-data class MpButton(val label: UiText, val action: MpAction, val tag: String)
-
-/** What a button of the master-password screen does. */
-sealed interface MpAction {
-    /** Tells the lock ([LockManager.send]): "Use PIN", "Forgot master password?" and the others. */
-    data class Send(val intent: LockIntent) : MpAction
-
-    /** "Try again" after "not enough memory": the line goes and the field takes the keyboard again. */
-    data object TryAgain : MpAction
-}
-
-/**
- * A date in a lock text: the ViewModel keeps the time, and the screen formats it in its own
- * language (`Formatters`, i18n.md §4.6), so that a language switch changes it too.
- */
-data class LockDate(val ms: Long, val style: Style) {
-    enum class Style {
-        /** A day and a month: "Oct 5", "5-okt", "5 окт." (in "An older copy from 5 Oct …"). */
-        DAY_MONTH,
-
-        /** A day, a month and the year: "Oct 7, 2026" (in "Your passwords from before 7 Oct 2026"). */
-        DATE,
-    }
-}
-
-/**
- * The test tags of the lock screens, exposed as resource ids under the route's root, so that tests
- * and the emulator scripts find each part whatever the language.
- */
-object LockTags {
-    const val ASIDE = "pv.lock.aside"
-    const val TITLE = "pv.lock.title"
-    const val REASON = "pv.lock.reason"
-    const val FINGERPRINT = "pv.lock.fingerprint"
-    const val FIELD = "pv.lock.password"
-    const val PENDING = "pv.lock.pending"
-    const val COUNTDOWN = "pv.lock.countdown"
-    const val UNLOCK = "pv.lock.unlock"
-    const val OPENING = "pv.lock.opening"
-    const val USE_PIN = "pv.lock.usePin"
-    const val NOT_NOW = "pv.lock.notNow"
-    const val CANT_REMEMBER = "pv.lock.cantRemember"
-    const val FORGOT = "pv.lock.forgot"
-    const val I_FORGOT = "pv.lock.iForgot"
-    const val FROM_BEFORE = "pv.lock.fromBefore"
-    const val TRY_AGAIN = "pv.lock.tryAgain"
-
-    /** The line [index] after a try (`MasterPasswordUi.lines`), from 0. */
-    fun line(index: Int): String = "pv.lock.line.$index"
 }

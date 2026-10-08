@@ -83,7 +83,7 @@ class LockViewModelTest {
         assertTrue(ui.fieldEnabled)
         assertFalse(ui.fieldError)
         assertNull(ui.pending)
-        assertEquals(emptyList<MpLine>(), ui.lines)
+        assertEquals(emptyList<LockLine>(), ui.lines)
         assertNull(ui.countdown)
         assertFalse(ui.opening)
         assertTrue(ui.canSubmit)
@@ -168,7 +168,7 @@ class LockViewModelTest {
     @Test
     fun usePinIsOfferedWhenThePinCanBeUsed() = runTest {
         val vm = viewModel(FakeLockManager(initial = LockUiState.Locked(screen(canUsePin = true))))
-        assertEquals(listOf(MpButton(text(R.string.lock_mp_use_pin), send(LockIntent.UsePin), LockTags.USE_PIN), forgot), ui(vm).buttons)
+        assertEquals(listOf(LockButton(text(R.string.lock_mp_use_pin), send(LockIntent.UsePin), LockTags.USE_PIN), forgot), ui(vm).buttons)
     }
 
     @Test
@@ -177,9 +177,9 @@ class LockViewModelTest {
             initial = LockUiState.Locked(screen(reason = MpReason.PracticeDue, canUsePin = true, practice = Practice(Shortcut.PIN))),
         )
         val vm = viewModel(lock)
-        val cantRemember = MpButton(text(R.string.lock_mp_cant_remember), send(LockIntent.CantRemember), LockTags.CANT_REMEMBER)
+        val cantRemember = LockButton(text(R.string.lock_mp_cant_remember), send(LockIntent.CantRemember), LockTags.CANT_REMEMBER)
         assertEquals(
-            listOf(MpButton(text(R.string.lock_mp_not_now_pin), send(LockIntent.UsePin), LockTags.USE_PIN), cantRemember, forgot),
+            listOf(LockButton(text(R.string.lock_mp_not_now_pin), send(LockIntent.UsePin), LockTags.USE_PIN), cantRemember, forgot),
             ui(vm).buttons,
         )
         assertEquals(text(R.string.lock_mp_reason_practice), ui(vm).reason)
@@ -188,7 +188,7 @@ class LockViewModelTest {
         lock.state.value = LockUiState.Locked(screen(reason = MpReason.PracticeDue, practice = Practice(Shortcut.FINGERPRINT)))
         runCurrent()
         assertEquals(
-            listOf(MpButton(text(R.string.lock_mp_not_now_fingerprint), send(LockIntent.NotNow), LockTags.NOT_NOW), cantRemember, forgot),
+            listOf(LockButton(text(R.string.lock_mp_not_now_fingerprint), send(LockIntent.NotNow), LockTags.NOT_NOW), cantRemember, forgot),
             ui(vm).buttons,
         )
 
@@ -212,13 +212,13 @@ class LockViewModelTest {
         val lock = FakeLockManager(initial = LockUiState.Locked(screen(canUsePin = true, error = MpError.Wrong(offerForgot = true, replaced = null))))
         lock.status.value = LockStatus.NONE.copy(pin = PinStatus.On, fingerprint = FingerprintStatus.On)
         val vm = viewModel(lock)
-        val iForgot = MpButton(text(R.string.lock_mp_i_forgot), send(LockIntent.OpenForgotSheet), LockTags.I_FORGOT)
-        assertEquals(listOf(wrong, MpLine(text(R.string.lock_mp_wrong_forgot_pin), iForgot)), ui(vm).lines)
+        val iForgot = LockButton(text(R.string.lock_mp_i_forgot), LockAction.OpenSheet, LockTags.I_FORGOT)
+        assertEquals(listOf(wrong, LockLine(text(R.string.lock_mp_wrong_forgot_pin), iForgot)), ui(vm).lines)
 
         // No PIN on this phone, fingerprint works: the line names the fingerprint (lock.md F11 step 2).
         lock.status.value = LockStatus.NONE.copy(pin = PinStatus.Off(PinReason.LIMIT), fingerprint = FingerprintStatus.On)
         runCurrent()
-        assertEquals(listOf(wrong, MpLine(text(R.string.lock_mp_wrong_forgot_fingerprint), iForgot)), ui(vm).lines)
+        assertEquals(listOf(wrong, LockLine(text(R.string.lock_mp_wrong_forgot_fingerprint), iForgot)), ui(vm).lines)
     }
 
     @Test
@@ -231,9 +231,9 @@ class LockViewModelTest {
         assertEquals(
             listOf(
                 wrong,
-                MpLine(
+                LockLine(
                     UiText.of(R.string.lock_mp_wrong_replaced_pin, dayMonth),
-                    MpButton(UiText.of(R.string.lock_mp_open_from_before, dayMonth), send(LockIntent.OpenAside(OLD_VAULT)), LockTags.FROM_BEFORE),
+                    LockButton(UiText.of(R.string.lock_mp_open_from_before, dayMonth), send(LockIntent.OpenAside(OLD_VAULT)), LockTags.FROM_BEFORE),
                 ),
             ),
             ui(vm).lines,
@@ -245,9 +245,9 @@ class LockViewModelTest {
         val lines = ui(vm).lines
         assertEquals(3, lines.size)
         assertEquals(
-            MpLine(
+            LockLine(
                 UiText.of(R.string.lock_mp_wrong_replaced_fingerprint, dayMonth),
-                MpButton(UiText.of(R.string.lock_mp_open_from_before, dayMonth), send(LockIntent.OpenForgotSheet), LockTags.FROM_BEFORE),
+                LockButton(UiText.of(R.string.lock_mp_open_from_before, dayMonth), LockAction.OpenSheet, LockTags.FROM_BEFORE),
             ),
             lines[2],
         )
@@ -259,9 +259,9 @@ class LockViewModelTest {
         val vm = viewModel(lock)
         assertEquals(listOf(noMemory), ui(vm).lines)
         assertFalse("not the field's fault", ui(vm).fieldError)
-        vm.onAction(MpAction.TryAgain)
+        vm.onAction(LockAction.TryAgain)
         runCurrent()
-        assertEquals(emptyList<MpLine>(), ui(vm).lines)
+        assertEquals(emptyList<LockLine>(), ui(vm).lines)
         assertEquals(emptyList<LockIntent>(), lock.sent)
 
         // The lock shows its screen again, with a new answer: the line is back.
@@ -308,7 +308,7 @@ class LockViewModelTest {
         val vm = viewModel(FakeLockManager(initial = LockUiState.Locked(screen(waitUntilElapsedMs = START - 1))))
         assertTrue(ui(vm).fieldEnabled)
         assertNull(ui(vm).countdown)
-        assertEquals(emptyList<MpLine>(), ui(vm).lines)
+        assertEquals(emptyList<LockLine>(), ui(vm).lines)
     }
 
     @Test
@@ -329,7 +329,7 @@ class LockViewModelTest {
         val ui = ui(vm)
         assertTrue(ui.opening)
         assertFalse(ui.canSubmit)
-        assertEquals(emptyList<MpLine>(), ui.lines)
+        assertEquals(emptyList<LockLine>(), ui.lines)
         assertFalse(ui.fieldError)
     }
 
@@ -354,7 +354,7 @@ class LockViewModelTest {
         runCurrent()
         assertEquals(UiText.of(R.string.lock_from_before, LockDate(REPLACED_AT, LockDate.Style.DATE)), ui(vm).asideLine)
 
-        vm.onAction(MpAction.Send(LockIntent.GoBack))
+        vm.onAction(LockAction.Send(LockIntent.GoBack))
         assertEquals(listOf<LockIntent>(LockIntent.GoBack), lock.sent)
     }
 
@@ -422,7 +422,7 @@ class LockViewModelTest {
 
         lock.state.value = LockUiState.Locked(screen(reason = MpReason.MasterChanged))
         runCurrent()
-        assertEquals(emptyList<MpLine>(), ui(vm).lines)
+        assertEquals(emptyList<LockLine>(), ui(vm).lines)
     }
 
     @Test
@@ -435,9 +435,9 @@ class LockViewModelTest {
         runCurrent()
         assertEmpty(vm.password)
         assertEquals(listOf(noMemory), ui(vm).lines)
-        vm.onAction(MpAction.TryAgain)
+        vm.onAction(LockAction.TryAgain)
         runCurrent()
-        assertEquals(emptyList<MpLine>(), ui(vm).lines)
+        assertEquals(emptyList<LockLine>(), ui(vm).lines)
     }
 
     @Test
@@ -592,18 +592,18 @@ class LockViewModelTest {
         const val TYPED = "correct horse battery"
 
         fun text(id: Int): UiText = UiText.of(id)
-        fun send(intent: LockIntent): MpAction = MpAction.Send(intent)
+        fun send(intent: LockIntent): LockAction = LockAction.Send(intent)
         fun seconds(n: Int): UiText = UiText.plural(R.plurals.lock_mp_wait_seconds, n)
         fun hours(n: Int): UiText = UiText.plural(R.plurals.lock_mp_pending_hours, n)
 
-        val forgot = MpButton(text(R.string.lock_mp_forgot), send(LockIntent.OpenForgotSheet), LockTags.FORGOT)
-        val wrong = MpLine(text(R.string.lock_mp_wrong), alert = true)
-        val noMemory = MpLine(
+        val forgot = LockButton(text(R.string.lock_mp_forgot), LockAction.OpenSheet, LockTags.FORGOT)
+        val wrong = LockLine(text(R.string.lock_mp_wrong), alert = true)
+        val noMemory = LockLine(
             text(R.string.lock_mp_no_memory),
-            MpButton(text(R.string.common_try_again), MpAction.TryAgain, LockTags.TRY_AGAIN),
+            LockButton(text(R.string.common_try_again), LockAction.TryAgain, LockTags.TRY_AGAIN),
             alert = true,
         )
-        val waitLine = MpLine(text(R.string.lock_mp_wait))
+        val waitLine = LockLine(text(R.string.lock_mp_wait))
 
         fun screen(
             reason: MpReason? = null,
