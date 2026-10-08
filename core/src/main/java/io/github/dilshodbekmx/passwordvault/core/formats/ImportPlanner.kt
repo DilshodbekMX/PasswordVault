@@ -267,7 +267,7 @@ object ImportPlanner {
      * counted), its canonical body padded to whole blocks, and the longest header.
      */
     internal fun sealedSize(vault: Vault, entries: List<Entry>, fromFile: (String) -> String): Long {
-        val after = if (entries.isEmpty()) vault else VaultEdits.addImported(entries, SizingIds(), fromFile)(vault, 0L).vault
+        val after = if (entries.isEmpty()) vault else VaultEdits.addImported(entries, SizingIds(vault, entries), fromFile)(vault, 0L).vault
         return sealedSize(after)
     }
 
@@ -282,17 +282,29 @@ object ImportPlanner {
         }
     }
 
-    /** Ids for the size estimate only: distinct and valid, never random, never a real entry's. */
-    private class SizingIds : RandomSource {
+    /**
+     * Ids for the size estimate only: distinct and valid, never random, and never one that [vault] or
+     * [entries] has. A file in our own format can bring any valid id, these among them, and
+     * `VaultEdits.addImported` gives up after a hundred ids that are taken.
+     */
+    private class SizingIds(vault: Vault, entries: List<Entry>) : RandomSource {
+        private val taken = HashSet<String>((vault.entries.size + entries.size) * 2)
         private var next = 0L
+
+        init {
+            vault.entries.mapTo(taken) { it.id }
+            entries.mapTo(taken) { it.id }
+        }
 
         override fun bytes(n: Int): ByteArray = ByteArray(n)
 
         override fun int(bound: Int): Int = 0
 
         override fun uuid(): String {
-            val hex = (next++).toString(16).padStart(12, '0')
-            return "ffffffff-ffff-4fff-bfff-$hex"
+            while (true) {
+                val id = "ffffffff-ffff-4fff-bfff-" + (next++).toString(16).padStart(12, '0')
+                if (id !in taken) return id
+            }
         }
     }
 

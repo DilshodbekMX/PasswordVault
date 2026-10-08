@@ -259,6 +259,32 @@ class ImportPlannerTest {
         assertTrue("${plan.sealedBytes} - ${sealed.size}", plan.sealedBytes - sealed.size < 128) // only the header's widest numbers
     }
 
+    /**
+     * The size is estimated with ids of the planner's own in place of the new ids an import would draw.
+     * They were `ffffffff-ffff-4fff-bfff-000000000000` and up: valid ids, which an earlier import of a
+     * file in our own format keeps as they are. With a hundred of them in the vault, no plan could be
+     * made any more for a file with an id that is taken (formats-review P1's own case).
+     */
+    @Test
+    fun theIdsOfTheSizeEstimateAreNeverIdsOfTheVault() {
+        val planted = List(100) { i -> entry(1, "Planted $i", "u$i", "p$i").copy(id = "ffffffff-ffff-4fff-bfff-" + i.toString(16).padStart(12, '0')) }
+        val gmail = entry(140, "Gmail", "aziz@gmail.com", "G00gle#2025", listOf("https://mail.google.com"))
+        // The hostile file is an ordinary import: its ids are valid and free, so they are kept.
+        val hostile = file(BitwardenJson.export(planted, NOW, GENERATOR).bytes)
+        val start = Vault(entries = listOf(gmail.copy(password = "N3w#Gmail")))
+        val vault = VaultEdits.addImported(plan(start, hostile).entries, FakeRandom(4), Texts::fromFile)(start, NOW).vault
+        assertEquals(planted.map { it.id }, vault.entries.drop(1).map { it.id })
+
+        // The vault's own older export, whose Gmail has the id that the vault's Gmail holds.
+        val plan = plan(vault, file(BitwardenJson.export(listOf(gmail), NOW - DAY, GENERATOR).bytes))
+        assertEquals(listOf("G00gle#2025"), plan.entries.map { it.password })
+        assertTrue(plan.fits)
+        val after = VaultEdits.addImported(plan.entries, FakeRandom(9), Texts::fromFile)(vault, NOW).vault
+        val codec = VaultCodecs.create(JcaAesGcm(), FakeRandom(1), FakeClock(), BuildInfo(GENERATOR, 1))
+        val sealed = codec.seal(after, ByteArray(32) { 7 }, id(1), id(2), 1, PasswordSlot(ByteArray(16), ByteArray(12), ByteArray(48)))
+        assertTrue("${plan.sealedBytes} < ${sealed.size}", plan.sealedBytes >= sealed.size)
+    }
+
     @Test
     fun anImportThatWouldNotFitIsRefused() {
         val note = "x".repeat(10_000)
