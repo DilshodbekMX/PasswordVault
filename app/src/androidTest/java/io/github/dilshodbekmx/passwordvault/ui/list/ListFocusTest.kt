@@ -1,6 +1,9 @@
 package io.github.dilshodbekmx.passwordvault.ui.list
 
 import android.os.ParcelFileDescriptor
+import android.os.SystemClock
+import android.view.InputDevice
+import android.view.MotionEvent
 import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Box
@@ -33,6 +36,7 @@ import io.github.dilshodbekmx.passwordvault.settings.ThemeChoice
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultSecureField
 import io.github.dilshodbekmx.passwordvault.ui.theme.PasswordVaultTheme
 import org.junit.After
+import org.junit.Before
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -53,6 +57,10 @@ import org.junit.runner.RunWith
  * navigation's transition at an unlock, and then it leaves: on Android 7 that is the case itself.
  * On every API level the test also makes the call Android 7 makes (`rootView.requestFocus()`), and
  * a tap must still give the field the focus.
+ *
+ * Both run in touch mode, where the field refuses that focus; with a keyboard it is Android's to
+ * give. Since Android 14 touch mode is one state of the whole display, left by a key that an earlier
+ * test pressed, so each test first taps the empty window through the system's input.
  */
 @RunWith(AndroidJUnit4::class)
 class ListFocusTest {
@@ -66,6 +74,27 @@ class ListFocusTest {
     @After
     fun closeRig() {
         rig?.close()
+    }
+
+    /** A tap in the middle of the activity's empty window, sent as a finger's is: the window is then in touch mode. */
+    @Before
+    fun enterTouchMode() {
+        val decor = compose.activity.window.decorView
+        val at = IntArray(2)
+        compose.runOnIdle { decor.getLocationOnScreen(at) }
+        val x = at[0] + decor.width / 2f
+        val y = at[1] + decor.height / 2f
+        val ui = InstrumentationRegistry.getInstrumentation().uiAutomation
+        val down = SystemClock.uptimeMillis()
+        for ((action, time) in listOf(MotionEvent.ACTION_DOWN to down, MotionEvent.ACTION_UP to down + 50)) {
+            val event = MotionEvent.obtain(down, time, action, x, y, 0)
+            event.source = InputDevice.SOURCE_TOUCHSCREEN
+            ui.injectInputEvent(event, true)
+            event.recycle()
+        }
+        val deadline = SystemClock.uptimeMillis() + TIMEOUT_MS
+        while (!decor.isInTouchMode && SystemClock.uptimeMillis() < deadline) Thread.sleep(50)
+        assertTrue("the window is in touch mode", decor.isInTouchMode)
     }
 
     private val vault = Vault(
