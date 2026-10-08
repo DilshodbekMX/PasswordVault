@@ -431,22 +431,26 @@ private fun ColumnScope.SavedStep(state: ExportUiState.Saved, actions: ExportAct
         tint = MaterialTheme.colorScheme.primary,
         modifier = Modifier.size(40.dp),
     )
+    val deleted = state.deletion == ExportDeletion.DELETED
     Text(
-        text = if (state.parts > 1) {
-            stringResource(R.string.export_saved_part, state.file.part, state.parts, state.name)
-        } else {
-            stringResource(R.string.export_saved, state.name)
+        text = when {
+            // Deleted: the file is gone, so nothing more is said about keeping or deleting it.
+            deleted -> stringResource(R.string.export_deleted, state.name)
+            state.parts > 1 -> stringResource(R.string.export_saved_part, state.file.part, state.parts, state.name)
+            else -> stringResource(R.string.export_saved, state.name)
         },
         style = MaterialTheme.typography.bodyLarge,
-        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }.testTag(ExportTags.SAVED),
+        modifier = Modifier
+            .semantics { liveRegion = LiveRegionMode.Polite }
+            .testTag(if (deleted) ExportTags.DELETION else ExportTags.SAVED),
     )
-    if (state.mayUploadLater) Line(stringResource(R.string.export_saved_upload), ExportTags.UPLOAD)
-    if (state.replaced > 0) Line(pluralStringResource(R.plurals.export_saved_replaced, state.replaced, state.replaced), ExportTags.REPLACED)
-    if (state.truncated > 0) Line(pluralStringResource(R.plurals.export_saved_truncated, state.truncated, state.truncated), ExportTags.TRUNCATED)
-    when (state.deletion) {
-        ExportDeletion.DELETED -> Line(stringResource(R.string.export_deleted, state.name), ExportTags.DELETION, live = true)
-        ExportDeletion.NOT_ALLOWED -> Line(stringResource(R.string.export_cannot_delete), ExportTags.DELETION, live = true)
-        ExportDeletion.DELETING, null -> Unit
+    if (!deleted) {
+        if (state.mayUploadLater) Line(stringResource(R.string.export_saved_upload), ExportTags.UPLOAD)
+        if (state.replaced > 0) Line(pluralStringResource(R.plurals.export_saved_replaced, state.replaced, state.replaced), ExportTags.REPLACED)
+        if (state.truncated > 0) Line(pluralStringResource(R.plurals.export_saved_truncated, state.truncated, state.truncated), ExportTags.TRUNCATED)
+    }
+    if (state.deletion == ExportDeletion.NOT_ALLOWED) {
+        Line(stringResource(R.string.export_cannot_delete), ExportTags.DELETION, live = true)
     }
     // "Done" is the main button: the user just asked for this file (ux.md §5.20).
     when (state.primary) {
