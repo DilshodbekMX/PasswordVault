@@ -35,12 +35,6 @@ object AppSourceRules {
     private const val MASTER_PROOF = "core/src/main/java/io/github/dilshodbekmx/passwordvault/core/lock/flow/MasterProof.kt"
     private const val APP_FAKE = "$APP_DIR/fake/"
 
-    /**
-     * R-15: the master-password gate of build plan 3.2 (iface-53), the app's `LockManager` until
-     * package 4.1 removes the file; this entry goes with it.
-     */
-    private const val MASTER_PASSWORD_GATE = "$APP_DIR/lock/MasterPasswordGate.kt"
-
     /** R-4: only the classic BiometricPrompt API, whose dialog stays inside our activity (lock.md §9.1). */
     val r4: List<Rule> = listOf(
         PatternRule("R-4", "AuthenticationRequest", Regex("""\bAuthenticationRequest\b""")),
@@ -158,16 +152,12 @@ object AppSourceRules {
      * §3.4), is named only in the file that declares it, by the fakes under `APP/fake/`, in the
      * `debug` source set (previews) and in `:testing`; the test source sets are not scanned. So
      * release code only ever holds the proofs that `LockEngine` makes after a correct master
-     * password. And, until build plan 4.1 removes it, in `APP/lock/MasterPasswordGate.kt`, the
-     * master-password gate of 3.2: it makes a proof only after `VaultPort.openWithPassword` opened a
-     * slot or `VaultPort.checkPassword` was true, from the verified `MasterPasswordBytes`, and drops
-     * each one at the next lock or process ON_STOP.
+     * password.
      */
     val r15: List<Rule> = listOf(
         PatternRule("R-15", "MasterProof.forFakes outside the fakes, previews and tests", Regex("""\bforFakes\b""")) { file, _ ->
             file.path == MASTER_PROOF || file.path.startsWith(APP_FAKE) ||
-                file.path.startsWith("app/src/debug/") || file.path.startsWith("testing/src/main/") ||
-                file.path == MASTER_PASSWORD_GATE
+                file.path.startsWith("app/src/debug/") || file.path.startsWith("testing/src/main/")
         },
     )
 
