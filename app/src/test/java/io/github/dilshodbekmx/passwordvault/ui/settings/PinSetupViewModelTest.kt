@@ -414,6 +414,99 @@ class PinSetupViewModelTest {
         assertEquals(listOf(NavStep.Back, NavStep.Replace(Route.BackupsExplained)), vm.ui.value.move?.steps)
     }
 
+    // ---- a save the lock cannot vouch for (build-plan.md §12, decision 4) ----------------------------------
+    // `LockManager.setPin` and `fingerprintOn` cannot give that answer until the merge of round R3 adds
+    // it, so the tests give it to the view model themselves, at the moment the lock's answer is awaited.
+
+    @Test
+    fun aPinThatMayNotBeSavedPromisesNothingAndGoesOn() = runTest {
+        val lock = unlockedWithProof()
+        val vm = model(lock, canAuthenticate = 11)
+        vm.start()
+        runCurrent()
+        vm.type(Pins.ALLOWED, Route.CreatePin)
+        vm.performMove()
+        vm.type(Pins.ALLOWED, Route.ConfirmPin)
+        assertTrue("the lock's answer is awaited", vm.ui.value.saving)
+        vm.pinMayNotBeSaved()
+        var ui = vm.ui.value
+        assertFalse(ui.saving)
+        assertFalse("not \"Your PIN is set.\"", ui.saved)
+        assertFalse("no \"Try again\"", ui.saveFailed)
+        assertTrue(ui.saveUnsure)
+        assertEquals("no PIN worked before: the sentence names no old PIN", PinLine(UiText.of(R.string.pin_may_not_be_saved_first)), ui.line)
+        assertEquals(PinSetupStage.CONFIRM, ui.stage)
+        // The lock's own answer, which comes later, changes nothing of it.
+        advanceUntilIdle()
+        ui = vm.ui.value
+        assertTrue(ui.saveUnsure)
+        assertFalse(ui.saved)
+        assertEquals(PinSetupStage.CONFIRM, ui.stage)
+        // The pad takes nothing, and nothing is tried again.
+        vm.digit(1, Route.ConfirmPin)
+        vm.retrySave()
+        vm.skipAfterFailure()
+        advanceUntilIdle()
+        assertEquals(0, vm.ui.value.entered)
+        assertEquals("the PIN was handed to the lock once", 1, lock.setPins.size)
+        assertEquals(PinSetupStage.CONFIRM, vm.ui.value.stage)
+        // "OK" goes on with the steps of setup.
+        vm.pinUnsureOk()
+        advanceUntilIdle()
+        ui = vm.ui.value
+        assertEquals(PinSetupStage.BACKUPS, ui.stage)
+        assertFalse(ui.saveUnsure)
+        assertNull(ui.line)
+        assertEquals(listOf(NavStep.Back, NavStep.Replace(Route.BackupsExplained)), ui.move?.steps)
+    }
+
+    @Test
+    fun aNewPinThatMayNotBeSavedNamesTheOldPinAndBackGoesOnToo() = runTest {
+        val lock = unlockedWithProof()
+        lock.fake.status.value = lock.fake.status.value.copy(pin = PinStatus.On)
+        val vm = model(lock)
+        vm.start()
+        runCurrent()
+        vm.type(Pins.ALLOWED, Route.CreatePin)
+        vm.performMove()
+        vm.type(Pins.ALLOWED, Route.ConfirmPin)
+        vm.pinMayNotBeSaved()
+        assertEquals(PinLine(UiText.of(R.string.pin_may_not_be_saved)), vm.ui.value.line)
+        vm.backFromConfirm()
+        advanceUntilIdle()
+        assertTrue("Back does not choose the PIN again: the steps go on", vm.ui.value.stage != PinSetupStage.CHOOSE && vm.ui.value.stage != PinSetupStage.CONFIRM)
+        assertFalse(vm.ui.value.saveUnsure)
+    }
+
+    @Test
+    fun theAnswerThatAPinMayNotBeSavedCountsOnlyWhileItIsSaved() = runTest {
+        val vm = model(unlockedWithProof())
+        vm.start()
+        runCurrent()
+        vm.pinMayNotBeSaved()
+        assertFalse(vm.ui.value.saveUnsure)
+        chooseAndSave(vm)
+        vm.pinMayNotBeSaved()
+        assertFalse("the PIN was saved: nothing is in doubt", vm.ui.value.saveUnsure)
+    }
+
+    @Test
+    fun fingerprintThatMayNotBeOnSaysSoOnTheOffer() = runTest {
+        val lock = unlockedWithProof()
+        val vm = model(lock, canAuthenticate = 0)
+        vm.fingerprintMayNotBeOn()
+        assertNull("not on another step", vm.ui.value.fingerprintLine)
+        chooseAndSave(vm)
+        vm.performMove()
+        assertEquals(PinSetupStage.FINGERPRINT, vm.ui.value.stage)
+        vm.fingerprintMayNotBeOn()
+        assertEquals(PinLine(UiText.of(R.string.pin_fingerprint_may_not_be_on)), vm.ui.value.fingerprintLine)
+        assertEquals("the offer stays", PinSetupStage.FINGERPRINT, vm.ui.value.stage)
+        vm.fingerprintNotNow()
+        advanceUntilIdle()
+        assertEquals("\"Not now\" goes on", PinSetupStage.BACKUPS, vm.ui.value.stage)
+    }
+
     // ---- fingerprint and backups ---------------------------------------------------------------------
 
     @Test

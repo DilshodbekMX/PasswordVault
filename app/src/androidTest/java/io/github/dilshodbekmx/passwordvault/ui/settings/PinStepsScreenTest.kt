@@ -116,6 +116,60 @@ class PinStepsScreenTest {
         assertEquals(PinStatus.NotSet, rig.lock.status.value.pin)
     }
 
+    /**
+     * build-plan.md §12, decision 4: when the lock cannot say whether the new PIN was saved, the step
+     * promises nothing. It says what to try next time and offers "OK" alone, which goes on.
+     */
+    @Test
+    fun aPinThatMayNotBeSavedSaysWhatToTryNextTimeAndOkGoesOn() {
+        val gated = GatedLock(rig.lock)
+        val vm = rig.pinSetupViewModel(canAuthenticate = 11, lock = gated)
+        compose.setContent { SettingsTestTheme { PinStepsHost(vm, rig.nav) } }
+        compose.waitForIdle()
+        type("582913")
+        compose.waitUntil(5_000) { "go ConfirmPin" in rig.nav.steps }
+        type("582913")
+        compose.onNodeWithTag(PinTags.BUSY).assertIsDisplayed() // "Saving…": the lock has not answered
+        compose.runOnIdle { vm.pinMayNotBeSaved() }
+        compose.onNodeWithText(string(R.string.pin_may_not_be_saved_first)).assertIsDisplayed()
+        compose.onNodeWithTag(PinTags.OK).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag(PinTags.RETRY).assertDoesNotExist()
+        compose.onNodeWithTag(PinTags.NOT_NOW).assertDoesNotExist()
+        compose.onNodeWithTag(PinTags.DONE).assertDoesNotExist() // not "Your PIN is set."
+        // The lock's own answer, when it comes, changes nothing on the screen.
+        gated.open.complete(Unit)
+        compose.waitForIdle()
+        compose.onNodeWithText(string(R.string.pin_may_not_be_saved_first)).assertIsDisplayed()
+        compose.onNodeWithTag(PinTags.OK).performScrollTo().performClick()
+        compose.waitUntil(5_000) { "replace BackupsExplained" in rig.nav.steps }
+        assertEquals(listOf("go ConfirmPin", "back", "replace BackupsExplained"), rig.nav.steps)
+    }
+
+    @Test
+    fun aChangedPinThatMayNotBeSavedNamesTheOldPinAndOkClosesTheRoute() {
+        rig.lock.status.value = rig.lock.status.value.copy(pin = PinStatus.On)
+        SettingsNotice.take()
+        val gated = GatedLock(rig.lock)
+        val vm = rig.changePinViewModel(lock = gated)
+        compose.setContent { SettingsTestTheme { ChangePinScreen(vm, rig.nav) } }
+        compose.waitForIdle()
+        type("582913")
+        type("905127")
+        type("905127")
+        compose.onNodeWithTag(PinTags.BUSY).assertIsDisplayed()
+        compose.runOnIdle { vm.pinMayNotBeSaved() }
+        compose.onNodeWithText(string(R.string.pin_may_not_be_saved)).assertIsDisplayed()
+        compose.onNodeWithTag(PinTags.RETRY).assertDoesNotExist()
+        compose.onNodeWithTag(PinTags.LATER).assertDoesNotExist()
+        compose.onNodeWithTag(PinPadTags.DOTS).assertDoesNotExist()
+        gated.open.complete(Unit)
+        compose.waitForIdle()
+        compose.onNodeWithText(string(R.string.pin_may_not_be_saved)).assertIsDisplayed()
+        assertEquals("Settings is not told that the PIN was changed", null, SettingsNotice.take())
+        compose.onNodeWithTag(PinTags.OK).performClick()
+        compose.waitUntil(5_000) { "back" in rig.nav.steps }
+    }
+
     @Test
     fun changePinTakesTheCurrentPinFirst() {
         rig.lock.status.value = rig.lock.status.value.copy(pin = PinStatus.On)

@@ -9,6 +9,7 @@ import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.test.platform.app.InstrumentationRegistry
+import io.github.dilshodbekmx.passwordvault.core.lock.flow.MasterProof
 import io.github.dilshodbekmx.passwordvault.core.model.Vault
 import io.github.dilshodbekmx.passwordvault.fake.FakeAppSettings
 import io.github.dilshodbekmx.passwordvault.fake.FakeDocumentIo
@@ -16,7 +17,9 @@ import io.github.dilshodbekmx.passwordvault.fake.FakeLockManager
 import io.github.dilshodbekmx.passwordvault.fake.FakeSecretClipboard
 import io.github.dilshodbekmx.passwordvault.fake.FakeSession
 import io.github.dilshodbekmx.passwordvault.fake.FakeVaultRepository
+import io.github.dilshodbekmx.passwordvault.lock.LockManager
 import io.github.dilshodbekmx.passwordvault.lock.LockUiState
+import io.github.dilshodbekmx.passwordvault.lock.PinChange
 import io.github.dilshodbekmx.passwordvault.nav.Navigator
 import io.github.dilshodbekmx.passwordvault.nav.Route
 import io.github.dilshodbekmx.passwordvault.platform.AndroidClock
@@ -27,6 +30,7 @@ import io.github.dilshodbekmx.passwordvault.ui.setup.PinSetupViewModel
 import io.github.dilshodbekmx.passwordvault.ui.theme.PasswordVaultTheme
 import io.github.dilshodbekmx.passwordvault.window.WindowPolicy
 import java.util.concurrent.CopyOnWriteArrayList
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -53,12 +57,32 @@ class SettingsRig(withProof: Boolean = true) {
 
     fun settingsViewModel() = SettingsViewModel(lock, settings, session, repository, files, AndroidClock, AppDispatchers.Default, scope)
 
-    fun pinSetupViewModel(canAuthenticate: Int = 0) =
+    fun pinSetupViewModel(canAuthenticate: Int = 0, lock: LockManager = this.lock) =
         PinSetupViewModel(lock, settings, AndroidClock, { canAuthenticate }, AppDispatchers.Default, scope)
 
-    fun changePinViewModel() = ChangePinViewModel(lock, AndroidClock, scope)
+    fun changePinViewModel(lock: LockManager = this.lock) = ChangePinViewModel(lock, AndroidClock, scope)
 
     fun close() = scope.cancel()
+}
+
+/**
+ * A [LockManager] that is [fake], but whose `setPin` and `changePin` answer only once [open] is
+ * completed: until then the screens stay on "Saving…", as they do while the real lock writes its
+ * record, so a test can look at that moment and give the answer of build-plan.md §12, decision 4
+ * (`pinMayNotBeSaved`), which the lock itself cannot give before the merge of round R3.
+ */
+class GatedLock(val fake: FakeLockManager) : LockManager by fake {
+    val open = CompletableDeferred<Unit>()
+
+    override suspend fun setPin(pin: ByteArray, proof: MasterProof): Boolean {
+        open.await()
+        return fake.setPin(pin, proof)
+    }
+
+    override suspend fun changePin(current: ByteArray, new: ByteArray): PinChange {
+        open.await()
+        return fake.changePin(current, new)
+    }
 }
 
 /** A [Navigator] that records each move the screens asked for, as text ("go ConfirmPin", "back"). */

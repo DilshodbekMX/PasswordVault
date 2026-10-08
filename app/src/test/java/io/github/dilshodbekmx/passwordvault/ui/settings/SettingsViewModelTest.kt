@@ -256,6 +256,22 @@ class SettingsViewModelTest {
         )
     }
 
+    /**
+     * build-plan.md §12, decision 4. `FingerprintOnResult` has no such value until the merge of round R3
+     * adds it, so the test gives the answer to the view model itself.
+     */
+    @Test
+    fun fingerprintThatMayNotBeOnIsSaidAndTheSwitchIsFreeAgain() = runTest {
+        val vm = model()
+        vm.fingerprintMayNotBeOn()
+        runCurrent()
+        assertEquals(UiText.of(R.string.pin_fingerprint_may_not_be_on), vm.ui.value.message)
+        assertFalse(vm.ui.value.fingerprintBusy)
+        vm.messageShown()
+        runCurrent()
+        assertNull(vm.ui.value.message)
+    }
+
     // ---- the App lock rows -------------------------------------------------------------------------------
 
     /** lock.md §9.4, the Settings column, through `LockStatus.fingerprint` (architecture.md §3.5). */

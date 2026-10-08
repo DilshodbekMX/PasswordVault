@@ -18,6 +18,7 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
@@ -321,7 +322,8 @@ private fun dimmed() = MaterialTheme.colorScheme.onSurface.copy(alpha = DISABLED
 
 /**
  * Shows [message] once in [snackbar], then reports it ([onShown]); the snackbar runs in a scope of
- * its own, so that reporting it does not cut it short.
+ * its own, so that reporting it does not cut it short. A message of more than one sentence stays
+ * longer (10 seconds instead of 4), so that it can be read to the end.
  */
 @Composable
 internal fun SettingsMessage(message: UiText?, snackbar: SnackbarHostState, onShown: () -> Unit) {
@@ -329,7 +331,8 @@ internal fun SettingsMessage(message: UiText?, snackbar: SnackbarHostState, onSh
     val text = message?.resolve()
     LaunchedEffect(message) {
         if (text == null) return@LaunchedEffect
-        scope.launch { snackbar.showSnackbar(text) }
+        val duration = if (text.length > LONG_MESSAGE) SnackbarDuration.Long else SnackbarDuration.Short
+        scope.launch { snackbar.showSnackbar(text, duration = duration) }
         onShown()
     }
 }
@@ -379,3 +382,6 @@ object SettingsTags {
 }
 
 private const val DISABLED_ALPHA = 0.38f
+
+/** A message longer than this many characters is more than one short sentence. */
+private const val LONG_MESSAGE = 70

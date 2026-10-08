@@ -13,6 +13,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import io.github.dilshodbekmx.passwordvault.R
+import kotlin.math.roundToInt
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
@@ -110,11 +111,14 @@ class LauncherIconTest {
         assertEquals(BLUE, largest(R.mipmap.ic_launcher).getPixel(30, 30))
         assertEquals(0, Color.alpha(largest(R.mipmap.ic_launcher_round).getPixel(30, 30)))
 
-        // And the app's icon on this phone is one of them.
+        // And the app's icon on this phone is one of them, brought to the size of 48 dp on its screen
+        // (126 pixels at 420 dpi, from the bitmap of 144).
         val icon = appIcon()
         assertTrue("the app's icon is ${icon.javaClass.name}", icon is BitmapDrawable)
         val bitmap = (icon as BitmapDrawable).bitmap
-        assertTrue("its size ${bitmap.width} is one of ${BITMAPS.values}", bitmap.width in BITMAPS.values && bitmap.width == bitmap.height)
+        val onThisScreen = (48f * context.resources.displayMetrics.densityDpi / DisplayMetrics.DENSITY_MEDIUM).roundToInt()
+        assertEquals("the app's icon: width", onThisScreen, bitmap.width)
+        assertEquals("the app's icon: height", onThisScreen, bitmap.height)
         assertEquals(Color.WHITE, bitmap.getPixel(bitmap.width / 2, (bitmap.height * 0.30f).toInt()))
         assertEquals(BLUE, bitmap.getPixel(bitmap.width / 2, (bitmap.height * 0.47f).toInt()))
     }

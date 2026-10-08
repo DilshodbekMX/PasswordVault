@@ -87,6 +87,11 @@ import kotlinx.coroutines.launch
  * A fingerprint never stands in for either. The digits are held as bytes and zeroed as soon as they
  * are not needed; a proof asked for here is dropped when the route ends. The lock's calls run in
  * [work], the app's scope, so that leaving the screen cannot cut the lock's records in half.
+ *
+ * When the lock cannot say whether the new PIN was saved (lock.md F6 step 8; build-plan.md §12,
+ * decision 4), the route promises nothing: [pinMayNotBeSaved] says what to try next time.
+ * `LockManager` cannot give that answer yet (`setPin` is a Boolean, `PinChange` has no such value);
+ * the merge of round R3 adds it, and its branches in [save] and [afterSave] call that function.
  */
 class ChangePinViewModel(
     private val lock: LockManager,
@@ -122,6 +127,9 @@ class ChangePinViewModel(
 
         /** The new PIN could not be saved: "Try again" or "Later". */
         NOT_SAVED,
+
+        /** The lock cannot say whether the new PIN was saved: what to try next time, and "OK". */
+        MAY_NOT_BE_SAVED,
 
         /** This phone cannot keep a PIN key in secure hardware (lock.md F18). */
         UNAVAILABLE,
@@ -248,6 +256,25 @@ class ChangePinViewModel(
     /** "Try again" after the new PIN could not be saved. */
     fun retry() {
         if (state.value.stage == Stage.NOT_SAVED && newPin != null) save()
+    }
+
+    /**
+     * The lock cannot say whether the new PIN was saved (lock.md F6 step 8; build-plan.md §12,
+     * decision 4): the route says "The new PIN may not have been saved. Next time try the new PIN
+     * first. If it is not accepted, use the old PIN or your master password." (without the old PIN
+     * where none works), and "OK" closes it. Nothing typed or proved stays, and nothing is tried
+     * again here: the lock already works from the record it read back, so the PIN typed as the
+     * current one may no longer be it.
+     *
+     * Called for the answer of `LockManager.setPin` or `changePin` that says so, once they have one
+     * (see the class); until then only the tests call it, while a save is running.
+     */
+    internal fun pinMayNotBeSaved() {
+        val now = state.value
+        if (now.stage != Stage.SAVING) return
+        val text = if (now.mode == Mode.CHANGE && !now.setAfterLimit) R.string.pin_may_not_be_saved else R.string.pin_may_not_be_saved_first
+        dropAll()
+        state.update { it.copy(stage = Stage.MAY_NOT_BE_SAVED, entered = 0, line = PinLine(UiText.of(text))) }
     }
 
     /** "Later", or Back: the route closes; nothing changes. */
@@ -422,7 +449,8 @@ data class ChangePinUi(
 /**
  * "Change PIN" or "Set a PIN" (ux.md §5.18, §5.6; lock.md F6): a top bar with Back and the title,
  * then the step: the current PIN, the master password, the new PIN, the new PIN again, "Saving…",
- * or what the lock said (the limit, a check that cannot be made now, a PIN that could not be saved).
+ * or what the lock said (the limit, a check that cannot be made now, a PIN that could not be saved,
+ * a PIN that may not have been saved).
  */
 @OptIn(ExperimentalMaterial3Api::class) // TopAppBar's signature names TopAppBarScrollBehavior (ux.md §10)
 @Composable
@@ -525,6 +553,12 @@ private fun ChangePinStep(vm: ChangePinViewModel, ui: ChangePinUi) {
                 Text(stringResource(R.string.common_try_again))
             }
             LaterButton(vm)
+        }
+        ChangePinViewModel.Stage.MAY_NOT_BE_SAVED -> MessagePage(title = stringResource(R.string.pin_confirm_title)) {
+            ui.line?.let { StatusLine(it) }
+            Button(onClick = vm::leave, modifier = Modifier.fillMaxWidth().testTag(PinTags.OK)) {
+                Text(stringResource(R.string.common_ok))
+            }
         }
         ChangePinViewModel.Stage.UNAVAILABLE -> MessagePage(title = stringResource(R.string.settings_set_pin)) {
             AlertText(stringResource(R.string.settings_no_secure_hardware))

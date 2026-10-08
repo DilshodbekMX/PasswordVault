@@ -415,6 +415,7 @@ object PinTags {
     const val DONE = "pv.pin.done"
     const val NOT_NOW = "pv.pin.notNow"
     const val RETRY = "pv.pin.retry"
+    const val OK = "pv.pin.ok"
     const val USE_MASTER_PASSWORD = "pv.pin.useMasterPassword"
     const val TYPE_MASTER_PASSWORD = "pv.pin.typeMasterPassword"
     const val LATER = "pv.pin.later"

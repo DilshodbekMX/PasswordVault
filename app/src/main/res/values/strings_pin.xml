@@ -58,6 +58,12 @@
     <string name="pin_not_saved_new">The PIN can’t be set up right now. Try again later.</string>
     <!-- Saving a new PIN failed in "Change PIN"; the old PIN still opens the app (lock.md F6 step 8). -->
     <string name="pin_not_saved_change">Couldn’t save the new PIN. Your old PIN still works.</string>
+    <!-- Saving a new PIN in place of one that works ended in doubt: the phone reported an error while
+         the PIN was written, and the app cannot tell which PIN the phone kept (lock.md F6 step 8;
+         build-plan.md §12, decision 4). Nothing is promised: this says what to try next time. -->
+    <string name="pin_may_not_be_saved">The new PIN may not have been saved. Next time try the new PIN first. If it is not accepted, use the old PIN or your master password.</string>
+    <!-- The same where no PIN worked before (setup, "Set a PIN"), so there is no old PIN to use. -->
+    <string name="pin_may_not_be_saved_first">The PIN may not have been saved. Next time try it first. If it is not accepted, use your master password.</string>
 
     <!-- The PIN pad's dots and keys are read by TalkBack from strings_common.xml (common_pin_…). -->
 
@@ -126,6 +132,10 @@
     <string name="pin_fingerprint_turn_on">Turn on fingerprint unlock</string>
     <!-- Turning fingerprint unlock on failed during setup (ux.md §5.7); setup goes on. -->
     <string name="pin_fingerprint_failed">Fingerprint unlock could not be turned on. You can try again later in Settings.</string>
+    <!-- Turning fingerprint unlock on ended in doubt: the phone reported an error while it was
+         written, and the app cannot tell whether it is on (lock.md F9 step 9; build-plan.md §12,
+         decision 4). Shown on the fingerprint offer and in Settings. -->
+    <string name="pin_fingerprint_may_not_be_on">Fingerprint unlock may not have been turned on. If your fingerprint is not accepted, turn it on again in Settings.</string>
     <!-- No fingerprint is saved on the phone, so fingerprint unlock cannot be turned on (lock.md F9 step 4). -->
     <string name="pin_fingerprint_add_first">Add a fingerprint in your phone’s settings first.</string>
     <!-- The phone cannot keep the fingerprint key in its secure hardware (ux.md §5.7). -->

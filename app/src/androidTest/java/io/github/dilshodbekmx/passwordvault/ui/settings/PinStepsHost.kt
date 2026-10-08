@@ -53,6 +53,8 @@ fun PinStepsHost(vm: PinSetupViewModel, nav: Navigator) {
             onClear = { vm.clearEntry(Route.ConfirmPin) },
             onRetry = vm::retrySave,
             onNotNow = vm::skipAfterFailure,
+            saveUnsure = ui.saveUnsure,
+            onOk = vm::pinUnsureOk,
         )
         PinSetupStage.FINGERPRINT -> FingerprintOfferScreen(busy = ui.fingerprintBusy, line = ui.fingerprintLine, onUse = vm::useFingerprint, onNotNow = vm::fingerprintNotNow)
         PinSetupStage.BACKUPS, PinSetupStage.DONE ->

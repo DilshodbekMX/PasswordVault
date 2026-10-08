@@ -216,6 +216,19 @@ class SettingsViewModel(
         fingerprintPassword.clear()
     }
 
+    /**
+     * The lock cannot say whether fingerprint unlock was turned on (lock.md F9 step 9; build-plan.md
+     * §12, decision 4): "Fingerprint unlock may not have been turned on. If your fingerprint is not
+     * accepted, turn it on again in Settings." The switch itself follows the lock's status.
+     *
+     * Called for the answer of `LockManager.fingerprintOn` that says so, once `FingerprintOnResult`
+     * has one (the merge of round R3 adds it; its branch in [turnOnFingerprint] calls this). Until
+     * then only the tests call it.
+     */
+    internal fun fingerprintMayNotBeOn() {
+        local.update { it.copy(fingerprintBusy = false, message = UiText.of(R.string.pin_fingerprint_may_not_be_on)) }
+    }
+
     private fun turnOnFingerprint(proof: MasterProof) {
         val turnOn = work.async {
             try {

@@ -21,6 +21,7 @@ import io.github.dilshodbekmx.passwordvault.nav.Route
 import io.github.dilshodbekmx.passwordvault.ui.setup.FingerprintOfferTags
 import java.util.Locale
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -133,6 +134,7 @@ class SettingsPseudoLocaleTest {
         check("the fingerprint offer")
         rig.lock.fingerprintResults += FingerprintOnResult.Failed
         step("the fingerprint offer after a failure") { gallery.pinSteps.useFingerprint() }
+        step("the fingerprint offer when it may not have been turned on") { gallery.pinSteps.fingerprintMayNotBeOn() }
         step("Make backups") { gallery.pinSteps.fingerprintNotNow() }
         step("the master password before a PIN") { gallery.shown = SettingsGallery.Screen.PIN_STEPS_NO_PROOF }
 
@@ -147,6 +149,32 @@ class SettingsPseudoLocaleTest {
         rig.lock.pinChanges += PinChange.Limit
         step("Change PIN: the limit") { gallery.typeChange("368014") }
         step("Set a PIN: the master password") { gallery.shown = SettingsGallery.Screen.SET_PIN }
+
+        // A save the lock cannot vouch for (build-plan.md §12, decision 4): the lock of these two does
+        // not answer, so the screens are on "Saving…" when the walk tells them.
+        step("the PIN steps over a lock that does not answer yet") { gallery.shown = SettingsGallery.Screen.PIN_STEPS_UNSURE }
+        compose.runOnUiThread { gallery.typeStepsUnsure("582913", Route.CreatePin) }
+        compose.waitForIdle()
+        compose.runOnUiThread { gallery.typeStepsUnsure("582913", Route.ConfirmPin) }
+        compose.waitForIdle()
+        step("a PIN that may not have been saved") { gallery.pinStepsUnsure.pinMayNotBeSaved() }
+        assertTrue(gallery.pinStepsUnsure.ui.value.saveUnsure)
+        step("Change PIN over a lock that does not answer yet") { gallery.shown = SettingsGallery.Screen.CHANGE_PIN_UNSURE }
+        compose.runOnUiThread {
+            gallery.typeChangeUnsure("582913")
+            gallery.typeChangeUnsure("905127")
+            gallery.typeChangeUnsure("905127")
+        }
+        compose.waitForIdle()
+        step("Change PIN: a PIN that may not have been saved") { gallery.changePinUnsure.pinMayNotBeSaved() }
+        assertEquals(ChangePinViewModel.Stage.MAY_NOT_BE_SAVED, gallery.changePinUnsure.ui.value.stage)
+
+        // Settings says the same of fingerprint unlock in a message.
+        step("Settings: fingerprint unlock may not have been turned on") {
+            gallery.shown = SettingsGallery.Screen.SETTINGS
+            gallery.settings.fingerprintMayNotBeOn()
+        }
+        assertTrue(compose.shownTexts().any { it == pseudo.getString(R.string.pin_fingerprint_may_not_be_on) })
     }
 
     /** Does [action] on the main thread, waits, and checks the screen as [what]. */

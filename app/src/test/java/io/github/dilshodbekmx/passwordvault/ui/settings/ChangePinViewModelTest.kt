@@ -328,6 +328,54 @@ class ChangePinViewModelTest {
         assertTrue(ask.enabled)
     }
 
+    /**
+     * build-plan.md §12, decision 4. `LockManager.changePin` and `setPin` cannot give that answer until
+     * the merge of round R3 adds it, so the test gives it to the view model itself, at the moment the
+     * lock's answer is awaited.
+     */
+    @Test
+    fun aPinThatMayNotBeSavedPromisesNothingAndOffersOnlyOk() = runTest {
+        val lock = lockWith(PinStatus.On)
+        val vm = model(lock)
+        vm.pinMayNotBeSaved()
+        assertEquals("nothing is being saved", Stage.CURRENT, vm.ui.value.stage)
+        vm.type(Pins.ALLOWED_3)
+        vm.type(Pins.ALLOWED_2)
+        vm.type(Pins.ALLOWED_2)
+        assertEquals(Stage.SAVING, vm.ui.value.stage)
+        vm.pinMayNotBeSaved()
+        assertEquals(Stage.MAY_NOT_BE_SAVED, vm.ui.value.stage)
+        assertEquals(PinLine(UiText.of(R.string.pin_may_not_be_saved)), vm.ui.value.line)
+        // The lock's own answer, which comes later, changes nothing of it, and Settings is told nothing.
+        advanceUntilIdle()
+        assertEquals(Stage.MAY_NOT_BE_SAVED, vm.ui.value.stage)
+        assertNull("no \"Your PIN was changed.\"", SettingsNotice.take())
+        // Nothing is tried again: the PIN typed as the current one may no longer be it.
+        vm.retry()
+        vm.type(Pins.ALLOWED_3)
+        advanceUntilIdle()
+        assertEquals(Stage.MAY_NOT_BE_SAVED, vm.ui.value.stage)
+        assertEquals("the lock was asked once", 1, lock.changedPins.size)
+        // "OK" closes the route.
+        vm.leave()
+        assertTrue(vm.ui.value.leave)
+    }
+
+    @Test
+    fun aFirstPinThatMayNotBeSavedNamesNoOldPin() = runTest {
+        val vm = model(lockWith(PinStatus.NotSet))
+        typeMasterPassword(vm)
+        vm.type(Pins.ALLOWED)
+        vm.type(Pins.ALLOWED)
+        assertEquals(Stage.SAVING, vm.ui.value.stage)
+        vm.pinMayNotBeSaved()
+        assertEquals(Stage.MAY_NOT_BE_SAVED, vm.ui.value.stage)
+        assertEquals(PinLine(UiText.of(R.string.pin_may_not_be_saved_first)), vm.ui.value.line)
+        advanceUntilIdle()
+        assertEquals(Stage.MAY_NOT_BE_SAVED, vm.ui.value.stage)
+        assertNull(SettingsNotice.take())
+    }
+
     @Test
     fun aPinThatCannotBeSavedOffersTryAgain() = runTest {
         val lock = lockWith(PinStatus.On)

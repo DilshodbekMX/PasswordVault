@@ -26,7 +26,7 @@ import io.github.dilshodbekmx.passwordvault.ui.setup.PinSetupViewModel
  */
 class SettingsGallery(val rig: SettingsRig) {
     /** The screens. */
-    enum class Screen { SETTINGS, APP_LOCK, THEME, PIN_STEPS, PIN_STEPS_NO_PROOF, CHANGE_PIN, SET_PIN }
+    enum class Screen { SETTINGS, APP_LOCK, THEME, PIN_STEPS, PIN_STEPS_NO_PROOF, CHANGE_PIN, SET_PIN, PIN_STEPS_UNSURE, CHANGE_PIN_UNSURE }
 
     var shown by mutableStateOf(Screen.SETTINGS)
     var theme by mutableStateOf(ThemeChoice.LIGHT)
@@ -44,6 +44,15 @@ class SettingsGallery(val rig: SettingsRig) {
     /** "Set a PIN": no PIN works. */
     val setPin: ChangePinViewModel
 
+    /** A lock that leaves the screens on "Saving…" (build-plan.md §12, decision 4; [GatedLock]). */
+    val gated = GatedLock(rig.lock)
+
+    /** The PIN steps over [gated]: the walk tells them that the PIN may not have been saved. */
+    val pinStepsUnsure: PinSetupViewModel = rig.pinSetupViewModel(canAuthenticate = 0, lock = gated)
+
+    /** "Change PIN" over [gated], for the same. */
+    val changePinUnsure: ChangePinViewModel
+
     init {
         val unlocked = rig.lock.state.value
         rig.lock.state.value = LockUiState.Unlocked(emptyList(), null)
@@ -52,6 +61,7 @@ class SettingsGallery(val rig: SettingsRig) {
         rig.lock.state.value = unlocked
         rig.lock.status.value = rig.lock.status.value.copy(pin = PinStatus.On)
         changePin = rig.changePinViewModel()
+        changePinUnsure = rig.changePinViewModel(lock = gated)
         rig.lock.status.value = rig.lock.status.value.copy(pin = PinStatus.NotSet)
         setPin = rig.changePinViewModel()
     }
@@ -61,6 +71,12 @@ class SettingsGallery(val rig: SettingsRig) {
 
     /** Types [pin] on the pad of "Change PIN". */
     fun typeChange(pin: String) = pin.forEach { changePin.digit(it - '0') }
+
+    /** Types [pin] on the PIN steps' pad of [on], over the lock that does not answer yet. */
+    fun typeStepsUnsure(pin: String, on: Route) = pin.forEach { pinStepsUnsure.digit(it - '0', on) }
+
+    /** Types [pin] on the pad of "Change PIN", over the lock that does not answer yet. */
+    fun typeChangeUnsure(pin: String) = pin.forEach { changePinUnsure.digit(it - '0') }
 }
 
 /** The gallery's screen in its style and theme. */
@@ -86,6 +102,8 @@ fun GalleryHost(gallery: SettingsGallery) {
             SettingsGallery.Screen.PIN_STEPS_NO_PROOF -> PinStepsHost(gallery.pinStepsNoProof, gallery.rig.nav)
             SettingsGallery.Screen.CHANGE_PIN -> ChangePinScreen(gallery.changePin, gallery.rig.nav)
             SettingsGallery.Screen.SET_PIN -> ChangePinScreen(gallery.setPin, gallery.rig.nav)
+            SettingsGallery.Screen.PIN_STEPS_UNSURE -> PinStepsHost(gallery.pinStepsUnsure, gallery.rig.nav)
+            SettingsGallery.Screen.CHANGE_PIN_UNSURE -> ChangePinScreen(gallery.changePinUnsure, gallery.rig.nav)
         }
     }
 }
