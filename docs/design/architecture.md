@@ -1322,7 +1322,7 @@ An emulator cannot settle these. Each item names what it decides.
 | Search keys and ranking | the moved tests of `prototypes/search` | `search` |
 | The import fixtures: the Chrome CSV and the Bitwarden JSON mock of formats.md §8.5, the Uzbek Cyrillic headers of formats-review P6 | `core/src/test/resources/formats/` (`SOURCES.md` names each origin and licence) | `formats` |
 | The fields-block vectors of D-10a | formats.md §4.4 (the table of vectors) | `formats` |
-| The review's attack inputs | formats-review.md, each finding's trigger (the files themselves were not rescued; `prototypes/formats/attack/` can write them again) | `formats` (the importer's tests, P 3.15) |
+| The review's attack inputs | formats-review.md, each finding's trigger (built from each finding's trigger by `core/src/test/java/…/core/formats/importer/ImportReviewFindingsTest.kt`; package 3.15 removed `prototypes/formats/attack/`, which is in the history at `wave-3B-merged`) | `formats` (the importer's tests, P 3.15) |
 
 After the first release, a change to any of the first five rows is a new format version, never an edit. The prototype's sample exports in `tools/validate/samples/prototype/` are not frozen vectors: they predate D-10a and formats-review P9, and serve the checks of `tools/validate/`. The CSV, JSON and Excel files of 1.0 are written by the writers' test into `core/build/samples/` and checked there with `tools/validate/run.sh` (P 3.11).
 

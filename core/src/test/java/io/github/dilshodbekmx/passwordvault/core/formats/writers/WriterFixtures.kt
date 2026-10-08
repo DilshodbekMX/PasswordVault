@@ -14,8 +14,8 @@ import java.util.TimeZone
 
 /**
  * What the tests of build-plan package 3.11 share: times, ids, the awkward entries of the export
- * prototype (`prototypes/formats/test/FormatsTest.kt`) in version 1's model, and a reading of our own
- * CSV back into entries.
+ * prototype (`prototypes/formats/test/FormatsTest.kt`, removed by build-plan 3.15 and in the history
+ * at `wave-3B-merged`) in version 1's model, and a reading of our own CSV back into entries.
  *
  * Every helper here writes numbers with ASCII digits whatever the default locale (formats-review
  * P18: the prototype's `"%04d".format` and `String.format` without a locale wrote Persian digits

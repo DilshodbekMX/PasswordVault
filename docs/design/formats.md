@@ -6,7 +6,7 @@ Date 2026-10-06. Status: proposal for review. Scope: every file the app writes o
 
 How I know things: **[S]** source code read today at HEAD (path given); **[P]** primary document fetched today; **[X]** my experiment today on this machine; **[I]** inference or design judgement; **[M]** from memory, not re-checked.
 
-Prototype (Kotlin, JVM, no Android types; 1,069 lines without blanks and comments) committed in `prototypes/formats/`: the code in `src/pv/formats/`, its test in `test/FormatsTest.kt`, `build.sh`. Build: Android Studio's kotlinc 2.3.20 and kotlinx-serialization-json 1.11.0 from the Gradle cache. The outside checks of the plain files are now `tools/validate/` (`run.sh`, with the fix of FR P18); those of the locked workbook stay in `prototypes/formats/validate/` with `OfficeCrypto.kt` (D-16). The prototype predates this revision: where they differ, this text is the specification.
+The prototype (Kotlin, JVM, no Android types; 1,069 lines without blanks and comments) was committed in `prototypes/formats/` (the code in `src/pv/formats/`, its test in `test/FormatsTest.kt`, `build.sh`); build-plan package 3.15 removed all of it except `OfficeCrypto.kt` and the checks of the locked workbook (D-16), and the rest is in the history at the tag `wave-3B-merged`. Build: Android Studio's kotlinc 2.3.20 and kotlinx-serialization-json 1.11.0 from the Gradle cache. The outside checks of the plain files are now `tools/validate/` (`run.sh`, with the fix of FR P18); those of the locked workbook stay in `prototypes/formats/validate/` with `OfficeCrypto.kt` (D-16). The prototype predates this revision: where they differ, this text is the specification.
 
 ## 0. Decisions in brief
 
@@ -240,7 +240,7 @@ Lost: previous passwords, `checkIgnored`, ids, the hidden flag's protection (val
 
 ## 7. Excel with a password (ECMA-376 Agile Encryption)
 
-**Not in version 1** (architecture.md D-16). Nothing here could run Microsoft Excel, and the file would be a second password for the user to keep. The code and its checks stay in `prototypes/formats/` (`OfficeCrypto.kt`, `validate/check_protected.py`, `validate/lo_read.py`, `validate/PoiCheck.java`); the prototype's locked samples are in `tools/validate/samples/prototype/`. It is the first candidate for 1.1, after the user has opened a locked and a plain sample in their own Excel. This section is kept for that.
+**Not in version 1** (architecture.md D-16). Nothing here could run Microsoft Excel, and the file would be a second password for the user to keep. The code and its checks stay in `prototypes/formats/` (`OfficeCrypto.kt`, `validate/check_protected.py`, `validate/lo_read.py`, `validate/PoiCheck.java`, and formats-review's own `validate/agile_check.py` and `validate/uno_open.py`; `README.md` there lists them); the prototype's locked samples are in `tools/validate/samples/prototype/`. It is the first candidate for 1.1, after the user has opened a locked and a plain sample in their own Excel. This section is kept for that.
 
 ### 7.1 What it is
 What Excel's "Encrypt with Password" writes: the finished `.xlsx` bytes encrypted and stored in a Compound File Binary container. Reference: the encrypted workbook in msoffcrypto-tool's tests (`tests/inputs/example_password.xlsx`), whose container carries times on storages only, the pattern of Windows structured storage, so very likely saved by Excel [I]. Its parameters, which this design copies [X]: SHA-512, spin count 100,000, AES-256-CBC, 16-byte salts.
