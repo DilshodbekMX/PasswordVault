@@ -53,6 +53,11 @@ import kotlinx.coroutines.withContext
  * a blank name from the first website's host or with `EditTexts.untitled`, and delete this form's
  * draft in the same save. Nothing compares the password with the master password (D-9b).
  *
+ * **Where a new account starts.** Empty, or with the name that the list's 'Add "gmal" as a new
+ * account' handed over in memory ([NewAccountName], taken once, when this ViewModel is made). That
+ * name is part of what the form started from, so a form with nothing else typed has no change: Back
+ * asks nothing and no draft is kept (ux.md §5.11).
+ *
  * **The draft** (ux.md §5.14, architecture.md §5.1, §5.5). While the form differs from what it
  * started from, every change is handed to the repository with `holdDraft` (a generated password
  * counts as a change); `AutoLock` writes it into the vault with `flushDraft` when the app is left or
@@ -117,6 +122,13 @@ class EditViewModel(
     private var lastFocus: FieldKey? = null
     private var progress: Job? = null
 
+    /**
+     * The name a new account starts with: what [NewAccountName] holds when this form is made, as the
+     * name field keeps it; empty for none, and always for an existing account. A lock drops it with
+     * the rest of the form. Before [init], whose first unlocked state may load the form at once.
+     */
+    private var startName: String = if (entryId == null) NewAccountName.take()?.let(::nameOf).orEmpty() else ""
+
     init {
         viewModelScope.launch { repository.state.collect(::onVault) }
         viewModelScope.launch { snapshotFlow { form.draft() }.collect { formChanged() } }
@@ -140,14 +152,14 @@ class EditViewModel(
         }
     }
 
-    /** Fills the form from [vault]: the entry (or nothing, for a new account), then this form's draft. */
+    /** Fills the form from [vault]: the entry (or a new account's start), then this form's draft. */
     private fun load(vault: Vault) {
         val entry = entryId?.let { id -> vault.entries.firstOrNull { it.id == id && it.deletedAt == null } }
         if (entryId != null && entry == null) {
             mutable.update { it.copy(phase = Phase.GONE) }
             return
         }
-        form.load(entry?.let(::formOf) ?: DraftEntry())
+        form.load(entry?.let(::formOf) ?: DraftEntry(title = startName))
         baseline = form.draft()
         var message: EditMessage? = null
         var dialog: EditDialog? = null
@@ -173,6 +185,7 @@ class EditViewModel(
         baseline = null
         oldDraft = null
         lastFocus = null
+        startName = ""
         generator.close()
         addField.clear()
         form.clear()
@@ -552,6 +565,20 @@ class EditViewModel(
             fields = entry.fields.map { CustomField(it.name, it.value, it.secret) },
             favourite = entry.favourite,
         )
+
+        /**
+         * What the name field keeps of [text] pasted into it while empty: the rules of
+         * [FieldInput.TITLE] (no control characters, at most 200 code points), then without white
+         * space at either end, as Save would store it.
+         */
+        internal fun nameOf(text: String): String {
+            val state = TextFieldState()
+            state.edit {
+                append(text)
+                with(FieldInput.TITLE) { transformInput() }
+            }
+            return state.text.toString().trim()
+        }
 
         private fun sharedMeter(password: CharSequence, inputs: List<String>): Strength = StrengthMeter.shared().measure(password, inputs)
     }

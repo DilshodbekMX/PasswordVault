@@ -31,6 +31,7 @@ import io.github.dilshodbekmx.passwordvault.lock.MpResult
 import io.github.dilshodbekmx.passwordvault.lock.PendingMasterPassword
 import io.github.dilshodbekmx.passwordvault.platform.AppDispatchers
 import io.github.dilshodbekmx.passwordvault.testing.FakeClock
+import io.github.dilshodbekmx.passwordvault.ui.edit.NewAccountName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -64,7 +65,8 @@ import java.util.Locale
  * collation's order and letter headers, favourites first; search answers the latest query only,
  * with the wrong-layout retry; at most two banners in priority order; copies go to
  * `SecretClipboard` with the right flag and no password ever reaches the state; the row's edits;
- * "Type it now"; and everything is dropped when the vault locks.
+ * "Type it now"; 'Add "gmal" as a new account' hands the query over in memory only; and everything
+ * is dropped when the vault locks.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class PasswordsViewModelTest {
@@ -636,6 +638,53 @@ class PasswordsViewModelTest {
         vm.closePractice()
         assertNull(vm.practice.value)
         assertEquals("", vm.practicePassword.text.toString())
+    }
+
+    // ---- Adding (ux.md §5.11; architecture.md §3.6) ----
+
+    @Test
+    fun addAsNewAccountHandsTheQueryThatFoundNothingToTheNewForm() = runTest(dispatcher) {
+        NewAccountName.clear()
+        try {
+            val rig = rig(entry("gm", "Gmail"), entry("tg", "Telegram"))
+            val vm = rig.viewModel()
+            advanceUntilIdle()
+            vm.type("gmal")
+            advanceUntilIdle()
+            val none = vm.body as ListBody.NoResults
+            assertEquals("gmal", none.typed)
+
+            // The button names what was typed; the form it opens (Route.Edit(), no id) takes it once.
+            vm.addAsNewAccount(none.typed)
+            assertEquals("gmal", NewAccountName.take())
+            assertNull(NewAccountName.take())
+            assertEquals("the query stays for the way back", "gmal", vm.query.text.toString())
+
+            // "Add" and the empty vault's "Add account" hand nothing over, not even an older offer.
+            vm.addAsNewAccount(none.typed)
+            vm.addAccount()
+            assertNull(NewAccountName.take())
+        } finally {
+            NewAccountName.clear()
+        }
+    }
+
+    @Test
+    fun aLockDropsANameHandedOverAndNotYetTaken() = runTest(dispatcher) {
+        NewAccountName.clear()
+        try {
+            val rig = rig(entry("gm", "Gmail"))
+            val vm = rig.viewModel()
+            advanceUntilIdle()
+            vm.type("gmal")
+            advanceUntilIdle()
+            vm.addAsNewAccount((vm.body as ListBody.NoResults).typed)
+            rig.repository.close()
+            advanceUntilIdle()
+            assertNull("nothing typed waits in memory while locked", NewAccountName.take())
+        } finally {
+            NewAccountName.clear()
+        }
     }
 
     // ---- A lock (architecture.md §5.5 step 5) ----

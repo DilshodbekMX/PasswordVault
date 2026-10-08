@@ -228,7 +228,10 @@ fun PasswordsScreen(viewModel: PasswordsViewModel, nav: Navigator) {
                         contentDescription = if (addExpanded) null else stringResource(R.string.list_add_account_description),
                     )
                 },
-                onClick = { nav.go(Route.Edit()) },
+                onClick = {
+                    viewModel.addAccount()
+                    nav.go(Route.Edit())
+                },
                 expanded = addExpanded,
                 modifier = Modifier.testTag(ListTags.ADD),
             )
@@ -259,7 +262,14 @@ fun PasswordsScreen(viewModel: PasswordsViewModel, nav: Navigator) {
                 rowActions = actions,
                 bannerActions = banners,
                 onShowAllFavourites = viewModel::showAllFavourites,
-                onAdd = { nav.go(Route.Edit()) },
+                onAdd = {
+                    viewModel.addAccount()
+                    nav.go(Route.Edit())
+                },
+                onAddAsNew = { typed ->
+                    viewModel.addAsNewAccount(typed)
+                    nav.go(Route.Edit())
+                },
                 onImport = { nav.go(Route.Import()) },
                 onRecentlyDeleted = { nav.go(Route.RecentlyDeleted) },
                 modifier = Modifier.nestedScroll(scrollWatch),
@@ -289,6 +299,7 @@ private fun ListContent(
     bannerActions: BannerActions,
     onShowAllFavourites: () -> Unit,
     onAdd: () -> Unit,
+    onAddAsNew: (typed: String) -> Unit,
     onImport: () -> Unit,
     onRecentlyDeleted: () -> Unit,
     modifier: Modifier = Modifier,
@@ -328,7 +339,7 @@ private fun ListContent(
             ListBody.Empty -> item(key = "empty") { EmptyVault(onAdd, onImport) }
             is ListBody.Browse -> browse(body, copiedKey, rowActions, onShowAllFavourites)
             is ListBody.Results -> results(body, copiedKey, rowActions)
-            is ListBody.NoResults -> item(key = "none") { NoResults(body.typed, onAdd) }
+            is ListBody.NoResults -> item(key = "none") { NoResults(body.typed, onAddAsNew) }
         }
         if (state.deletedCount > 0 && (body is ListBody.Browse || body is ListBody.Empty)) {
             item(key = "deleted", contentType = "deleted") { RecentlyDeletedRow(state.deletedCount, onRecentlyDeleted) }
@@ -449,16 +460,16 @@ private fun EmptyVault(onAdd: () -> Unit, onImport: () -> Unit) {
     }
 }
 
-/** 'No accounts match “gmal”.' and 'Add “gmal” as a new account' (ux.md §5.11). */
+/** 'No accounts match “gmal”.' and 'Add “gmal” as a new account', which opens the form with that name (ux.md §5.11). */
 @Composable
-private fun NoResults(typed: String, onAdd: () -> Unit) {
+private fun NoResults(typed: String, onAddAsNew: (typed: String) -> Unit) {
     Column(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 24.dp).testTag(ListTags.NO_RESULTS),
         verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(text = stringResource(R.string.list_no_results, typed), style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
-        TextButton(onClick = onAdd, modifier = Modifier.testTag(ListTags.ADD_AS_NEW)) {
+        TextButton(onClick = { onAddAsNew(typed) }, modifier = Modifier.testTag(ListTags.ADD_AS_NEW)) {
             Text(stringResource(R.string.list_add_as_new, typed), textAlign = TextAlign.Center)
         }
     }

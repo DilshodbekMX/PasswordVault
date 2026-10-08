@@ -630,6 +630,8 @@ class Data(val repository: VaultRepository, val port: VaultPort, val lists: List
 
 A screen that needs a new route asks for it as an interface request.
 
+**Values handed to the next screen.** A route key holds ids only and saved state no typed text (5.6), so a value one screen hands to the screen it opens waits in a one-time holder in memory, which the next screen takes when its ViewModel is made; a new process has none. `ui/edit/SavedNotice.kt`: Save of a new account marks its id, and the entry detail screen shows "Saved" (ux.md §5.14). `ui/edit/NewAccountName.kt`: the list's 'Add "gmal" as a new account' offers what was typed, and the new-account form takes it as its starting name, so a form with nothing else typed has no change to ask about and keeps no draft (ux.md §5.11); the list clears it for a plain "Add" and when the vault locks.
+
 **Debug commands.** `DebugCommandReceiver` (source sets `debug` and `staging`) looks up the command in `debug/DebugCommands.kt`, a list kept by the integrator. Each package that needs a command writes its handler in its own file under `debug/<area>/` and asks for the one line in the list.
 
 ### 3.7 Shapes declared with the contracts

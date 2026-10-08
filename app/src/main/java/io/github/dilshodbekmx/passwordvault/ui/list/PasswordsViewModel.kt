@@ -32,6 +32,7 @@ import io.github.dilshodbekmx.passwordvault.session.Session
 import io.github.dilshodbekmx.passwordvault.settings.AppSettings
 import io.github.dilshodbekmx.passwordvault.ui.common.clearSecret
 import io.github.dilshodbekmx.passwordvault.ui.common.readSecret
+import io.github.dilshodbekmx.passwordvault.ui.edit.NewAccountName
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -69,9 +70,11 @@ import kotlinx.coroutines.withContext
  * **No secret in the state.** [state] holds titles, usernames and hosts, never a password: a copy
  * reads the entry from the vault at the moment of the tap. The search text is held in [query], here
  * and never in saved state (architecture.md §5.6); the master password of "Type it now" in
- * [practicePassword], emptied after it is read. When the vault locks, this ViewModel drops what it
- * holds itself (architecture.md §5.5 step 5): the list, the query and the dialog, because after a
- * lock in the background its screen leaves only when the activity starts again.
+ * [practicePassword], emptied after it is read. 'Add "gmal" as a new account' hands the query to the
+ * new form through [NewAccountName], in memory only (architecture.md §3.6). When the vault locks,
+ * this ViewModel drops what it holds itself (architecture.md §5.5 step 5): the list, the query, a
+ * query handed over and not yet taken, and the dialog, because after a lock in the background its
+ * screen leaves only when the activity starts again.
  *
  * Every function is called on the main thread.
  *
@@ -158,6 +161,22 @@ class PasswordsViewModel(
     /** "Lock now" in the top bar: clears our clip, writes a dirty form's draft, locks (architecture.md §5.5). */
     fun lockNow() {
         session.lockNow()
+    }
+
+    // ---- Adding (ux.md §5.11); the screen then opens `Route.Edit()` ----
+
+    /** "Add" and the empty vault's "Add account": the new form starts empty. */
+    fun addAccount() {
+        NewAccountName.clear()
+    }
+
+    /**
+     * 'Add "gmal" as a new account' after a search that found nothing: [typed], the text the button
+     * names, is handed to the new form as its name, in memory only (never in the route key or saved
+     * state, architecture.md §3.6).
+     */
+    fun addAsNewAccount(typed: String) {
+        NewAccountName.offer(typed)
     }
 
     /** The wall-clock time now, for "saved 2 hours ago". */
@@ -370,9 +389,10 @@ class PasswordsViewModel(
     /** "Try again" for a save that failed for [problem]; none when the vault is too large, which another try cannot change. */
     private fun retryUnless(problem: SaveProblem, again: () -> Unit): (() -> Unit)? = if (problem == SaveProblem.TOO_LARGE) null else again
 
-    /** The vault locked: drop the query, the dialog and its field, and what was put off until the next unlock. */
+    /** The vault locked: drop the query (and one handed over), the dialog and its field, and what was put off until the next unlock. */
     private fun forgetAll() {
         query.clearText()
+        NewAccountName.clear()
         practicePassword.clearSecret()
         practiceState.value = null
         dismissed.value = emptySet()
