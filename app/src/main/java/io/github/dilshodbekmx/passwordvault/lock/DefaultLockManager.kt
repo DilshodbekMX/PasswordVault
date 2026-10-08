@@ -7,6 +7,7 @@ import io.github.dilshodbekmx.passwordvault.core.lock.flow.AsideOutcome
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.ChangeOutcome
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.CreateOutcome
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.FingerprintOnOutcome
+import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockCause
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockEngine
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockScreen
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockState
@@ -281,9 +282,13 @@ class DefaultLockManager(
         }
     }
 
+    /**
+     * The engine locks for [reason], passed on value for value as its [LockCause]: a screen-off lock
+     * also ends the visit of a lock screen that shows, so that a PIN, fingerprint or master-password
+     * check still running opens nothing (lock.md §6.3, decision 29; build-plan.md §12, decision 2).
+     */
     override suspend fun lock(reason: LockReason) {
-        // The merge of sub-wave 4A passes `reason` to the engine, value for value (build plan §12 item 8, decision 2).
-        engine.lock()
+        engine.lock(causeOf(reason))
     }
 
     override suspend fun submitMasterPassword(chars: CharArray, purpose: MpPurpose): MpResult =
@@ -693,6 +698,14 @@ class DefaultLockManager(
             MasterPasswordOutcome.NoMemory -> MpResult.NoMemory
             is MasterPasswordOutcome.OlderPassword -> MpResult.OlderPassword(outcome.changedAtMs, outcome.unfinishedChange)
             MasterPasswordOutcome.TooLate -> MpResult.TooLate
+        }
+
+        fun causeOf(reason: LockReason): LockCause = when (reason) {
+            LockReason.LEFT -> LockCause.LEFT
+            LockReason.SCREEN_OFF -> LockCause.SCREEN_OFF
+            LockReason.NO_TOUCH -> LockCause.NO_TOUCH
+            LockReason.EXTERNAL_TIMEOUT -> LockCause.EXTERNAL_TIMEOUT
+            LockReason.LOCK_NOW -> LockCause.LOCK_NOW
         }
 
         fun asideResultOf(outcome: AsideOutcome): AsideResult = when (outcome) {

@@ -255,6 +255,50 @@ class PadAndPinTest {
         assertTrue(rig.isUnlocked)
     }
 
+    // ---- the reason of a lock reaches the engine (build-plan.md §12, item 8 and decision 2) -------------
+
+    @Test
+    fun aScreenOffLockWhileThePadShows_endsItsVisit_andARightPinTypedJustBefore_opensNothing() = runTest {
+        val rig = LockRig(this)
+        lockedOnThePad(rig)
+        rig.press(LockRig.PIN)
+        assertTrue(rig.pad.opening)
+        val opens = rig.port.calls.count { it.startsWith("open ") }
+
+        // AutoLock tells the lock of a screen-off also while it is locked, in its own coroutine; ON_STOP comes about
+        // 700 ms later, or not at all. The PIN's check holds the lock's mutex until its charge has aged.
+        val screenOff = backgroundScope.asyncOn { rig.manager.lock(LockReason.SCREEN_OFF) }
+        rig.settle()
+        rig.advance(LockRig.CHARGE_AGE_MS)
+        assertTrue("the lock has run", screenOff.isCompleted)
+
+        assertEquals("the vault was never opened with the screen off (lock.md §6.3, decision 29)", opens, rig.port.calls.count { it.startsWith("open ") })
+        assertTrue("the app stays locked", rig.state is LockUiState.Locked)
+        assertNull("the vault is not open", rig.port.openVaultId)
+        assertEquals("the counts are as for any right PIN", 0, rig.pinRecord().guard.row)
+        assertEquals("a new visit of the same pad", 0, rig.pad.digits)
+        assertFalse(rig.pad.opening)
+        rig.typePin(LockRig.PIN)
+        assertTrue(rig.isUnlocked)
+    }
+
+    @Test
+    fun aLockForAnyOtherReasonWhileThePadShows_leavesItsVisitAsItWas() = runTest {
+        val rig = LockRig(this)
+        lockedOnThePad(rig)
+        rig.press("582")
+        val shown = rig.screen
+        for (reason in LockReason.entries - LockReason.SCREEN_OFF) {
+            rig.lock(reason)
+            assertEquals("$reason", shown, rig.screen)
+        }
+        assertTrue("the same charge", rig.pinRecord().guard.charged)
+        rig.press("913")
+        rig.advance(LockRig.CHARGE_AGE_MS)
+        assertTrue("the entry begun before goes on and opens the app", rig.isUnlocked)
+        assertEquals("one try, checked once", 1, rig.checks)
+    }
+
     @Test
     fun anEntryLeftUnfinishedWhenTheAppIsLeft_isGivenUp() = runTest {
         val rig = LockRig(this)
