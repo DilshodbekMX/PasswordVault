@@ -562,14 +562,14 @@ object Importer {
 
     /**
      * [text] as the shared website rule `EntryRules.normalizeUrl` stores it (formats.md §8.4), for a
-     * value of any length. The rule asks whether a text without a scheme looks like a host with a
-     * pattern whose time grows with the square of the text when white space follows many dots, and
-     * an imported value may be megabytes long. A text with white space in it never looks like a host
-     * (the pattern allows none), so the rule only trims it: that is done here, without asking.
+     * value of any length. A text with white space in it never looks like a host, so the rule only
+     * trims it: that is done here, without asking. (The rule's own check took time that grew with the
+     * square of such a text until iface-97; it is one pass now, with white space as Unicode's
+     * White_Space on every platform.)
      *
-     * White space here is every character that the pattern's `\s` means on the JVM or on Android,
-     * whose pattern engines differ (ASCII only on the one, Unicode on the other): so a website with,
-     * say, a no-break space in it is read the same way on both.
+     * White space here is `Char.isWhitespace` and U+0085: Unicode's White_Space, as the rule reads it,
+     * and U+001C to U+001F, which reach here only in a value whose control characters were not
+     * removed first (the host comparison of a second website), where they keep their old meaning.
      */
     private fun website(text: String): String {
         val url = text.trim()
