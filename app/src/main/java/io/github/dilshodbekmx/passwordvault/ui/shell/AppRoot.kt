@@ -12,8 +12,8 @@ import io.github.dilshodbekmx.passwordvault.window.WindowPolicy
  * (`NoPersonalizedLearning`, `ObscuredTouchNotice`), the clipboard bridge, the theme, then the
  * navigation.
  *
- * The theme follows `graph.settings.theme` (System, Light or Dark), as §3.6 writes the call; it is
- * the window kit's (build plan 2.8).
+ * The look follows `graph.settings.style` and `graph.settings.theme` (Settings › Appearance;
+ * docs/design/looks/README.md), as §3.6 writes the call; it is the window kit's (build plan 2.8).
  */
 @Composable
 fun AppRoot(graph: AppGraph) {

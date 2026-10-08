@@ -97,7 +97,10 @@ sealed interface Route {
     @Serializable
     data object ChangePin : Route
 
-    /** The theme dialog. Not kept across a lock: dialogs are closed after unlock (ux.md §4). */
+    /**
+     * The dialog "Appearance": the colours and light or dark (docs/design/looks/README.md). Not kept
+     * across a lock: dialogs are closed after unlock (ux.md §4).
+     */
     @Serializable
     data object Theme : Route
 
@@ -137,7 +140,11 @@ sealed interface Route {
 
     // ui/transfer/ExportNav.kt: export (5.3)
 
-    /** The export at its [step] (the step of its `FileTask`). */
+    /**
+     * The export (5.3). Settings opens `Export()`. An export cut short continues from the recorded
+     * `FileTask` (`FileTaskStore.task`), not from [step], so that no route can skip the warning or the
+     * master password (ExportNav.kt says why).
+     */
     @Serializable
     data class Export(val step: Int = 0) : Route
 
