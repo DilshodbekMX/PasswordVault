@@ -286,7 +286,7 @@ class PickerProcessTest {
         try {
             val activity = currentActivity()
             openTheShareSheet(activity)
-            DocumentsRig.backTo(activity, "the app in front again") // the sheet closed without sending anything
+            DocumentsRig.closeShareSheet(activity) // closed without sending anything
             DocumentsRig.pressHome()
             DocumentsRig.await("the app left") { processState() == Lifecycle.State.CREATED }
             DocumentsRig.await("\"Immediately\" locks the app that was left after the share sheet was closed", 5_000) { AppVault.state is LockUiState.Locked }
@@ -297,10 +297,10 @@ class PickerProcessTest {
 
     /** Shares a backup from [activity] through the system's own share sheet, and waits until the sheet is in front of it. */
     private fun openTheShareSheet(activity: MainActivity) {
-        DocumentsRig.awaitFocus("the app in front", ofTheApp = true)
+        DocumentsRig.awaitInFront(activity)
         assertTrue(runBlocking { store().share("PVAULT01 shared".toByteArray(), DocumentNames.backup("2026-10-08"), "Send to another app") })
         DocumentsRig.await("the app behind the share sheet") { activity in DocumentsRig.activities(MainActivity::class.java, Stage.PAUSED) }
-        DocumentsRig.awaitFocus("the share sheet in front", ofTheApp = false)
+        DocumentsRig.awaitShareSheet(activity)
     }
 
     private fun newActivity(old: MainActivity): MainActivity? =
