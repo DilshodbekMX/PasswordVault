@@ -50,21 +50,22 @@ internal class OlderCopies(private val core: LockCore) {
 
     /**
      * The typed master password [bytes] opens only a copy from before a change (F16b), and
-     * `LockVisit.olderPassword` of [visit] has storage's answer. While the change is marked unfinished
-     * on the current vault, a copy of [bytes] is kept for "Open my passwords from before the change";
-     * otherwise nothing is kept: the screen has only "OK" (the change was proven), or belongs to a
-     * vault put aside, where nothing is put aside for it.
+     * `LockVisit.olderPassword` of [visit] has storage's answer. While the screen offers "Open my
+     * passwords from before the change" (`LockCore.changeUnfinished`: the change is marked
+     * unfinished on the current vault, and its copy is the newest on disk), a copy of [bytes] is kept
+     * for it; otherwise nothing is kept: the screen has only "OK".
      */
     fun olderPasswordTyped(visit: LockVisit, bytes: ByteArray) {
         forget()
-        if (visit.target.aside != null || visit.target.lock.state?.mpChange == null) return
+        if (!core.changeUnfinished(visit.target)) return
         kept = Kept(visit, bytes.copyOf(), null)
     }
 
     /**
      * An answer on "This is an older master password" (F16b, after an ordinary change). TRY_AGAIN and
      * OK: `LockVisit.olderPassword = null` and the field again. OPEN_FROM_BEFORE, after its question
-     * was answered with "Open", only on the current vault and only while `mp_change` is set:
+     * was answered with "Open", only where the screen offers it (`LockCore.changeUnfinished`: on the
+     * current vault, while `mp_change` is set and the copy the change made is the newest on disk):
      *
      * 2. storage puts the generations above the copy that opened aside (`VaultPort.putNewerAside`),
      *    never deleting them; the step can be repeated after an interruption;
@@ -103,8 +104,9 @@ internal class OlderCopies(private val core: LockCore) {
         val older = visit.olderPassword ?: return
         val target = visit.target
         val lock = target.lock
-        // `putNewerAside` acts on the current vault; and only an unfinished change may be given up.
-        if (target.aside != null || lock.state?.mpChange == null) return
+        // Only an unfinished change may be given up, and only the copy it made (`putNewerAside` acts
+        // on the current vault): where the screen has only "OK", this answer does nothing.
+        if (!core.changeUnfinished(target)) return
         if (!core.vault.putNewerAside(older.generation)) {
             core.rescan()
             core.showLockScreen() // nothing was put aside: the screen stays, with "Try again"

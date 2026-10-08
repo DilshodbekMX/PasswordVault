@@ -555,7 +555,7 @@ internal class UnlockFlows(private val core: LockCore) {
                 visit.olderPassword = opened
                 core.olderCopies.olderPasswordTyped(visit, bytes)
                 core.showLockScreen()
-                MasterPasswordOutcome.OlderPassword(opened.changedAtMs, unfinishedChange = lock.state?.mpChange != null)
+                MasterPasswordOutcome.OlderPassword(opened.changedAtMs, unfinishedChange = core.changeUnfinished(visit.target))
             }
             PasswordOpen.NoMemory -> {
                 visit.mpError = MpError.NoMemory

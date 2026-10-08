@@ -778,7 +778,7 @@ internal class LockCore(
         visit?.olderSet?.let { return LockScreen.OpenOlderSet(it.atMs, aside = decision.screen.aside) }
         val older = visit?.olderPassword
         if (older != null) {
-            return LockScreen.OlderPassword(older.changedAtMs, unfinishedChange = target.lock.state?.mpChange != null, aside = decision.screen.aside)
+            return LockScreen.OlderPassword(older.changedAtMs, unfinishedChange = changeUnfinished(target), aside = decision.screen.aside)
         }
         return when (val screen = decision.screen) {
             is LockScreen.Pad -> screen.copy(digits = visit?.count ?: 0, opening = visit?.opening == true)
@@ -789,6 +789,21 @@ internal class LockCore(
             )
             is LockScreen.FingerprintOnly, is LockScreen.OlderPassword, is LockScreen.OpenOlderSet -> screen
         }
+    }
+
+    /**
+     * Holds the mutex: whether a master password that opens only an older copy of [target]'s vault
+     * is offered "Open my passwords from before the change" (lock.md F16b, §5.6). The change must be
+     * marked unfinished (`mp_change` is set), and the copy it made must be the newest one on disk:
+     * that is the copy the offer gives up. A mark whose change never reached the disk leaves nothing
+     * to go back from; the newest copy is then the one from before that change, its own master
+     * password opens it, and a password from before an earlier, proven change gets "OK" only, as it
+     * does without a mark. Never on the lock screen of a vault put aside: storage puts newer
+     * generations aside in the current vault only (`VaultPort.putNewerAside`).
+     */
+    fun changeUnfinished(target: LockTarget): Boolean {
+        val change = target.lock.state?.mpChange ?: return false
+        return target.aside == null && newest(target)?.vkId == change.toVkId
     }
 
     /**
