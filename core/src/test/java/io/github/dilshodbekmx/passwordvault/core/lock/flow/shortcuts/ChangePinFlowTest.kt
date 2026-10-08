@@ -1,6 +1,7 @@
 package io.github.dilshodbekmx.passwordvault.core.lock.flow.shortcuts
 
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.KeyCreate
+import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockCause
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockScreen
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockState
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockSummary
@@ -305,7 +306,7 @@ class ChangePinFlowTest {
         val outcome = runBlocking {
             var result: PinChangeOutcome? = null
             val change = launch(start = CoroutineStart.UNDISPATCHED) { result = g.engine.changePin(digits(PIN), digits(NEW_PIN)) }
-            val lock = launch(start = CoroutineStart.UNDISPATCHED) { g.engine.lock() } // ends the prompts at once
+            val lock = launch(start = CoroutineStart.UNDISPATCHED) { g.engine.lock(LockCause.NO_TOUCH) } // ends the prompts at once
             clock.advance(1_000)
             change.join()
             lock.join()

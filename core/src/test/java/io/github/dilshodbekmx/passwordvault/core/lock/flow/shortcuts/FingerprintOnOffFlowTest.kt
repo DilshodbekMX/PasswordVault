@@ -2,6 +2,7 @@ package io.github.dilshodbekmx.passwordvault.core.lock.flow.shortcuts
 
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.FingerprintOnOutcome
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.KeyCreate
+import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockCause
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockEngine
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockScreen
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockState
@@ -211,7 +212,7 @@ class FingerprintOnOffFlowTest {
             val on = launch(start = CoroutineStart.UNDISPATCHED) { result = f.engine.fingerprintOn(proof) }
             assertEquals(PromptUse.TURN_ON, f.keys.openPrompt!!.use)
             // The launch ends and the prompt is cancelled (§9.2 rule 8, §10.4 step 2).
-            val lock = launch(start = CoroutineStart.UNDISPATCHED) { f.engine.lock() }
+            val lock = launch(start = CoroutineStart.UNDISPATCHED) { f.engine.lock(LockCause.NO_TOUCH) }
             on.join()
             lock.join()
             result

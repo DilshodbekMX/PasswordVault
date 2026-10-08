@@ -259,6 +259,28 @@ sealed interface AsideOutcome {
 }
 
 /**
+ * Why the app locks (lock.md §10.1, §10.4; architecture.md §5.5 step 1): the engine's side of
+ * `LockReason` (architecture.md §3.5), value for value. [LockEngine.lock] takes it because one of
+ * them, [SCREEN_OFF], also ends the visit of a lock screen that is shown (lock.md §6.3).
+ */
+enum class LockCause {
+    /** The lock delay passed since the app was left, or "Immediately" at `ON_STOP`. */
+    LEFT,
+
+    /** The screen turned off (`ACTION_SCREEN_OFF`, also when Android delivers it late). */
+    SCREEN_OFF,
+
+    /** Five minutes without a touch while the app was in front. */
+    NO_TOUCH,
+
+    /** More than 10 minutes in a file picker or share sheet that the app opened (§10.3). */
+    EXTERNAL_TIMEOUT,
+
+    /** Settings › "Lock now". */
+    LOCK_NOW,
+}
+
+/**
  * The buttons of "This is an older master password" (lock.md F16b, [LockScreen.OlderPassword]), and
  * of the question before the passwords from before a replacement are opened
  * ([LockScreen.OpenOlderSet], F16b step 3).
@@ -418,20 +440,43 @@ class LockEngine(
 
     /**
      * Locks (lock.md §10.4; architecture.md §5.5 steps 3 and 4), called only by `AutoLock` after
-     * its draft flush. At once: the prompts end, the proofs are dropped, a fingerprint prompt of the
-     * open app is cancelled. Under the mutex: a proof that an unlock running meanwhile made is
-     * dropped too, the vault port drops its session (it waits for a save that is running), the
-     * vaults are listed again, the lock screen is chosen (§13.1), and a new visit starts if the app
-     * is visible. It never writes vault data. While the app is not unlocked it does nothing more.
+     * its draft flush, with the reason of the lock ([cause]). At once: the prompts end, the proofs
+     * are dropped, a fingerprint prompt of the open app is cancelled. Under the mutex: a proof that
+     * an unlock running meanwhile made is dropped too, the vault port drops its session (it waits
+     * for a save that is running), the vaults are listed again, the lock screen is chosen (§13.1),
+     * and a new visit starts if the app is visible. It never writes vault data.
+     *
+     * **A screen-off lock while a lock screen shows ends its visit** (lock.md §6.3: a visit ends at
+     * `ON_STOP` or at a screen-off lock, whichever comes first; decision 29). At once, before the
+     * mutex: the visit's place is ended, so that a PIN or master-password check that is running
+     * counts as usual and opens nothing (I11), and an open fingerprint prompt is cancelled and its
+     * launch ended, so that its result is dropped. Then, under the mutex: a held charge is refunded,
+     * the digits go (§6.3 A), and a new visit of the same lock screen starts, because the screen can
+     * come back on before the app was ever stopped (`ON_STOP` follows the screen-off by about 700
+     * ms, and not at all when the screen is on again by then). Without this a PIN typed just before
+     * the power button could open the vault with the screen off, until the `ON_STOP` arrived.
+     *
+     * For any other [cause] a lock while the app is not unlocked does nothing more.
      */
-    suspend fun lock() {
+    suspend fun lock(cause: LockCause) {
         val wasOpen = core.state.value is LockState.Unlocked
         val prompts = core.endPromptsNow()
         core.dropProofs()
         if (wasOpen) core.endLaunchNow()
+        val ended = if (cause == LockCause.SCREEN_OFF) core.endVisitNow() else null
         core.locked {
             core.promptsEnded(prompts)
-            if (core.state.value !is LockState.Unlocked) return@locked
+            if (core.state.value !is LockState.Unlocked) {
+                // The lock screen was showing when the screen went off: its visit is closed, and the
+                // next one starts. A visit that an ON_STOP closed meanwhile, or that an ON_START began
+                // after this lock was asked for, is left as it is.
+                if (ended != null && core.visit === ended) {
+                    core.startVisit()
+                    if (core.state.value is LockState.Locked) core.showLockScreen()
+                    core.publishSummary()
+                }
+                return@locked
+            }
             core.dropProofs() // and the proof of an unlock that held the mutex when the lock came (§5.8, §10.4 step 2)
             try {
                 core.vault.lock()

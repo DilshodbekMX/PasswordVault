@@ -1,6 +1,7 @@
 package io.github.dilshodbekmx.passwordvault.core.lock.flow.core
 
 import io.github.dilshodbekmx.passwordvault.core.crypto.Aead
+import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockCause
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockState
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockSummary
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.MasterPasswordOutcome
@@ -122,7 +123,7 @@ class PromptChecksTest {
     fun i11_aLockWhileTheCheckRuns_theResultProvesNothing() {
         openByPin()
         val outcome = runBlocking {
-            f.port.beforeCall = { call -> if (call == "checkPassword") launch(start = CoroutineStart.UNDISPATCHED) { f.engine.lock() } }
+            f.port.beforeCall = { call -> if (call == "checkPassword") launch(start = CoroutineStart.UNDISPATCHED) { f.engine.lock(LockCause.NO_TOUCH) } }
             f.engine.checkMasterPassword(PASSWORD.toCharArray())
         }
         assertEquals(MasterPasswordOutcome.TooLate, outcome)
@@ -177,7 +178,7 @@ class PromptChecksTest {
         g.plantState()
         g.startInFront()
         val beforeTheLock = runBlocking {
-            g.port.beforeCall = { call -> if (call == "retireOldKeys") launch(start = CoroutineStart.UNDISPATCHED) { g.engine.lock() } }
+            g.port.beforeCall = { call -> if (call == "retireOldKeys") launch(start = CoroutineStart.UNDISPATCHED) { g.engine.lock(LockCause.NO_TOUCH) } }
             g.engine.unlockWithMasterPassword(PASSWORD.toCharArray())
         }
         assertTrue(g.state is LockState.Locked)
@@ -313,7 +314,7 @@ class PromptChecksTest {
         val outcome = runBlocking {
             var result: PinOutcome? = null
             val prompt = launch(start = CoroutineStart.UNDISPATCHED) { result = g.engine.core.unlock.pinInPrompt(digits(PIN)) }
-            val lock = launch(start = CoroutineStart.UNDISPATCHED) { g.engine.lock() } // ends the prompt at once; waits for the mutex
+            val lock = launch(start = CoroutineStart.UNDISPATCHED) { g.engine.lock(LockCause.NO_TOUCH) } // ends the prompt at once; waits for the mutex
             clock.advance(1_000)
             prompt.join()
             lock.join()
