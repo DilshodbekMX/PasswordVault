@@ -31,7 +31,10 @@ import kotlinx.coroutines.launch
  * - **Returning** (`ON_START`) locks when the time away is at least the lock delay, or more than
  *   10 minutes after an external screen of the app's own was started (§10.3).
  * - **Screen off** ([screenTurnedOff], `ACTION_SCREEN_OFF`, also when Android delivers it late)
- *   locks at once.
+ *   locks at once. While the app is locked already it is still passed to the lock
+ *   ([LockManager.lock] with [LockReason.SCREEN_OFF], with nothing to flush), which ends the visit
+ *   of the lock screen shown, so that a PIN, fingerprint or master-password check that is still
+ *   running opens nothing (lock.md §6.3, §10.2, decision 29).
  * - **No touch** for 5 minutes while the app is in front locks; the timer stands still while the
  *   app is away and while an external screen is pending.
  * - **"Lock now"** ([lockNow]) clears our clip, then locks.
@@ -87,8 +90,17 @@ class AutoLock(
         scope.launch { lock.state.collect { lockStateChanged(it) } }
     }
 
-    /** `ACTION_SCREEN_OFF` arrived: lock at once (lock.md §10.2). */
-    fun screenTurnedOff() = decideWith { it.screenOff() }
+    /**
+     * `ACTION_SCREEN_OFF` arrived: lock at once (lock.md §10.2). While a lock screen shows, the lock
+     * is told too, so that it ends that screen's visit (lock.md §6.3, decision 29).
+     */
+    fun screenTurnedOff() {
+        if (lock.state.value is LockUiState.Locked) {
+            scope.launch { lock.lock(LockReason.SCREEN_OFF) }
+            return
+        }
+        decideWith { it.screenOff() }
+    }
 
     override fun beginExternal() {
         decideWith { it.beginExternal(now()) }

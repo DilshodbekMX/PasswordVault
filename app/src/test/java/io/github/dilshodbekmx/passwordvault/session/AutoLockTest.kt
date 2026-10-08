@@ -415,9 +415,25 @@ class AutoLockTest {
         s.awayFor(20 * minute)
         s.autoLock.lockNow()
         s.settle()
-        assertEquals(before, s.vault.log)
-        assertEquals(emptyList<LockReason>(), s.reasons)
+        assertEquals("nothing flushed or written", before.filterNot { it.startsWith("lock(") }, s.vault.log.filterNot { it.startsWith("lock(") })
+        assertEquals("only the screen-off is passed on, for the lock screen's visit (lock.md §6.3)", listOf(LockReason.SCREEN_OFF), s.reasons)
         assertEquals("Lock now still clears our clip", 1, s.clipboard.clears)
+    }
+
+    @Test
+    fun aScreenOffWhileLocked_isPassedToTheLock_withoutAFlush() = runTest {
+        // Decision 2 (build-plan.md §12): it ends the visit of the lock screen shown (lock.md §6.3, decision 29).
+        val s = SessionRig(this).start()
+        s.setUp()
+        s.autoLock.lockNow()
+        s.settle()
+        assertTrue(s.locked)
+        val before = s.vault.log.toList()
+        s.autoLock.screenTurnedOff()
+        s.settle()
+        assertTrue(s.locked)
+        assertEquals(listOf(LockReason.LOCK_NOW, LockReason.SCREEN_OFF), s.reasons)
+        assertEquals("the lock, and no draft flush", listOf("lock(SCREEN_OFF)"), s.vault.log.drop(before.size))
     }
 
     @Test

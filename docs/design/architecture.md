@@ -460,7 +460,9 @@ interface LockManager {
                                                        // enum class OlderPasswordChoice { TRY_AGAIN, OPEN_FROM_BEFORE, OK,
                                                        //   OPEN_OLDER_SET, KEEP_NEWER_SET }: the last two are the buttons of
                                                        //   LockScreen.OpenOlderSet, "Open my passwords from 7 Oct" and "Cancel"
-    suspend fun lock(reason: LockReason)               // called only by AutoLock, after the draft flush of 5.5; never writes vault data
+    suspend fun lock(reason: LockReason)               // called only by AutoLock, after the draft flush of 5.5; never writes vault data.
+                                                       // While the app is locked AutoLock still passes a screen-off (SCREEN_OFF, no flush):
+                                                       // it ends the visit of the lock screen shown (lock.md §6.3, §10.2, decision 29)
                                                        // enum class LockReason { LEFT, SCREEN_OFF, NO_TOUCH, EXTERNAL_TIMEOUT, LOCK_NOW }
     suspend fun submitMasterPassword(chars: CharArray, purpose: MpPurpose): MpResult        // the lock screen and every prompt; the guard of lock.md §6.8
                                                        // MpResult: Right(proof) | Wrong | Wait(untilElapsedMs) | NoMemory
@@ -1100,6 +1102,8 @@ Order: lock mutex, then vault mutex, then KDF gate. The repository never calls t
 4. `LockManager` cancels an open prompt, drops `MasterProof`, and publishes `Locked(screen)` from `EntryPolicy`.
 5. `NavState` shows the locked stack. The ViewModels of the unlocked screens are cleared with their entries; their `TextFieldState`s go with them. A lock while the activity is stopped switches `NavState` at once, but Compose does not recompose a stopped activity, so the unlocked screens and their ViewModels leave only when the activity starts again (measured on API 37: the ViewModel was still there 3 s after such a lock, and cleared on resume). So a ViewModel that holds account data or a secret drops it itself when `VaultRepository.state` becomes `VaultState.Locked`.
 6. Kept: the clipboard and its pending clear, the draft, an unfinished file task, the route ids (lock.md §10.4).
+
+While the app is locked already, a screen-off still reaches the lock: `AutoLock` calls `LockManager.lock(SCREEN_OFF)` without a flush (there is no open vault), which ends the visit of the lock screen shown, so that a PIN, fingerprint or master-password check still running opens nothing (lock.md §6.3, §10.2, decision 29; build-plan §12, decision 2).
 
 The same flush runs at process `ON_STOP`, while the vault is still open (ux.md §5.14). With the default 30-second delay that flush has written the draft long before the lock; the screen-off lock (about 700 ms before `ON_STOP`) and the no-touch timer (no `ON_STOP` at all) are why step 2 exists. On a screen-off the screen is dark during the write; for the no-touch timer and "Lock now" the form stays visible for the length of one save before the lock screen replaces it.
 

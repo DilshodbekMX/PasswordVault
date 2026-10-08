@@ -28,7 +28,9 @@ interface LockManager {
     /**
      * Locks: drops the proof, cancels an open prompt, and asks the vault to drop its session
      * (architecture.md §5.5 steps 3 and 4). Called only by `AutoLock`, after the draft flush of §5.5;
-     * never writes vault data.
+     * never writes vault data. While the app is locked already, `AutoLock` still passes a screen-off
+     * ([LockReason.SCREEN_OFF], with no flush): it ends the visit of the lock screen shown, so that a
+     * check still running opens nothing (lock.md §6.3, decision 29).
      */
     suspend fun lock(reason: LockReason)
 
