@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The test APK's own components (build plan 5.1, APP-AT/files/). They run in the test APK's own
+     process, as a real place behind the file picker runs in its own app: the app reaches them only
+     through the Storage Access Framework and the permissions a picker's result grants. None of this
+     is in the app's APK. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application>
+        <!-- A documents provider with documents that behave as their ids say: plain, or broken in the
+             ways of [V-S6] (TestDocuments.java). -->
+        <provider
+            android:name="io.github.dilshodbekmx.passwordvault.files.TestDocumentsProvider"
+            android:authorities="io.github.dilshodbekmx.passwordvault.test.documents"
+            android:exported="true"
+            android:grantUriPermissions="true"
+            android:label="PV test documents"
+            android:permission="android.permission.MANAGE_DOCUMENTS">
+            <intent-filter>
+                <action android:name="android.content.action.DOCUMENTS_PROVIDER" />
+            </intent-filter>
+        </provider>
+
+        <!-- Stands in for the system file picker: started for a result by the app's activity. -->
+        <activity
+            android:name="io.github.dilshodbekmx.passwordvault.files.FakePickerActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.DeviceDefault.Light.NoActionBar" />
+
+        <!-- The test's commands into this process (TestDocumentsReceiver.java). -->
+        <receiver
+            android:name="io.github.dilshodbekmx.passwordvault.files.TestDocumentsReceiver"
+            android:exported="true" />
+    </application>
+
+</manifest>
