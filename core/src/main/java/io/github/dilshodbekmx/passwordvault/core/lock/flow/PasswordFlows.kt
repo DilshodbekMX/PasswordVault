@@ -429,7 +429,8 @@ internal class PasswordFlows(private val core: LockCore) {
     /**
      * The proof of F11 step 3, in memory only, like a `MasterProof` (§5.8): made by the PIN typed now
      * (or by the fingerprint when no PIN exists), handed to [requestNewMasterPassword], and dropped
-     * when that request is made, at a lock and when the app stops being visible. [place] is a prompt
+     * when that request is made, when the flow ends without one ([leave]), at a lock and when the app
+     * stops being visible. [place] is a prompt
      * of the open app, which a lock or `ON_STOP` ends at once, without the mutex; [dropProof] follows
      * under it.
      */
@@ -484,6 +485,20 @@ internal class PasswordFlows(private val core: LockCore) {
     }
 
     /**
+     * Holds the mutex. The flow of F11 has ended without a request: "Cancel" on its explanation
+     * (step 2), Back from the new master password (step 4), or its screens closed any other way. The
+     * proof of step 3 goes with that flow, as a proof does (§5.8: "dropped when that flow ends"), so
+     * that a request later in this session needs the PIN typed again, or the fingerprint where there
+     * is no PIN: "An app that is already open is not enough" (step 3). On the lock screen, the entry
+     * that opens the app on this visit proves nothing any more. A request that was made has used the
+     * proof up already, and a lock and `ON_STOP` drop it by themselves.
+     */
+    fun leave() {
+        askedOn = null
+        dropProof()
+    }
+
+    /**
      * Holds the mutex. "I can't remember it" on a practice screen (F10 step 4): F11 from the lock
      * screen. Practice is skipped for this visit (`LockVisit.practiceSkipped`), so that the PIN, or
      * the fingerprint when no PIN exists, opens the app as an ordinary entry of the visit (F11 step
@@ -519,7 +534,7 @@ internal class PasswordFlows(private val core: LockCore) {
             val earlier = visit.afterUnlock
             visit.afterUnlock = { by ->
                 earlier?.invoke(by)
-                provenByUnlock(lock, by)
+                if (askedOn === visit) provenByUnlock(lock, by) // not after [leave]
             }
         }
         core.showLockScreen()

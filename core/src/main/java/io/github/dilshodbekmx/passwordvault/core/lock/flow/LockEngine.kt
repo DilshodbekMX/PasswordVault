@@ -316,8 +316,9 @@ sealed interface AsideOutcome {
 sealed interface ProofOutcome {
     /**
      * The proof is held, given with [by]: the next step is the new master password (F11 step 4) and
-     * [LockEngine.requestNewMasterPassword]. It is dropped when that request is made, at a lock and
-     * when the app stops being visible (§5.8).
+     * [LockEngine.requestNewMasterPassword]. It is dropped when that request is made, when the flow
+     * ends without one ([LockEngine.leaveNewMasterPassword]), at a lock and when the app stops being
+     * visible (§5.8).
      */
     data class Proven(val by: Shortcut) : ProofOutcome
 
@@ -801,7 +802,7 @@ class LockEngine(
      * [ProofOutcome.Proven] when the entry that opened the app after "I can't remember it" was that
      * proof, [ProofOutcome.NeedsPin] while a PIN exists, and otherwise shows the fingerprint prompt
      * "Confirm with your fingerprint", which is accepted only when there is no PIN. The proof is held
-     * until [requestNewMasterPassword], a lock or `ON_STOP`.
+     * until [requestNewMasterPassword], [leaveNewMasterPassword], a lock or `ON_STOP`.
      */
     suspend fun proveForNewMasterPassword(pin: ByteArray?): ProofOutcome = passwords.proveNow(pin)
 
@@ -811,6 +812,17 @@ class LockEngine(
      * [proveForNewMasterPassword]. Without one: [RequestOutcome.NotAllowed].
      */
     suspend fun requestNewMasterPassword(first: CharArray, again: CharArray): RequestOutcome = passwords.requestNewMasterPassword(first, again)
+
+    /**
+     * The flow of F11 ended without [RequestOutcome.Requested]: "Cancel" on its explanation, Back
+     * from the new master password, or its screens closed any other way, on the lock screen after
+     * [cantRemember] or in the open app. The proof of step 3 goes with its flow (lock.md §5.8), so
+     * a request later in this session needs the PIN typed again, or the fingerprint where there is
+     * no PIN ("An app that is already open is not enough", F11 step 3); on the lock screen the entry
+     * that opens the app on this visit proves nothing any more. The screens of F11 call it whenever
+     * they close without a request; a lock and `ON_STOP` drop the proof by themselves.
+     */
+    suspend fun leaveNewMasterPassword() = step { passwords.leave() }
 
     /** "Cancel it": the pending new master password is dropped; no proof (F11 step 8). */
     suspend fun cancelPending() = step {

@@ -602,6 +602,46 @@ class NewMasterPasswordRequestFlowTest {
         assertEquals(ProofOutcome.NeedsPin, f.prove())
     }
 
+    @Test
+    fun t16_theProofGoesWithTheFlowItWasMadeFor_aRequestLaterInTheSameSessionNeedsThePinTypedNow() {
+        // "I can't remember it" on the required practice screen, then the PIN: the app opens, and the owner
+        // leaves F11 without choosing a new master password (F10 step 4), and goes on using the app.
+        phone()
+        f.cantRemember()
+        f.type(PIN)
+        assertTrue(f.state is LockState.Unlocked)
+        await { f.engine.leaveNewMasterPassword() } // the screens of F11 close without a request
+        f.passTime(HOUR)
+        // Later, in the same session, someone holds the open app: "An app that is already open is not
+        // enough" (F11 step 3), so nothing that was typed for the flow that ended stands for this one.
+        val checks = f.keys.hmacCalls.size
+        assertEquals(ProofOutcome.NeedsPin, f.prove())
+        assertEquals(RequestOutcome.NotAllowed, f.request())
+        assertNull(pending)
+        assertEquals("no PIN was checked", checks, f.keys.hmacCalls.size)
+        assertEquals(ProofOutcome.Proven(Shortcut.PIN), f.prove(PIN)) // the PIN typed now
+        assertTrue(f.request() is RequestOutcome.Requested)
+
+        // The same for the proof made in a prompt of the open app.
+        f.cancelPendingNow()
+        assertEquals(ProofOutcome.Proven(Shortcut.PIN), f.prove(PIN))
+        await { f.engine.leaveNewMasterPassword() }
+        assertEquals(ProofOutcome.NeedsPin, f.prove())
+        assertEquals(RequestOutcome.NotAllowed, f.request())
+
+        // And on the lock screen: the flow ends before the PIN is typed ("Cancel" on the explanation).
+        f.lock()
+        f.cantRemember()
+        await { f.engine.leaveNewMasterPassword() }
+        f.type(PIN)
+        assertTrue(f.state is LockState.Unlocked)
+        assertEquals(ProofOutcome.NeedsPin, f.prove())
+        assertEquals(RequestOutcome.NotAllowed, f.request())
+        assertNull(pending)
+    }
+
+    private fun LockFixture.cancelPendingNow() = await { engine.cancelPending() }
+
     // ---------------------------------------------------------------------------------------------
     // Steps 4 and 5: the request
 
