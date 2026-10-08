@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  PasswordVault: the app's icon, provisional (docs/design/looks/README.md, "The icon and the name").
+  This file is the one source of the launcher icon and of the app's logo. After changing it, run
+
+      python3 docs/design/looks/icon/make-icon.py
+
+  which writes every resource made from it (its header lists them and says what this file may hold).
+
+  The drawing: the shield with a keyhole of mock-up A (mockups/Main.dc.html), white on #1D4E89.
+  It is the mock-up's 24-unit drawing three times as large, with the shield's middle on the middle
+  of the canvas. The keyhole is a hole in the shield, cut by drawing it in the other direction, so
+  that the same path is the launcher's foreground, its one-colour layer and the logo.
+
+  The canvas is an adaptive icon's: 108 x 108, of which a launcher shows the middle 72 x 72 under its
+  own mask, so everything that must be seen lies within 33 units of the middle (54, 54).
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108" width="432" height="432">
+  <rect id="background" width="108" height="108" fill="#1D4E89"/>
+  <path id="foreground" fill="#FFFFFF"
+        d="M54 26.4 l22.2 8.4 v17.4 c0 14.4 -9.6 24.9 -22.2 29.4 c-12.6 -4.5 -22.2 -15 -22.2 -29.4 V34.8 z
+           M57.261 54.836 A6 6 0 1 0 50.739 54.836 L48.6 66.6 h10.8 z"/>
+</svg>

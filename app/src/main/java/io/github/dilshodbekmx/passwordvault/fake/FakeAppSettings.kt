@@ -10,12 +10,14 @@ import io.github.dilshodbekmx.passwordvault.settings.OneTime
 import io.github.dilshodbekmx.passwordvault.settings.PendingClip
 import io.github.dilshodbekmx.passwordvault.settings.PurgeArm
 import io.github.dilshodbekmx.passwordvault.settings.SettingsEditor
+import io.github.dilshodbekmx.passwordvault.settings.StyleChoice
 import io.github.dilshodbekmx.passwordvault.settings.ThemeChoice
 import kotlinx.coroutines.flow.MutableStateFlow
 
 /**
  * In-memory [AppSettings] (architecture.md §2.2 `fake`). It starts as a fresh install reads: every
- * value missing, so the strictest ones ([LockDelay.WHEN_MISSING], [ClipDelay.WHEN_MISSING]).
+ * value missing, so the strictest ones ([LockDelay.WHEN_MISSING], [ClipDelay.WHEN_MISSING]) and the
+ * look of a new install ([ThemeChoice.SYSTEM], [StyleChoice.DEFAULT]); it takes any style, whatever the phone.
  * [failWrites] makes [update] and [writeDefaults] fail and change nothing; [writes] counts the
  * successful ones. A test may also set any flow's value directly. Single-threaded.
  */
@@ -23,6 +25,7 @@ class FakeAppSettings : AppSettings {
     override val lockDelay = MutableStateFlow(LockDelay.WHEN_MISSING)
     override val clipDelay = MutableStateFlow(ClipDelay.WHEN_MISSING)
     override val theme = MutableStateFlow(ThemeChoice.SYSTEM)
+    override val style = MutableStateFlow(StyleChoice.DEFAULT)
     override val generator = MutableStateFlow(GeneratorOptions())
     override val backupReminder = MutableStateFlow(BackupReminder())
     override val fileTask = MutableStateFlow<FileTask?>(null)
@@ -49,6 +52,7 @@ class FakeAppSettings : AppSettings {
         lockDelay.value = editor.lockDelay
         clipDelay.value = editor.clipDelay
         theme.value = editor.theme
+        style.value = editor.style
         generator.value = editor.generator
         backupReminder.value = editor.backupReminder
         fileTask.value = editor.fileTask
@@ -63,6 +67,7 @@ class FakeAppSettings : AppSettings {
         override var lockDelay = this@FakeAppSettings.lockDelay.value
         override var clipDelay = this@FakeAppSettings.clipDelay.value
         override var theme = this@FakeAppSettings.theme.value
+        override var style = this@FakeAppSettings.style.value
         override var generator = this@FakeAppSettings.generator.value
         override var backupReminder = this@FakeAppSettings.backupReminder.value
         override var fileTask = this@FakeAppSettings.fileTask.value

@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The PIN and fingerprint steps (build plan 4.3; ux.md §5.6 to §5.8, §5.18 "Change PIN and Set a
+     PIN"; lock.md §7.3, F6, F9): "Choose a 6-digit PIN", "Enter the PIN again", the fingerprint
+     offer, "Make backups", and the PIN pad and master-password steps of Settings › App lock ›
+     "Change PIN" or "Set a PIN". Every name starts with pin_. Plain words at B1 level, "you" and
+     "your", numbers as digits (ux.md §7). The app's own PIN is always "app PIN" or "PIN", never the
+     phone's (lock.md §9.3). -->
+<resources>
+
+    <!-- "Choose a 6-digit PIN" (ux.md §5.6, lock.md §7.3). -->
+
+    <!-- Title of the step that chooses the app's PIN, during setup and when the app has no PIN yet.
+         Short: one line. -->
+    <string name="pin_create_title">Choose a 6-digit PIN</string>
+    <!-- Title of the same step when a new PIN replaces one that was turned off, forgotten or
+         stopped working (ux.md §5.9). Short: one line. -->
+    <string name="pin_create_new_title">Choose a new PIN</string>
+    <!-- The first line under the title: what the PIN is for, and that it is not the phone's own PIN. -->
+    <string name="pin_create_body_use">Use this PIN to open the app on this phone, like your bank app. This is not your phone’s PIN.</string>
+    <!-- The second line: which PINs are refused, said before the user types (lock.md §7.2). Keep the
+         two example numbers as they are. -->
+    <string name="pin_create_body_avoid">Don’t use a date or a year, or a pattern like 123456 or 112233.</string>
+    <!-- The third line: why not to reuse a PIN that other people may know. -->
+    <string name="pin_create_body_others">Don’t use your phone’s unlock PIN or your bank card PIN. Other people may know them.</string>
+    <!-- Added to the lines above only while TalkBack (or another screen reader) is on (ux.md §5.6). -->
+    <string name="pin_create_talkback">TalkBack reads each key aloud. Use headphones if other people are near.</string>
+    <!-- Added above the pad when the master password was replaced by someone using the old PIN and
+         the user went back to the passwords from before (lock.md F16b step 6). -->
+    <string name="pin_create_someone_may_know">Someone else may know the old one.</string>
+    <!-- The footer under the pad (lock.md §7.3): what happens after wrong tries. -->
+    <string name="pin_create_footer">After 5 wrong tries in a row the PIN turns off. Then you open the app with your fingerprint or master password and choose a new PIN.</string>
+    <!-- Shown under the dots when the six digits typed are refused (lock.md §7.3): a date in any
+         order, or a year. The dots are cleared and the pad stays. -->
+    <string name="pin_refused_date">This PIN looks like a date or a year. Choose another.</string>
+    <!-- The same for a PIN that repeats digits or follows a pattern, such as 121212 or 102030. -->
+    <string name="pin_refused_pattern">This PIN repeats digits or follows a pattern. Choose another.</string>
+    <!-- The same for a sequence such as 123456, or a straight line or path of keys on the pad. -->
+    <string name="pin_refused_sequence">This PIN is a sequence or a shape on the keypad. Choose another.</string>
+    <!-- "Change PIN": the new PIN is the same as the current one that was just typed. -->
+    <string name="pin_same_as_current">Choose a PIN different from your current one.</string>
+
+    <!-- "Enter the PIN again" (ux.md §5.6). -->
+
+    <!-- Title of the step that types the chosen PIN once more. Short: one line. -->
+    <string name="pin_confirm_title">Enter the PIN again</string>
+    <!-- Under the title of the same step. -->
+    <string name="pin_confirm_body">Type the same 6 digits once more.</string>
+    <!-- Shown under the dots when the PIN typed again is not the one chosen. After the third time
+         the user starts again with a new first entry. -->
+    <string name="pin_mismatch">The PINs don’t match. Try again.</string>
+    <!-- Shown with a spinner while the new PIN is saved. -->
+    <string name="pin_saving">Saving…</string>
+    <!-- Shown when a new PIN was saved, where no PIN worked before (lock.md F6 step 7). -->
+    <string name="pin_set">Your PIN is set.</string>
+    <!-- Shown when "Change PIN" saved the new PIN (lock.md F6 step 7). -->
+    <string name="pin_changed">Your PIN was changed.</string>
+    <!-- Saving a PIN failed where no PIN worked before; nothing changed (lock.md F6 step 8). -->
+    <string name="pin_not_saved_new">The PIN can’t be set up right now. Try again later.</string>
+    <!-- Saving a new PIN failed in "Change PIN"; the old PIN still opens the app (lock.md F6 step 8). -->
+    <string name="pin_not_saved_change">Couldn’t save the new PIN. Your old PIN still works.</string>
+    <!-- Saving a new PIN in place of one that works ended in doubt: the phone reported an error while
+         the PIN was written, and the app cannot tell which PIN the phone kept (lock.md F6 step 8;
+         build-plan.md §12, decision 4). Nothing is promised: this says what to try next time. -->
+    <string name="pin_may_not_be_saved">The new PIN may not have been saved. Next time try the new PIN first. If it is not accepted, use the old PIN or your master password.</string>
+    <!-- The same where no PIN worked before (setup, "Set a PIN"), so there is no old PIN to use. -->
+    <string name="pin_may_not_be_saved_first">The PIN may not have been saved. Next time try it first. If it is not accepted, use your master password.</string>
+
+    <!-- The PIN pad's dots and keys are read by TalkBack from strings_common.xml (common_pin_…). -->
+
+    <!-- Settings › App lock › "Change PIN" (ux.md §5.18, lock.md F6 step 2). -->
+
+    <!-- Title of the first step of "Change PIN": the app PIN used today. Short: one line. -->
+    <string name="pin_current_title">Enter your current PIN</string>
+    <!-- Text button under the pad of that step: prove it with the master password instead. -->
+    <string name="pin_use_master_password">Use master password instead</string>
+    <!-- The current PIN was wrong; the try was counted. %d is the number of tries left before the
+         PIN turns off (1 to 4). -->
+    <plurals name="pin_wrong_left">
+        <item quantity="one">Wrong PIN. %d try left.</item>
+        <item quantity="other">Wrong PIN. %d tries left.</item>
+    </plurals>
+    <!-- The same wrong PIN was typed twice in a row: the second time is not counted (lock.md §6.6). -->
+    <string name="pin_same_wrong_again">You already tried that PIN. It was not counted again.</string>
+    <!-- The current PIN was wrong too many times, so the app turned it off (lock.md F6 step 2). The
+         app stays open. -->
+    <string name="pin_limit">PIN unlock was turned off after too many wrong tries. Nothing was deleted. To choose a new PIN, type your master password.</string>
+    <!-- Button after the line above: go on with the master password. -->
+    <string name="pin_type_master_password">Type master password</string>
+    <!-- The phone's key store did not answer, so the current PIN could not be checked; the try was
+         not counted (lock.md F6 step 2). -->
+    <string name="pin_cannot_check">Your PIN can’t be checked right now. Use your master password instead, or try again later.</string>
+
+    <!-- The master-password step before a PIN is set (lock.md §8.2: adding a way into the app
+         needs the master password typed now). -->
+
+    <!-- Title of the step that asks for the master password. Short: one line. -->
+    <string name="pin_mp_title">Type your master password</string>
+    <!-- Under the title, before a new PIN is chosen (lock.md F5 step 4). -->
+    <string name="pin_mp_body">To choose a new PIN you need your master password.</string>
+    <!-- The label of the master-password field. -->
+    <string name="pin_mp_label">Master password</string>
+    <!-- The button under the field: checks the master password, then the PIN pad follows. -->
+    <string name="pin_mp_next">Next</string>
+    <!-- Shown with a spinner while the master password is checked (a second or so). -->
+    <string name="pin_mp_checking">Checking…</string>
+    <!-- The master password typed was wrong (lock.md §13.3). -->
+    <string name="pin_mp_wrong">That’s not the right master password. Check the keyboard language (Latin or Cyrillic) and capital letters.</string>
+    <!-- After several wrong master passwords the field waits (lock.md §6.8). -->
+    <string name="pin_mp_wait">Wait 30 seconds, then try again. Take your time and look at your paper.</string>
+    <!-- The countdown of that wait. %d is whole seconds left. -->
+    <plurals name="pin_mp_countdown">
+        <item quantity="one">Try again in %d second</item>
+        <item quantity="other">Try again in %d seconds</item>
+    </plurals>
+    <!-- The phone had too little free memory to check the master password; nothing was counted. -->
+    <string name="pin_mp_no_memory">Your phone doesn’t have enough free memory to check your master password. Close other apps or restart the phone, then try again.</string>
+
+    <!-- The fingerprint offer (ux.md §5.7, lock.md §9.4, F9). -->
+
+    <!-- Title of the fingerprint offer. Short: one line. -->
+    <string name="pin_fingerprint_title">Use your fingerprint?</string>
+    <!-- Under the title: what fingerprint unlock does. -->
+    <string name="pin_fingerprint_body">Open the app with your fingerprint instead of your PIN. Your PIN and master password still work.</string>
+    <!-- Who can open the app with fingerprint (lock.md §9.4). Also under the switch in Settings. -->
+    <string name="pin_fingerprint_anyone">Anyone whose fingerprint is saved in this phone’s settings can open the app.</string>
+    <!-- A note on the offer: when the app turns fingerprint unlock off by itself. -->
+    <string name="pin_fingerprint_note">If this phone’s fingerprints or screen lock change, fingerprint unlock turns off for safety. You can turn it on again in Settings.</string>
+    <!-- Main button of the offer: opens the phone's fingerprint prompt. -->
+    <string name="pin_fingerprint_use">Use fingerprint</string>
+    <!-- The title of the phone's fingerprint prompt that turns fingerprint unlock on (lock.md §9.2).
+         Also the title of the master-password question in Settings before it. -->
+    <string name="pin_fingerprint_turn_on">Turn on fingerprint unlock</string>
+    <!-- Turning fingerprint unlock on failed during setup (ux.md §5.7); setup goes on. -->
+    <string name="pin_fingerprint_failed">Fingerprint unlock could not be turned on. You can try again later in Settings.</string>
+    <!-- Turning fingerprint unlock on ended in doubt: the phone reported an error while it was
+         written, and the app cannot tell whether it is on (lock.md F9 step 9; build-plan.md §12,
+         decision 4). Shown on the fingerprint offer and in Settings. -->
+    <string name="pin_fingerprint_may_not_be_on">Fingerprint unlock may not have been turned on. If your fingerprint is not accepted, turn it on again in Settings.</string>
+    <!-- No fingerprint is saved on the phone, so fingerprint unlock cannot be turned on (lock.md F9 step 4). -->
+    <string name="pin_fingerprint_add_first">Add a fingerprint in your phone’s settings first.</string>
+    <!-- The phone cannot keep the fingerprint key in its secure hardware (ux.md §5.7). -->
+    <string name="pin_fingerprint_no_secure_hardware">This phone can’t keep a fingerprint key in protected hardware.</string>
+
+    <!-- "Make backups" (ux.md §5.8), the last setup step. -->
+
+    <!-- Title of the step that explains backups. Short: one line. -->
+    <string name="pin_backups_title">Make backups</string>
+    <!-- The first paragraph: the passwords exist only on this phone. -->
+    <string name="pin_backups_only_here">Your passwords are kept only on this phone. If the phone is lost, broken or reset, they are gone. Uninstalling the app or clearing its storage also deletes them.</string>
+    <!-- The second paragraph: what a backup is. -->
+    <string name="pin_backups_locked">A backup is a locked file with all your passwords. It opens only with your master password.</string>
+    <!-- The third paragraph: where to keep one. -->
+    <string name="pin_backups_outside">Keep a backup outside this phone — in your Google Drive, on a computer, or send it to yourself.</string>
+    <!-- A switch (on by default): the app reminds the user when a backup is due (ux.md §5.11). -->
+    <string name="pin_backups_remind">Remind me to make a backup</string>
+    <!-- The button that ends setup and opens the list of passwords. -->
+    <string name="pin_backups_finish">Finish</string>
+
+</resources>

@@ -91,10 +91,10 @@ The three factory objects (`CryptoFactory`, `VaultCodecs`, `VaultStores`, 3.2 an
 | `clipboard` | Copying | `SecretClipboard`, `AndroidSecretClipboard`, `ClipboardClearReceiver`, `ClipStatus`, `SecretClipboardBridge` (the Compose `Clipboard` provided as `LocalClipboard`, ux.md §6 item 5), `ClipboardRoot` (hook), `ClipboardModule` |
 | `window` | Window and input protections, from `docs/lab/window-input-artifacts/VaultSecurity.kt` with the API 26 gate of lock.md §13.5 | `VaultSecurity` (activity window), `VaultWindow` (dialogs and sheets), `Modifier.vaultTextField()`, `NoPersonalizedLearning`, `ObscuredTouchNotice`, `WindowPolicy` (hook) |
 | `files` | Storage Access Framework | `DocRef`, `DocumentIo`, `SafDocumentIo`, `FileTask`, `FileTaskStore`, `BackupSharing` (`FileProvider`), `Places`, `DocumentLaunchers` (hook: the picker launchers registered by the activity), `FilesModule` |
-| `settings` | Non-secret settings | `AppSettings`, `SettingsEditor`, `PrefsAppSettings`, `LockDelay`, `ClipDelay`, `ThemeChoice`, `BackupReminder`, `OneTime`, `PurgeArm`, `PendingClip`, `SettingsModule` |
+| `settings` | Non-secret settings | `AppSettings`, `SettingsEditor`, `PrefsAppSettings`, `LockDelay`, `ClipDelay`, `ThemeChoice`, `StyleChoice`, `BackupReminder`, `OneTime`, `PurgeArm`, `PendingClip`, `SettingsModule` |
 | `i18n` | Language-dependent formatting | `UiText` (resource id plus arguments), `Formatters` (`android.icu` dates, relative times, numbers), `SortKeys` (`Collator`, `AlphabeticIndex`, the sort key of i18n.md §2.7, behind the `Collation` interface), `AppLanguages` (with `AppLanguage`; AppCompat keeps the choice, not `AppSettings`, i18n.md §1.4) |
 | `nav` | Navigation 3 | `Route` (every key, holding ids only), `NavState` (three back stacks: setup, locked, unlocked), `Navigator`, `AppNavHost` |
-| `ui.theme`, `ui.common` | Look and shared parts | `PasswordVaultTheme(settings)` (and `PasswordVaultTheme(theme: ThemeChoice)` for previews and tests), `PinPad` (made of `PinDots` and `PinKeys`; `PinPadTags`, `PIN_LENGTH`), `SecretText`, `MaskedValue`, `VaultTextField`, `VaultSecureField` (with `RevealToggle`), `VaultSearchField`, `VaultDialog`, `VaultSheet` (a plain form, and an `@ExperimentalMaterial3Api` form that takes a `SheetState`) (the only ways to make a text field, a dialog or a sheet; R-13), `VaultFieldDefaults`, `TextFieldState.readSecret()` and `clearSecret()`, `Banner` (with `BannerKind`), `ClipboardRow`, `StrengthBar` |
+| `ui.theme`, `ui.common` | Look and shared parts | `PasswordVaultTheme(settings)`, which follows `AppSettings.style` and `AppSettings.theme` (and `PasswordVaultTheme(style, theme)` and `PasswordVaultTheme(theme)`, Bank blue, for previews and tests), `Look` with `LocalLook` and `Looks` (a style's colour scheme and the details that differ between the styles: the PIN keys, the avatars' shape and tones; [looks/README.md](looks/README.md)), `PinPad` (made of `PinDots` and `PinKeys`; `PinPadTags`, `PIN_LENGTH`), `SecretText`, `MaskedValue`, `VaultTextField`, `VaultSecureField` (with `RevealToggle`), `VaultSearchField`, `VaultDialog`, `VaultSheet` (a plain form, and an `@ExperimentalMaterial3Api` form that takes a `SheetState`) (the only ways to make a text field, a dialog or a sheet; R-13), `VaultFieldDefaults`, `TextFieldState.readSecret()` and `clearSecret()`, `Banner` (with `BannerKind`), `ClipboardRow`, `StrengthBar` |
 | `ui.shell` | The frame around the screens | `AppRoot` (the root content: window policy, clipboard bridge, theme, navigation), `UnlockedScaffold` (bottom bar, the clipboard row's slot, the Security tab's dot) |
 | `ui.setup` | ux.md §5.1–5.8 | Welcome, CreateMasterPassword, WriteDown, TypeAgain, CreatePin, FingerprintOffer, BackupsExplained |
 | `ui.lock` | ux.md §5.9–5.10, lock.md §13 | PinLockScreen, FingerprintOnlyScreen, MasterPasswordScreen, ForgotSheet, OlderPasswordScreen, AsideLockScreen, Notices |
@@ -545,7 +545,9 @@ class AppDispatchers(val main: CoroutineDispatcher, val io: CoroutineDispatcher,
 interface AppSettings {                                // SharedPreferences "pv_settings"; a missing value is the strictest one [V-P9]
     val lockDelay: StateFlow<LockDelay>                // missing or unreadable: Immediately. Setup writes 30 seconds
     val clipDelay: StateFlow<ClipDelay>                // missing or unreadable: 30 seconds. Setup writes 1 minute (ux.md §5.18)
-    val theme: StateFlow<ThemeChoice>
+    val theme: StateFlow<ThemeChoice>                  // light or dark; missing or unreadable: System
+    val style: StateFlow<StyleChoice>                  // the colours (looks/README.md); missing or unreadable: Bank blue, as is a stored
+                                                       // "Phone's colours" on a phone before Android 12, where it cannot be set either
     val generator: StateFlow<GeneratorOptions>
     val backupReminder: StateFlow<BackupReminder>      // on or off, snoozed until; when a backup is due is computed from the vault (4.3)
     val fileTask: StateFlow<FileTask?>                 // an unfinished backup, export, import or restore: kind, step, DocRef; nothing secret
@@ -557,15 +559,18 @@ interface AppSettings {                                // SharedPreferences "pv_
     fun update(change: (SettingsEditor) -> Unit): Boolean        // commit(); false = not written, nothing changed; off the main thread
 }
 interface SettingsEditor {                             // the values update() can set, each starting as the current one
-    var lockDelay: LockDelay; var clipDelay: ClipDelay; var theme: ThemeChoice; var generator: GeneratorOptions
-    var backupReminder: BackupReminder; var fileTask: FileTask?; var oneTime: Set<OneTime>; var purgeArm: PurgeArm?
-    var pendingClip: PendingClip?
+    var lockDelay: LockDelay; var clipDelay: ClipDelay; var theme: ThemeChoice; var style: StyleChoice
+    var generator: GeneratorOptions; var backupReminder: BackupReminder; var fileTask: FileTask?; var oneTime: Set<OneTime>
+    var purgeArm: PurgeArm?; var pendingClip: PendingClip?
 }
 // The values (settings/SettingValues.kt). Each persisted enum has a fixed `stored` text, the value kept in "pv_settings", so that
 // renaming a constant (or R8) never changes what is read back.
 // enum class LockDelay(stored, ms) { IMMEDIATELY, SECONDS_30, MINUTE_1, MINUTES_5 }   // WHEN_MISSING = IMMEDIATELY, SETUP = SECONDS_30
 // enum class ClipDelay(stored, ms) { SECONDS_30, MINUTE_1, MINUTES_2, MINUTES_5 }     // WHEN_MISSING = SECONDS_30, SETUP = MINUTE_1
-// enum class ThemeChoice(stored) { SYSTEM, LIGHT, DARK }
+// enum class ThemeChoice(stored) { SYSTEM, LIGHT, DARK }                              // Settings › Appearance › "Light or dark"
+// enum class StyleChoice(stored) { BANK_BLUE, EMERALD, NIGHT_VAULT, PHONE_COLOURS }   // Settings › Appearance › "Colours"; DEFAULT = BANK_BLUE;
+//                                                    // offered(phoneColours) leaves PHONE_COLOURS out before Android 12 (API 31), and
+//                                                    // read(stored, phoneColours) is what a stored text stands for on this phone
 // class BackupReminder(val on: Boolean = true, val snoozedUntilMs: Long? = null)    // "Later" snoozes it for 3 days (wall clock)
 // enum class OneTime(stored) { WORDS_SHOWN, FIRST_COPY_TIP, BACKUP_EXPLAINED, NO_SECURE_HARDWARE_TOLD }
 // class PurgeArm(val vaultId: String, val armedAtMs: Long, val credit: Credit)      // D-24; Credit is core.lock.guard's (lock.md §6.9)
@@ -632,7 +637,7 @@ class Data(val repository: VaultRepository, val port: VaultPort, val lists: List
 | `dispatchTouchEvent`, `dispatchKeyEvent` | `graph.session.touched()` | the interface; `AutoLock` |
 | `onResume` | `graph.clipboard.appCameToFront()` | the interface |
 
-`AppRoot` is `WindowPolicy.Root { ClipboardRoot(graph) { PasswordVaultTheme(graph.settings) { AppNavHost(graph) } } }`. `WindowPolicy.Root` (window kit) applies `NoPersonalizedLearning` and `ObscuredTouchNotice` around everything; `ClipboardRoot` (clipboard package) provides `SecretClipboardBridge` as `LocalClipboard`. A dialog or bottom sheet is a window of its own whose ComposeView provides the platform's clipboard as `LocalClipboard` again, so `VaultWindow`, which holds everything `VaultDialog` and `VaultSheet` show (R-13), wraps it in `ClipboardWindow` (clipboard package), which provides the bridge again; at the activity's root, outside `ClipboardRoot`, it changes nothing. `UnlockedScaffold` (shell) draws the bottom bar and calls `ClipboardRowSlot(graph)` (clipboard package), `FirstCopyTip(graph)` (`ui/shell/FirstCopyTip.kt`, help package) and `SecurityBadge(graph)` (security tab package), all stubs until then.
+`AppRoot` is `WindowPolicy.Root { ClipboardRoot(graph) { PasswordVaultTheme(graph.settings) { AppNavHost(graph) } } }`. `PasswordVaultTheme` provides the Material 3 colour scheme and `LocalLook` of the style and of light or dark that `AppSettings` holds ([looks/README.md](looks/README.md)): both are read before unlock, so the lock screen has them, and a change reaches every screen, dialog and sheet at once. A screen reads what differs between the styles from `LocalLook` and never asks which style is chosen. `WindowPolicy.Root` (window kit) applies `NoPersonalizedLearning` and `ObscuredTouchNotice` around everything; `ClipboardRoot` (clipboard package) provides `SecretClipboardBridge` as `LocalClipboard`. A dialog or bottom sheet is a window of its own whose ComposeView provides the platform's clipboard as `LocalClipboard` again, so `VaultWindow`, which holds everything `VaultDialog` and `VaultSheet` show (R-13), wraps it in `ClipboardWindow` (clipboard package), which provides the bridge again; at the activity's root, outside `ClipboardRoot`, it changes nothing. `UnlockedScaffold` (shell) draws the bottom bar and calls `ClipboardRowSlot(graph)` (clipboard package), `FirstCopyTip(graph)` (`ui/shell/FirstCopyTip.kt`, help package) and `SecurityBadge(graph)` (security tab package), all stubs until then.
 
 **Routes.** `nav/Route.kt` (shell) declares every route key of the app. `AppNavHost` (shell) builds its entries from one registration function per package, each in its own file: `fun EntryProviderScope<Route>.<file>Nav(graph: AppGraph, nav: Navigator)`, for example `setupNav` and `lockNav`. A screen moves with `Navigator`: `go(route)`, `back()`, `replace(route)` and `tab(root)`, each returning a `Boolean`. `go` and `replace` return false, with nothing changed, when the route does not belong to the back stack shown now, so a screen whose work ends after a lock never puts an unlocked screen over the lock screen; `back` returns false at the root of its stack (Back leaves the app), `tab` while the app is not unlocked or for a route that is not a bottom-bar root. `ui/lock/LockNav.kt` also declares `@Composable fun LockNotices(graph: AppGraph, nav: Navigator)`, the notices after unlock (lock.md §13.4): `UnlockedScaffold` calls it while the app is unlocked, and the lock screens package fills it. The shell registers `Route.Starting` itself (`LockUiState.Starting`) and creates every file below with placeholder screens:
 
@@ -644,7 +649,7 @@ class Data(val repository: VaultRepository, val port: VaultPort, val lists: List
 | `ui/list/ListNav.kt` | Passwords, RecentlyDeleted | list |
 | `ui/entry/EntryNav.kt` | Entry(id), BigLetters(id, field: String) with the field names `username`, `password`, `old-password`, `previous-N`, `field-N` | entry detail |
 | `ui/edit/EditNav.kt` | Edit(id: String? = null) | add and edit |
-| `ui/settings/SettingsNav.kt` | Settings, AppLock (the App lock pages), ChangePin, Theme | PIN and fingerprint setup |
+| `ui/settings/SettingsNav.kt` | Settings, AppLock (the App lock pages), ChangePin, Theme (the dialog "Appearance": the colours, and light or dark) | PIN and fingerprint setup |
 | `ui/settings/MasterPasswordNav.kt` | ChangeMasterPassword, NewMasterPassword | master-password change |
 | `ui/settings/LanguageNav.kt` | Language | language switch |
 | `ui/settings/HelpNav.kt` | Help(page: HelpPage) with `HelpPage { PROTECTION, LOST_PHONE, FORGOT_MASTER_PASSWORD, FORGOT_PIN, VERSION }`, Licences | help |
@@ -1262,7 +1267,7 @@ Run with `./gradlew :core:testDebugUnitTest` twice: under a Turkish default loca
 
 ### 8.2 JVM unit tests in `:app`
 
-ViewModels against the fakes of `APP/fake/` and `:testing`; `AutoLock` with a fake lifecycle and clock, including the order of 5.5 for every lock trigger (a dirty form and a no-touch lock: the draft is written before `VaultPort.lock()`); the language mapping of i18n.md §1.4.5; the resource completeness test of i18n.md §5, one test per language (every string and plural in all four languages, the apostrophe and script rules); the source-rule tests of 8.5. Nothing here needs the Android framework: file locations are `DocRef` strings, and `android.icu` is reached through the `Collation` interface, whose real implementation is tested on a device (8.3).
+ViewModels against the fakes of `APP/fake/` and `:testing`; `AutoLock` with a fake lifecycle and clock, including the order of 5.5 for every lock trigger (a dirty form and a no-touch lock: the draft is written before `VaultPort.lock()`); the looks ([looks/README.md](looks/README.md)): in each of the six own colour schemes every text pair has a contrast of at least 4.5:1, every icon and outline that carries meaning 3:1 and every avatar tone 4.5:1, the style survives a new process and an unknown stored value reads as Bank blue, and the icon's resources are those its script made from its one drawing; the language mapping of i18n.md §1.4.5; the resource completeness test of i18n.md §5, one test per language (every string and plural in all four languages, the apostrophe and script rules); the source-rule tests of 8.5. Nothing here needs the Android framework: file locations are `DocRef` strings, and `android.icu` is reached through the `Collation` interface, whose real implementation is tested on a device (8.3).
 
 ### 8.3 Instrumented tests (`:app:connectedDebugAndroidTest` on emulators with Android 7, 9 and 17; every run sets `ANDROID_SERIAL` to its own devices)
 
@@ -1276,6 +1281,7 @@ A run is checked per device, through `tools/emu/adb.sh --connected` (or `--conne
 - `SortKeys` and `Formatters` on API 24 and 37: the Uzbek and Russian order and letter headers of i18n.md §2.7, ICU 56 against ICU 78.
 - Compose tests: the pad (no digit in any node), the secure field (nothing in saved state after `onSaveInstanceState`), the masks; the wrappers of R-13 set the content type, the sensitive flag and the window policy; `SecretClipboardBridge` (text selected and copied in notes carries the sensitive flag and the token, and pasting into a field still works).
 - `NavState`: a lock keeps the route ids and clears the unlocked ViewModels; a recreation keeps the route.
+- The looks, read from the screen's own pixels: a change of style or of light or dark reaches an open dialog and an open sheet without a restart; the lock screen has the stored style while the app is locked; "Phone's colours" is offered from Android 12 only; the launcher icon is adaptive with a monochrome layer, and Android 7 has a bitmap of every size.
 
 ### 8.4 Emulator scripts (under `tools/emu/`, on private devices made by `tools/emu/boot.sh`; every `adb` call names its device with `-s`; never `adb kill-server`)
 

@@ -4,6 +4,7 @@ import android.content.Context
 import android.provider.Settings
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.keyframes
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
@@ -59,6 +60,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import io.github.dilshodbekmx.passwordvault.R
+import io.github.dilshodbekmx.passwordvault.ui.theme.LocalLook
+import io.github.dilshodbekmx.passwordvault.ui.theme.PinKeyLook
 
 /** The number of digits of the app's PIN (ux.md §5.6). */
 const val PIN_LENGTH = 6
@@ -170,7 +173,10 @@ fun PinDots(entered: Int, modifier: Modifier = Modifier, length: Int = PIN_LENGT
  * The 3 × 4 keypad `1 2 3 / 4 5 6 / 7 8 9 / [fingerprint] 0 [⌫]` (ux.md §5.9): round keys of 72 dp
  * (never under 64 dp), larger with large fonts as far as the width allows, digits in
  * `headlineMedium`, a ripple and `HapticFeedbackType.VirtualKey` on each press; no letters under the
- * digits, never shuffled; always left to right. Every key is marked sensitive (ux.md §3; if
+ * digits, never shuffled; always left to right. How a key is drawn is the style's
+ * (docs/design/looks/README.md "PIN keys", read from `LocalLook`): a digit on a filled circle, alone,
+ * or in an outlined circle; the fingerprint key in the primary colour, or on a tonal circle; the
+ * delete key always without a fill. Every key is marked sensitive (ux.md §3; if
  * TalkBack cannot press keys that carry the flag, lock.md §13.5 check E12 turns [sensitiveKeys]
  * off and the dots keep it). TalkBack reads "1" … "0", "Delete last digit" and "Unlock with
  * fingerprint" (ux.md §8).
@@ -217,7 +223,7 @@ fun PinKeys(
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(KEY_GAP)) {
                     if (onFingerprint != null) {
-                        Key(keySize, enabled, sensitiveKeys, PinPadTags.FINGERPRINT, onClick = onFingerprint) {
+                        Key(keySize, enabled, sensitiveKeys, PinPadTags.FINGERPRINT, KeyKind.FINGERPRINT, onClick = onFingerprint) {
                             Icon(painterResource(R.drawable.ic_common_fingerprint), contentDescription = stringResource(R.string.common_pin_fingerprint), modifier = Modifier.size(KEY_ICON))
                         }
                     } else {
@@ -229,6 +235,7 @@ fun PinKeys(
                         enabled = enabled,
                         sensitive = sensitiveKeys,
                         tag = PinPadTags.DELETE,
+                        kind = KeyKind.DELETE,
                         onLongClick = onClear,
                         onClick = {
                             haptics.performHapticFeedback(HapticFeedbackType.VirtualKey)
@@ -263,8 +270,39 @@ object PinPadTags {
 
 @Composable
 private fun DigitKey(n: Int, size: Dp, enabled: Boolean, sensitive: Boolean, onPress: (Int) -> Unit) {
-    Key(size, enabled, sensitive, PinPadTags.key(n), onClick = { onPress(n) }) {
+    Key(size, enabled, sensitive, PinPadTags.key(n), KeyKind.DIGIT, onClick = { onPress(n) }) {
         Text(text = n.toString(), style = MaterialTheme.typography.headlineMedium)
+    }
+}
+
+/** The three kinds of key: the style draws each in its own way. */
+private enum class KeyKind { DIGIT, FINGERPRINT, DELETE }
+
+/** How one key is drawn: the circle's fill and outline, if it has them, and the colour of what is on it. */
+private class KeyColours(val fill: Color?, val outline: Color?, val content: Color)
+
+/**
+ * The colours of a key of [kind] in the style being shown. Whatever the style, the digit or icon
+ * has a contrast of at least 4.5:1 on what is behind it; a digit key's outline is decoration (the
+ * digit says what the key is), so it has the colour of a divider.
+ */
+@Composable
+private fun keyColours(kind: KeyKind): KeyColours {
+    val look = LocalLook.current
+    val colours = MaterialTheme.colorScheme
+    return when (kind) {
+        KeyKind.DIGIT -> when (look.pinKeys) {
+            PinKeyLook.FILLED -> KeyColours(fill = colours.surfaceContainerHigh, outline = null, content = colours.onSurface)
+            PinKeyLook.PLAIN -> KeyColours(fill = null, outline = null, content = colours.onSurface)
+            PinKeyLook.OUTLINED -> KeyColours(fill = null, outline = colours.outlineVariant, content = colours.onSurface)
+        }
+        KeyKind.FINGERPRINT ->
+            if (look.fingerprintKeyTonal) {
+                KeyColours(fill = colours.secondaryContainer, outline = null, content = colours.onSecondaryContainer)
+            } else {
+                KeyColours(fill = null, outline = null, content = colours.primary)
+            }
+        KeyKind.DELETE -> KeyColours(fill = null, outline = null, content = colours.onSurfaceVariant)
     }
 }
 
@@ -274,16 +312,18 @@ private fun Key(
     enabled: Boolean,
     sensitive: Boolean,
     tag: String,
+    kind: KeyKind,
     onClick: () -> Unit,
     onLongClick: (() -> Unit)? = null,
     content: @Composable () -> Unit,
 ) {
-    val onSurface = MaterialTheme.colorScheme.onSurface
+    val colours = keyColours(kind)
     Box(
         modifier = Modifier
             .size(size)
             .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+            .then(if (colours.fill != null) Modifier.background(colours.fill) else Modifier)
+            .then(if (colours.outline != null) Modifier.border(BorderStroke(KEY_OUTLINE, colours.outline), CircleShape) else Modifier)
             .combinedClickable(enabled = enabled, role = Role.Button, onLongClick = onLongClick, onClick = onClick)
             .semantics {
                 testTag = tag
@@ -291,7 +331,7 @@ private fun Key(
             },
         contentAlignment = Alignment.Center,
     ) {
-        CompositionLocalProvider(LocalContentColor provides if (enabled) onSurface else onSurface.copy(alpha = 0.38f)) {
+        CompositionLocalProvider(LocalContentColor provides if (enabled) colours.content else colours.content.copy(alpha = 0.38f)) {
             content()
         }
     }
@@ -320,5 +360,6 @@ private val MIN_KEY_SIZE = 64.dp
 private const val MAX_KEY_GROWTH = 1.5f
 private val KEY_GAP = 16.dp
 private val KEY_ICON = 32.dp
+private val KEY_OUTLINE = 1.5.dp
 private val DOT_SIZE = 14.dp
 private val SHAKE_STEP = 10.dp

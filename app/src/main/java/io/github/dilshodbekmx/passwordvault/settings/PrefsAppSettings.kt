@@ -2,6 +2,7 @@ package io.github.dilshodbekmx.passwordvault.settings
 
 import android.annotation.SuppressLint
 import android.content.SharedPreferences
+import android.os.Build
 import io.github.dilshodbekmx.passwordvault.core.generator.GeneratorOptions
 import io.github.dilshodbekmx.passwordvault.core.lock.guard.Credit
 import io.github.dilshodbekmx.passwordvault.files.DocRef
@@ -18,7 +19,10 @@ import kotlinx.coroutines.flow.asStateFlow
  * text this version does not know reads as the strictest value [V-P9]: the lock delay as
  * [LockDelay.WHEN_MISSING] ("Immediately"), the clipboard delay as [ClipDelay.WHEN_MISSING] (30
  * seconds), the backup reminder as on, and a purge arm, a file task or a pending clip that is not
- * complete as none (nothing is purged, resumed or cleared on half a record). Every enum is kept as
+ * complete as none (nothing is purged, resumed or cleared on half a record). The look has no strict
+ * value: the theme reads as [ThemeChoice.SYSTEM] and the style as [StyleChoice.DEFAULT], Bank blue,
+ * which also stands for a stored "Phone's colours" on a phone that has none ([phoneColours] false:
+ * before Android 12), where that style cannot be set either. Every enum is kept as
  * its fixed `stored` text, and the generator's kind and separator as the fixed texts below, so that
  * renaming a constant (or R8) never changes what is read back. Setup writes the defaults
  * ([writeDefaults], lock.md §10.1).
@@ -41,12 +45,15 @@ import kotlinx.coroutines.flow.asStateFlow
  * Nothing here is secret: no password, no PIN, no account data. The clip's token is a random number
  * that marks our own clip, and a document is a `content://` address.
  */
-class PrefsAppSettings(private val prefs: SharedPreferences) : AppSettings {
+class PrefsAppSettings(
+    private val prefs: SharedPreferences,
+    private val phoneColours: Boolean = StyleChoice.hasPhoneColours(Build.VERSION.SDK_INT),
+) : AppSettings {
 
     /** Held for the whole of every write, so that two writes never interleave. */
     private val writing = Any()
 
-    private val initial = Values.read(prefs.all)
+    private val initial = Values.read(prefs.all, phoneColours)
 
     /** The values last read or written; changed only under [writing]. */
     @Volatile
@@ -55,6 +62,7 @@ class PrefsAppSettings(private val prefs: SharedPreferences) : AppSettings {
     private val lockDelayFlow = MutableStateFlow(initial.lockDelay)
     private val clipDelayFlow = MutableStateFlow(initial.clipDelay)
     private val themeFlow = MutableStateFlow(initial.theme)
+    private val styleFlow = MutableStateFlow(initial.style)
     private val generatorFlow = MutableStateFlow(initial.generator)
     private val backupReminderFlow = MutableStateFlow(initial.backupReminder)
     private val fileTaskFlow = MutableStateFlow(initial.fileTask)
@@ -65,6 +73,7 @@ class PrefsAppSettings(private val prefs: SharedPreferences) : AppSettings {
     override val lockDelay: StateFlow<LockDelay> = lockDelayFlow.asStateFlow()
     override val clipDelay: StateFlow<ClipDelay> = clipDelayFlow.asStateFlow()
     override val theme: StateFlow<ThemeChoice> = themeFlow.asStateFlow()
+    override val style: StateFlow<StyleChoice> = styleFlow.asStateFlow()
     override val generator: StateFlow<GeneratorOptions> = generatorFlow.asStateFlow()
     override val backupReminder: StateFlow<BackupReminder> = backupReminderFlow.asStateFlow()
     override val fileTask: StateFlow<FileTask?> = fileTaskFlow.asStateFlow()
@@ -83,7 +92,9 @@ class PrefsAppSettings(private val prefs: SharedPreferences) : AppSettings {
         val before = current
         val editor = Editor(before)
         change(editor)
-        val after = editor.values()
+        val after = editor.values().let { set ->
+            if (set.style in StyleChoice.offered(phoneColours)) set else set.copy(style = StyleChoice.DEFAULT)
+        }
         if (after == before) return@synchronized true
 
         val entriesBefore = prefs.all
@@ -125,6 +136,7 @@ class PrefsAppSettings(private val prefs: SharedPreferences) : AppSettings {
         lockDelayFlow.value = values.lockDelay
         clipDelayFlow.value = values.clipDelay
         themeFlow.value = values.theme
+        styleFlow.value = values.style
         generatorFlow.value = values.generator
         backupReminderFlow.value = values.backupReminder
         fileTaskFlow.value = values.fileTask
@@ -137,6 +149,7 @@ class PrefsAppSettings(private val prefs: SharedPreferences) : AppSettings {
         override var lockDelay = start.lockDelay
         override var clipDelay = start.clipDelay
         override var theme = start.theme
+        override var style = start.style
         override var generator = start.generator
         override var backupReminder = start.backupReminder
         override var fileTask = start.fileTask
@@ -145,7 +158,7 @@ class PrefsAppSettings(private val prefs: SharedPreferences) : AppSettings {
         override var pendingClip = start.pendingClip
 
         fun values() = Values(
-            lockDelay, clipDelay, theme, generator, backupReminder, fileTask, oneTime.toSet(), purgeArm, pendingClip,
+            lockDelay, clipDelay, theme, style, generator, backupReminder, fileTask, oneTime.toSet(), purgeArm, pendingClip,
         )
     }
 
@@ -154,6 +167,7 @@ class PrefsAppSettings(private val prefs: SharedPreferences) : AppSettings {
         val lockDelay: LockDelay,
         val clipDelay: ClipDelay,
         val theme: ThemeChoice,
+        val style: StyleChoice,
         val generator: GeneratorOptions,
         val backupReminder: BackupReminder,
         val fileTask: FileTask?,
@@ -162,11 +176,15 @@ class PrefsAppSettings(private val prefs: SharedPreferences) : AppSettings {
         val pendingClip: PendingClip?,
     ) {
         companion object {
-            /** The values of [entries], `SharedPreferences.getAll()`; anything missing or unreadable as above. */
-            fun read(entries: Map<String, *>): Values = Values(
+            /**
+             * The values of [entries], `SharedPreferences.getAll()`; anything missing or unreadable
+             * as above. [phoneColours]: whether this phone has the wallpaper's colours.
+             */
+            fun read(entries: Map<String, *>, phoneColours: Boolean): Values = Values(
                 lockDelay = LockDelay.entries.firstOrNull { it.stored == entries[LOCK_DELAY] } ?: LockDelay.WHEN_MISSING,
                 clipDelay = ClipDelay.entries.firstOrNull { it.stored == entries[CLIP_DELAY] } ?: ClipDelay.WHEN_MISSING,
                 theme = ThemeChoice.entries.firstOrNull { it.stored == entries[THEME] } ?: ThemeChoice.SYSTEM,
+                style = StyleChoice.read(entries[STYLE], phoneColours),
                 generator = readGenerator(entries),
                 backupReminder = BackupReminder(
                     on = entries[BACKUP_ON] as? Boolean ?: true,
@@ -200,6 +218,7 @@ class PrefsAppSettings(private val prefs: SharedPreferences) : AppSettings {
                 if (new.lockDelay != old.lockDelay) put(LOCK_DELAY, new.lockDelay.stored)
                 if (new.clipDelay != old.clipDelay) put(CLIP_DELAY, new.clipDelay.stored)
                 if (new.theme != old.theme) put(THEME, new.theme.stored)
+                if (new.style != old.style) put(STYLE, new.style.stored)
                 if (new.generator != old.generator) {
                     val g = new.generator
                     put(GEN_KIND, kindStored(g.kind))
@@ -325,6 +344,7 @@ class PrefsAppSettings(private val prefs: SharedPreferences) : AppSettings {
         const val LOCK_DELAY = "lock_delay"
         const val CLIP_DELAY = "clip_delay"
         const val THEME = "theme"
+        const val STYLE = "style"
         const val GEN_KIND = "generator_kind"
         const val GEN_LENGTH = "generator_length"
         const val GEN_UPPER = "generator_upper"

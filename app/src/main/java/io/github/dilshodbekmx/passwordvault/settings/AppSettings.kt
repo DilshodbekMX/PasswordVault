@@ -8,8 +8,9 @@ import kotlinx.coroutines.flow.StateFlow
  * The app's settings outside the vault, needed before unlock and not secret (ux.md §2 "Outside the
  * vault"; architecture.md §3.5, D-7, D-19): `PrefsAppSettings` (build plan 2.9) over the
  * `SharedPreferences` file "pv_settings", written with `commit()`. A value that is missing or cannot
- * be read is the strictest one [V-P9]; setup writes the defaults ([writeDefaults]). The app's
- * language is not here: AppCompat keeps it (i18n.md §1.4).
+ * be read is the strictest one [V-P9]; setup writes the defaults ([writeDefaults]). The look ([theme],
+ * [style]) is here because the lock screen has it too. The app's language is not here: AppCompat
+ * keeps it (i18n.md §1.4).
  */
 interface AppSettings {
     /** "Lock the app after leaving it". Missing or unreadable: [LockDelay.IMMEDIATELY]; setup writes [LockDelay.SECONDS_30]. */
@@ -18,8 +19,15 @@ interface AppSettings {
     /** "Clear copied text after". Missing or unreadable: [ClipDelay.SECONDS_30]; setup writes [ClipDelay.MINUTE_1] (ux.md §5.18). */
     val clipDelay: StateFlow<ClipDelay>
 
-    /** System, light or dark. */
+    /** Light or dark: as the phone is set, always light, or always dark. Missing or unreadable: [ThemeChoice.SYSTEM]. */
     val theme: StateFlow<ThemeChoice>
+
+    /**
+     * The colours: one of the three styles, or the phone's own (docs/design/looks/README.md). Missing or
+     * unreadable: [StyleChoice.DEFAULT], Bank blue; so is a stored [StyleChoice.PHONE_COLOURS] on a
+     * phone before Android 12, which has none, and there it cannot be set either.
+     */
+    val style: StateFlow<StyleChoice>
 
     /** The generator sheet's last choices (ux.md §5.15). */
     val generator: StateFlow<GeneratorOptions>
@@ -62,6 +70,7 @@ interface SettingsEditor {
     var lockDelay: LockDelay
     var clipDelay: ClipDelay
     var theme: ThemeChoice
+    var style: StyleChoice
     var generator: GeneratorOptions
     var backupReminder: BackupReminder
     var fileTask: FileTask?
