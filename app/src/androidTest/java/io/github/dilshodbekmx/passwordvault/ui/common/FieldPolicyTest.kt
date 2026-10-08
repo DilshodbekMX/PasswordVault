@@ -89,14 +89,14 @@ class FieldPolicyTest {
     }
 
     /**
-     * No node of a `VaultSecureField` is offered to the phone's autofill service, its show/hide
+     * No node of a `VaultSecureField` can be filled by the phone's autofill service, its show/hide
      * button (`RevealToggle`) included (ux.md §3, [V-P4]). Compose offers every toggle as a value to
      * read and to set (foundation 1.12.1: `ContentDataType.Toggle` with `OnFillData`), so a fill could
-     * switch "Show password" on. The control, a plain `IconToggleButton`, is offered, so that the test
-     * cannot pass because it saw nothing.
+     * switch "Show password" on; the button's kind of value is "none". The control, a plain
+     * `IconToggleButton`, can be filled, so that the test cannot pass because it saw nothing.
      */
     @Test
-    fun noNodeOfThePasswordFieldIsOfferedToAutofill() {
+    fun noNodeOfThePasswordFieldCanBeFilledByAutofill() {
         compose.setContent {
             WindowPolicy.Root {
                 Column {
@@ -107,11 +107,12 @@ class FieldPolicyTest {
         }
         val nodes = compose.onAllNodes(SemanticsMatcher("any node") { true }, useUnmergedTree = true).fetchSemanticsNodes()
         val control = nodes.single { it.config.getOrNull(SemanticsProperties.TestTag) == CONTROL }
-        assertTrue("a plain toggle is offered to autofill: ${control.config}", control.config.offeredToAutofill())
+        assertTrue("a plain toggle can be filled: ${control.config}", control.config.fillableByAutofill())
         val toggles = nodes.filter { it.id != control.id && SemanticsProperties.ToggleableState in it.config }
         assertEquals("the field's show/hide button: ${toggles.map { it.config }}", 1, toggles.size)
-        val offered = nodes.filter { it.id != control.id && it.config.offeredToAutofill() }
-        assertTrue("offered to autofill: ${offered.map { it.config }}", offered.isEmpty())
+        assertEquals("the show/hide button's kind of value", ContentDataType.None, toggles.single().config.getOrNull(SemanticsProperties.ContentDataType))
+        val fillable = nodes.filter { it.id != control.id && it.config.fillableByAutofill() }
+        assertTrue("autofill can fill: ${fillable.map { it.config }}", fillable.isEmpty())
     }
 
     @Test
@@ -191,12 +192,13 @@ class FieldPolicyTest {
     }
 
     /**
-     * Whether the phone's autofill service is offered this node: it has a content type, or a kind of
-     * value other than "none" (Compose ui 1.12.1 leaves a node whose kind is "none" out of autofill).
+     * Whether Compose lets the phone's autofill service fill this node (ui 1.12.1,
+     * `AndroidAutofillManager.isAutofillable`): it has a way to be filled, and its kind of value is not
+     * "none". A content type alone does not count: `BasicSecureTextField` gives every password field
+     * `ContentType.Password`, and the field's own kind of value, "none", keeps it from being filled.
      */
-    private fun SemanticsConfiguration.offeredToAutofill(): Boolean =
-        SemanticsProperties.ContentType in this ||
-            (SemanticsProperties.ContentDataType in this && this[SemanticsProperties.ContentDataType] != ContentDataType.None)
+    private fun SemanticsConfiguration.fillableByAutofill(): Boolean =
+        getOrNull(SemanticsProperties.ContentDataType) != ContentDataType.None && SemanticsActions.OnFillData in this
 
     /** Long-presses the empty field [tag] and returns the items its toolbar was asked to show. */
     private fun longPressAndRecord(menu: MenuRecorder, tag: String): List<Any> {
