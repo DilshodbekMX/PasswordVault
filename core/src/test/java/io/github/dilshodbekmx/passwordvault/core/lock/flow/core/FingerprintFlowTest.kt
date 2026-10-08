@@ -6,6 +6,7 @@ import io.github.dilshodbekmx.passwordvault.core.lock.flow.FingerprintKey
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.FingerprintLine
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.FingerprintResult
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.KeyCreate
+import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockEngine
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockScreen
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockState
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockSummary
@@ -25,9 +26,15 @@ import io.github.dilshodbekmx.passwordvault.core.lock.record.PinRecord
 import io.github.dilshodbekmx.passwordvault.core.lock.record.RecordCodec
 import io.github.dilshodbekmx.passwordvault.core.lock.record.ShortcutSlot
 import io.github.dilshodbekmx.passwordvault.core.lock.record.StateRecord
+import io.github.dilshodbekmx.passwordvault.testing.FakeRandom
 import io.github.dilshodbekmx.passwordvault.testing.lock.FakeKeys
 import io.github.dilshodbekmx.passwordvault.testing.lock.FakeVaultPort
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.yield
@@ -513,6 +520,101 @@ class FingerprintFlowTest {
             first.join()
         }
         assertTrue(f.state is LockState.Unlocked)
+    }
+
+    /**
+     * An engine whose steps run on a thread of their own, as in the app (`Dispatchers.IO`), over the
+     * phone of [f], and a fingerprint key whose probe waits while [HeldProbe.hold] is set: so that a
+     * caller can be cancelled while the first turn of `UnlockFlows.fingerprint` runs. `LockCore.locked`
+     * runs that turn to its end, and `withContext` then drops its answer on the way back to the
+     * cancelled caller (architecture.md §3.4), which only happens when the dispatcher changes.
+     */
+    private class HeldProbe(private val inner: FingerprintKey) : FingerprintKey by inner {
+        val hold = AtomicBoolean(false)
+        val atTheProbe = CountDownLatch(1)
+        val goOn = CountDownLatch(1)
+
+        override fun probe(alias: String, nonce: ByteArray): Ks<Unit> {
+            if (hold.get()) {
+                atTheProbe.countDown()
+                check(goOn.await(30, TimeUnit.SECONDS)) { "the test never let the probe go on" }
+            }
+            return inner.probe(alias, nonce)
+        }
+    }
+
+    /** Runs [script] with such an engine, started and in front on the pad with its fingerprint key. */
+    private fun onItsOwnThread(script: suspend (engine: LockEngine, probe: HeldProbe) -> Unit) {
+        vault = f.seedVault()
+        f.plantPin(vault)
+        finger = f.plantFingerprint(vault)
+        f.plantState()
+        val probe = HeldProbe(f.keys.fingerprint)
+        val thread = Executors.newSingleThreadExecutor()
+        try {
+            val engine = LockEngine(
+                f.files, LockFixture.ROOT, f.clock, FakeRandom(77), f.keys.pin, probe, f.keys.device, f.port, f.kdf, f.aead,
+                thread.asCoroutineDispatcher(),
+            )
+            runBlocking {
+                engine.start()
+                engine.appStarted()
+                assertTrue(((engine.state.value as LockState.Locked).screen as LockScreen.Pad).fingerprintKey)
+                script(engine, probe)
+            }
+        } finally {
+            thread.shutdownNow()
+        }
+    }
+
+    @Test
+    fun aTapWhoseCallerIsCancelledDuringTheFirstTurn_leavesNoLaunchOutstanding_andTheNextTapOpensThePrompt() {
+        // §9.2 rule 8: a launch is outstanding only until its result is dealt with. The launch that the
+        // first turn made never reached its cancelled caller, and no prompt was shown for it: left
+        // outstanding, it would refuse every later prompt of the visit (rule 4), so that the
+        // fingerprint key of the pad did nothing (rule 7).
+        onItsOwnThread { engine, probe ->
+            probe.hold.set(true)
+            runBlocking {
+                val tap = launch(start = CoroutineStart.UNDISPATCHED) { engine.useFingerprint() }
+                assertTrue(probe.atTheProbe.await(30, TimeUnit.SECONDS)) // the first turn is at the probe, under the mutex
+                tap.cancel() // the scope of the screen that asked went away
+                probe.hold.set(false)
+                probe.goOn.countDown()
+                tap.join()
+            }
+            assertEquals("no launch is left outstanding", 0, engine.core.outstandingLaunch)
+            assertEquals(emptyList<FakeKeys.PromptCall>(), f.keys.prompts)
+            assertTrue(engine.state.value is LockState.Locked)
+
+            engine.useFingerprint() // the fingerprint key again
+            assertEquals(listOf(PromptUse.UNLOCK), f.keys.prompts.map { it.use })
+            assertTrue(engine.state.value is LockState.Unlocked)
+            assertEquals(0, engine.core.outstandingLaunch)
+        }
+    }
+
+    @Test
+    fun aPromptThatWasToOpenByItself_andWhoseCallerIsCancelledDuringTheFirstTurn_opensAtTheNextResume() {
+        // §9.2 rules 3 and 7: the prompt opens by itself once per visit; one that was never shown is
+        // tried again at the next resume, as after `NotShown`.
+        onItsOwnThread { engine, probe ->
+            probe.hold.set(true)
+            runBlocking {
+                val resume = launch(start = CoroutineStart.UNDISPATCHED) { engine.promptIfDue() }
+                assertTrue(probe.atTheProbe.await(30, TimeUnit.SECONDS))
+                resume.cancel() // a rotation: the activity that was resumed is gone
+                probe.hold.set(false)
+                probe.goOn.countDown()
+                resume.join()
+            }
+            assertEquals("no launch is left outstanding", 0, engine.core.outstandingLaunch)
+            assertEquals(emptyList<FakeKeys.PromptCall>(), f.keys.prompts)
+
+            engine.promptIfDue() // the recreated activity is resumed
+            assertEquals(listOf(PromptUse.UNLOCK), f.keys.prompts.map { it.use })
+            assertTrue(engine.state.value is LockState.Unlocked)
+        }
     }
 
     @Test
