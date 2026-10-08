@@ -381,8 +381,8 @@ class LockEngine(
      * nothing (I11); an open fingerprint prompt is cancelled and its launch ended; the proofs are
      * dropped (§5.8). Then, under the mutex: a held charge is refunded (§6.3 A), the digits are
      * zeroed, a proof that a step running meanwhile made is dropped too, the credits observed. It
-     * does not lock: `AutoLock` decides that (§10.2). Only the
-     * visit it ended is closed: one that a later `ON_START` has begun meanwhile stays.
+     * does not lock: `AutoLock` decides that (§10.2). Only the visit it ended is closed: one that a
+     * later `ON_START` has begun meanwhile stays.
      */
     suspend fun appStopped() {
         core.visible = false
@@ -409,9 +409,8 @@ class LockEngine(
      * its draft flush. At once: the prompts end, the proofs are dropped, a fingerprint prompt of the
      * open app is cancelled. Under the mutex: a proof that an unlock running meanwhile made is
      * dropped too, the vault port drops its session (it waits for a save that is running), the
-     * vaults are listed again, the lock screen is chosen (§13.1), and a new
-     * visit starts if the app is visible. It never writes vault data. While the app is not unlocked
-     * it does nothing more.
+     * vaults are listed again, the lock screen is chosen (§13.1), and a new visit starts if the app
+     * is visible. It never writes vault data. While the app is not unlocked it does nothing more.
      */
     suspend fun lock() {
         val wasOpen = core.state.value is LockState.Unlocked
