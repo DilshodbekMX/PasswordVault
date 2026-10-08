@@ -49,6 +49,8 @@ final class TestDocuments {
     static final String NO_DELETE = "nodelete";
     /** Cannot open the document for reading. */
     static final String NO_READ = "noread";
+    /** Refuses the mode "wt" as a bad mode, and with "w" writes over the old content without cutting it. */
+    static final String W_ONLY = "wonly";
     /** Answers a query with all its columns, in its own order, whatever columns were asked for. */
     static final String ALL_COLUMNS = "allcolumns";
 

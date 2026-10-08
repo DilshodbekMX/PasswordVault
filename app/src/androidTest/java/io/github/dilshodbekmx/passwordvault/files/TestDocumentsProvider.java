@@ -84,6 +84,9 @@ public final class TestDocumentsProvider extends DocumentsProvider {
             case TestDocuments.CUT:
             case TestDocuments.FLIP:
                 return brokenWriter(file, behaviour);
+            case TestDocuments.W_ONLY:
+                if (mode.indexOf('t') >= 0) throw new IllegalArgumentException("Bad mode: " + mode);
+                return ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_WRITE_ONLY);
             default:
                 return ParcelFileDescriptor.open(file, ParcelFileDescriptor.parseMode(mode));
         }

@@ -112,6 +112,24 @@ class SafDocumentIoTest {
     }
 
     @Test
+    fun aProviderThatTakesOnlyWIsWrittenAndAnOldTailIsCaught() = runBlocking {
+        // Where "wt" is refused as a bad mode the document is written with "w", which cuts nothing
+        // here: what was written is all there is only when the old content was not longer.
+        val old = payload(50, seed = 9)
+        val (id, doc) = document(TestDocuments.W_ONLY, old)
+        val longer = payload(200)
+        assertTrue("longer than the old content", io.write(doc, longer))
+        assertArrayEquals(longer, DocumentsRig.stored(id))
+        val same = payload(200, seed = 3)
+        assertTrue("as long as the old content", io.write(doc, same))
+        assertArrayEquals(same, DocumentsRig.stored(id))
+        val shorter = payload(120, seed = 4)
+        assertFalse("the old tail is still there, and the read-back sees it", io.write(doc, shorter))
+        assertArrayEquals(shorter + same.copyOfRange(120, 200), DocumentsRig.stored(id))
+        assertFalse("also when nothing at all was to be written", io.write(doc, ByteArray(0)))
+    }
+
+    @Test
     fun deleteWhereAllowed() = runBlocking {
         val (id, doc) = document(TestDocuments.PLAIN, payload(10))
         assertTrue("the place allows deleting", io.delete(doc))
