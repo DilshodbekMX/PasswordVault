@@ -806,6 +806,16 @@ internal class LockCore(
     /** Whether this engine made [proof] and has not dropped it: a flow accepts no other. */
     fun holds(proof: MasterProof): Boolean = synchronized(proofs) { proofs.any { it === proof } }
 
+    /**
+     * Any thread: [proof] alone is zeroed and no longer held, because the flow it was made for has
+     * ended (lock.md §5.8; F12 step 2: "The typed bytes are kept only until the offer is answered").
+     * The other proofs stay. A proof this engine does not hold is zeroed all the same.
+     */
+    fun dropProof(proof: MasterProof) {
+        synchronized(proofs) { proofs.removeAll { it === proof } }
+        proof.drop()
+    }
+
     /** Any thread: every proof handed out is zeroed (a lock, `ON_STOP`). */
     fun dropProofs() {
         val all = synchronized(proofs) {

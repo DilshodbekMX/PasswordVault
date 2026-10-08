@@ -433,6 +433,8 @@ sealed interface LockScreen {                          // lock.md §13.2; declar
 // enum class ChoosePinReason { TURNED_OFF, FORGOTTEN, STOPPED_WORKING, MASTER_CHANGED, NONE_HERE, SOMEONE_MAY_KNOW }
 // enum class NoticeAnswer { OK, LATER, CANCEL_IT, FINISH_NOW, IT_WASNT_ME, CHANGE_PIN, TYPE_MASTER_PASSWORD, NEW_MASTER_PASSWORD,
 //                           CHOOSE_PIN, TURN_ON_FINGERPRINT, SET_UP_AGAIN, BACK_UP_NOW }   // each Notice's KDoc lists the ones it offers
+// BackupNow ("Make a backup now?", lock.md F12 step 2): BACK_UP_NOW leaves Unlocked.proof for the backup that the answer starts; any
+//   other answer drops that proof and publishes Unlocked with proof = null, so whatever follows asks for the master password again
 class LockStatus(                                      // Settings › App lock, the list's banners, Welcome and the sheet
     val pin: PinStatus,                                // On | NotSet | Off(reason: PinReason, never CANNOT_CHECK) | CannotCheck | NoSecureHardware
     val fingerprint: FingerprintStatus,                // On | Off | TurnOnAgain | Unavailable(canAuthenticate: Int) | NoSecureHardware
