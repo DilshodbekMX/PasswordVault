@@ -14,6 +14,7 @@ import io.github.dilshodbekmx.passwordvault.core.lock.flow.Notice
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.PadStatus
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.PinKey
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.PinReason
+import io.github.dilshodbekmx.passwordvault.core.lock.flow.PinSetOutcome
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.core.LockFixture
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.core.LockFixture.Companion.PASSWORD
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.core.LockFixture.Companion.PIN
@@ -277,7 +278,7 @@ class SetPinFlowTest {
         withPin()
         val proof = f.unlockWithMasterPassword()
         val pin = digits(NEW_PIN)
-        assertTrue(await { f.engine.setPin(pin, proof) })
+        assertEquals(PinSetOutcome.Set, await { f.engine.setPin(pin, proof) })
         assertArrayEquals(digits(NEW_PIN), pin)
     }
 
@@ -409,7 +410,8 @@ class SetPinFlowTest {
         val proof = f.unlockWithMasterPassword()
         val old = PinWrap.alias(f.pinRecord().slot!!.id)
         f.files.failNextWrite(FakeRecordFiles.WriteStep.DIR_SYNC) // §5.9: "not written", although the rename is on disk
-        assertFalse(f.setPin(NEW_PIN, proof))
+        // F6 step 8: the record read back is the new one, so nobody can promise that the old PIN still works.
+        assertEquals(PinSetOutcome.MayNotBeSaved, f.setPinOutcome(NEW_PIN, proof))
         val onDisk = f.pinAliasOnDisk()!!
         assertNotEquals(old, onDisk)
         assertTrue("a record names the new key: it was not deleted", onDisk in f.keys.aliases)

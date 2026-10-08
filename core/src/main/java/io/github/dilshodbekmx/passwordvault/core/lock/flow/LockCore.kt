@@ -63,6 +63,32 @@ internal class OpenVault(
 )
 
 /**
+ * What writing the record of a new PIN or fingerprint slot came to (lock.md F6 steps 7 and 8, F9
+ * steps 8 and 9). When the write reports a failure the lock reads the record back and goes on with
+ * what is on disk: a failed directory sync counts as "not written" (§5.9) while the rename is
+ * already there, so the new record may be the one the next start reads.
+ */
+internal enum class SlotWrite {
+    /** The new record is on disk. */
+    WRITTEN,
+
+    /**
+     * The write failed and the record read back is not the new one: the earlier state stands, in
+     * memory and on disk. No record names the new key, which is left to the sweep (§5.7).
+     */
+    NOT_WRITTEN,
+
+    /**
+     * The write reported a failure, and the lock cannot say which record a later start will find.
+     * The record read back is the new one, and the lock goes on with it: the new slot works in this
+     * process, and after a power cut the earlier record may be back. Or the record could not be read
+     * back, and the lock goes on with the earlier one. Neither key is deleted: the sweep deletes the
+     * one that no record names (§5.7).
+     */
+    MAY_BE_WRITTEN,
+}
+
+/**
  * `fingerprint.rec` of one vault as the lock controller means to have it on disk (lock.md §5.5,
  * §6.3): what `PinGuard` is for `pin.rec`, without a counter. Every write stores the whole record,
  * so a write that failed is made good by the next one that succeeds. A record that read DAMAGED,
@@ -108,23 +134,39 @@ internal class FingerprintKeeper(
 
     /**
      * Fingerprint unlock is turned on (lock.md F9 step 8): writes [slot] with `off = null`. It must
-     * reach the disk: when the write reports a failure the old record stays here, in memory, and it
-     * returns false. Such a write may still have replaced the record on disk (a failed directory
-     * `fsync` counts as not written, §5.9, while the rename is already there), so the flow leaves the
-     * new alias to the sweep and never deletes it (F9 step 9, as F6 step 8). The earlier key is left
-     * to the sweep too. A record that read NEWER is never replaced: false.
+     * reach the disk. When the write reports a failure the record is read back, and the keeper goes
+     * on with what is on disk (F9 step 9): the new record when the rename took place and only the
+     * directory sync failed (§5.9), otherwise the earlier one, which stays here as it was. Either
+     * way the flow never deletes the new alias: a record may name it, now or after a power cut. The
+     * earlier key is left to the sweep too (§5.7). A record that read NEWER is never replaced:
+     * [SlotWrite.NOT_WRITTEN].
      */
-    fun setSlot(slot: ShortcutSlot): Boolean {
+    fun setSlot(slot: ShortcutSlot): SlotWrite {
         require(Uuid.isValid(slot.id)) { "not a lower-case UUID of version 4" }
         require(slot.wraps.size in 1..RecordCodec.MAX_WRAPS && slot.wraps.map { it.vkId }.toSet().size == slot.wraps.size) {
             "a slot holds one or two wraps with different vk_ids"
         }
-        if (rec == null && lastRead is RecordRead.Newer) return false
+        if (rec == null && lastRead is RecordRead.Newer) return SlotWrite.NOT_WRITTEN
         val next = FingerprintRecord(vaultId, slot, off = null)
-        if (!write(next)) return false
-        rec = next
-        lastRead = RecordRead.Ok(next)
-        return true
+        if (write(next)) {
+            rec = next
+            lastRead = RecordRead.Ok(next)
+            return SlotWrite.WRITTEN
+        }
+        val back = try {
+            store.read()
+        } catch (e: IOException) {
+            RecordRead.Unreadable
+        }
+        return when {
+            back is RecordRead.Ok && back.record.slot?.id == slot.id -> {
+                rec = back.record
+                lastRead = back
+                SlotWrite.MAY_BE_WRITTEN
+            }
+            back is RecordRead.Unreadable -> SlotWrite.MAY_BE_WRITTEN // what is on disk cannot be known now
+            else -> SlotWrite.NOT_WRITTEN
+        }
     }
 
     /**
@@ -260,6 +302,32 @@ internal class VaultLock(
         val result = pin.startUp()
         interruptedAtStart = result.interrupted
         return result
+    }
+
+    /**
+     * The record write of a new PIN slot [slotId] reported a failure (lock.md F6 step 8): `pin.rec`
+     * is read back, and the lock goes on with what is on disk. When that is the new record (the
+     * rename took place, and only the directory sync failed, §5.9), the guard takes it up as it
+     * takes up a record at its start-up step (§6.3 S): the new PIN works from now on, and what the
+     * guard remembered about the old one is forgotten. When it is not, the guard keeps the record it
+     * had. When it cannot be read back, the guard keeps the record it had too, and nobody can say
+     * which one a later start will find.
+     */
+    fun newPinWriteFailed(slotId: String): SlotWrite {
+        val back = try {
+            pinStore.read()
+        } catch (e: IOException) {
+            RecordRead.Unreadable
+        }
+        return when {
+            back is RecordRead.Ok && back.record.slot?.id == slotId -> {
+                pinStarted = true
+                interruptedAtStart = pin.startUp().interrupted
+                SlotWrite.MAY_BE_WRITTEN
+            }
+            back is RecordRead.Unreadable -> SlotWrite.MAY_BE_WRITTEN
+            else -> SlotWrite.NOT_WRITTEN
+        }
     }
 
     /** `pin.rec` as the entry policy takes it (lock.md §13.1): the record in memory, or what reading the file gave. */

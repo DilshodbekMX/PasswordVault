@@ -157,6 +157,30 @@ sealed interface CreateOutcome {
     data object NotSaved : CreateOutcome
 }
 
+/** What setting a PIN with the master password of the flow came to (lock.md F6 "Set", steps 4 to 8). */
+sealed interface PinSetOutcome {
+    /** The new record is on disk: "Your PIN is set." */
+    data object Set : PinSetOutcome
+
+    /**
+     * Nothing changed: the proof is not one this engine holds for the open vault, the PIN is one
+     * the blocklist refuses, the key or the wrap could not be made, or the record was not written
+     * and the one read back is the one from before (F6 step 8). A PIN that worked before still
+     * works: "Couldn't save the new PIN. Your old PIN still works." or "The PIN can't be set up
+     * right now. Try again later."
+     */
+    data object NotSet : PinSetOutcome
+
+    /**
+     * The record write reported a failure, and the lock cannot say that the old record is the one
+     * on disk (F6 step 8): the record read back is the new one, which this process goes on with (a
+     * failed directory sync, with the rename already there), or it could not be read back. "The new
+     * PIN may not have been saved. Next time try the new PIN first. If it is not accepted, use the
+     * old PIN or your master password."
+     */
+    data object MayNotBeSaved : PinSetOutcome
+}
+
 /** What "Change PIN" came to (lock.md F6): the engine's side of `PinChange`. */
 sealed interface PinChangeOutcome {
     data object Changed : PinChangeOutcome
@@ -178,6 +202,9 @@ sealed interface PinChangeOutcome {
 
     /** The new key or record could not be made (F6 step 8): the old PIN still works. */
     data object NotSaved : PinChangeOutcome
+
+    /** As [PinSetOutcome.MayNotBeSaved]: the current PIN was right, and the new record may or may not be on disk (F6 step 8). */
+    data object MayNotBeSaved : PinChangeOutcome
 }
 
 /** What turning fingerprint unlock on came to (lock.md F9 steps 4 to 9): the engine's side of `FingerprintOnResult`. */
@@ -198,6 +225,14 @@ sealed interface FingerprintOnOutcome {
 
     /** The prompt could not be shown now (§9.2 rule 3). */
     data object NotShown : FingerprintOnOutcome
+
+    /**
+     * The record write reported a failure, and the lock cannot say that the earlier record is the
+     * one on disk (F9 step 9): the record read back is the new one, which this process goes on
+     * with, or it could not be read back. "Fingerprint unlock may not have been turned on. If your
+     * fingerprint is not accepted, turn it on again in Settings."
+     */
+    data object MayNotBeOn : FingerprintOnOutcome
 }
 
 /** What changing the master password came to (lock.md F8): the engine's side of `ChangeResult`. */
@@ -644,8 +679,12 @@ class LockEngine(
     // ---------------------------------------------------------------------------------------------
     // The shortcuts (F6, F9)
 
-    /** Sets a PIN with the master password of this flow (F6 "Set", F1 step 6). False: not set; what was there stays. */
-    suspend fun setPin(pin: ByteArray, proof: MasterProof): Boolean = core.locked { shortcuts.setPin(pin, proof) }
+    /**
+     * Sets a PIN with the master password of this flow (F6 "Set", F1 step 6). [PinSetOutcome.NotSet]:
+     * what was there stays. [PinSetOutcome.MayNotBeSaved]: the record write reported a failure, and
+     * the lock went on with the record it read back (F6 step 8).
+     */
+    suspend fun setPin(pin: ByteArray, proof: MasterProof): PinSetOutcome = core.locked { shortcuts.setPin(pin, proof) }
 
     /** "Change PIN": [current] is a counted check in a prompt (§6.3, F6 step 2), then [new]. */
     suspend fun changePin(current: ByteArray, new: ByteArray): PinChangeOutcome = shortcuts.changePin(current, new)

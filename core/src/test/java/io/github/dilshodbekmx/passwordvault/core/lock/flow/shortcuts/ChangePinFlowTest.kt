@@ -419,7 +419,8 @@ class ChangePinFlowTest {
                 if (writes == 2) f.files.failNextWrite(FakeRecordFiles.WriteStep.DIR_SYNC)
             }
         }
-        assertEquals(PinChangeOutcome.NotSaved, f.changePin(PIN, NEW_PIN))
+        // F6 step 8: the record read back is the new one, so nobody can promise that the old PIN still works.
+        assertEquals(PinChangeOutcome.MayNotBeSaved, f.changePin(PIN, NEW_PIN))
         f.files.onBoundary = null
         val onDisk = f.pinAliasOnDisk()!!
         assertNotEquals(old, onDisk)
