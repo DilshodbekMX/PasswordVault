@@ -170,7 +170,7 @@ class SafDocumentIoTest {
     fun theProvidersNamesAreShown() {
         val (_, doc) = document(TestDocuments.PLAIN)
         assertEquals(Place.Other("PV test documents"), io.place(doc))
-        assertEquals(doc.uri.substringAfterLast('/') + ".bin", io.displayName(doc))
+        assertEquals(doc.uri.substringAfterLast('/') + ".bin", io.name(doc))
     }
 
     private fun payload(size: Int, seed: Int = 1): ByteArray = ByteArray(size) { ((it * 31 + seed * 7) xor (it ushr 8)).toByte() }

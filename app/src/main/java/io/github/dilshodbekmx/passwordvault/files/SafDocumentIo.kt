@@ -39,9 +39,10 @@ import kotlinx.coroutines.withContext
  *   already.
  * - **Place** by the provider ([Places]); another place is named by the label of its provider, or for
  *   an SD card or USB drive by its volume's description ("SanDisk SD card").
+ * - **Name** asks the provider for the document's display name.
  *
- * Everything that reads or writes runs on [io] (architecture.md §5.3); [keep], [delete], [place] and
- * [nameOf] are binder calls of their own, cheap enough for any thread.
+ * Everything that reads or writes runs on [io] (architecture.md §5.3); [keep], [delete], [place],
+ * [name] and [nameOf] are binder calls of their own, made by their callers off the main thread.
  */
 class SafDocumentIo(private val context: Context, private val io: CoroutineDispatcher) : DocumentIo {
     private val resolver: ContentResolver get() = context.contentResolver
@@ -107,10 +108,10 @@ class SafDocumentIo(private val context: Context, private val io: CoroutineDispa
     override fun place(doc: DocRef): Place = Places.of(doc.uri, ::nameOf)
 
     /**
-     * The name the provider shows for [doc], which may differ from the one the picker suggested ("(1)"
-     * added on a clash); null when it cannot be read.
+     * The name the provider shows for [doc] (`OpenableColumns.DISPLAY_NAME`), which may differ from
+     * the one the picker suggested ("(1)" added on a clash); null when it cannot be read.
      */
-    fun displayName(doc: DocRef): String? = try {
+    override fun name(doc: DocRef): String? = try {
         resolver.query(Uri.parse(doc.uri), arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
             if (cursor.moveToFirst() && !cursor.isNull(0)) cursor.getString(0) else null
         }
