@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.res.Configuration
 import android.os.SystemClock
 import androidx.activity.ComponentActivity
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -13,19 +14,39 @@ import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.github.dilshodbekmx.passwordvault.R
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.AsideLine
+import io.github.dilshodbekmx.passwordvault.core.lock.flow.AsideVault
+import io.github.dilshodbekmx.passwordvault.core.lock.flow.ChoosePinReason
+import io.github.dilshodbekmx.passwordvault.core.lock.flow.CurrentVault
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.FingerprintLine
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockScreen
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.MpError
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.MpReason
+import io.github.dilshodbekmx.passwordvault.core.lock.flow.Notice
+import io.github.dilshodbekmx.passwordvault.core.lock.flow.NoticeAnswer
+import io.github.dilshodbekmx.passwordvault.core.lock.flow.PadStatus
+import io.github.dilshodbekmx.passwordvault.core.lock.flow.PinReason
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.Practice
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.ReplacedLine
 import io.github.dilshodbekmx.passwordvault.core.lock.record.Shortcut
 import io.github.dilshodbekmx.passwordvault.fake.FakeLockManager
+import io.github.dilshodbekmx.passwordvault.lock.LockStatus
 import io.github.dilshodbekmx.passwordvault.lock.LockUiState
+import io.github.dilshodbekmx.passwordvault.lock.PinStatus
+import io.github.dilshodbekmx.passwordvault.nav.Navigator
+import io.github.dilshodbekmx.passwordvault.nav.Route
+import io.github.dilshodbekmx.passwordvault.platform.AndroidClock
+import io.github.dilshodbekmx.passwordvault.settings.ThemeChoice
+import io.github.dilshodbekmx.passwordvault.ui.theme.PasswordVaultTheme
+import io.github.dilshodbekmx.passwordvault.window.WindowPolicy
 import java.util.Locale
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -33,11 +54,13 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * Build plan §1 rule 5: the master-password screen walked once in the `en-XA` pseudo-locale (the
- * debug build makes it, i18n.md §1.1): every `lock_` string and plural comes out pseudo-localized,
- * so none is plain English or marked untranslatable; and the screen, drawn in `en-XA` in states that
- * between them show every line and button, has no text and no label that stayed plain English, so
- * none is written into the code.
+ * Build plan §1 rule 5: the lock screens walked once in the `en-XA` pseudo-locale (the debug build
+ * makes it, i18n.md §1.1): every `lock_` string and plural comes out pseudo-localized, so none is
+ * plain English or marked untranslatable; and each screen (the master password, the pad, fingerprint
+ * only, an older master password, "can't be opened"), the sheet, the questions, every notice and the
+ * prompt, drawn in `en-XA` in states that between them show every line and button, has no text and
+ * no label that stayed plain English, so none is written into the code. The app's name and the
+ * keys' digits are the same in every language.
  */
 @RunWith(AndroidJUnit4::class)
 class LockPseudoLocaleTest {
@@ -117,6 +140,134 @@ class LockPseudoLocaleTest {
         }
     }
 
+    @Test
+    fun theOtherLockScreensDrawEveryTextFromResources() {
+        val states = listOf(
+            LockUiState.Locked(LockScreen.Pad(3, PadStatus.LastTry, fingerprintKey = true, opening = false, aside = AsideLine.LockedOn(AT))),
+            LockUiState.Locked(LockScreen.Pad(6, PadStatus.Interrupted(3), fingerprintKey = false, opening = true, aside = null)),
+            LockUiState.Locked(LockScreen.FingerprintOnly(FingerprintLine.CannotCheck, PinReason.STOPPED_WORKING, AsideLine.FromBefore(AT))),
+            LockUiState.Locked(LockScreen.OlderPassword(AT, unfinishedChange = true)),
+            LockUiState.Locked(LockScreen.OlderPassword(AT, unfinishedChange = false, aside = AsideLine.LockedOn(AT))),
+            LockUiState.Unreadable(CurrentVault.Why.IO, listOf(AsideVault("00000000-0000-4000-8000-0000000000aa", AT, null))),
+            LockUiState.Unreadable(CurrentVault.Why.DAMAGED, emptyList()),
+            LockUiState.Unreadable(CurrentVault.Why.NEWER, emptyList()),
+        )
+        val lock = FakeLockManager(initial = states.first())
+        inPseudo { LockRouteHost(lock) }
+        for (state in states) {
+            compose.runOnUiThread { lock.state.value = state }
+            compose.waitForIdle()
+            assertAllPseudo("$state", shownTexts(), atLeast = 3)
+        }
+    }
+
+    @Test
+    fun theSheetAndTheQuestionsDrawEveryTextFromResources() {
+        val lock = FakeLockManager(initial = LockUiState.Locked(screen()))
+        lock.status.value = LockStatus.NONE.copy(pin = PinStatus.CannotCheck, aside = listOf(AsideVault("00000000-0000-4000-8000-0000000000aa", AT, null)))
+        inPseudo { LockRouteHost(lock) }
+        compose.onNodeWithTag(LockTags.FORGOT).performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag(LockTags.SHEET).assertExists()
+        assertAllPseudo("the sheet", shownTexts(), atLeast = 12)
+        compose.onNodeWithTag(LockTags.SHEET_EMPTY).performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag(LockTags.CONFIRM).assertExists()
+        assertAllPseudo("Start with an empty app?", shownTexts(), atLeast = 4)
+        compose.onNodeWithTag(LockTags.CONFIRM_CANCEL).performClick()
+        compose.onNodeWithTag(LockTags.SHEET_TRY_AGAIN).performClick()
+        compose.runOnUiThread { lock.state.value = LockUiState.Locked(LockScreen.OlderPassword(AT, unfinishedChange = true)) }
+        compose.waitForIdle()
+        compose.onNodeWithTag(LockTags.OLDER_FROM_BEFORE).performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag(LockTags.CONFIRM).assertExists()
+        assertAllPseudo("Open your passwords as they were before …?", shownTexts(), atLeast = 4)
+    }
+
+    @Test
+    fun theNoticesAndThePromptDrawEveryTextFromResources() {
+        val notices = listOf(
+            Notice.OlderCopy(1, AT),
+            Notice.OlderThanLastTime(2, AT),
+            Notice.Pending(3, AT, Shortcut.PIN, 20 * 3_600_000L),
+            Notice.Pending(4, AT, Shortcut.FINGERPRINT, 3_600_000L),
+            Notice.PendingReady(5, AT, Shortcut.PIN),
+            Notice.PendingCancelled(6),
+            Notice.Replaced(7, AT, Shortcut.PIN, "00000000-0000-4000-8000-0000000000aa"),
+            Notice.Replaced(8, AT, Shortcut.FINGERPRINT, "00000000-0000-4000-8000-0000000000aa"),
+            Notice.WrongTries(9, 3, AT, true, 4, true, 2),
+            Notice.WrongTries(10, 1, System.currentTimeMillis(), false, null, false, 0),
+            Notice.WrongTries(11, 2, null, false, null, false, 0),
+            Notice.ChoosePin(12, ChoosePinReason.TURNED_OFF, needsMasterPassword = true),
+            Notice.FingerprintAgain(13),
+            Notice.StorageUnreadable(14),
+            Notice.BackupNow(15),
+        )
+        val lock = FakeLockManager(initial = LockUiState.Unlocked(notices, null))
+        val nav = object : Navigator {
+            override fun go(route: Route) = true
+            override fun back() = false
+            override fun replace(route: Route) = false
+            override fun tab(root: Route) = false
+        }
+        inPseudo { NoticesInTheme(lock, nav) }
+        for (notice in notices) {
+            compose.waitForIdle()
+            compose.onNodeWithTag(NoticeTags.NOTICE).assertExists()
+            assertAllPseudo("$notice", shownTexts(), atLeast = 2)
+            if (notice is Notice.WrongTries && notice.pinsBeforeOff != null) {
+                // "Type master password": the prompt, then back to the notices.
+                compose.onNodeWithTag(NoticeTags.answer(NoticeAnswer.TYPE_MASTER_PASSWORD)).performClick()
+                compose.waitForIdle()
+                compose.onNodeWithTag(NoticeTags.PROMPT).assertExists()
+                assertAllPseudo("the prompt", shownTexts(), atLeast = 4)
+                compose.onNodeWithTag(NoticeTags.PROMPT_CANCEL).performClick()
+            } else {
+                compose.runOnUiThread { lock.send(io.github.dilshodbekmx.passwordvault.lock.LockIntent.NoticeAnswered(notice.id, NoticeAnswer.OK)) }
+            }
+        }
+        compose.waitForIdle()
+        compose.onNodeWithTag(NoticeTags.NOTICE).assertDoesNotExist()
+    }
+
+    @Composable
+    private fun NoticesInTheme(lock: FakeLockManager, nav: Navigator) {
+        WindowPolicy.Root {
+            PasswordVaultTheme(ThemeChoice.LIGHT) {
+                val vm = viewModel { NoticesViewModel(lock, AndroidClock, NOTICE_SCOPE) }
+                NoticesHost(vm, nav)
+            }
+        }
+    }
+
+    /** [content] in `en-XA`, as the screens draw it there. */
+    private fun inPseudo(content: @Composable () -> Unit) {
+        val pseudo = pseudo(compose.activity)
+        compose.setContent {
+            CompositionLocalProvider(
+                LocalContext provides pseudo,
+                LocalConfiguration provides pseudo.resources.configuration,
+                LocalResources provides pseudo.resources,
+            ) {
+                content()
+            }
+        }
+        compose.waitForIdle()
+    }
+
+    /**
+     * Every text in [texts] has a pseudo-localized (non-ASCII) character, except the app's name and
+     * the keys' digits, which are the same in every language.
+     */
+    private fun assertAllPseudo(what: String, texts: List<String>, atLeast: Int) {
+        assertTrue("$what shows texts: $texts", texts.size >= atLeast)
+        val appName = compose.activity.getString(R.string.app_name)
+        for (text in texts) {
+            if (text == appName || text.all(Char::isDigit)) continue
+            assertTrue("\"$text\" stayed plain English in en-XA ($what)", text.any { it.code > 0x7F })
+        }
+    }
+
     /** Every text and label of the screen, as an accessibility service reads them. */
     private fun shownTexts(): List<String> {
         val out = mutableListOf<String>()
@@ -131,6 +282,7 @@ class LockPseudoLocaleTest {
 
     private companion object {
         const val AT = 1_791_331_200_000L
+        val NOTICE_SCOPE = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
         fun screen(
             reason: MpReason? = null,

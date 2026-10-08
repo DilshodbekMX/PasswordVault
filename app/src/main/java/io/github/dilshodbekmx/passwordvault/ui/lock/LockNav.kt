@@ -86,7 +86,7 @@ fun LockScreens(vm: LockViewModel, onRestore: () -> Unit) {
         null -> Box(Modifier.fillMaxSize())
         is PadUi -> PadScreen(ui, onDigit = vm::onDigit, onDelete = vm::onDelete, onClear = vm::onClear, onAction = onAction)
         is FingerprintOnlyUi -> FingerprintOnlyScreen(ui, onAction)
-        is MasterPasswordUi -> MasterPasswordScreen(vm, ui, onAction = onAction)
+        is MasterPasswordUi -> MasterPasswordScreen(vm, ui, onAction = onAction, covered = sheet != null || confirm != null)
         is OlderPasswordUi -> OlderPasswordScreen(ui, onAction)
         is UnreadableUi -> UnreadableScreen(ui, onAction)
     }

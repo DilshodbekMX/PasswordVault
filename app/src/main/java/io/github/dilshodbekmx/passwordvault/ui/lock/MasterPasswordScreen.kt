@@ -39,9 +39,11 @@ import kotlinx.coroutines.flow.first
  *
  * The field takes the keyboard whenever this screen is composed and whenever it can be typed into
  * again after a wait: at the first show, after a rotation, which builds the screen again and where
- * Android 17 no longer brings the keyboard back by itself (architecture.md §5.4, [V-P7]), and on
- * "Try again". It asks once the window has focus, so that the request reaches the keyboard. On the
- * screen of a vault put aside, Back returns to the current vault (lock.md F17 step 4).
+ * Android 17 no longer brings the keyboard back by itself (architecture.md §5.4, [V-P7]), on "Try
+ * again", and when the sheet over it closes. It asks once the window has focus, so that the request
+ * reaches the keyboard. While the "Forgot master password?" sheet or a question [covered] the screen,
+ * the keyboard is put away, so that it hides nothing of them. On the screen of a vault put aside,
+ * Back returns to the current vault (lock.md F17 step 4).
  */
 @Composable
 fun MasterPasswordScreen(
@@ -49,13 +51,15 @@ fun MasterPasswordScreen(
     ui: MasterPasswordUi,
     modifier: Modifier = Modifier,
     onAction: (LockAction) -> Unit = vm::onAction,
+    covered: Boolean = false,
 ) {
     val focusRequester = remember { FocusRequester() }
     val keyboard = LocalSoftwareKeyboardController.current
     val windowInfo = LocalWindowInfo.current
 
-    LaunchedEffect(ui.fieldEnabled) {
-        if (!ui.fieldEnabled) return@LaunchedEffect
+    LaunchedEffect(ui.fieldEnabled, covered) {
+        if (covered) keyboard?.hide()
+        if (!ui.fieldEnabled || covered) return@LaunchedEffect
         snapshotFlow { windowInfo.isWindowFocused }.first { it }
         focusRequester.requestFocus()
         keyboard?.show()
