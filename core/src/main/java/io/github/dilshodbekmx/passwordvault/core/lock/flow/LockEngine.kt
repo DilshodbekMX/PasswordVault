@@ -365,7 +365,9 @@ class LockEngine(
         core.visible = true
         core.locked {
             core.observeCredits()
-            if (core.state.value is LockState.Locked && core.visit == null) {
+            // A visit that an ON_STOP has ended but not yet closed is closed here too (startVisit),
+            // so that the pad never stays without a visit while the app is visible.
+            if (core.state.value is LockState.Locked && core.visit?.place?.hasEnded != false) {
                 core.startVisit()
                 core.showLockScreen()
             }
@@ -378,15 +380,16 @@ class LockEngine(
      * visit and every prompt of the open app end, so that a check that is running opens and proves
      * nothing (I11); an open fingerprint prompt is cancelled and its launch ended; the proofs are
      * dropped (§5.8). Then, under the mutex: a held charge is refunded (§6.3 A), the digits are
-     * zeroed, the credits observed. It does not lock: `AutoLock` decides that (§10.2).
+     * zeroed, the credits observed. It does not lock: `AutoLock` decides that (§10.2). Only the
+     * visit it ended is closed: one that a later `ON_START` has begun meanwhile stays.
      */
     suspend fun appStopped() {
         core.visible = false
-        core.endVisitNow()
+        val ended = core.endVisitNow()
         val prompts = core.endPromptsNow()
         core.dropProofs()
         core.locked {
-            core.closeVisit()
+            if (ended != null && core.visit === ended) core.closeVisit()
             core.promptsEnded(prompts)
             core.observeCredits()
             val now = core.state.value

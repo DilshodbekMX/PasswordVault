@@ -513,11 +513,14 @@ internal class LockCore(
     /**
      * Any thread: the visit of the lock screen ends now. Its place is marked ended, so that a check
      * running under the mutex opens nothing (I11); an outstanding fingerprint launch is ended and
-     * its prompt cancelled (§9.2 rule 8). [closeVisit] must follow under the mutex.
+     * its prompt cancelled (§9.2 rule 8). [closeVisit] must follow under the mutex. Returns the visit
+     * that was ended, or null when there was none.
      */
-    fun endVisitNow() {
-        visit?.place?.end()
+    fun endVisitNow(): LockVisit? {
+        val ended = visit
+        ended?.place?.end()
         endLaunchNow()
+        return ended
     }
 
     /**

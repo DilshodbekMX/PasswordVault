@@ -536,6 +536,23 @@ class PinUnlockFlowTest {
     }
 
     @Test
+    fun anOnStartThatComesBeforeTheOnStopHasClosedItsVisit_beginsANewVisitAllTheSame() {
+        withPin()
+        f.type("582")
+        // ON_STOP has ended the visit at once, and its work under the mutex has not run yet.
+        f.engine.core.visible = false
+        val ended = f.engine.core.endVisitNow()!!
+        await { f.engine.appStarted() }
+
+        // The ended visit is closed (its charge refunded, its digits gone) and a new one takes keys.
+        assertTrue(f.engine.core.visit !== ended)
+        assertFalse(f.pinRecord().guard.charged)
+        assertEquals(0, f.pad.digits)
+        f.type(PIN)
+        assertTrue(f.state is LockState.Unlocked)
+    }
+
+    @Test
     fun i11_aPinWhoseVisitEndedWhileItWaited_countsAsRight_andOpensNothing() {
         val clock = FakeClock(elapsedMs = 3_600_000L, autoAdvance = false)
         val g = LockFixture(clock)
