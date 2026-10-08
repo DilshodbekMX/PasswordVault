@@ -22,6 +22,9 @@ import kotlinx.serialization.json.JsonUnquotedLiteral
  * - **A failure is one exception, [Failure]**, with an offset and a [Reason] from a fixed list. Its
  *   message is made of the reason's code and the offset only, never of input text, and it carries
  *   no cause (architecture.md §5.6). Offsets count characters for [parse] and bytes for [parseUtf8].
+ * - **One array of the outermost object may be limited** ([ArrayLimit]): an import's `items` keeps
+ *   its first 10,000 elements and only counts the rest (formats.md §5.2), so that a file of millions
+ *   of tiny items is refused without the memory of a tree that would be refused anyway.
  *
  * The result is a kotlinx-serialization tree, read in the order of the text: object keys keep their
  * order, and a number keeps its spelling (`1.50` stays `1.50`, so `JsonElement.toString()` writes back
@@ -68,16 +71,37 @@ object StrictJson {
     /** The one exception of this reader: where and why, never what (architecture.md §5.6). */
     class Failure(val offset: Long, val reason: Reason) : Exception(reason.code + " at offset " + offset)
 
-    /** Reads one JSON value from [text]. Offsets in a [Failure] are character indices. */
-    fun parse(text: String, maxDepth: Int): JsonElement {
+    /**
+     * A limit on one array of the outermost object (formats.md §5.2 and §8.1: an import reads at most
+     * 10,000 `items`): the array that is the value of [key] keeps its first [max] elements, and every
+     * element after them is read, so that the text is checked to its end as always, and counted, but
+     * not kept. After a parse, [count] is how many elements that array had, 0 when the outermost value
+     * is no object with an array at [key]. A caller refuses a text whose [count] is over [max] without
+     * ever holding the elements it refuses. One parse at a time.
+     */
+    class ArrayLimit(val key: String, val max: Int) {
+        init {
+            require(max >= 0) { "max must not be negative" }
+        }
+
+        /** How many elements the array at [key] had in the last parse; only its first [max] are in the tree. */
+        var count: Int = 0
+            internal set
+    }
+
+    /**
+     * Reads one JSON value from [text]. Offsets in a [Failure] are character indices. [limit] limits
+     * one array of the outermost object ([ArrayLimit]).
+     */
+    fun parse(text: String, maxDepth: Int, limit: ArrayLimit? = null): JsonElement {
         require(maxDepth >= 1) { "maxDepth must be at least 1" }
-        val parser = Parser(text, maxDepth)
+        val parser = Parser(text, maxDepth, limit)
         return guardStack({ parser.pos }) { parser.run() }
     }
 
     /** As [parse], and the value must be an object. */
-    fun parseObject(text: String, maxDepth: Int): JsonObject =
-        parse(text, maxDepth) as? JsonObject ?: throw Failure(firstNonSpace(text).toLong(), Reason.NOT_AN_OBJECT)
+    fun parseObject(text: String, maxDepth: Int, limit: ArrayLimit? = null): JsonObject =
+        parse(text, maxDepth, limit) as? JsonObject ?: throw Failure(firstNonSpace(text).toLong(), Reason.NOT_AN_OBJECT)
 
     /**
      * Reads one JSON value from strict UTF-8 [bytes]: a malformed sequence, an overlong form, an
@@ -85,19 +109,19 @@ object StrictJson {
      * sequence's first byte, and a byte-order mark is refused. Offsets in a [Failure] are byte
      * offsets into [bytes].
      */
-    fun parseUtf8(bytes: ByteArray, maxDepth: Int): JsonElement {
+    fun parseUtf8(bytes: ByteArray, maxDepth: Int, limit: ArrayLimit? = null): JsonElement {
         require(maxDepth >= 1) { "maxDepth must be at least 1" }
         val text = decodeStrictUtf8(bytes)
         try {
-            return parse(text, maxDepth)
+            return parse(text, maxDepth, limit)
         } catch (f: Failure) {
             throw Failure(utf8Length(text, f.offset.toInt()), f.reason)
         }
     }
 
     /** As [parseUtf8], and the value must be an object. */
-    fun parseUtf8Object(bytes: ByteArray, maxDepth: Int): JsonObject {
-        val value = parseUtf8(bytes, maxDepth)
+    fun parseUtf8Object(bytes: ByteArray, maxDepth: Int, limit: ArrayLimit? = null): JsonObject {
+        val value = parseUtf8(bytes, maxDepth, limit)
         if (value is JsonObject) return value
         var at = 0
         while (at < bytes.size && isJsonSpace(bytes[at].toInt().toChar())) at++
@@ -204,12 +228,17 @@ object StrictJson {
     private val EMPTY_OBJECT = JsonObject(emptyMap())
     private val EMPTY_ARRAY = JsonArray(emptyList())
 
-    /** One container being read: the members so far and, in an object, the key of the next value. */
+    /**
+     * One container being read: the members so far and, in an object, the key of the next value. An
+     * array under an [ArrayLimit] is [limited]: [count] is how many elements it has had so far.
+     */
     private class Frame(val members: LinkedHashMap<String, JsonElement>?, val items: ArrayList<JsonElement>?) {
         var key: String = ""
+        var limited = false
+        var count = 0
     }
 
-    private class Parser(private val s: String, private val maxDepth: Int) {
+    private class Parser(private val s: String, private val maxDepth: Int, private val limit: ArrayLimit?) {
         var pos = 0
 
         private fun fail(reason: Reason, at: Int = pos): Nothing = throw Failure(at.toLong(), reason)
@@ -219,6 +248,7 @@ object StrictJson {
         }
 
         fun run(): JsonElement {
+            limit?.count = 0
             if (s.isNotEmpty() && s[0] == '\uFEFF') fail(Reason.BYTE_ORDER_MARK, 0)
             val value = readValue()
             skipSpace()
@@ -256,7 +286,10 @@ object StrictJson {
                             pos++
                             value = EMPTY_ARRAY
                         } else {
-                            stack.add(Frame(null, ArrayList()))
+                            val frame = Frame(null, ArrayList())
+                            // The array at the limit's key of the outermost object.
+                            frame.limited = limit != null && stack.size == 1 && stack[0].members != null && stack[0].key == limit.key
+                            stack.add(frame)
                             continue
                         }
                     }
@@ -270,7 +303,12 @@ object StrictJson {
                 while (true) {
                     val top = stack.lastOrNull() ?: return value
                     val members = top.members
-                    if (members != null) members[top.key] = value else top.items!!.add(value)
+                    when {
+                        members != null -> members[top.key] = value
+                        !top.limited -> top.items!!.add(value)
+                        ++top.count <= limit!!.max -> top.items!!.add(value)
+                        else -> Unit // counted, not kept
+                    }
                     skipSpace()
                     if (pos >= s.length) fail(Reason.END_OF_INPUT)
                     val c = s[pos]
@@ -285,6 +323,7 @@ object StrictJson {
                     if (c != (if (members != null) '}' else ']')) fail(Reason.UNEXPECTED_CHARACTER)
                     pos++
                     stack.removeAt(stack.size - 1)
+                    if (top.limited) limit!!.count = top.count
                     value = if (members != null) JsonObject(members) else JsonArray(top.items!!)
                 }
             }

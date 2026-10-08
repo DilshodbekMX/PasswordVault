@@ -20,6 +20,47 @@ import org.junit.Assert.fail
 import org.junit.Test
 
 class StrictJsonTest {
+    @Test
+    fun anArrayLimitKeepsTheFirstElementsOfItsArrayAndCountsTheRest() {
+        // formats.md §5.2: an import keeps at most 10,000 items and only counts the rest.
+        val limit = StrictJson.ArrayLimit("items", 2)
+        val root = StrictJson.parseObject("""{"a":1,"items":[1,{"b":[2,3]},3,[4],"5"],"z":[1,2,3]}""", 32, limit)
+        assertEquals(5, limit.count)
+        assertEquals("""[1,{"b":[2,3]}]""", root["items"].toString())
+        assertEquals("the other arrays are whole", """[1,2,3]""", root["z"].toString())
+        assertEquals("1", root["a"].toString())
+
+        // The same through parseUtf8Object, at the limit and under it; and an empty array.
+        assertEquals("[1,2]", StrictJson.parseUtf8Object("""{"items":[1,2]}""".toByteArray(), 32, limit)["items"].toString())
+        assertEquals(2, limit.count)
+        StrictJson.parseUtf8Object("""{"items":[]}""".toByteArray(), 32, limit)
+        assertEquals(0, limit.count)
+
+        // Only the array at the key of the outermost object: a nested one, a value that is no array, or
+        // an outermost array are not limited, and count nothing.
+        for (text in listOf("""{"x":{"items":[1,2,3]}}""", """{"items":7}""", """[{"items":[1,2,3]}]""", """{"other":[1,2,3]}""")) {
+            assertEquals(text, StrictJson.parse(text, 32), StrictJson.parse(text, 32, limit))
+            assertEquals(text, 0, limit.count)
+        }
+
+        // The text is still checked to its end, the elements that are not kept included.
+        val limited = StrictJson.ArrayLimit("items", 1)
+        assertEquals(Reason.TRAILING_CHARACTERS, failure { StrictJson.parse("""{"items":[1,2,3]} x""", 32, limited) }.reason)
+        assertEquals(Reason.DUPLICATE_KEY, failure { StrictJson.parse("""{"items":[1,{"k":1,"k":2}]}""", 32, limited) }.reason)
+        assertEquals(Reason.DUPLICATE_KEY, failure { StrictJson.parse("""{"items":[1,2],"items":[3]}""", 32, limited) }.reason)
+        assertEquals(Reason.TOO_DEEP, failure { StrictJson.parse("""{"items":[1,[[[]]]]}""", 3, limited) }.reason)
+        assertThrows(IllegalArgumentException::class.java) { StrictJson.ArrayLimit("items", -1) }
+    }
+
+    private fun failure(parse: () -> Unit): StrictJson.Failure =
+        try {
+            parse()
+            fail("accepted")
+            error("unreachable")
+        } catch (f: StrictJson.Failure) {
+            f
+        }
+
     private fun failure(text: String, maxDepth: Int = 32): StrictJson.Failure =
         try {
             StrictJson.parse(text, maxDepth)
