@@ -645,6 +645,27 @@ class MasterPasswordFlowTest {
     }
 
     @Test
+    fun section54_whenALiveFileCouldNotBeReadBeforeTheUnlock_noWrapIsDropped_masterPasswordIncluded() {
+        val vault = f.seedVault(password = "the old one", generations = 2)
+        val oldKey = vault.newestVkId
+        val newKey = vault.rekey(bytes(PASSWORD))
+        vault.generation(2).state = FakeVaultPort.FileState.UNREADABLE // a copy under the old key cannot be read now
+        f.plantPin(vault, vkIds = listOf(oldKey, newKey))
+        f.plantFingerprint(vault, vkIds = listOf(newKey, oldKey))
+        f.plantState(maxGeneration = StateRecord.MaxGeneration(3, f.clock.wallMs()))
+        f.startInFront()
+        await { f.engine.useMasterPassword() }
+        assertTrue(f.unlockWith(PASSWORD) is MasterPasswordOutcome.Right)
+
+        // Storage retired what it could, and its answer leaves out the key of the file it could not
+        // read. The listing before the unlock could not read every live file, so nothing is dropped
+        // for that: the wrap goes at a later unlock whose listing can tell (§5.4, §5.10, I6).
+        assertTrue("retireOldKeys" in f.port.calls)
+        assertEquals(setOf(oldKey, newKey), f.pinRecord().slot!!.wraps.map { it.vkId }.toSet())
+        assertEquals(setOf(oldKey, newKey), f.fingerprintRecord().slot!!.wraps.map { it.vkId }.toSet())
+    }
+
+    @Test
     fun section54_aSlotLeftWithoutAnyWrapIsRemoved_andAPinIsOfferedAgain() {
         val vault = f.seedVault(password = "the old one")
         val oldKey = vault.newestVkId

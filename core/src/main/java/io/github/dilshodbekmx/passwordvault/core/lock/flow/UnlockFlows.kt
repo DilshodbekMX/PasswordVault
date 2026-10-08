@@ -644,13 +644,18 @@ internal class UnlockFlows(private val core: LockCore) {
         core.closeVisit()
 
         // The wraps. A right PIN trimmed its own record in the check; its write waits below.
-        var kept = core.target?.takeIf { it.lock === lock }?.let { core.keptVkIds(it) }
+        val listed = core.target?.takeIf { it.lock === lock }?.let { core.keptVkIds(it) }
+        var kept = listed
         if (by == UnlockBy.MASTER_PASSWORD) {
-            kept = try {
+            val retired = try {
                 core.vault.retireOldKeys() // F8 step 10: storage decides whether the old keys may go yet
             } catch (e: Exception) {
-                kept
+                null
             }
+            // Storage's answer names the keys of the generations it could read just now. When the
+            // listing before this unlock could not read every live file, a key whose file is only
+            // unreadable for now would be missing from it, so nothing is trimmed then (§5.4, §5.10).
+            if (listed != null && retired != null) kept = retired
         }
         // An older copy opened: the damaged ones above it are still on disk, and nothing is removed
         // for a mismatch (§5.10, F16a).
