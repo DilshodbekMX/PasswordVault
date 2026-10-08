@@ -40,6 +40,7 @@ import io.github.dilshodbekmx.passwordvault.window.WindowPolicy
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.abs
 import kotlin.math.roundToInt
+import org.junit.Before
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
@@ -74,6 +75,9 @@ class StyleReachesWindowsTest {
     private enum class Window { NONE, DIALOG, SHEET }
 
     private var window by mutableStateOf(Window.NONE)
+
+    @Before
+    fun touchMode() = enterTouchMode(compose.activity)
 
     @Composable
     private fun Probes() {

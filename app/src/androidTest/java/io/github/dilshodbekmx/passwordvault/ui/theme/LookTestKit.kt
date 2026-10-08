@@ -1,8 +1,11 @@
 package io.github.dilshodbekmx.passwordvault.ui.theme
 
+import android.app.Activity
 import android.graphics.Bitmap
 import android.os.ParcelFileDescriptor
 import android.os.SystemClock
+import android.view.InputDevice
+import android.view.MotionEvent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
@@ -13,6 +16,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import io.github.dilshodbekmx.passwordvault.settings.StyleChoice
 import kotlin.math.abs
 import kotlin.math.roundToInt
+import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 
 // What the device tests of the looks read: the colours that are really on the screen. A test finds
@@ -43,6 +47,32 @@ fun screenshot(): Bitmap {
         SystemClock.sleep(200)
     }
     error("no screenshot of the screen")
+}
+
+/**
+ * Puts the display in touch mode, as a phone in use is: a tap in the middle of the activity's window,
+ * sent as a finger's is. Outside touch mode a dialog that opens gives its first row the focus and
+ * draws it highlighted, which no one who touches the screen sees. Since Android 14 touch mode is one
+ * state of the whole display, left by a key that an earlier test pressed, so a test that looks at
+ * pixels calls this first, while the window is still empty.
+ */
+fun enterTouchMode(activity: Activity) {
+    val decor = activity.window.decorView
+    val at = IntArray(2)
+    InstrumentationRegistry.getInstrumentation().runOnMainSync { decor.getLocationOnScreen(at) }
+    val x = at[0] + decor.width / 2f
+    val y = at[1] + decor.height / 2f
+    val automation = InstrumentationRegistry.getInstrumentation().uiAutomation
+    val down = SystemClock.uptimeMillis()
+    for ((action, time) in listOf(MotionEvent.ACTION_DOWN to down, MotionEvent.ACTION_UP to down + 50)) {
+        val event = MotionEvent.obtain(down, time, action, x, y, 0)
+        event.source = InputDevice.SOURCE_TOUCHSCREEN
+        automation.injectInputEvent(event, true)
+        event.recycle()
+    }
+    val deadline = SystemClock.uptimeMillis() + 5_000
+    while (!decor.isInTouchMode && SystemClock.uptimeMillis() < deadline) SystemClock.sleep(50)
+    assertTrue("the window is in touch mode", decor.isInTouchMode)
 }
 
 /** The output of a shell command, run as the shell user. */

@@ -69,6 +69,13 @@ class LockScreenLookTest {
         context.deleteSharedPreferences(FILE)
     }
 
+    @Before
+    fun lockedAndInTouchMode() {
+        // Locked: the vault is closed, as the lock closes it.
+        repository.state.value = VaultState.Locked
+        enterTouchMode(compose.activity)
+    }
+
     private fun showLocked(settings: AppSettings) {
         compose.setContent {
             WindowPolicy.Root {

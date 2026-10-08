@@ -58,7 +58,8 @@ class LookGallery(now: Long = System.currentTimeMillis()) {
 
     var shown by mutableStateOf(Screen.PAD)
 
-    val list = ListRig(Vault(entries = accounts(now)))
+    /** The list's vault has a backup newer than its accounts, so no reminder stands above the rows. */
+    val list = ListRig(Vault(entries = accounts(now), backups = listOf(FileRef(DRIVE, "PasswordVault-backup.pvault", now - DAY_MS))))
     val entry = EntryRig(Vault(entries = listOf(EntryRig.gmail(now = now))))
     val settingsRig = SettingsRig()
 
@@ -68,10 +69,9 @@ class LookGallery(now: Long = System.currentTimeMillis()) {
     init {
         // Settings as a person who set the app up meets them: a PIN and fingerprint unlock, a backup
         // saved two days ago to Google Drive, one set of passwords put aside.
-        val drive = "content://com.google.android.apps.docs.storage/document/backup"
-        settingsRig.files.places[drive] = Place.GoogleDrive
+        settingsRig.files.places[DRIVE] = Place.GoogleDrive
         settingsRig.repository.state.value = VaultState.Unlocked(
-            Vault(backups = listOf(FileRef(drive, "PasswordVault-backup.pvault", now - 2 * DAY_MS))),
+            Vault(backups = listOf(FileRef(DRIVE, "PasswordVault-backup.pvault", now - 2 * DAY_MS))),
             1L,
             null,
             false,
@@ -90,6 +90,7 @@ class LookGallery(now: Long = System.currentTimeMillis()) {
 
     companion object {
         const val DAY_MS = 86_400_000L
+        private const val DRIVE = "content://com.google.android.apps.docs.storage/document/backup"
 
         /**
          * Eight accounts whose names have eight different tones (`EntryRow.toneOf`), in the README's

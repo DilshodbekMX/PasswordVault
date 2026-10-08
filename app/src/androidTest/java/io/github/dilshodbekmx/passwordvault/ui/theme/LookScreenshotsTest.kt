@@ -17,6 +17,7 @@ import io.github.dilshodbekmx.passwordvault.ui.entry.EntryTags
 import io.github.dilshodbekmx.passwordvault.ui.entry.EntryValue
 import io.github.dilshodbekmx.passwordvault.ui.list.ListTags
 import io.github.dilshodbekmx.passwordvault.ui.settings.SettingsTags
+import org.junit.Before
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -44,6 +45,9 @@ class LookScreenshotsTest {
     fun tearDown() {
         gallery?.close()
     }
+
+    @Before
+    fun touchMode() = enterTouchMode(compose.activity)
 
     @Test
     fun theScreensInEveryLook() {

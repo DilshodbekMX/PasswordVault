@@ -40,6 +40,7 @@ import io.github.dilshodbekmx.passwordvault.ui.settings.SettingsScreen
 import io.github.dilshodbekmx.passwordvault.ui.settings.SettingsTags
 import io.github.dilshodbekmx.passwordvault.ui.settings.SettingsViewModel
 import io.github.dilshodbekmx.passwordvault.window.WindowPolicy
+import org.junit.Before
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -70,6 +71,9 @@ class AppearanceDialogTest {
 
     @After
     fun tearDown() = rig.close()
+
+    @Before
+    fun touchMode() = enterTouchMode(compose.activity)
 
     private fun show(withDialog: Boolean) {
         rig.settings.theme.value = ThemeChoice.LIGHT
