@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The clipboard status row at the bottom of the unlocked screens (build plan 3.8; ux.md §6;
+     architecture.md D-14, D-25). Every name starts with clipboard_. What was copied from an account
+     ("Password for Gmail") comes from the screen that copied it. -->
+<resources>
+
+    <!-- What the row calls text that was selected and copied in a note or a field, as in
+         “Copied text · clears in 0:52” (i18n.md glossary 148). -->
+    <string name="clipboard_copied_text">Copied text</string>
+
+    <!-- The row while a copy waits to be removed from the clipboard: %1$s is what was copied, for
+         example “Password for Gmail” or “Copied text”; %2$s is the time left in minutes and
+         seconds, for example “0:52” (i18n.md glossary 149). Keep the dot in the middle. -->
+    <string name="clipboard_row_clears_in">%1$s · clears in %2$s</string>
+    <!-- The row when the time is up and the copy is being removed just now (ux.md §6 “Late jobs”). -->
+    <string name="clipboard_row_clearing">Clearing…</string>
+    <!-- The row for two seconds after the copy was removed from the clipboard. -->
+    <string name="clipboard_row_cleared">Clipboard cleared</string>
+    <!-- Button in the row: removes the copy from the clipboard at once. Short: it stands next to the text. -->
+    <string name="clipboard_clear_now">Clear now</string>
+
+    <!-- A line above the row's text on Android 7 to 12, and the first sentence TalkBack reads when
+         the row appears: a password, or another secret of an account, was copied (i18n.md glossary 31). -->
+    <string name="clipboard_copied_password">Password copied</string>
+    <!-- The same for anything else that was copied: a username, a website, selected text
+         (i18n.md glossary 30). -->
+    <string name="clipboard_copied_other">Copied</string>
+
+    <!-- What TalkBack reads once when the row appears: %1$s is one of the two texts above, %2$s one
+         of the two sentences below, for example “Password copied. It will be removed from the
+         clipboard in 1 minute.” -->
+    <string name="clipboard_announcement">%1$s. %2$s</string>
+    <!-- The second sentence of that announcement, when the time is counted in seconds; %d is the
+         number of seconds, for example 30. -->
+    <plurals name="clipboard_removed_in_seconds">
+        <item quantity="one">It will be removed from the clipboard in %d&#160;second.</item>
+        <item quantity="other">It will be removed from the clipboard in %d&#160;seconds.</item>
+    </plurals>
+    <!-- The same when the time is whole minutes; %d is the number of minutes: 1, 2 or 5. -->
+    <plurals name="clipboard_removed_in_minutes">
+        <item quantity="one">It will be removed from the clipboard in %d&#160;minute.</item>
+        <item quantity="other">It will be removed from the clipboard in %d&#160;minutes.</item>
+    </plurals>
+
+</resources>
