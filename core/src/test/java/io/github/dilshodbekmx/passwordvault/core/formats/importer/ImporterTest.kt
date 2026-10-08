@@ -21,6 +21,7 @@ import io.github.dilshodbekmx.passwordvault.core.formats.importer.ImportFixtures
 import io.github.dilshodbekmx.passwordvault.core.formats.writers.WriterFixtures
 import io.github.dilshodbekmx.passwordvault.core.model.Entry
 import io.github.dilshodbekmx.passwordvault.core.model.HistoryItem
+import io.github.dilshodbekmx.passwordvault.core.util.Uuid
 import java.nio.charset.Charset
 import java.util.Random
 import org.junit.Assert.assertEquals
@@ -347,6 +348,34 @@ class ImporterTest {
         for (secret in listOf("Парол-2026!", "aziz", "Почта", "pochta", "шахсий", "Номи")) {
             assertTrue(texts.none { it.contains(secret) })
         }
+        // An account that is left out is listed by its name, which its toString hides too; so does the plan's.
+        val long = file(csv("name,url,username,password", "Zaxira,https://z.example,zafar,${"p".repeat(1_001)}", "accounts.google.com,https://accounts.google.com,gulnora,pw"))
+        assertEquals("Zaxira", long.leftOut.single().name)
+        val plan = ImportFixtures.plan(long)
+        assertEquals("accounts.google.com", plan.tidyExamples.single().before)
+        for (text in listOf(long.leftOut.toString(), long.toString(), plan.toString(), plan.accounts.toString(), plan.tidyExamples.toString(), plan.entries.toString())) {
+            for (secret in listOf("Zaxira", "zafar", "gulnora", "google", "Google")) assertFalse(text, text.contains(secret))
+        }
+    }
+
+    /**
+     * The id of an item of our own JSON is text of the file like any other: `Entry.toString` shows an
+     * id, so one that is no id is not kept (`VaultEdits.addImported` would give a new one anyway).
+     */
+    @Test
+    fun anIdThatIsNoIdIsNotKeptAndShowsInNoToString() {
+        val own = file(
+            """{"encrypted":false,"passwordVault":{"format":"passwordvault-export","version":1},"folders":[],"items":[""" +
+                """{"id":"S3cret-text-in-the-id","type":1,"name":"A","login":{"username":"u","password":"p"}},""" +
+                """{"id":"${ImportFixtures.id(7)}","type":1,"name":"B","login":{"username":"u","password":"q"}},""" +
+                """{"id":"00000000-0000-4000-8000-00000000000A","type":1,"name":"C","login":{"username":"u","password":"r"}}]}""",
+        )
+        assertEquals(Importer.Format.OWN_JSON, own.format)
+        assertFalse(own.accounts.toString(), own.accounts.toString().contains("S3cret"))
+        assertFalse(ImportFixtures.plan(own).entries.toString().contains("S3cret"))
+        assertTrue(own.accounts.all { Uuid.isValid(it.entry.id) })
+        assertEquals(ImportFixtures.id(7), own.accounts[1].entry.id) // an id that is one is kept as written
+        assertEquals(3, own.accounts.map { it.entry.id }.toSet().size)
     }
 
     @Test

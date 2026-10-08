@@ -10,6 +10,7 @@ import io.github.dilshodbekmx.passwordvault.core.util.ParseError
 import io.github.dilshodbekmx.passwordvault.core.util.RandomSource
 import io.github.dilshodbekmx.passwordvault.core.util.StrictJson
 import io.github.dilshodbekmx.passwordvault.core.util.TextHygiene
+import io.github.dilshodbekmx.passwordvault.core.util.Uuid
 import java.util.Locale
 
 /**
@@ -61,7 +62,8 @@ import java.util.Locale
  * - A broken character (half of a surrogate pair) cannot be stored and becomes U+FFFD
  *   ([ImportFile.replacedCharacters]); in a password that is listed too.
  * - Ids: a CSV row and a foreign item get new ids; our own JSON's ids are kept here, and
- *   `VaultEdits.addImported` keeps one only when it is free (formats-review P1).
+ *   `VaultEdits.addImported` keeps one only when it is free (formats-review P1). An id of our own JSON
+ *   that is no id (any text may stand there) is not kept: `Entry.toString` shows an id.
  *
  * Nothing here throws for any bytes, and no exception message or `toString` holds a value of the
  * file (architecture.md §5.6).
@@ -208,7 +210,7 @@ object Importer {
             is BitwardenJson.Read.TooMany -> return Result.TooManyRows(read.items, read.limit)
             is BitwardenJson.Read.Ok -> read
         }
-        val cleaner = Cleaner(nowMs, texts)
+        val cleaner = Cleaner(nowMs, texts, random::uuid)
         val leftOut = ArrayList<ImportLeftOut>()
         // Every element of `items` is an account, or one of the three that are not imported; the
         // reader lists the others (passkeys, linked fields, …) by the position of an account it made.
@@ -313,7 +315,7 @@ object Importer {
         }
         // Rule (a) on the rows as written, before the limits move anything: one account, all its websites.
         val joined = if (format == Format.BITWARDEN_CSV) rows else joinAdjacent(rows)
-        val cleaner = Cleaner(nowMs, texts)
+        val cleaner = Cleaner(nowMs, texts, random::uuid)
         val leftOut = ArrayList<ImportLeftOut>()
         val accounts = ArrayList<ImportAccount>(joined.size)
         for (r in joined) {
@@ -633,7 +635,7 @@ object Importer {
     }
 
     /** formats.md §8.4 and architecture.md D-10f for one account, counting over the whole file. */
-    private class Cleaner(private val nowMs: Long, private val texts: EditTexts) {
+    private class Cleaner(private val nowMs: Long, private val texts: EditTexts, private val newId: () -> String) {
         val controls = TextHygiene.Counter()
         val surrogates = TextHygiene.Counter()
 
@@ -740,7 +742,10 @@ object Importer {
             }
 
             val entry = raw.copy(
-                id = TextHygiene.replaceUnpairedSurrogates(raw.id, surrogates),
+                // Our own JSON may hold any text where an id belongs. One that is no id would get a new one
+                // from `VaultEdits.addImported` anyway; it gets it here, so that no text of the file stands
+                // where `Entry.toString` shows it (architecture.md §5.6).
+                id = if (Uuid.isValid(raw.id)) raw.id else newId(),
                 title = title,
                 username = username,
                 password = password,
@@ -903,7 +908,7 @@ class ImportWrongLength(val values: Int, val expected: Int) {
 
 /** One account the file holds, as the importer read and cleaned it. */
 class ImportAccount(
-    /** The account as it would be added. Its id is new, except for our own JSON (`VaultEdits.addImported` decides). */
+    /** The account as it would be added. Its id is new, except for a valid id of our own JSON (`VaultEdits.addImported` decides). */
     val entry: Entry,
     /** CSV: the line each of its rows starts on (several when adjacent rows were joined); JSON: none. */
     val lines: List<Int>,
