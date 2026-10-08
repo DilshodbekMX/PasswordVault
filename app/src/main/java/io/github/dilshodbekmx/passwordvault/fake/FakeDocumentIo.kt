@@ -8,14 +8,17 @@ import java.io.IOException
 /**
  * In-memory documents (architecture.md §2.2 `fake`): [files] by URI. Scripted with [writeResults]
  * (the next writes: false fails and stores nothing), [notDeletable], [places] and [names]; [kept]
- * lists the documents given a persistable permission. Single-threaded.
+ * lists the documents given a persistable permission, and [released] those given it up. Single-threaded.
  */
 class FakeDocumentIo : DocumentIo {
     /** The documents' bytes by URI. */
     val files = mutableMapOf<String, ByteArray>()
 
-    /** The URIs [keep] was called for. */
+    /** The URIs [keep] was called for, and not [release] since. */
     val kept = mutableSetOf<String>()
+
+    /** The URIs [release] was called for, in order. */
+    val released = mutableListOf<String>()
 
     /** The answers of the next writes; when empty, a write succeeds. */
     val writeResults = ArrayDeque<Boolean>()
@@ -42,6 +45,11 @@ class FakeDocumentIo : DocumentIo {
 
     override fun keep(doc: DocRef) {
         kept += doc.uri
+    }
+
+    override fun release(doc: DocRef) {
+        kept -= doc.uri
+        released += doc.uri
     }
 
     override fun delete(doc: DocRef): Boolean {

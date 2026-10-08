@@ -23,8 +23,9 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
 /**
- * [JVM] What [FileTaskStore] does with a task's write and its end, against the fakes of the
- * settings, the documents and the lock (architecture.md §3.5, "The file tasks"; ux.md §4 item 3).
+ * [JVM] What [FileTaskStore] does with a task's write and its end, and the permissions it gives up,
+ * against the fakes of the settings, the documents and the lock (architecture.md §3.5, "The file
+ * tasks"; ux.md §4 item 3).
  * The store's other behaviour, with its picker and share sheet, is in the device tests
  * (`FileTaskStoreTest`, `PickerProcessTest`). A new process is a new store over the same settings.
  */
@@ -139,13 +140,71 @@ class FileTaskStoreJvmTest {
         assertEquals(FileTask(FileTask.Kind.EXPORT, 1, null), settings.fileTask.value)
     }
 
-    /** The fake documents, and what the settings held when a write came. */
+    @Test
+    fun finishingAnImportOrARestoreGivesUpItsPermissionAndABackupOrAnExportKeepsIt() = runTest {
+        val store = newStore()
+        for (kind in listOf(FileTask.Kind.IMPORT, FileTask.Kind.RESTORE)) {
+            assertTrue(store.open(FileTask(kind, 1, null)))
+            store.returned(FileTaskStore.Action.OPEN, "$DOC-$kind")
+            runCurrent()
+            assertTrue("kept while the task runs", "$DOC-$kind" in fake.kept)
+            store.finish(kind)
+            assertFalse("given up when it is done", "$DOC-$kind" in fake.kept)
+        }
+        assertEquals(listOf("$DOC-IMPORT", "$DOC-RESTORE"), fake.released)
+
+        // The vault notes a backup's and an export's document: its permission stays for the banner's "Delete".
+        for (kind in listOf(FileTask.Kind.BACKUP, FileTask.Kind.EXPORT)) {
+            picked(store, FileTask(kind, 2, null))
+            assertTrue(store.write(kind, PLAIN))
+            store.finish(kind)
+            assertTrue(DOC in fake.kept)
+        }
+        store.finish(FileTask.Kind.IMPORT) // no task: nothing to give up
+        assertEquals(2, fake.released.size)
+    }
+
+    @Test
+    fun givingUpATaskGivesUpItsPermissionAfterTheDelete() = runTest {
+        val store = newStore()
+        picked(store, FileTask(FileTask.Kind.EXPORT, 2, null))
+        assertEquals(Cleanup.Removed, store.abandon(FileTask.Kind.EXPORT))
+        assertEquals(listOf("delete $DOC", "release $DOC"), documents.calls)
+
+        // A file the user chose to replace is left as it was, and its permission given up all the same.
+        picked(store, FileTask(FileTask.Kind.BACKUP, 3, null))
+        fake.files[DOC] = PLAIN
+        assertEquals(Cleanup.Kept, store.abandon(FileTask.Kind.BACKUP))
+        assertEquals("release $DOC", documents.calls.last())
+
+        // An import's file is never touched; its permission is given up.
+        assertTrue(store.open(FileTask(FileTask.Kind.IMPORT, 1, null)))
+        store.returned(FileTaskStore.Action.OPEN, "$DOC-import")
+        runCurrent()
+        assertEquals(Cleanup.NoDocument, store.abandon(FileTask.Kind.IMPORT))
+        assertEquals("release $DOC-import", documents.calls.last())
+        assertFalse("$DOC-import" in fake.kept)
+        assertEquals(3, fake.released.size)
+    }
+
+    /** The fake documents, what the settings held when a write came, and the deletes and releases in order. */
     private class SeeingDocuments(private val fake: FakeDocumentIo, private val settings: AppSettings) : DocumentIo by fake {
         var recordedAtWrite: FileTask? = null
+        val calls = mutableListOf<String>()
 
         override suspend fun write(doc: DocRef, bytes: ByteArray): Boolean {
             recordedAtWrite = settings.fileTask.value
             return fake.write(doc, bytes)
+        }
+
+        override fun delete(doc: DocRef): Boolean {
+            calls += "delete ${doc.uri}"
+            return fake.delete(doc)
+        }
+
+        override fun release(doc: DocRef) {
+            calls += "release ${doc.uri}"
+            fake.release(doc)
         }
     }
 
