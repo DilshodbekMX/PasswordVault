@@ -1,7 +1,9 @@
 package io.github.dilshodbekmx.passwordvault.lock
 
+import io.github.dilshodbekmx.passwordvault.core.lock.flow.FingerprintLine
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.MasterProof
 import io.github.dilshodbekmx.passwordvault.core.lock.pin.PinBlocklist
+import io.github.dilshodbekmx.passwordvault.core.lock.record.Shortcut
 import io.github.dilshodbekmx.passwordvault.core.model.Vault
 import kotlinx.coroutines.flow.StateFlow
 
@@ -76,7 +78,26 @@ interface LockManager {
      */
     suspend fun changeMasterPassword(proof: MasterProof, first: CharArray, again: CharArray, pin: ByteArray?): ChangeResult
 
-    /** Asks for a new master password while the old one is forgotten (lock.md F11 steps 3 to 5); the PIN or fingerprint prompt appears through `state`. */
+    /**
+     * "Proof now" for a new master password in the open app (lock.md F11 step 3: "An app that is
+     * already open is not enough"; T16). [pin] is the PIN typed now in the screen's own PIN prompt,
+     * six ASCII digits: a counted check in a prompt (lock.md §6.3), which must yield the open vault's
+     * key. Null asks without one: [ProofResult.Proven] when the PIN (or, where no PIN exists, the
+     * fingerprint) that opened the app after [LockIntent.CantRemember] still stands as this flow's
+     * proof, [ProofResult.NeedsPin] while a PIN exists, and otherwise the fingerprint prompt "Confirm
+     * with your fingerprint", which appears through `state` like every prompt and is accepted only
+     * where there is no PIN. The proof is held by the lock, never handed out: it is used up by
+     * [requestNewMasterPassword], and dropped at a lock and when the app stops being visible (lock.md
+     * §5.8).
+     */
+    suspend fun proveForNewMasterPassword(pin: ByteArray?): ProofResult
+
+    /**
+     * Asks for a new master password while the old one is forgotten (lock.md F11 steps 4 and 5),
+     * with the proof of step 3 that the lock holds: from [proveForNewMasterPassword], or from the PIN
+     * (or fingerprint) that opened the app after [LockIntent.CantRemember]. The two typings are
+     * compared before anything is derived. Without such a proof: [RequestResult.NotAllowed].
+     */
     suspend fun requestNewMasterPassword(first: CharArray, again: CharArray): RequestResult
 
     /** "Cancel it": the pending new master password is dropped (lock.md F11 step 9). */
@@ -290,6 +311,47 @@ sealed interface ChangeResult {
     data object Unclear : ChangeResult
 }
 
+/**
+ * What [LockManager.proveForNewMasterPassword] came to (lock.md F11 step 3, ux.md §5.24 step 2): the
+ * PIN typed now whenever there is one, a fingerprint only where there is none, and never one in
+ * place of the other.
+ */
+sealed interface ProofResult {
+    /** The proof is held, given with [by]: the next step is choosing the new master password (F11 step 4). */
+    data class Proven(val by: Shortcut) : ProofResult
+
+    /** A PIN exists, so it must be typed now: "Enter your app PIN". Nothing was checked; a fingerprint is not accepted in its place. */
+    data object NeedsPin : ProofResult
+
+    /** The PIN was wrong and counted, as always: "Wrong PIN. [left] tries left." */
+    data class PinWrong(val left: Int) : ProofResult
+
+    /** The same wrong PIN as before: not counted again (lock.md §6.6). */
+    data object SamePinAgain : ProofResult
+
+    /**
+     * The PIN can no longer be the proof: a limit turned it off (lock.md §6.5), its key is gone, or
+     * there is none any more (`LockStatus.pin` says which). Where fingerprint is usable the flow goes
+     * on with it: [LockManager.proveForNewMasterPassword] with null.
+     */
+    data object PinGone : ProofResult
+
+    /** The PIN cannot be checked right now: "Your PIN can't be checked right now. Try again later." The flow stops; it never falls back to the fingerprint. */
+    data object CannotCheck : ProofResult
+
+    /** The fingerprint prompt was closed (codes 10, 13, 5), or the app locked or stopped being visible meanwhile: stay on the screen. */
+    data object Cancelled : ProofResult
+
+    /** The fingerprint did not confirm, and nothing was removed: [line] is its line of lock.md §13.3. */
+    data class FingerprintFailed(val line: FingerprintLine) : ProofResult
+
+    /** The fingerprint prompt could not be shown now (lock.md §9.2 rules 3 and 4). */
+    data object NotShown : ProofResult
+
+    /** Neither a PIN nor a usable fingerprint: the route is not offered (F11 step 3, "Neither"). */
+    data object NotOffered : ProofResult
+}
+
 /** What [LockManager.requestNewMasterPassword] came to (lock.md F11 steps 3 to 5). */
 sealed interface RequestResult {
     /** Asked for: it starts working once [remainingMs] more are credited (24 hours in all, lock.md §6.9). */
@@ -301,10 +363,14 @@ sealed interface RequestResult {
     /** As [CreateResult.Unassigned]. */
     data class Unassigned(val codePoint: Int) : RequestResult
 
-    /** The PIN or fingerprint confirmation was closed. */
+    /** The proof of step 3 went while the request was made: the app locked or stopped being visible. Nothing is pending. */
     data object Cancelled : RequestResult
 
-    /** No proof is accepted now: a fingerprint while a PIN exists, the PIN turned off or not checkable (lock.md T16). */
+    /**
+     * No proof of step 3 is held (lock.md T16): the PIN was not typed now
+     * ([LockManager.proveForNewMasterPassword], or the lock screen after [LockIntent.CantRemember]),
+     * or a fingerprint was the proof and a PIN exists. Nothing was derived.
+     */
     data object NotAllowed : RequestResult
 
     /** Argon2id could not run. */

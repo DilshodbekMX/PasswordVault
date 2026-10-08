@@ -5,6 +5,7 @@ import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockScreen
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.MasterProof
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.Notice
 import io.github.dilshodbekmx.passwordvault.core.lock.pin.PinBlocklist
+import io.github.dilshodbekmx.passwordvault.core.lock.record.Shortcut
 import io.github.dilshodbekmx.passwordvault.core.model.Vault
 import io.github.dilshodbekmx.passwordvault.lock.AsideResult
 import io.github.dilshodbekmx.passwordvault.lock.ChangeResult
@@ -21,6 +22,7 @@ import io.github.dilshodbekmx.passwordvault.lock.MpResult
 import io.github.dilshodbekmx.passwordvault.lock.PinChange
 import io.github.dilshodbekmx.passwordvault.lock.PinSetResult
 import io.github.dilshodbekmx.passwordvault.lock.PinStatus
+import io.github.dilshodbekmx.passwordvault.lock.ProofResult
 import io.github.dilshodbekmx.passwordvault.lock.RequestResult
 import kotlinx.coroutines.flow.MutableStateFlow
 
@@ -57,12 +59,16 @@ class FakeLockManager(
     /** The purpose of every [submitMasterPassword]; what was typed is never kept. */
     val purposes = mutableListOf<MpPurpose>()
 
+    /** Whether each [proveForNewMasterPassword] was given a PIN; the digits are never kept. */
+    val proofPins = mutableListOf<Boolean>()
+
     val mpResults = ArrayDeque<MpResult>()
     val createResults = ArrayDeque<CreateResult>()
     val setPinResults = ArrayDeque<PinSetResult>()
     val pinChanges = ArrayDeque<PinChange>()
     val fingerprintResults = ArrayDeque<FingerprintOnResult>()
     val changeResults = ArrayDeque<ChangeResult>()
+    val proofResults = ArrayDeque<ProofResult>()
     val requestResults = ArrayDeque<RequestResult>()
     val asideResults = ArrayDeque<AsideResult>()
 
@@ -146,6 +152,12 @@ class FakeLockManager(
             } else {
                 ChangeResult.Changed(pinKept = pin != null, fingerprintKept = status.value.fingerprint == FingerprintStatus.On)
             }
+
+    /** The PIN given is recorded as typed or not ([proofPins]); never the digits. */
+    override suspend fun proveForNewMasterPassword(pin: ByteArray?): ProofResult {
+        proofPins += pin != null
+        return proofResults.removeFirstOrNull() ?: ProofResult.Proven(Shortcut.PIN)
+    }
 
     override suspend fun requestNewMasterPassword(first: CharArray, again: CharArray): RequestResult =
         requestResults.removeFirstOrNull()

@@ -19,6 +19,7 @@ import io.github.dilshodbekmx.passwordvault.core.lock.flow.Notice
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.OlderPasswordAnswer
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.PinChangeOutcome
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.PinSetOutcome
+import io.github.dilshodbekmx.passwordvault.core.lock.flow.ProofOutcome
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.RequestOutcome
 import io.github.dilshodbekmx.passwordvault.core.lock.pin.PinBlocklist
 import io.github.dilshodbekmx.passwordvault.core.model.Vault
@@ -371,6 +372,20 @@ class DefaultLockManager(
             ChangeOutcome.NoMemory -> ChangeResult.NoMemory
             ChangeOutcome.NothingChanged -> ChangeResult.NothingChanged
             ChangeOutcome.Unclear -> ChangeResult.Unclear
+        }
+
+    override suspend fun proveForNewMasterPassword(pin: ByteArray?): ProofResult =
+        when (val outcome = engine.proveForNewMasterPassword(pin)) {
+            is ProofOutcome.Proven -> ProofResult.Proven(outcome.by)
+            ProofOutcome.NeedsPin -> ProofResult.NeedsPin
+            is ProofOutcome.PinWrong -> ProofResult.PinWrong(outcome.left)
+            ProofOutcome.SamePinAgain -> ProofResult.SamePinAgain
+            ProofOutcome.PinGone -> ProofResult.PinGone
+            ProofOutcome.CannotCheck -> ProofResult.CannotCheck
+            ProofOutcome.Cancelled -> ProofResult.Cancelled
+            is ProofOutcome.FingerprintFailed -> ProofResult.FingerprintFailed(outcome.line)
+            ProofOutcome.NotShown -> ProofResult.NotShown
+            ProofOutcome.NotOffered -> ProofResult.NotOffered
         }
 
     override suspend fun requestNewMasterPassword(first: CharArray, again: CharArray): RequestResult =

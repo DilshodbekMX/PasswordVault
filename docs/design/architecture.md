@@ -490,9 +490,15 @@ interface LockManager {
     suspend fun changeMasterPassword(proof: MasterProof, first: CharArray, again: CharArray, pin: ByteArray?): ChangeResult   // F8; Mismatch before anything is derived
                                                        // ChangeResult: Changed(pinKept, fingerprintKept) | Mismatch | Unassigned(codePoint)
                                                        //   | PinWrong(left) | NoMemory | NothingChanged | Unclear
-    suspend fun requestNewMasterPassword(first: CharArray, again: CharArray): RequestResult   // F11 steps 3-5
+    suspend fun proveForNewMasterPassword(pin: ByteArray?): ProofResult   // F11 step 3 in the open app ("Proof now"): `pin` is the PIN typed
+                                                       // now in the screen's prompt, a counted check; null asks without one: the proof the
+                                                       // lock-screen route made after CantRemember, NeedsPin while a PIN exists, else the
+                                                       // prompt "Confirm with your fingerprint" (lock.md T16)
+                                                       // ProofResult: Proven(by: Shortcut) | NeedsPin | PinWrong(left) | SamePinAgain | PinGone
+                                                       //   | CannotCheck | Cancelled | FingerprintFailed(line: FingerprintLine) | NotShown | NotOffered
+    suspend fun requestNewMasterPassword(first: CharArray, again: CharArray): RequestResult   // F11 steps 4-5, with the proof of step 3
                                                        // RequestResult: Requested(remainingMs) | Mismatch | Unassigned(codePoint) | Cancelled
-                                                       //   | NotAllowed | NoMemory | NotSaved
+                                                       //   | NotAllowed | NoMemory | NotSaved; NotAllowed: no proof of step 3 is held
     fun cancelNewMasterPassword()
     suspend fun openAside(vaultId: String, chars: CharArray): AsideResult                // Settings › Old passwords › Open (F17 step 5)
     suspend fun deleteAside(vaultId: String, chars: CharArray): AsideResult              // F17 step 5: files, then its lock directory and keys

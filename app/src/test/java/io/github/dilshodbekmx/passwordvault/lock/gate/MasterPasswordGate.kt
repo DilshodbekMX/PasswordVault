@@ -253,6 +253,9 @@ class MasterPasswordGate(
     override suspend fun changeMasterPassword(proof: MasterProof, first: CharArray, again: CharArray, pin: ByteArray?): ChangeResult =
         if (!MasterPasswordBytes.same(first, again)) ChangeResult.Mismatch else ChangeResult.NothingChanged
 
+    /** The gate has neither a PIN nor a fingerprint, so the route is not offered (lock.md F11 step 3, "Neither"). */
+    override suspend fun proveForNewMasterPassword(pin: ByteArray?): ProofResult = ProofResult.NotOffered
+
     /** No PIN or fingerprint can confirm a new master password here (lock.md F11 needs one). */
     override suspend fun requestNewMasterPassword(first: CharArray, again: CharArray): RequestResult =
         if (!MasterPasswordBytes.same(first, again)) RequestResult.Mismatch else RequestResult.NotAllowed
