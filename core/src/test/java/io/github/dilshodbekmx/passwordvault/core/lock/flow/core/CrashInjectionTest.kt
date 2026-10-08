@@ -151,7 +151,7 @@ class CrashInjectionTest {
     // ---------------------------------------------------------------------------------------------
     // F5: the PIN limit
 
-    private class F5(val f: LockFixture, val pin: ShortcutSlot, val finger: ShortcutSlot, val files: String)
+    private class F5(val f: LockFixture, val pin: ShortcutSlot, val finger: ShortcutSlot)
 
     private fun f5Phone(): F5 {
         val f = phone()
@@ -159,7 +159,7 @@ class CrashInjectionTest {
         val pin = f.plantPin(vault, row = 4, total = 4)
         val finger = f.plantFingerprint(vault)
         f.plantState(maxGeneration = StateRecord.MaxGeneration(2, f.clock.wallMs()))
-        return F5(f, pin, finger, "")
+        return F5(f, pin, finger)
     }
 
     /** How the F5 script reaches the limit and opens the app afterwards. */
