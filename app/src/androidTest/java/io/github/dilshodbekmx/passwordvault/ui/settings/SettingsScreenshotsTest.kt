@@ -6,6 +6,7 @@ import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.AsideVault
+import io.github.dilshodbekmx.passwordvault.core.lock.flow.ChoosePinReason
 import io.github.dilshodbekmx.passwordvault.core.model.FileRef
 import io.github.dilshodbekmx.passwordvault.core.model.Vault
 import io.github.dilshodbekmx.passwordvault.data.VaultState
@@ -16,6 +17,7 @@ import io.github.dilshodbekmx.passwordvault.nav.HelpPage
 import io.github.dilshodbekmx.passwordvault.nav.Route
 import io.github.dilshodbekmx.passwordvault.settings.ThemeChoice
 import io.github.dilshodbekmx.passwordvault.ui.setup.FingerprintOfferTags
+import io.github.dilshodbekmx.passwordvault.ui.setup.PinSetupStart
 import org.junit.After
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -89,12 +91,13 @@ class SettingsScreenshotsTest {
             gallery.shown = SettingsGallery.Screen.APP_LOCK
         }
 
+        // The PIN steps as setup opens them: no PIN on this phone yet (lock.md F1 step 6).
+        PinSetupStart.offer(ChoosePinReason.NONE_HERE)
         step("10-create-pin") { gallery.shown = SettingsGallery.Screen.PIN_STEPS }
         step("11-create-pin-refused") { gallery.typeSteps("111111", Route.CreatePin) }
-        step("12-confirm-pin") {
-            gallery.typeSteps("582913", Route.CreatePin)
-            gallery.typeSteps("58", Route.ConfirmPin)
-        }
+        compose.runOnUiThread { gallery.typeSteps("582913", Route.CreatePin) }
+        compose.waitForIdle() // the move to the second step is made before its pad takes digits
+        step("12-confirm-pin") { gallery.typeSteps("58", Route.ConfirmPin) }
         step("13-pin-is-set") { gallery.typeSteps("2913", Route.ConfirmPin) }
         compose.waitUntil(5_000) { compose.onAllNodes(hasTestTag(FingerprintOfferTags.USE)).fetchSemanticsNodes().isNotEmpty() }
         Shots.take(compose, "14-fingerprint-offer")
