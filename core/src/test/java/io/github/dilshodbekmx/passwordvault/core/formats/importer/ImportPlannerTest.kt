@@ -260,7 +260,15 @@ class ImportPlannerTest {
         val siteAfter = VaultEdits.addImported(plan(siteVault, siteFile).entries, FakeRandom(12), Texts::fromFile)(siteVault, NOW).vault
         assertEquals(listOf("example.org", "Example (fayldan)"), siteAfter.entries.map { it.title })
         assertTrue(plan(siteAfter, siteFile).accounts.isEmpty())
+        // Imported once with "Tidy names" on, then again with it off: the tidied name is this account.
+        val tidied = VaultEdits.addImported(plan(Vault(), file(exportedOwn(own))).entries, FakeRandom(13), Texts::fromFile)(Vault(), NOW).vault
+        assertEquals(listOf("Gmail", "Mail"), tidied.entries.map { it.title })
+        val off = plan(tidied, file(exportedOwn(own)), ImportPlanner.Choices(tidyNames = false))
+        assertEquals(2, off.alreadyHere)
+        assertTrue(off.entries.map { it.title }.toString(), off.accounts.isEmpty())
     }
+
+    private fun exportedOwn(vault: Vault): ByteArray = BitwardenJson.export(vault, NOW, GENERATOR).bytes
 
     /**
      * Many accounts of one login and one password are the planner's worst case: each was compared with

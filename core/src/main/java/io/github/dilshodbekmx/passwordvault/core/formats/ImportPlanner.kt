@@ -43,13 +43,14 @@ import java.util.Locale
  *    vault outside Recently deleted has the same username, a website host in common (or, when neither
  *    has a website, the same name), the same password, and nothing that the incoming one would add
  *    in its notes, its extra fields or a pending change's old password: it is skipped. The name of an
- *    account without a website is looked up as the file has it and as an import stores it: after "Tidy
- *    names", and with "(from file)", so that the same file imported again adds nothing. The same within
- *    the file: an exact repeat of an account already planned is imported once. An account with the
- *    same website and username as one in the vault but another password is added beside it "so you
- *    can compare" ([ImportPlan.conflicts]); nothing combines the two. An account of our own JSON whose
- *    id an account of the vault holds is added only when it differs from it in this sense, and then
- *    `VaultEdits.addImported` gives it a new id and the name "Gmail (from file)" (formats-review P1).
+ *    account without a website is looked up as the file has it and as an import stores it: with "Tidy
+ *    names" and without, and with "(from file)", so that the same file imported again adds nothing.
+ *    The same within the file: an exact repeat of an account already planned is imported once. An
+ *    account with the same website and username as one in the vault but another password is added
+ *    beside it "so you can compare" ([ImportPlan.conflicts]); nothing combines the two. An account of
+ *    our own JSON whose id an account of the vault holds is added only when it differs from it in this
+ *    sense, and then `VaultEdits.addImported` gives it a new id and the name "Gmail (from file)"
+ *    (formats-review P1).
  * 5. **The size** (architecture.md §3.5): the vault file after the import, estimated from the vault
  *    `VaultEdits.addImported` would make, sealed with the longest header a vault file can have. An
  *    import that would not fit ([ImportPlan.fits] false) is refused with "Your passwords no longer fit
@@ -214,14 +215,15 @@ object ImportPlanner {
      * The logins under which an account of the vault may be the incoming [e]: [keys], and for an account
      * without a website, which only its name tells apart, also the names an import gives it. That is
      * the name it has in the file when "Tidy names" changed it ([nameInFile]; the vault's own export
-     * holds that one), and each name with "(from file)", as `VaultEdits.addImported` names an account
-     * of our own JSON that it adds beside the one holding its id ([fromFile]).
+     * holds that one), the name "Tidy names" gives it when it is off now and was on for an earlier
+     * import, and each name with "(from file)", as `VaultEdits.addImported` names an account of our own
+     * JSON that it adds beside the one holding its id ([fromFile]).
      */
     private fun keysInVault(e: Entry, keys: List<String>, nameInFile: String?, fromFile: (String) -> String): List<String> {
         if (e.urls.any { siteHost(it).isNotEmpty() }) return keys
         val user = e.username.trim()
         val all = LinkedHashSet<String>(keys)
-        for (name in listOfNotNull(e.title, nameInFile)) {
+        for (name in linkedSetOf(e.title, tidyName(e.title)).apply { nameInFile?.let(::add) }) {
             all.add(nameKey(user, name))
             all.add(nameKey(user, Entries.titled(fromFile, name)))
         }
