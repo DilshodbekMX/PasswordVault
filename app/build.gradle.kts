@@ -227,6 +227,8 @@ class VariantSpec(
     /** R-2: whether the debug receiver's class is in the APK. */
     val hasDebugReceiver: Boolean,
     val allowBackup: Boolean,
+    /** R8 runs (§7.2), so R-16 reads the variant's mapping. */
+    val r8: Boolean,
 )
 
 val mainActivity = "$appId.MainActivity"
@@ -242,10 +244,26 @@ val phoneAbis = setOf("arm64-v8a", "armeabi-v7a")
 val emulatorAbis = phoneAbis + "x86_64"
 
 val variantSpecs = mapOf(
-    "debug" to VariantSpec(true, false, emulatorAbis, debugExported, true, false),
-    "staging" to VariantSpec(true, true, emulatorAbis, stagingExported, true, false),
-    "release" to VariantSpec(false, true, phoneAbis, releaseExported, false, false),
-    "backupCheck" to VariantSpec(true, false, emulatorAbis, debugExported, true, true),
+    "debug" to VariantSpec(true, false, emulatorAbis, debugExported, true, false, r8 = false),
+    "staging" to VariantSpec(true, true, emulatorAbis, stagingExported, true, false, r8 = true),
+    "release" to VariantSpec(false, true, phoneAbis, releaseExported, false, false, r8 = true),
+    "backupCheck" to VariantSpec(true, false, emulatorAbis, debugExported, true, true, r8 = false),
+)
+
+/**
+ * R-16: the members that R8 must keep under their own names, by class, as `mapping.txt` writes
+ * them. androidx.biometric's FingerprintManager callback (Android 6 to 8.1, and Samsung phones with
+ * Android 9): compileSdk 37's android.jar has no FingerprintManager, so R8 does not see that these
+ * override the platform's methods, and only the rule in src/main/keepRules/rules.keep keeps them
+ * (lock.md §9.1 item 7).
+ */
+val r8MustKeep = mapOf(
+    "androidx.biometric.internal.FingerprintManagerCompat\$Api23Impl\$1" to listOf(
+        "void onAuthenticationError(int,java.lang.CharSequence)",
+        "void onAuthenticationHelp(int,java.lang.CharSequence)",
+        "void onAuthenticationSucceeded(android.hardware.fingerprint.FingerprintManager\$AuthenticationResult)",
+        "void onAuthenticationFailed()",
+    ),
 )
 
 /** R-9: the only permissions the app may hold. R-7: HIDE_OVERLAY_WINDOWS must be one of them. */
@@ -426,6 +444,56 @@ abstract class CheckBuildConfig : DefaultTask() {
     }
 }
 
+/**
+ * R-16: R8 kept every member of [r8MustKeep] under its own name. Read from the variant's
+ * `mapping.txt`, where a class is a line `original -> renamed:` followed by its members, each
+ * indented, as `[lines:]type name(arguments)[:lines] -> name in the APK`; a member that R8 removed
+ * is not listed there.
+ */
+abstract class CheckR8Keeps : DefaultTask() {
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.NONE)
+    abstract val mapping: RegularFileProperty
+
+    @get:Input abstract val variantName: Property<String>
+    @get:Input abstract val mustKeep: MapProperty<String, List<String>>
+    @get:OutputFile abstract val report: RegularFileProperty
+
+    @TaskAction
+    fun check() {
+        val v = variantName.get()
+        val wanted = mustKeep.get()
+        // For each class of [wanted]: the members listed under it, as "signature -> name".
+        val found = wanted.keys.associateWith { mutableSetOf<String>() }
+        var current: MutableSet<String>? = null
+        val memberLine = Regex("^\\s+(?:\\d+:\\d+:)?(\\S+ [^\\s(]+\\([^)]*\\))(?::\\d+(?::\\d+)?)? -> (\\S+)$")
+        mapping.get().asFile.useLines { lines ->
+            for (line in lines) {
+                if (line.isEmpty() || line.startsWith("#")) continue
+                if (!line[0].isWhitespace()) {
+                    current = found[line.substringBefore(" -> ")]
+                    continue
+                }
+                val members = current ?: continue
+                memberLine.find(line)?.let { members += "${it.groupValues[1]} -> ${it.groupValues[2]}" }
+            }
+        }
+        val problems = mutableListOf<String>()
+        for ((cls, signatures) in wanted) {
+            for (signature in signatures) {
+                val name = signature.substringBefore('(').substringAfterLast(' ')
+                if ("$signature -> $name" !in found.getValue(cls)) {
+                    problems += "R-16: R8 did not keep \"$signature\" of $cls under its own name (src/main/keepRules/rules.keep)"
+                }
+            }
+        }
+        if (problems.isNotEmpty()) {
+            throw GradleException("Build checks failed for the R8 output of '$v':\n- " + problems.joinToString("\n- "))
+        }
+        report.get().asFile.writeText("R8 mapping of '$v': ${wanted.values.sumOf { it.size }} members kept under their own names.\nR-16 passes.\n")
+    }
+}
+
 /** R-12: no build output is tracked by git. Skipped, with a warning, outside a git checkout. */
 abstract class CheckNoTrackedBuildOutput : DefaultTask() {
     @get:Inject abstract val exec: ExecOperations
@@ -509,8 +577,20 @@ androidComponents {
             )
             report.set(reports.map { it.file("buildconfig.txt") })
         }
+        val r8Check = if (spec.r8) {
+            tasks.register<CheckR8Keeps>("buildCheck${cap}R8") {
+                description = "R-16 on the R8 mapping of ${variant.name}."
+                mapping.set(variant.artifacts.get(SingleArtifact.OBFUSCATION_MAPPING_FILE))
+                variantName.set(variant.name)
+                mustKeep.set(r8MustKeep)
+                report.set(reports.map { it.file("r8.txt") })
+            }
+        } else {
+            null
+        }
         tasks.matching { it.name == "assemble$cap" }.configureEach {
             dependsOn(manifestCheck, apkCheck, buildConfigCheck, noTrackedBuildOutput)
+            r8Check?.let { dependsOn(it) }
         }
     }
 }

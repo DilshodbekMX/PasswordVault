@@ -11,3 +11,19 @@
 -keep class io.github.dilshodbekmx.passwordvault.nav.Route { *; }
 -keep class io.github.dilshodbekmx.passwordvault.nav.Route$** { *; }
 -keep class * implements io.github.dilshodbekmx.passwordvault.nav.Route { *; }
+
+# androidx.biometric 1.4.0-alpha07 brings its own FingerprintManager path for Android 6 to 8.1, and
+# for the Samsung phones with Android 9 that it routes there (lock.md §9.1). The callback it hands
+# to FingerprintManager is the anonymous class below. The android.jar of compileSdk 37 has no
+# android.hardware.fingerprint, so R8 cannot see that these four methods override the platform's
+# AuthenticationCallback, and the library's own rules only -dontwarn that class: without this rule
+# R8 removes all four, and no fingerprint result ever reaches the app on those phones in staging and
+# release (the review of build plan 4.1; shown with lock.md E6 on API 24). Build check R-16 fails the
+# build of staging and release when one of them is not kept under its own name. The class name is
+# the pinned version's: when the version changes, run R-16 and E6 again (lock.md §9.1 item 5).
+-keepclassmembers class androidx.biometric.internal.FingerprintManagerCompat$Api23Impl$1 {
+    public void onAuthenticationError(int, java.lang.CharSequence);
+    public void onAuthenticationHelp(int, java.lang.CharSequence);
+    public void onAuthenticationSucceeded(android.hardware.fingerprint.FingerprintManager$AuthenticationResult);
+    public void onAuthenticationFailed();
+}
