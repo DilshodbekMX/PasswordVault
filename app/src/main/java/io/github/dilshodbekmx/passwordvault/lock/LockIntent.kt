@@ -73,7 +73,10 @@ sealed interface LockIntent {
      */
     data object RestoreFromFile : LockIntent
 
-    /** An answer on "This is an older master password" (lock.md F16b). */
+    /**
+     * An answer on "This is an older master password" (lock.md F16b, `LockScreen.OlderPassword`), or
+     * on "Open the older set instead?" (F16b step 3, `LockScreen.OpenOlderSet`).
+     */
     data class OlderPasswordAnswer(val choice: OlderPasswordChoice) : LockIntent
 
     /** The answer [answer] to the notice [id] (lock.md §13.4); [answer] is one the notice offers. */
@@ -92,7 +95,11 @@ sealed interface LockIntent {
     data object GoBack : LockIntent
 }
 
-/** The buttons of "This is an older master password" (lock.md F16b, `LockScreen.OlderPassword`). */
+/**
+ * The buttons of "This is an older master password" (lock.md F16b, `LockScreen.OlderPassword`), and
+ * of the question before the passwords from before a replacement are opened
+ * (`LockScreen.OpenOlderSet`, F16b step 3). The engine's side is `OlderPasswordAnswer`, value for value.
+ */
 enum class OlderPasswordChoice {
     /** The change did not finish: "Try again" with the new master password. */
     TRY_AGAIN,
@@ -102,4 +109,10 @@ enum class OlderPasswordChoice {
 
     /** The change was proven: "OK", back to the field. */
     OK,
+
+    /** On `LockScreen.OpenOlderSet`: "Open my passwords from 7 Oct". The two vaults change places (F16b steps 4 to 6). */
+    OPEN_OLDER_SET,
+
+    /** On `LockScreen.OpenOlderSet`: "Cancel". Nothing changes. */
+    KEEP_NEWER_SET,
 }

@@ -132,7 +132,9 @@ sealed interface MasterPasswordOutcome {
      * Nothing opens: the visit or prompt that asked has ended, although the password may have been
      * right and was counted as usual (§6.8 step 8, I11); or there was nothing to check against; or
      * no generation of the vault could be used, which counts neither as right nor as wrong
-     * ([LockEngine.state] then says "Your passwords can't be opened").
+     * ([LockEngine.state] then says "Your passwords can't be opened"); or the password was right for
+     * a vault from before a replacement, and [LockEngine.state] asks first
+     * ([LockScreen.OpenOlderSet], F16b step 3).
      */
     data object TooLate : MasterPasswordOutcome
 }
@@ -256,7 +258,11 @@ sealed interface AsideOutcome {
     data object NotSaved : AsideOutcome
 }
 
-/** The buttons of "This is an older master password" (lock.md F16b, [LockScreen.OlderPassword]). */
+/**
+ * The buttons of "This is an older master password" (lock.md F16b, [LockScreen.OlderPassword]), and
+ * of the question before the passwords from before a replacement are opened
+ * ([LockScreen.OpenOlderSet], F16b step 3).
+ */
 enum class OlderPasswordAnswer {
     /** The change did not finish: "Try again", with the new master password. */
     TRY_AGAIN,
@@ -266,6 +272,12 @@ enum class OlderPasswordAnswer {
 
     /** The change was proven: "OK", back to the field. */
     OK,
+
+    /** On [LockScreen.OpenOlderSet]: "Open my passwords from 7 Oct". The two vaults change places (F16b steps 4 to 6). */
+    OPEN_OLDER_SET,
+
+    /** On [LockScreen.OpenOlderSet]: "Cancel". Nothing changes, and the vault that opened in place is dropped again. */
+    KEEP_NEWER_SET,
 }
 
 /**
@@ -542,7 +554,7 @@ class LockEngine(
         }
     }
 
-    /** An answer on "This is an older master password" (F16b). */
+    /** An answer on "This is an older master password", or on "Open the older set instead?" (F16b). */
     suspend fun olderPasswordAnswer(answer: OlderPasswordAnswer) = core.locked { olderCopies.answer(answer) }
 
     // ---------------------------------------------------------------------------------------------

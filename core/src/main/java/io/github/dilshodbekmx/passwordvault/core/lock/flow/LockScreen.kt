@@ -72,6 +72,19 @@ sealed interface LockScreen {
      * otherwise only "OK".
      */
     data class OlderPassword(val changedAtMs: Long, val unfinishedChange: Boolean, override val aside: AsideLine? = null) : LockScreen
+
+    /**
+     * "Open the older set instead?" (lock.md F16b step 3, after a replacement): the master password of
+     * a vault from before a replacement has just opened it in place, on that vault's own lock screen,
+     * and the app asks before the two vaults change places: "These are your passwords as they were
+     * on 7 Oct. Passwords added or changed after that are in the newer set, which stays on this
+     * phone. Open the older set instead?" The buttons are "Open my passwords from 7 Oct"
+     * ([OlderPasswordAnswer.OPEN_OLDER_SET]: steps 4 to 6 follow) and "Cancel"
+     * ([OlderPasswordAnswer.KEEP_NEWER_SET]: nothing changes). [atMs] is when the master password was
+     * replaced, the date both sentences name. `EntryPolicy` never chooses this screen: it is shown
+     * while `LockVisit.olderSet` is set.
+     */
+    data class OpenOlderSet(val atMs: Long, override val aside: AsideLine?) : LockScreen
 }
 
 /** The line on the lock screen of a vault put aside (lock.md §13.2, F17 step 4, F16b). */
