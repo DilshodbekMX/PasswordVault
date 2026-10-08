@@ -208,6 +208,9 @@ class RecordingVault : VaultRepository {
     /** When set, `matchesMasterPassword` throws it. */
     var matchFails: Exception? = null
 
+    /** When set, `matchesMasterPassword` waits for it after it has taken the bytes, as a save of the vault that is still running. */
+    var matchRuns: CompletableDeferred<Unit>? = null
+
     /** The open vault as the screens see it. */
     fun show(vault: Vault) {
         state.value = VaultState.Unlocked(vault, 1L, null, false)
@@ -220,6 +223,7 @@ class RecordingVault : VaultRepository {
             false
         }
         matched += Match(proof, lent)
+        matchRuns?.await()
         matchFails?.let { throw it }
         return emptySet()
     }

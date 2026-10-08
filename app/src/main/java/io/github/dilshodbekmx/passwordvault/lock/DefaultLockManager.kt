@@ -291,7 +291,7 @@ class DefaultLockManager(
             is LockState.Unlocked -> {
                 // A prompt of the open app: checked against the open vault's own slot, with a proof of its own.
                 val outcome = engine.checkMasterPassword(chars)
-                if (outcome is MasterPasswordOutcome.Right) matchOnce(outcome.proof).join()
+                if (outcome is MasterPasswordOutcome.Right) handOver(outcome.proof)
                 mpResultOf(outcome)
             }
             is LockState.Locked -> {
@@ -565,6 +565,22 @@ class DefaultLockManager(
         }
         job.start()
         return job
+    }
+
+    /**
+     * The proof of a check of the open app goes to its caller once D-9b has had it ([matchOnce]). A
+     * caller that is cancelled meanwhile (its screen went) never receives it, so its flow has ended
+     * here: the proof is dropped as soon as the comparison is done with it (lock.md §5.8), not left
+     * until the next `ON_STOP` or lock.
+     */
+    private suspend fun handOver(proof: MasterProof) {
+        val match = matchOnce(proof)
+        try {
+            match.join()
+        } catch (e: CancellationException) {
+            match.invokeOnCompletion { proof.drop() }
+            throw e
+        }
     }
 
     /** lock.md F12 step 2: "Make a backup now?" on the entry just made on the lock screen, when a backup is due. */

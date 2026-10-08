@@ -15,7 +15,9 @@ import io.github.dilshodbekmx.passwordvault.core.model.Vault
 import io.github.dilshodbekmx.passwordvault.settings.BackupReminder
 import java.io.IOException
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -410,6 +412,37 @@ class MasterPasswordTest {
         assertEquals(MpResult.Wrong, rig.submit("not the password", MpPurpose.EXPORT))
         rig.send(LockIntent.NoticeAnswered(rig.notices.first().id, NoticeAnswer.LATER)) // the state changes, the proof does not
         assertEquals("nothing is compared twice, and nothing for a wrong password", 2, rig.vault.matched.size)
+    }
+
+    @Test
+    fun aCheckOfTheOpenAppWhoseScreenIsGoneBeforeItGetsItsProof_hasThatProofDropped() = runTest {
+        val rig = LockRig(this)
+        rig.setUpWithPin()
+        rig.answerNotices(NoticeAnswer.LATER)
+        rig.lock()
+        rig.typePin() // the app is open, and no proof is in the state
+        rig.vault.matched.clear()
+        val comparing = CompletableDeferred<Unit>()
+        rig.vault.matchRuns = comparing // the comparison of D-9b is still saving when the screen goes
+
+        val backup = backgroundScope.launch(start = CoroutineStart.UNDISPATCHED) {
+            rig.manager.submitMasterPassword(LockRig.PASSWORD.toCharArray(), MpPurpose.BACKUP)
+        }
+        rig.settle()
+        val proof = rig.vault.matched.single().proof
+        assertTrue("D-9b had its bytes", rig.vault.matched.single().bytesLent)
+        assertFalse("the proof waits for the comparison", backup.isCompleted)
+
+        backup.cancel() // Back on the backup screen: its ViewModel is cleared, and nobody will receive the proof
+        rig.settle()
+        comparing.complete(Unit)
+        rig.settle()
+
+        assertTrue(rig.isUnlocked)
+        assertThrows(
+            "lock.md §5.8: a proof is dropped when its flow ends, not only at ON_STOP or a lock",
+            IllegalStateException::class.java,
+        ) { proof.useBytes { } }
     }
 
     @Test
