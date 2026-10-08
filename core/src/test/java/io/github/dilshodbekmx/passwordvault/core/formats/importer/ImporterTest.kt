@@ -19,9 +19,12 @@ import io.github.dilshodbekmx.passwordvault.core.formats.importer.ImportFixtures
 import io.github.dilshodbekmx.passwordvault.core.formats.importer.ImportFixtures.resource
 import io.github.dilshodbekmx.passwordvault.core.formats.importer.ImportFixtures.visible
 import io.github.dilshodbekmx.passwordvault.core.formats.writers.WriterFixtures
+import io.github.dilshodbekmx.passwordvault.core.model.EditTexts
 import io.github.dilshodbekmx.passwordvault.core.model.Entry
 import io.github.dilshodbekmx.passwordvault.core.model.HistoryItem
+import io.github.dilshodbekmx.passwordvault.core.util.ParseError
 import io.github.dilshodbekmx.passwordvault.core.util.Uuid
+import io.github.dilshodbekmx.passwordvault.testing.FakeRandom
 import java.nio.charset.Charset
 import java.util.Random
 import org.junit.Assert.assertEquals
@@ -406,6 +409,32 @@ class ImporterTest {
         assertTrue(own.accounts.all { Uuid.isValid(it.entry.id) })
         assertEquals(ImportFixtures.id(7), own.accounts[1].entry.id) // an id that is one is kept as written
         assertEquals(3, own.accounts.map { it.entry.id }.toSet().size)
+    }
+
+    /**
+     * A 10 MB file of millions of tiny values ran out of memory on a phone whose app memory is small
+     * (the review of 3.15, on API 37 at 192 MB): the read says so, and the app goes on. Here the read
+     * is made to run out of memory by the text that names an account that has no name.
+     */
+    @Test
+    fun aReadThatRunsOutOfMemoryIsAFileTooLargeToReadOnThisPhone() {
+        val noMemory = object : EditTexts {
+            override fun untitled(nowMs: Long): String = throw OutOfMemoryError("Failed to allocate")
+
+            override fun fromBackup(title: String): String = title
+
+            override fun fromFile(title: String): String = title
+        }
+        val files = listOf(
+            csv("name,url,username,password", ",,,S3cret!"),
+            """{"encrypted":false,"items":[{"type":1,"name":null,"login":{"password":"S3cret!"}}]}""",
+        )
+        for (text in files) {
+            val result = Importer.read(text.toByteArray(Charsets.UTF_8), NOW, noMemory, FakeRandom(7))
+            assertTrue(result.toString(), result is Importer.Result.Unreadable)
+            assertEquals(ParseError(0, Importer.REASON_OUT_OF_MEMORY), (result as Importer.Result.Unreadable).error)
+        }
+        assertEquals("out-of-memory", Importer.REASON_OUT_OF_MEMORY)
     }
 
     @Test
