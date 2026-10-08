@@ -56,7 +56,8 @@ import kotlinx.coroutines.withContext
  * on a vault that logs them, which a lock that does only this much keeps short. It stays in the
  * package `…passwordvault.lock`, where they import it from. The app's own lock is tested in
  * `APP-T/lock/` on `DefaultLockManager`. Once the session's tests run on that manager, this file,
- * `GateRig` and `InMemoryVault` can go.
+ * `GateRig`, `InMemoryVault` and `MasterPasswordGateTest` can go (and the skeleton's check,
+ * `tools/emu/checks/3A.sh`, stops counting that test among 3.2's).
  *
  * - **Start** (lock.md §5.11 step 2): [state] is [LockUiState.Starting] until [VaultPort.vaults]
  *   has answered, off the main thread: [LockUiState.NoVault] for an empty phone (§13.1 row 1),
