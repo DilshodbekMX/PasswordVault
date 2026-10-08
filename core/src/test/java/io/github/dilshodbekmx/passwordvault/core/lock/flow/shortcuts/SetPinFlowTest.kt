@@ -11,6 +11,7 @@ import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockSummary
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.MasterProof
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.MpReason
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.Notice
+import io.github.dilshodbekmx.passwordvault.core.lock.flow.PadStatus
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.PinKey
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.PinReason
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.core.LockFixture
@@ -455,6 +456,40 @@ class SetPinFlowTest {
         f.lock()
         f.type(NEW_PIN)
         assertTrue(f.state is LockState.Unlocked)
+    }
+
+    @Test
+    fun anEntryInterruptedBeforeTheNewPin_isNotTheNewPinsLine() {
+        val vault = f.seedVault()
+        f.plantPin(vault, row = 1, total = 1, charged = true) // the last entry of the old PIN was cut off
+        f.plantState()
+        f.startInFront()
+        assertEquals(PadStatus.Interrupted(3), f.pad.status)
+        val proof = f.unlockWithMasterPassword()
+        assertTrue(f.setPin(NEW_PIN, proof))
+        f.lock()
+        assertNull("the line was about the old PIN", f.pad.status)
+    }
+
+    @Test
+    fun theOfferAfterAFingerprintUnlock_comesAgainForANewPinThatIsTurnedOffInTheSameProcess() {
+        val vault = f.seedVault()
+        f.plantPin(vault, row = 4, total = 4)
+        f.plantFingerprint(vault)
+        f.plantState()
+        f.startInFront()
+        f.type(WRONG_PIN) // the limit: the fingerprint-only screen
+        await { f.engine.promptIfDue() }
+        assertEquals(true, f.notices.filterIsInstance<Notice.ChoosePin>().single().needsMasterPassword)
+        f.answerEveryNotice()
+        assertTrue(f.setPin(NEW_PIN, f.proofInTheOpenApp()))
+
+        // The new PIN is turned off at a limit in this same process: the offer is made again.
+        f.lock()
+        for (wrong in listOf("582914", "582915", "582916", "582917", "582918")) f.type(wrong)
+        assertTrue(f.screen is LockScreen.FingerprintOnly)
+        await { f.engine.promptIfDue() }
+        assertEquals(true, f.notices.filterIsInstance<Notice.ChoosePin>().singleOrNull()?.needsMasterPassword)
     }
 
     @Test

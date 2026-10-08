@@ -191,6 +191,10 @@ internal class ShortcutFlows(private val core: LockCore) {
         // Step 7. When this write fails the old record stays in memory, and the new key is left to the
         // sweep: the write may have replaced the record all the same (see the class).
         if (!lock.pin.setPin(slot, masterPasswordTyped)) return false
+        // What the process remembered about the PIN before was about the old one: the pad's line about
+        // an entry interrupted at start (§13.3), and the offer made once after a fingerprint unlock (F5 step 4).
+        lock.interruptedAtStart = false
+        lock.choosePinOffered = false
         core.publishSummary()
         return true
     }
