@@ -55,6 +55,8 @@ import kotlinx.serialization.json.JsonPrimitive
  *   fields are the item's values (hidden when the key looks secret), and the previous passwords are
  *   cut to the newest 5.
  * - An item without a name gets one as on the CSV path ([titleFor]).
+ * - The `login` object is read whatever the item's type, so an edited secure note keeps its username
+ *   and password. A password that is neither text nor a number is not imported, and is listed.
  * - Everything not imported is listed ([NotImported]), never dropped silently.
  *
  * The reader applies none of the importer's rules: control characters, limits, the website rule and
@@ -473,6 +475,12 @@ object BitwardenJson {
             PREVIOUS_PASSWORDS,
 
             /**
+             * The item was imported without its password, which was neither text nor a number (a list,
+             * an object, `true` or `false`) and so is no password the app could keep.
+             */
+            PASSWORD_NOT_TEXT,
+
+            /**
              * An unknown key of our own extension could not be kept: its value nests deeper than a
              * vault file holds. [position] is the item's, or 0 for the top object.
              */
@@ -608,19 +616,29 @@ object BitwardenJson {
         }
         var username = ""
         var password = ""
+        var passwordNotText = false
         val urls = ArrayList<String>()
-        when (int(item["type"]) ?: TYPE_LOGIN) {
-            TYPE_LOGIN -> (item["login"] as? JsonObject)?.let { login ->
-                username = text(login["username"]) ?: ""
-                password = text(login["password"]) ?: ""
-                (login["uris"] as? JsonArray)?.forEach { uri ->
-                    text((uri as? JsonObject)?.get("uri"))?.takeIf { it.isNotBlank() }?.let(urls::add)
-                }
-                // Version 1 has no one-time codes (ux.md §11): the secret is kept as a hidden field.
-                text(login["totp"])?.takeIf { it.isNotBlank() }?.let { fields.add(CustomField(TOTP_FIELD, it, true)) }
-                if ((login["fido2Credentials"] as? JsonArray)?.isNotEmpty() == true) listed(NotImported.What.PASSKEYS)
+        // The login. Bitwarden gives one to its logins only, but an item of any type that has one keeps
+        // it (an edited secure note with a username and a password): a password is never dropped on
+        // import (formats.md §5.2, §8.4).
+        (item["login"] as? JsonObject)?.let { login ->
+            username = text(login["username"]) ?: ""
+            when (val value = login["password"]) {
+                null, JsonNull -> Unit // no password, as Bitwarden writes an empty one
+                is JsonPrimitive -> if (value.isString || !isBoolean(value)) password = value.content else passwordNotText = true
+                else -> passwordNotText = true
             }
-            TYPE_NOTE -> Unit // a secure note: its name, notes and fields
+            // A list, an object, true or false is no password: the account comes without one, and says so.
+            if (passwordNotText) listed(NotImported.What.PASSWORD_NOT_TEXT)
+            (login["uris"] as? JsonArray)?.forEach { uri ->
+                text((uri as? JsonObject)?.get("uri"))?.takeIf { it.isNotBlank() }?.let(urls::add)
+            }
+            // Version 1 has no one-time codes (ux.md §11): the secret is kept as a hidden field.
+            text(login["totp"])?.takeIf { it.isNotBlank() }?.let { fields.add(CustomField(TOTP_FIELD, it, true)) }
+            if ((login["fido2Credentials"] as? JsonArray)?.isNotEmpty() == true) listed(NotImported.What.PASSKEYS)
+        }
+        when (int(item["type"]) ?: TYPE_LOGIN) {
+            TYPE_LOGIN, TYPE_NOTE -> Unit // a login, a secure note: their name, login, notes and fields
             else -> {
                 // A card, an identity, an SSH key or a later type: every value of its object is a field.
                 val body = item.entries.firstOrNull { (key, value) -> value is JsonObject && key !in NOT_A_BODY }?.value as? JsonObject
@@ -672,7 +690,7 @@ object BitwardenJson {
         }
 
         val notes = text(item["notes"]) ?: ""
-        if (name == null && username.isBlank() && password.isEmpty() && urls.isEmpty() && notes.isBlank() &&
+        if (name == null && username.isBlank() && password.isEmpty() && !passwordNotText && urls.isEmpty() && notes.isBlank() &&
             fields.isEmpty() && history.isEmpty() && pendingOldPassword == null && extras.isEmpty()
         ) {
             listed(NotImported.What.EMPTY)

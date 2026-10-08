@@ -597,7 +597,7 @@ class BitwardenJsonTest {
               {"type":1,"name":"Unnamed folder","folderId":"c2","login":{"password":"p","totp":"  "}},
               {"type":"1","name":"Type as text","folderId":"3","login":{"password":"p"}},
               {"type":99,"name":"Unknown type","futureObject":{"secretCode":"S1","label":"L","count":3,"on":true,"nested":{"x":1},"none":null,"blank":" "},"card":{"number":"4111"}},
-              {"type":2,"name":"Note","notes":"n","secureNote":{"type":0},"login":{"password":"ignored"}},
+              {"type":2,"name":"Note","notes":"n","secureNote":{"type":0},"login":{"password":"kept"}},
               {"name":"No type","login":{"username":"u2","password":"p2"}}
             ]}"""
         val back = ok(file)
@@ -608,7 +608,7 @@ class BitwardenJsonTest {
         assertEquals("p", e[2].password)
         // The first object of an unknown type is its body: every value that is text, a number or a boolean.
         assertEquals(listOf(hidden("secretCode", "S1"), visible("label", "L"), visible("count", "3"), visible("on", "true")), e[3].fields)
-        assertEquals("", e[4].password)
+        assertEquals("a secure note's login is read too (iface-98)", "kept", e[4].password)
         assertEquals("n", e[4].notes)
         assertEquals("p2", e[5].password)
         assertTrue(back.notImported.isEmpty())
@@ -676,6 +676,39 @@ class BitwardenJsonTest {
         assertTrue("finished", process.waitFor(5, TimeUnit.MINUTES))
         assertEquals(out, 0, process.exitValue())
         assertEquals(out, "TooMany items=5000000 limit=10000", out.trim().lines().last())
+    }
+
+    /**
+     * The review of 3.15: a secure note (type 2) whose login held a username and a password lost both
+     * without a word, and a password written as a list was read as "". A password is never dropped on
+     * import (formats.md §8.4), and nothing is dropped silently (§5.2).
+     */
+    @Test
+    fun aLoginOfAnyItemTypeIsReadAndAPasswordThatIsNotTextIsListed() {
+        val read = ok(
+            bitwarden(
+                """{"type":2,"name":"Router","notes":"in the hall","secureNote":{"type":0},"login":{"username":"admin","password":"R0uter#Pass","uris":[{"uri":"192.168.1.1"}]}}""",
+                """{"type":1,"name":"List","login":{"username":"u1","password":["x"]}}""",
+                """{"type":1,"name":"Object","login":{"username":"u2","password":{"p":"x"}}}""",
+                """{"type":1,"name":"Yes","login":{"username":"u3","password":true}}""",
+                """{"type":1,"name":"Number","login":{"username":"u4","password":12345}}""",
+                """{"type":1,"name":"None","login":{"username":"u5","password":null}}""",
+                """{"type":3,"name":"Card","card":{"number":"8600123412341234"},"login":{"username":"c","password":"Card#Pin1"}}""",
+                """{"type":1,"login":{"password":["only this"]}}""",
+            ),
+        )
+        val e = read.entries
+        assertEquals(8, e.size)
+        assertEquals(listOf("admin", "R0uter#Pass", "in the hall"), listOf(e[0].username, e[0].password, e[0].notes))
+        assertEquals(listOf("192.168.1.1"), e[0].urls)
+        assertEquals(listOf("u1", "u2", "u3", "u4", "u5"), e.subList(1, 6).map { it.username })
+        assertEquals(listOf("", "", "", "12345", ""), e.subList(1, 6).map { it.password })
+        assertEquals(listOf("c", "Card#Pin1"), listOf(e[6].username, e[6].password))
+        assertTrue(e[6].fields.contains(visible("number", "8600123412341234")) || e[6].fields.contains(hidden("number", "8600123412341234")))
+        assertEquals("", e[7].password) // an item whose only content is a password that is no text is still listed on an account
+        // Listed: the list, the object, true, and the last; a number is a password as written, null none.
+        assertEquals(listOf(2, 3, 4, 8), read.notImported.filter { it.what == What.PASSWORD_NOT_TEXT }.map { it.position })
+        assertEquals(listOf("List", "Object", "Yes", null), read.notImported.filter { it.what == What.PASSWORD_NOT_TEXT }.map { it.name })
     }
 
     @Test
