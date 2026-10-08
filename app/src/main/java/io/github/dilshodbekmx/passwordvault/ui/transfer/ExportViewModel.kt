@@ -452,7 +452,7 @@ class ExportViewModel(
                 val why = if (noted.problem == SaveProblem.TOO_LARGE) ExportFailure.TOO_LARGE else ExportFailure.NOT_NOTED
                 return ExportUiState.Failed(file, why, ExportCleanup.of(store.abandon(FileTask.Kind.EXPORT), name))
             }
-            if (writeFile(doc, built.bytes)) {
+            if (writeFile(built.bytes)) {
                 store.finish(FileTask.Kind.EXPORT)
                 return ExportUiState.Saved(file, built.parts, doc, name, placeOf(doc), built.replaced, built.truncated)
             }
@@ -467,11 +467,13 @@ class ExportViewModel(
     }
 
     /**
-     * Writes [bytes] into [doc], the export task's document, then reads them back and compares
+     * Writes [bytes] into the export task's document through the store (`FileTaskStore.write`), which
+     * first records that the task's write began, so that a write cut off by a lock or a new process is
+     * removed when the task is given up; then the bytes are read back and compared
      * (`DocumentIo.write`, [V-S6]). The one place where the export writes a file.
      */
-    private suspend fun writeFile(doc: DocRef, bytes: ByteArray): Boolean = try {
-        documents.write(doc, bytes)
+    private suspend fun writeFile(bytes: ByteArray): Boolean = try {
+        store.write(FileTask.Kind.EXPORT, bytes)
     } catch (e: CancellationException) {
         throw e
     } catch (e: Exception) {
@@ -479,12 +481,13 @@ class ExportViewModel(
     }
 
     /**
-     * Gives up the persisted permission on [doc] once the vault no longer notes it: the one place for
-     * `DocumentIo.release` (the review of 5.1, item 2), which the interface does not have yet; until
-     * then the permission is kept, as before.
+     * Gives up the persisted permission on [doc] once the vault no longer notes it
+     * (`DocumentIo.release`, architecture.md §3.5): "Delete it now" here. The task's own end keeps it,
+     * because the vault notes the file (`FileTaskStore.finish`); giving the task up releases it there.
      */
-    @Suppress("UNUSED_PARAMETER")
-    private fun release(doc: DocRef) = Unit
+    private suspend fun release(doc: DocRef) {
+        withContext(NonCancellable + dispatchers.io) { documents.release(doc) }
+    }
 
     /** Gives up the recorded task of the export and says what became of its document. */
     private suspend fun giveUp(): ExportCleanup {
