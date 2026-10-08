@@ -53,7 +53,7 @@ import kotlinx.coroutines.withContext
  * 5. The screen calls [finish] when the task is done, or [abandon] when it is given up (the user
  *    cancelled after the picker, or the write failed): that deletes the document "Save as" created
  *    when nothing of the user's is in it, and says what it did, for the screen's sentence (ux.md §4
- *    item 3).
+ *    item 3). Both give up the permission on a document that nothing will use again.
  *
  * A new task replaces the one recorded: a screen finishes or abandons its own task first. Nothing
  * secret is ever recorded: a kind, a step and a `content://` address.
@@ -160,11 +160,19 @@ class FileTaskStore(
         return documents.write(doc, bytes)
     }
 
-    /** Forgets the task of [kind]: it is done. Nothing happens to its document. */
+    /**
+     * Forgets the task of [kind]: it is done. Nothing happens to its document. An import's or a
+     * restore's document is read no more, so its permission is given up ([DocumentIo.release]): the
+     * import screen deletes or keeps the file before it calls this. A backup's or an export's
+     * permission stays, because the vault notes the document (`backups`, `plainExports`: "Delete" on
+     * the export's banner needs it); whoever makes the vault forget it releases it.
+     */
     suspend fun finish(kind: FileTask.Kind) {
         withContext(dispatchers.main) {
             changes.withLock {
-                if (recorded.value?.kind == kind) record(null)
+                val task = recorded.value?.takeIf { it.kind == kind } ?: return@withLock
+                record(null)
+                if (kind.action == Action.OPEN) task.doc?.let { release(it) }
             }
         }
     }
@@ -177,7 +185,8 @@ class FileTaskStore(
      * ([FileTask.written], set by [write], in this process or in one before) or from the caller
      * ([written]). A document that holds something else (an existing file the user chose to replace),
      * or that cannot be read, is left as it was; one that an import or a restore opened is never
-     * touched. Says what was done, for the screen's sentence.
+     * touched. Then the permission on the task's document is given up ([DocumentIo.release]), whatever
+     * the kind. Says what was done, for the screen's sentence.
      */
     suspend fun abandon(kind: FileTask.Kind, written: Boolean = false): Cleanup = withContext(dispatchers.main) {
         changes.withLock {
@@ -189,6 +198,7 @@ class FileTaskStore(
                 withContext(NonCancellable) { remove(doc, task.written || written) }
             }
             record(null)
+            doc?.let { release(it) }
             cleanup
         }
     }
@@ -325,6 +335,11 @@ class FileTaskStore(
         }
         recorded.value = next
         written
+    }
+
+    /** Gives up the permission on [doc], to its end even if the caller is cancelled. */
+    private suspend fun release(doc: DocRef) {
+        withContext(NonCancellable + dispatchers.io) { documents.release(doc) }
     }
 
     private suspend fun removeIfEmpty(doc: DocRef) {

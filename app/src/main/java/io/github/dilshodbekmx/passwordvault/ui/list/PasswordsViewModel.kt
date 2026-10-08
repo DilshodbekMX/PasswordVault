@@ -259,8 +259,8 @@ class PasswordsViewModel(
 
     /**
      * "Delete" on the banner of an unprotected export (ux.md §5.20): the document is deleted through
-     * the file picker's provider, then forgotten. A place that does not allow it is said so, and the
-     * banner stays.
+     * the file picker's provider, then forgotten, and the permission on it given up. A place that
+     * does not allow it is said so, and the banner stays.
      */
     fun deleteExport(uri: String) {
         viewModelScope.launch {
@@ -271,13 +271,18 @@ class PasswordsViewModel(
                     false
                 }
             }
-            if (deleted) save(VaultEdits.forgetPlainExport(uri)) else eventChannel.send(ListEvent.CannotDeleteExport)
+            if (deleted) save(VaultEdits.forgetPlainExport(uri)) { release(uri) } else eventChannel.send(ListEvent.CannotDeleteExport)
         }
     }
 
-    /** "I deleted it myself": the banner goes. */
+    /** "I deleted it myself": the banner goes, and the permission on the document is given up. */
     fun exportDeletedMyself(uri: String) {
-        save(VaultEdits.forgetPlainExport(uri))
+        save(VaultEdits.forgetPlainExport(uri)) { release(uri) }
+    }
+
+    /** The vault no longer notes the export at [uri]: nothing will use the permission on it again (architecture.md §3.5). */
+    private suspend fun release(uri: String) {
+        withContext(dispatchers.io) { files.release(DocRef(uri)) }
     }
 
     /** "Later" on the backup banner: put off for 3 days (ux.md §5.11). */

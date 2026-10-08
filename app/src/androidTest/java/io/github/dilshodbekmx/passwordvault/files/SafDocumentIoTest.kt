@@ -22,7 +22,8 @@ import org.junit.runner.RunWith
  * another process (the test APK's, [TestDocumentsProvider]), with the permissions a picker grants.
  * Write and read back; a provider that writes 0 bytes, cuts the file, changes a byte or refuses to
  * write is caught [V-S6]; delete where the place allows it, and not where it does not; a document
- * that cannot be read is an IOException; keep takes the persistable permission.
+ * that cannot be read is an IOException; keep takes the persistable permission, and release gives
+ * it up.
  */
 @RunWith(AndroidJUnit4::class)
 class SafDocumentIoTest {
@@ -225,6 +226,17 @@ class SafDocumentIoTest {
         assertNull(DocumentsRig.persisted(doc))
         io.keep(doc)
         assertEquals("read and write, kept", true to true, DocumentsRig.persisted(doc))
+    }
+
+    @Test
+    fun releaseGivesUpThePermissionKeepTook() {
+        val (_, doc) = document(TestDocuments.PLAIN)
+        io.keep(doc)
+        assertEquals(true to true, DocumentsRig.persisted(doc))
+        io.release(doc)
+        assertNull("given up", DocumentsRig.persisted(doc))
+        io.release(doc) // none held any more: nothing happens, and nothing is thrown
+        io.release(DocRef("file:///data/user/0/io.github.dilshodbekmx.passwordvault/files/none")) // not another app's document
     }
 
     @Test
