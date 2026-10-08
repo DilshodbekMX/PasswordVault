@@ -262,6 +262,7 @@ object Importer {
                     BitwardenJson.NotImported.What.PASSKEYS -> ImportChange.Kind.PASSKEYS_NOT_IMPORTED
                     BitwardenJson.NotImported.What.LINKED_FIELD -> ImportChange.Kind.LINKED_FIELDS_NOT_IMPORTED
                     BitwardenJson.NotImported.What.PREVIOUS_PASSWORDS -> ImportChange.Kind.PREVIOUS_PASSWORDS_CUT
+                    BitwardenJson.NotImported.What.PASSWORD_NOT_TEXT -> ImportChange.Kind.PASSWORD_NOT_IMPORTED
                     else -> ImportChange.Kind.UNKNOWN_DATA_NOT_KEPT
                 }
                 changes.add(ImportChange(kind, 1))
@@ -1054,6 +1055,13 @@ class ImportChange(val kind: Kind, val count: Int) {
 
         /** JSON: linked fields, which only point at another value, are not imported. */
         LINKED_FIELDS_NOT_IMPORTED,
+
+        /**
+         * JSON: the password in the file was neither text nor a number (a list, an object, true or false):
+         * the account is imported without it. "Gmail: the password in the file is not text and was not
+         * imported."
+         */
+        PASSWORD_NOT_IMPORTED,
 
         /** Our JSON: a later version's data that nests deeper than a vault file holds was not kept. */
         UNKNOWN_DATA_NOT_KEPT,
