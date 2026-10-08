@@ -304,9 +304,12 @@ internal class UnlockFlows(private val core: LockCore) {
         // key, or the fingerprint-only screen. Never a master-password screen: on a practice screen
         // the fingerprint comes only after "Not now" (§8.3), so a fingerprint there would skip the
         // practice that is due, or required.
-        val shown = (core.state.value as? LockState.Locked)?.screen
-        val offered = (shown is LockScreen.Pad && shown.fingerprintKey) || shown is LockScreen.FingerprintOnly
-        if (!offered || !decision.fingerprintUsable) return null
+        fun offered(): Boolean {
+            val shown = (core.state.value as? LockState.Locked)?.screen
+            return ((shown is LockScreen.Pad && shown.fingerprintKey) || shown is LockScreen.FingerprintOnly) &&
+                visit.decision?.fingerprintUsable == true
+        }
+        if (!offered()) return null
         if (auto) {
             if (visit.autoPromptDone || !decision.promptOpensItself) return null
             visit.autoPromptDone = true
@@ -319,6 +322,9 @@ internal class UnlockFlows(private val core: LockCore) {
         if (!auto) { // §6.3 A: the fingerprint key is tapped, so an entry that was begun is given up
             giveUpEntry(visit)
             core.showLockScreen()
+            // That decided the screen again, and time may have changed it meanwhile (practice fell
+            // due): the prompt opens only if the screen shown now still offers the fingerprint.
+            if (!offered()) return null
         }
         val probe = try {
             core.fingerprintKey.probe(alias, wrap.nonce)

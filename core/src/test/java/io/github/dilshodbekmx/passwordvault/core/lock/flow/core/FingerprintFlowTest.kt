@@ -12,6 +12,7 @@ import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockSummary
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.MpReason
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.Notice
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.NoticeAnswer
+import io.github.dilshodbekmx.passwordvault.core.lock.flow.Practice
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.PromptUse
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.core.LockFixture.Companion.PIN
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.core.LockFixture.Companion.await
@@ -441,6 +442,26 @@ class FingerprintFlowTest {
         await { f.engine.useFingerprint() }
         assertEquals(1, f.keys.prompts.size)
         assertTrue(f.state is LockState.Unlocked)
+    }
+
+    @Test
+    fun theFingerprintKeyOfAPadThatPracticeHasReplacedMeanwhile_opensNoPrompt() {
+        // The pad was decided when the visit began; since then practice has fallen due (here the date
+        // moved past its grace). Tapping the fingerprint key gives the entry up and decides the screen
+        // again, and that screen is now the practice screen, where the fingerprint comes only after
+        // "Not now", and past the grace not at all (§8.3, §9.2 rule 7, §13.1 row 3).
+        withFingerprint()
+        f.type("58") // an entry is begun, so the screen is decided again when the key is tapped
+        assertTrue(f.pad.fingerprintKey)
+        f.clock.jumpWall(30 * 86_400_000L) // practice step 3, last_ok at the start: past its 14 days and 7 of grace
+        await { f.engine.useFingerprint() }
+
+        assertEquals(emptyList<FakeKeys.PromptCall>(), f.keys.prompts)
+        assertFalse("probe" in watched.asked)
+        assertNull(f.port.openVaultId)
+        assertEquals(MpReason.PracticeDue, f.field.reason)
+        assertEquals(Practice(notNow = null), f.field.practice)
+        assertFalse(f.pinRecord().guard.charged) // the entry was given up (§6.3 A)
     }
 
     // ---- launch numbers (§9.2 rule 8), I11 ---------------------------------------------------------------
