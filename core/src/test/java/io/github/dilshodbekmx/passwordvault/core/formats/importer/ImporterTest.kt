@@ -137,6 +137,58 @@ class ImporterTest {
         assertEquals(listOf(hidden("TOTP", "otpauth://totp/k"), visible("Folder", "Banks/Uzbek")), bank.fields)
     }
 
+    /**
+     * Build-plan §12, decision 12: Windows-1251 is told from UTF-8 by proportion. A capital letter
+     * followed by ё or ў is a valid two-byte UTF-8 sequence in Windows-1251 ("Пётр" is CF B8 F2 F0), and
+     * the rule before took any such sequence for UTF-8: "Пётр;mail.ru;ivan;Пароль1" came back with the
+     * password as six U+FFFD and "1" (the review of 3.15). Russian and Uzbek Cyrillic, in both
+     * encodings, passwords included.
+     */
+    @Test
+    fun windows1251IsToldFromUtf8ByProportion() {
+        val cp1251 = Charset.forName("windows-1251")
+        val russian = csv(
+            "name;url;username;password",
+            "Пётр;mail.ru;ivan;Пароль1",
+            "Фёдор;yandex.ru;fyodor;Ёлка-2026!",
+            "Лёва;vk.com;lev;Пёс#777",
+        )
+        // Uzbek Cyrillic as Windows-1251 can hold it: ў and Ў are in it, қ, ғ and ҳ are not.
+        val uzbek = csv(
+            "name;url;username;password",
+            "Тўлов;click.uz;aziz;Тўлов2026!",
+            "Ўзбекистон;my.gov.uz;nodira;Ўзб-2026",
+            "Кўприк;bank.uz;ali;ТЎЛОВ-1",
+        )
+        val passwords = mapOf(russian to listOf("Пароль1", "Ёлка-2026!", "Пёс#777"), uzbek to listOf("Тўлов2026!", "Ўзб-2026", "ТЎЛОВ-1"))
+        for ((text, expected) in passwords) {
+            val file = file(text.toByteArray(cp1251))
+            assertEquals(text, Encoding.WINDOWS_1251, file.decoding!!.encoding)
+            assertEquals(Why.NO_UTF8_SEQUENCES, file.decoding!!.why)
+            assertEquals(0, file.decoding!!.replacedBytes)
+            assertEquals(expected, file.accounts.map { it.entry.password })
+            assertEquals(text.lines()[1].substringBefore(';'), file.accounts.first().entry.title)
+        }
+        // The review's own row, and a file whose valid sequences only equal its bad bytes ("Тўй": D2 A2 E9).
+        assertEquals("Пароль1", file(csv("name;url;username;password", "Пётр;mail.ru;ivan;Пароль1").toByteArray(cp1251)).accounts.single().entry.password)
+        val tie = file(csv("name;password", "Тўй;Тўй1").toByteArray(cp1251))
+        assertEquals(Encoding.WINDOWS_1251, tie.decoding!!.encoding)
+        assertEquals(listOf("Тўй", "Тўй1"), tie.accounts.single().entry.let { listOf(it.title, it.password) })
+
+        // The same in UTF-8, with all of Uzbek Cyrillic: UTF-8; and with a stray byte, still UTF-8.
+        val uzbekUtf8 = uzbek + "Қарз-ҳисоб;soliq.uz;ғани;Ғалаба-1Ҳ\n"
+        for ((text, expected) in mapOf(russian to passwords.getValue(russian), uzbekUtf8 to passwords.getValue(uzbek) + "Ғалаба-1Ҳ")) {
+            val clean = file(text.toByteArray(Charsets.UTF_8))
+            assertEquals(Why.VALID_UTF8, clean.decoding!!.why)
+            assertEquals(expected, clean.accounts.map { it.entry.password })
+            val stray = file(text.toByteArray(Charsets.UTF_8) + "Oxir;x.uz;u;p ".toByteArray() + byteArrayOf(0xC3.toByte()))
+            assertEquals(Encoding.UTF_8, stray.decoding!!.encoding)
+            assertEquals(Why.UTF8_SEQUENCES, stray.decoding!!.why)
+            assertEquals(1, stray.decoding!!.replacedBytes)
+            assertEquals(expected + "p \uFFFD", stray.accounts.map { it.entry.password })
+        }
+    }
+
     @Test
     fun windows1251WithSemicolonsAndRussianHeaders() {
         val bytes = "Название;Сайт;Логин;Пароль;Примечание\r\nПочта;mail.ru;ivan;Пароль1;личное\r\n".toByteArray(Charset.forName("windows-1251"))

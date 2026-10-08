@@ -11,10 +11,15 @@ package io.github.dilshodbekmx.passwordvault.core.formats
  * 2. **No mark, but NUL bytes at one parity only** (at least two of them, in at least 1 of 16
  *    characters of the first 8 KB): UTF-16 without a mark, little-endian when the NULs are the odd
  *    bytes. A text in UTF-8 or Windows-1251 has no NUL byte at all.
- * 3. **UTF-8** when every byte is valid UTF-8, and also when some bytes are not but valid multi-byte
- *    UTF-8 sequences occur: the bad bytes then become U+FFFD and their lines are listed.
- * 4. **Windows-1251** (what Russian-language Excel writes for "CSV (comma delimited)") only when
- *    bytes that are not UTF-8 occur and no valid multi-byte UTF-8 sequence occurs at all.
+ * 3. **UTF-8** when every byte is valid UTF-8, and also when some bytes are not but the valid
+ *    multi-byte UTF-8 sequences outnumber them: the bad bytes then become U+FFFD and their lines are
+ *    listed. One stray byte in a UTF-8 file of Cyrillic passwords stays one U+FFFD.
+ * 4. **Windows-1251** (what Russian-language Excel writes for "CSV (comma delimited)") otherwise: when
+ *    the bytes that are not UTF-8 are at least as many as the valid multi-byte sequences. Windows-1251
+ *    text makes such a sequence now and then by chance, a capital letter followed by ё or ў ("Пётр"
+ *    is CF B8, "Тўлов" starts D2 A2), and its other Cyrillic bytes are not UTF-8: by proportion it
+ *    is still Windows-1251 (build-plan §12, decision 12; the rule before took any valid sequence for
+ *    UTF-8, and read such a file's Cyrillic passwords as U+FFFD).
  *
  * [decode] with an encoding is the preview's "Text looks wrong? Read as …": the bytes are decoded as
  * told, and a mark of that encoding (or EF BB BF before Windows-1251) is dropped.
@@ -41,10 +46,13 @@ object TextDecoding {
         /** Every byte is valid UTF-8 (plain ASCII included). */
         VALID_UTF8,
 
-        /** Some bytes are not UTF-8, but valid multi-byte UTF-8 sequences occur: UTF-8. */
+        /** Some bytes are not UTF-8, but the valid multi-byte UTF-8 sequences outnumber them: UTF-8. */
         UTF8_SEQUENCES,
 
-        /** Bytes that are not UTF-8 and no valid multi-byte UTF-8 sequence: Windows-1251. */
+        /**
+         * Bytes that are not UTF-8, and no more valid multi-byte UTF-8 sequences than such bytes (often
+         * none at all): Windows-1251.
+         */
         NO_UTF8_SEQUENCES,
 
         /** The caller chose the encoding ("Read as …"). */
@@ -91,7 +99,7 @@ object TextDecoding {
         val utf8 = utf8(bytes, 0, 0, Why.VALID_UTF8)
         return when {
             utf8.decoded.replacedBytes == 0 -> utf8.decoded
-            utf8.sequences > 0 -> utf8.decoded.because(Why.UTF8_SEQUENCES)
+            utf8.sequences > utf8.decoded.replacedBytes -> utf8.decoded.because(Why.UTF8_SEQUENCES) // by proportion (rule 3)
             else -> windows1251(bytes, 0, 0, Why.NO_UTF8_SEQUENCES)
         }
     }
