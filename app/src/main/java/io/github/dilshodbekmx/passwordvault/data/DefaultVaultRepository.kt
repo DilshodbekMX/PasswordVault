@@ -461,6 +461,14 @@ class DefaultVaultRepository internal constructor(
         if (wasOpen) countPurgeTime()
     }
 
+    /** Only the vault put aside that is held open in place goes, its key zeroed; the session stays (lock.md §6.8 step 8, I11). */
+    override suspend fun dropAside() = underMutex {
+        val held = aside
+        aside = null
+        held?.let { wipe(it.opened) }
+        Unit
+    }
+
     override suspend fun createVault(vaultId: String, first: ByteArray, again: ByteArray, from: Vault?, putCurrentAside: Boolean): VaultWrite {
         val vault = from?.let(VaultEdits::forRestore) ?: Vault()
         return withContext(NonCancellable) { writeNewVault({ vault }, vaultId, first, again, putCurrentAside, keepDraft = false) }

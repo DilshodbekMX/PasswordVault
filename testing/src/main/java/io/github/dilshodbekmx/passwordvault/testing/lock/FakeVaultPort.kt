@@ -483,6 +483,17 @@ class FakeVaultPort(
         }
     }
 
+    override suspend fun dropAside() {
+        beforeCall?.invoke("dropAside")
+        synchronized(this) {
+            enter("dropAside")
+            boundary("dropAside: before")
+            asideSession?.let { openedAside -= it.vault.vaultId } // no longer open in place: swapIn would refuse it
+            asideSession = null
+            boundary("dropAside: after")
+        }
+    }
+
     // ---------------------------------------------------------------------------------------------
     // VaultPort: the calls that write vault data (lock.md I1)
 
