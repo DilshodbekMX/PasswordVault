@@ -115,7 +115,7 @@ private fun OldAsking(step: OldStep.Asking, waitSeconds: Int?, vm: OldPasswordsV
     step.problem?.let { BackupLine(BackupTexts.oldProblem(it, step.action), BackupTags.ERROR, alert = true, formatters = formatters) }
     if (waiting) {
         BackupLine(UiText.of(R.string.backup_wait), BackupTags.line(1), formatters = formatters)
-        BackupLine(UiText.plural(R.plurals.backup_wait_seconds, waitSeconds ?: 0), BackupTags.COUNTDOWN, formatters = formatters)
+        BackupLine(UiText.plural(R.plurals.backup_wait_seconds, waitSeconds), BackupTags.COUNTDOWN, formatters = formatters)
     }
     if (step.working) {
         BackupProgress(UiText.of(if (open) R.string.backup_old_adding else R.string.backup_old_deleting))

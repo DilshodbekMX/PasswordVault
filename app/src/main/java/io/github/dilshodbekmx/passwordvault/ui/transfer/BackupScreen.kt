@@ -80,7 +80,7 @@ fun BackupContent(ui: BackupUi, vm: BackupViewModel, done: () -> Unit) {
             step.error?.let { BackupLine(BackupTexts.passwordError(it), BackupTags.ERROR, alert = true, formatters = formatters) }
             if (waiting) {
                 BackupLine(UiText.of(R.string.backup_wait), BackupTags.line(0), formatters = formatters)
-                BackupLine(UiText.plural(R.plurals.backup_wait_seconds, ui.waitSeconds ?: 0), BackupTags.COUNTDOWN, formatters = formatters)
+                BackupLine(UiText.plural(R.plurals.backup_wait_seconds, ui.waitSeconds), BackupTags.COUNTDOWN, formatters = formatters)
             }
             if (step.checking) {
                 BackupProgress(UiText.of(R.string.backup_checking))
