@@ -561,9 +561,11 @@ internal class VaultFlows(private val core: LockCore) {
 
     private companion object {
         /**
-         * How old the writes that settle another vault's `replaced` mark must be before the files of
-         * the vault it names are deleted (F17 step 5): the charge age of lock.md §6.2, which is this
-         * design's time for a handed-over write to reach the flash (§2.3, §6.7).
+         * How old a change on disk must be before "Delete" takes the step that depends on it (F17
+         * step 5): the settling of another vault's `replaced` mark before the files of the vault it
+         * names go, and the deletion of a lock directory before the keys its records named. It is the
+         * charge age of lock.md §6.2, this design's time for a handed-over write to reach the flash
+         * (§2.3, §6.7).
          */
         const val SETTLED_MS = PinGuard.CHARGE_AGE_MS
     }
