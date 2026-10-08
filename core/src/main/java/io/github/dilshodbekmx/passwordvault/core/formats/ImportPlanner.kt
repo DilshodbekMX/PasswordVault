@@ -323,9 +323,10 @@ object ImportPlanner {
     private const val COMPARISON = 64
 
     /**
-     * The most characters the comparisons of one plan may read ([Work]): 200 million, which this
-     * machine reads in well under a second and a phone in a few seconds. An import of files that
-     * people make needs far fewer, because few accounts share a login and a password.
+     * The most characters the comparisons of one plan may read ([Work]): 200 million. A file made so
+     * that its comparisons read as much as they can reaches it in about 0.3 s on the desktop this was
+     * measured on and 0.5 s on its API 37 emulator. The files people make need far fewer, because few
+     * accounts share a login and a password.
      */
     internal const val WORK_MAX: Long = 200_000_000L
 
