@@ -84,6 +84,13 @@ object Importer {
     /** The reason of the [ParseError] of a failure of the importer's own, which never happens with correct code. */
     const val REASON_IMPORTER_FAILURE: String = "importer-failure"
 
+    /**
+     * The reason of the [ParseError] of a file that this phone does not have the memory to read: the
+     * read ran out of memory (`OutOfMemoryError`), as a 10 MB file of millions of tiny values can on a
+     * phone whose app memory is small. The screen says "This file is too large to read on this phone."
+     */
+    const val REASON_OUT_OF_MEMORY: String = "out-of-memory"
+
     /** The layouts the importer knows (formats.md §8.3). */
     enum class Format {
         /** `name,url,username,password,note`: Google Password Manager, Chrome, and our own CSV. */
@@ -146,7 +153,12 @@ object Importer {
         /** Not text: a file of another kind. */
         data object NotText : Result
 
-        /** JSON that cannot be read: not strict UTF-8, or not JSON as `StrictJson` reads it. Where and why, never what. */
+        /**
+         * JSON that cannot be read: not strict UTF-8, or not JSON as `StrictJson` reads it. Where and why,
+         * never what. Also any file whose read ran out of memory, with the reason [REASON_OUT_OF_MEMORY]
+         * ("This file is too large to read on this phone."), and a fault of the importer's own, with
+         * [REASON_IMPORTER_FAILURE].
+         */
         class Unreadable(val error: ParseError) : Result {
             override fun toString(): String = "Unreadable($error)"
         }
@@ -194,6 +206,8 @@ object Importer {
             }
         } catch (e: StackOverflowError) { // formats-review P3: never on the readers used here, but never a crash either
             Result.Unreadable(ParseError(0, StrictJson.Reason.TOO_DEEP.code))
+        } catch (e: OutOfMemoryError) { // what the read took is garbage once it is left; the app goes on
+            Result.Unreadable(ParseError(0, REASON_OUT_OF_MEMORY))
         } catch (e: RuntimeException) { // a fault of this code; its message is never kept (§5.6)
             Result.Unreadable(ParseError(0, REASON_IMPORTER_FAILURE))
         }

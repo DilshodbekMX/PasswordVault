@@ -686,6 +686,9 @@ object Importer {                                      // reads a file into acco
                                                        // Result: NotForImport(kind: FileKind) | Empty | TooBig(limit) | TooManyRows(rows: Int?, limit)
                                                        //   | NotText | Unreadable(error: ParseError) | Encrypted(passwordProtected) | NotAnExport
                                                        //   | ChooseColumns(columns: ImportColumns, decoding: ImportDecoding, rows) | Read(file: ImportFile)
+                                                       // Unreadable(ParseError(0, REASON_OUT_OF_MEMORY)): the read ran out of memory (an
+                                                       //   OutOfMemoryError, caught like a StackOverflowError); "This file is too large to read
+                                                       //   on this phone." const val REASON_OUT_OF_MEMORY = "out-of-memory"
 }
 enum class FileKind { EMPTY, BACKUP, SPREADSHEET, KEEPASS, JSON, BINARY, CSV }   // FileKind.of(bytes): by content, never by name or type
 object ImportPlanner {                                 // pure: decides, against the vault, what the import adds
