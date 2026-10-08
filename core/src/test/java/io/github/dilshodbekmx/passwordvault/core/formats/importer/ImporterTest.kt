@@ -438,6 +438,19 @@ class ImporterTest {
         assertTrue(file("""{"encrypted":false,"folders":[],"items":[{"type":1,"name":"B","login":{"password":"q"}}]}""").leftOut.isEmpty())
     }
 
+    /** Build-plan §12, decision 10: the preview starts "Tidy names" off for this app's own files, which the file says. */
+    @Test
+    fun aFileOfThisAppSaysSo() {
+        val withFields = ImportFixtures.entry(1, "accounts.google.com", "aziz", "pw", urls = listOf("https://accounts.google.com"), fields = listOf(hidden("PIN", "1234")))
+        val plain = ImportFixtures.entry(2, "gmail.com", "ali", "pw2", urls = listOf("https://gmail.com"))
+        assertTrue("our JSON", file(BitwardenJson.export(listOf(plain), NOW, GENERATOR).bytes).fromThisApp)
+        assertTrue("our CSV with its fields block", file(GoogleCsv.export(listOf(plain, withFields)).parts.single()).fromThisApp)
+        // Our CSV without a block is Chrome's layout and nothing more: it cannot be told apart.
+        assertFalse(file(GoogleCsv.export(listOf(plain)).parts.single()).fromThisApp)
+        assertFalse(file(csv("name,url,username,password,note", "gmail.com,https://gmail.com,ali,pw,")).fromThisApp)
+        assertFalse(file("""{"encrypted":false,"folders":[],"items":[{"type":1,"name":"B","login":{"password":"q"}}]}""").fromThisApp)
+    }
+
     /** The review of 3.15: a JSON password that is not text is listed on its account, and a secure note keeps its login. */
     @Test
     fun aJsonPasswordThatIsNotTextIsListedOnItsAccount() {
