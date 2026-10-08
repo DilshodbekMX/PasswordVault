@@ -20,6 +20,7 @@ import io.github.dilshodbekmx.passwordvault.fake.FakeVaultRepository
 import io.github.dilshodbekmx.passwordvault.lock.LockManager
 import io.github.dilshodbekmx.passwordvault.lock.LockUiState
 import io.github.dilshodbekmx.passwordvault.lock.PinChange
+import io.github.dilshodbekmx.passwordvault.lock.PinSetResult
 import io.github.dilshodbekmx.passwordvault.nav.Navigator
 import io.github.dilshodbekmx.passwordvault.nav.Route
 import io.github.dilshodbekmx.passwordvault.platform.AndroidClock
@@ -68,13 +69,13 @@ class SettingsRig(withProof: Boolean = true) {
 /**
  * A [LockManager] that is [fake], but whose `setPin` and `changePin` answer only once [open] is
  * completed: until then the screens stay on "Saving…", as they do while the real lock writes its
- * record, so a test can look at that moment and give the answer of build-plan.md §12, decision 4
- * (`pinMayNotBeSaved`), which the lock itself cannot give before the merge of round R3.
+ * record, so a test can look at that moment, or give the screen the answer of build-plan.md §12,
+ * decision 4 itself (`pinMayNotBeSaved`) while the lock's own answer is awaited.
  */
 class GatedLock(val fake: FakeLockManager) : LockManager by fake {
     val open = CompletableDeferred<Unit>()
 
-    override suspend fun setPin(pin: ByteArray, proof: MasterProof): Boolean {
+    override suspend fun setPin(pin: ByteArray, proof: MasterProof): PinSetResult {
         open.await()
         return fake.setPin(pin, proof)
     }

@@ -256,10 +256,7 @@ class SettingsViewModelTest {
         )
     }
 
-    /**
-     * build-plan.md §12, decision 4. `FingerprintOnResult` has no such value until the merge of round R3
-     * adds it, so the test gives the answer to the view model itself.
-     */
+    /** build-plan.md §12, decision 4, given to the view model directly (the lock's own answer is in whatTurningFingerprintOnCameToIsSaid). */
     @Test
     fun fingerprintThatMayNotBeOnIsSaidAndTheSwitchIsFreeAgain() = runTest {
         val vm = model()
@@ -357,6 +354,7 @@ class SettingsViewModelTest {
             FingerprintOnResult.Failed to UiText.of(R.string.settings_fingerprint_failed),
             FingerprintOnResult.Cancelled to null,
             FingerprintOnResult.NotShown to null,
+            FingerprintOnResult.MayNotBeOn to UiText.of(R.string.pin_fingerprint_may_not_be_on),
         )
         val vm = model()
         for ((result, message) in cases) {

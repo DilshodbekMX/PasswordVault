@@ -27,6 +27,7 @@ import io.github.dilshodbekmx.passwordvault.lock.MpPurpose
 import io.github.dilshodbekmx.passwordvault.lock.MpResult
 import io.github.dilshodbekmx.passwordvault.lock.OlderPasswordChoice
 import io.github.dilshodbekmx.passwordvault.lock.PinChange
+import io.github.dilshodbekmx.passwordvault.lock.PinSetResult
 import io.github.dilshodbekmx.passwordvault.lock.PinStatus
 import io.github.dilshodbekmx.passwordvault.lock.RequestResult
 import io.github.dilshodbekmx.passwordvault.settings.ClipDelay
@@ -601,7 +602,7 @@ class MasterPasswordGateTest {
 
         assertEquals(PinBlocklist.reason("123456".encodeToByteArray()), gate.pinProblem("123456".encodeToByteArray()))
         assertNull(gate.pinProblem(pin))
-        assertFalse(gate.setPin(pin, proof))
+        assertEquals(PinSetResult.NotSet, gate.setPin(pin, proof))
         assertEquals(PinChange.CannotCheck, gate.changePin(pin, "905127".encodeToByteArray()))
         assertEquals(FingerprintOnResult.Failed, gate.fingerprintOn(proof))
         gate.fingerprintOff()

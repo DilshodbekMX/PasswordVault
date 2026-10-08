@@ -24,6 +24,7 @@ import io.github.dilshodbekmx.passwordvault.lock.FingerprintStatus
 import io.github.dilshodbekmx.passwordvault.lock.LockManager
 import io.github.dilshodbekmx.passwordvault.lock.LockUiState
 import io.github.dilshodbekmx.passwordvault.lock.MpPurpose
+import io.github.dilshodbekmx.passwordvault.lock.PinSetResult
 import io.github.dilshodbekmx.passwordvault.lock.PinStatus
 import io.github.dilshodbekmx.passwordvault.nav.Navigator
 import io.github.dilshodbekmx.passwordvault.nav.Route
@@ -208,10 +209,8 @@ data class PinSetupUi(
  *   again and starts afresh.
  * - **A save the lock cannot vouch for** (lock.md F6 step 8, F9 step 9; build-plan.md §12, decision 4:
  *   the record's write reported a failure, and the record read back is the new one or cannot be
- *   read). The screen then promises nothing: [pinMayNotBeSaved] and [fingerprintMayNotBeOn] say what
- *   to try next time. `LockManager` cannot give these two answers yet (its `setPin` is a Boolean, its
- *   `FingerprintOnResult` has no such value); the merge of round R3 adds them, and their branches in
- *   [save] and [useFingerprint] call the two functions.
+ *   read: `PinSetResult.MayNotBeSaved`, `FingerprintOnResult.MayNotBeOn`). The screen then promises
+ *   nothing: [pinMayNotBeSaved] and [fingerprintMayNotBeOn] say what to try next time.
  */
 class PinSetupViewModel(
     private val lock: LockManager,
@@ -398,8 +397,8 @@ class PinSetupViewModel(
      * old PIN where none worked before), and "OK" goes on ([pinUnsureOk]). Nothing is tried again
      * here: the lock already works from the record it read back.
      *
-     * Called for the answer of `LockManager.setPin` that says so, once it has one (see the class);
-     * until then only the tests call it, while a save is running.
+     * Called for the answer of `LockManager.setPin` that says so (`PinSetResult.MayNotBeSaved`),
+     * while the save is running.
      */
     internal fun pinMayNotBeSaved() {
         val now = state.value
@@ -456,6 +455,7 @@ class PinSetupViewModel(
                 FingerprintOnResult.NoneEnrolled -> fingerprintLine(R.string.pin_fingerprint_add_first)
                 FingerprintOnResult.NoSecureHardware -> fingerprintLine(R.string.pin_fingerprint_no_secure_hardware)
                 FingerprintOnResult.Failed -> fingerprintLine(R.string.pin_fingerprint_failed)
+                FingerprintOnResult.MayNotBeOn -> fingerprintMayNotBeOn()
             }
         }
     }
@@ -465,8 +465,7 @@ class PinSetupViewModel(
      * §12, decision 4): the offer says "Fingerprint unlock may not have been turned on. If your
      * fingerprint is not accepted, turn it on again in Settings.", and "Not now" goes on.
      *
-     * Called for the answer of `LockManager.fingerprintOn` that says so, once it has one (see the
-     * class); until then only the tests call it.
+     * Called for the answer of `LockManager.fingerprintOn` that says so (`FingerprintOnResult.MayNotBeOn`).
      */
     internal fun fingerprintMayNotBeOn() {
         if (state.value.stage == PinSetupStage.FINGERPRINT) fingerprintLine(R.string.pin_fingerprint_may_not_be_on)
@@ -567,27 +566,31 @@ class PinSetupViewModel(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                false
+                PinSetResult.NotSet
             } finally {
                 copy.fill(0)
             }
         }
         viewModelScope.launch {
-            val ok = saved.await()
+            val result = saved.await()
             if (state.value.stage != PinSetupStage.CONFIRM || !state.value.saving) return@launch
-            if (ok) {
-                wipePending()
-                state.update { it.copy(saving = false, saved = true) }
-                delay(SAVED_SHOWN_MS)
-                if (state.value.stage == PinSetupStage.CONFIRM) decideAfterPin(Route.ConfirmPin)
-            } else {
-                val change = lock.status.value.pin == PinStatus.On
-                state.update {
-                    it.copy(
-                        saving = false,
-                        saveFailed = true,
-                        line = PinLine(UiText.of(if (change) R.string.pin_not_saved_change else R.string.pin_not_saved_new)),
-                    )
+            when (result) {
+                PinSetResult.Set -> {
+                    wipePending()
+                    state.update { it.copy(saving = false, saved = true) }
+                    delay(SAVED_SHOWN_MS)
+                    if (state.value.stage == PinSetupStage.CONFIRM) decideAfterPin(Route.ConfirmPin)
+                }
+                PinSetResult.MayNotBeSaved -> pinMayNotBeSaved()
+                PinSetResult.NotSet -> {
+                    val change = lock.status.value.pin == PinStatus.On
+                    state.update {
+                        it.copy(
+                            saving = false,
+                            saveFailed = true,
+                            line = PinLine(UiText.of(if (change) R.string.pin_not_saved_change else R.string.pin_not_saved_new)),
+                        )
+                    }
                 }
             }
         }

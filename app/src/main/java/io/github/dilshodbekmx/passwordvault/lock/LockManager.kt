@@ -52,8 +52,12 @@ interface LockManager {
     /** Why [pin] (six ASCII digits) is refused, or null (lock.md §7.2): `PinBlocklist.reason`. */
     fun pinProblem(pin: ByteArray): PinBlocklist.Reason?
 
-    /** Sets a PIN where none is usable, with the master password of this flow (lock.md F6). False: not set; the old state stays. */
-    suspend fun setPin(pin: ByteArray, proof: MasterProof): Boolean
+    /**
+     * Sets a PIN where none is usable, with the master password of this flow (lock.md F6): [PinSetResult.Set];
+     * [PinSetResult.NotSet] leaves the old state; [PinSetResult.MayNotBeSaved] when the record write
+     * reported a failure and the lock cannot say that the old record is the one on disk (F6 step 8).
+     */
+    suspend fun setPin(pin: ByteArray, proof: MasterProof): PinSetResult
 
     /** "Change PIN": [current] is a counted check in a prompt (lock.md §6.3, F6 step 2), then [new]. */
     suspend fun changePin(current: ByteArray, new: ByteArray): PinChange
@@ -174,6 +178,27 @@ sealed interface CreateResult {
     data object NotSaved : CreateResult
 }
 
+/** What [LockManager.setPin] came to (lock.md F6 "Set", steps 4 to 8). */
+sealed interface PinSetResult {
+    /** The new record is on disk: "Your PIN is set." */
+    data object Set : PinSetResult
+
+    /**
+     * Nothing changed, and a PIN that worked before still works: "Couldn't save the new PIN. Your old
+     * PIN still works." or "The PIN can't be set up right now. Try again later."
+     */
+    data object NotSet : PinSetResult
+
+    /**
+     * The record write reported a failure, and the record read back is the new one (the lock goes on
+     * with it) or could not be read (lock.md F6 step 8; build-plan.md §12, decision 4). The screen
+     * promises nothing: "The new PIN may not have been saved. Next time try the new PIN first. If it
+     * is not accepted, use the old PIN or your master password." (without the old PIN where none
+     * worked before), with "OK" only.
+     */
+    data object MayNotBeSaved : PinSetResult
+}
+
 /** What [LockManager.changePin] came to (lock.md F6). */
 sealed interface PinChange {
     /** "Your PIN was changed." */
@@ -196,6 +221,9 @@ sealed interface PinChange {
 
     /** The new key or record could not be made (lock.md F6 step 8): "Couldn't save the new PIN. Your old PIN still works." */
     data object NotSaved : PinChange
+
+    /** As [PinSetResult.MayNotBeSaved]: the current PIN was right, and the new record may or may not be on disk (lock.md F6 step 8). */
+    data object MayNotBeSaved : PinChange
 }
 
 /** What [LockManager.fingerprintOn] came to (lock.md F9 steps 4 to 9, ux.md §5.7). */
@@ -217,6 +245,14 @@ sealed interface FingerprintOnResult {
 
     /** The prompt could not be shown now (the activity is not resumed, lock.md §9.2 rule 3). */
     data object NotShown : FingerprintOnResult
+
+    /**
+     * The record write reported a failure, and the record read back is the new one (the lock goes on
+     * with it) or could not be read (lock.md F9 step 9; build-plan.md §12, decision 4): "Fingerprint
+     * unlock may not have been turned on. If your fingerprint is not accepted, turn it on again in
+     * Settings."
+     */
+    data object MayNotBeOn : FingerprintOnResult
 }
 
 /** What [LockManager.changeMasterPassword] came to (lock.md F8). */

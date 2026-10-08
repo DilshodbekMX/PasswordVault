@@ -228,7 +228,7 @@ class MasterPasswordGate(
     override fun pinProblem(pin: ByteArray): PinBlocklist.Reason? = PinBlocklist.reason(pin)
 
     /** No PIN in the gate (build plan 4.1): nothing is set. */
-    override suspend fun setPin(pin: ByteArray, proof: MasterProof): Boolean = false
+    override suspend fun setPin(pin: ByteArray, proof: MasterProof): PinSetResult = PinSetResult.NotSet
 
     /** No PIN to change. */
     override suspend fun changePin(current: ByteArray, new: ByteArray): PinChange = PinChange.CannotCheck

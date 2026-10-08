@@ -15,6 +15,7 @@ import io.github.dilshodbekmx.passwordvault.lock.FingerprintOnResult
 import io.github.dilshodbekmx.passwordvault.lock.FingerprintStatus
 import io.github.dilshodbekmx.passwordvault.lock.LockUiState
 import io.github.dilshodbekmx.passwordvault.lock.MpPurpose
+import io.github.dilshodbekmx.passwordvault.lock.PinSetResult
 import io.github.dilshodbekmx.passwordvault.lock.PinStatus
 import io.github.dilshodbekmx.passwordvault.nav.Route
 import io.github.dilshodbekmx.passwordvault.platform.AppDispatchers
@@ -381,7 +382,7 @@ class PinSetupViewModelTest {
     @Test
     fun aPinThatCannotBeSavedSaysSoWithTryAgain() = runTest {
         val lock = unlockedWithProof()
-        lock.fake.setPinResults += false
+        lock.fake.setPinResults += PinSetResult.NotSet
         val vm = model(lock)
         vm.start()
         runCurrent()
@@ -405,7 +406,7 @@ class PinSetupViewModelTest {
     @Test
     fun notNowAfterAFailedSaveGoesOnWithoutAPin() = runTest {
         val lock = unlockedWithProof()
-        lock.fake.setPinResults += false
+        lock.fake.setPinResults += PinSetResult.NotSet
         val vm = model(lock, canAuthenticate = 11)
         chooseAndSave(vm)
         vm.skipAfterFailure()
@@ -415,8 +416,39 @@ class PinSetupViewModelTest {
     }
 
     // ---- a save the lock cannot vouch for (build-plan.md §12, decision 4) ----------------------------------
-    // `LockManager.setPin` and `fingerprintOn` cannot give that answer until the merge of round R3 adds
-    // it, so the tests give it to the view model themselves, at the moment the lock's answer is awaited.
+    // The first two tests take the lock's own answers (`PinSetResult.MayNotBeSaved`,
+    // `FingerprintOnResult.MayNotBeOn`); the others give the answer to the view model themselves, at the
+    // moment the lock's answer is awaited.
+
+    @Test
+    fun theLocksAnswerThatAPinMayNotBeSavedIsShownAsSuch() = runTest {
+        val lock = unlockedWithProof()
+        lock.fake.setPinResults += PinSetResult.MayNotBeSaved
+        val vm = model(lock, canAuthenticate = 11)
+        chooseAndSave(vm)
+        val ui = vm.ui.value
+        assertEquals(PinSetupStage.CONFIRM, ui.stage)
+        assertTrue(ui.saveUnsure)
+        assertFalse("not \"Your PIN is set.\"", ui.saved)
+        assertFalse("no \"Try again\"", ui.saveFailed)
+        assertEquals(PinLine(UiText.of(R.string.pin_may_not_be_saved_first)), ui.line)
+        assertEquals("the PIN was handed to the lock once", 1, lock.setPins.size)
+    }
+
+    @Test
+    fun theLocksAnswerThatFingerprintMayNotBeOnIsShownOnTheOffer() = runTest {
+        val lock = unlockedWithProof()
+        lock.fake.fingerprintResults += FingerprintOnResult.MayNotBeOn
+        val vm = model(lock, canAuthenticate = 0)
+        chooseAndSave(vm)
+        vm.performMove()
+        assertEquals(PinSetupStage.FINGERPRINT, vm.ui.value.stage)
+        vm.useFingerprint()
+        advanceUntilIdle()
+        assertEquals(PinLine(UiText.of(R.string.pin_fingerprint_may_not_be_on)), vm.ui.value.fingerprintLine)
+        assertFalse(vm.ui.value.fingerprintBusy)
+        assertEquals("the offer stays", PinSetupStage.FINGERPRINT, vm.ui.value.stage)
+    }
 
     @Test
     fun aPinThatMayNotBeSavedPromisesNothingAndGoesOn() = runTest {

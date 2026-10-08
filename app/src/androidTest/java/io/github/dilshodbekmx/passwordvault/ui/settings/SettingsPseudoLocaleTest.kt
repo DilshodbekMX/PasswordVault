@@ -17,6 +17,7 @@ import io.github.dilshodbekmx.passwordvault.lock.FingerprintOnResult
 import io.github.dilshodbekmx.passwordvault.lock.FingerprintStatus
 import io.github.dilshodbekmx.passwordvault.lock.MpResult
 import io.github.dilshodbekmx.passwordvault.lock.PinChange
+import io.github.dilshodbekmx.passwordvault.lock.PinSetResult
 import io.github.dilshodbekmx.passwordvault.nav.Route
 import io.github.dilshodbekmx.passwordvault.ui.setup.FingerprintOfferTags
 import java.util.Locale
@@ -127,7 +128,7 @@ class SettingsPseudoLocaleTest {
         step("a refused PIN") { gallery.typeSteps("111111", Route.CreatePin) }
         step("Enter the PIN again") { gallery.typeSteps("582913", Route.CreatePin) }
         step("a mismatch") { gallery.typeSteps("905127", Route.ConfirmPin) }
-        rig.lock.setPinResults += false
+        rig.lock.setPinResults += PinSetResult.NotSet
         step("a PIN that could not be saved") { gallery.typeSteps("582913", Route.ConfirmPin) }
         step("Your PIN is set.") { gallery.pinSteps.retrySave() }
         compose.waitUntil(5_000) { compose.onAllNodes(hasTestTag(FingerprintOfferTags.USE)).fetchSemanticsNodes().isNotEmpty() }

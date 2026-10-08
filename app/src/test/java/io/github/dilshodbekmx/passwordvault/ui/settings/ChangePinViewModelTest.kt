@@ -12,6 +12,7 @@ import io.github.dilshodbekmx.passwordvault.lock.LockUiState
 import io.github.dilshodbekmx.passwordvault.lock.MpPurpose
 import io.github.dilshodbekmx.passwordvault.lock.MpResult
 import io.github.dilshodbekmx.passwordvault.lock.PinChange
+import io.github.dilshodbekmx.passwordvault.lock.PinSetResult
 import io.github.dilshodbekmx.passwordvault.lock.PinStatus
 import io.github.dilshodbekmx.passwordvault.testing.FakeClock
 import io.github.dilshodbekmx.passwordvault.ui.settings.ChangePinViewModel.Mode
@@ -328,10 +329,39 @@ class ChangePinViewModelTest {
         assertTrue(ask.enabled)
     }
 
+    /** build-plan.md §12, decision 4: the lock's own answer, `PinChange.MayNotBeSaved`. */
+    @Test
+    fun theLocksAnswerThatAChangedPinMayNotBeSavedIsShownAsSuch() = runTest {
+        val lock = lockWith(PinStatus.On)
+        lock.fake.pinChanges += PinChange.MayNotBeSaved
+        val vm = model(lock)
+        vm.type(Pins.ALLOWED_3)
+        vm.type(Pins.ALLOWED_2)
+        vm.type(Pins.ALLOWED_2)
+        advanceUntilIdle()
+        assertEquals(Stage.MAY_NOT_BE_SAVED, vm.ui.value.stage)
+        assertEquals(PinLine(UiText.of(R.string.pin_may_not_be_saved)), vm.ui.value.line)
+        assertNull("no \"Your PIN was changed.\"", SettingsNotice.take())
+    }
+
+    /** build-plan.md §12, decision 4: the lock's own answer to "Set a PIN", `PinSetResult.MayNotBeSaved`. */
+    @Test
+    fun theLocksAnswerThatASetPinMayNotBeSavedIsShownAsSuch() = runTest {
+        val lock = lockWith(PinStatus.NotSet)
+        lock.fake.setPinResults += PinSetResult.MayNotBeSaved
+        val vm = model(lock)
+        typeMasterPassword(vm)
+        vm.type(Pins.ALLOWED)
+        vm.type(Pins.ALLOWED)
+        advanceUntilIdle()
+        assertEquals(Stage.MAY_NOT_BE_SAVED, vm.ui.value.stage)
+        assertEquals(PinLine(UiText.of(R.string.pin_may_not_be_saved_first)), vm.ui.value.line)
+        assertNull("no \"Your PIN is set.\"", SettingsNotice.take())
+    }
+
     /**
-     * build-plan.md §12, decision 4. `LockManager.changePin` and `setPin` cannot give that answer until
-     * the merge of round R3 adds it, so the test gives it to the view model itself, at the moment the
-     * lock's answer is awaited.
+     * build-plan.md §12, decision 4, given to the view model by the test itself at the moment the
+     * lock's answer is awaited: what the lock answers later changes nothing of it.
      */
     @Test
     fun aPinThatMayNotBeSavedPromisesNothingAndOffersOnlyOk() = runTest {

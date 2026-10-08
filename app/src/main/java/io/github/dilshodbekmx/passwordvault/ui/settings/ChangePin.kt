@@ -45,6 +45,7 @@ import io.github.dilshodbekmx.passwordvault.lock.LockManager
 import io.github.dilshodbekmx.passwordvault.lock.LockUiState
 import io.github.dilshodbekmx.passwordvault.lock.MpPurpose
 import io.github.dilshodbekmx.passwordvault.lock.PinChange
+import io.github.dilshodbekmx.passwordvault.lock.PinSetResult
 import io.github.dilshodbekmx.passwordvault.lock.PinStatus
 import io.github.dilshodbekmx.passwordvault.nav.Navigator
 import io.github.dilshodbekmx.passwordvault.ui.common.PIN_LENGTH
@@ -89,9 +90,8 @@ import kotlinx.coroutines.launch
  * [work], the app's scope, so that leaving the screen cannot cut the lock's records in half.
  *
  * When the lock cannot say whether the new PIN was saved (lock.md F6 step 8; build-plan.md §12,
- * decision 4), the route promises nothing: [pinMayNotBeSaved] says what to try next time.
- * `LockManager` cannot give that answer yet (`setPin` is a Boolean, `PinChange` has no such value);
- * the merge of round R3 adds it, and its branches in [save] and [afterSave] call that function.
+ * decision 4: `PinSetResult.MayNotBeSaved`, `PinChange.MayNotBeSaved`), the route promises nothing:
+ * [pinMayNotBeSaved] says what to try next time.
  */
 class ChangePinViewModel(
     private val lock: LockManager,
@@ -266,8 +266,8 @@ class ChangePinViewModel(
      * again here: the lock already works from the record it read back, so the PIN typed as the
      * current one may no longer be it.
      *
-     * Called for the answer of `LockManager.setPin` or `changePin` that says so, once they have one
-     * (see the class); until then only the tests call it, while a save is running.
+     * Called for the answer of `LockManager.setPin` or `changePin` that says so
+     * (`PinSetResult.MayNotBeSaved`, `PinChange.MayNotBeSaved`), while the save is running.
      */
     internal fun pinMayNotBeSaved() {
         val now = state.value
@@ -337,7 +337,11 @@ class ChangePinViewModel(
         val saved = work.async {
             try {
                 if (withProof != null) {
-                    if (lock.setPin(pinCopy, withProof)) PinChange.Changed else PinChange.NotSaved
+                    when (lock.setPin(pinCopy, withProof)) {
+                        PinSetResult.Set -> PinChange.Changed
+                        PinSetResult.NotSet -> PinChange.NotSaved
+                        PinSetResult.MayNotBeSaved -> PinChange.MayNotBeSaved
+                    }
                 } else {
                     lock.changePin(checkNotNull(currentCopy), pinCopy)
                 }
@@ -390,6 +394,7 @@ class ChangePinViewModel(
                 if (!withMasterPassword) wipeCurrent()
                 state.update { it.copy(stage = Stage.NOT_SAVED, line = PinLine(UiText.of(text))) }
             }
+            PinChange.MayNotBeSaved -> pinMayNotBeSaved()
         }
     }
 

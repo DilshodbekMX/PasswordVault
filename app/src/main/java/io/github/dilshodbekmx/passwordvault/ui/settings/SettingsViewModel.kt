@@ -221,9 +221,8 @@ class SettingsViewModel(
      * §12, decision 4): "Fingerprint unlock may not have been turned on. If your fingerprint is not
      * accepted, turn it on again in Settings." The switch itself follows the lock's status.
      *
-     * Called for the answer of `LockManager.fingerprintOn` that says so, once `FingerprintOnResult`
-     * has one (the merge of round R3 adds it; its branch in [turnOnFingerprint] calls this). Until
-     * then only the tests call it.
+     * Called for the answer of `LockManager.fingerprintOn` that says so (`FingerprintOnResult.MayNotBeOn`,
+     * the branch in [turnOnFingerprint]).
      */
     internal fun fingerprintMayNotBeOn() {
         local.update { it.copy(fingerprintBusy = false, message = UiText.of(R.string.pin_fingerprint_may_not_be_on)) }
@@ -249,6 +248,7 @@ class SettingsViewModel(
                 FingerprintOnResult.NoneEnrolled -> UiText.of(R.string.pin_fingerprint_add_first)
                 FingerprintOnResult.NoSecureHardware -> UiText.of(R.string.pin_fingerprint_no_secure_hardware)
                 FingerprintOnResult.Failed -> UiText.of(R.string.settings_fingerprint_failed)
+                FingerprintOnResult.MayNotBeOn -> return@launch fingerprintMayNotBeOn()
             }
             local.update { it.copy(fingerprintBusy = false, message = message ?: it.message) }
         }

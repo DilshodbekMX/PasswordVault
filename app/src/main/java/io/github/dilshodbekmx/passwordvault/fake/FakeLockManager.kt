@@ -19,6 +19,7 @@ import io.github.dilshodbekmx.passwordvault.lock.LockUiState
 import io.github.dilshodbekmx.passwordvault.lock.MpPurpose
 import io.github.dilshodbekmx.passwordvault.lock.MpResult
 import io.github.dilshodbekmx.passwordvault.lock.PinChange
+import io.github.dilshodbekmx.passwordvault.lock.PinSetResult
 import io.github.dilshodbekmx.passwordvault.lock.PinStatus
 import io.github.dilshodbekmx.passwordvault.lock.RequestResult
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -58,7 +59,7 @@ class FakeLockManager(
 
     val mpResults = ArrayDeque<MpResult>()
     val createResults = ArrayDeque<CreateResult>()
-    val setPinResults = ArrayDeque<Boolean>()
+    val setPinResults = ArrayDeque<PinSetResult>()
     val pinChanges = ArrayDeque<PinChange>()
     val fingerprintResults = ArrayDeque<FingerprintOnResult>()
     val changeResults = ArrayDeque<ChangeResult>()
@@ -120,9 +121,9 @@ class FakeLockManager(
 
     override fun pinProblem(pin: ByteArray): PinBlocklist.Reason? = PinBlocklist.reason(pin)
 
-    override suspend fun setPin(pin: ByteArray, proof: MasterProof): Boolean {
-        val result = setPinResults.removeFirstOrNull() ?: true
-        if (result) status.value = status.value.copy(pin = PinStatus.On)
+    override suspend fun setPin(pin: ByteArray, proof: MasterProof): PinSetResult {
+        val result = setPinResults.removeFirstOrNull() ?: PinSetResult.Set
+        if (result == PinSetResult.Set) status.value = status.value.copy(pin = PinStatus.On)
         return result
     }
 

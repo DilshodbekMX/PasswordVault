@@ -7,6 +7,7 @@ import io.github.dilshodbekmx.passwordvault.core.lock.flow.MasterProof
 import io.github.dilshodbekmx.passwordvault.fake.FakeLockManager
 import io.github.dilshodbekmx.passwordvault.lock.LockManager
 import io.github.dilshodbekmx.passwordvault.lock.PinChange
+import io.github.dilshodbekmx.passwordvault.lock.PinSetResult
 
 /**
  * A [LockManager] that is [fake] and also records the PINs and proofs handed to `setPin` and
@@ -20,7 +21,7 @@ class RecordingLock(val fake: FakeLockManager = FakeLockManager()) : LockManager
     /** Each `changePin` as the current PIN's digits and the new PIN's. */
     val changedPins = mutableListOf<Pair<String, String>>()
 
-    override suspend fun setPin(pin: ByteArray, proof: MasterProof): Boolean {
+    override suspend fun setPin(pin: ByteArray, proof: MasterProof): PinSetResult {
         setPins += String(pin, Charsets.US_ASCII) to proof
         return fake.setPin(pin, proof)
     }
