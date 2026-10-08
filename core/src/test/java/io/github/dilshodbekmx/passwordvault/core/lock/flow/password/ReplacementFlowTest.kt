@@ -237,6 +237,29 @@ class ReplacementFlowTest {
         assertEquals(Shortcut.FINGERPRINT, f.notices.filterIsInstance<Notice.Replaced>().single().by)
     }
 
+    @Test
+    fun f11_finishedOnTheLockScreenFromAnOlderCopy_saysSo_andTheNewerCopyStaysInTheOldVault() {
+        vault = f.seedVault(generations = 2)
+        vault.content = entries
+        f.plantPin(vault)
+        f.plantState(pendingMp = f.plantPending(vault))
+        vault.generation(2).state = FakeVaultPort.FileState.DAMAGED // the newest copy cannot be read (F16a)
+        f.startInFront()
+        await { f.engine.useMasterPassword() }
+
+        assertTrue(f.unlockWith(NEW_PASSWORD) is MasterPasswordOutcome.Right)
+
+        // Vault N was made from the copy that opened, and the notice of 13.4 item 1 says which one that was.
+        val olderCopy = f.notices.filterIsInstance<Notice.OlderCopy>().single()
+        assertEquals(vault.generation(1).createdMs, olderCopy.openedCreatedMs)
+        assertEquals(olderCopy, f.notices.first())
+        assertEquals(ChoosePinReason.NONE_HERE, f.notices.filterIsInstance<Notice.ChoosePin>().single().reason)
+        // The newer copy is still in the old vault, which was put aside whole.
+        assertEquals(listOf(VAULT), f.port.asideVaults.map { it.vaultId })
+        assertEquals(listOf(2L, 1L), vault.live.map { it.number })
+        assertEquals(FakeVaultPort.FileState.DAMAGED, vault.generation(2).state)
+    }
+
     // ---------------------------------------------------------------------------------------------
     // Step 18: the old vault, put aside and marked
 

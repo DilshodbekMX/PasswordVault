@@ -329,7 +329,9 @@ internal class PasswordFlows(private val core: LockCore) {
             core.unlock.lockFromInside()
             return
         }
-        core.open = OpenVault(open.vaultId, open.generation, vkId, open.createdMs, open.olderCopy)
+        // The port holds the new copy when it kept the session; its number and date are the newest's.
+        val newest = (core.scan?.current as? CurrentVault.Present)?.newest?.takeIf { it.vkId == vkId && vkId != open.vkId }
+        core.open = OpenVault(open.vaultId, newest?.number ?: open.generation, vkId, newest?.createdMs ?: open.createdMs, open.olderCopy)
         (core.state.value as? LockState.Unlocked)?.let { now -> core.state.value = now.copy(proof = null) }
         core.publishSummary()
     }
@@ -905,16 +907,19 @@ internal class PasswordFlows(private val core: LockCore) {
      * made before goes; vault N gets its ways in as a restored vault does (F1 step 5: "Choose a PIN"
      * when this phone can hold a key), with the proof of the new master password when [withProof].
      */
-    private fun continueOn(write: VaultWrite.Done, passwordBytes: ByteArray, withProof: Boolean): MasterProof? {
+    private fun continueOn(write: VaultWrite.Done, passwordBytes: ByteArray, withProof: Boolean, olderCopyCreatedMs: Long? = null): MasterProof? {
         core.dropProofs()
         dropProof()
         core.rescan()
         core.retarget()
         core.open = OpenVault(write.vaultId, write.generation, write.vkId, write.createdMs, olderCopy = false)
-        val notices = if (core.canHoldKeys() == KeyCreate.Ok) {
-            listOf(Notice.ChoosePin(core.nextNoticeId(), ChoosePinReason.NONE_HERE, needsMasterPassword = !withProof))
-        } else {
-            emptyList()
+        val notices = ArrayList<Notice>()
+        // Vault N was made from an older copy, because the newest one of the old vault could not be
+        // read: said as at any unlock that opens an older copy (13.4 item 1). The newer copy stays in
+        // the old vault, put aside.
+        olderCopyCreatedMs?.let { notices += Notice.OlderCopy(core.nextNoticeId(), it) }
+        if (core.canHoldKeys() == KeyCreate.Ok) {
+            notices += Notice.ChoosePin(core.nextNoticeId(), ChoosePinReason.NONE_HERE, needsMasterPassword = !withProof)
         }
         val made = if (withProof) core.newProof(passwordBytes, write.vaultId) else null
         core.state.value = LockState.Unlocked(notices, made)
@@ -1089,7 +1094,8 @@ internal class PasswordFlows(private val core: LockCore) {
                     } else {
                         core.endVisitNow()
                         core.closeVisit()
-                        MasterPasswordOutcome.Right(checkNotNull(continueOn(done.write, passwordBytes, withProof = true)))
+                        val olderCopy = if (opened.olderCopy) opened.createdMs else null
+                        MasterPasswordOutcome.Right(checkNotNull(continueOn(done.write, passwordBytes, withProof = true, olderCopyCreatedMs = olderCopy)))
                     }
                 }
                 Replacement.NotFinished -> {

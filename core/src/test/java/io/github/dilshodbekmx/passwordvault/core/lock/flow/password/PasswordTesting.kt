@@ -121,12 +121,6 @@ internal fun LockFixture.pinWraps(vaultId: String = LockFixture.VAULT): List<Str
 internal fun LockFixture.fingerprintWraps(vaultId: String = LockFixture.VAULT): List<String> =
     (fingerprintOnDisk(vaultId) as? RecordRead.Ok)?.record?.slot?.wraps?.map { it.vkId }.orEmpty()
 
-/** The aliases that the two slot records of [vaultId] name on disk now. */
-internal fun LockFixture.aliasesOnDisk(vaultId: String): Set<String> = setOfNotNull(
-    (pinOnDisk(vaultId) as? RecordRead.Ok)?.record?.slot?.let { PinWrap.alias(it.id) },
-    (fingerprintOnDisk(vaultId) as? RecordRead.Ok)?.record?.slot?.let { RecordCodec.FINGERPRINT_ALIAS_PREFIX + it.id },
-)
-
 /** A pending new master password that was asked for [agoMs] ago by [by], with [creditedMs] of its 24 hours credited: as `PasswordFlows` writes one, for [password]. */
 internal fun LockFixture.plantPending(
     vault: FakeVaultPort.FakeVault,

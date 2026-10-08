@@ -616,6 +616,7 @@ class ChangeMasterPasswordFlowTest {
         assertTrue("the session goes on under the key the vault port holds", f.state is LockState.Unlocked)
         assertEquals(vkId2, f.port.openVkId)
         assertEquals(vkId2, f.engine.core.open!!.vkId)
+        assertEquals("the open vault is the new copy, as storage lists it", 3L, f.engine.core.open!!.generation)
         assertEquals("no fingerprint prompt: the change is not proven", emptyList<FakeKeys.PromptCall>(), f.keys.prompts)
         assertEquals(listOf(vkId1, vkId2), f.pinWraps())
         assertEquals(LockSummary.Pin.On, f.engine.summary.value.pin)
