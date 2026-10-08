@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The export (build plan 5.3; ux.md §5.20; formats.md §2): choose a format, the warning of a file
+     that is not protected, the master password, saving through the system file picker, and the
+     result with "Done" and "Delete it now". Every name starts with export_. File names, "CSV",
+     "JSON", "Excel", "Google Password Manager", "Google Drive", "Telegram", "Bitwarden", "Proton
+     Pass" and "KeePassXC" are not translated (ux.md §9). -->
+<resources>
+
+    <!-- The screen's title in its top bar (glossary term 100). Short: one line. -->
+    <string name="export_title">Export</string>
+    <!-- The back arrow in the top bar, read by TalkBack. -->
+    <string name="export_back">Back</string>
+    <!-- Button that goes from one step of the export to the next. -->
+    <string name="export_continue">Continue</string>
+
+    <!-- ===== Step 1: choose a format (ux.md §5.20, a list of choices with one line each) ===== -->
+
+    <!-- Heading above the list of formats. -->
+    <string name="export_choose_heading">Choose a format</string>
+    <!-- A choice: the app's own locked backup file. "(recommended)" says it is the safe choice. -->
+    <string name="export_backup">Backup file (recommended)</string>
+    <!-- The line under that choice. -->
+    <string name="export_backup_line">Locked with your master password. To keep a safe copy or move to a new phone.</string>
+    <!-- A choice: a spreadsheet file for Excel. ".xlsx" is the file type; do not translate it. -->
+    <string name="export_xlsx">Excel (.xlsx)</string>
+    <!-- The line under that choice. "Not protected": anyone with the file can read it (glossary term 104). -->
+    <string name="export_xlsx_line">To see your passwords in a table on a computer. Not protected.</string>
+    <!-- A choice: a CSV file, the format other password apps import. Do not translate "CSV". -->
+    <string name="export_csv">CSV</string>
+    <!-- The line under that choice. -->
+    <string name="export_csv_line">To move your passwords to another password app, such as Google Password Manager. Not protected.</string>
+    <!-- A choice: a JSON file. Do not translate "JSON". -->
+    <string name="export_json">JSON</string>
+    <!-- The line under that choice. App names are not translated. -->
+    <string name="export_json_line">Complete data, including previous passwords. Bitwarden, Proton Pass and KeePassXC can import it. Not protected.</string>
+
+    <!-- ===== Step 2: the warning, a full screen, for the three formats that are not protected (formats.md §2) ===== -->
+
+    <!-- The warning's title. -->
+    <string name="export_warning_title">This file will not be protected</string>
+    <!-- The warning's first sentences. -->
+    <string name="export_warning_body">Anyone who opens this file can read all your passwords. It has no password.</string>
+    <!-- One point of the warning's list. -->
+    <string name="export_warning_control">Save it only where you control it: your own computer or USB stick.</string>
+    <!-- One point of the warning's list. "Telegram" is not translated. -->
+    <string name="export_warning_messengers">Don’t send it by Telegram, email or other messengers.</string>
+    <!-- One point of the warning's list. -->
+    <string name="export_warning_delete">Delete it as soon as you’re done.</string>
+    <!-- One more point for a CSV file (formats.md §4.6): spreadsheets change such values when they open a CSV file. -->
+    <string name="export_warning_csv">Don’t open this file in Excel: Excel changes phone numbers and codes and can run formulas. Choose Excel export instead.</string>
+    <!-- One more point for an Excel file. -->
+    <string name="export_warning_xlsx">Google Sheets and other apps may keep a copy in their cloud.</string>
+    <!-- One more point on Android 7 to 10, where apps with storage access can read the Downloads folder. -->
+    <string name="export_warning_old_android">On this phone other apps with storage access can read files in Downloads.</string>
+    <!-- The check box that must be ticked before "Continue" works. -->
+    <string name="export_understand">I understand</string>
+
+    <!-- The card about Google Password Manager on the warning of a CSV file (ux.md §5.20.2, formats.md §4.5). Its heading. -->
+    <string name="export_csv_card_title">In Google Password Manager</string>
+    <!-- The card's first line, before a list of counts such as "12 accounts without a website". -->
+    <string name="export_csv_skip_intro">Google Password Manager will skip:</string>
+    <!-- One count of that list: accounts that have no website. -->
+    <plurals name="export_csv_skip_no_website">
+        <item quantity="one">%1$d&#160;account without a website</item>
+        <item quantity="other">%1$d&#160;accounts without a website</item>
+    </plurals>
+    <!-- One count of that list: accounts that have no password. -->
+    <plurals name="export_csv_skip_no_password">
+        <item quantity="one">%1$d&#160;account without a password</item>
+        <item quantity="other">%1$d&#160;accounts without a password</item>
+    </plurals>
+    <!-- One count of that list: accounts whose notes are longer than Google takes (about 1,000 letters, 500 in Cyrillic; extra fields count). -->
+    <plurals name="export_csv_skip_long_note">
+        <item quantity="one">%1$d&#160;account with notes too long for Google</item>
+        <item quantity="other">%1$d&#160;accounts with notes too long for Google</item>
+    </plurals>
+    <!-- One count of that list: accounts whose password is longer than Google takes. -->
+    <plurals name="export_csv_skip_long_password">
+        <item quantity="one">%1$d&#160;account with a password too long for Google</item>
+        <item quantity="other">%1$d&#160;accounts with a password too long for Google</item>
+    </plurals>
+    <!-- One count of that list: accounts whose username is longer than Google takes. -->
+    <plurals name="export_csv_skip_long_username">
+        <item quantity="one">%1$d&#160;account with a username too long for Google</item>
+        <item quantity="other">%1$d&#160;accounts with a username too long for Google</item>
+    </plurals>
+    <!-- One count of that list: accounts with a website address Google does not accept. -->
+    <plurals name="export_csv_skip_bad_website">
+        <item quantity="one">%1$d&#160;account with a website Google doesn’t accept</item>
+        <item quantity="other">%1$d&#160;accounts with a website Google doesn’t accept</item>
+    </plurals>
+    <!-- One count of that list: accounts with a website address longer than Google takes. -->
+    <plurals name="export_csv_skip_long_website">
+        <item quantity="one">%1$d&#160;account with a website address too long for Google</item>
+        <item quantity="other">%1$d&#160;accounts with a website address too long for Google</item>
+    </plurals>
+    <!-- After that list. -->
+    <string name="export_csv_skip_outro">They are still in the file. Other apps may accept them.</string>
+    <!-- Button under the list: shows the names of those accounts. -->
+    <string name="export_csv_see_which">See which</string>
+    <!-- The same button while the names are shown: hides them again. -->
+    <string name="export_csv_hide_which">Hide the list</string>
+    <!-- On the card when the export is cut into several files (formats.md §4.4): %1$d is how many (2 or more). -->
+    <plurals name="export_csv_parts">
+        <item quantity="one">Google takes at most 3,000&#160;rows or 1,000&#160;KB in one file, so the export is saved as %1$d&#160;file. You choose a place for each one.</item>
+        <item quantity="other">Google takes at most 3,000&#160;rows or 1,000&#160;KB in one file, so the export is saved as %1$d&#160;files. You choose a place for each one.</item>
+    </plurals>
+    <!-- On the card when one of those files is still over Google's limit (one account with very many websites or very long notes); %1$d is its number. -->
+    <string name="export_csv_part_too_large">File %1$d is still too large for Google, which will refuse it as a whole.</string>
+    <!-- Always on the card: what a CSV file does not hold. -->
+    <string name="export_csv_not_kept">Previous passwords and favourites are not in CSV. JSON keeps everything.</string>
+
+    <!-- ===== Step 3: the master password, typed every time (lock.md F12) ===== -->
+
+    <!-- The step's heading. -->
+    <string name="export_password_title">Type your master password</string>
+    <!-- The step's text. -->
+    <string name="export_password_body">The app asks for it before every export, because the file will not be protected.</string>
+    <!-- The label of the master-password field (glossary term "master password"). -->
+    <string name="export_password_field">Master password</string>
+    <!-- Under the field after a wrong master password (lock.md §13.3). -->
+    <string name="export_password_wrong">That’s not the right master password. Check the keyboard language (Latin or Cyrillic) and capital letters.</string>
+    <!-- Under the field while the lock makes the user wait after several wrong tries; %1$d is the seconds left, counting down (lock.md §13.3). -->
+    <plurals name="export_password_wait">
+        <item quantity="one">Wait %1$d&#160;second, then try again. Take your time and look at your paper.</item>
+        <item quantity="other">Wait %1$d&#160;seconds, then try again. Take your time and look at your paper.</item>
+    </plurals>
+    <!-- Under the field when the phone has too little free memory to check the master password. -->
+    <string name="export_password_no_memory">Your phone doesn’t have enough free memory to check your master password. Close other apps or restart the phone, then try again.</string>
+    <!-- Under the field when the user typed the master password they used before a change; %1$s is the date of the change, such as "6 Oct 2026". -->
+    <string name="export_password_older">This is your master password from before %1$s. Type the one you use now.</string>
+    <!-- A notice at the top when the export continues after the app locked in the middle of it (ux.md §4). -->
+    <string name="export_paused">This was paused when the app locked.</string>
+    <!-- Under that notice; %1$s is the file's name, such as passwords-2026-10-06.csv. -->
+    <string name="export_paused_body">Type your master password again to save %1$s.</string>
+    <!-- The same when the place does not tell the file's name. -->
+    <string name="export_paused_body_file">Type your master password again to save the file.</string>
+
+    <!-- ===== Steps 4 and 5: the file picker, then saving ===== -->
+
+    <!-- Shown behind the system's file picker while it is open. -->
+    <string name="export_picking">Choose where to save the file.</string>
+    <!-- Shown while the file is written and read back to check it. -->
+    <string name="export_saving">Saving and checking the file…</string>
+
+    <!-- ===== The result (ux.md §5.20 "After export") ===== -->
+
+    <!-- The result; %1$s is the file's name as the place saved it, such as passwords-2026-10-06.xlsx. -->
+    <string name="export_saved">Saved: %1$s. When you’re done with it, delete it.</string>
+    <!-- The result of one file of a CSV export cut into several: %1$d is its number, %2$d how many there are, %3$s its name. -->
+    <string name="export_saved_part">Saved file %1$d of %2$d: %3$s. When you’re done with it, delete it.</string>
+    <!-- Main button after one file of several: saves the next one; %1$d is its number. -->
+    <string name="export_next_part">Save file %1$d</string>
+    <!-- Under the result when the place is Google Drive or another app's storage (owner's decision 8 of 2026-10-08). -->
+    <string name="export_saved_upload">This place may upload the file later. Open it there once to check that it arrived.</string>
+    <!-- Under the result when some broken characters were written as the replacement character; %1$d is how many. -->
+    <plurals name="export_saved_replaced">
+        <item quantity="one">%1$d&#160;broken character was saved as �.</item>
+        <item quantity="other">%1$d&#160;broken characters were saved as �.</item>
+    </plurals>
+    <!-- Under the result of an Excel file when a cell was cut at Excel's limit; %1$d is how many cells. -->
+    <plurals name="export_saved_truncated">
+        <item quantity="one">%1$d&#160;very long text was cut to fit in Excel.</item>
+        <item quantity="other">%1$d&#160;very long texts were cut to fit in Excel.</item>
+    </plurals>
+    <!-- Second button of the result: deletes the file that was just saved. -->
+    <string name="export_delete_now">Delete it now</string>
+    <!-- After "Delete it now" worked; %1$s is the file's name. -->
+    <string name="export_deleted">%1$s was deleted.</string>
+    <!-- After "Delete it now" when the place does not allow it (ux.md §5.20). -->
+    <string name="export_cannot_delete">This place doesn’t let apps delete files. Delete it yourself in your Files app.</string>
+
+    <!-- ===== When no file was saved ===== -->
+
+    <!-- The file picker could not be opened. -->
+    <string name="export_picker_failed">The screen for saving files could not be opened. Try again.</string>
+    <!-- Writing to the chosen place failed, or the file read back was not what was written (formats.md §2 rule 3). -->
+    <string name="export_write_failed">Couldn’t save to this place. Try another folder.</string>
+    <!-- After that, when the file could not be removed: it may hold part of the export. %1$s is its name. -->
+    <string name="export_write_left_phone">The file %1$s may hold some of your passwords. Delete it yourself in your Files app.</string>
+    <!-- The same in Google Drive. -->
+    <string name="export_write_left_drive">The file %1$s may hold some of your passwords. Delete it yourself in Google Drive.</string>
+    <!-- The same in another place; %2$s is the place's name. -->
+    <string name="export_write_left_other">The file %1$s may hold some of your passwords. Delete it yourself in %2$s.</string>
+    <!-- The app could not keep its note of the file in the vault, so nothing was saved (storage full). -->
+    <string name="export_note_failed">Couldn’t save. Your phone’s storage may be full.</string>
+    <!-- The same when the passwords no longer fit in one file (architecture.md §3.5, TOO_LARGE). -->
+    <string name="export_too_large">Your passwords no longer fit in one file. Delete accounts you don’t need, or shorten very long notes.</string>
+    <!-- No file was saved and the empty file the picker made was removed (ux.md §4 item 3). -->
+    <string name="export_cleanup_removed">No file was saved. The empty file was removed.</string>
+    <!-- No file was saved, and the empty file on the phone could not be removed; %1$s is its name. -->
+    <string name="export_cleanup_left_phone">No file was saved. Delete the empty file %1$s yourself in your Files app.</string>
+    <!-- The same in Google Drive. -->
+    <string name="export_cleanup_left_drive">No file was saved. Delete the empty file %1$s in Google Drive yourself.</string>
+    <!-- The same in another place; %2$s is the place's name. -->
+    <string name="export_cleanup_left_other">No file was saved. Delete the empty file %1$s in %2$s yourself.</string>
+    <!-- No file was saved, and nothing is left to clean up. -->
+    <string name="export_cleanup_nothing">No file was saved.</string>
+
+    <!-- While a new master password waits for its 24 hours (lock.md F11 step 10, F12): no export is possible. -->
+    <string name="export_pending">You can export your passwords when your new master password has started working.</string>
+
+    <!-- ===== The Excel file's own texts (formats.md §6): in the language the screens show ===== -->
+
+    <!-- The sheet's name. At most 31 characters, and none of these: [ ] : * ? / \ -->
+    <string name="export_xlsx_sheet">Passwords</string>
+    <!-- A column heading of the sheet: the account's name. -->
+    <string name="export_xlsx_name">Name</string>
+    <!-- A column heading of the sheet. -->
+    <string name="export_xlsx_username">Username</string>
+    <!-- A column heading of the sheet. -->
+    <string name="export_xlsx_password">Password</string>
+    <!-- A column heading of the sheet: the first website. -->
+    <string name="export_xlsx_website">Website</string>
+    <!-- A column heading of the sheet: the other websites, one per line. -->
+    <string name="export_xlsx_other_websites">Other websites</string>
+    <!-- A column heading of the sheet. -->
+    <string name="export_xlsx_notes">Notes</string>
+    <!-- A column heading of the sheet: the account's extra fields, one per line. -->
+    <string name="export_xlsx_fields">Extra fields</string>
+    <!-- A column heading of the sheet. -->
+    <string name="export_xlsx_favourite">Favourite</string>
+    <!-- A column heading of the sheet: when the account was added. -->
+    <string name="export_xlsx_added">Added</string>
+    <!-- A column heading of the sheet: when the account was last changed. -->
+    <string name="export_xlsx_last_changed">Last changed</string>
+    <!-- A column heading of the sheet: when the password was last changed. -->
+    <string name="export_xlsx_password_changed">Password changed</string>
+    <!-- The Favourite cell of a favourite account. -->
+    <string name="export_xlsx_yes">Yes</string>
+    <!-- The word after a hidden field's label in the sheet: "PIN code (hidden): 1234". Lower case. -->
+    <string name="export_xlsx_hidden">hidden</string>
+    <!-- The label of the old password's line while a password change is pending: "Old password (hidden): …". -->
+    <string name="export_xlsx_old_password">Old password</string>
+    <!-- The word before an Android app's name in the Website cell: "app: com.example". Lower case, short. -->
+    <string name="export_xlsx_app">app</string>
+    <!-- Added at the end of a cell cut at Excel's limit; %1$d is how many characters were cut. -->
+    <plurals name="export_xlsx_truncated">
+        <item quantity="one">[… %1$d&#160;more character: Excel shows at most 32,767 in one cell]</item>
+        <item quantity="other">[… %1$d&#160;more characters: Excel shows at most 32,767 in one cell]</item>
+    </plurals>
+
+</resources>
