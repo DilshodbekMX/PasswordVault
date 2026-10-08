@@ -84,6 +84,9 @@ class ChangeMasterPasswordCrashTest {
         SAVING_MAY_NOT_HAVE_FINISHED(fingerprint = true),
     }
 
+    /** The rows of the crash table the stopping points reached: (the new file in place, the mark on disk, the offer). */
+    private val reached = HashSet<Triple<Boolean, Boolean, Boolean>>()
+
     private fun setUp(f: LockFixture, script: Script) {
         val vault = f.seedVault(generations = 2)
         f.plantPin(vault, total = 3) // wrong PINs from earlier visits, so that a count that goes down where it must not shows (I5)
@@ -207,6 +210,7 @@ class ChangeMasterPasswordCrashTest {
             if (reachedTheDisk && trace.last().startsWith("storage: changePassword: published")) assertEquals(where, newest.vkId, mark.toVkId)
         }
         val offered = mark != null && mark.toVkId == newest.vkId // "Open my passwords from before the change"
+        if (run.how == Restart.KILL) reached += Triple(reachedTheDisk, mark != null, offered)
 
         // ---- The next process -------------------------------------------------------------------------
         f.startInFront()
@@ -329,6 +333,12 @@ class ChangeMasterPasswordCrashTest {
             minFileBoundaries = 40,
             minPortBoundaries = 14,
         ) { afterRestart(script, it) }
+        // Before step 5; after it, before the new file is in place; in place and unproven; proven.
+        val rows = mutableSetOf(Triple(false, false, false), Triple(false, true, false), Triple(true, true, true))
+        if (script != Script.SAVING_MAY_NOT_HAVE_FINISHED) rows += Triple(true, false, false)
+        // The second change's step 5 over the first change's copy: a mark whose file is not in place offers nothing.
+        if (script == Script.CHANGED_TWICE_IN_ONE_PROCESS) rows += Triple(true, true, false)
+        assertEquals(rows, reached)
         assertTrue("I4 was checked at the PINs of the run", (whole.pinKey as AgedChargeKey).checks > 0)
         assertNotNull(whole.port.current)
         assertEquals(VAULT, whole.port.current!!.vaultId)
