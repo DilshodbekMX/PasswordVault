@@ -1,6 +1,7 @@
 package io.github.dilshodbekmx.passwordvault.core.lock.flow.shortcuts
 
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.KeyCreate
+import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockCause
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockScreen
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockState
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockSummary
@@ -305,7 +306,7 @@ class ChangePinFlowTest {
         val outcome = runBlocking {
             var result: PinChangeOutcome? = null
             val change = launch(start = CoroutineStart.UNDISPATCHED) { result = g.engine.changePin(digits(PIN), digits(NEW_PIN)) }
-            val lock = launch(start = CoroutineStart.UNDISPATCHED) { g.engine.lock() } // ends the prompts at once
+            val lock = launch(start = CoroutineStart.UNDISPATCHED) { g.engine.lock(LockCause.NO_TOUCH) } // ends the prompts at once
             clock.advance(1_000)
             change.join()
             lock.join()
@@ -418,7 +419,8 @@ class ChangePinFlowTest {
                 if (writes == 2) f.files.failNextWrite(FakeRecordFiles.WriteStep.DIR_SYNC)
             }
         }
-        assertEquals(PinChangeOutcome.NotSaved, f.changePin(PIN, NEW_PIN))
+        // F6 step 8: the record read back is the new one, so nobody can promise that the old PIN still works.
+        assertEquals(PinChangeOutcome.MayNotBeSaved, f.changePin(PIN, NEW_PIN))
         f.files.onBoundary = null
         val onDisk = f.pinAliasOnDisk()!!
         assertNotEquals(old, onDisk)

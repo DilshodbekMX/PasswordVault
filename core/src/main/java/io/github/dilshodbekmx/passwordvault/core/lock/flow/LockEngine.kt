@@ -134,9 +134,20 @@ sealed interface MasterPasswordOutcome {
      * no generation of the vault could be used, which counts neither as right nor as wrong
      * ([LockEngine.state] then says "Your passwords can't be opened"); or the password was right for
      * a vault from before a replacement, and [LockEngine.state] asks first
-     * ([LockScreen.OpenOlderSet], F16b step 3).
+     * ([LockScreen.OpenOlderSet], F16b step 3); or the new vault of a replacement is in place but
+     * perhaps not durable (F11 step 16), and [LockEngine.state] shows the lock screen of what is
+     * there now.
      */
     data object TooLate : MasterPasswordOutcome
+
+    /**
+     * The new master password was typed right, and the replacement could not be finished (F11 steps
+     * 13 to 16): "Couldn't finish now. Nothing was changed. Try again later." The mark could not be
+     * written, or storage could not make the new vault; the pending password stays ready, and PIN and
+     * fingerprint work as before. Also [LockEngine.finishPending] before the 24 hours are credited:
+     * nothing was tried. The try is not counted.
+     */
+    data object NotFinished : MasterPasswordOutcome
 }
 
 /** What creating a vault came to (lock.md F1 steps 2 and 3, F13, F17 step 3): the engine's side of `CreateResult`. */
@@ -155,6 +166,30 @@ sealed interface CreateOutcome {
 
     /** Writing or proving failed: "Couldn't save. Your phone's storage may be full." Nothing else exists yet. */
     data object NotSaved : CreateOutcome
+}
+
+/** What setting a PIN with the master password of the flow came to (lock.md F6 "Set", steps 4 to 8). */
+sealed interface PinSetOutcome {
+    /** The new record is on disk: "Your PIN is set." */
+    data object Set : PinSetOutcome
+
+    /**
+     * Nothing changed: the proof is not one this engine holds for the open vault, the PIN is one
+     * the blocklist refuses, the key or the wrap could not be made, or the record was not written
+     * and the one read back is the one from before (F6 step 8). A PIN that worked before still
+     * works: "Couldn't save the new PIN. Your old PIN still works." or "The PIN can't be set up
+     * right now. Try again later."
+     */
+    data object NotSet : PinSetOutcome
+
+    /**
+     * The record write reported a failure, and the lock cannot say that the old record is the one
+     * on disk (F6 step 8): the record read back is the new one, which this process goes on with (a
+     * failed directory sync, with the rename already there), or it could not be read back. "The new
+     * PIN may not have been saved. Next time try the new PIN first. If it is not accepted, use the
+     * old PIN or your master password."
+     */
+    data object MayNotBeSaved : PinSetOutcome
 }
 
 /** What "Change PIN" came to (lock.md F6): the engine's side of `PinChange`. */
@@ -178,6 +213,9 @@ sealed interface PinChangeOutcome {
 
     /** The new key or record could not be made (F6 step 8): the old PIN still works. */
     data object NotSaved : PinChangeOutcome
+
+    /** As [PinSetOutcome.MayNotBeSaved]: the current PIN was right, and the new record may or may not be on disk (F6 step 8). */
+    data object MayNotBeSaved : PinChangeOutcome
 }
 
 /** What turning fingerprint unlock on came to (lock.md F9 steps 4 to 9): the engine's side of `FingerprintOnResult`. */
@@ -198,6 +236,14 @@ sealed interface FingerprintOnOutcome {
 
     /** The prompt could not be shown now (§9.2 rule 3). */
     data object NotShown : FingerprintOnOutcome
+
+    /**
+     * The record write reported a failure, and the lock cannot say that the earlier record is the
+     * one on disk (F9 step 9): the record read back is the new one, which this process goes on
+     * with, or it could not be read back. "Fingerprint unlock may not have been turned on. If your
+     * fingerprint is not accepted, turn it on again in Settings."
+     */
+    data object MayNotBeOn : FingerprintOnOutcome
 }
 
 /** What changing the master password came to (lock.md F8): the engine's side of `ChangeResult`. */
@@ -230,10 +276,14 @@ sealed interface RequestOutcome {
 
     data class Unassigned(val codePoint: Int) : RequestOutcome
 
-    /** The PIN or fingerprint confirmation was closed. */
+    /** The proof of step 3 went while the request was made: the app locked or stopped being visible. Nothing is pending. */
     data object Cancelled : RequestOutcome
 
-    /** No proof is accepted now (F11 step 3, lock.md T16). */
+    /**
+     * No proof of step 3 is held (F11 step 3, lock.md T16): the PIN was not typed now, on the lock
+     * screen after "I can't remember it" or in [LockEngine.proveForNewMasterPassword]; or a
+     * fingerprint was the proof and a PIN exists.
+     */
     data object NotAllowed : RequestOutcome
 
     data object NoMemory : RequestOutcome
@@ -256,6 +306,77 @@ sealed interface AsideOutcome {
 
     /** The merge or the delete failed; nothing changed. */
     data object NotSaved : AsideOutcome
+}
+
+/**
+ * What "Proof now" came to (lock.md F11 step 3) in the open app: [LockEngine.proveForNewMasterPassword].
+ * "An app that is already open is not enough": the PIN typed now whenever there is one, a
+ * fingerprint only when there is none, and never one in place of the other.
+ */
+sealed interface ProofOutcome {
+    /**
+     * The proof is held, given with [by]: the next step is the new master password (F11 step 4) and
+     * [LockEngine.requestNewMasterPassword]. It is dropped when that request is made, when the flow
+     * ends without one ([LockEngine.leaveNewMasterPassword]), at a lock and when the app stops being
+     * visible (§5.8).
+     */
+    data class Proven(val by: Shortcut) : ProofOutcome
+
+    /** A PIN exists, so the PIN must be typed now: "Enter your app PIN". Nothing was checked; a fingerprint is not accepted in its place. */
+    data object NeedsPin : ProofOutcome
+
+    /** The PIN was wrong and counted, as always: "Wrong PIN. [left] tries left." */
+    data class PinWrong(val left: Int) : ProofOutcome
+
+    /** The same wrong PIN as before: not counted again (§6.6). */
+    data object SamePinAgain : ProofOutcome
+
+    /**
+     * The PIN can no longer be the proof: a limit was reached and it was turned off (§6.5), its key
+     * is gone (F15b), or there is none any more. The summary says which. When fingerprint is usable
+     * the flow goes on with it: [LockEngine.proveForNewMasterPassword] without a PIN.
+     */
+    data object PinGone : ProofOutcome
+
+    /**
+     * The PIN cannot be checked right now (TEMPORARY, storage full, UNREADABLE): "Your PIN can't be
+     * checked right now. Try again later." The flow stops; it does not fall back to the fingerprint.
+     */
+    data object CannotCheck : ProofOutcome
+
+    /** The fingerprint prompt was closed (codes 10, 13, 5), or the app locked or stopped being visible meanwhile. */
+    data object Cancelled : ProofOutcome
+
+    /** The fingerprint did not confirm, and nothing was removed (TEMPORARY, lock.md §14): [line] is its line of §13.3. */
+    data class FingerprintFailed(val line: FingerprintLine) : ProofOutcome
+
+    /** The fingerprint prompt could not be shown now (§9.2 rules 3 and 4). */
+    data object NotShown : ProofOutcome
+
+    /** Neither a PIN nor a usable fingerprint: the route is not offered. */
+    data object NotOffered : ProofOutcome
+}
+
+/**
+ * Why the app locks (lock.md §10.1, §10.4; architecture.md §5.5 step 1): the engine's side of
+ * `LockReason` (architecture.md §3.5), value for value. [LockEngine.lock] takes it because one of
+ * them, [SCREEN_OFF], also ends the visit of a lock screen that is shown (lock.md §6.3).
+ */
+enum class LockCause {
+    /** The lock delay passed since the app was left, or "Immediately" at `ON_STOP`. */
+    LEFT,
+
+    /** The screen turned off (`ACTION_SCREEN_OFF`, also when Android delivers it late). */
+    SCREEN_OFF,
+
+    /** Five minutes without a touch while the app was in front. */
+    NO_TOUCH,
+
+    /** More than 10 minutes in a file picker or share sheet that the app opened (§10.3). */
+    EXTERNAL_TIMEOUT,
+
+    /** Settings › "Lock now". */
+    LOCK_NOW,
 }
 
 /**
@@ -305,8 +426,7 @@ enum class OlderPasswordAnswer {
  * launch numbers, and F1 to F5 and F7 are here and in `LockCore`, `UnlockFlows`, `StartUp` and
  * `Sweep` (build plan 3.10). The other flows are entry points here that go straight to
  * `ShortcutFlows` (F6, F9, F10: 3.13), `VaultFlows` (F12, F13, F17: 3.14), `PasswordFlows` (F8,
- * F11: 4.4) and `OlderCopies` (F16b: 4.4), whose functions throw `NotImplementedError` until those
- * packages fill them.
+ * F11: 4.4) and `OlderCopies` (F16b: 4.4).
  *
  * @param records the files of the lock records, and [lockRoot] the directory they are under:
  *   `<noBackupFilesDir>/lock` (lock.md §5.2, build check R-3).
@@ -351,6 +471,21 @@ class LockEngine(
     /** The lock's facts. [refresh] brings the parts that depend on time, and on the phone's settings, up to date. */
     val summary: StateFlow<LockSummary> = core.summary.asStateFlow()
 
+    /**
+     * Runs [block] under the lock mutex (`LockCore.locked`), and then lets `OlderCopies` drop what a
+     * lock-screen visit that ended in the meantime left behind: the bytes kept for "Open my passwords
+     * from before the change", and the vault that opened in place for the question of F16b step 3
+     * (I11). `LockCore.closeVisit` cannot do the second, because it does not suspend; so every entry
+     * point that holds the mutex here ends with it.
+     */
+    private suspend fun <T> step(block: suspend () -> T): T = core.locked {
+        try {
+            block()
+        } finally {
+            olderCopies.visitMayHaveEnded()
+        }
+    }
+
     // ---------------------------------------------------------------------------------------------
     // The process
 
@@ -363,8 +498,8 @@ class LockEngine(
      * @param noSecureHardwareTold the text of F18 was shown on this phone before ("first time
      *   only"); see [noSecureHardwareShown].
      */
-    suspend fun start(noSecureHardwareTold: Boolean = false) = core.locked {
-        if (core.state.value !is LockState.Starting) return@locked
+    suspend fun start(noSecureHardwareTold: Boolean = false) = step {
+        if (core.state.value !is LockState.Starting) return@step
         core.noSecureHardwareTold = noSecureHardwareTold
         startUp.run()
     }
@@ -375,7 +510,7 @@ class LockEngine(
      */
     suspend fun appStarted() {
         core.visible = true
-        core.locked {
+        step {
             core.observeCredits()
             // A visit that an ON_STOP has ended but not yet closed is closed here too (startVisit),
             // so that the pad never stays without a visit while the app is visible.
@@ -392,22 +527,24 @@ class LockEngine(
      * visit and every prompt of the open app end, so that a check that is running opens and proves
      * nothing (I11); an open fingerprint prompt is cancelled and its launch ended; the proofs are
      * dropped (§5.8). Then, under the mutex: a held charge is refunded (§6.3 A), the digits are
-     * zeroed, a proof that a step running meanwhile made is dropped too, the credits observed. It
-     * does not lock: `AutoLock` decides that (§10.2). Only the visit it ended is closed: one that a
-     * later `ON_START` has begun meanwhile stays.
+     * zeroed, a proof that a step running meanwhile made is dropped too (a master password's, and
+     * the proof of F11 step 3), the credits observed. It does not lock: `AutoLock` decides that
+     * (§10.2). Only the visit it ended is closed: one that a later `ON_START` has begun meanwhile
+     * stays.
      */
     suspend fun appStopped() {
         core.visible = false
         val ended = core.endVisitNow()
         val prompts = core.endPromptsNow()
         core.dropProofs()
-        core.locked {
+        step {
             if (ended != null && core.visit === ended) core.closeVisit()
             core.promptsEnded(prompts)
             // A step that held the mutex when the app stopped being visible (an unlock, a check, setup)
             // made its proof after the drop above: it goes now (§5.8). The mutex is fair, so nothing
             // that began after this ON_STOP has run yet.
             core.dropProofs()
+            passwords.dropProof()
             core.observeCredits()
             val now = core.state.value
             if (now is LockState.Unlocked && now.proof != null) core.state.value = now.copy(proof = null)
@@ -418,20 +555,44 @@ class LockEngine(
 
     /**
      * Locks (lock.md §10.4; architecture.md §5.5 steps 3 and 4), called only by `AutoLock` after
-     * its draft flush. At once: the prompts end, the proofs are dropped, a fingerprint prompt of the
-     * open app is cancelled. Under the mutex: a proof that an unlock running meanwhile made is
-     * dropped too, the vault port drops its session (it waits for a save that is running), the
-     * vaults are listed again, the lock screen is chosen (§13.1), and a new visit starts if the app
-     * is visible. It never writes vault data. While the app is not unlocked it does nothing more.
+     * its draft flush, with the reason of the lock ([cause]). At once: the prompts end, the proofs
+     * are dropped, a fingerprint prompt of the open app is cancelled. Under the mutex: a proof that
+     * an unlock running meanwhile made is dropped too, the vault port drops its session (it waits
+     * for a save that is running), the vaults are listed again, the lock screen is chosen (§13.1),
+     * and a new visit starts if the app is visible. It never writes vault data.
+     *
+     * **A screen-off lock while a lock screen shows ends its visit** (lock.md §6.3: a visit ends at
+     * `ON_STOP` or at a screen-off lock, whichever comes first; decision 29). At once, before the
+     * mutex: the visit's place is ended, so that a PIN or master-password check that is running
+     * counts as usual and opens nothing (I11), and an open fingerprint prompt is cancelled and its
+     * launch ended, so that its result is dropped. Then, under the mutex: a held charge is refunded,
+     * the digits go (§6.3 A), and a new visit of the same lock screen starts, because the screen can
+     * come back on before the app was ever stopped (`ON_STOP` follows the screen-off by about 700
+     * ms, and not at all when the screen is on again by then). Without this a PIN typed just before
+     * the power button could open the vault with the screen off, until the `ON_STOP` arrived.
+     *
+     * For any other [cause] a lock while the app is not unlocked does nothing more.
      */
-    suspend fun lock() {
+    suspend fun lock(cause: LockCause) {
         val wasOpen = core.state.value is LockState.Unlocked
         val prompts = core.endPromptsNow()
         core.dropProofs()
         if (wasOpen) core.endLaunchNow()
-        core.locked {
+        val ended = if (cause == LockCause.SCREEN_OFF) core.endVisitNow() else null
+        step {
             core.promptsEnded(prompts)
-            if (core.state.value !is LockState.Unlocked) return@locked
+            passwords.dropProof()
+            if (core.state.value !is LockState.Unlocked) {
+                // The lock screen was showing when the screen went off: its visit is closed, and the
+                // next one starts. A visit that an ON_STOP closed meanwhile, or that an ON_START began
+                // after this lock was asked for, is left as it is.
+                if (ended != null && core.visit === ended) {
+                    core.startVisit()
+                    if (core.state.value is LockState.Locked) core.showLockScreen()
+                    core.publishSummary()
+                }
+                return@step
+            }
             core.dropProofs() // and the proof of an unlock that held the mutex when the lock came (§5.8, §10.4 step 2)
             try {
                 core.vault.lock()
@@ -449,21 +610,21 @@ class LockEngine(
      * asked again and the summary published, for Settings › App lock (§9.4) and the banners
      * (§13.4). The credits of §6.9 are observed in every case.
      */
-    suspend fun refresh() = core.locked { unlock.refresh() }
+    suspend fun refresh() = step { unlock.refresh() }
 
     /**
      * The text of F18, "This phone can't keep a PIN or fingerprint key in protected hardware …",
      * has been shown: it is not given as a reason again ("first time only", lock.md §13.3). The
      * caller keeps that across processes and passes it to [start].
      */
-    suspend fun noSecureHardwareShown() = core.locked {
-        if (core.noSecureHardwareTold) return@locked
+    suspend fun noSecureHardwareShown() = step {
+        if (core.noSecureHardwareTold) return@step
         core.noSecureHardwareTold = true
         if (core.state.value is LockState.Locked) core.showLockScreen()
     }
 
     /** The debug status of lock.md §15.3: the inputs and the result of §13.1, the counts, the aliases present. Nothing in it is secret. */
-    suspend fun describe(): String = core.locked { core.describe() }
+    suspend fun describe(): String = step { core.describe() }
 
     // ---------------------------------------------------------------------------------------------
     // The pad (F2, F4, F5)
@@ -475,32 +636,32 @@ class LockEngine(
      */
     suspend fun digit(digit: Int) {
         val epoch = core.inputEpoch
-        core.locked { unlock.digit(digit, epoch) }
+        step { unlock.digit(digit, epoch) }
     }
 
     /** ⌫: the last digit goes. Deleting back to none gives the entry up and refunds its charge (§6.3 A). */
     suspend fun deleteDigit() {
         val epoch = core.inputEpoch
-        core.locked { unlock.deleteDigit(epoch) }
+        step { unlock.deleteDigit(epoch) }
     }
 
     /** A long press on ⌫: every digit goes, and the charge is refunded. */
     suspend fun clearDigits() {
         val epoch = core.inputEpoch
-        core.locked { unlock.clearDigits(epoch) }
+        step { unlock.clearDigits(epoch) }
     }
 
     // ---------------------------------------------------------------------------------------------
     // Which way in
 
     /** "Forgot PIN? Use master password", "Use master password" (F7 step 1): a held charge is refunded, and the master-password screen is shown without a reason. */
-    suspend fun useMasterPassword() = core.locked { unlock.useMasterPassword() }
+    suspend fun useMasterPassword() = step { unlock.useMasterPassword() }
 
     /** "Use PIN": back to the pad. On a practice screen within its grace it is "Not now: use PIN" (F10 step 3). */
-    suspend fun usePin() = core.locked { unlock.usePin() }
+    suspend fun usePin() = step { unlock.usePin() }
 
     /** "Not now: use fingerprint" on a practice screen within its grace (F10 step 3). */
-    suspend fun notNow() = core.locked {
+    suspend fun notNow() = step {
         val screen = (core.state.value as? LockState.Locked)?.screen as? LockScreen.MasterPassword
         if (screen?.practice?.notNow != null) shortcuts.practiceNotNow()
     }
@@ -508,9 +669,12 @@ class LockEngine(
     /**
      * "I can't remember it" on a practice screen (F10 step 4), or "Use my PIN" or "Use my fingerprint"
      * on the "Forgot master password?" sheet (F11 step 1, F17 step 1): F11 from the lock screen, which
-     * wants the PIN now, or the fingerprint when there is no PIN.
+     * wants the PIN now, or the fingerprint when there is no PIN. Practice is skipped for this visit,
+     * so the pad (or the fingerprint-only screen) is shown; the entry that then opens the app is
+     * also the proof of F11 step 3, when it is the one that step accepts. Nothing changes while
+     * neither shortcut can open the app.
      */
-    suspend fun cantRemember() = core.locked { passwords.cantRemember() }
+    suspend fun cantRemember() = step { passwords.cantRemember() }
 
     // ---------------------------------------------------------------------------------------------
     // Fingerprint (F3)
@@ -537,7 +701,7 @@ class LockEngine(
      */
     suspend fun unlockWithMasterPassword(chars: CharArray): MasterPasswordOutcome {
         val at = core.visit?.place
-        return core.locked { unlock.masterPasswordOnLockScreen(chars, at) }
+        return step { unlock.masterPasswordOnLockScreen(chars, at) }
     }
 
     /**
@@ -548,23 +712,27 @@ class LockEngine(
     suspend fun checkMasterPassword(chars: CharArray): MasterPasswordOutcome {
         val at = core.openPrompt()
         try {
-            return core.locked { unlock.masterPasswordInApp(chars, at) }
+            return step { unlock.masterPasswordInApp(chars, at) }
         } finally {
             core.closePrompt(at)
         }
     }
 
-    /** An answer on "This is an older master password", or on "Open the older set instead?" (F16b). */
-    suspend fun olderPasswordAnswer(answer: OlderPasswordAnswer) = core.locked { olderCopies.answer(answer) }
+    /**
+     * An answer on "This is an older master password", or on "Open the older set instead?" (F16b).
+     * "Open my passwords from before the change" and "Open my passwords from 7 Oct" open the app
+     * when they succeed; an answer that does not belong to the screen shown does nothing.
+     */
+    suspend fun olderPasswordAnswer(answer: OlderPasswordAnswer) = step { olderCopies.answer(answer) }
 
     // ---------------------------------------------------------------------------------------------
     // Notices (§13.4)
 
     /** The answer [answer] to the notice [id]; it is taken off the list. An id that is not shown does nothing. */
-    suspend fun answerNotice(id: Long, answer: NoticeAnswer) = core.locked { unlock.answerNotice(id, answer) }
+    suspend fun answerNotice(id: Long, answer: NoticeAnswer) = step { unlock.answerNotice(id, answer) }
 
     /** F12: the master password was just typed and a backup is due, so "Make a backup now?" is offered on that entry. */
-    suspend fun offerBackup() = core.locked { vaults.offerBackup() }
+    suspend fun offerBackup() = step { vaults.offerBackup() }
 
     // ---------------------------------------------------------------------------------------------
     // Vaults: setup, restore, the vaults put aside
@@ -582,13 +750,13 @@ class LockEngine(
         if (restoreFrom == null) unlock.createVault(first, again, created) else vaults.restore(first, again, restoreFrom, created)
 
     /** "Start with an empty app" confirmed (F17 step 2): the vault is put aside, with its lock records and keys left where they are. */
-    suspend fun startEmpty(): Boolean = core.locked { vaults.startEmpty() }
+    suspend fun startEmpty(): Boolean = step { vaults.startEmpty() }
 
     /** "Open my previous passwords" for the vault [vaultId] put aside (F17 step 4): its own lock screen. */
-    suspend fun showAside(vaultId: String) = core.locked { vaults.showAside(vaultId) }
+    suspend fun showAside(vaultId: String) = step { vaults.showAside(vaultId) }
 
     /** Back on the lock screen of a vault put aside: the current vault's screen again, and nothing changed. */
-    suspend fun goBack() = core.locked { vaults.goBack() }
+    suspend fun goBack() = step { vaults.goBack() }
 
     /** Settings › Old passwords › "Open" (F17 step 5): that vault's master password, under its own guard; its accounts join the current vault. */
     suspend fun mergeAside(vaultId: String, chars: CharArray): AsideOutcome = vaults.mergeAside(vaultId, chars)
@@ -599,8 +767,12 @@ class LockEngine(
     // ---------------------------------------------------------------------------------------------
     // The shortcuts (F6, F9)
 
-    /** Sets a PIN with the master password of this flow (F6 "Set", F1 step 6). False: not set; what was there stays. */
-    suspend fun setPin(pin: ByteArray, proof: MasterProof): Boolean = core.locked { shortcuts.setPin(pin, proof) }
+    /**
+     * Sets a PIN with the master password of this flow (F6 "Set", F1 step 6). [PinSetOutcome.NotSet]:
+     * what was there stays. [PinSetOutcome.MayNotBeSaved]: the record write reported a failure, and
+     * the lock went on with the record it read back (F6 step 8).
+     */
+    suspend fun setPin(pin: ByteArray, proof: MasterProof): PinSetOutcome = step { shortcuts.setPin(pin, proof) }
 
     /** "Change PIN": [current] is a counted check in a prompt (§6.3, F6 step 2), then [new]. */
     suspend fun changePin(current: ByteArray, new: ByteArray): PinChangeOutcome = shortcuts.changePin(current, new)
@@ -609,27 +781,64 @@ class LockEngine(
     suspend fun fingerprintOn(proof: MasterProof): FingerprintOnOutcome = shortcuts.fingerprintOn(proof)
 
     /** Turns fingerprint unlock off; no proof (F9 "Off"). */
-    suspend fun fingerprintOff() = core.locked { shortcuts.fingerprintOff() }
+    suspend fun fingerprintOff() = step { shortcuts.fingerprintOff() }
 
     // ---------------------------------------------------------------------------------------------
     // The master password: change and replacement (F8, F11, F16b)
 
-    /** Changes the master password (F8); [pin] is the PIN typed at step 3 to keep it, or null. */
+    /**
+     * Changes the master password (F8 steps 2 to 9). [proof] is the current master password, typed
+     * in this flow; [pin] is the PIN typed at step 3 to keep it, or null for "Not now" and when no
+     * PIN is usable. After [ChangeOutcome.Changed] every earlier proof is dropped, and
+     * [LockState.Unlocked] holds the proof of the new master password, for "Choose a PIN" and for
+     * "Back up now" (F8 steps 3 and 9).
+     */
     suspend fun changeMasterPassword(proof: MasterProof, first: CharArray, again: CharArray, pin: ByteArray?): ChangeOutcome =
         passwords.changeMasterPassword(proof, first, again, pin)
 
-    /** Asks for a new master password while the old one is forgotten (F11 steps 3 to 5). */
+    /**
+     * "Proof now" for a new master password, in the open app (F11 step 3): [pin] is the PIN typed now
+     * in its prompt, a counted check (§6.3); null asks without one. Without a PIN it answers
+     * [ProofOutcome.Proven] when the entry that opened the app after "I can't remember it" was that
+     * proof, [ProofOutcome.NeedsPin] while a PIN exists, and otherwise shows the fingerprint prompt
+     * "Confirm with your fingerprint", which is accepted only when there is no PIN. The proof is held
+     * until [requestNewMasterPassword], [leaveNewMasterPassword], a lock or `ON_STOP`.
+     */
+    suspend fun proveForNewMasterPassword(pin: ByteArray?): ProofOutcome = passwords.proveNow(pin)
+
+    /**
+     * Asks for a new master password while the old one is forgotten (F11 step 5), with the proof of
+     * step 3 that this engine holds: from the lock screen after [cantRemember], or from
+     * [proveForNewMasterPassword]. Without one: [RequestOutcome.NotAllowed].
+     */
     suspend fun requestNewMasterPassword(first: CharArray, again: CharArray): RequestOutcome = passwords.requestNewMasterPassword(first, again)
 
+    /**
+     * The flow of F11 ended without [RequestOutcome.Requested]: "Cancel" on its explanation, Back
+     * from the new master password, or its screens closed any other way, on the lock screen after
+     * [cantRemember] or in the open app. The proof of step 3 goes with its flow (lock.md §5.8), so
+     * a request later in this session needs the PIN typed again, or the fingerprint where there is
+     * no PIN ("An app that is already open is not enough", F11 step 3); on the lock screen the entry
+     * that opens the app on this visit proves nothing any more. The screens of F11 call it whenever
+     * they close without a request; a lock and `ON_STOP` drop the proof by themselves.
+     */
+    suspend fun leaveNewMasterPassword() = step { passwords.leave() }
+
     /** "Cancel it": the pending new master password is dropped; no proof (F11 step 8). */
-    suspend fun cancelPending() = core.locked {
+    suspend fun cancelPending() = step {
         passwords.cancelPending()
         core.publishSummary()
     }
 
-    /** "Finish now": the new master password is ready and is typed to finish (F11 steps 13 to 19). */
+    /**
+     * "Finish now": the new master password is ready and is typed to finish (F11 steps 13 to 19).
+     * [MasterPasswordOutcome.Right]: the session goes on in the new vault, and the proof is the new
+     * master password's, for that vault; or, when [chars] is the current master password, that
+     * password cancelled the request (F11 step 9) and the proof is its own. Before the 24 hours are
+     * credited nothing is tried: [MasterPasswordOutcome.NotFinished].
+     */
     suspend fun finishPending(chars: CharArray): MasterPasswordOutcome = passwords.finishPending(chars)
 
     /** "It wasn't me" on the "replaced" notice, or "Open my passwords from before 7 Oct" (F16b): the old vault's own lock screen. */
-    suspend fun itWasntMe(oldVaultId: String?) = core.locked { olderCopies.itWasntMe(oldVaultId) }
+    suspend fun itWasntMe(oldVaultId: String?) = step { olderCopies.itWasntMe(oldVaultId) }
 }

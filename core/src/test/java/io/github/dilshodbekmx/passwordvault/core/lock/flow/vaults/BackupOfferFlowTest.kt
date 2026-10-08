@@ -6,6 +6,7 @@ import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockState
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.MasterPasswordOutcome
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.Notice
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.NoticeAnswer
+import io.github.dilshodbekmx.passwordvault.core.lock.flow.PinSetOutcome
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.core.LockFixture
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.core.LockFixture.Companion.OTHER_VAULT
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.core.LockFixture.Companion.PASSWORD
@@ -122,7 +123,7 @@ class BackupOfferFlowTest {
         }
         // What needs the master password asks for it again from here on (§8.2): that entry sets no PIN.
         val pinBefore = f.pinRecord()
-        assertFalse(await { f.engine.setPin(digits("368014"), proof) })
+        assertEquals(PinSetOutcome.NotSet, await { f.engine.setPin(digits("368014"), proof) })
         assertEquals(pinBefore, f.pinRecord())
         // A master password typed now is a new entry, with a proof of its own.
         val again = (f.check(PASSWORD) as MasterPasswordOutcome.Right).proof

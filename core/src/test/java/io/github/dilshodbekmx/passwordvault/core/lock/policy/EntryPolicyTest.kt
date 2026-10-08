@@ -179,6 +179,8 @@ class EntryPolicyTest {
         val fingerprintLine: FingerprintLine? = when {
             markedReplaced -> null
             visit.fingerprintLine != null -> visit.fingerprintLine
+            // "`fingerprint.rec` is damaged (5.3)": not offered, and the screen says that it stopped working on this phone.
+            input.fingerprint is RecordRead.Damaged -> EntryPolicy.DAMAGED_FINGERPRINT_LINE
             !fingerprintOn || fingerprintUsable -> null
             visit.fingerprintHidden -> FingerprintLine.CannotCheck
             input.canAuthenticate == null -> null
@@ -265,9 +267,11 @@ class EntryPolicyTest {
             ),
         )
 
-        // Rows 3 and 4: "For a vault that was put aside ... without rows 1 to 4."
+        // Rows 3 and 4: "For a vault that was put aside ... without rows 1 to 4." And not on a visit on
+        // which practice was skipped: "I can't remember it" (F10 step 4: F11, which "opens the app with
+        // the PIN or fingerprint"), or "Not now" where no record can hold the snooze (F10 step 3).
         val shortcutUsable = pinUsable || fingerprintUsable
-        if (asideVault == null && shortcutUsable) {
+        if (asideVault == null && shortcutUsable && !visit.practiceSkipped) {
             // §5.3: MISSING and DAMAGED mean "practice due now and still skippable"; NEWER and UNREADABLE "Practice is not asked".
             // §8.3: "Not asked while a replacement is pending (F11)".
             val status = when (val state = input.state) {
@@ -407,6 +411,35 @@ class EntryPolicyTest {
         assertEquals(Row.PIN_PAD, decide(pin = pinRead(), state = stateRead(practice = SNOOZED)).row)
         assertEquals(Row.PRACTICE_IN_GRACE, decide(pin = pinRead(), state = stateRead(practice = CLOCK_BEHIND)).row)
         assertEquals(Row.PIN_PAD, decide(pin = pinRead(), state = stateRead(practice = NOT_DUE)).row)
+    }
+
+    @Test
+    fun t12_practiceSkippedForAVisit_passesOverRows3And4_andChangesNothingElse() {
+        val skipped = Visit(practiceSkipped = true)
+        for (practice in listOf(DUE, REQUIRED)) {
+            // The PIN: the pad, as on any other visit.
+            val pad = decide(pin = pinRead(), fingerprint = fingerprintRead(), state = stateRead(practice = practice), visit = skipped)
+            assertEquals(Row.PIN_PAD, pad.row)
+            assertEquals(LockScreen.Pad(0, null, true, false, null), pad.screen)
+            assertTrue("the prompt opens by itself on the pad, as on any other visit", pad.promptOpensItself)
+            // Only fingerprint: its own screen.
+            assertEquals(Row.FINGERPRINT_ONLY, decide(fingerprint = fingerprintRead(), state = stateRead(practice = practice), visit = skipped).row)
+            // No shortcut: the master password, without the practice subtitle, as without the flag.
+            val none = decide(state = stateRead(practice = practice), visit = skipped)
+            assertEquals(Row.MASTER_PASSWORD, none.row)
+            assertNull((none.screen as LockScreen.MasterPassword).practice)
+            // The user's own choice of the master-password screen still comes first.
+            val chosen = decide(pin = pinRead(), state = stateRead(practice = practice), visit = Visit(practiceSkipped = true, masterPasswordChosen = true))
+            assertEquals(Row.MASTER_PASSWORD_CHOSEN, chosen.row)
+            assertNull((chosen.screen as LockScreen.MasterPassword).reason)
+        }
+        // Without a record that holds the dates (§5.3: due now and still skippable), the same.
+        for (state in listOf(RecordRead.Missing, RecordRead.Damaged(ParseError(0, "magic")))) {
+            assertEquals(Row.PIN_PAD, decide(pin = pinRead(), state = state, visit = skipped).row)
+        }
+        // What else the record says still counts: the last try while a new master password is not working yet (F11 step 11).
+        val pending = decide(pin = pinRead(row = 4), state = stateRead(practice = REQUIRED, pending = NOT_READY), visit = Visit(practiceSkipped = true, pinEvent = PinEvent.WRONG))
+        assertEquals(LockScreen.Pad(0, PadStatus.LastTryWhilePending, false, false, null), pending.screen)
     }
 
     @Test
@@ -791,6 +824,9 @@ class EntryPolicyTest {
             Visit(needsOtherKeyCreatedMs = OTHER_KEY_COPY),
             Visit(pinEvent = PinEvent.WRONG, interruptedAtStart = true, fingerprintLine = FingerprintLine.Locked),
             Visit(masterPasswordChosen = true, pinEvent = PinEvent.CANNOT_CHECK, fingerprintHidden = true),
+            Visit(practiceSkipped = true),
+            Visit(practiceSkipped = true, masterPasswordChosen = true),
+            Visit(practiceSkipped = true, pinEvent = PinEvent.WRONG, fingerprintLine = FingerprintLine.Locked),
         )
 
         fun pinRead(wraps: List<String> = listOf(VK_NEW), row: Int = 0, total: Int = 0, vaultId: String = VAULT): RecordRead<PinRecord> =

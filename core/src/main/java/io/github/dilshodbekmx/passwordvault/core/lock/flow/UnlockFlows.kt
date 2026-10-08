@@ -13,6 +13,7 @@ import io.github.dilshodbekmx.passwordvault.core.lock.policy.KeystoreErrors
 import io.github.dilshodbekmx.passwordvault.core.lock.policy.Ks
 import io.github.dilshodbekmx.passwordvault.core.lock.record.FingerprintRecord
 import io.github.dilshodbekmx.passwordvault.core.lock.record.KeyWrap
+import io.github.dilshodbekmx.passwordvault.core.lock.record.PinRecord
 import io.github.dilshodbekmx.passwordvault.core.lock.record.RecordRead
 import io.github.dilshodbekmx.passwordvault.core.lock.record.StateRecord
 import io.github.dilshodbekmx.passwordvault.core.model.Vault
@@ -43,8 +44,10 @@ import kotlinx.coroutines.withContext
  * Where another package's flow begins, this file calls that flow's file and does nothing of it
  * itself: a vault put aside that opened (`VaultFlows.asideOpened`, F17 step 4), "Not now" on a
  * practice screen (`ShortcutFlows.practiceNotNow`, F10), the pending wrap at a master-password
- * entry (`PasswordFlows.typedPending`, F11 step 13), cancelling a pending password and "It wasn't
- * me" from their notices. Package 4.4 may edit this file for the last three (build plan 4.4).
+ * entry (`PasswordFlows.typedPending`, F11 step 13), a master password from before a change
+ * (`OlderCopies.olderPasswordTyped`, F16b), cancelling a pending password and "It wasn't me" from
+ * their notices. Package 4.4 edited this file for those (build plan 4.4), and for [pinAt],
+ * [checkOnLockScreen] and [lockFromInside], which its flows call.
  */
 internal class UnlockFlows(private val core: LockCore) {
 
@@ -224,8 +227,11 @@ internal class UnlockFlows(private val core: LockCore) {
         }
     }
 
-    /** A right PIN, fingerprint or master password, and no generation that can be used: "Your passwords can't be opened", with "Try again". */
-    private fun cannotOpen(visit: LockVisit, why: CurrentVault.Why, flushPin: Boolean) {
+    /**
+     * Holds the mutex: a right PIN, fingerprint or master password (the pending one of F11 among
+     * them), and no generation that can be used: "Your passwords can't be opened", with "Try again".
+     */
+    fun cannotOpen(visit: LockVisit, why: CurrentVault.Why, flushPin: Boolean) {
         if (flushPin) visit.target.lock.pin.flush()
         if (visit.place.hasEnded) return
         core.endVisitNow()
@@ -445,6 +451,22 @@ internal class UnlockFlows(private val core: LockCore) {
         val visit = core.visit
         if (at == null || visit == null || visit.place !== at || at.hasEnded || visit.opening) return MasterPasswordOutcome.TooLate
         if ((core.state.value as? LockState.Locked)?.screen !is LockScreen.MasterPassword) return MasterPasswordOutcome.TooLate
+        val bytes = MasterPasswordBytes.of(chars)
+        try {
+            return checkOnLockScreen(visit, bytes)
+        } finally {
+            Bytes.wipe(bytes)
+        }
+    }
+
+    /**
+     * Holds the mutex: §6.8 for the master-password bytes [bytes] on the lock screen of [visit], which
+     * is the visit shown and has not ended: [masterPasswordOnLockScreen] once the characters are
+     * bytes, and `OlderCopies` for "Open my passwords from before the change" (F16b step 3), which
+     * opens with the password typed a moment ago. [bytes] stays the caller's, which wipes it.
+     */
+    suspend fun checkOnLockScreen(visit: LockVisit, bytes: ByteArray): MasterPasswordOutcome {
+        val at = visit.place
         val target = visit.target
         val lock = target.lock
         val guard = lock.master
@@ -452,7 +474,6 @@ internal class UnlockFlows(private val core: LockCore) {
             core.showLockScreen()
             return MasterPasswordOutcome.Wait(until)
         }
-        val bytes = MasterPasswordBytes.of(chars)
         var opened: PasswordOpen? = null
         var pending: MasterPasswordOutcome? = null
         visit.opening = true
@@ -489,7 +510,6 @@ internal class UnlockFlows(private val core: LockCore) {
                 is MpAttempt.Checked -> pending ?: afterMasterPassword(visit, attempt, checkNotNull(opened), bytes)
             }
         } finally {
-            Bytes.wipe(bytes)
             if (visit.opening) { // the vault port threw: the field again
                 visit.opening = false
                 if (!at.hasEnded && core.visit === visit) core.showLockScreen()
@@ -533,8 +553,9 @@ internal class UnlockFlows(private val core: LockCore) {
             is PasswordOpen.OlderPassword -> { // F16b: its screen, until `OlderCopies` has its answer
                 visit.mpError = null
                 visit.olderPassword = opened
+                core.olderCopies.olderPasswordTyped(visit, bytes)
                 core.showLockScreen()
-                MasterPasswordOutcome.OlderPassword(opened.changedAtMs, unfinishedChange = lock.state?.mpChange != null)
+                MasterPasswordOutcome.OlderPassword(opened.changedAtMs, unfinishedChange = core.changeUnfinished(visit.target))
             }
             PasswordOpen.NoMemory -> {
                 visit.mpError = MpError.NoMemory
@@ -612,30 +633,58 @@ internal class UnlockFlows(private val core: LockCore) {
         val at = core.openPrompt() // before the mutex: it belongs to the app as it is open now
         var made: PinOutcome? = null
         try {
-            return core.locked {
-                val open = core.open
-                if (core.state.value !is LockState.Unlocked || open == null || at.hasEnded) return@locked PinOutcome.NotCharged
-                val lock = core.lockOf(open.vaultId)
-                lock.startPin()
-                when (lock.pin.charge(at)) {
-                    PinCharge.CHARGED -> Unit
-                    PinCharge.STORAGE_FULL -> return@locked PinOutcome.CannotCheck
-                    PinCharge.NOT_USABLE -> return@locked PinOutcome.NotCharged
-                }
-                // No wrap is trimmed here: a prompt is not an unlock (§5.4), and the list of kept
-                // keys is the one of the last lock screen.
-                val outcome = lock.pin.check(pin, null, useKek)
-                if (outcome is PinOutcome.Right) lock.pin.flush()
-                core.publishSummary()
-                made = outcome
-                outcome
-            }
+            return core.locked { pinAt(pin, at, useKek).also { made = it } }
         } catch (e: CancellationException) {
             // The step ran to its end, and its caller, who was to wipe the keys, is gone (§4.2).
             (made as? PinOutcome.Right)?.keys?.values?.forEach { Bytes.wipe(it) }
             throw e
         } finally {
             core.closePrompt(at)
+        }
+    }
+
+    /**
+     * Holds the mutex: the counted PIN check of [pinInPrompt] in the prompt [at], which the caller
+     * opened before it took the mutex and closes afterwards. For a flow that goes on under the same
+     * turn of the mutex with what the PIN gave (F8 steps 3 to 6, F11 step 3): no other step can then
+     * change the slot between the check and the use of its `KEK_pin`.
+     */
+    suspend fun pinAt(pin: ByteArray, at: Place, useKek: ((ByteArray) -> Unit)? = null): PinOutcome {
+        val open = core.open
+        if (core.state.value !is LockState.Unlocked || open == null || at.hasEnded) return PinOutcome.NotCharged
+        val lock = core.lockOf(open.vaultId)
+        lock.startPin()
+        when (lock.pin.charge(at)) {
+            PinCharge.CHARGED -> Unit
+            PinCharge.STORAGE_FULL -> return PinOutcome.CannotCheck
+            PinCharge.NOT_USABLE -> return PinOutcome.NotCharged
+        }
+        // No wrap is trimmed here: a prompt is not an unlock (§5.4), and the list of kept
+        // keys is the one of the last lock screen.
+        val outcome = lock.pin.check(pin, null, useKek)
+        if (outcome is PinOutcome.Right) lock.pin.flush()
+        core.publishSummary()
+        return outcome
+    }
+
+    /**
+     * Holds the mutex, from inside a step that found the app open: the app is locked as
+     * `LockEngine.lock` locks it (lock.md §10.4): open prompts end (a charge held in one is
+     * refunded), the proofs are dropped, a fingerprint launch ends and its prompt is cancelled, the
+     * vault port drops its session, and the lock screen of what is there now is shown. It never
+     * writes vault data. For a flow that cannot go on in the open app: the vault port ended its
+     * session after a write whose end is not known (F8 step 6, F11 step 16), or the lock screen is
+     * where the next step is (F16b, "It wasn't me" after more than one replacement).
+     */
+    suspend fun lockFromInside() {
+        core.promptsEnded(core.endPromptsNow())
+        core.dropProofs()
+        core.passwords.dropProof()
+        core.endLaunchNow()
+        try {
+            core.vault.lock()
+        } finally {
+            relock()
         }
     }
 
@@ -661,7 +710,9 @@ internal class UnlockFlows(private val core: LockCore) {
      * 3. `state.rec`: a missing or damaged one is made again (§5.3; F14 step 2); `max_generation`
      *    follows the generation that opened, or a lower one is reported (F16c); a change of master
      *    password that never reached the disk is forgotten (§5.6).
-     * 4. The notices, in the order of §13.4, and the proof of a typed master password (§5.8).
+     * 4. The notices, in the order of §13.4, and the proof of a typed master password (§5.8). After
+     *    a master-password unlock a `fingerprint.rec` that read DAMAGED is replaced by one without a
+     *    slot, with the offer "Turn fingerprint unlock on again?" (§5.3, §13.4 item 5).
      * 5. **The list is shown** ([LockState.Unlocked]) before any of these records is written: the
      *    record of a right PIN is written right after, still under the mutex, so that no other step
      *    can overtake it (§6.3 E.6, decision 27), and the other writes follow it. All are best effort.
@@ -734,7 +785,13 @@ internal class UnlockFlows(private val core: LockCore) {
         wrongTries(lock)?.let { notices += it }
         choosePin(lock, by, chosen)?.let { notices += it }
         val fingerprintOff = lock.fingerprint.record?.takeIf { it.slot == null }?.off?.reason
-        if (fingerprintOff in FINGERPRINT_AGAIN && !core.noSecureHardware) notices += Notice.FingerprintAgain(core.nextNoticeId())
+        // A damaged `fingerprint.rec` is handled as F15a handles a key that is gone (§5.3): the offer
+        // comes with the next master-password unlock, and the damaged record goes at that unlock,
+        // whatever the answer, so that it no longer blocks the key sweep (§5.7).
+        val fingerprintDamaged = by == UnlockBy.MASTER_PASSWORD && lock.fingerprint.read is RecordRead.Damaged
+        if ((fingerprintOff in FINGERPRINT_AGAIN || fingerprintDamaged) && !core.noSecureHardware) {
+            notices += Notice.FingerprintAgain(core.nextNoticeId())
+        }
         if (by == UnlockBy.MASTER_PASSWORD && anyUnreadable(lock)) notices += Notice.StorageUnreadable(core.nextNoticeId())
 
         val proof = proofBytes?.let { core.newProof(it, lock.vaultId) }
@@ -743,6 +800,7 @@ internal class UnlockFlows(private val core: LockCore) {
 
         // The writes nobody waits for, the right PIN's record first.
         lock.pin.flush()
+        if (fingerprintDamaged) lock.fingerprint.replaceDamaged()
         if (before == null) {
             val read = lock.master.lastRead
             if (read is RecordRead.Missing || read is RecordRead.Damaged) {
@@ -794,7 +852,13 @@ internal class UnlockFlows(private val core: LockCore) {
         val typed = by == UnlockBy.MASTER_PASSWORD
         val reason = when (pin) {
             EntryPolicy.PinState.USABLE -> if (typed && chosen) ChoosePinReason.FORGOTTEN else null
-            EntryPolicy.PinState.NOT_SET -> if (typed) ChoosePinReason.NONE_HERE else null
+            // F16b step 6: the PIN of a vault that a replacement put aside went with `off = replaced`,
+            // because whoever replaced the master password knew it: "Someone else may know the old one."
+            EntryPolicy.PinState.NOT_SET -> when {
+                !typed -> null
+                lock.pin.record?.off?.reason == PinRecord.OffReason.REPLACED -> ChoosePinReason.SOMEONE_MAY_KNOW
+                else -> ChoosePinReason.NONE_HERE
+            }
             EntryPolicy.PinState.LIMIT -> ChoosePinReason.TURNED_OFF
             EntryPolicy.PinState.STOPPED_WORKING -> ChoosePinReason.STOPPED_WORKING
             EntryPolicy.PinState.MASTER_CHANGED -> ChoosePinReason.MASTER_CHANGED
@@ -814,7 +878,8 @@ internal class UnlockFlows(private val core: LockCore) {
     private fun anyUnreadable(lock: VaultLock): Boolean =
         lock.pinRead is RecordRead.Unreadable || lock.fingerprint.read is RecordRead.Unreadable || lock.stateRead is RecordRead.Unreadable
 
-    private fun newStateRecord(vaultId: String, practice: PracticeSchedule, generation: Long, nowWall: Long): StateRecord = StateRecord(
+    /** A new `state.rec` for [vaultId]: [practice], no counts, no mark, and [generation] as the highest this phone has opened. */
+    fun newStateRecord(vaultId: String, practice: PracticeSchedule, generation: Long, nowWall: Long): StateRecord = StateRecord(
         vaultId = vaultId,
         practice = StateRecord.Practice(practice.lastOkMs, practice.step, practice.snoozedUntilMs),
         mpGuard = StateRecord.MpGuard(failures = 0, lastFailElapsedMs = null, unseen = 0), // the guard writes its own counts

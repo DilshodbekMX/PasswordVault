@@ -5,6 +5,7 @@ import io.github.dilshodbekmx.passwordvault.core.crypto.CryptoFactory
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.DeviceKeys
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.FingerprintKey
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.KeyCreate
+import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockCause
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockEngine
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockScreen
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockState
@@ -189,8 +190,8 @@ internal class LockFixture(val clock: FakeClock = FakeClock(elapsedMs = 3_600_00
         return await { engine.checkMasterPassword(chars) }
     }
 
-    /** Locks as `AutoLock` does, with the app staying in front. */
-    fun lock() = await { engine.lock() }
+    /** Locks as `AutoLock` does, with the app staying in front: the no-touch timer, unless a test names another [cause]. */
+    fun lock(cause: LockCause = LockCause.NO_TOUCH) = await { engine.lock(cause) }
 
     /** The user leaves the app (`ON_STOP`) and comes back (`ON_START`). */
     fun leaveAndReturn() {

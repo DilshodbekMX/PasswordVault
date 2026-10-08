@@ -5,6 +5,7 @@ import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockState
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.MasterPasswordOutcome
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.MasterProof
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.NoticeAnswer
+import io.github.dilshodbekmx.passwordvault.core.lock.flow.PinSetOutcome
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.core.LockFixture
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.core.LockFixture.Companion.PASSWORD
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.core.LockFixture.Companion.await
@@ -56,7 +57,10 @@ internal fun LockFixture.answerEveryNotice() {
     for (notice in (state as LockState.Unlocked).notices) await { engine.answerNotice(notice.id, NoticeAnswer.OK) }
 }
 
-internal fun LockFixture.setPin(pin: String, proof: MasterProof): Boolean = await { engine.setPin(digits(pin), proof) }
+/** Whether the PIN was set and its record is on disk (`PinSetOutcome.Set`); [setPinOutcome] gives the outcome itself. */
+internal fun LockFixture.setPin(pin: String, proof: MasterProof): Boolean = setPinOutcome(pin, proof) == PinSetOutcome.Set
+
+internal fun LockFixture.setPinOutcome(pin: String, proof: MasterProof): PinSetOutcome = await { engine.setPin(digits(pin), proof) }
 
 internal fun LockFixture.changePin(current: String, new: String) = await { engine.changePin(digits(current), digits(new)) }
 

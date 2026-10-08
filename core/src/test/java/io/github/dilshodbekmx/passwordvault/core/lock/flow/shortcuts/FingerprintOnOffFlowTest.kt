@@ -2,6 +2,7 @@ package io.github.dilshodbekmx.passwordvault.core.lock.flow.shortcuts
 
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.FingerprintOnOutcome
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.KeyCreate
+import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockCause
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockEngine
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockScreen
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockState
@@ -211,7 +212,7 @@ class FingerprintOnOffFlowTest {
             val on = launch(start = CoroutineStart.UNDISPATCHED) { result = f.engine.fingerprintOn(proof) }
             assertEquals(PromptUse.TURN_ON, f.keys.openPrompt!!.use)
             // The launch ends and the prompt is cancelled (§9.2 rule 8, §10.4 step 2).
-            val lock = launch(start = CoroutineStart.UNDISPATCHED) { f.engine.lock() }
+            val lock = launch(start = CoroutineStart.UNDISPATCHED) { f.engine.lock(LockCause.NO_TOUCH) }
             on.join()
             lock.join()
             result
@@ -370,7 +371,8 @@ class FingerprintOnOffFlowTest {
         val (vault, proof) = openWithMasterPassword(fingerprint = true)
         val old = f.fingerprintAliasOnDisk()!!
         f.files.failNextWrite(FakeRecordFiles.WriteStep.DIR_SYNC) // §5.9: "not written", although the rename is on disk
-        assertEquals(FingerprintOnOutcome.Failed, f.fingerprintOn(proof))
+        // F9 step 9: the record read back is the new one, so nobody can promise that it was not turned on.
+        assertEquals(FingerprintOnOutcome.MayNotBeOn, f.fingerprintOn(proof))
         val onDisk = f.fingerprintAliasOnDisk()!!
         assertNotEquals(old, onDisk)
         assertTrue("a record names the new key: it was not deleted", onDisk in f.keys.aliases)

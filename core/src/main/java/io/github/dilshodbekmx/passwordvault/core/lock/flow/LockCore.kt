@@ -63,11 +63,38 @@ internal class OpenVault(
 )
 
 /**
+ * What writing the record of a new PIN or fingerprint slot came to (lock.md F6 steps 7 and 8, F9
+ * steps 8 and 9). When the write reports a failure the lock reads the record back and goes on with
+ * what is on disk: a failed directory sync counts as "not written" (§5.9) while the rename is
+ * already there, so the new record may be the one the next start reads.
+ */
+internal enum class SlotWrite {
+    /** The new record is on disk. */
+    WRITTEN,
+
+    /**
+     * The write failed and the record read back is not the new one: the earlier state stands, in
+     * memory and on disk. No record names the new key, which is left to the sweep (§5.7).
+     */
+    NOT_WRITTEN,
+
+    /**
+     * The write reported a failure, and the lock cannot say which record a later start will find.
+     * The record read back is the new one, and the lock goes on with it: the new slot works in this
+     * process, and after a power cut the earlier record may be back. Or the record could not be read
+     * back, and the lock goes on with the earlier one. Neither key is deleted: the sweep deletes the
+     * one that no record names (§5.7).
+     */
+    MAY_BE_WRITTEN,
+}
+
+/**
  * `fingerprint.rec` of one vault as the lock controller means to have it on disk (lock.md §5.5,
  * §6.3): what `PinGuard` is for `pin.rec`, without a counter. Every write stores the whole record,
  * so a write that failed is made good by the next one that succeeds. A record that read DAMAGED,
- * NEWER or UNREADABLE is not used and not rewritten (§5.3); only turning fingerprint unlock on
- * ([setSlot], "set it up again") replaces a DAMAGED or UNREADABLE one, and nothing replaces a NEWER
+ * NEWER or UNREADABLE is not used and not rewritten (§5.3), with two exceptions: turning
+ * fingerprint unlock on ([setSlot], "set it up again") replaces a DAMAGED or UNREADABLE one, and a
+ * DAMAGED one goes at the next master-password unlock ([replaceDamaged]). Nothing replaces a NEWER
  * one. Called under the lock mutex, with I/O on the engine's dispatcher.
  *
  * It deletes a fingerprint key only where lock.md says "at once": when its slot is removed. A key
@@ -108,19 +135,53 @@ internal class FingerprintKeeper(
 
     /**
      * Fingerprint unlock is turned on (lock.md F9 step 8): writes [slot] with `off = null`. It must
-     * reach the disk: when the write reports a failure the old record stays here, in memory, and it
-     * returns false. Such a write may still have replaced the record on disk (a failed directory
-     * `fsync` counts as not written, §5.9, while the rename is already there), so the flow leaves the
-     * new alias to the sweep and never deletes it (F9 step 9, as F6 step 8). The earlier key is left
-     * to the sweep too. A record that read NEWER is never replaced: false.
+     * reach the disk. When the write reports a failure the record is read back, and the keeper goes
+     * on with what is on disk (F9 step 9): the new record when the rename took place and only the
+     * directory sync failed (§5.9), otherwise the earlier one, which stays here as it was. Either
+     * way the flow never deletes the new alias: a record may name it, now or after a power cut. The
+     * earlier key is left to the sweep too (§5.7). A record that read NEWER is never replaced:
+     * [SlotWrite.NOT_WRITTEN].
      */
-    fun setSlot(slot: ShortcutSlot): Boolean {
+    fun setSlot(slot: ShortcutSlot): SlotWrite {
         require(Uuid.isValid(slot.id)) { "not a lower-case UUID of version 4" }
         require(slot.wraps.size in 1..RecordCodec.MAX_WRAPS && slot.wraps.map { it.vkId }.toSet().size == slot.wraps.size) {
             "a slot holds one or two wraps with different vk_ids"
         }
-        if (rec == null && lastRead is RecordRead.Newer) return false
+        if (rec == null && lastRead is RecordRead.Newer) return SlotWrite.NOT_WRITTEN
         val next = FingerprintRecord(vaultId, slot, off = null)
+        if (write(next)) {
+            rec = next
+            lastRead = RecordRead.Ok(next)
+            return SlotWrite.WRITTEN
+        }
+        val back = try {
+            store.read()
+        } catch (e: IOException) {
+            RecordRead.Unreadable
+        }
+        return when {
+            back is RecordRead.Ok && back.record.slot?.id == slot.id -> {
+                rec = back.record
+                lastRead = back
+                SlotWrite.MAY_BE_WRITTEN
+            }
+            back is RecordRead.Unreadable -> SlotWrite.MAY_BE_WRITTEN // what is on disk cannot be known now
+            else -> SlotWrite.NOT_WRITTEN
+        }
+    }
+
+    /**
+     * A `fingerprint.rec` that read DAMAGED goes (lock.md §5.3), at the master-password unlock that
+     * offers "Turn fingerprint unlock on again?": it is replaced by a record without a slot, with
+     * `off = key_gone`, as F15a leaves one. It is not repaired: which key it named cannot be known,
+     * so nothing is deleted here; with every record readable again the key sweep runs at the next
+     * start and deletes the key that no record names (§5.7). Returns whether the new record is on
+     * disk; when the write fails the record stays damaged, here and on disk, and the next
+     * master-password unlock tries again. Nothing happens to a record that did not read DAMAGED.
+     */
+    fun replaceDamaged(): Boolean {
+        if (rec != null || lastRead !is RecordRead.Damaged) return true
+        val next = FingerprintRecord(vaultId, slot = null, off = FingerprintRecord.Off(FingerprintRecord.OffReason.KEY_GONE, clock.wallMs()))
         if (!write(next)) return false
         rec = next
         lastRead = RecordRead.Ok(next)
@@ -262,6 +323,32 @@ internal class VaultLock(
         return result
     }
 
+    /**
+     * The record write of a new PIN slot [slotId] reported a failure (lock.md F6 step 8): `pin.rec`
+     * is read back, and the lock goes on with what is on disk. When that is the new record (the
+     * rename took place, and only the directory sync failed, §5.9), the guard takes it up as it
+     * takes up a record at its start-up step (§6.3 S): the new PIN works from now on, and what the
+     * guard remembered about the old one is forgotten. When it is not, the guard keeps the record it
+     * had. When it cannot be read back, the guard keeps the record it had too, and nobody can say
+     * which one a later start will find.
+     */
+    fun newPinWriteFailed(slotId: String): SlotWrite {
+        val back = try {
+            pinStore.read()
+        } catch (e: IOException) {
+            RecordRead.Unreadable
+        }
+        return when {
+            back is RecordRead.Ok && back.record.slot?.id == slotId -> {
+                pinStarted = true
+                interruptedAtStart = pin.startUp().interrupted
+                SlotWrite.MAY_BE_WRITTEN
+            }
+            back is RecordRead.Unreadable -> SlotWrite.MAY_BE_WRITTEN
+            else -> SlotWrite.NOT_WRITTEN
+        }
+    }
+
     /** `pin.rec` as the entry policy takes it (lock.md §13.1): the record in memory, or what reading the file gave. */
     val pinRead: RecordRead<PinRecord>
         get() = if (pinStarted) pin.record?.let { RecordRead.Ok(it) } ?: pin.lastRead else pinAtLoad
@@ -315,11 +402,11 @@ internal class LockVisit(val place: Place, val target: LockTarget) {
     var masterPasswordChosen = false
 
     /**
-     * Practice is not asked on this visit (lock.md §13.1 rows 3 and 4 are skipped): "I can't
-     * remember it" was chosen, and F11 step 3 wants the PIN or the fingerprint now (F10 step 4); or
-     * "Not now" was chosen while `state.rec` cannot hold the snooze (F10 step 3). `ShortcutFlows`
-     * sets it for "Not now" (build plan 3.13) and `PasswordFlows` for "I can't remember it" (4.4);
-     * nothing in the core does.
+     * Practice is not asked on this visit (lock.md §13.1 rows 3 and 4 are skipped,
+     * `EntryPolicy.Visit.practiceSkipped`): "I can't remember it" was chosen, and F11 step 3 wants
+     * the PIN or the fingerprint now (F10 step 4); or "Not now" was chosen while `state.rec` cannot
+     * hold the snooze (F10 step 3). `ShortcutFlows` sets it for "Not now" (build plan 3.13) and
+     * `PasswordFlows` for "I can't remember it" (4.4); nothing in the core does.
      */
     var practiceSkipped = false
 
@@ -611,22 +698,13 @@ internal class LockCore(
             val listed = checkNotNull(current) { "the current vault was listed" }
             EntryPolicy.Target.Current(listed, (listed.current as? CurrentVault.Present)?.olderCopyFirst == true)
         }
-        var stateRead = lock.stateRead
-        var nowWall = clock.wallMs()
-        if (visit?.practiceSkipped == true) {
-            // EntryPolicy has no input that skips rows 3 and 4. Until it has one, practice is made
-            // "not due" for this decision only: the clock at the last correct master password, or,
-            // without a record to hold that time, a record that asks for no practice.
-            val record = (stateRead as? RecordRead.Ok)?.record
-            if (record != null) nowWall = record.practice.lastOkMs else stateRead = RecordRead.Unreadable
-        }
         return EntryPolicy.decide(
             EntryPolicy.Input(
                 target = policyTarget,
                 pin = lock.pinRead,
                 fingerprint = lock.fingerprint.read,
-                state = stateRead,
-                nowWallMs = nowWall,
+                state = lock.stateRead,
+                nowWallMs = clock.wallMs(),
                 nowElapsedMs = clock.elapsedMs(),
                 canAuthenticate = visit?.canAuthenticate,
                 pinStartUpFailed = lock.pin.storageFull,
@@ -638,6 +716,7 @@ internal class LockCore(
                     fingerprintHidden = visit?.fingerprintHidden == true,
                     fingerprintLine = visit?.fingerprintLine,
                     needsOtherKeyCreatedMs = visit?.needsOtherKeyCreatedMs,
+                    practiceSkipped = visit?.practiceSkipped == true,
                 ),
             ),
         )
@@ -699,7 +778,7 @@ internal class LockCore(
         visit?.olderSet?.let { return LockScreen.OpenOlderSet(it.atMs, aside = decision.screen.aside) }
         val older = visit?.olderPassword
         if (older != null) {
-            return LockScreen.OlderPassword(older.changedAtMs, unfinishedChange = target.lock.state?.mpChange != null, aside = decision.screen.aside)
+            return LockScreen.OlderPassword(older.changedAtMs, unfinishedChange = changeUnfinished(target), aside = decision.screen.aside)
         }
         return when (val screen = decision.screen) {
             is LockScreen.Pad -> screen.copy(digits = visit?.count ?: 0, opening = visit?.opening == true)
@@ -710,6 +789,33 @@ internal class LockCore(
             )
             is LockScreen.FingerprintOnly, is LockScreen.OlderPassword, is LockScreen.OpenOlderSet -> screen
         }
+    }
+
+    /**
+     * Holds the mutex: whether a master password that opens only an older copy of [target]'s vault
+     * is offered "Open my passwords from before the change" (lock.md F16b, §5.6). The change must be
+     * marked unfinished (`mp_change` is set), and the copy it made must be the newest one on disk:
+     * that is the copy the offer gives up. A mark whose change never reached the disk leaves nothing
+     * to go back from; the newest copy is then the one from before that change, its own master
+     * password opens it, and a password from before an earlier, proven change gets "OK" only, as it
+     * does without a mark. Never on the lock screen of a vault put aside: storage puts newer
+     * generations aside in the current vault only (`VaultPort.putNewerAside`).
+     *
+     * And the kept copies must be under exactly two keys, the one the change made and one more:
+     * that one is then the key the change started from, and the typed password, which opened an
+     * older copy, is the master password from directly before the change. With a third key kept (a
+     * second change before the copies of the first were retired, F8 step 10) storage cannot say
+     * which older key the typed password opened, and `putNewerAside` would put aside every copy
+     * above it, those of an earlier change that was proven among them: a master password the owner
+     * changed away from would undo that change ("An old master password has to stop working when
+     * the user changes it", decision 20). Nor when storage could not read every live copy.
+     */
+    fun changeUnfinished(target: LockTarget): Boolean {
+        val change = target.lock.state?.mpChange ?: return false
+        if (target.aside != null) return false
+        val present = (scan?.current as? CurrentVault.Present)?.takeIf { it.vaultId == target.vaultId } ?: return false
+        val kept = present.keptVkIds ?: return false
+        return present.newest.vkId == change.toVkId && kept.size == 2 && change.toVkId in kept
     }
 
     /**

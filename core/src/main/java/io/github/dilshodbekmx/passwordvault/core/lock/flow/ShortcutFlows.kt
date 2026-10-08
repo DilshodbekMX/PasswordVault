@@ -43,6 +43,13 @@ import kotlinx.coroutines.withContext
  * rename is already on disk). If the record did change, the next start finds a key behind it; if it
  * did not, the next start's sweep deletes the key, which no record names.
  *
+ * **A record write that reports a failure** (F6 step 8, F9 step 9; the owner's decision of
+ * 2026-10-08). The lock reads the record back and goes on with what is on disk (`SlotWrite`): the
+ * earlier record, and the flow answers that nothing was saved; or the new record, which this process
+ * then works from, or a record that cannot be read back, and the flow answers that the new PIN or
+ * fingerprint may not have been saved (`PinSetOutcome.MayNotBeSaved`, `PinChangeOutcome.MayNotBeSaved`,
+ * `FingerprintOnOutcome.MayNotBeOn`), so that the screen promises nothing it cannot know.
+ *
  * **What the core already does, so that it is not done twice.**
  * - F15 on the lock screen is `UnlockFlows`: a PIN key that is GONE or does not answer (`PinGuard`,
  *   §6.3 E.3), a fingerprint key that is GONE at the probe or after the prompt (the slot removed
@@ -72,21 +79,27 @@ internal class ShortcutFlows(private val core: LockCore) {
      * (§6.4), `unseen` is kept, and the remembered wrong PINs are forgotten (§6.6). A slot that was
      * there is replaced; its key is left to the sweep.
      *
-     * False, with nothing changed (the old record stays, and so does the old PIN where one works):
-     * the app is not unlocked, [proof] is not one this engine holds for the open vault, the PIN is
-     * one the blocklist refuses (§7.2: the screen checks first, with `LockManager.pinProblem`; this
-     * is the engine's own guard), `pin.rec` was written by a newer app (§5.3), this phone cannot
-     * hold a key now or ever (F18), or a step of 4 to 7 failed. [pin] stays the caller's, which
-     * wipes it.
+     * [PinSetOutcome.NotSet], with nothing changed (the old record stays, and so does the old PIN
+     * where one works): the app is not unlocked, [proof] is not one this engine holds for the open
+     * vault, the PIN is one the blocklist refuses (§7.2: the screen checks first, with
+     * `LockManager.pinProblem`; this is the engine's own guard), `pin.rec` was written by a newer app
+     * (§5.3), this phone cannot hold a key now or ever (F18), or a step of 4 to 7 failed and the
+     * record on disk is the one from before. [PinSetOutcome.MayNotBeSaved]: the record write of step 7
+     * reported a failure, and the record read back is the new one or cannot be read (step 8). [pin]
+     * stays the caller's, which wipes it.
      *
      * @throws IllegalArgumentException when [pin] is not six ASCII digits: the pad produces nothing else.
      */
-    suspend fun setPin(pin: ByteArray, proof: MasterProof): Boolean {
+    suspend fun setPin(pin: ByteArray, proof: MasterProof): PinSetOutcome {
         require(PinWrap.isPin(pin)) { "a PIN is six ASCII digits" }
-        val open = openVault() ?: return false
-        if (!core.holds(proof) || proof.vaultId != open.vaultId) return false
+        val open = openVault() ?: return PinSetOutcome.NotSet
+        if (!core.holds(proof) || proof.vaultId != open.vaultId) return PinSetOutcome.NotSet
         // A lock or ON_STOP drops the proof at once, without the mutex (§5.8): asked again before the write.
-        return newPin(core.lockOf(open.vaultId), pin, masterPasswordTyped = true) { core.holds(proof) }
+        return when (newPin(core.lockOf(open.vaultId), pin, masterPasswordTyped = true) { core.holds(proof) }) {
+            SlotWrite.WRITTEN -> PinSetOutcome.Set
+            SlotWrite.NOT_WRITTEN -> PinSetOutcome.NotSet
+            SlotWrite.MAY_BE_WRITTEN -> PinSetOutcome.MayNotBeSaved
+        }
     }
 
     /**
@@ -108,7 +121,10 @@ internal class ShortcutFlows(private val core: LockCore) {
      *   PIN that does not yield the open vault's key: its slot opens only a key from before a
      *   master-password change, and a new PIN under the current key would add a way in (§8.2).
      * - A lock or `ON_STOP` while the change runs ends it (its prompt has ended, I11): nothing
-     *   changes, [PinChangeOutcome.NotSaved]. So does a failure of steps 4 to 7.
+     *   changes, [PinChangeOutcome.NotSaved]. So does a failure of steps 4 to 7 that leaves the old
+     *   record on disk.
+     * - The record write of step 7 reported a failure, and the record read back is the new one or
+     *   cannot be read (step 8): [PinChangeOutcome.MayNotBeSaved].
      *
      * @throws IllegalArgumentException when either PIN is not six ASCII digits, before anything is charged.
      */
@@ -148,25 +164,33 @@ internal class ShortcutFlows(private val core: LockCore) {
             false
         }
         if (!yields) return PinChangeOutcome.CannotCheck
-        val changed = newPin(core.lockOf(open.vaultId), new, masterPasswordTyped = false) { !at.hasEnded }
-        return if (changed) PinChangeOutcome.Changed else PinChangeOutcome.NotSaved
+        return when (newPin(core.lockOf(open.vaultId), new, masterPasswordTyped = false) { !at.hasEnded }) {
+            SlotWrite.WRITTEN -> PinChangeOutcome.Changed
+            SlotWrite.NOT_WRITTEN -> PinChangeOutcome.NotSaved
+            SlotWrite.MAY_BE_WRITTEN -> PinChangeOutcome.MayNotBeSaved
+        }
     }
 
     /**
      * Holds the mutex: F6 steps 4 to 8 for the vault of [lock], which is open. A new slot with one
-     * wrap, for the key of the open vault, made, tested and written; true when the record is on disk.
-     * [wanted] says whether the flow that asked still stands (its proof is held, its prompt has not
-     * ended): a lock or `ON_STOP` ends it at once, without the mutex, so it is asked before the key
-     * is made and again just before the record is written.
+     * wrap, for the key of the open vault, made, tested and written: [SlotWrite.WRITTEN] when the
+     * record is on disk. [wanted] says whether the flow that asked still stands (its proof is held,
+     * its prompt has not ended): a lock or `ON_STOP` ends it at once, without the mutex, so it is
+     * asked before the key is made and again just before the record is written.
+     *
+     * When the record write of step 7 reports a failure, the record is read back and the lock goes
+     * on with what is on disk (step 8, `VaultLock.newPinWriteFailed`): [SlotWrite.NOT_WRITTEN] with
+     * the old record, [SlotWrite.MAY_BE_WRITTEN] with the new one or with one that cannot be read
+     * back. The new key is left to the sweep in each case (see the class).
      */
-    private suspend fun newPin(lock: VaultLock, pin: ByteArray, masterPasswordTyped: Boolean, wanted: () -> Boolean): Boolean {
+    private suspend fun newPin(lock: VaultLock, pin: ByteArray, masterPasswordTyped: Boolean, wanted: () -> Boolean): SlotWrite {
         // The guard writes the new record over the one it read at its start-up step (§6.3 S): that
         // step must have run, or a record on disk would be overwritten unread.
         lock.startPin()
-        if (lock.pinRead == RecordRead.Newer) return false // a newer app owns it: never replaced (§5.3)
-        if (PinBlocklist.rule(pin) != 0) return false // §7.2: there is no "use it anyway"
-        if (core.canHoldKeys() != KeyCreate.Ok) return false // step 4: the canary; F18 or NOT NOW
-        if (!wanted()) return false
+        if (lock.pinRead == RecordRead.Newer) return SlotWrite.NOT_WRITTEN // a newer app owns it: never replaced (§5.3)
+        if (PinBlocklist.rule(pin) != 0) return SlotWrite.NOT_WRITTEN // §7.2: there is no "use it anyway"
+        if (core.canHoldKeys() != KeyCreate.Ok) return SlotWrite.NOT_WRITTEN // step 4: the canary; F18 or NOT NOW
+        if (!wanted()) return SlotWrite.NOT_WRITTEN
 
         val slotId = core.random.uuid()
         val alias = PinWrap.alias(slotId)
@@ -177,7 +201,7 @@ internal class ShortcutFlows(private val core: LockCore) {
         }
         if (made != KeyCreate.Ok) { // NOT NOW (§14.3): the half-made alias goes, nothing else changes
             deleteQuietly(alias)
-            return false
+            return SlotWrite.NOT_WRITTEN
         }
         val slot = try {
             wrapAndTest(lock.vaultId, slotId, alias, pin)
@@ -186,17 +210,20 @@ internal class ShortcutFlows(private val core: LockCore) {
         }
         if (slot == null || !wanted()) { // step 8: no record names the new key
             deleteQuietly(alias)
-            return false
+            return SlotWrite.NOT_WRITTEN
         }
-        // Step 7. When this write fails the old record stays in memory, and the new key is left to the
-        // sweep: the write may have replaced the record all the same (see the class).
-        if (!lock.pin.setPin(slot, masterPasswordTyped)) return false
-        // What the process remembered about the PIN before was about the old one: the pad's line about
-        // an entry interrupted at start (§13.3), and the offer made once after a fingerprint unlock (F5 step 4).
-        lock.interruptedAtStart = false
-        lock.choosePinOffered = false
+        // Step 7. When this write reports a failure the record is read back (step 8), and the new key
+        // is left to the sweep: the write may have replaced the record all the same (see the class).
+        val written = if (lock.pin.setPin(slot, masterPasswordTyped)) SlotWrite.WRITTEN else lock.newPinWriteFailed(slotId)
+        if (written == SlotWrite.NOT_WRITTEN) return written
+        if (lock.pin.record?.slot?.id == slotId) {
+            // What the process remembered about the PIN before was about the old one: the pad's line about
+            // an entry interrupted at start (§13.3), and the offer made once after a fingerprint unlock (F5 step 4).
+            lock.interruptedAtStart = false
+            lock.choosePinOffered = false
+        }
         core.publishSummary()
-        return true
+        return written
     }
 
     /**
@@ -289,8 +316,10 @@ internal class ShortcutFlows(private val core: LockCore) {
      * fingerprint in your phone's settings first."), [FingerprintOnOutcome.NoSecureHardware] (F18),
      * [FingerprintOnOutcome.Cancelled] (a closed prompt, codes 10, 13 and 5),
      * [FingerprintOnOutcome.NotShown] (the prompt could not be shown now, §9.2 rule 3, or another
-     * prompt is open, rule 4), and [FingerprintOnOutcome.Failed] for everything else, a proof this
-     * engine does not hold for the open vault among it. A result whose launch is no longer
+     * prompt is open, rule 4), [FingerprintOnOutcome.MayNotBeOn] (the record write of step 8 reported
+     * a failure, and the record read back is the new one or cannot be read, step 9), and
+     * [FingerprintOnOutcome.Failed] for everything else, a proof this engine does not hold for the
+     * open vault among it. A result whose launch is no longer
      * outstanding (`LockCore.launchEnded` false: a lock or `ON_STOP` came while the prompt was open)
      * changes nothing: [FingerprintOnOutcome.Cancelled].
      */
@@ -404,14 +433,16 @@ internal class ShortcutFlows(private val core: LockCore) {
                 deleteQuietly(turnOn.alias)
                 return FingerprintOnOutcome.Failed
             }
-            // Step 8: one wrap, for the key of the open vault. When the write fails the earlier record
-            // stays in memory, and the new key is left to the sweep (see the class).
+            // Step 8: one wrap, for the key of the open vault. When the write reports a failure the
+            // record is read back (step 9), and the new key is left to the sweep (see the class).
             val wrap = KeyWrap(turnOn.vkId, sealed.nonce.copyOf(), sealed.bytes.copyOf())
-            if (!turnOn.lock.fingerprint.setSlot(ShortcutSlot(turnOn.slotId, core.clock.wallMs(), listOf(wrap)))) {
-                return FingerprintOnOutcome.Failed
-            }
+            val written = turnOn.lock.fingerprint.setSlot(ShortcutSlot(turnOn.slotId, core.clock.wallMs(), listOf(wrap)))
             core.publishSummary()
-            return FingerprintOnOutcome.On
+            return when (written) {
+                SlotWrite.WRITTEN -> FingerprintOnOutcome.On
+                SlotWrite.NOT_WRITTEN -> FingerprintOnOutcome.Failed
+                SlotWrite.MAY_BE_WRITTEN -> FingerprintOnOutcome.MayNotBeOn
+            }
         } finally {
             sealed?.let { Bytes.wipe(it.bytes) }
         }

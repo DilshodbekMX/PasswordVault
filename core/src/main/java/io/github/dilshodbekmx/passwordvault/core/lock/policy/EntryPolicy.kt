@@ -56,7 +56,13 @@ import io.github.dilshodbekmx.passwordvault.core.lock.record.StateRecord
  *
  * **Practice** (§5.3, §8.3): a `state.rec` that is MISSING or DAMAGED means practice due now and
  * still skippable; NEWER or UNREADABLE means practice is not asked. It is never asked while a new
- * master password is pending, without a usable shortcut, or on a vault put aside.
+ * master password is pending, without a usable shortcut, on a vault put aside, or on a visit on
+ * which it was skipped ([Visit.practiceSkipped]: "I can't remember it", F10 step 4, and "Not now"
+ * where no record can hold the snooze, F10 step 3).
+ *
+ * **A damaged `fingerprint.rec`** (§5.3) is not offered, and the screen says so with a fingerprint
+ * line ([DAMAGED_FINGERPRINT_LINE]), as after a fingerprint key that is gone (F15a); a
+ * master-password unlock then offers to turn fingerprint unlock on again (§13.4 item 5).
  *
  * The screens hold facts, never sentences (lock.md §11); the lock screens pick the texts of §13.3
  * from them.
@@ -67,6 +73,16 @@ object EntryPolicy {
 
     /** At most this many tries are left when a fresh pad warns "2 tries left before the PIN turns off" (§6.4, §13.3). */
     const val WARN_AT_TRIES_LEFT = 2
+
+    /**
+     * The line of lock.md §13.3 while `fingerprint.rec` reads DAMAGED (§5.3): "Fingerprint unlock
+     * stopped working on this phone. Use your PIN. You can turn it on again in Settings." The lock
+     * screens have no fact for that sentence yet (`FingerprintLine` is their contract, architecture.md
+     * §3.5), so until it has one this is the line of a fingerprint key that is gone (F15a), which the
+     * decision of 2026-10-08 names as the case to follow: not offered, and "You can turn it on again
+     * in Settings."
+     */
+    val DAMAGED_FINGERPRINT_LINE: FingerprintLine = FingerprintLine.TurnedOff
 
     /** Which vault the lock screen is for. */
     sealed interface Target {
@@ -117,6 +133,11 @@ object EntryPolicy {
      * @property needsOtherKeyCreatedMs a PIN or fingerprint opened no usable copy on this visit:
      *   `VaultOpen.NeedsOtherKey(_, createdMs)` (lock.md F16a). Neither shortcut is offered again on
      *   this visit, and the master-password screen names the copy that opens.
+     * @property practiceSkipped practice is not asked on this visit, so rows 3 and 4 of §13.1 are
+     *   passed over: "I can't remember it" was chosen, and F11 step 3 wants the PIN or the fingerprint
+     *   now (F10 step 4); or "Not now" was chosen where `state.rec` cannot hold the snooze (F10 step
+     *   3). Nothing else of the decision changes: what the records say about practice is still
+     *   overdue, and the standing banner of §13.4 item 6 says so in the open app.
      */
     data class Visit(
         val masterPasswordChosen: Boolean = false,
@@ -125,6 +146,7 @@ object EntryPolicy {
         val fingerprintHidden: Boolean = false,
         val fingerprintLine: FingerprintLine? = null,
         val needsOtherKeyCreatedMs: Long? = null,
+        val practiceSkipped: Boolean = false,
     )
 
     /**
@@ -313,8 +335,9 @@ object EntryPolicy {
             fingerprintLine = fingerprint.line,
         )
 
-        // Rows 3 and 4: practice, on the current vault, while a shortcut would open it.
-        if (current && (pinUsable || fingerprint.usable)) {
+        // Rows 3 and 4: practice, on the current vault, while a shortcut would open it, unless it was
+        // skipped for this visit.
+        if (current && !visit.practiceSkipped && (pinUsable || fingerprint.usable)) {
             when (practice(input.state, input.nowWallMs)) {
                 PracticeSchedule.Status.REQUIRED ->
                     return locked(Row.PRACTICE_REQUIRED, masterPassword(MpReason.PracticeDue, canUsePin = false, Practice(notNow = null)))
@@ -417,6 +440,8 @@ object EntryPolicy {
         val canAuthenticate = input.canAuthenticate
         val usable = on && !visit.fingerprintHidden && canAuthenticate != null && KeystoreErrors.mayProbe(canAuthenticate)
         val unavailable = when {
+            // §5.3: a damaged record is not offered, and the screen says that fingerprint unlock stopped working.
+            input.fingerprint is RecordRead.Damaged -> DAMAGED_FINGERPRINT_LINE
             !on || usable -> null
             visit.fingerprintHidden -> FingerprintLine.CannotCheck
             canAuthenticate == null -> null
