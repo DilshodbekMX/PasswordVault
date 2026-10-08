@@ -610,16 +610,19 @@ secure_prepare() {
     done
 }
 
-# The app's window has FLAG_SECURE (0x2000): named SECURE from Android 9 on, a hex mask on Android 7.
+# The app's window has FLAG_SECURE (0x2000): its flags (fl=) are named from Android 9 on, a hex mask
+# on Android 7.
 window_is_secure() {
-    local attrs flags
-    attrs=$(pv_shell dumpsys window windows 2>/dev/null | tr -d '\r' \
-        | awk -v w="$PV_PACKAGE/$PV_PACKAGE.MainActivity" 'index($0, "Window{") && index($0, w) { on = 1; next } on && /mAttrs=/ { print; exit }')
-    [ -n "$attrs" ] || { pv_log "the app's window is not in dumpsys window"; return 1; }
-    note "$(printf '%s' "$attrs" | sed 's/^ *//' | cut -c1-160)"
-    case " $attrs " in *" SECURE "* | *" SECURE}"*) return 0 ;; esac
-    flags=$(printf '%s' "$attrs" | sed -n 's/.* fl=#\([0-9a-f]*\).*/\1/p')
-    [ -n "$flags" ] && [ $((0x$flags & 0x2000)) -ne 0 ] || { pv_log "no FLAG_SECURE on the app's window"; return 1; }
+    local flags mask
+    flags=$(pv_shell dumpsys window windows 2>/dev/null | tr -d '\r' \
+        | awk -v w="$PV_PACKAGE/$PV_PACKAGE.MainActivity" '
+            / Window #[0-9]+ Window\{/ { on = index($0, w) > 0; next }
+            on && / fl=/ { sub(/.* fl=/, ""); print; exit }')
+    [ -n "$flags" ] || { pv_log "no flags of the app's window in dumpsys window"; return 1; }
+    note "the app's window: fl=$(printf '%s' "$flags" | cut -c1-120)"
+    case " $flags " in *" SECURE "*) return 0 ;; esac
+    mask=$(printf '%s' "$flags" | sed -n 's/^#\([0-9a-f]*\).*/\1/p')
+    [ -n "$mask" ] && [ $((0x$mask & 0x2000)) -ne 0 ] || { pv_log "no FLAG_SECURE on the app's window"; return 1; }
 }
 
 # black_share FILE: the share of black pixels between 10 % and 90 % of the picture's height (the app's
@@ -641,9 +644,16 @@ print(f"{black / total:.4f}")
 EOF
 }
 
+# screencap shows nothing of the app: on Android 7 and 17 its picture is black where the app is; on
+# Android 9 screencap refuses while a secure window is shown (exit 1, no picture).
 screencap_is_black() {
     local file=$LOGS/$PV_SERIAL-staging-screencap.png share
-    capture "$file" || { pv_log "screencap gave nothing"; return 1; }
+    pva_in_front || { pv_log "the app is not in front: $(pv_focus)"; return 1; }
+    pv_adb exec-out screencap -p > "$file" 2> /dev/null
+    if [ ! -s "$file" ]; then
+        note "screencap wrote no picture: $(pv_shell 'screencap -p /data/local/tmp/pv-secure.png > /dev/null 2>&1; echo exit $?; rm -f /data/local/tmp/pv-secure.png' | tr -d '\r' | tr '\n' ' ')"
+        return 0
+    fi
     share=$(black_share "$file") || return 1
     note "screencap: $share of the app's area is black ($file)"
     python3 -c "import sys; sys.exit(0 if float(sys.argv[1]) >= 0.999 else 1)" "$share"
@@ -668,7 +678,7 @@ run_secure() {
     echo "secure: $PV_SERIAL (API $(pv_api)): $APK"
     pv_step "install afresh; set up; an account, its password shown" -- secure_prepare || { pv_summary; return 1; }
     pv_step "the app's window has FLAG_SECURE" -- window_is_secure
-    pv_step "adb exec-out screencap -p: the app's area is black" -- screencap_is_black
+    pv_step "adb exec-out screencap -p: nothing of the app (its area black, or no picture)" -- screencap_is_black
     pv_step "the control: the emulator's own screenshot of the same screen is not black" -- emulator_shot_is_not_black
     pv_step "the app did not crash" -- pva_no_crash
     pv_shell input keyevent KEYCODE_HOME >/dev/null 2>&1
