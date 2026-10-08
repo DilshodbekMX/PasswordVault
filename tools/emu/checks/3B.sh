@@ -588,6 +588,20 @@ dialog_copied() {
     pva_on Entry 20
 }
 
+# foreign_run: says so when another adb client stopped or started the app on this device since the
+# log was cleared (pva_start). Android Studio's Run does both ("shell:am force-stop", "shell:am start
+# -n ...", the form ddmlib sends; these scripts send "shell,v2,raw:"), and it lands on a private
+# emulator when that one is chosen in Studio's device list: seen three times on emulator-5580 during
+# the 3B device check, where each one broke the step that was running. Android 7 and 9 do not log
+# the requests.
+foreign_run() {
+    local lines
+    lines=$(pv_shell logcat -d -s adbd:I 2>/dev/null | tr -d '\r' | grep -E "service requested 'shell:am (force-stop|start) [^']*$PV_PACKAGE" | sed -E 's/^[0-9-]+ +([0-9:]+)[^:]*:.*requested (.*)$/\1 \2/' | cut -c1-120)
+    [ -n "$lines" ] || return 0
+    echo "NOTE another adb client (Android Studio's Run?) stopped or started the app on $PV_SERIAL during this run:"
+    printf '%s\n' "$lines" | sed 's/^/     /'
+}
+
 run_clip() {
     pv_use "$1"
     pva_init
@@ -605,6 +619,7 @@ run_clip() {
     pv_step "7. a word of the note selected and copied with the toolbar's Copy: flagged, with a token; the row says Copied" -- note_copied
     pv_step "8. iface-66: the Add field dialog's value copied with the toolbar's Copy: flagged, with a token; not cut" -- dialog_copied
     pv_step "the app did not crash" -- pva_no_crash
+    foreign_run
     pv_shell input keyevent KEYCODE_HOME >/dev/null 2>&1
     pv_summary
 }
@@ -701,6 +716,7 @@ run_secure() {
     pv_step "adb exec-out screencap -p: nothing of the app (its area black, or no picture)" -- screencap_is_black
     pv_step "the control: the emulator's own screenshot of the same screen is not black" -- emulator_shot_is_not_black
     pv_step "the app did not crash" -- pva_no_crash
+    foreign_run
     pv_shell input keyevent KEYCODE_HOME >/dev/null 2>&1
     pv_summary
 }
@@ -939,7 +955,7 @@ in_parallel() {
         wait "${pids[$api]}"
         status=$?
         echo "   $name on API $api (${SER[$api]}): exit $status"
-        grep -E '^(PASS|FAIL|SKIPPED|SUMMARY|   )' "$LOGS/$name-$api.log" | sed 's/^/     /'
+        grep -E '^(PASS|FAIL|SKIPPED|SUMMARY|NOTE|   )' "$LOGS/$name-$api.log" | sed 's/^/     /'
         [ $status -eq 0 ] || rc=1
     done
     return $rc

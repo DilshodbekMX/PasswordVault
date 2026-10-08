@@ -279,3 +279,13 @@ says `Found systemPath /home/asus/pvlab/sysimg/...`).
   and `pvc_get` makes Android 12 and later show "Shell pasted from your clipboard" over the row's
   middle: a script that looks at the row's countdown does so before `pvc_get`, and again a few
   seconds later when the overlay hides it (`checks/3B.sh`, `row_counts_down`).
+- Android Studio's Run can land on a private emulator: its device list shows every running emulator
+  (`pvlab_api37 [emulator-5580]`), and with one of them chosen each Run stops, reinstalls and starts
+  the app there (`am force-stop`, a full deploy, `am start -n ... -a android.intent.action.MAIN`), in
+  the middle of whatever a script is doing. On 2026-10-08 it did so on emulator-5580 at 14:58:47,
+  16:41:45 and 16:42:19 (idea.log: "Full deploy on emulator-5580"); each time the step that was
+  running failed (`clipboard/clear.sh`'s case `other`: the force-stop removed the clear alarm; step 8
+  of `checks/3B.sh clip`: the app was suddenly locked). On API 37 adbd logs every request, so
+  `adb logcat -d -s adbd:I` shows the foreign ones as `shell:am ...` where these scripts send
+  `shell,v2,raw:...`; `checks/3B.sh` prints them as a NOTE (`foreign_run`). A step that failed on an
+  API 37 device for no reason of its own is checked against that first.
