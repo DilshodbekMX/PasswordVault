@@ -8,8 +8,8 @@ import io.github.dilshodbekmx.passwordvault.core.model.Vault
  * at every boundary (lock.md §15.1).
  *
  * `open` and `openWithPassword` on [VaultRef.Aside] open that vault in place and keep it, still
- * apart from the current one, until [swapIn], [mergeAside] or a lock; only one vault put aside is
- * held at a time. The lock checks the master password of a vault put aside under that vault's own
+ * apart from the current one, until [swapIn], [mergeAside], a [deleteAside] that deleted it,
+ * [dropAside] or a lock; only one vault put aside is held at a time. The lock checks the master password of a vault put aside under that vault's own
  * guard and records (lock.md §6.8). Byte arrays passed in belong to the caller, which wipes them.
  *
  * What a caller must know (architecture.md §3.4): [vaults] reads every live generation file, so it is
@@ -43,6 +43,14 @@ interface VaultPort {
 
     /** Waits for a save that is running, then drops the session. Never writes. */
     suspend fun lock()
+
+    /**
+     * Drops only the vault put aside that is held open in place, with its key zeroed; the open
+     * current vault stays as it is, and nothing happens when none is held. For a check in the open
+     * app that opened such a vault and then neither merged nor deleted it (lock.md §6.8 step 8, I11;
+     * F17 step 5). Never writes.
+     */
+    suspend fun dropAside()
 
     // The only calls that write vault data (lock.md I1): F1, F8, F11, F13, F16b, F17. Each proves a
     // new slot from disk before it publishes (architecture.md §4.9).

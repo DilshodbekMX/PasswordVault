@@ -290,6 +290,13 @@ internal class VaultFlows(private val core: LockCore) {
     private suspend fun mergeLocked(vaultId: String, chars: CharArray, at: Place): AsideOutcome {
         val lock = asideToChange(vaultId, at) ?: return AsideOutcome.NotSaved
         refusal(checkOwnPassword(lock, chars, at))?.let { return it }
+        val outcome = mergeChecked(vaultId, at)
+        if (outcome != AsideOutcome.Done) dropAsideHeld() // opened in place by the check, and not merged
+        return outcome
+    }
+
+    /** Holds the mutex: "Open", once that vault's own master password has opened it in place. */
+    private suspend fun mergeChecked(vaultId: String, at: Place): AsideOutcome {
         if (at.hasEnded) return AsideOutcome.NotSaved
         val write = core.vault.mergeAside(vaultId)
         core.rescan()
@@ -339,6 +346,13 @@ internal class VaultFlows(private val core: LockCore) {
     private suspend fun deleteLocked(vaultId: String, chars: CharArray, at: Place): AsideOutcome {
         val lock = asideToChange(vaultId, at) ?: return AsideOutcome.NotSaved
         refusal(checkOwnPassword(lock, chars, at))?.let { return it }
+        val outcome = deleteChecked(vaultId, lock, at)
+        if (outcome != AsideOutcome.Done) dropAsideHeld() // opened in place by the check, and not deleted
+        return outcome
+    }
+
+    /** Holds the mutex: "Delete", once that vault's own master password has opened it in place. */
+    private suspend fun deleteChecked(vaultId: String, lock: VaultLock, at: Place): AsideOutcome {
         val onPhone = vaultsOnPhone() ?: return AsideOutcome.NotSaved
         if (vaultId !in onPhone || vaultId == core.open?.vaultId) return AsideOutcome.NotSaved
         val settled = settleMarksNaming(vaultId, onPhone - vaultId)
@@ -405,12 +419,12 @@ internal class VaultFlows(private val core: LockCore) {
      * Holds the mutex. lock.md §6.8 for the vault of [lock], put aside, in the prompt [at] of the open
      * app, under **its own** guard: its wait when one is due, the try counted before Argon2id runs,
      * only its own slots tried (`openWithPassword` on `VaultRef.Aside`, which keeps it open in place
-     * until `mergeAside`, `deleteAside` or a lock). Right: that vault's PIN counts return to zero
-     * (§6.4; its counter's start-up step runs first if its lock screen has not been shown in this
-     * process, so that a charge left on disk is counted before the reset), also when the answer
-     * comes too late. Wrong, or a password that opens only an older copy of it (§6.8 step 6):
-     * counted. Not enough memory: not counted. No generation of it can be used now: neither right
-     * nor wrong, and nothing happens.
+     * until `mergeAside`, `deleteAside`, [dropAsideHeld] or a lock). Right: that vault's PIN counts
+     * return to zero (§6.4; its counter's start-up step runs first if its lock screen has not been
+     * shown in this process, so that a charge left on disk is counted before the reset), also when
+     * the answer comes too late; the vault that opened is then dropped again. Wrong, or a password
+     * that opens only an older copy of it (§6.8 step 6): counted. Not enough memory: not counted.
+     * No generation of it can be used now: neither right nor wrong, and nothing happens.
      */
     private suspend fun checkOwnPassword(lock: VaultLock, chars: CharArray, at: Place): OwnPassword {
         val bytes = MasterPasswordBytes.of(chars)
@@ -431,7 +445,12 @@ internal class VaultFlows(private val core: LockCore) {
                     MpCheck.RIGHT -> {
                         lock.startPin()
                         lock.pin.masterPasswordCorrect()
-                        if (attempt.tooLate) OwnPassword.Refused(AsideOutcome.NotSaved) else OwnPassword.Right
+                        if (attempt.tooLate) {
+                            dropAsideHeld() // right, and too late: the records are updated and the key is dropped (§6.8 step 8)
+                            OwnPassword.Refused(AsideOutcome.NotSaved)
+                        } else {
+                            OwnPassword.Right
+                        }
                     }
                     MpCheck.WRONG -> OwnPassword.Refused(AsideOutcome.Wrong)
                     MpCheck.NOT_COUNTED ->
@@ -440,6 +459,21 @@ internal class VaultFlows(private val core: LockCore) {
             }
         } finally {
             Bytes.wipe(bytes)
+        }
+    }
+
+    /**
+     * Holds the mutex. The vault put aside that a check in the open app opened in place is dropped
+     * again, with its key (lock.md §6.8 step 8, I11): its master password was right, and nothing came
+     * of it, because the prompt had ended by then, or the merge or the delete failed or was refused.
+     * `VaultPort.dropAside` leaves the open current vault as it is; `VaultPort.lock` would lock the
+     * open app with it. Without this that vault's key and accounts stayed in memory until the next lock.
+     */
+    private suspend fun dropAsideHeld() {
+        try {
+            core.vault.dropAside()
+        } catch (e: RuntimeException) {
+            // It cannot be reached: the next lock drops it with everything else.
         }
     }
 

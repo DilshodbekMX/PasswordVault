@@ -108,6 +108,41 @@ class LockTest(private val kind: DiskKind) {
     }
 
     @Test
+    fun dropAsideZeroesTheKeyOfTheVaultPutAsideAlone_andNothingOfItRemains() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val scope = CoroutineScope(SupervisorJob() + dispatcher)
+        try {
+            val repo = phone.process(scope, dispatcher)
+            repo.create(vaultId(1), password = OTHER_PASSWORD)
+            repo.edit { vault, _ -> Edited(vault.copy(entries = listOf(entry(7, title = "old-secret-title"))), Unit) }
+            repo.lock()
+            assertTrue(repo.putAside())
+            repo.create(vaultId(2))
+            repo.edit { vault, _ -> Edited(vault.copy(entries = listOf(entry(1))), Unit) }
+            repo.unlock(OTHER_PASSWORD, VaultRef.Aside(vaultId(1)))
+            testScheduler.advanceUntilIdle()
+            val held = openedVaultsOf(repo)
+            assertEquals("the current vault and the one put aside", 2, held.size)
+
+            repo.dropAside()
+
+            val left = openedVaultsOf(repo)
+            assertEquals("only the open vault is held", 1, left.size)
+            val dropped = held.single { it !== left.single() }
+            assertTrue("the key of the vault put aside is zeroed", vkOf(dropped).all { it == 0.toByte() })
+            assertTrue("the open vault's key is as it was", vkOf(left.single()).any { it != 0.toByte() })
+            val texts = reachableFrom(repo).filterIsInstance<String>().filter { it.contains("old-secret-title") }
+            assertEquals("texts of the vault put aside reachable after dropAside: $texts", 0, texts.size)
+            // The open vault is untouched and saves.
+            assertEquals(listOf(id(1)), repo.shown().vault.entries.map { it.id })
+            repo.edit { vault, _ -> Edited(vault.copy(entries = vault.entries + entry(2)), Unit) }
+            assertEquals(listOf(id(1), id(2)), repo.shown().vault.entries.map { it.id })
+        } finally {
+            scope.cancel()
+        }
+    }
+
+    @Test
     fun aLockWaitsForASaveThatIsRunning() = runBlocking {
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         try {

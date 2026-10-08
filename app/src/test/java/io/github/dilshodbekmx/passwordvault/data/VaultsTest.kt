@@ -168,6 +168,39 @@ class VaultsTest(private val kind: DiskKind) {
     }
 
     @Test
+    fun dropAsideDropsOnlyTheVaultPutAsideThatIsHeldOpen() = runTest {
+        val (repo, scope) = started()
+        try {
+            val a = repo.create(vaultId(1), password = OTHER_PASSWORD)
+            repo.edit { vault, _ -> Edited(vault.copy(entries = listOf(entry(5))), Unit) }
+            repo.lock()
+            assertTrue(repo.putAside())
+            repo.create(vaultId(2))
+            repo.add(form("in B"), phone.random)
+            repo.dropAside() // none is held: nothing happens
+            assertEquals(listOf("in B"), titles(repo))
+            repo.unlock(OTHER_PASSWORD, VaultRef.Aside(a.vaultId))
+
+            repo.dropAside() // lock.md §6.8 step 8: a check in the open app that came too late, or whose merge or delete failed
+
+            // It is no longer held: nothing of it is merged or made current without its master password.
+            assertEquals(VaultWrite.NothingChanged, repo.mergeAside(a.vaultId))
+            assertFalse(repo.swapIn(a.vaultId))
+            // The open vault is as it was, and saves.
+            assertEquals(listOf("in B"), titles(repo))
+            repo.add(form("B again"), phone.random)
+            assertEquals(listOf("in B", "B again"), titles(repo))
+            // The vault put aside is on the phone as before, and opens in place again.
+            assertEquals(listOf(a.vaultId), repo.vaults().aside.map { it.vaultId })
+            repo.unlock(OTHER_PASSWORD, VaultRef.Aside(a.vaultId))
+            assertTrue(repo.mergeAside(a.vaultId) is VaultWrite.Done)
+            assertEquals(id(5), repo.shown().vault.entries.last().id)
+        } finally {
+            scope.cancel()
+        }
+    }
+
+    @Test
     fun replaceVaultMakesANewVaultFromTheOpenOneAndPutsTheOldOneAside() = runTest {
         val (repo, scope) = started()
         try {
