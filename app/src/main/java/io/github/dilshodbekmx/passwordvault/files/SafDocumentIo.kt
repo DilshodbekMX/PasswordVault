@@ -31,7 +31,11 @@ import kotlinx.coroutines.withContext
  *   and counted up to one byte more than was written, and the two SHA-256 sums and byte counts are
  *   compared: providers have reported success after writing 0 bytes, and have cut files [V-S6]. A
  *   provider that refuses the mode "wt" (some take only "w") is written with "w": a longer old
- *   content that "w" leaves behind fails the comparison.
+ *   content that "w" leaves behind fails the comparison. What the read-back shows is what the
+ *   provider gives back on this phone. A provider that keeps the bytes in a copy of its own and
+ *   sends them on later (a cloud app) answers from that copy: whether they ever reach its server
+ *   is not checked here and cannot be, which is why the result line for Google Drive says "It is
+ *   uploaded when the phone is online" (ux.md §5.19).
  * - **Read** reads at most `maxBytes + 1` bytes, so that the caller can tell "too long"; anything
  *   that keeps the document from being read, a missing permission included, is an [IOException].
  * - **Keep** takes the persistable permission that the picker's result granted, read and write

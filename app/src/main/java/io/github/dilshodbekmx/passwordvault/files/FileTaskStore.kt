@@ -138,6 +138,10 @@ class FileTaskStore(
      * wrote into it and the write or its check failed. A document that holds something else (an
      * existing file the user chose to replace), or that cannot be read, is left as it was; one that
      * an import or a restore opened is never touched. Says what was done, for the screen's sentence.
+     *
+     * The store does not know what a task wrote: only [written] says it, and only for the try that
+     * calls. A document that an earlier try filled, before a lock or the end of the process cut it
+     * off, counts as "something else" and is kept ([Cleanup.Kept]).
      */
     suspend fun abandon(kind: FileTask.Kind, written: Boolean = false): Cleanup = withContext(dispatchers.main) {
         val task = recorded.value?.takeIf { it.kind == kind } ?: return@withContext Cleanup.NoDocument
