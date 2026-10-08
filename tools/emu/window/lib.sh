@@ -74,12 +74,15 @@ win_begin() {
     WIN_OVERLAY=0
     WIN_INSTRUMENTED=0
     echo "$WIN_NAME on $SERIAL (API $API): $APK"
-    if [ "${API:-0}" -lt 26 ] 2>/dev/null; then
-        echo "$WIN_NAME: the helper app needs Android 8.0 (API 26); $SERIAL has API $API" >&2
-        exit 2
-    fi
     trap win_cleanup EXIT
     trap 'exit 130' INT TERM
+    # A script that works without the helper app sets WIN_NO_HELPER=1 before win_begin.
+    [ "${WIN_NO_HELPER:-0}" = 0 ] || return 0
+    if [ "${API:-0}" -lt 26 ] 2>/dev/null; then
+        echo "$WIN_NAME: the helper app needs Android 8.0 (API 26); $SERIAL has API $API" >&2
+        trap - EXIT
+        exit 2
+    fi
     pv_step "the helper app is built" -- win_helper_build || win_end
     pv_step "the helper app is installed" -- win_helper_install || win_end
 }

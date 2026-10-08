@@ -10,14 +10,16 @@
 #       --apk FILE one APK of the app; may be given more than once. Without it: this worktree's
 #                  app/build/outputs/apk/debug/app-debug.apk and .../staging/app-staging.apk
 #                  (tools/gradle.sh :app:assembleDebug :app:assembleStaging).
-#       --only     some of: keyboard, autofill, overlay, state, a11y (the default: all, in that order).
+#       --only     some of: keyboard, autofill, overlay, state, a11y (the default: these five, in this
+#                  order), and capture (content capture, API 29 and newer; not in the default list:
+#                  it records what these devices let a script see, see capture.sh).
 #
 # The scripts, each of which can be run alone as SCRIPT SERIAL [--apk FILE] and says in its header
 # what it checks and how: keyboard.sh (the keyboard's flags for every field), autofill.sh (no fill
 # and no save request), overlay.sh (taps through another app's window), state.sh (nothing typed in
-# the saved-instance state), a11y.sh (what accessibility services read of the secrets). The helper
-# app (tools/emu/window/helper) is built once, through tools/gradle.sh, when it is missing or older
-# than its sources. One device and one APK take about 11 minutes.
+# the saved-instance state), a11y.sh (what accessibility services read of the secrets), capture.sh
+# (content capture). The helper app (tools/emu/window/helper) is built once, through tools/gradle.sh,
+# when it is missing or older than its sources. One device and one APK take about 11 minutes.
 #
 # Prints every script's output as one block when the script ends, then one line per script with its
 # counts, and "SUMMARY window checks". Exit 0 when every script passed, 1 otherwise, 2 for a usage
@@ -43,7 +45,7 @@ done
 SCRIPTS=()
 for name in $(printf '%s' "$ONLY" | tr ',' ' '); do
     case "$name" in
-        keyboard | autofill | overlay | state | a11y) SCRIPTS+=("$name") ;;
+        keyboard | autofill | overlay | state | a11y | capture) SCRIPTS+=("$name") ;;
         *) echo "all.sh: no such check: $name" >&2; usage ;;
     esac
 done

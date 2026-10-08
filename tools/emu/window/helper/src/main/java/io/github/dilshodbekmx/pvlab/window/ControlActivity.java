@@ -11,6 +11,7 @@ import android.text.method.PasswordTransformationMethod;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
@@ -27,7 +28,8 @@ import android.widget.TextView;
  * IME_FLAG_NO_PERSONALIZED_LEARNING; a tap through another app's overlay arrives; an accessibility
  * service reads the typed text; the saved-instance state holds the typed text.
  *
- * Started with the string extra "clip", it puts that text on the clipboard.
+ * Started with the string extra "clip", it puts that text on the clipboard; with the boolean extra
+ * "secure", its window has FLAG_SECURE, as the app's staging and release builds have (capture.sh).
  */
 public class ControlActivity extends Activity {
     private static final String TAG = "PvWinControl";
@@ -39,13 +41,15 @@ public class ControlActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        boolean secure = getIntent().getBooleanExtra("secure", false);
+        if (secure) getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
         LinearLayout column = new LinearLayout(this);
         column.setOrientation(LinearLayout.VERTICAL);
         int pad = (int) (24 * getResources().getDisplayMetrics().density);
         column.setPadding(pad, 3 * pad, pad, pad);
 
         TextView title = new TextView(this);
-        title.setText("PV window lab: control");
+        title.setText(secure ? "PV window lab: control (FLAG_SECURE)" : "PV window lab: control");
         title.setTextSize(20f);
         column.addView(title, wide());
 
