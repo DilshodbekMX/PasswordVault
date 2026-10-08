@@ -1074,7 +1074,7 @@ If the app is killed after step 3, the next start finds a vault without `pin.rec
 5. `KEK_pin = HMAC(new key, pin_msg)`; wrap the open vault's VK for its `vk_id` with a fresh nonce.
 6. **Test it:** compute the HMAC again, open the new wrap and compare with VK.
 7. Write `pin.rec` with the new slot, `off = null`, and the guard of 6.4. Zero the digits and `KEK_pin`. An old key is left to the sweep (5.7). "Your PIN is set." or "Your PIN was changed."
-8. If anything in steps 4 to 7 fails: delete the new alias (no record names it), keep the old record. "Couldn't save the new PIN. Your old PIN still works." or "The PIN can't be set up right now. Try again later."
+8. If anything in steps 4 to 6 fails, or the flow has ended meanwhile (a lock or `ON_STOP`): delete the new alias (no record names it), keep the old record. If the record write of step 7 reports a failure: keep the old record and leave the new alias to the sweep (5.7). A write that reports a failure may still have replaced the record, because a failed directory sync counts as not written (5.9) while the rename is already on disk, and a record must never name a deleted key. If the record did change, the next start finds its key; if it did not, the sweep deletes the key that no record names. "Couldn't save the new PIN. Your old PIN still works." or "The PIN can't be set up right now. Try again later."
 
 Version 1 has no switch to turn the PIN off. It can be skipped at setup and set later.
 
@@ -1126,7 +1126,7 @@ The PIN never opens an older copy while a newer one is intact.
 6. Prompt: "Turn on fingerprint unlock", negative button "Cancel".
 7. On success: `ct = result.cryptoObject.cipher.doFinal(VK)` (48 bytes) and `nonce = cipher.iv` (12 bytes).
 8. Write `fingerprint.rec` with the new slot and one wrap for the current `vk_id`. An earlier key is left to the sweep.
-9. On any error or cancel in steps 4 to 8: delete the new alias and keep the earlier state. "Fingerprint unlock could not be turned on. You can try again later in Settings." Setup is never blocked.
+9. On any error or cancel in steps 4 to 7: delete the new alias and keep the earlier state. If the record write of step 8 reports a failure: keep the earlier state and leave the new alias to the sweep, for the reason given in F6 step 8. "Fingerprint unlock could not be turned on. You can try again later in Settings." Setup is never blocked.
 
 There is no second touch to test the wrap. A wrap that does not match shows at its first use and is removed then (section 14).
 
@@ -1771,6 +1771,7 @@ What the emulators cannot show: invalidation by a new finger on the Android 7 an
 16. **A notification during the wait for a new master password? For the user.** Today the warning is a banner inside the app, so an owner who does not open the app for a day is not warned (2.3). An Android notification would reach them without that. It needs the notification permission on Android 13 and newer, which the app does not have today (the build check R-9 of architecture.md would have to allow it); it needs no network; and its text must give nothing away to a bystander.
 17. **One PIN counter for the whole phone?** Today every vault that was put aside with a working PIN adds five guesses (2.3, decision 30). It takes two vaults with PINs on one phone, which happens after a restore over an existing vault.
 18. **If a manufacturer's tool can restore `pin.rec`** (D6): keep a second count in the Keystore, where no file restore reaches. One marker alias per wrong PIN, deleted on a right PIN or a master password; the count that is used is the larger of the two. Not designed further until D6 says it is needed.
+19. **A new PIN or fingerprint slot whose record write reports a failure after its rename (F6 step 8, F9 step 9). For the design owner.** The screen says "Couldn't save the new PIN. Your old PIN still works." In this process that holds: the lock works from the old record (6.3), and its next write of `pin.rec` puts the old record back. If the process ends before that write and the rename did reach the disk, the next start reads the new record: the new PIN is the one that works, and the old one counts as wrong. It takes a failed directory `fsync` followed by the end of the process, which is rare, and the master password opens the app either way. The choices: accept it; write the old record once more right after the failure, best effort; or read the record back and go on with what is on disk, with a sentence that says which PIN works. Found by the review of build plan 3.13.
 
 ---
 

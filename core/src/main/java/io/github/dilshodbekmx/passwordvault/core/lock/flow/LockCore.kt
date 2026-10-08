@@ -108,9 +108,11 @@ internal class FingerprintKeeper(
 
     /**
      * Fingerprint unlock is turned on (lock.md F9 step 8): writes [slot] with `off = null`. It must
-     * reach the disk: when the write fails the old record stays, here and on disk, and it returns
-     * false (the flow deletes the new alias, F9 step 9). The earlier key is left to the sweep. A
-     * record that read NEWER is never replaced: false.
+     * reach the disk: when the write reports a failure the old record stays here, in memory, and it
+     * returns false. Such a write may still have replaced the record on disk (a failed directory
+     * `fsync` counts as not written, §5.9, while the rename is already there), so the flow leaves the
+     * new alias to the sweep and never deletes it (F9 step 9, as F6 step 8). The earlier key is left
+     * to the sweep too. A record that read NEWER is never replaced: false.
      */
     fun setSlot(slot: ShortcutSlot): Boolean {
         require(Uuid.isValid(slot.id)) { "not a lower-case UUID of version 4" }
