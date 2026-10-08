@@ -32,7 +32,9 @@ import kotlinx.coroutines.launch
  *   backup screen.
  *
  * An entry is given out once. One that nobody takes is dropped when the app locks; the lock drops
- * its own proofs when the app stops being visible. Main thread.
+ * its own proofs when the app stops being visible. Should the answer not have reached the lock's
+ * state yet when the backup screen is made (the lock was busy at that moment), the offer is still
+ * listed and the screen asks for the master password: the safe side. Main thread.
  */
 class BackupOffer(private val lockState: StateFlow<LockUiState>, scope: CoroutineScope) {
     /** The proof of the unlock on which the lock showed "Make a backup now?", until that unlock ends. */
