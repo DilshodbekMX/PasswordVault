@@ -402,11 +402,11 @@ internal class LockVisit(val place: Place, val target: LockTarget) {
     var masterPasswordChosen = false
 
     /**
-     * Practice is not asked on this visit (lock.md §13.1 rows 3 and 4 are skipped): "I can't
-     * remember it" was chosen, and F11 step 3 wants the PIN or the fingerprint now (F10 step 4); or
-     * "Not now" was chosen while `state.rec` cannot hold the snooze (F10 step 3). `ShortcutFlows`
-     * sets it for "Not now" (build plan 3.13) and `PasswordFlows` for "I can't remember it" (4.4);
-     * nothing in the core does.
+     * Practice is not asked on this visit (lock.md §13.1 rows 3 and 4 are skipped,
+     * `EntryPolicy.Visit.practiceSkipped`): "I can't remember it" was chosen, and F11 step 3 wants
+     * the PIN or the fingerprint now (F10 step 4); or "Not now" was chosen while `state.rec` cannot
+     * hold the snooze (F10 step 3). `ShortcutFlows` sets it for "Not now" (build plan 3.13) and
+     * `PasswordFlows` for "I can't remember it" (4.4); nothing in the core does.
      */
     var practiceSkipped = false
 
@@ -698,22 +698,13 @@ internal class LockCore(
             val listed = checkNotNull(current) { "the current vault was listed" }
             EntryPolicy.Target.Current(listed, (listed.current as? CurrentVault.Present)?.olderCopyFirst == true)
         }
-        var stateRead = lock.stateRead
-        var nowWall = clock.wallMs()
-        if (visit?.practiceSkipped == true) {
-            // EntryPolicy has no input that skips rows 3 and 4. Until it has one, practice is made
-            // "not due" for this decision only: the clock at the last correct master password, or,
-            // without a record to hold that time, a record that asks for no practice.
-            val record = (stateRead as? RecordRead.Ok)?.record
-            if (record != null) nowWall = record.practice.lastOkMs else stateRead = RecordRead.Unreadable
-        }
         return EntryPolicy.decide(
             EntryPolicy.Input(
                 target = policyTarget,
                 pin = lock.pinRead,
                 fingerprint = lock.fingerprint.read,
-                state = stateRead,
-                nowWallMs = nowWall,
+                state = lock.stateRead,
+                nowWallMs = clock.wallMs(),
                 nowElapsedMs = clock.elapsedMs(),
                 canAuthenticate = visit?.canAuthenticate,
                 pinStartUpFailed = lock.pin.storageFull,
@@ -725,6 +716,7 @@ internal class LockCore(
                     fingerprintHidden = visit?.fingerprintHidden == true,
                     fingerprintLine = visit?.fingerprintLine,
                     needsOtherKeyCreatedMs = visit?.needsOtherKeyCreatedMs,
+                    practiceSkipped = visit?.practiceSkipped == true,
                 ),
             ),
         )
