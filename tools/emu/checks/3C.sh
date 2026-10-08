@@ -22,7 +22,7 @@
 #                says: .csv has the type text/comma-separated-values everywhere; on Android 17 text/csv
 #                maps back to .csv and json and application/json map to each other; on Android 7 and 9
 #                text/csv, .json and application/json have no mapping; xlsx and its type map to each
-#                other everywhere; application/octet-stream has no extension before Android 10 and
+#                other everywhere; application/octet-stream has no extension on Android 7 and 9 and
 #                .bin on Android 17. And with that table a provider keeps every suggested name
 #                (FileUtils.splitFileName's rule, as DocumentNamesTest states it);
 #              - adb.sh --connected on the API 28 device with the runner's package argument: the
@@ -45,6 +45,12 @@
 #              screenshots of steps 1, 2 and 4 (debug) go to --shots DIR (default
 #              /home/asus/pvwork/shots-3C; only step*.png there is written).
 #   smoke      smoke.sh staging on API 24 and 37 at once (20 steps).
+#   window     tools/emu/window/all.sh S24 S28 S37 with the debug and the staging APK: architecture.md
+#              8.4 has the window and input checks run at every integration check from 3B on. On API 28
+#              and 37 keyboard, autofill, overlay, state and a11y (a KNOWN line on API 28 is a shown
+#              secret that lock.md 2.3 accepts before Android 14), on API 24 a11y-old.sh. No screen
+#              changed in round R2; the activity's saved state, which state.sh searches, has held the
+#              keys and request codes of the picker's two launchers since 5.1.
 #
 # After a part that drives the app, a NOTE names every Run that Android Studio started on one of the
 # three devices meanwhile (its idea.log; tools/emu/README.md, "Device facts"): such a Run stops,
@@ -243,12 +249,14 @@ for line in open(path, encoding="utf-8"):
     kind, key, _, value = line.split()
     (ext if kind == "ext" else typ)[key] = None if value == "none" else value
 OCTET, CSV, CSV_OLD, JSON = "application/octet-stream", "text/csv", "text/comma-separated-values", "application/json"
-# What formats.md 2 rule 4 says the table holds: Android 17 against Android 7.0 ("as on API 24 to 28").
+# What formats.md 2 rule 4 says the table holds: on Android 17, and on Android 7.0 and 9 (libcore's
+# MimeUtils, API 24 to 28).
 if api >= 29:
     rule = {"ext .csv": CSV_OLD, "type " + CSV: ".csv", "ext .json": JSON, "type " + JSON: ".json",
             "ext .xlsx": xlsx, "type " + xlsx: ".xlsx", "type " + OCTET: ".bin"}
 else:
-    rule = {"ext .csv": CSV_OLD, "type " + CSV: None, "ext .json": None, "type " + JSON: None}
+    rule = {"ext .csv": CSV_OLD, "type " + CSV: None, "ext .json": None, "type " + JSON: None,
+            "ext .xlsx": xlsx, "type " + xlsx: ".xlsx", "type " + OCTET: None}
 measured = {**{"ext " + k: v for k, v in ext.items()}, **{"type " + k: v for k, v in typ.items()}}
 bad = 0
 print(f"   API {api}: " + "; ".join(f"{k[4:] if k.startswith('ext ') else k[5:]} -> {v or 'none'}" for k, v in measured.items()))
@@ -547,14 +555,25 @@ skeleton_debug() {
 skeleton_staging() { "$EMU/checks/3A.sh" skeleton staging "$1" --apk "$STAGING_APK"; }
 smoke_staging() { "$EMU/smoke.sh" staging "$1" --apk "$STAGING_APK"; }
 
+window_checks() {
+    local began rc
+    began=$(date +%s)
+    "$EMU/window/all.sh" "${SER[24]}" "${SER[28]}" "${SER[37]}" > "$LOGS/all.log" 2>&1
+    rc=$?
+    grep -E '^(PASS|FAIL) .* \(exit|^SUMMARY window' "$LOGS/all.log" | sed 's/^/   /'
+    grep -E '^KNOWN ' "$LOGS/all.log" | sort | uniq -c | sed 's/^/     /'
+    studio_runs "$began" | sed 's/^/   /'
+    return $rc
+}
+
 # ---- arguments ------------------------------------------------------------------------------------------
-ALL_PARTS=(merged files connected skeleton smoke)
+ALL_PARTS=(merged files connected skeleton smoke window)
 parts=()
 gradle_args=()
 keep=0
 while [ $# -gt 0 ]; do
     case "$1" in
-        merged | files | connected | skeleton | smoke | stop) parts+=("$1") ;;
+        merged | files | connected | skeleton | smoke | window | stop) parts+=("$1") ;;
         --shots) [ $# -ge 2 ] || pv_usage "${BASH_SOURCE[0]}"; SHOTS=$2; shift ;;
         --keep) keep=1 ;;
         --) shift; gradle_args=("$@"); break ;;
@@ -564,7 +583,7 @@ while [ $# -gt 0 ]; do
 done
 [ ${#parts[@]} -gt 0 ] || parts=("${ALL_PARTS[@]}")
 wants() { [[ " ${parts[*]} " == *" $1 "* ]]; }
-needs_devices() { local p; for p in files connected skeleton smoke; do wants "$p" && return 0; done; return 1; }
+needs_devices() { local p; for p in files connected skeleton smoke window; do wants "$p" && return 0; done; return 1; }
 
 mkdir -p "$LOGS_ROOT"
 echo "round R2 (sub-wave 3C and 5.1) device check in $REPO at $(git -C "$REPO" rev-parse --short HEAD) ($(date '+%F %T')): ${parts[*]}; logs in ${LOGS_ROOT#"$REPO"/}"
@@ -582,7 +601,7 @@ if needs_devices; then
         parts=(stop)
     fi
 fi
-for part in files connected skeleton smoke; do
+for part in files connected skeleton smoke window; do
     wants "$part" || continue
     LOGS=$LOGS_ROOT/$part
     rm -rf "$LOGS"
@@ -609,6 +628,8 @@ for part in files connected skeleton smoke; do
             pv_step "the skeleton steps 1 to 9, staging build, on API 24 and 37" -- in_parallel skeleton-staging skeleton_staging -- 24 37 ;;
         smoke)
             pv_step "smoke.sh staging on API 24 and 37" -- in_parallel smoke smoke_staging -- 24 37 ;;
+        window)
+            pv_step "tools/emu/window/all.sh: debug and staging on API 28 and 37, a11y-old on API 24" -- window_checks ;;
     esac
 done
 if needs_devices || wants stop; then
