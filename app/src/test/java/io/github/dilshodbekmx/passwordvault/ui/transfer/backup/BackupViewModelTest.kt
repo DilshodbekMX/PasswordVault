@@ -7,6 +7,7 @@ import io.github.dilshodbekmx.passwordvault.core.lock.flow.MasterProof
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.Notice
 import io.github.dilshodbekmx.passwordvault.core.lock.record.Shortcut
 import io.github.dilshodbekmx.passwordvault.data.BackupResult
+import io.github.dilshodbekmx.passwordvault.data.SaveProblem
 import io.github.dilshodbekmx.passwordvault.files.Cleanup
 import io.github.dilshodbekmx.passwordvault.files.DocRef
 import io.github.dilshodbekmx.passwordvault.files.FileTask
@@ -225,6 +226,20 @@ class BackupViewModelTest {
         assertEquals(saved.name, noted.name)
         assertEquals(NOW, noted.savedAt)
         assertTrue("the permission stays while the vault notes it", DOC in rig.fakeDocuments.kept)
+    }
+
+    @Test
+    fun aSavedBackupTheVaultCouldNotNoteKeepsNoPermission() = runTest {
+        val rig = rig()
+        rig.opens()
+        rig.vault.failures.add(SaveProblem.FAILED) // the note in the vault
+        val vm = rig.backup()
+        rig.submit(vm)
+        rig.answerSaveAs(DOC)
+        assertTrue("the file is saved and checked all the same", vm.step() is BackupStep.Saved)
+        assertTrue(rig.vault.stored.backups.isEmpty())
+        assertTrue("nothing notes the document: its permission is given up", DOC in rig.fakeDocuments.released)
+        assertArrayEquals(BACKUP_BYTES, rig.fakeDocuments.files[DOC])
     }
 
     @Test

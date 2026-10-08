@@ -111,7 +111,7 @@ fun BackupContent(ui: BackupUi, vm: BackupViewModel, done: () -> Unit) {
             BackupLine(BackupTexts.failure(step.why), BackupTags.ERROR, alert = true, formatters = formatters)
             BackupTexts.failedFile(step.cleanup, step.name)?.let { BackupLine(it, BackupTags.line(0), formatters = formatters) }
             Button(onClick = vm::retry, modifier = Modifier.fillMaxWidth().testTag(BackupTags.RETRY)) {
-                Text(stringResource(if (step.retry == Retry.CHOOSE) R.string.backup_choose_other else R.string.common_try_again))
+                Text(stringResource(if (step.retry == Retry.CHOOSE && step.why != Failure.PICKER) R.string.backup_choose_other else R.string.common_try_again))
             }
             OutlinedButton(onClick = done, modifier = Modifier.fillMaxWidth().testTag(BackupTags.DONE)) {
                 Text(stringResource(R.string.common_close))

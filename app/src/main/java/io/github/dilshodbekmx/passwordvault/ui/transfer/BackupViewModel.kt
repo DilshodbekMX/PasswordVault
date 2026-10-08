@@ -9,6 +9,7 @@ import io.github.dilshodbekmx.passwordvault.core.lock.flow.MasterProof
 import io.github.dilshodbekmx.passwordvault.core.model.VaultEdits
 import io.github.dilshodbekmx.passwordvault.core.util.Clock
 import io.github.dilshodbekmx.passwordvault.data.BackupResult
+import io.github.dilshodbekmx.passwordvault.data.SaveResult
 import io.github.dilshodbekmx.passwordvault.data.VaultRepository
 import io.github.dilshodbekmx.passwordvault.files.Cleanup
 import io.github.dilshodbekmx.passwordvault.files.DocRef
@@ -182,7 +183,10 @@ class BackupViewModel(
         }
     }
 
-    /** "Try again" after the backup could not be made: back to the master password. */
+    /**
+     * "Try again" or "Choose another place" after a failure: "Save as" again when the backup is
+     * made, otherwise back to the master password.
+     */
     fun retry() {
         val now = step as? BackupStep.Failed ?: return
         if (backup != null && now.retry == Retry.CHOOSE) openPicker() else show(BackupStep.Password())
@@ -358,9 +362,11 @@ class BackupViewModel(
             val name = files.name(target) ?: BackupFiles.suggestedName(clock.wallMs())
             val place = files.place(target)
             // "Last backup" and when a backup is due (architecture.md §4.3). The file is saved and
-            // checked whatever this save does; a failure shows again as a backup that is due.
-            repository.edit(VaultEdits.noteBackup(target.uri, name))
+            // checked whatever this save does; a failure shows again as a backup that is due, and the
+            // permission on a document the vault does not note is given up (architecture.md §3.5).
+            val noted = repository.edit(VaultEdits.noteBackup(target.uri, name)) is SaveResult.Saved
             files.finish(FileTask.Kind.BACKUP)
+            if (!noted) files.release(target)
             show(BackupStep.Saved(name, made.accounts, place), paused = false)
         }
     }
