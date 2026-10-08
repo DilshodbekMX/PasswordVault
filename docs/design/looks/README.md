@@ -50,6 +50,11 @@ The eight avatar tones of the list (ux.md §5.11), background / letter:
 
 The schemes the mock-ups do not show (A dark, B dark, C light) keep the hue of each role. C's light scheme cannot use `#F2B84B` as primary on a light surface (contrast under 2:1): its primary is a deep gold such as `#6A4800`, and the bright gold becomes a container colour.
 
+Where the built schemes (`APP/ui/theme/Schemes.kt`, build plan 4.3b) differ from the table above, and why:
+- **`surface` is the screen's colour** (the table's "background") in every style, because Material 3 draws the top bar and the list's rows on `surface`. The table's "surface (cards, sheets)" colour is `surfaceContainerLow` and `surfaceContainerLowest`.
+- **Emerald's two outlines** (`#DCE5E1` around the navigation bar, `#BEC9C5` around the search field) are not a role: the look hands them out as `Look.barOutline` and `Look.searchOutline`, for the second step to draw.
+- **Night vault's dark outline is `#757D86`**, not the mock-up's `#5B636C`, which has only 2.8:1 on `#161C21` (a sheet) and 2.6:1 on `#1C232A` (a dialog), under the 3:1 that an outline that carries meaning needs (ux.md §8).
+
 ## What differs between styles besides colour
 
 | Detail | A · Bank blue | B · Emerald | C · Night vault | Phone's colours |
@@ -64,5 +69,5 @@ Colours, the avatar tones and shape and the PIN keys come first. The lock screen
 
 ## The icon and the name
 
-- **Icon, provisional.** The shield with a keyhole of mock-up A, white on `#1D4E89`: an adaptive icon with a monochrome layer, and bitmaps for Android 7. It has one source file and one script that makes every size, so that replacing it later is one step. The same drawing, as a vector, is the app's logo on the Welcome and lock screens.
+- **Icon, provisional.** The shield with a keyhole of mock-up A, white on `#1D4E89`: an adaptive icon with a monochrome layer, and bitmaps for Android 7. It has one source file and one script that makes every size, so that replacing it later is one step: [icon/icon.svg](icon/icon.svg), the one drawing, and [icon/make-icon.py](icon/make-icon.py), which writes every file of the launcher icon and `ic_app_logo.xml`, records each file's hash in `icon/generated.sha256` and with `--check` says whether the files are still those it made (a test fails on a file edited by hand). The same drawing, as a vector, is the app's logo on the Welcome and lock screens.
 - **Name.** "PasswordVault" for now, spelled one way in every language (architecture.md D-23) and written in one resource, `app_name`; no other text repeats it, so a new name is one change. The application ID `io.github.dilshodbekmx.passwordvault` never changes, whatever the name becomes: Android keys the app's data to it.
