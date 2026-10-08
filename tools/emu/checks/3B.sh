@@ -994,9 +994,9 @@ stop_devices() {
 }
 
 # ---- arguments ------------------------------------------------------------------------------------
-if [ "${1:-}" = clip ] || [ "${1:-}" = secure ]; then
+# "clip" and "secure" name a part, and with a serial after them the one-device mode.
+if { [ "${1:-}" = clip ] || [ "${1:-}" = secure ]; } && [[ "${2:-}" == emulator-* ]]; then
     mode=$1
-    [ $# -ge 2 ] || pv_usage "${BASH_SOURCE[0]}"
     serial=$2
     shift 2
     if [ "$mode" = clip ]; then APK=$DEBUG_APK; else APK=$STAGING_APK; fi
