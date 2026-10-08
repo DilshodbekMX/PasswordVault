@@ -15,6 +15,7 @@ import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.github.dilshodbekmx.passwordvault.R
@@ -167,19 +168,19 @@ class LockPseudoLocaleTest {
         val lock = FakeLockManager(initial = LockUiState.Locked(screen()))
         lock.status.value = LockStatus.NONE.copy(pin = PinStatus.CannotCheck, aside = listOf(AsideVault("00000000-0000-4000-8000-0000000000aa", AT, null)))
         inPseudo { LockRouteHost(lock) }
-        compose.onNodeWithTag(LockTags.FORGOT).performClick()
+        compose.onNodeWithTag(LockTags.FORGOT).performScrollTo().performClick()
         compose.waitForIdle()
         compose.onNodeWithTag(LockTags.SHEET).assertExists()
         assertAllPseudo("the sheet", shownTexts(), atLeast = 12)
-        compose.onNodeWithTag(LockTags.SHEET_EMPTY).performClick()
+        compose.onNodeWithTag(LockTags.SHEET_EMPTY).performScrollTo().performClick()
         compose.waitForIdle()
         compose.onNodeWithTag(LockTags.CONFIRM).assertExists()
         assertAllPseudo("Start with an empty app?", shownTexts(), atLeast = 4)
         compose.onNodeWithTag(LockTags.CONFIRM_CANCEL).performClick()
-        compose.onNodeWithTag(LockTags.SHEET_TRY_AGAIN).performClick()
+        compose.onNodeWithTag(LockTags.SHEET_TRY_AGAIN).performScrollTo().performClick()
         compose.runOnUiThread { lock.state.value = LockUiState.Locked(LockScreen.OlderPassword(AT, unfinishedChange = true)) }
         compose.waitForIdle()
-        compose.onNodeWithTag(LockTags.OLDER_FROM_BEFORE).performClick()
+        compose.onNodeWithTag(LockTags.OLDER_FROM_BEFORE).performScrollTo().performClick()
         compose.waitForIdle()
         compose.onNodeWithTag(LockTags.CONFIRM).assertExists()
         assertAllPseudo("Open your passwords as they were before …?", shownTexts(), atLeast = 4)
