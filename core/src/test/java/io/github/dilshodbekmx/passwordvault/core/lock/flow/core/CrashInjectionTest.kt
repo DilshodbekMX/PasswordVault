@@ -10,6 +10,7 @@ import io.github.dilshodbekmx.passwordvault.core.lock.flow.Notice
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.NoticeAnswer
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.PasswordOpen
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.PinKey
+import io.github.dilshodbekmx.passwordvault.core.lock.flow.PinOutcome
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.VaultRef
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.core.LockFixture.Companion.OTHER_VAULT
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.core.LockFixture.Companion.PASSWORD
@@ -18,6 +19,7 @@ import io.github.dilshodbekmx.passwordvault.core.lock.flow.core.LockFixture.Comp
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.core.LockFixture.Companion.WRONG_PIN
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.core.LockFixture.Companion.await
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.core.LockFixture.Companion.bytes
+import io.github.dilshodbekmx.passwordvault.core.lock.flow.core.LockFixture.Companion.digits
 import io.github.dilshodbekmx.passwordvault.core.lock.guard.PinGuard
 import io.github.dilshodbekmx.passwordvault.core.lock.guard.PinWrap
 import io.github.dilshodbekmx.passwordvault.core.lock.policy.EntryPolicy
@@ -160,20 +162,33 @@ class CrashInjectionTest {
         return F5(f, pin, finger, "")
     }
 
+    /** How the F5 script reaches the limit and opens the app afterwards. */
+    private enum class F5Way { MASTER_PASSWORD, FINGERPRINT, IN_A_PROMPT }
+
     /**
-     * F5 steps 1 to 4: the fifth wrong PIN in a row turns the PIN off and the fingerprint-only screen
-     * shows (§6.5 step 3); the user opens the app with the fingerprint, or taps "Use master password"
-     * and types it; the notices are answered; the app is locked again.
+     * F5 steps 1 to 4. On the pad ([F5Way.MASTER_PASSWORD], [F5Way.FINGERPRINT]): the fifth wrong PIN in
+     * a row turns the PIN off and the fingerprint-only screen shows (§6.5 step 3); the user opens the
+     * app with the fingerprint, or taps "Use master password" and types it. In a prompt of the open app
+     * ([F5Way.IN_A_PROMPT]): the app is opened with the fingerprint, which resets no count, and the fifth
+     * wrong PIN is typed where a flow asks for the current PIN (F6 step 2, F8 step 3); the PIN turns off
+     * and the app stays open. Then the notices are answered and the app is locked again.
      */
-    private fun f5Script(f: LockFixture, byFingerprint: Boolean) {
+    private fun f5Script(f: LockFixture, way: F5Way) {
         f.startInFront()
-        f.type(WRONG_PIN)
-        assertTrue("the fingerprint-only screen after the limit: ${f.state}", f.screen is LockScreen.FingerprintOnly)
-        if (byFingerprint) {
+        if (way == F5Way.IN_A_PROMPT) {
             await { f.engine.promptIfDue() }
+            assertTrue("opened by the fingerprint: ${f.state}", f.state is LockState.Unlocked)
+            assertEquals(PinOutcome.Limit, await { f.engine.core.unlock.pinInPrompt(digits(WRONG_PIN)) })
+            assertTrue("the app stays open", f.state is LockState.Unlocked)
         } else {
-            await { f.engine.useMasterPassword() }
-            assertTrue(f.unlockWith(PASSWORD) is MasterPasswordOutcome.Right)
+            f.type(WRONG_PIN)
+            assertTrue("the fingerprint-only screen after the limit: ${f.state}", f.screen is LockScreen.FingerprintOnly)
+            if (way == F5Way.FINGERPRINT) {
+                await { f.engine.promptIfDue() }
+            } else {
+                await { f.engine.useMasterPassword() }
+                assertTrue(f.unlockWith(PASSWORD) is MasterPasswordOutcome.Right)
+            }
         }
         for (notice in (f.state as LockState.Unlocked).notices) await { f.engine.answerNotice(notice.id, NoticeAnswer.OK) }
         f.lock()
@@ -183,6 +198,11 @@ class CrashInjectionTest {
         val f = phone.f
         val wrongPinChecked = (f.pinKey as AgedCharge).checks > 0
         val passwordChecked = f.port.calls.any { it.startsWith("openWithPassword") }
+        // At the stopping point, before anything runs again: every key a record on disk names is
+        // there, except the PIN's own, whose slot was being removed at the limit (§6.5: the key goes
+        // at once, and a lost record write is counted again at the next start).
+        assertNoNamedKeyWasDeleted(f, "$where, at the stopping point", removing = setOf(PinWrap.alias(phone.pin.id)))
+        assertTrue("$where: the fingerprint key", RecordCodec.FINGERPRINT_ALIAS_PREFIX + phone.finger.id in f.keys.aliases)
         f.startInFront()
 
         // I1: nothing of the vault was written, renamed or deleted, and it opens with its master password.
@@ -225,16 +245,16 @@ class CrashInjectionTest {
         assertEquals(where, emptyList<String>(), f.port.writes)
     }
 
-    private fun f5(byFingerprint: Boolean) {
+    private fun f5(way: F5Way) {
         val whole = f5Phone()
         val files = vaultFiles(whole.f)
-        f5Script(whole.f, byFingerprint)
+        f5Script(whole.f, way)
         val fileBoundaries = whole.f.files.boundaries
         val portBoundaries = whole.f.port.boundaries
         // Uninterrupted, the script deletes the stale temporary files (2 boundaries) and writes pin.rec
-        // three times at least: the charge, the limit, and the notice answered (4 boundaries each); the
-        // master password adds the writes of its guard.
-        assertTrue("the script writes records: $fileBoundaries boundaries", fileBoundaries >= 14)
+        // for the charge and for the limit (4 boundaries each); on the pad also for the notice answered,
+        // and the master password adds the writes of its guard.
+        assertTrue("the script writes records: $fileBoundaries boundaries", fileBoundaries >= if (way == F5Way.IN_A_PROMPT) 10 else 14)
         assertTrue("the script asks storage: $portBoundaries boundaries", portBoundaries >= 6)
         assertNull(whole.f.pinRecord().slot) // uninterrupted, it ends with the PIN turned off
         assertEquals(listOf(PinRecord.OffReason.LIMIT), listOf(whole.f.pinRecord().off?.reason))
@@ -243,25 +263,28 @@ class CrashInjectionTest {
             for (k in 1..fileBoundaries) {
                 val phone = f5Phone()
                 phone.f.files.stopAt(k)
-                assertTrue("no stop at record boundary $k", untilStopped { f5Script(phone.f, byFingerprint) })
+                assertTrue("no stop at record boundary $k", untilStopped { f5Script(phone.f, way) })
                 restart(phone.f, how)
-                f5AfterRestart(phone, "record boundary $k, $how", files)
+                f5AfterRestart(phone, "$way, record boundary $k, $how", files)
             }
             for (k in 1..portBoundaries) {
                 val phone = f5Phone()
                 phone.f.port.stopAt(k)
-                assertTrue("no stop at storage boundary $k", untilStopped { f5Script(phone.f, byFingerprint) })
+                assertTrue("no stop at storage boundary $k", untilStopped { f5Script(phone.f, way) })
                 restart(phone.f, how)
-                f5AfterRestart(phone, "storage boundary $k, $how", files)
+                f5AfterRestart(phone, "$way, storage boundary $k, $how", files)
             }
         }
     }
 
     @Test
-    fun t14_f5_aStopAtEveryBoundary_thenTheMasterPassword() = f5(byFingerprint = false)
+    fun t14_f5_aStopAtEveryBoundary_thenTheMasterPassword() = f5(F5Way.MASTER_PASSWORD)
 
     @Test
-    fun t14_f5_aStopAtEveryBoundary_thenTheFingerprint() = f5(byFingerprint = true)
+    fun t14_f5_aStopAtEveryBoundary_thenTheFingerprint() = f5(F5Way.FINGERPRINT)
+
+    @Test
+    fun t14_f5_inAPromptOfTheOpenApp_aStopAtEveryBoundary() = f5(F5Way.IN_A_PROMPT)
 
     // ---------------------------------------------------------------------------------------------
     // The start-up steps of §5.11
