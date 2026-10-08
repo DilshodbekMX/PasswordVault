@@ -283,10 +283,15 @@ big_letters() {
 # tried again 3 s later, up to three rounds. The screenshots are kept as LOGS/SERIAL-NAME-N.png, the
 # row cut out as ...-row-N.png.
 row_counts_down() {
-    local what=$1 name=$2 nodes line desc box round
-    nodes=$(pv_ui_nodes_all) || { pv_log "the windows could not be read"; return 1; }
-    line=$(printf '%s\n' "$nodes" | awk -F'|' '$3 == "pv.clip.row" { print; exit }')
-    [ -n "$line" ] || { pv_log "no status row (pv.clip.row); ids: $(pva_ids)"; return 1; }
+    local what=$1 name=$2 nodes line="" desc box round deadline=$((SECONDS + 6))
+    # The windows are listed a moment after they change: right after a dialog has closed the list can
+    # still hold the dialog alone (seen on API 37), so the row is looked for until it is there.
+    while :; do
+        nodes=$(pv_ui_nodes_all) && line=$(printf '%s\n' "$nodes" | awk -F'|' '$3 == "pv.clip.row" { print; exit }')
+        [ -z "$line" ] || break
+        [ $SECONDS -lt $deadline ] || { pv_log "no status row (pv.clip.row) in the windows; the active window's ids: $(pva_ids)"; return 1; }
+        pv_sleep 0.5
+    done
     desc=$(printf '%s\n' "$nodes" | awk -F'|' '$3 == "pv.clip.row" { on = 1; next } on && $2 != "" { print $2; exit }')
     note "the row tells TalkBack: $desc"
     case "$desc" in "$what. "*) ;; *) pv_log "the row's announcement does not begin with '$what. '"; return 1 ;; esac
