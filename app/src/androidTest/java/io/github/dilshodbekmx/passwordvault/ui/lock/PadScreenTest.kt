@@ -5,6 +5,9 @@ import android.os.SystemClock
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
@@ -17,6 +20,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.pressKey
+import androidx.compose.ui.unit.dp
 import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -189,6 +193,25 @@ class PadScreenTest {
         compose.waitForIdle()
         assertFalse(compose.activity.isFinishing)
         assertTrue(lock.fake.sent.isEmpty())
+    }
+
+    @Test
+    fun inLandscapeTheKeypadStandsBesideTheDotsAndTheTexts() {
+        // A phone held sideways, about 840 × 380 dp: wider than high, and low.
+        val lock = PadLock(FakeLockManager(initial = LockUiState.Locked(pad(status = PadStatus.TriesLeft(2)))))
+        compose.setContent {
+            Box(Modifier.requiredSize(840.dp, 380.dp)) { LockRouteHost(lock) }
+        }
+        compose.waitForIdle()
+        val dots = compose.onNodeWithTag(PinPadTags.DOTS).fetchSemanticsNode().boundsInRoot
+        val status = compose.onNodeWithTag(LockTags.STATUS).fetchSemanticsNode().boundsInRoot
+        val one = compose.onNodeWithTag(PinPadTags.key(1)).fetchSemanticsNode().boundsInRoot
+        val zero = compose.onNodeWithTag(PinPadTags.key(0)).fetchSemanticsNode().boundsInRoot
+        assertTrue("the dots ($dots) are left of the keypad ($one)", dots.right <= one.left)
+        assertTrue("the status line ($status) is left of the keypad ($one)", status.right <= one.left)
+        assertTrue("the keypad's rows go down: 1 ($one) above 0 ($zero)", one.bottom <= zero.top)
+        enter(3)
+        assertEquals(listOf<LockIntent>(LockIntent.Digit(3)), lock.fake.sent)
     }
 
     @Test

@@ -4,7 +4,7 @@
      sheet and the notices after unlock (4.2; ux.md §5.9, §5.10; lock.md §13.3, §13.4, F16, F17).
      Every name starts with lock_. The English wording is lock.md's and ux.md's; dates are formatted
      by the screen in the phone's own style (i18n.md §4.6), so "7 Oct" may read "Oct 7". -->
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
 
     <!-- ===== Titles and the line of a set of passwords put aside ===== -->
 
@@ -367,6 +367,17 @@
     <string name="lock_notice_backup_body">A backup is a locked copy of all your passwords. It opens only with your master password, on any phone.</string>
     <!-- The offer's button. Short. -->
     <string name="lock_notice_back_up">Back up now</string>
+
+    <!-- ===== The system's fingerprint prompt (lock.md §9.2; ux.md §5.7, §5.9), built by the lock
+         manager (build plan 4.1, which uses these from its own code; tools:ignore until then). Its
+         negative button is "Use PIN" (lock_mp_use_pin), "Use master password"
+         (lock_use_master_password) when no PIN is usable, or "Cancel" (common_cancel) ===== -->
+
+    <!-- Title of the phone's fingerprint prompt over the lock screen. The app's name is not
+         translated (i18n.md §3). -->
+    <string name="lock_prompt_unlock_title" tools:ignore="UnusedResources">Open PasswordVault</string>
+    <!-- Title of the phone's fingerprint prompt that turns fingerprint unlock on (lock.md F9 step 6). -->
+    <string name="lock_prompt_turn_on_title" tools:ignore="UnusedResources">Turn on fingerprint unlock</string>
 
     <!-- ===== "Type master password" from the notice about wrong PINs: the master password typed in
          the open app (title "Type your master password", lock_mp_title) ===== -->

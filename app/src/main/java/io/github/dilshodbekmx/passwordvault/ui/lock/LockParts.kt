@@ -131,7 +131,7 @@ internal fun TestBuildLine() {
  * when it changes (a polite live region), centred under the pad or full width under a field.
  */
 @Composable
-internal fun LockLineText(line: LockLine, formatters: Formatters, tag: String, centred: Boolean = false, modifier: Modifier = Modifier) {
+internal fun LockLineText(line: LockLine, formatters: Formatters, tag: String, modifier: Modifier = Modifier, centred: Boolean = false) {
     Text(
         text = line.text.show(formatters),
         style = MaterialTheme.typography.bodyMedium,
