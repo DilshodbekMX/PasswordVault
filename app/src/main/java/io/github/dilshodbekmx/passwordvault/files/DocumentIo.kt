@@ -26,6 +26,15 @@ interface DocumentIo {
     /** Takes a persistable permission on [doc], so that a task can continue in a new process (ux.md §4 item 1). */
     fun keep(doc: DocRef)
 
+    /**
+     * Gives up the persistable permission that [keep] took on [doc], once nothing will read or write
+     * it again: Android keeps a limited number for each app and drops the oldest without a word (128
+     * on Android 7), which could take the permission of a document the vault still notes. Best
+     * effort: nothing happens when none is held, and it never throws. A binder call, made off the
+     * main thread.
+     */
+    fun release(doc: DocRef)
+
     /** Deletes [doc] (`DocumentsContract.deleteDocument`); false where the place does not allow it. */
     fun delete(doc: DocRef): Boolean
 

@@ -387,6 +387,7 @@ class PasswordsViewModelTest {
         vm.exportDeletedMyself("content://docs/1")
         advanceUntilIdle()
         assertEquals(emptyList<FileRef>(), rig.repository.stored.plainExports)
+        assertEquals("the permission on it is given up", listOf("content://docs/1"), rig.files.released)
         assertEquals(listOf(ListBanner.PracticeOverdue(now - 40 * day), ListBanner.BackupDue), vm.state.value.banners)
 
         // Practice typed: the lock's banner goes.
@@ -444,11 +445,13 @@ class PasswordsViewModelTest {
         advanceUntilIdle()
         assertFalse("content://docs/1" in rig.files.files)
         assertEquals(listOf("content://docs/2"), rig.repository.stored.plainExports.map { it.uri })
+        assertEquals("the permission on it is given up", listOf("content://docs/1"), rig.files.released)
 
         vm.deleteExport("content://docs/2")
         advanceUntilIdle()
         assertEquals(listOf<ListEvent>(ListEvent.CannotDeleteExport), events)
         assertEquals(listOf("content://docs/2"), rig.repository.stored.plainExports.map { it.uri })
+        assertEquals("kept for the banner that stays", listOf("content://docs/1"), rig.files.released)
     }
 
     // ---- Copying (ux.md §6) ----
