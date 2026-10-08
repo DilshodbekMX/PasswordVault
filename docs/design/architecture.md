@@ -654,6 +654,45 @@ Declared by the contracts package (build plan 1.1) so that earlier waves can nam
 | `PinRecord`, `FingerprintRecord`, `StateRecord`, `RecordRead` | `core.lock.record` | lock.md §5.3 to §5.6 as revised by its audit: no `trouble_boots`, no `udr`; `unseen` with `count`, `last_at`, `interrupted`; `mp_guard.unseen`; `mp_change`; `pending_mp` and `replaced` with `credited_ms` and `seen_elapsed_ms`. `RecordRead.Damaged` carries the `ParseError` of the rule that failed (5.6) |
 | `EditTexts` (`untitled(nowMs)`, `fromBackup(title)`, `fromFile(title)`) | `core.model` | `:app` passes the resource texts in, so that stored titles are in the user's language |
 
+### 3.8 Import (`core.formats`)
+
+Declared by the importer (build plan 3.15); the import screens (build plan 5.4) are built on it. Reading a file and planning the import are two pure steps, and nothing is written before the user taps "Import" (formats.md §8, ux.md §5.21).
+
+```kotlin
+object Importer {                                      // reads a file into accounts; never touches the vault and never throws, whatever the bytes
+    const val MAX_BYTES: Int = 10 * 1024 * 1024        // the file is read with DocumentIo.read(doc, MAX_BYTES)
+    const val MAX_ROWS: Int = 10_000                   // rows under a CSV header, or elements of a JSON `items`
+    enum class Format { GOOGLE_CSV, BITWARDEN_CSV, KEEPASSXC_CSV, FIREFOX_CSV, GENERIC_CSV, BITWARDEN_JSON, OWN_JSON }   // isCsv
+    class Choices(val encoding: TextDecoding.Encoding? = null,    // "Text looks wrong? Read as …" (formats.md §8.2); null: TextDecoding chooses
+                  val columns: List<ColumnMeaning>? = null)        // the column-mapping screen's answer: one meaning per column of the header
+    fun read(bytes: ByteArray, nowMs: Long, texts: EditTexts, random: RandomSource, choices: Choices = Choices()): Result
+                                                       // Result: NotForImport(kind: FileKind) | Empty | TooBig(limit) | TooManyRows(rows: Int?, limit)
+                                                       //   | NotText | Unreadable(error: ParseError) | Encrypted(passwordProtected) | NotAnExport
+                                                       //   | ChooseColumns(columns: ImportColumns, decoding: ImportDecoding, rows) | Read(file: ImportFile)
+}
+enum class FileKind { EMPTY, BACKUP, SPREADSHEET, KEEPASS, JSON, BINARY, CSV }   // FileKind.of(bytes): by content, never by name or type
+object ImportPlanner {                                 // pure: decides, against the vault, what the import adds
+    const val MAX_FILE_BYTES: Long = 16_777_216L       // the largest vault file (4.1)
+    class Choices(val includeWrongLength: Boolean = false,         // the rows with the wrong number of values were confirmed (FR P4)
+                  val keepSeparate: Boolean = false,               // "Keep them separate": rules (b) and (c) of ux.md §5.21 join nothing
+                  val tidyNames: Boolean = true)                   // "Tidy names"
+    fun plan(vault: Vault, file: ImportFile, fromFile: (title: String) -> String, choices: Choices = Choices()): ImportPlan
+}
+class ImportPlan(val accounts: List<ImportAccount>, val found: Int, val alreadyHere: Int, val repeatedInFile: Int,
+                 val conflicts: List<ImportConflict>, val withoutPassword: Int, val wrongLengthLeftOut: Int, val relatedRows: Int,
+                 val relatedAccounts: Int, val tidied: Int, val tidyExamples: List<TidyExample>, val sealedBytes: Long) {
+    val entries: List<Entry>                           // what VaultEdits.addImported takes
+    val changed: List<ImportAccount>                   // the accounts the importer changed to fit the model, for the preview's list
+    fun count(kind: ImportChange.Kind): Int            // how many accounts to add have a change of that kind
+    val fits: Boolean                                  // sealedBytes <= MAX_FILE_BYTES
+}
+```
+
+- **The steps of an import.** `Importer.read(bytes, …)` with the file's bytes. `Result.ChooseColumns` opens the column-mapping screen (no column is a password column); its answer goes back as `Choices.columns`, and "Read as Windows-1251" as `Choices.encoding`. `Result.Read(file)` goes to `ImportPlanner.plan(vault, file, texts::fromFile, choices)`, whose `ImportPlan` is the preview. "Import" is `VaultRepository.edit(VaultEdits.addImported(plan.entries, random, texts::fromFile))`, one save; "Undo this import" is `VaultEdits.replaceVault(imported.before)` (D-15).
+- **What the preview reads.** `ImportFile`: `format`, `decoding` (`ImportDecoding`: the encoding, why it was chosen, the bytes and lines that could not be decoded, and the `alternative` to offer), `delimiter`, `columns` (`ImportColumns`: headers, a sample value and the `ColumnMeaning` of each column), `accounts`, `leftOut` (`ImportLeftOut`, by name or place), `wrongLengthRows`, `emptyRows`, `unclosedQuoteLine`, `removedControls`, `replacedCharacters`, `newerVersion`, and `sample(count)`, which gives names and usernames and never a password. An `ImportAccount` is the `Entry` as it would be added, the lines of its rows, `wrongLength` (`ImportWrongLength(values, expected)`) and `changes` (`ImportChange(kind, count)`: what a limit moved or cut, and a password that holds a control character, which is imported as it is and listed). `ImportConflict(index, existingId)` points at the account of the vault it is added beside.
+- **Too large.** `ImportPlan.sealedBytes` is the vault file after the import, estimated from the vault `VaultEdits.addImported` would make and never smaller than the real file; when `fits` is false the import is refused with the sentence of 3.5 (`TOO_LARGE`).
+- None of these types shows a value of the file in its `toString` (5.6).
+
 ---
 
 ## 4. The vault file, the reader rules and generation storage (normative)
