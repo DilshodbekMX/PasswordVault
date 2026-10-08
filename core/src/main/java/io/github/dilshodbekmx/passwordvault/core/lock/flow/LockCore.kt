@@ -349,6 +349,35 @@ internal class VaultLock(
         }
     }
 
+    /**
+     * A replacement takes this vault's shortcuts (`off = replaced`, each key deleted at once, lock.md
+     * §5.7): F16b step 5, and rows 1 and 2 of start-up's step 3 (§5.11). The PIN's record is read
+     * through its counter first (§6.3 S), which a vault whose PIN is being removed loses nothing by.
+     * Both slots are always tried. True when neither slot can come back: each record was written
+     * without its slot, holds none, or is never used (MISSING, DAMAGED). False while a record cannot
+     * be read now (UNREADABLE), which may read fine next time with its slot in it, or was written by
+     * a newer version of the app, which the lock never rewrites, or while a write failed: the
+     * `replaced` mark must then stay, because start-up makes good a step 5 that did not finish only
+     * while the mark is there.
+     */
+    fun removeShortcutsOfAReplacement(): Boolean {
+        startPin()
+        val pinGone = pin.removeSlot(PinRecord.OffReason.REPLACED) && noSlotCanComeBack(pinRead)
+        val fingerprintGone = fingerprint.removeSlot(FingerprintRecord.OffReason.REPLACED) && noSlotCanComeBack(fingerprint.read)
+        return pinGone && fingerprintGone
+    }
+
+    /**
+     * Whether a shortcut record that [read] gives can bring no slot back: one the lock holds (its
+     * removal of the slot is then the record), none at all, or a damaged one, which is never used
+     * (§5.3). Not one that cannot be read now, which may read fine next time with its slot in it,
+     * nor one written by a newer version of the app, which the lock never rewrites.
+     */
+    private fun noSlotCanComeBack(read: RecordRead<*>): Boolean = when (read) {
+        is RecordRead.Ok, RecordRead.Missing, is RecordRead.Damaged -> true
+        RecordRead.Unreadable, RecordRead.Newer -> false
+    }
+
     /** `pin.rec` as the entry policy takes it (lock.md §13.1): the record in memory, or what reading the file gave. */
     val pinRead: RecordRead<PinRecord>
         get() = if (pinStarted) pin.record?.let { RecordRead.Ok(it) } ?: pin.lastRead else pinAtLoad

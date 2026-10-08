@@ -1,7 +1,5 @@
 package io.github.dilshodbekmx.passwordvault.core.lock.flow
 
-import io.github.dilshodbekmx.passwordvault.core.lock.record.FingerprintRecord
-import io.github.dilshodbekmx.passwordvault.core.lock.record.PinRecord
 import io.github.dilshodbekmx.passwordvault.core.lock.record.RecordRead
 import io.github.dilshodbekmx.passwordvault.core.util.Uuid
 
@@ -20,7 +18,7 @@ import io.github.dilshodbekmx.passwordvault.core.util.Uuid
  *    | This vault is | Vault N is | The lock |
  *    |---|---|---|
  *    | put aside | on the phone | removes this vault's two slots (`off = replaced`), sets `pending_mp = null`, deletes the two aliases; `replaced` stays |
- *    | current | on the phone, put aside | does the same, and sets `replaced = null` (the owner went back, F16b) |
+ *    | current | on the phone, put aside | does the same, and sets `replaced = null` once neither slot can come back (the owner went back, F16b) |
  *    | either | not on the phone | sets `replaced = null`; slots, keys and `pending_mp` are kept (the replacement did not take place) |
  *
  *    A write that fails here is tried again at the next start; until then the app behaves as if it
@@ -98,15 +96,18 @@ internal class StartUp(private val core: LockCore) {
 
     /**
      * The two slots of a replaced vault go (`off = replaced`), each key at once (§5.7), and its
-     * pending password with them. The PIN's record is read through its counter first (§6.3 S), which
-     * a vault whose PIN is being removed loses nothing by.
+     * pending password with them (`VaultLock.removeShortcutsOfAReplacement`). With [clearMark] (row 2,
+     * the owner went back) the mark goes only once neither slot can come back. A record that this
+     * start could not read may still hold its slot, which nothing would remove once the mark was gone,
+     * and the PIN or the finger of whoever replaced the master password would open these passwords
+     * again: the mark stays, and the next start tries again (lock.md §5.11 step 3), as F16b step 5
+     * keeps it (`OlderCopies`).
      */
     private fun removeShortcuts(lock: VaultLock, clearMark: Boolean) {
-        lock.startPin()
-        lock.pin.removeSlot(PinRecord.OffReason.REPLACED)
-        lock.fingerprint.removeSlot(FingerprintRecord.OffReason.REPLACED)
+        val gone = lock.removeShortcutsOfAReplacement()
         val record = lock.state ?: return
-        if (record.pendingMp == null && !(clearMark && record.replaced != null)) return
-        lock.master.update { it.copy(pendingMp = null, replaced = if (clearMark) null else it.replaced) }
+        val clear = clearMark && gone && record.replaced != null
+        if (record.pendingMp == null && !clear) return
+        lock.master.update { it.copy(pendingMp = null, replaced = if (clear) null else it.replaced) }
     }
 }

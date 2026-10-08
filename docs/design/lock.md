@@ -489,7 +489,7 @@ Under the lock mutex, before any lock screen is drawn and before any flow can ma
    | This vault is | Vault N is | What happened | The lock |
    |---|---|---|---|
    | put aside | on the phone | The replacement was carried out | removes this vault's two slots (`off = replaced`), sets `pending_mp = null`, and deletes the two aliases. `replaced` stays |
-   | current | on the phone, put aside | The owner went back (F16b), and step 5 there did not finish | does the same, and sets `replaced = null` |
+   | current | on the phone, put aside | The owner went back (F16b), and step 5 there did not finish | does the same, and sets `replaced = null` once neither slot can come back: each record was written without its slot, or reads MISSING or DAMAGED. A record that this start cannot read (UNREADABLE) may hold its slot when it reads again, and nothing would remove that slot once the mark was gone, so the mark stays and the next start tries again, as F16b step 5 keeps it |
    | either | not on the phone | The replacement did not take place: the process died after F11 step 15 or inside storage's last step | sets `replaced = null`. Slots, keys and `pending_mp` are kept, so the owner gets in as before |
 
    A write that fails here is tried again at the next start. Until then the app behaves as if it had succeeded, because the lock controller works from the records it means to have on disk (6.3). The third row cannot be reached by deleting vault N after a replacement that did take place: "Delete" settles the mark first (F17 step 5).

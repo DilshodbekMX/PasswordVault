@@ -1,8 +1,5 @@
 package io.github.dilshodbekmx.passwordvault.core.lock.flow
 
-import io.github.dilshodbekmx.passwordvault.core.lock.record.FingerprintRecord
-import io.github.dilshodbekmx.passwordvault.core.lock.record.PinRecord
-import io.github.dilshodbekmx.passwordvault.core.lock.record.RecordRead
 import io.github.dilshodbekmx.passwordvault.core.lock.record.StateRecord
 import io.github.dilshodbekmx.passwordvault.core.util.Bytes
 
@@ -150,10 +147,8 @@ internal class OlderCopies(private val core: LockCore) {
             // not reach the disk), the mark stays, and the next start removes that slot and then the mark
             // ("the owner went back, and step 5 there did not finish"). Without it, the PIN or the finger of
             // whoever replaced the master password would open these passwords again once that record reads.
-            lock.startPin()
-            val pinGone = lock.pin.removeSlot(PinRecord.OffReason.REPLACED) && noSlotCanComeBack(lock.pinRead)
-            val fingerprintGone = lock.fingerprint.removeSlot(FingerprintRecord.OffReason.REPLACED) && noSlotCanComeBack(lock.fingerprint.read)
-            lock.master.update { it.copy(pendingMp = null, replaced = if (pinGone && fingerprintGone) null else it.replaced) }
+            val gone = lock.removeShortcutsOfAReplacement()
+            lock.master.update { it.copy(pendingMp = null, replaced = if (gone) null else it.replaced) }
             if (core.visit !== visit || visit.place.hasEnded) {
                 // The visit ended while the vaults changed places: the swap stands, and nothing opens (I11).
                 try {
@@ -254,17 +249,6 @@ internal class OlderCopies(private val core: LockCore) {
     private fun forget() {
         kept?.let { Bytes.wipe(it.typed) }
         kept = null
-    }
-
-    /**
-     * Whether a shortcut record that [read] gives can bring no slot back: one the lock holds (its
-     * removal of the slot is then the record), none at all, or a damaged one, which is never used
-     * (§5.3). Not one that cannot be read now, which may read fine next time with its slot in it,
-     * nor one written by a newer version of the app, which the lock never rewrites.
-     */
-    private fun noSlotCanComeBack(read: RecordRead<*>): Boolean = when (read) {
-        is RecordRead.Ok, RecordRead.Missing, is RecordRead.Damaged -> true
-        RecordRead.Unreadable, RecordRead.Newer -> false
     }
 
     /** The vault put aside that is open in place in the vault port is dropped again, with its key (`VaultPort.dropAside`). */

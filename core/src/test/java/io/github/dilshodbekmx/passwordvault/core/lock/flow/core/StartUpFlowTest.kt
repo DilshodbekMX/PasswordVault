@@ -264,6 +264,42 @@ class StartUpFlowTest {
     }
 
     @Test
+    fun step3_row2_aShortcutRecordThatCannotBeReadAtTwoStarts_keepsTheMarkUntilItsSlotIsGone() {
+        for (record in listOf("pin.rec", "fingerprint.rec")) {
+            val g = LockFixture()
+            val old = g.seedVault(vaultId = OTHER_VAULT, password = "the old password") // current again
+            g.port.seedAside(VAULT, bytes(PASSWORD)) // vault N, put aside by going back
+            g.plantPin(old)
+            g.plantFingerprint(old)
+            g.plantState(
+                OTHER_VAULT,
+                replaced = StateRecord.Replaced(VAULT, atMs = g.clock.wallMs(), by = Shortcut.PIN, creditedMs = 0L, seenElapsedMs = g.clock.elapsedMs()),
+            )
+            // Two starts at which this record of the old vault cannot be read (lock.md §5.3 UNREADABLE: an I/O
+            // error that may pass). Its slot cannot be removed then, so the mark must stay: start-up removes
+            // what F16b step 5 did not only while the mark is there (§5.11 step 3, row 2).
+            g.files.fail(FakeRecordFiles.Op.READ, times = -1) { it.endsWith("/$OTHER_VAULT/$record") }
+            g.startInFront()
+            assertNotNull("$record, first start: the mark stays while that slot may still be there", g.stateRecord(OTHER_VAULT).replaced)
+            g.restart()
+            g.startInFront()
+            assertNotNull("$record, second start: the mark is still there", g.stateRecord(OTHER_VAULT).replaced)
+
+            // The error passes, and the phone starts again: now both slots go, and then the mark.
+            g.files.clearFaults()
+            g.restart()
+            g.startInFront()
+            assertNull("$record: the old PIN slot", g.pinRecord(OTHER_VAULT).slot)
+            assertNull("$record: the old fingerprint slot", g.fingerprintRecord(OTHER_VAULT).slot)
+            assertNull("$record: the mark", g.stateRecord(OTHER_VAULT).replaced)
+            // Whoever replaced the master password knew the old PIN (F11 step 3): it opens nothing here.
+            assertTrue("$record: ${g.screen}", g.screen is LockScreen.MasterPassword)
+            assertEquals(record, LockSummary.Pin.NotSet, g.engine.summary.value.pin)
+            assertEquals(record, emptyList<String>(), g.keys.aliases)
+        }
+    }
+
+    @Test
     fun step3_row3_theReplacementDidNotTakePlace_onlyTheMarkGoes() {
         val vault = f.seedVault()
         val pin = f.plantPin(vault)
