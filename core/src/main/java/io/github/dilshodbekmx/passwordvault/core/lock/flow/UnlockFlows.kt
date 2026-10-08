@@ -284,9 +284,25 @@ internal class UnlockFlows(private val core: LockCore) {
      * under a launch number of its own. Step 4: only 32 bytes that then open the vault count (I7).
      * A result whose launch is no longer outstanding, or whose visit has ended, is dropped (§9.2
      * rule 8, I11).
+     *
+     * A caller that is cancelled while the first turn runs (a scope that a rotation ends) never
+     * gets the launch that turn made: the turn runs to its end under the mutex, and `withContext`
+     * drops its answer on the way back (architecture.md §3.4). That launch is ended here, so that it
+     * does not stay outstanding with no prompt behind it and refuse every later one of the visit
+     * (rule 4); and a prompt that was to open by itself may do so at the next resume (rule 3).
      */
     suspend fun fingerprint(auto: Boolean) {
-        val launch = core.locked { prepare(auto) } ?: return
+        var made: Launch? = null
+        val launch = try {
+            core.locked { prepare(auto).also { made = it } }
+        } catch (e: CancellationException) {
+            made?.let { dropped ->
+                withContext(NonCancellable) {
+                    core.locked { if (core.launchEnded(dropped.number) && auto) dropped.visit.autoPromptDone = false }
+                }
+            }
+            throw e
+        } ?: return
         val result = try {
             core.fingerprintKey.open(launch.alias, launch.wrap.nonce, launch.wrap.ct, PromptUse.UNLOCK, launch.number)
         } catch (e: CancellationException) {
