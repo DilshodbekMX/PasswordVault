@@ -102,6 +102,25 @@ class ImportPlannerTest {
         assertEquals(2, notes.entries.size)
     }
 
+    /** Rules (b) and (c) join rows whatever their stars: the account they make is a favourite when one of them was. */
+    @Test
+    fun aJoinKeepsTheStarOfARowItTakesIn() {
+        val file = file(
+            csv(
+                "name,url,username,password,favorite",
+                "google.com,https://accounts.google.com/,aziz,G00gle!,",
+                "youtube.com,https://youtube.com/,aziz,G00gle!,1",
+                "instagram.com,https://instagram.com/,aziz,In5ta!,1",
+                "com.instagram.android,android://AbC==@com.instagram.android/,aziz,In5ta!,",
+                "mail.ru,https://mail.ru/,aziz,M@il,",
+            ),
+        )
+        val plan = plan(file)
+        assertEquals(listOf("Google", "Instagram", "Mail"), plan.entries.map { it.title })
+        assertEquals(listOf(2, 2, 1), plan.entries.map { it.urls.size })
+        assertEquals(listOf(true, true, false), plan.entries.map { it.favourite })
+    }
+
     @Test
     fun aJoinTakesAtMostTenWebsites() {
         val rows = (1..12).map { "s$it.google.com,https://s$it.google.com/,aziz@gmail.com,G00gle!," }

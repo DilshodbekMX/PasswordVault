@@ -919,7 +919,11 @@ class ImportAccount(
     /** How many rows of the file it is (1 for a JSON item). */
     val rows: Int get() = if (lines.isEmpty()) 1 else lines.size
 
-    /** This account and [other], read from later rows, as one: [other]'s websites added (rules (a) to (c) of ux.md §5.21). */
+    /**
+     * This account and [other], read from later rows, as one: [other]'s websites added (rules (a) to (c)
+     * of ux.md §5.21), and a favourite when either was one (rules (b) and (c) join rows whatever their
+     * stars, and the star of a row that is taken in is not lost).
+     */
     internal fun joinedWith(other: ImportAccount): ImportAccount {
         val a = entry
         val b = other.entry
@@ -930,6 +934,7 @@ class ImportAccount(
         return ImportAccount(
             a.copy(
                 urls = urls,
+                favourite = a.favourite || b.favourite,
                 createdAt = minOf(a.createdAt, b.createdAt),
                 updatedAt = maxOf(a.updatedAt, b.updatedAt),
                 passwordChangedAt = listOfNotNull(a.passwordChangedAt, b.passwordChangedAt).maxOrNull(),
