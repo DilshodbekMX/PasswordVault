@@ -22,6 +22,8 @@ import io.github.dilshodbekmx.passwordvault.core.formats.writers.WriterFixtures
 import io.github.dilshodbekmx.passwordvault.core.model.EditTexts
 import io.github.dilshodbekmx.passwordvault.core.model.Entry
 import io.github.dilshodbekmx.passwordvault.core.model.HistoryItem
+import io.github.dilshodbekmx.passwordvault.core.model.Vault
+import io.github.dilshodbekmx.passwordvault.core.model.VaultEdits
 import io.github.dilshodbekmx.passwordvault.core.util.ParseError
 import io.github.dilshodbekmx.passwordvault.core.util.Uuid
 import io.github.dilshodbekmx.passwordvault.testing.FakeRandom
@@ -409,6 +411,31 @@ class ImporterTest {
         assertTrue(own.accounts.all { Uuid.isValid(it.entry.id) })
         assertEquals(ImportFixtures.id(7), own.accounts[1].entry.id) // an id that is one is kept as written
         assertEquals(3, own.accounts.map { it.entry.id }.toSet().size)
+    }
+
+    /**
+     * Build-plan §12, decision 9: our own JSON's data of a newer version at the top of the file is listed
+     * once ("Some data from a newer version of the app will not be imported.") and is not kept; an
+     * item's unknown keys stay with its account, as before.
+     */
+    @Test
+    fun ourOwnJsonsUnknownTopLevelDataIsListedOnceAndNotKept() {
+        val newer = file(
+            """{"encrypted":false,"passwordVault":{"format":"passwordvault-export","version":2,"exportedAt":"2027-01-01T00:00:00.000Z",""" +
+                """"folders":[{"id":1,"name":"Ish"}],"theme":"dark"},"folders":[],"items":[""" +
+                """{"type":1,"id":"${ImportFixtures.id(5)}","name":"A","login":{"username":"u","password":"p"},"passwordVault":{"future":true}}]}""",
+        )
+        assertTrue(newer.newerVersion)
+        assertEquals(listOf(ImportLeftOut.Kind.UNKNOWN_DATA to 0), newer.leftOut.map { it.kind to it.position })
+        val plan = ImportFixtures.plan(newer)
+        val after = VaultEdits.addImported(plan.entries, FakeRandom(3), ImportFixtures.Texts::fromFile)(Vault(), NOW).vault
+        assertTrue("not kept", after.extras.isEmpty())
+        assertEquals("an item's own unknown keys are kept", mapOf("future" to "true"), after.entries.single().extras)
+
+        // Our own file of this version, and a foreign one, list nothing.
+        val own = file(BitwardenJson.export(listOf(ImportFixtures.entry(1, "A", "u", "p")), NOW, GENERATOR).bytes)
+        assertTrue(own.leftOut.isEmpty())
+        assertTrue(file("""{"encrypted":false,"folders":[],"items":[{"type":1,"name":"B","login":{"password":"q"}}]}""").leftOut.isEmpty())
     }
 
     /** The review of 3.15: a JSON password that is not text is listed on its account, and a secure note keeps its login. */
