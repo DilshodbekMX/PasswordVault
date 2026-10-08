@@ -244,7 +244,8 @@ class TextDecodingTest {
 
     @Test
     fun replacedBytesAreListedByLineAsCsvNumbersItsRows() {
-        val text = "name,note Ж\r\n" + "a,\"one\ntwo X\"\r\n" + "b,c\rd,eX\n"
+        // Three Cyrillic letters against the two bad bytes: UTF-8 by proportion (build-plan §12, decision 12).
+        val text = "name,note ЖЖЖ\r\n" + "a,\"one\ntwo X\"\r\n" + "b,c\rd,eX\n"
         val raw = text.toByteArray()
         raw[raw.indexOf('X'.code.toByte())] = 0xFF.toByte()
         raw[raw.lastIndexOf('X'.code.toByte())] = 0xFE.toByte()
@@ -260,7 +261,8 @@ class TextDecodingTest {
 
     @Test
     fun atMostAThousandLinesAreListedButAllAreCounted() {
-        val raw = ("ok Ж\n" + "bad ").toByteArray() + bytes(0xFF) + "\n".toByteArray()
+        // Two Cyrillic letters for each bad byte: UTF-8 by proportion (build-plan §12, decision 12).
+        val raw = ("ok ЖЖ\n" + "bad ").toByteArray() + bytes(0xFF) + "\n".toByteArray()
         val many = ByteArray(0).let { var all = it; repeat(2_000) { all += raw }; all }
         val d = TextDecoding.decode(many)
         assertEquals(Why.UTF8_SEQUENCES, d.why)
