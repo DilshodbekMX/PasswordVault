@@ -376,6 +376,7 @@ class VaultsAndNoticesTest {
 
         rig.send(LockIntent.ItWasntMe) // "It wasn't me" on the list's banner
 
+        assertEquals("the open app is locked first, by the session as \"Lock now\" locks it (architecture.md §5.5)", 1, rig.lockNows)
         if (rig.reached44("F16b")) return@runTest // OlderCopies.itWasntMe is package 4.4's: the intent reached it
         val field = rig.field
         assertEquals("the old vault's own lock screen (lock.md F16b step 2)", AsideLine.FromBefore(replacedAt), field.aside)
@@ -390,6 +391,7 @@ class VaultsAndNoticesTest {
         val before = rig.state
         rig.send(LockIntent.ItWasntMe)
         assertEquals(before, rig.state)
+        assertEquals("and nothing is locked for it", 0, rig.lockNows)
         assertEquals(emptyList<Throwable>(), rig.crashes)
     }
 

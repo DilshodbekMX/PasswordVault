@@ -90,7 +90,8 @@ import kotlinx.coroutines.withContext
  * @param io the dispatcher of the settings' writes.
  * @param prompts the fingerprint prompt of the process; `BiometricHost` gives it each activity's.
  * @param lockNow `Session.lockNow` (architecture.md §5.5: our clip cleared, a draft flushed, then
- *   [lock]), for "Finish now"; this class never calls [lock] itself.
+ *   [lock]), for the intents of the open app that lead to a lock screen ("Finish now", "It wasn't
+ *   me"); this class never calls [lock] itself.
  * @param olderCopyAnswered called when the older-copy notice was answered (lock.md §13.4 item 1):
  *   the vault's automatic writes may run again (architecture.md §5.5).
  * @param debug the test hooks of lock.md §15.3 in a build that has the debug commands, else null.
@@ -133,8 +134,8 @@ class DefaultLockManager(
      */
     private var setAside = false
 
-    /** "Finish now" asked for a lock: when it has come, the master-password field is shown ([finishPending]). */
-    private var finishAfterLock = false
+    /** What an intent of the open app does once the lock it asked the session for has come ([lockThen]). */
+    private var afterLock: (suspend () -> Unit)? = null
 
     /** The app is visible: between the process-level `ON_START` and `ON_STOP`. */
     private val visible = MutableStateFlow(false)
@@ -252,8 +253,17 @@ class DefaultLockManager(
             LockIntent.CancelPending -> act { engine.cancelPending() }
             LockIntent.FinishPending -> finishPending()
             LockIntent.ItWasntMe -> {
-                val old = engine.summary.value.replaced?.oldVaultId ?: return
-                act { engine.itWasntMe(old) }
+                // The old vault's own lock screen (lock.md F16b step 1), so the open app is locked first, as
+                // "Lock now" locks it. Without a replacement there is nothing to answer. Its old vault is null
+                // when the master password was replaced more than once: the lock screen's "Forgot master
+                // password?" sheet then lists each, and the engine changes nothing there.
+                val old = (engine.summary.value.replaced ?: return).oldVaultId
+                if (engine.state.value is LockState.Unlocked) {
+                    setAside = true // the lock screen that the lock shows first is not where this leads: no prompt over it
+                    lockThen { engine.itWasntMe(old) }
+                } else {
+                    act { engine.itWasntMe(old) }
+                }
             }
             LockIntent.GoBack -> {
                 lockScreenUsed()
@@ -410,10 +420,10 @@ class DefaultLockManager(
         when (now) {
             is LockState.Unlocked -> if (before !is LockState.Unlocked) unlocked(before)
             is LockState.Locked -> {
-                if (finishAfterLock) {
-                    // The lock that "Finish now" asked for: the field that takes the new master password (F11 step 13).
-                    finishAfterLock = false
-                    act { engine.useMasterPassword() }
+                afterLock?.let { step ->
+                    // The lock that an intent of the open app asked for has come: now its step.
+                    afterLock = null
+                    act(step)
                 }
                 val screen = now.screen
                 if (screen is LockScreen.MasterPassword && screen.reason == MpReason.NoSecureHardware) noSecureHardwareSeen = true
@@ -501,7 +511,16 @@ class DefaultLockManager(
     private fun finishPending() {
         if (engine.state.value !is LockState.Unlocked || engine.summary.value.pending?.ready != true) return
         setAside = true
-        finishAfterLock = true
+        lockThen { engine.useMasterPassword() }
+    }
+
+    /**
+     * Locks the open app as "Lock now" does, through the session ([lockNow]: our clip cleared, a
+     * draft flushed, then [lock]; architecture.md §5.5), and runs [step] when the lock has come: for
+     * the intents of the open app that lead to a lock screen. [lock] is called only by the session.
+     */
+    private fun lockThen(step: suspend () -> Unit) {
+        afterLock = step
         lockNow()
     }
 
