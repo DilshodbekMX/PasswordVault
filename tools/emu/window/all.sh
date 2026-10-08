@@ -4,9 +4,11 @@
 # staging build. This is what an integration check calls.
 #
 #   tools/emu/window/all.sh [--apk FILE]... [--only NAME[,NAME...]] SERIAL...
-#       SERIAL...  private emulators of this worktree from tools/emu/boot.sh, API 28 and API 37 (the
-#                  helper app needs API 26, so not the API 24 device). The devices run at the same
-#                  time; on one device the scripts run one after another.
+#       SERIAL...  private emulators of this worktree from tools/emu/boot.sh: API 28 and API 37, and
+#                  API 24 if wanted. The helper app needs API 26, so a device older than that runs
+#                  a11y-old.sh in a11y.sh's place and nothing else (uiautomator's view of the masked
+#                  fields). The devices run at the same time; on one device the scripts run one after
+#                  another.
 #       --apk FILE one APK of the app; may be given more than once. Without it: this worktree's
 #                  app/build/outputs/apk/debug/app-debug.apk and .../staging/app-staging.apk
 #                  (tools/gradle.sh :app:assembleDebug :app:assembleStaging).
@@ -51,6 +53,17 @@ for name in $(printf '%s' "$ONLY" | tr ',' ' '); do
 done
 [ ${#SCRIPTS[@]} -gt 0 ] || usage
 for serial in "${SERIALS[@]}"; do pv_require_serial "$serial"; done
+
+# The scripts of each device: the chosen ones; on a device older than API 26, a11y-old.sh for a11y.sh.
+declare -A DEVICE_SCRIPTS DEVICE_API
+for serial in "${SERIALS[@]}"; do
+    DEVICE_API[$serial]=$(PV_SERIAL=$serial pv_api)
+    if [ "${DEVICE_API[$serial]:-0}" -lt 26 ] 2>/dev/null; then
+        case " ${SCRIPTS[*]} " in *" a11y "*) DEVICE_SCRIPTS[$serial]=a11y-old ;; *) DEVICE_SCRIPTS[$serial]="" ;; esac
+    else
+        DEVICE_SCRIPTS[$serial]="${SCRIPTS[*]}"
+    fi
+done
 for apk in "${APKS[@]}"; do
     [ -f "$apk" ] || { echo "all.sh: no APK at $apk (tools/gradle.sh :app:assembleDebug :app:assembleStaging)" >&2; exit 2; }
 done
@@ -66,7 +79,7 @@ rm -f "$OUT"/*.log "$OUT"/*.rc
 run_device() {
     local serial=$1 apk script log rc
     for apk in "${APKS[@]}"; do
-        for script in "${SCRIPTS[@]}"; do
+        for script in ${DEVICE_SCRIPTS[$serial]}; do
             log=$OUT/$serial-$(basename "$apk" .apk)-$script.log
             "$WIN_DIR/$script.sh" "$serial" --apk "$apk" >"$log" 2>&1
             rc=$?
@@ -81,7 +94,10 @@ run_device() {
     done
 }
 
-echo "all.sh: ${SCRIPTS[*]} on ${SERIALS[*]} with $(for apk in "${APKS[@]}"; do printf '%s ' "$(basename "$apk")"; done)"
+plan=""
+for serial in "${SERIALS[@]}"; do plan="$plan$serial (API ${DEVICE_API[$serial]}): ${DEVICE_SCRIPTS[$serial]:-nothing}; "; done
+for apk in "${APKS[@]}"; do plan="$plan$(basename "$apk") "; done
+echo "all.sh: $plan"
 for serial in "${SERIALS[@]}"; do run_device "$serial" & done
 wait
 
@@ -89,14 +105,14 @@ failed=0
 total=0
 for serial in "${SERIALS[@]}"; do
     for apk in "${APKS[@]}"; do
-        for script in "${SCRIPTS[@]}"; do
+        for script in ${DEVICE_SCRIPTS[$serial]}; do
             log=$OUT/$serial-$(basename "$apk" .apk)-$script.log
             rc=$(cat "$log.rc" 2>/dev/null || echo "?")
             total=$((total + 1))
             [ "$rc" = 0 ] || failed=$((failed + 1))
             printf '%s %s on %s (API %s) with %s: %s passed, %s failed, %s skipped, %s known (exit %s)\n' \
                 "$([ "$rc" = 0 ] && echo PASS || echo FAIL)" "$script.sh" "$serial" \
-                "$(sed -n 's/^.* on [^ ]* (API \([0-9]*\)).*/\1/p' "$log" | head -n 1)" "$(basename "$apk")" \
+                "${DEVICE_API[$serial]}" "$(basename "$apk")" \
                 "$(grep -c '^PASS ' "$log")" "$(grep -c '^FAIL ' "$log")" "$(grep -c '^SKIPPED ' "$log")" "$(grep -c '^KNOWN ' "$log")" "$rc"
         done
     done
