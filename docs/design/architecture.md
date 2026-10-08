@@ -250,6 +250,7 @@ class AsideVault(val vaultId: String, val putAsideAtMs: Long, val newest: Genera
 class Staged internal constructor(val vaultId: String, val vkId: String, val generation: Long,
                                   val slotSalt: ByteArray /* as read back from disk */, internal val path: String)
 class OpenedVault internal constructor(val vault: Vault, val vaultId: String, val generation: Long, val vkId: String,
+                                       val createdMs: Long /* the header's `created` of `generation` */,
                                        val newestOnDisk: Long, internal val vk: ByteArray, internal val slot: PasswordSlot)
 class SlotRef internal constructor(val salt: ByteArray, val vkId: String, val generation: Long, internal val slot: PasswordSlot)
                                                        // one distinct slot (4.8 step 1): the caller derives the KEK with `salt`;
@@ -261,7 +262,7 @@ object VaultStores {                                   // the body throws NotImp
                                                        // build: the running app's, for the writer_version rule of 4.10
 ```
 
-`OpenedVault`, `Staged` and `SlotRef` keep VK, the slot and paths `internal` to `:core`, so `:app` can hold them but reach VK only through `useKey`. `olderCopyFirst` says that the newest generation was DAMAGED and an older one is the newest readable (the notice of ux.md §5.9, and the hold on automatic writes in 5.5).
+`OpenedVault`, `Staged` and `SlotRef` keep VK, the slot and paths `internal` to `:core`, so `:app` can hold them but reach VK only through `useKey`. `OpenedVault.createdMs` is the `created` of the generation it holds (4.2), taken from the header the store has just read or written: the one that opened, which is older than the newest on disk when an older copy opened, or the one `commit` or `publish` just placed. The repository hands it on as the `createdMs` of `VaultOpen.Opened`, `PasswordOpen.Opened` and `VaultWrite.Done` (3.4) and never reads a generation file itself. `olderCopyFirst` says that the newest generation was DAMAGED and an older one is the newest readable (the notice of ux.md §5.9, and the hold on automatic writes in 5.5).
 
 ### 3.4 Lock ports (`core.lock.record`, `core.lock.flow`)
 

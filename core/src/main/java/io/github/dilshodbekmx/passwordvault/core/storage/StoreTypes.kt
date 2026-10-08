@@ -70,12 +70,17 @@ class SlotRef internal constructor(
  * A vault opened from disk (architecture.md §3.3). `:app` holds it but reaches VK only through
  * `VaultStorage.useKey`: VK and the slot are `internal` to `:core`. [newestOnDisk] above
  * [generation] tells the caller that an older copy opened (the notice of ux.md §5.9).
+ *
+ * [createdMs] is the `created` of generation [generation] as its header gives it (§4.2): the
+ * generation that opened, or the one a save has just placed. The lock shows it ("We opened the
+ * copy from 5 October, 18:42", ux.md §5.9), so nobody reads the file again for it.
  */
 class OpenedVault internal constructor(
     val vault: Vault,
     val vaultId: String,
     val generation: Long,
     val vkId: String,
+    val createdMs: Long,
     val newestOnDisk: Long,
     internal val vk: ByteArray,
     internal val slot: PasswordSlot,
