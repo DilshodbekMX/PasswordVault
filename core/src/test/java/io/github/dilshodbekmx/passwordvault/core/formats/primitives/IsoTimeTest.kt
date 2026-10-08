@@ -98,6 +98,30 @@ class IsoTimeTest {
         for (text in refused) assertNull(text, IsoTime.parse(text))
     }
 
+    /**
+     * The review of 3.15: the pattern's `\d` is any decimal digit on Android (ICU), so a date in
+     * Arabic-Indic, Persian or Devanagari digits was read on the phone and refused on the JVM. The
+     * pattern is compiled here as Android reads it (`\d` and `\s` by Unicode), and still takes ASCII
+     * digits only.
+     */
+    @Test
+    fun thePatternTakesAsciiDigitsOnlyAsAndroidReadsIt() {
+        val asAndroid = java.util.regex.Pattern.compile(IsoTime.PATTERN, java.util.regex.Pattern.UNICODE_CHARACTER_CLASS)
+        val otherDigits = listOf(
+            "\u0662\u0660\u0662\u0666-\u0661\u0660-\u0660\u0668", // Arabic-Indic
+            "\u06F2\u06F0\u06F2\u06F6-\u06F1\u06F0-\u06F0\u06F8T\u06F0\u06F9:\u06F0\u06F0Z", // Persian
+            "\u0968\u0966\u0968\u0966-\u0967\u0966-\u0966\u096E", // Devanagari
+            "2026-10-0\u0668", // one of them among ASCII digits
+            "2026-10-08T09:00:00+0\u06F5:00",
+        )
+        for (text in otherDigits) {
+            assertFalse(text, asAndroid.matcher(text).matches())
+            assertNull(text, IsoTime.parse(text))
+        }
+        assertTrue(asAndroid.matcher("2026-10-08T09:00:00.123+05:00").matches())
+        assertEquals(OffsetDateTime.parse("2026-10-08T09:00:00.123+05:00").toInstant().toEpochMilli(), IsoTime.parse("2026-10-08T09:00:00.123+05:00"))
+    }
+
     @Test
     fun theDigitsAreAsciiWhateverTheDefaultLocale() {
         val saved = Locale.getDefault()

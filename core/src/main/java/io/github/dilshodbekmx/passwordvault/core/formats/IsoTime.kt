@@ -80,18 +80,26 @@ object IsoTime {
         sb.append(digits)
     }
 
-    private val ISO = Regex(
-        """^\s*([+-]\d{6}|\d{4})-(\d{2})-(\d{2})""" +
-            """(?:[Tt ](\d{2}):(\d{2})(?::(\d{2})(?:[.,](\d{1,9}))?)?)?""" +
-            """\s*([Zz]|[+-]\d{2}(?::?\d{2})?)?\s*$""",
-    )
+    /**
+     * The forms [parse] reads. Digits are `[0-9]`, never `\d`: Android's pattern engine (ICU) reads
+     * `\d` as any decimal digit, Arabic-Indic and Persian ones included, and `toInt` takes those too,
+     * so a date written with them was read on the phone and refused in the JVM tests (the review of
+     * 3.15). The test compiles it as Android does.
+     */
+    internal const val PATTERN: String =
+        """^\s*([+-][0-9]{6}|[0-9]{4})-([0-9]{2})-([0-9]{2})""" +
+            """(?:[Tt ]([0-9]{2}):([0-9]{2})(?::([0-9]{2})(?:[.,]([0-9]{1,9}))?)?)?""" +
+            """\s*([Zz]|[+-][0-9]{2}(?::?[0-9]{2})?)?\s*$"""
+
+    private val ISO = Regex(PATTERN)
 
     /**
      * Parses the date forms that Bitwarden, KeePassXC and spreadsheets write: a date, optionally a
      * time (`T`, `t` or a space between) with optional seconds and fraction (`.` or `,`, up to nine
      * digits, cut to milliseconds), optionally `Z` or an offset `±HH`, `±HHMM` or `±HH:MM`. A time
-     * without an offset is UTC. Returns null for anything else, including a day the month does not
-     * have; the importer then keeps "unknown". A second of 60 (a leap second) is the next second.
+     * without an offset is UTC. The digits are ASCII on every platform. Returns null for anything
+     * else, including a day the month does not have; the importer then keeps "unknown". A second of
+     * 60 (a leap second) is the next second.
      */
     fun parse(s: String?): Long? {
         if (s == null || s.length > 64) return null
