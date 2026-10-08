@@ -48,7 +48,9 @@ import kotlinx.coroutines.withContext
  *    new process, waits for the next unlock. A restore's in any state but `Starting` (its screens
  *    are shown in setup and while locked). A recorded document is handed out again after every
  *    unlock until the screen calls [finish]: the task continues where it was (ux.md §4 item 2).
- * 4. The screen calls [finish] when the task is done, or [abandon] when it is given up (the user
+ * 4. A backup's or an export's screen writes through [write], which records that the task's write
+ *    began ([FileTask.written]) before it writes into the document.
+ * 5. The screen calls [finish] when the task is done, or [abandon] when it is given up (the user
  *    cancelled after the picker, or the write failed): that deletes the document "Save as" created
  *    when nothing of the user's is in it, and says what it did, for the screen's sentence (ux.md §4
  *    item 3).
@@ -135,6 +137,29 @@ class FileTaskStore(
             .map { PickResult.Picked(it) },
     )
 
+    /**
+     * Writes [bytes] into the document of the task of [kind], a backup or an export, with
+     * [DocumentIo.write] (its read-back included), after recording that the task's write began
+     * ([FileTask.written]): if the write fails, or a lock or the end of the process cuts it off before
+     * [finish], [abandon] removes what it wrote, in this process or in a new one. The record is kept
+     * in this process even if the settings could not be written, as every record of the store is.
+     *
+     * True: written and read back. False, with nothing written: no task of [kind] has a document.
+     * False: the write or its check failed; the screen then gives the task up with [abandon].
+     */
+    suspend fun write(kind: FileTask.Kind, bytes: ByteArray): Boolean {
+        require(kind.action == Action.CREATE) { "$kind saves no document" }
+        val doc = withContext(dispatchers.main) {
+            changes.withLock {
+                val task = recorded.value?.takeIf { it.kind == kind } ?: return@withLock null
+                val doc = task.doc ?: return@withLock null
+                if (!task.written) record(task.copy(written = true))
+                doc
+            }
+        } ?: return false
+        return documents.write(doc, bytes)
+    }
+
     /** Forgets the task of [kind]: it is done. Nothing happens to its document. */
     suspend fun finish(kind: FileTask.Kind) {
         withContext(dispatchers.main) {
@@ -147,20 +172,22 @@ class FileTaskStore(
     /**
      * Gives up the task of [kind] and cleans up after it (ux.md §4 item 3: the user cancelled after
      * the picker, or the write failed), then forgets it. The document that "Save as" created for it is
-     * deleted when nothing of the user's is in it: it is still empty, or [written] says that this task
-     * wrote into it and the write or its check failed. A document that holds something else (an
-     * existing file the user chose to replace), or that cannot be read, is left as it was; one that
-     * an import or a restore opened is never touched. Says what was done, for the screen's sentence.
-     *
-     * The store does not know what a task wrote: only [written] says it, and only for the try that
-     * calls. A document that an earlier try filled, before a lock or the end of the process cut it
-     * off, counts as "something else" and is kept ([Cleanup.Kept]).
+     * deleted when nothing of the user's is in it: it is still empty, or this task wrote into it and
+     * the write or its check failed or was cut off. That the task wrote is known from its record
+     * ([FileTask.written], set by [write], in this process or in one before) or from the caller
+     * ([written]). A document that holds something else (an existing file the user chose to replace),
+     * or that cannot be read, is left as it was; one that an import or a restore opened is never
+     * touched. Says what was done, for the screen's sentence.
      */
     suspend fun abandon(kind: FileTask.Kind, written: Boolean = false): Cleanup = withContext(dispatchers.main) {
         changes.withLock {
             val task = recorded.value?.takeIf { it.kind == kind } ?: return@withLock Cleanup.NoDocument
             val doc = task.doc
-            val cleanup = if (doc == null || kind.action != Action.CREATE) Cleanup.NoDocument else withContext(NonCancellable) { remove(doc, written) }
+            val cleanup = if (doc == null || kind.action != Action.CREATE) {
+                Cleanup.NoDocument
+            } else {
+                withContext(NonCancellable) { remove(doc, task.written || written) }
+            }
             record(null)
             cleanup
         }
@@ -261,7 +288,7 @@ class FileTaskStore(
         changes.withLock {
             if (launcher == null) return@withLock false
             val before = recorded.value
-            if (!record(task.copy(doc = null))) {
+            if (!record(task.copy(doc = null, written = false))) {
                 recorded.value = before // not recorded, so the picker does not open
                 return@withLock false
             }

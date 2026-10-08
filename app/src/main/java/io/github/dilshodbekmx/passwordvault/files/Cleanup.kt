@@ -18,13 +18,11 @@ sealed interface Cleanup {
     data class Left(val doc: DocRef, val place: Place) : Cleanup
 
     /**
-     * It holds something, or it could not be read, and the caller did not say that this task wrote
-     * into it (`written`): it is left as it was. Mostly that is an existing file the user chose to
-     * replace, and nothing is said about it. It can also be what an earlier try of this same task
-     * wrote before it was cut off, when the app locked or its process ended between the write and
-     * [FileTaskStore.finish]: the store cannot tell the two apart. So a screen that gives up a task
-     * it took up again must not take this answer as "nothing of ours is left": an unprotected export
-     * that may be in that file is noted in the vault, so that its banner shows (ux.md §5.20).
+     * It holds something, or it could not be read, and no write of this task began (neither
+     * [FileTask.written], which [FileTaskStore.write] records, nor the caller's `written`): it is left
+     * as it was. That is an existing file the user chose to replace, and nothing is said about it.
+     * What a try of this task wrote before a lock or the end of the process cut it off is not
+     * [Kept]: the task's record says that its write began, and the document is removed.
      */
     data object Kept : Cleanup
 }
