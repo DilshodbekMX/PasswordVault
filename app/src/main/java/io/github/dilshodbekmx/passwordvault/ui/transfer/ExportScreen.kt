@@ -32,8 +32,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedCard
@@ -51,6 +49,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -67,6 +66,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.isSpecified
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.dilshodbekmx.passwordvault.R
 import io.github.dilshodbekmx.passwordvault.core.formats.GoogleCsv
@@ -213,16 +213,26 @@ private fun ColumnScope.ChooseStep(state: ExportUiState.Choose, actions: ExportA
     Column(Modifier.fillMaxWidth().selectableGroup()) {
         for (choice in ExportChoice.entries) {
             val selected = choice == state.choice
-            ListItem(
-                headlineContent = { Text(stringResource(choice.label)) },
-                supportingContent = { Text(stringResource(choice.line)) },
-                leadingContent = { RadioButton(selected = selected, onClick = null) },
-                colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surface),
+            // A row of a list of choices (ux.md §5.20): the whole row is the radio button, 48 dp high at least.
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .heightIn(min = 48.dp)
                     .selectable(selected = selected, role = Role.RadioButton, onClick = { actions.choose(choice) })
+                    .padding(vertical = 12.dp)
                     .testTag(ExportTags.choice(choice)),
-            )
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                RadioButton(selected = selected, onClick = null)
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(stringResource(choice.label), style = MaterialTheme.typography.bodyLarge)
+                    Text(
+                        text = stringResource(choice.line),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
         }
     }
     Button(onClick = actions.continueFromChoice, modifier = Modifier.fillMaxWidth().testTag(ExportTags.CONTINUE)) {
@@ -294,7 +304,10 @@ private fun CsvCard(summary: ExportCsvSummary?, showWhich: Boolean, toggleWhich:
             if (summary.skipped.isNotEmpty()) {
                 Text(stringResource(R.string.export_csv_skip_intro), style = MaterialTheme.typography.bodyMedium)
                 for (skipped in summary.skipped) {
-                    Bullet(pluralStringResource(skipped.reason.plural, skipped.titles.size, skipped.titles.size))
+                    Bullet(
+                        text = pluralStringResource(skipped.reason.plural, skipped.titles.size, skipped.titles.size),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
                 }
                 Text(stringResource(R.string.export_csv_skip_outro), style = MaterialTheme.typography.bodyMedium)
                 TextButton(onClick = toggleWhich, modifier = Modifier.testTag(ExportTags.SEE_WHICH)) {
@@ -561,17 +574,20 @@ private fun Line(text: String, tag: String, live: Boolean = false) {
     )
 }
 
-/** One point of a list, with a dot drawn in the text's colour. */
+/** One point of a list, in [style], with a dot drawn in the theme's colour for secondary content. */
 @Composable
-private fun Bullet(text: String, modifier: Modifier = Modifier) {
+private fun Bullet(text: String, modifier: Modifier = Modifier, style: TextStyle = MaterialTheme.typography.bodyLarge) {
+    // The dot sits in the middle of the first line, whatever the font size.
+    val line = if (style.lineHeight.isSpecified) style.lineHeight else style.fontSize
+    val dotTop = if (line.isSpecified) with(LocalDensity.current) { (line.toDp() - 6.dp) / 2 } else 9.dp
     Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Box(
             Modifier
-                .padding(top = 9.dp)
+                .padding(top = dotTop.coerceAtLeast(0.dp))
                 .size(6.dp)
                 .background(MaterialTheme.colorScheme.onSurfaceVariant, CircleShape),
         )
-        Text(text, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+        Text(text, style = style, modifier = Modifier.weight(1f))
     }
 }
 

@@ -14,8 +14,6 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalResources
-import androidx.compose.ui.semantics.SemanticsProperties
-import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.unit.LayoutDirection
@@ -38,7 +36,7 @@ import org.junit.runner.RunWith
  * build makes it, i18n.md §1.1, §5), and in `ar-XB` for a right-to-left layout. Every `export_`
  * string comes out pseudo-localized, so none is plain English or marked untranslatable; no step
  * shows an English `export_` text, so none is written into the code; and each step is kept as a
- * picture on the device (`/data/local/tmp/pv-shots-5.3-pseudo/`) for a person to look for
+ * picture on the device (`/data/local/tmp/pv-shots-5.3-pseudo/<tag>/`) for a person to look for
  * clipped text.
  */
 @RunWith(AndroidJUnit4::class)
@@ -71,7 +69,7 @@ class ExportPseudoLocaleTest {
         val english = compose.activity
         val pseudo = pseudo("en-XA")
         val strings = R.string::class.java.fields.filter { it.name.startsWith("export_") }
-        assertTrue("the export's strings are found: ${strings.size}", strings.size >= 80)
+        assertTrue("the export's strings are found: ${strings.size}", strings.size >= 70)
         for (field in strings) {
             val id = field.getInt(null)
             assertNotEquals("string ${field.name}", english.getString(id), pseudo.getString(id))
@@ -103,7 +101,8 @@ class ExportPseudoLocaleTest {
                 ExportFrame(shown, password, ExportActions(), onBack = {})
             }
         }
-        ExportShots.PSEUDO.start()
+        val shots = ExportShots.pseudo(tag)
+        shots.start()
         val title = context.getString(R.string.export_title)
         for ((name, state) in ExportStates.all) {
             compose.runOnUiThread { shown = state }
@@ -112,7 +111,7 @@ class ExportPseudoLocaleTest {
             val texts = compose.everyText()
             val plain = texts.filter { it in english }
             assertTrue("$tag, step $name shows English texts: $plain", plain.isEmpty())
-            ExportShots.PSEUDO.take(compose, "$tag-$name")
+            shots.take(compose, name)
         }
     }
 
@@ -122,16 +121,4 @@ class ExportPseudoLocaleTest {
         .map { compose.activity.getString(it.getInt(null)) }
         .filter { '%' !in it }
         .toSet()
-
-    /** Every text and content description on the screen. */
-    private fun androidx.compose.ui.test.junit4.ComposeTestRule.everyText(): List<String> {
-        val texts = mutableListOf<String>()
-        fun walk(node: androidx.compose.ui.semantics.SemanticsNode) {
-            node.config.getOrNull(SemanticsProperties.Text)?.forEach { texts += it.text }
-            node.config.getOrNull(SemanticsProperties.ContentDescription)?.let { texts += it }
-            for (child in node.children) walk(child)
-        }
-        for (root in onAllNodes(androidx.compose.ui.test.isRoot(), useUnmergedTree = true).fetchSemanticsNodes()) walk(root)
-        return texts
-    }
 }

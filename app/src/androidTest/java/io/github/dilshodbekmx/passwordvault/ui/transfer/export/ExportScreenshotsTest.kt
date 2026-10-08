@@ -43,15 +43,17 @@ class ExportScreenshotsTest {
             }
         }
         ExportShots.USER.start()
-        fun take(file: String, step: String, scrollTo: String? = null) {
-            compose.runOnUiThread { shown = states.getValue(step) }
+        fun take(file: String, step: String, scrollTo: String? = null, state: ExportUiState = states.getValue(step)) {
+            compose.runOnUiThread { shown = state }
             compose.waitForIdle()
             if (scrollTo != null) compose.onNodeWithTag(scrollTo).performScrollTo()
             ExportShots.USER.take(compose, file)
         }
+        // The CSV warning as this phone shows it (Android 17: no line about Downloads), with the names listed afterwards.
+        val csv = (states.getValue("warning-csv") as ExportUiState.Warning).copy(oldAndroid = false, showWhich = false)
         take("5.3-01-choose", "choose")
-        take("5.3-02-warning-csv", "warning-csv")
-        take("5.3-03-warning-csv-end", "warning-csv", scrollTo = ExportTags.WARNING_CONTINUE)
+        take("5.3-02-warning-csv", "warning-csv", state = csv)
+        take("5.3-03-warning-csv-see-which", "warning-csv", scrollTo = ExportTags.WARNING_CONTINUE, state = csv.copy(showWhich = true, understood = true))
         take("5.3-04-warning-excel", "warning-xlsx", scrollTo = ExportTags.WARNING_CONTINUE)
         take("5.3-05-password", "password")
         take("5.3-06-password-wrong", "password-wrong")
@@ -64,7 +66,7 @@ class ExportScreenshotsTest {
         take("5.3-13-pending", "pending")
         compose.runOnUiThread { theme = ThemeChoice.DARK }
         take("5.3-14-choose-dark", "choose")
-        take("5.3-15-warning-csv-dark", "warning-csv")
+        take("5.3-15-warning-csv-dark", "warning-csv", state = csv)
         take("5.3-16-password-dark", "password")
         take("5.3-17-saved-dark", "saved-drive")
         val taken = ExportShots.USER.taken()

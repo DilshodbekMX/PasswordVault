@@ -6,6 +6,8 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -115,7 +117,11 @@ class ExportScreenTest {
         compose.onNodeWithTag(ExportTags.SUBMIT).assertIsNotEnabled()
         compose.onNodeWithTag(ExportTags.PASSWORD).performTextInput(MASTER)
         compose.waitForIdle()
-        assertFalse("no node holds the typed master password", MASTER in compose.everythingReadable())
+        // The field's node holds a mask character for each typed one, and no text of the screen any of it.
+        val field = compose.onNodeWithTag(ExportTags.PASSWORD).fetchSemanticsNode().config
+        assertTrue("the field is a password field", SemanticsProperties.Password in field)
+        assertEquals("\u2022".repeat(MASTER.length), field.getOrNull(SemanticsProperties.EditableText)?.text)
+        assertNoTextHolds(MASTER)
         compose.onNodeWithTag(ExportTags.SUBMIT).assertIsEnabled().performClick()
         compose.waitUntil(TIMEOUT_MS) { rig.picker.creates.isNotEmpty() }
         assertEquals(listOf(NAME_TODAY to "text/csv"), rig.picker.creates.map { it.first.replace(Regex("\\d{4}-\\d{2}-\\d{2}"), "DAY") to it.second })
@@ -133,7 +139,7 @@ class ExportScreenTest {
         assertTrue("Done above Delete it now: $done, $delete", done.bottom <= delete.top)
         assertTrue(String(rig.documents.files.getValue(DOC), Charsets.UTF_8).contains(PASSWORD_GMAIL))
         assertEquals(listOf(DOC), rig.repository.stored.plainExports.map { it.uri })
-        assertFalse("never a password on the screen", PASSWORD_GMAIL in compose.everythingReadable())
+        assertNoTextHolds(PASSWORD_GMAIL)
 
         compose.onNodeWithTag(ExportTags.DONE).performClick()
         assertEquals(1, rig.nav.backs)
@@ -224,6 +230,15 @@ class ExportScreenTest {
         compose.onNodeWithTag(ExportTags.CONTINUE).performScrollTo().performClick()
         compose.waitUntil(TIMEOUT_MS) { rig.nav.opened.isNotEmpty() }
         assertEquals(listOf<Route>(Route.Backup), rig.nav.opened.toList())
+    }
+
+    /** No text, description or state of the screen holds four characters in a row of [secret]. */
+    private fun assertNoTextHolds(secret: String) {
+        val shown = compose.everyText()
+        assertTrue("the screen's texts are read", shown.size >= 3)
+        for (text in shown) {
+            for (part in secret.windowed(4)) assertFalse("\"$text\" shows \"$part\" of a secret", part in text)
+        }
     }
 
     private companion object {

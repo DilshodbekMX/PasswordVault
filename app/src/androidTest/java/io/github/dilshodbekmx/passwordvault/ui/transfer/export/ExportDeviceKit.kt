@@ -3,6 +3,8 @@ package io.github.dilshodbekmx.passwordvault.ui.transfer.export
 import android.content.Context
 import android.os.ParcelFileDescriptor
 import androidx.compose.ui.semantics.SemanticsNode
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsNodeInteractionsProvider
 import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.junit4.ComposeTestRule
@@ -172,17 +174,19 @@ class RecordingNav : Navigator {
     override fun tab(root: Route): Boolean = false
 }
 
-/** Every property of every node of both trees as text: what an accessibility service or a test can read. */
-fun SemanticsNodeInteractionsProvider.everythingReadable(): String {
-    val nodes = mutableListOf<SemanticsNode>()
+/** Every text, content description and state description on the screen, in both trees: what a person or a service reads. */
+fun SemanticsNodeInteractionsProvider.everyText(): List<String> {
+    val texts = mutableListOf<String>()
     fun walk(node: SemanticsNode) {
-        nodes += node
+        node.config.getOrNull(SemanticsProperties.Text)?.forEach { texts += it.text }
+        node.config.getOrNull(SemanticsProperties.ContentDescription)?.let { texts += it }
+        node.config.getOrNull(SemanticsProperties.StateDescription)?.let { texts += it }
         for (child in node.children) walk(child)
     }
-    for (merged in listOf(true, false)) {
-        for (root in onAllNodes(isRoot(), useUnmergedTree = !merged).fetchSemanticsNodes()) walk(root)
+    for (unmerged in listOf(true, false)) {
+        for (root in onAllNodes(isRoot(), useUnmergedTree = unmerged).fetchSemanticsNodes()) walk(root)
     }
-    return nodes.joinToString("\n") { node -> node.config.joinToString(", ") { (key, value) -> "${key.name}=$value" } }
+    return texts
 }
 
 /**
@@ -195,6 +199,7 @@ class ExportShots(val dir: String) {
     fun start() {
         shell("rm -rf $dir")
         shell("mkdir -p $dir")
+        shell("chmod 777 $dir")
     }
 
     /** Saves the screen as [name].png once the composition is idle and the window has settled. */
@@ -212,8 +217,8 @@ class ExportShots(val dir: String) {
         /** The pictures for the user. */
         val USER = ExportShots("/data/local/tmp/pv-shots-5.3")
 
-        /** The walks in the pseudo-locales. */
-        val PSEUDO = ExportShots("/data/local/tmp/pv-shots-5.3-pseudo")
+        /** The walk in the pseudo-locale [tag]. */
+        fun pseudo(tag: String) = ExportShots("/data/local/tmp/pv-shots-5.3-pseudo/$tag")
 
         private const val SETTLE_MS = 600L
 
