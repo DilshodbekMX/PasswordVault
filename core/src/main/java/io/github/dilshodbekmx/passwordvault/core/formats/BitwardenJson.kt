@@ -418,9 +418,9 @@ object BitwardenJson {
             val newerVersion: Boolean,
             /**
              * The unknown keys of our own file's top `passwordVault` object, each with its value as
-             * compact JSON text, in the order they were read: what [Vault.extras] holds, so that a
-             * later version's vault-level data survives (formats-review P11). Unpaired surrogates in
-             * them are U+FFFD already.
+             * compact JSON text, in the order they were read: what [Vault.extras] holds (formats-review
+             * P11). An import lists them and does not keep them (build-plan §12, decision 9). Unpaired
+             * surrogates in them are U+FFFD already.
              */
             val vaultExtras: Map<String, String>,
             /** Byte-order marks removed from the start of the file. */
