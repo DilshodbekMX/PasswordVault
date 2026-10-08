@@ -67,7 +67,7 @@ internal fun ImportScreen(vm: ImportViewModel, nav: Navigator) {
     val resources = LocalResources.current
     val formatters = rememberFormatters()
     val texts = remember(resources, formatters) { ImportTexts(resources, formatters) }
-    LaunchedEffect(texts) { vm.start(texts) }
+    LaunchedEffect(vm, texts) { vm.start(texts) }
     BackHandler { vm.back() }
     LaunchedEffect(ui.move) {
         when (ui.move ?: return@LaunchedEffect) {

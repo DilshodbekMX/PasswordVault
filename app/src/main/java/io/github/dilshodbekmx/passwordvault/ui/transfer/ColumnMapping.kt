@@ -62,7 +62,7 @@ internal fun ColumnMappingScreen(vm: ImportColumnsViewModel, nav: Navigator) {
     val resources = LocalResources.current
     val formatters = rememberFormatters()
     val texts = remember(resources, formatters) { ImportTexts(resources, formatters) }
-    LaunchedEffect(texts) { vm.start(texts) }
+    LaunchedEffect(vm, texts) { vm.start(texts) }
     LaunchedEffect(ui.leave) {
         if (!ui.leave) return@LaunchedEffect
         nav.back()
