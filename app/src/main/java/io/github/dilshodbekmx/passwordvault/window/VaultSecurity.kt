@@ -27,6 +27,7 @@ import androidx.compose.ui.semantics.isSensitiveData
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.window.DialogWindowProvider
 import io.github.dilshodbekmx.passwordvault.BuildConfig
+import io.github.dilshodbekmx.passwordvault.clipboard.ClipboardWindow
 
 /*
  * Window and input protections (lock.md §13.5, ux.md §3), copied from the window lab's
@@ -137,6 +138,10 @@ internal object MaskedFieldEvents : View.AccessibilityDelegate() {
  *  - In a dialog's or sheet's window it applies [VaultSecurity.applyToWindow] to that window.
  *  - In every window it removes the "Autofill" item from the text toolbar: that item sends a manual
  *    autofill request even for a field that opted out with `ContentDataType.None` [L-win Experiment 2].
+ *  - In every window it provides the clipboard bridge as `LocalClipboard` ([ClipboardWindow]): a
+ *    dialog's or sheet's ComposeView provides the platform's clipboard again, so without it a copy
+ *    made there would skip `SecretClipboard` (architecture.md D-25, ux.md §6 item 5). At the
+ *    activity's root, which is outside `ClipboardRoot`, it changes nothing.
  *
  * The content is laid out as if the wrapper were not there.
  */
@@ -151,7 +156,7 @@ fun VaultWindow(content: @Composable () -> Unit) {
         modifier = Modifier.filterTextContextMenuComponents { it.key != TextContextMenuKeys.AutofillKey },
         propagateMinConstraints = true,
     ) {
-        content()
+        ClipboardWindow(content)
     }
 }
 

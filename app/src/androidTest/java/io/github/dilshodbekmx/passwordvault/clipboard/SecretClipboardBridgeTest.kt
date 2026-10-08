@@ -28,6 +28,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.github.dilshodbekmx.passwordvault.i18n.UiText
 import io.github.dilshodbekmx.passwordvault.settings.ThemeChoice
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultDialog
+import io.github.dilshodbekmx.passwordvault.ui.common.VaultSheet
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultTextField
 import io.github.dilshodbekmx.passwordvault.ui.theme.PasswordVaultTheme
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -187,8 +188,9 @@ class SecretClipboardBridgeTest {
 
     /**
      * A bottom sheet is a window of its own too, drawn by its own ComposeView: as with a dialog.
-     * Material 3's sheet itself, as the dialog above is Compose's own: `VaultSheet` is to wrap its
-     * content in [ClipboardWindow] (this package's interface request), and then has the bridge.
+     * Material 3's sheet itself, as the dialog above is Compose's own. The app's `VaultDialog` and
+     * `VaultSheet` have the bridge because `VaultWindow`, which holds their content, wraps it in
+     * [ClipboardWindow] (the two tests below).
      */
     @OptIn(ExperimentalMaterial3Api::class)
     @Test
@@ -206,24 +208,48 @@ class SecretClipboardBridgeTest {
         assertTrue("inside ClipboardWindow it has the bridge", wrapped is SecretClipboardBridge)
     }
 
-    /** The same copy as in the activity's window, from a field in one of the app's own dialogs. */
+    /**
+     * The same copy as in the activity's window, from a field in one of the app's own dialogs, with
+     * nothing around the field but what `VaultDialog` puts there.
+     */
     @Test
-    fun aFieldInADialogCopiesThroughTheBridgeInsideClipboardWindow() {
+    fun aFieldInTheAppsDialogCopiesThroughTheBridge() {
         val field = TextFieldState("card 8600 1234")
         show(focused = false) {
             VaultDialog(onDismissRequest = {}) {
-                ClipboardWindow {
-                    VaultTextField(state = field, modifier = Modifier.testTag(FIELD_TAG))
-                }
+                VaultTextField(state = field, modifier = Modifier.testTag(FIELD_TAG))
             }
         }
+        copyAllOfTheField(field)
+    }
+
+    /** The same from a field in one of the app's own bottom sheets (`VaultSheet`). */
+    @Test
+    fun aFieldInTheAppsSheetCopiesThroughTheBridge() {
+        val field = TextFieldState("card 8600 1234")
+        show(focused = false) {
+            VaultSheet(onDismissRequest = {}) {
+                VaultTextField(state = field, modifier = Modifier.testTag(FIELD_TAG))
+            }
+        }
+        copyAllOfTheField(field)
+    }
+
+    /**
+     * Selects all of [field], the one tagged [FIELD_TAG], and copies it: it reaches the phone's
+     * clipboard with the sensitive flag and a token, and through the app's one helper, whose row
+     * says "Copied text".
+     */
+    private fun copyAllOfTheField(field: TextFieldState) {
         compose.onNodeWithTag(FIELD_TAG).performClick()
         compose.runOnUiThread { field.edit { selection = TextRange(0, length) } }
         compose.waitForIdle()
         compose.onNodeWithTag(FIELD_TAG).performSemanticsAction(SemanticsActions.CopyText)
         compose.waitUntil(TOOLBAR_MS) { ClipDevice.token() != null }
-        assertEquals("card 8600 1234", ClipDevice.text())
-        assertEquals(true, ClipDevice.sensitive())
+        assertEquals(field.text.toString(), ClipDevice.text())
+        assertEquals("with the sensitive flag", true, ClipDevice.sensitive())
+        val token = ClipDevice.token()
+        assertTrue("and a token: $token", Regex("[0-9a-f]{32}").matches(token.orEmpty()))
         assertEquals(AndroidSecretClipboard.COPIED_TEXT, graph.clipboard.status.value?.what)
     }
 
