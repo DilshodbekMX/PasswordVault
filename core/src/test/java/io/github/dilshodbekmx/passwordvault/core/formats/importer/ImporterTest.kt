@@ -411,6 +411,21 @@ class ImporterTest {
         assertEquals(3, own.accounts.map { it.entry.id }.toSet().size)
     }
 
+    /** The review of 3.15: a JSON password that is not text is listed on its account, and a secure note keeps its login. */
+    @Test
+    fun aJsonPasswordThatIsNotTextIsListedOnItsAccount() {
+        val file = file(
+            """{"encrypted":false,"items":[""" +
+                """{"type":1,"name":"Gmail","login":{"username":"aziz","password":["x"]}},""" +
+                """{"type":2,"name":"Router","secureNote":{"type":0},"login":{"username":"admin","password":"R0uter#Pass"}}]}""",
+        )
+        val (gmail, router) = file.accounts
+        assertEquals("[PASSWORD_NOT_IMPORTED×1]", gmail.changes.toString())
+        assertEquals(listOf("aziz", ""), listOf(gmail.entry.username, gmail.entry.password))
+        assertEquals(listOf("admin", "R0uter#Pass"), listOf(router.entry.username, router.entry.password))
+        assertTrue(router.changes.isEmpty())
+    }
+
     /**
      * A 10 MB file of millions of tiny values ran out of memory on a phone whose app memory is small
      * (the review of 3.15, on API 37 at 192 MB): the read says so, and the app goes on. Here the read
