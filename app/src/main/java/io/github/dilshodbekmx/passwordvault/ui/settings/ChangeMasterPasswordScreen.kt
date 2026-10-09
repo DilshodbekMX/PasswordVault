@@ -125,6 +125,7 @@ private fun ChangeStep(vm: ChangeMasterPasswordViewModel, ui: ChangeMasterPasswo
         ChangeStage.UNCLEAR -> Outcome(UiText.of(R.string.master_unclear), vm::close)
         ChangeStage.BACKUP -> NewBackupStep(
             heading = stringResource(R.string.master_changed),
+            usedElsewhere = ui.usedElsewhere,
             places = ui.places,
             onBackUpNow = vm::backUpNow,
             onLater = vm::close,

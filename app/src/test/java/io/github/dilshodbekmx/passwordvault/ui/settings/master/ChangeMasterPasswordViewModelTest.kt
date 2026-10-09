@@ -465,6 +465,16 @@ class ChangeMasterPasswordViewModelTest {
     }
 
     @Test
+    fun anOldMasterPasswordUsedForAnAccount_withoutSavedBackups_stillSaysSo() = runTest(dispatcher) {
+        val lock = lockWith(pin = PinStatus.NotSet)
+        val vm = model(lock, Vault(entries = listOf(GMAIL), masterPasswordMatches = listOf(GMAIL.id)))
+        upToThePin(vm)
+        advanceUntilIdle()
+        assertTrue("\"Also delete copies you sent to Telegram or by email.\" stands", vm.ui.value.usedElsewhere)
+        assertTrue(vm.ui.value.places.isEmpty())
+    }
+
+    @Test
     fun anOldMasterPasswordUsedNowhereElse_listsNoBackups() = runTest(dispatcher) {
         val lock = lockWith(pin = PinStatus.NotSet)
         val vm = model(lock, Vault(entries = listOf(BANK), backups = listOf(OLD_BACKUP)))

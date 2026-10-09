@@ -295,12 +295,13 @@ private fun keyboardShown(view: View): Boolean = ViewCompat.getRootWindowInsets(
  * The last step of a change (lock.md F8 step 9) and of a replacement (F11 step 19): [heading] ("Your
  * master password was changed." or "Your new master password works now."), "Make a new backup now.
  * Your old backups still open only with your old master password." with "Back up now" and "Later",
- * and, when the old master password may be known to others, the backups this app saved with
- * "Delete" ([places]) and "Also delete copies you sent to Telegram or by email."
+ * and, when the old master password may be known to others ([usedElsewhere]), the backups this app
+ * saved with "Delete" ([places]) and "Also delete copies you sent to Telegram or by email."
  */
 @Composable
 internal fun NewBackupStep(
     heading: String,
+    usedElsewhere: Boolean,
     places: List<BackupPlace>,
     onBackUpNow: () -> Unit,
     onLater: () -> Unit,
@@ -308,7 +309,7 @@ internal fun NewBackupStep(
 ) {
     MasterPage(heading = heading) {
         MasterText(stringResource(R.string.master_backup_text), Modifier.testTag(MasterTags.TEXT))
-        if (places.isNotEmpty()) Places(places, onDelete)
+        if (usedElsewhere) Places(places, onDelete)
         Button(onClick = onBackUpNow, modifier = Modifier.fillMaxWidth().testTag(MasterTags.BACK_UP_NOW)) {
             Text(stringResource(R.string.master_back_up_now))
         }
@@ -318,13 +319,17 @@ internal fun NewBackupStep(
     }
 }
 
-/** The backups this app saved (ux.md §5.18 step 6, §5.16 card 1), each with "Delete" and what it came to. */
+/**
+ * The backups this app saved (ux.md §5.18 step 6, §5.16 card 1), each with "Delete" and what it came
+ * to, and "Also delete copies you sent to Telegram or by email.", which stands also when this app
+ * noted no saved backup (one sent with the share sheet is not noted).
+ */
 @Composable
 private fun Places(places: List<BackupPlace>, onDelete: (FileRef) -> Unit) {
     val formatters = rememberFormatters()
     Column(Modifier.fillMaxWidth().testTag(MasterTags.PLACES), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
-            text = stringResource(R.string.master_places_heading),
+            text = stringResource(if (places.isEmpty()) R.string.master_places_none else R.string.master_places_heading),
             style = MaterialTheme.typography.titleSmall,
             modifier = Modifier.semantics { heading() },
         )

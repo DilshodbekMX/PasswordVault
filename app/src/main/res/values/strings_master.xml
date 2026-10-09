@@ -80,6 +80,8 @@
     <!-- Above the list of the backups this app saved, when the old master password is also the
          password of some account (ux.md §5.16 card 1): others may know it. -->
     <string name="master_places_heading">Your old master password may be known to others. Delete the backups made with it:</string>
+    <!-- The same when this app noted no saved backup: some may have been sent with another app. -->
+    <string name="master_places_none">Your old master password may be known to others. Delete the backups you made with it.</string>
     <!-- One backup in that list: %1$s is its file name, %2$s the day it was saved, for example
          "Oct 6, 2026". -->
     <string name="master_place">%1$s, saved %2$s</string>

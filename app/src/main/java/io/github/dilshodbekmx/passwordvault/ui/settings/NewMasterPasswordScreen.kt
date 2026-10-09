@@ -105,6 +105,7 @@ private fun NewStep(vm: NewMasterPasswordViewModel, ui: NewMasterPasswordUi) {
         NewStage.FINISH -> FinishStep(vm, ui)
         NewStage.FINISHED -> NewBackupStep(
             heading = stringResource(R.string.master_finished),
+            usedElsewhere = false,
             places = emptyList(),
             onBackUpNow = vm::backUpNow,
             onLater = vm::close,
