@@ -276,7 +276,13 @@ class NewMasterPasswordViewModelTest {
 
     @Test
     fun neitherAPinNorAFingerprint_theRouteIsNotOffered() = runTest(dispatcher) {
-        val lock = lockWith(pin = PinStatus.NotSet)
+        for (fingerprint in listOf(FingerprintStatus.Off, FingerprintStatus.TurnOnAgain, FingerprintStatus.Unavailable(11))) {
+            val vm = model(lockWith(pin = PinStatus.NotSet, fingerprint = fingerprint))
+            assertEquals("$fingerprint: said at once, without an explanation that promises a way", NewStage.STOPPED, vm.ui.value.stage)
+            assertEquals(UiText.of(R.string.master_not_offered), vm.ui.value.line)
+        }
+        // The lock decides when it is asked: a shortcut that stopped working meanwhile.
+        val lock = lockWith(pin = PinStatus.NotSet, fingerprint = FingerprintStatus.On)
         val vm = model(lock)
         lock.fake.proofResults += ProofResult.NotOffered
         vm.proveWithoutPin()

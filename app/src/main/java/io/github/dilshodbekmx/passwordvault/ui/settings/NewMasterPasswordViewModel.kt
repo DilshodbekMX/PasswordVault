@@ -102,10 +102,8 @@ class NewMasterPasswordViewModel(
     private var countdown: Job? = null
 
     init {
-        val status = lock.status.value
-        val stage = if (status.pending?.ready == true) NewStage.FINISH else NewStage.EXPLAIN
-        asking = stage == NewStage.EXPLAIN
-        state = MutableStateFlow(NewMasterPasswordUi(stage = stage).withStatus(status))
+        state = MutableStateFlow(startUi(lock.status.value))
+        asking = state.value.stage == NewStage.EXPLAIN
         ui = state.asStateFlow()
         viewModelScope.launch {
             lock.state.collect { if (it !is LockUiState.Unlocked) lockedNow() }
@@ -127,7 +125,7 @@ class NewMasterPasswordViewModel(
         val now = state.value
         if (now.proving || (now.stage != NewStage.EXPLAIN && now.stage != NewStage.PIN_GONE && now.stage != NewStage.PIN)) return
         asking = true
-        state.update { it.copy(proving = true, line = null, fingerprintPrompt = lock.status.value.pin != PinStatus.On) }
+        state.update { it.copy(proving = true, line = null, fingerprintPrompt = promptsFingerprint(lock.status.value)) }
         prove(pin = null)
     }
 
@@ -406,10 +404,23 @@ class NewMasterPasswordViewModel(
     private fun lockedNow() {
         asking = false
         dropAll()
-        val status = lock.status.value
-        val stage = if (status.pending?.ready == true) NewStage.FINISH else NewStage.EXPLAIN
-        asking = stage == NewStage.EXPLAIN
-        state.value = NewMasterPasswordUi(stage = stage).withStatus(status)
+        state.value = startUi(lock.status.value)
+        asking = state.value.stage == NewStage.EXPLAIN
+    }
+
+    /**
+     * Where the route starts for [status]: the finishing step while a new master password is ready;
+     * the explanation while the PIN or the fingerprint can open the app; otherwise the route is not
+     * offered (lock.md F11 step 3, "Neither"), and says so.
+     */
+    private fun startUi(status: LockStatus): NewMasterPasswordUi {
+        val stage = when {
+            status.pending?.ready == true -> NewStage.FINISH
+            status.pin == PinStatus.On || status.pin == PinStatus.CannotCheck || fingerprintUsable(status) -> NewStage.EXPLAIN
+            else -> NewStage.STOPPED
+        }
+        val line = if (stage == NewStage.STOPPED) UiText.of(R.string.master_not_offered) else null
+        return NewMasterPasswordUi(stage = stage, line = line).withStatus(status)
     }
 
     /**
@@ -473,6 +484,10 @@ class NewMasterPasswordViewModel(
 
         /** Fingerprint unlock is on and can be used: the line "Forgot your PIN as well? …", and the way on after the PIN is turned off. */
         private fun fingerprintUsable(status: LockStatus): Boolean = status.fingerprint == FingerprintStatus.On
+
+        /** Whether "Proof now" without a PIN opens the fingerprint prompt: no PIN exists, and fingerprint unlock is on (lock.md F11 step 3). */
+        private fun promptsFingerprint(status: LockStatus): Boolean =
+            status.pin != PinStatus.On && status.pin != PinStatus.CannotCheck && fingerprintUsable(status)
 
         /** The line of lock.md §13.3 for a fingerprint that did not confirm, said for this step. */
         fun fingerprintLine(line: FingerprintLine): UiText = UiText.of(
