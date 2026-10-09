@@ -103,6 +103,9 @@ class GuidedChangeViewModel(
     /** Counts the locks, so that a save that ends after one changes nothing on the screen. */
     private var session = 0
 
+    /** "Next" or "Done for now" was used: the screen is going. */
+    private var left = false
+
     init {
         viewModelScope.launch { repository.state.collect(::onVault) }
     }
@@ -257,7 +260,7 @@ class GuidedChangeViewModel(
 
     private suspend fun saveNew(password: String, mine: Int, again: () -> Unit) {
         // Locked while the password was being made: nothing is saved, and the screen is gone.
-        if (mine != session) return
+        if (!stillOpen(mine)) return
         val retry = liveEntry()?.changePending ?: false
         val change = if (retry) VaultEdits.retryChange(entryId, password) else VaultEdits.startChange(entryId, password)
         val result = repository.edit(change)
@@ -282,7 +285,7 @@ class GuidedChangeViewModel(
             if (result is SaveResult.Saved && result.value is EntryResult.Done) {
                 val open = currentVault()
                 val entry = open?.entries?.firstOrNull { it.id == entryId }
-                if (open != null && entry != null && !entry.changePending && mine == session) {
+                if (open != null && entry != null && !entry.changePending && stillOpen(mine)) {
                     memory.markDone(entryId, entry.updatedAt, GuidedChangeRules.notInBackup(open, entry))
                 }
             }
@@ -311,15 +314,24 @@ class GuidedChangeViewModel(
 
     // ---- The end of the change -------------------------------------------------------------------
 
-    /** "Next: Facebook": the id of the account to change next, whose screen takes this one's place; null when there is none. */
+    /**
+     * "Next: Facebook": the id of the account to change next, whose screen takes this one's place;
+     * null when there is none, and after the end was left once. The end stays drawn while the screen
+     * goes.
+     */
     fun next(): String? {
-        val next = (mutable.value as? GuidedChangeUiState.Done)?.nextId
-        memory.forget(entryId)
+        val next = (mutable.value as? GuidedChangeUiState.Done)?.nextId?.takeIf { !left }
+        leave()
         return next
     }
 
-    /** "Done for now", and "Back up now": the end of this change is not shown again. */
-    fun finish() = memory.forget(entryId)
+    /** "Done for now": the end of this change is not shown again. */
+    fun finish() = leave()
+
+    private fun leave() {
+        left = true
+        memory.forget(entryId)
+    }
 
     // ---- Inside ------------------------------------------------------------------------------------
 
@@ -330,9 +342,16 @@ class GuidedChangeViewModel(
         return session
     }
 
+    /**
+     * Whether the screen still shows session [mine]: no lock came since, and the vault is open. The
+     * lock's state reaches this ViewModel's collector a moment after the repository has it, so the
+     * repository is asked too.
+     */
+    private fun stillOpen(mine: Int): Boolean = mine == session && repository.state.value is VaultState.Unlocked
+
     /** A save of session [mine] ended: true when the screen still shows that session, which is then shown again. */
     private fun end(mine: Int): Boolean {
-        if (mine != session) return false
+        if (!stillOpen(mine)) return false
         busy = false
         currentVault()
         render()
