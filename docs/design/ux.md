@@ -235,7 +235,7 @@ Back rules. Predictive back is on at target 36: `onBackPressed` is not called an
 
 ### 5.1 Welcome (first run)
 
-- **Layout**: app icon, title "Your passwords, safe on this phone", and three short lines with icons:
+- **Layout**: the app's logo (the launcher icon's shield on a tile in the style's primary colour, [looks/README.md](looks/README.md) "The icon and the name"), title "Your passwords, safe on this phone", and three short lines with icons:
   - "Everything stays on this phone. No sign-up, no internet."
   - "Open the app with a PIN or your fingerprint, like a bank app."
   - "Copy a password with one tap when you need it."
@@ -400,13 +400,13 @@ States and messages:
 The states, what each shows and its English wording are lock.md §13.1 to §13.3; this section is the look, and its texts are lock.md's.
 
 **Layout** (portrait):
-- app icon 64 dp; title "PasswordVault"; subtitle **"Enter your app PIN"**. "App" tells it apart from the phone's own PIN, which the system's fingerprint prompt asks for after several wrong fingers (lock.md §9.3);
+- the app's logo, 64 dp (as on Welcome, §5.1); title "PasswordVault"; subtitle **"Enter your app PIN"**. "App" tells it apart from the phone's own PIN, which the system's fingerprint prompt asks for after several wrong fingers (lock.md §9.3);
 - a row of 6 dots, filled as digits are entered;
 - a status line (below). A line about a wrong PIN or about tries left stays until the visit ends: typing or deleting digits does not remove it, so that someone who is handed the phone sees it;
 - a 3 × 4 keypad `1 2 3 / 4 5 6 / 7 8 9 / [fingerprint] 0 [⌫]`;
 - below it, `TextButton` **"Forgot PIN? Use master password"**.
 
-**The fingerprint-only screen** (lock.md §13.1 row 6, §13.2), when fingerprint is usable and the PIN is not: title "PasswordVault", the status line, and the buttons "Use fingerprint" and "Use master password". No pad and no dots. The prompt opens by itself.
+**The fingerprint-only screen** (lock.md §13.1 row 6, §13.2), when fingerprint is usable and the PIN is not: the logo, the title "PasswordVault", the status line, and the buttons "Use fingerprint" and "Use master password". No pad and no dots. The prompt opens by itself.
 
 Details:
 - **Keys.** At least **64 dp** (72 dp preferred); digits in `headlineMedium`; a ripple and `HapticFeedbackType.VirtualKey` on press (Compose 1.12 has it [V: bytecode]).

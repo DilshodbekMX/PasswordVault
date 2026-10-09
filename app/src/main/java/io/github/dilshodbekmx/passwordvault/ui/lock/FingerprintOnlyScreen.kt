@@ -18,7 +18,7 @@ import io.github.dilshodbekmx.passwordvault.lock.LockIntent
 
 /**
  * The fingerprint-only screen (ux.md §5.9; lock.md §13.1 row 6, §13.2): fingerprint can be used and
- * the PIN cannot. The app's mark, "PasswordVault", a fingerprint that only decorates, the status
+ * the PIN cannot. The app's logo, "PasswordVault", a fingerprint that only decorates, the status
  * line (a fingerprint line with "Use your master password"), the line about why there is no pad,
  * "Use fingerprint" and "Use master password", and the test build's line. No pad and no dots. The
  * system's prompt opens over it by itself (the lock decides when, lock.md §9.2 rule 7). On the

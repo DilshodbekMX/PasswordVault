@@ -30,7 +30,7 @@ import io.github.dilshodbekmx.passwordvault.ui.common.PinDots
 import io.github.dilshodbekmx.passwordvault.ui.common.PinKeys
 
 /**
- * The PIN pad (ux.md §5.9; lock.md §13.1 row 5, §13.2): the app's mark, "PasswordVault", "Enter
+ * The PIN pad (ux.md §5.9; lock.md §13.1 row 5, §13.2): the app's logo, "PasswordVault", "Enter
  * your app PIN", the six dots, the status line, the keypad of `ui/common` with the fingerprint key
  * when fingerprint can be used, "Forgot PIN? Use master password", and the test build's line.
  *
@@ -99,7 +99,7 @@ fun PadScreen(
 }
 
 /**
- * The pad's column: the line of a vault put aside, the mark, the title, "Enter your app PIN", the
+ * The pad's column: the line of a vault put aside, the logo, the title, "Enter your app PIN", the
  * dots, the status line, then [keys] when they come in the same column, "Forgot PIN? Use master
  * password" and the test build's line.
  */

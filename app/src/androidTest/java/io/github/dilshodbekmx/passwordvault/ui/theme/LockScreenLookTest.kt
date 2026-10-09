@@ -3,15 +3,16 @@ package io.github.dilshodbekmx.passwordvault.ui.theme
 import android.content.Context
 import android.content.res.Configuration
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.ColorScheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.getValue
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockScreen
@@ -20,12 +21,20 @@ import io.github.dilshodbekmx.passwordvault.data.VaultState
 import io.github.dilshodbekmx.passwordvault.fake.FakeLockManager
 import io.github.dilshodbekmx.passwordvault.fake.FakeVaultRepository
 import io.github.dilshodbekmx.passwordvault.lock.LockUiState
+import io.github.dilshodbekmx.passwordvault.platform.AndroidClock
 import io.github.dilshodbekmx.passwordvault.settings.AppSettings
 import io.github.dilshodbekmx.passwordvault.settings.PrefsAppSettings
 import io.github.dilshodbekmx.passwordvault.settings.StyleChoice
 import io.github.dilshodbekmx.passwordvault.settings.ThemeChoice
 import io.github.dilshodbekmx.passwordvault.ui.common.PinPadTags
+import io.github.dilshodbekmx.passwordvault.ui.lock.LockScreens
+import io.github.dilshodbekmx.passwordvault.ui.lock.LockTags
+import io.github.dilshodbekmx.passwordvault.ui.lock.LockViewModel
 import io.github.dilshodbekmx.passwordvault.window.WindowPolicy
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -43,10 +52,10 @@ import org.junit.runner.RunWith
  * The style is stored with the real settings, `PrefsAppSettings` over a `SharedPreferences` file on
  * the device, and read back by a second one made over the same file, as a new process reads it.
  * The app's root theme is drawn with that over a lock that is locked ([FakeLockManager], its vault
- * closed) and shows [StandInLockScreen], which stands in for the lock screens package's PIN screen
- * and is drawn, like it, with the shared `PinPad`. The test then reads the screen's pixels: the
- * background, the logo, the dots and each kind of key, which every style draws in its own way (the
- * README's "PIN keys": filled circles, no fill with a tonal fingerprint key, outlined circles).
+ * closed), whose lock screens (`LockScreens`, as the lock route draws them) show the PIN pad. The
+ * test then reads the screen's pixels: the background, the logo, the dots and each kind of key,
+ * which every style draws in its own way (the README's "PIN keys": filled circles, no fill with a
+ * tonal fingerprint key, outlined circles).
  */
 @RunWith(AndroidJUnit4::class)
 class LockScreenLookTest {
@@ -56,6 +65,7 @@ class LockScreenLookTest {
     private val context: Context get() = InstrumentationRegistry.getInstrumentation().targetContext
     private val repository = FakeVaultRepository(Vault())
     private val lock = FakeLockManager(LockUiState.Locked(LockScreen.Pad(digits = 3, status = null, fingerprintKey = true, opening = false, aside = null)), repository)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
     private fun prefs() = context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
 
@@ -69,6 +79,9 @@ class LockScreenLookTest {
         context.deleteSharedPreferences(FILE)
     }
 
+    @After
+    fun stopScope() = scope.cancel()
+
     @Before
     fun lockedAndInTouchMode() {
         // Locked: the vault is closed, as the lock closes it.
@@ -80,15 +93,13 @@ class LockScreenLookTest {
         compose.setContent {
             WindowPolicy.Root {
                 PasswordVaultTheme(settings) {
-                    val state by lock.state.collectAsStateWithLifecycle()
-                    when (val now = state) {
-                        is LockUiState.Locked -> (now.screen as LockScreen.Pad).let { StandInLockScreen(entered = it.digits, fingerprintKey = it.fingerprintKey) }
-                        else -> Text("Unlocked")
+                    Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+                        LockScreens(viewModel { LockViewModel(lock, AndroidClock, scope, testBuild = false) }, onRestore = {})
                     }
                 }
             }
         }
-        compose.onNodeWithTag(LockTags.SCREEN).assertIsDisplayed()
+        compose.onNodeWithTag(LockTags.PAD).assertIsDisplayed()
     }
 
     @Test
@@ -120,26 +131,24 @@ class LockScreenLookTest {
         assertTrue("the app stayed locked", lock.state.value is LockUiState.Locked)
     }
 
-    /** The stand-in lock screen is drawn in [style]: its colours and its keys. */
+    /** The lock screen is drawn in [style]: its colours, its logo, its dots and its keys. */
     private fun assertLockScreenIs(style: StyleChoice, dark: Boolean) {
         val look = Looks.of(style, dark)
         val c: ColorScheme = look.colors
+        val top = LockTop.of(look)
         val what = "$style ${if (dark) "dark" else "light"}"
         compose.waitForIdle()
-        // The details as the screen read them from the theme.
-        val expected = "${look.pinKeys}/${if (look.fingerprintKeyTonal) "tonal" else "plain"}"
-        compose.waitUntil(5_000) { compose.node(LockTags.LOOK).config[SemanticsProperties.StateDescription] == expected }
 
         // The screen and the logo's tile.
-        compose.awaitPixel(LockTags.SCREEN, c.background, "$what: the lock screen's background", fx = 0.04f, fy = 0.12f)
-        compose.awaitPixel(LockTags.LOGO, c.primary, "$what: the logo's tile", fx = 0.5f, fy = 0.08f)
-        compose.awaitHasPixel(LockTags.LOGO, c.onPrimary, Offset(0.3f, 0.3f), Offset(0.7f, 0.7f), "$what: the logo on its tile")
+        compose.awaitPixel(LockTags.PAD, c.background, "$what: the lock screen's background", fx = 0.04f, fy = 0.97f)
+        compose.awaitPixel(LockTags.LOGO, top.logoTile, "$what: the logo's tile", fx = 0.5f, fy = 0.08f)
+        compose.awaitHasPixel(LockTags.LOGO, top.logoMark, Offset(0.3f, 0.3f), Offset(0.7f, 0.7f), "$what: the logo on its tile")
 
-        // The dots: three filled with the primary colour, three empty with a ring of the outline colour.
+        // The dots: three filled, three empty with a ring, on the top's colour.
         val dot = DOT / DOTS_WIDTH
-        compose.awaitPixel(PinPadTags.DOTS, c.primary, "$what: the first dot, filled", fx = dot / 2, fy = 0.5f)
-        compose.awaitPixel(PinPadTags.DOTS, c.background, "$what: the last dot, empty", fx = 1f - dot / 2, fy = 0.5f)
-        compose.awaitHasPixel(PinPadTags.DOTS, c.outline, Offset(1f - dot, 0.3f), Offset(1f - dot * 0.8f, 0.7f), "$what: the last dot's ring")
+        compose.awaitPixel(PinPadTags.DOTS, top.dotFilled, "$what: the first dot, filled", fx = dot / 2, fy = 0.5f)
+        compose.awaitPixel(PinPadTags.DOTS, top.background, "$what: the last dot, empty", fx = 1f - dot / 2, fy = 0.5f)
+        compose.awaitHasPixel(PinPadTags.DOTS, top.dotRing, Offset(1f - dot, 0.3f), Offset(1f - dot * 0.8f, 0.7f), "$what: the last dot's ring")
 
         // A digit key: a filled circle, the digit alone, or an outlined circle.
         val key = PinPadTags.key(5)

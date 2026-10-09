@@ -13,21 +13,17 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.heading
@@ -40,9 +36,10 @@ import io.github.dilshodbekmx.passwordvault.R
 import io.github.dilshodbekmx.passwordvault.i18n.Formatters
 import io.github.dilshodbekmx.passwordvault.i18n.UiText
 import io.github.dilshodbekmx.passwordvault.i18n.resolve
+import io.github.dilshodbekmx.passwordvault.ui.common.AppLogo
 
 /*
- * The parts the lock screens share: the page, the app's mark, the line of a vault put aside, the
+ * The parts the lock screens share: the page, the app's logo, the line of a vault put aside, the
  * test build's line, the buttons, and texts with their dates formatted in the composition's language.
  */
 
@@ -74,21 +71,12 @@ internal fun LockPage(modifier: Modifier = Modifier, spacing: Dp = 16.dp, conten
 }
 
 /**
- * The app's mark above the title, 64 dp (ux.md §5.9): a key in a circle, as on Welcome; the launcher
- * icon is not a vector Compose can draw. It only decorates.
+ * The app's logo above the title, 64 dp (ux.md §5.9): the launcher icon's shield on a tile, as on
+ * Welcome (`AppLogo`, docs/design/looks/README.md "The icon and the name"). It only decorates.
  */
 @Composable
-internal fun LockMark(size: Dp = 64.dp) {
-    Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.size(size)) {
-        Box(contentAlignment = Alignment.Center) {
-            Icon(
-                painter = painterResource(R.drawable.ic_common_key),
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier.size(size * 0.55f),
-            )
-        }
-    }
+internal fun LockMark() {
+    AppLogo(Modifier.testTag(LockTags.LOGO))
 }
 
 /** The title "PasswordVault" of the pad and the fingerprint-only screen (ux.md §5.9), a heading. */

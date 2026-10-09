@@ -64,6 +64,9 @@ object SetupTags {
     const val RESTORE = "pv.open.Restore"
     const val LANGUAGE = "pv.open.Language"
 
+    /** Welcome's logo. */
+    const val LOGO = "pv.setup.logo"
+
     /** "Open my previous passwords (locked on …)" for the vault [vaultId]. */
     fun aside(vaultId: String): String = "pv.setup.aside.$vaultId"
 

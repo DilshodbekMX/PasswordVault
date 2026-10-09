@@ -3,17 +3,13 @@ package io.github.dilshodbekmx.passwordvault.ui.setup
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -27,13 +23,15 @@ import io.github.dilshodbekmx.passwordvault.core.lock.flow.AsideVault
 import io.github.dilshodbekmx.passwordvault.i18n.rememberFormatters
 import io.github.dilshodbekmx.passwordvault.lock.LockStatus
 import io.github.dilshodbekmx.passwordvault.lock.LockUiState
+import io.github.dilshodbekmx.passwordvault.ui.common.AppLogo
 
 /**
  * Welcome, the first screen when the phone has no vault (ux.md §5.1; lock.md F1 step 1, §13.1 row
- * 1): the app's mark, "Your passwords, safe on this phone" and three short lines, then "Start", one
- * "Open my previous passwords (locked on …)" for each vault put aside, newest first (lock.md F17
- * step 4: the lock answers `LockIntent.OpenAside` with that vault's own lock screen), and "Restore
- * from a backup file". The globe button at the top opens the language dialog. Back leaves the app.
+ * 1): the app's logo (`AppLogo`, 72 dp), "Your passwords, safe on this phone" and three short
+ * lines, then "Start", one "Open my previous passwords (locked on …)" for each vault put aside,
+ * newest first (lock.md F17 step 4: the lock answers `LockIntent.OpenAside` with that vault's own
+ * lock screen), and "Restore from a backup file". The globe button at the top opens the language
+ * dialog. Back leaves the app.
  */
 @Composable
 fun WelcomeScreen(
@@ -48,7 +46,7 @@ fun WelcomeScreen(
         title = stringResource(R.string.setup_welcome_title),
         top = {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {
-                AppMark()
+                AppLogo(Modifier.testTag(SetupTags.LOGO), size = WELCOME_LOGO)
                 IconButton(onClick = onLanguage, modifier = Modifier.testTag(SetupTags.LANGUAGE)) {
                     Icon(
                         painter = painterResource(R.drawable.ic_setup_language),
@@ -87,21 +85,6 @@ fun asideVaults(state: LockUiState, status: LockStatus): List<AsideVault> {
     return (fromState + status.aside).distinctBy { it.vaultId }.sortedByDescending { it.putAsideAtMs }
 }
 
-/** The app's mark above the title: a key in a circle (the launcher icon is not a vector Compose can draw). */
-@Composable
-private fun AppMark() {
-    Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.size(72.dp)) {
-        Box(contentAlignment = Alignment.Center) {
-            Icon(
-                painter = painterResource(R.drawable.ic_common_key),
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier.size(40.dp),
-            )
-        }
-    }
-}
-
 /** One of Welcome's three lines: an icon that only decorates, and the text. */
 @Composable
 private fun Point(@DrawableRes icon: Int, @StringRes text: Int) {
@@ -110,3 +93,6 @@ private fun Point(@DrawableRes icon: Int, @StringRes text: Int) {
         Text(text = stringResource(text), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
     }
 }
+
+/** The logo's side on Welcome (ux.md §5.1). */
+private val WELCOME_LOGO = 72.dp

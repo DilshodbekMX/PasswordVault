@@ -65,6 +65,20 @@ class LooksTest {
         }
     }
 
+    /**
+     * The app's logo on Welcome and the lock screens (README "The icon and the name"; `AppLogo`): the
+     * shield on its tile of the primary colour, and that tile on the screen, can be seen in every
+     * style (3:1, as an icon that carries meaning).
+     */
+    @Test
+    fun theLogoCanBeSeenInEveryStyle() {
+        for (scheme in OWN_LOOKS) {
+            val c = scheme.colors
+            assertTrue("$scheme: the shield on its tile", contrast(c.onPrimary, c.primary) >= 3.0)
+            assertTrue("$scheme: the tile on the screen", contrast(c.primary, c.background) >= 3.0)
+        }
+    }
+
     @Test
     fun everyStyleHasALightAndADarkSchemeOfItsOwn() {
         assertSame(BankBlueLight, Looks.of(StyleChoice.BANK_BLUE, dark = false).colors)

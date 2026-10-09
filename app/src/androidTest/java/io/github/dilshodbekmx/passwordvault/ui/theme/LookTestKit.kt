@@ -169,3 +169,17 @@ object LookShots {
 
     private const val SETTLE_MS = 600L
 }
+
+/**
+ * What the top of the lock screen's PIN pad is drawn with in a look (docs/design/looks/README.md):
+ * what lies behind the logo and the dots, the logo's tile and shield, and the dots.
+ */
+class LockTop(val background: Color, val logoTile: Color, val logoMark: Color, val dotFilled: Color, val dotRing: Color) {
+    companion object {
+        /** The top of the pad in [look]: on the screen's own colours, the logo on a tile of the primary colour. */
+        fun of(look: Look): LockTop {
+            val c = look.colors
+            return LockTop(background = c.background, logoTile = c.primary, logoMark = c.onPrimary, dotFilled = c.primary, dotRing = c.outline)
+        }
+    }
+}

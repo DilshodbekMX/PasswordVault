@@ -279,6 +279,9 @@ object LockTags {
     const val FROM_BEFORE = "pv.lock.fromBefore"
     const val TRY_AGAIN = "pv.lock.tryAgain"
 
+    /** The app's logo on the pad and on the fingerprint-only screen. */
+    const val LOGO = "pv.lock.logo"
+
     /** The pad's screen, its subtitle "Enter your app PIN", its status line and "Forgot PIN? Use master password". */
     const val PAD = "pv.lock.pad"
     const val SUBTITLE = "pv.lock.subtitle"
