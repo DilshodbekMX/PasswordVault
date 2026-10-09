@@ -536,7 +536,7 @@ If fingerprint unlock is on and cannot be used now, the matching fingerprint lin
 
 **Layout** (`Scaffold`):
 - **`TopAppBar`**: title "Passwords"; action `IconButton` "Lock now" (lock icon).
-- **Search field**, directly below: `SearchBarDefaults.InputField` from the Material 3 `SearchBar` family, used as an in-place filter (the full-screen expanded mode is not used). Placeholder "Search accounts".
+- **Search field**, directly below: `SearchBarDefaults.InputField` from the Material 3 `SearchBar` family, used as an in-place filter (the full-screen expanded mode is not used). Placeholder "Search accounts". In Emerald's light scheme it has an outline of 1 dp, because it is white on a nearly white screen ([looks/README.md](looks/README.md)).
 - **Banners** (`OutlinedCard`), **at most two at a time**, in this priority order (the others wait):
   1. the lock's banner (`LockStatus`, architecture.md §3.5), one of two that never show together:
      - a new master password waiting to start working (§5.24): who asked, when, and about how many hours are left, with "Cancel it";
@@ -552,7 +552,7 @@ If fingerprint unlock is on and cannot be used now, the matching fingerprint lin
   - last, when not empty, a row "Recently deleted (3)" (§5.23).
   - Its bottom content padding is at least the height of the Add button plus 16 dp, plus the clipboard status row when it shows. So the button never covers the last row's copy button.
 - **`ExtendedFloatingActionButton`** "Add" (collapses to the + icon while scrolling down), drawn as the style says: tonal in Bank blue and the phone's colours, filled in Night vault, filled and fully rounded in Emerald ([looks/README.md](looks/README.md)).
-- **Bottom**: the navigation bar (Passwords · Security · Settings) and, when something is copied, the clipboard status row (§6) above it. The Security item shows a dot when there are new results (§5.16).
+- **Bottom**: the navigation bar (Passwords · Security · Settings) and, when something is copied, the clipboard status row (§6) above it. The Security item shows a dot when there are new results (§5.16). In Emerald's light scheme the bar has a line of 1 dp along its top edge, for the same reason as the search field.
 
 **Row** (`ListItem`):
 - leading: a 40 dp circle with the first letter of the title (first grapheme; colour picked from 8 tones by a hash of the title, letter contrast ≥ 4.5:1);

@@ -20,6 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -49,6 +50,8 @@ import io.github.dilshodbekmx.passwordvault.ui.settings.AppearanceDialog
 import io.github.dilshodbekmx.passwordvault.ui.settings.SettingsRig
 import io.github.dilshodbekmx.passwordvault.ui.settings.SettingsScreen
 import io.github.dilshodbekmx.passwordvault.ui.settings.SettingsViewModel
+import io.github.dilshodbekmx.passwordvault.ui.shell.TAB_BAR_TAG
+import io.github.dilshodbekmx.passwordvault.ui.common.topHairline
 import io.github.dilshodbekmx.passwordvault.ui.setup.WelcomeScreen
 import io.github.dilshodbekmx.passwordvault.window.WindowPolicy
 import kotlinx.coroutines.CoroutineScope
@@ -193,12 +196,12 @@ private fun GalleryScreen(gallery: LookGallery) {
 @Composable
 private fun settingsViewModel(gallery: LookGallery): SettingsViewModel = viewModel(key = "look-settings") { gallery.settingsRig.settingsViewModel() }
 
-/** A screen in the frame of the three tabs, as the shell draws a tab's first screen. */
+/** A screen in the frame of the three tabs, as the shell draws a tab's first screen, with its bar's hairline. */
 @Composable
 private fun TabsFrame(selected: Int, content: @Composable () -> Unit) {
     Scaffold(
         bottomBar = {
-            NavigationBar {
+            NavigationBar(Modifier.testTag(TAB_BAR_TAG).topHairline(LocalLook.current.barOutline)) {
                 Tab(selected == 0, R.drawable.ic_shell_passwords, R.string.shell_tab_passwords)
                 Tab(selected == 1, R.drawable.ic_shell_security, R.string.shell_tab_security)
                 Tab(selected == 2, R.drawable.ic_shell_settings, R.string.shell_tab_settings)

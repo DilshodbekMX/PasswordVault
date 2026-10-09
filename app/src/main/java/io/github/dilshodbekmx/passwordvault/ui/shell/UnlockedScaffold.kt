@@ -27,7 +27,9 @@ import io.github.dilshodbekmx.passwordvault.clipboard.ClipboardRowSlot
 import io.github.dilshodbekmx.passwordvault.nav.NavState
 import io.github.dilshodbekmx.passwordvault.nav.Route
 import io.github.dilshodbekmx.passwordvault.ui.lock.LockNotices
+import io.github.dilshodbekmx.passwordvault.ui.common.topHairline
 import io.github.dilshodbekmx.passwordvault.ui.security.SecurityBadge
+import io.github.dilshodbekmx.passwordvault.ui.theme.LocalLook
 
 /**
  * The frame around the screens (architecture.md §2.2 `ui.shell`, §3.6). While the app is unlocked
@@ -64,14 +66,21 @@ fun UnlockedScaffold(graph: AppGraph, nav: NavState, content: @Composable (Paddi
     }
 }
 
+/**
+ * The navigation bar of the three tabs: with a hairline along its top where the style has one
+ * (Emerald in light, `Look.barOutline`; docs/design/looks/README.md).
+ */
 @Composable
 private fun TabBar(graph: AppGraph, nav: NavState) {
-    NavigationBar {
+    NavigationBar(Modifier.testTag(TAB_BAR_TAG).topHairline(LocalLook.current.barOutline)) {
         Tab(nav, Route.Passwords, R.drawable.ic_shell_passwords, R.string.shell_tab_passwords)
         Tab(nav, Route.Security, R.drawable.ic_shell_security, R.string.shell_tab_security) { SecurityBadge(graph) }
         Tab(nav, Route.Settings, R.drawable.ic_shell_settings, R.string.shell_tab_settings)
     }
 }
+
+/** The navigation bar's test tag; its items are `pv.tab.<Route>`. */
+const val TAB_BAR_TAG = "pv.tabBar"
 
 @Composable
 private fun RowScope.Tab(nav: NavState, root: Route, @DrawableRes icon: Int, @StringRes label: Int, badge: (@Composable () -> Unit)? = null) {

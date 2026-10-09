@@ -22,6 +22,7 @@ import io.github.dilshodbekmx.passwordvault.ui.common.PinPadTags
 import io.github.dilshodbekmx.passwordvault.ui.list.ListTags
 import io.github.dilshodbekmx.passwordvault.ui.lock.LockTags
 import io.github.dilshodbekmx.passwordvault.ui.setup.SetupTags
+import io.github.dilshodbekmx.passwordvault.ui.shell.TAB_BAR_TAG
 import kotlin.math.roundToInt
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -205,6 +206,44 @@ class LookDetailsTest {
             }
         }
     }
+
+    /**
+     * Emerald's two outlines (README "Where the built schemes differ" and the second step's list;
+     * ux.md §5.11): in Emerald's light scheme, where the navigation bar and the search field are
+     * white on a nearly white screen, a line of the look's colour along the bar's top edge and around
+     * the search field; in every other look neither (no pixel of an outline's colour there).
+     */
+    @Test
+    fun emeraldOutlinesTheBarAndTheSearchFieldInLight() {
+        val made = open()
+        everyLook(made) { look, what ->
+            show(made, LookGallery.Screen.LIST, ListTags.SEARCH)
+            val bar = look.barOutline
+            val search = look.searchOutline
+            // The top dp of the bar and of the field, at their middle.
+            val barTop = Offset(0.3f, 0f) to Offset(0.7f, dpOf(TAB_BAR_TAG, 1f))
+            val searchTop = Offset(0.3f, 0f) to Offset(0.7f, dpOf(ListTags.SEARCH, 1f))
+            if (bar == null) {
+                assertFalse("$what: no line along the bar", compose.hasPixel(TAB_BAR_TAG, look.colors.outlineVariant, barTop.first, barTop.second))
+            } else {
+                compose.awaitHasPixel(TAB_BAR_TAG, bar, barTop.first, barTop.second, "$what: the bar's line")
+            }
+            if (search == null) {
+                assertFalse("$what: no outline around the search field", compose.hasPixel(ListTags.SEARCH, look.colors.outlineVariant, searchTop.first, searchTop.second))
+            } else {
+                compose.awaitHasPixel(ListTags.SEARCH, search, searchTop.first, searchTop.second, "$what: the search field's outline")
+                // Also at its left end, halfway down: an outline, not a line.
+                compose.awaitHasPixel(ListTags.SEARCH, search, Offset(0f, 0.4f), Offset(dpOfWidth(ListTags.SEARCH, 1f), 0.6f), "$what: the outline's left end")
+            }
+            assertEquals("$what: only Emerald in light has the outlines", look === Looks.of(StyleChoice.EMERALD, dark = false), bar != null && search != null)
+        }
+    }
+
+    /** [dp] as a fraction of the height of the node [tag]. */
+    private fun dpOf(tag: String, dp: Float): Float = dp * compose.activity.resources.displayMetrics.density / compose.node(tag).size.height
+
+    /** [dp] as a fraction of the width of the node [tag]. */
+    private fun dpOfWidth(tag: String, dp: Float): Float = dp * compose.activity.resources.displayMetrics.density / compose.node(tag).size.width
 
     /** The colour on the screen [xDp], [yDp] from the top left corner of the node [tag]. */
     private fun pixelAtDp(tag: String, xDp: Float, yDp: Float): Int {
