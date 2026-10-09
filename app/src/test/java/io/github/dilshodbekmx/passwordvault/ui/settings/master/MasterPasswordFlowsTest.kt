@@ -254,6 +254,33 @@ class MasterPasswordFlowsTest {
         assertEquals("4.3's PIN steps take the new master password's proof", words, proof.useBytes { String(it, Charsets.UTF_8) })
     }
 
+    @Test
+    fun f8_theAppLeftWhileTheNewOneIsChosen_theCurrentMasterPasswordIsAskedAgain_andTheNewOneKept() = runTest {
+        val rig = rig()
+        phone(rig, fingerprint = false)
+        val vm = change(rig)
+        val words = upToThePin(rig, vm)
+        rig.away() // ON_STOP drops every proof (lock.md §5.8); the lock delay has not passed
+        rig.toFront()
+        assertTrue(rig.isUnlocked)
+        digits(rig, PIN, vm::digit)
+        assertEquals(ChangeStage.CURRENT, vm.ui.value.stage)
+        assertEquals(UiText.of(R.string.master_current_again), vm.ui.value.line)
+        assertNull("nothing changed", rig.stateRecord().mpChange)
+
+        vm.current.field.type(PASSWORD)
+        vm.submitCurrent()
+        rig.settle()
+        assertEquals(ChangeStage.PIN, vm.ui.value.stage)
+        digits(rig, PIN, vm::digit)
+        rig.advance(LockRig.CHARGE_AGE_MS)
+        rig.advance(LockRig.CHARGE_AGE_MS)
+        assertEquals(ChangeStage.BACKUP, vm.ui.value.stage)
+        rig.lock()
+        rig.send(LockIntent.UseMasterPassword)
+        assertTrue("the words chosen before the app was left are the new master password", rig.unlockWith(words) is MpResult.Right)
+    }
+
     // =================================================================================================
     // F11: a new master password while the old one is forgotten
     // =================================================================================================

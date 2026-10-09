@@ -124,9 +124,15 @@ class ChangeMasterPasswordViewModel(
             }
             proof?.drop()
             proof = right
+            if (choice.typed) {
+                // Asked again because the first proof went (the app was left meanwhile): the new one stands.
+                state.update { it.copy(line = null) }
+                toPinOrSave()
+                return@submit
+            }
             val vault = (repository.state.value as? VaultState.Unlocked)?.vault
             val usedElsewhere = vault?.masterPasswordMatches?.isNotEmpty() == true
-            state.update { it.copy(stage = ChangeStage.CHOOSE, usedElsewhere = usedElsewhere) }
+            state.update { it.copy(stage = ChangeStage.CHOOSE, usedElsewhere = usedElsewhere, line = null) }
             choice.showWords()
         }
     }
@@ -168,7 +174,11 @@ class ChangeMasterPasswordViewModel(
      */
     fun submitAgain() {
         if (state.value.stage != ChangeStage.TYPE_AGAIN) return
-        if (!choice.submitAgain()) return
+        if (choice.submitAgain()) toPinOrSave()
+    }
+
+    /** The new master password is typed twice: the PIN while one is usable (step 3), otherwise the change. */
+    private fun toPinOrSave() {
         val pinNow = lock.status.value.pin
         hadPin = pinNow == PinStatus.On || pinNow == PinStatus.CannotCheck
         if (pinNow == PinStatus.On) {
@@ -228,9 +238,21 @@ class ChangeMasterPasswordViewModel(
         }
     }
 
-    /** The change with the proof of step 1, the two typings of step 2 and [withPin] (step 3). */
+    /**
+     * The change with the proof of step 1, the two typings of step 2 and [withPin] (step 3). A proof
+     * that went meanwhile (the app stopped being visible: lock.md §5.8) cannot change anything: the
+     * current master password is asked again, and the new one chosen is kept.
+     */
     private fun save(withPin: ByteArray?) {
         val proved = proof
+        if (proved != null && !alive(proved)) {
+            proof = null
+            wipePin()
+            pinDigits.clear()
+            current.clear()
+            state.update { it.copy(stage = ChangeStage.CURRENT, entered = 0, line = UiText.of(R.string.master_current_again)) }
+            return
+        }
         val typings = choice.typings()
         if (proved == null || typings == null) {
             // Nothing to change with (should not happen while the app is open): back to step 1.
@@ -387,6 +409,13 @@ class ChangeMasterPasswordViewModel(
 
     // ---- inside ------------------------------------------------------------------------------------
 
+    /** Whether [proof] still holds its bytes: the lock drops every proof at a lock and when the app stops being visible. */
+    private fun alive(proof: MasterProof): Boolean = try {
+        proof.useBytes { true }
+    } catch (e: IllegalStateException) {
+        false
+    }
+
     private fun savedBackups(): List<FileRef> =
         ((repository.state.value as? VaultState.Unlocked)?.vault?.backups.orEmpty()).sortedByDescending { it.savedAt }
 
@@ -489,7 +518,8 @@ enum class PlaceState { LISTED, DELETING, DELETED, NOT_DELETABLE, NOT_NOTED }
  * What "Change master password" shows. Never a digit or a password.
  *
  * @property entered how many digits of the PIN are typed (step 3).
- * @property line the line under the dots: a wrong PIN with the tries left.
+ * @property line the line under the dots: a wrong PIN with the tries left; on step 1, that the
+ *   current master password is asked again with the new one kept.
  * @property shakes grows with each wrong PIN: the dots shake.
  * @property fingerprintOn fingerprint unlock was on when the change started: "Touch the sensor …".
  * @property usedElsewhere the old master password is also the password of some account (D-9b).

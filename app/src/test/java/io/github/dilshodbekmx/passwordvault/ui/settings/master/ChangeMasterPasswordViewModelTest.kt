@@ -335,6 +335,32 @@ class ChangeMasterPasswordViewModelTest {
         assertEquals(OWN_NEW, lock.changes.single().again)
     }
 
+    @Test
+    fun aProofThatWentMeanwhile_asksForTheCurrentMasterPasswordAgain_andKeepsTheNewOne() = runTest(dispatcher) {
+        val lock = lockWith(pin = PinStatus.On)
+        val vm = model(lock)
+        val stepOne = lock.fake.proof()
+        lock.fake.mpResults += MpResult.Right(stepOne)
+        val words = upToThePin(vm)
+        assertEquals(ChangeStage.PIN, vm.ui.value.stage)
+        stepOne.drop() // the app stopped being visible: the lock drops every proof it made (lock.md §5.8)
+        lock.fake.purposes.clear()
+
+        vm.typePin(PIN)
+        advanceUntilIdle()
+        assertEquals(ChangeStage.CURRENT, vm.ui.value.stage)
+        assertEquals(UiText.of(R.string.master_current_again), vm.ui.value.line)
+        assertTrue("nothing was tried with a proof that went", lock.changes.isEmpty())
+
+        typeCurrent(vm)
+        assertEquals(listOf(MpPurpose.CHANGE_MASTER_PASSWORD), lock.fake.purposes)
+        assertEquals("the PIN again, then the change", ChangeStage.PIN, vm.ui.value.stage)
+        vm.typePin(PIN)
+        advanceUntilIdle()
+        assertEquals(ChangeStage.BACKUP, vm.ui.value.stage)
+        assertEquals("the new master password chosen before is the one changed to", words, lock.changes.single().first)
+    }
+
     // ---- what the change came to --------------------------------------------------------------------
 
     @Test

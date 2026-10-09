@@ -67,7 +67,7 @@ fun ChangeMasterPasswordScreen(vm: ChangeMasterPasswordViewModel, nav: Navigator
 @Composable
 private fun ChangeStep(vm: ChangeMasterPasswordViewModel, ui: ChangeMasterPasswordUi) {
     when (ui.stage) {
-        ChangeStage.CURRENT -> CurrentStep(vm.current, onNext = vm::submitCurrent, onDontRemember = vm::dontRemember)
+        ChangeStage.CURRENT -> CurrentStep(vm.current, again = ui.line, onNext = vm::submitCurrent, onDontRemember = vm::dontRemember)
         ChangeStage.CHOOSE, ChangeStage.WRITE_DOWN, ChangeStage.TYPE_AGAIN -> {
             val setup by vm.choice.state.collectAsStateWithLifecycle()
             ChoiceSteps(
@@ -135,13 +135,15 @@ private fun ChangeStep(vm: ChangeMasterPasswordViewModel, ui: ChangeMasterPasswo
 
 /**
  * Step 1 (lock.md F8 step 1): "Type your current master password", the field with its lines (a wrong
- * one, the wait, too little memory: [MasterPasswordAsk.ui]), "Next" and "I don't remember it".
+ * one, the wait, too little memory: [MasterPasswordAsk.ui]), "Next" and "I don't remember it". [again]
+ * says why it is asked once more after the new one was chosen.
  */
 @Composable
-private fun CurrentStep(ask: MasterPasswordAsk, onNext: () -> Unit, onDontRemember: () -> Unit) {
+private fun CurrentStep(ask: MasterPasswordAsk, again: UiText?, onNext: () -> Unit, onDontRemember: () -> Unit) {
     val ui by ask.ui.collectAsStateWithLifecycle()
     MasterPage(heading = stringResource(R.string.master_current_heading)) {
         MasterText(stringResource(R.string.master_current_text))
+        again?.let { MasterLine(it, alert = false, tag = MasterTags.TEXT) }
         MasterField(
             state = ask.field,
             label = stringResource(R.string.master_current_label),

@@ -20,6 +20,9 @@
     <string name="master_current_heading">Type your current master password</string>
     <!-- Step 1: under the heading. -->
     <string name="master_current_text">Type the master password you use now. Then you choose a new one.</string>
+    <!-- Step 1 again, after the new master password was chosen: the app was left meanwhile, which
+         ends what step 1 proved. -->
+    <string name="master_current_again">For your safety, type your current master password once more. The new one you chose is kept.</string>
     <!-- The label of the field of step 1. -->
     <string name="master_current_label">Current master password</string>
     <!-- The button under a master-password field: checks it and goes on. Short. -->
