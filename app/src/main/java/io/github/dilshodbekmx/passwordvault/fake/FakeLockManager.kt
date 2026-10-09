@@ -12,6 +12,7 @@ import io.github.dilshodbekmx.passwordvault.lock.ChangeResult
 import io.github.dilshodbekmx.passwordvault.lock.CreateResult
 import io.github.dilshodbekmx.passwordvault.lock.FingerprintOnResult
 import io.github.dilshodbekmx.passwordvault.lock.FingerprintStatus
+import io.github.dilshodbekmx.passwordvault.lock.FinishResult
 import io.github.dilshodbekmx.passwordvault.lock.LockIntent
 import io.github.dilshodbekmx.passwordvault.lock.LockManager
 import io.github.dilshodbekmx.passwordvault.lock.LockReason
@@ -38,6 +39,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
  *   "Choose a PIN" for a new vault);
  * - [submitMasterPassword] is right; for [MpPurpose.UNLOCK] on a lock screen it unlocks;
  * - [lock] shows [lockScreen];
+ * - [finishNewMasterPassword] finishes, and nothing is pending any more;
  * - [send] records the intent, and `NoticeAnswered` removes that notice.
  *
  * A [vault], when given, is opened at every unlock and closed at every lock, as `VaultPort` is.
@@ -66,6 +68,10 @@ class FakeLockManager(
     var newMasterPasswordLeft = 0
         private set
 
+    /** How many times [finishNewMasterPassword] was called; what was typed is never kept. */
+    var finishes = 0
+        private set
+
     val mpResults = ArrayDeque<MpResult>()
     val createResults = ArrayDeque<CreateResult>()
     val setPinResults = ArrayDeque<PinSetResult>()
@@ -74,6 +80,7 @@ class FakeLockManager(
     val changeResults = ArrayDeque<ChangeResult>()
     val proofResults = ArrayDeque<ProofResult>()
     val requestResults = ArrayDeque<RequestResult>()
+    val finishResults = ArrayDeque<FinishResult>()
     val asideResults = ArrayDeque<AsideResult>()
 
     /** The vault id of the proofs this fake makes. */
@@ -169,6 +176,14 @@ class FakeLockManager(
 
     override fun leaveNewMasterPassword() {
         newMasterPasswordLeft++
+    }
+
+    /** Finished or cancelled by the current master password: nothing is pending any more. */
+    override suspend fun finishNewMasterPassword(chars: CharArray): FinishResult {
+        finishes++
+        val result = finishResults.removeFirstOrNull() ?: FinishResult.Finished
+        if (result == FinishResult.Finished || result == FinishResult.RequestCancelled) status.value = status.value.copy(pending = null)
+        return result
     }
 
     override fun cancelNewMasterPassword() {

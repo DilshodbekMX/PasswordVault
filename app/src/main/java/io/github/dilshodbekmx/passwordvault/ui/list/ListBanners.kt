@@ -31,7 +31,7 @@ sealed interface ListBanner {
         override val priority: Int get() = 1
     }
 
-    /** The new master password is ready: "Finish now" (`LockIntent.FinishPending`), "Later", "Cancel it". */
+    /** The new master password is ready: "Finish now" (opens `Route.NewMasterPassword`, lock.md F11 step 13), "Later", "Cancel it". */
     data object PendingReady : ListBanner {
         override val priority: Int get() = 1
     }

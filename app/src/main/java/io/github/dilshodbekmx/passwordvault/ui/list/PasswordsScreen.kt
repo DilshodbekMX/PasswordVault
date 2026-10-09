@@ -188,7 +188,7 @@ fun PasswordsScreen(viewModel: PasswordsViewModel, nav: Navigator) {
     val banners = remember(viewModel, nav) {
         BannerActions(
             cancelPending = viewModel::cancelPending,
-            finishPending = viewModel::finishPending,
+            finishPending = { nav.go(Route.NewMasterPassword) }, // the new master password is typed there; nothing locks (decision 14)
             pendingLater = viewModel::pendingLater,
             itWasntMe = viewModel::itWasntMe,
             replacedSeen = viewModel::replacedSeen,

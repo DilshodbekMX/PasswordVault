@@ -113,6 +113,17 @@ interface LockManager {
      */
     fun leaveNewMasterPassword()
 
+    /**
+     * "Finish now" in the open app (lock.md F11 steps 13 to 19; build-plan.md §12, decision 14): the
+     * screen of `Route.NewMasterPassword`, which "Finish now" on the list's banner and on the notice
+     * opens, takes the new master password typed once, checked under the guard of lock.md §6.8 as in
+     * a prompt. Nothing locks: on [FinishResult.Finished] the app goes on in the new vault, and steps
+     * 19 and 20 follow. Before the 24 hours are credited nothing is tried ([FinishResult.NotFinished]).
+     * A new master password typed on the lock screen when the wait is over still finishes there (F11
+     * step 13), through [submitMasterPassword].
+     */
+    suspend fun finishNewMasterPassword(chars: CharArray): FinishResult
+
     /** "Cancel it": the pending new master password is dropped (lock.md F11 step 9). */
     fun cancelNewMasterPassword()
 
@@ -199,8 +210,8 @@ sealed interface MpResult {
      * replacement could not be finished (F11 steps 15 and 16: the mark or the new vault could not be
      * written): "Couldn't finish now. Nothing was changed. Try again later." The pending password
      * stays ready, PIN and fingerprint work as before, and the try is not counted. Only the lock
-     * screen's field answers it today ([MpPurpose.UNLOCK]); a check of the current master password
-     * in the open app never does.
+     * screen's field answers it ([MpPurpose.UNLOCK]); a check of the current master password in the
+     * open app never does. "Finish now" in the open app answers [FinishResult.NotFinished].
      */
     data object NotFinished : MpResult
 }
@@ -392,6 +403,48 @@ sealed interface RequestResult {
 
     /** The record could not be written. Nothing is pending. */
     data object NotSaved : RequestResult
+}
+
+/** What [LockManager.finishNewMasterPassword] came to (lock.md F11 steps 9 and 12 to 19; build-plan.md §12, decision 14). */
+sealed interface FinishResult {
+    /**
+     * The new master password opened the pending wrap, and the replacement is done (steps 14 to 18):
+     * the app is open on the new vault. Step 19 follows through the notices: "Choose a PIN" first,
+     * with `LockUiState.Unlocked.proof`, the proof of the new master password, which stays until a
+     * lock or the app stops being visible; the fingerprint offer and "Make a new backup now. Your old
+     * backups still open only with your old master password." are the screens' to show with it.
+     */
+    data object Finished : FinishResult
+
+    /**
+     * The vault's current master password was typed: it is right (lock.md §6.8 step 5), which
+     * cancels the request (F11 step 9), and the notice "You typed your master password, so the new
+     * one was cancelled." follows. It counts as practice; its proof has no next step and is dropped.
+     */
+    data object RequestCancelled : FinishResult
+
+    /** Neither the new nor the current master password: counted as wrong (lock.md §6.8 step 7). */
+    data object Wrong : FinishResult
+
+    /** The field waits until `elapsedRealtime()` reaches [untilElapsedMs] (lock.md §6.8 step 1). Nothing was tried. */
+    data class Wait(val untilElapsedMs: Long) : FinishResult
+
+    /** Argon2id could not run: not counted, not wrong (lock.md §6.8 step 3). */
+    data object NoMemory : FinishResult
+
+    /**
+     * "Couldn't finish now. Nothing was changed. Try again later." (F11 steps 15 and 16, as
+     * [MpResult.NotFinished]); also before the 24 hours are credited, when nothing is tried (step
+     * 12). The pending password stays, PIN and fingerprint work as before, and the try is not counted.
+     */
+    data object NotFinished : FinishResult
+
+    /**
+     * Nothing is shown for it: nothing is pending (it was cancelled meanwhile), or the app locked or
+     * stopped being visible while the password was checked. A replacement whose steps 15 to 17 had
+     * started stands, and the next unlock is the new vault's.
+     */
+    data object TooLate : FinishResult
 }
 
 /** What [LockManager.openAside] and [LockManager.deleteAside] came to (lock.md F17 step 5). */

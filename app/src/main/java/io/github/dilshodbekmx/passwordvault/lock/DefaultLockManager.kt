@@ -97,8 +97,8 @@ import kotlinx.coroutines.withContext
  * @param io the dispatcher of the settings' writes.
  * @param prompts the fingerprint prompt of the process; `BiometricHost` gives it each activity's.
  * @param lockNow `Session.lockNow` (architecture.md §5.5: our clip cleared, a draft flushed, then
- *   [lock]), for the intents of the open app that lead to a lock screen ("Finish now", "It wasn't
- *   me"); this class never calls [lock] itself.
+ *   [lock]), for the intent of the open app that leads to a lock screen ("It wasn't me"); this class
+ *   never calls [lock] itself. "Finish now" locks nothing ([finishNewMasterPassword]).
  * @param olderCopyAnswered called when the older-copy notice was answered (lock.md §13.4 item 1):
  *   the vault's automatic writes may run again (architecture.md §5.5).
  * @param debug the test hooks of lock.md §15.3 in a build that has the debug commands, else null.
@@ -142,10 +142,10 @@ class DefaultLockManager(
     private var setAside = false
 
     /**
-     * "Finish now" or "It wasn't me" locked the open app for a screen of their own (the
-     * master-password field, the old vault's lock screen): no prompt opens by itself over the lock
-     * screen that this lock shows. It belongs to that visit (lock.md §9.2 rule 7, "once per visit"):
-     * it ends when the lock screen is used, the app is unlocked, or the app stops being visible.
+     * "It wasn't me" locked the open app for a screen of its own (the old vault's lock screen): no
+     * prompt opens by itself over the lock screen that this lock shows. It belongs to that visit
+     * (lock.md §9.2 rule 7, "once per visit"): it ends when the lock screen is used, the app is
+     * unlocked, or the app stops being visible.
      */
     private var lockedForAScreen = false
 
@@ -272,7 +272,6 @@ class DefaultLockManager(
                 }
             }
             LockIntent.CancelPending -> act { engine.cancelPending() }
-            LockIntent.FinishPending -> finishPending()
             LockIntent.ItWasntMe -> {
                 // The old vault's own lock screen (lock.md F16b step 1), so the open app is locked first, as
                 // "Lock now" locks it. Without a replacement there is nothing to answer. Its old vault is null
@@ -410,6 +409,20 @@ class DefaultLockManager(
 
     /** The engine drops the proof of F11 step 3 (`LockEngine.leaveNewMasterPassword`), in the order of the calls. */
     override fun leaveNewMasterPassword() = act { engine.leaveNewMasterPassword() }
+
+    /** "Finish now" in the open app (`LockEngine.finishPending`; build-plan.md §12, decision 14): nothing locks. */
+    override suspend fun finishNewMasterPassword(chars: CharArray): FinishResult {
+        val replacedBefore = engine.summary.value.replaced
+        return when (val outcome = engine.finishPending(chars)) {
+            is MasterPasswordOutcome.Right -> finishedWith(outcome.proof, replacedBefore)
+            // Not an answer of finishPending; a password that opens only an older copy is counted, as a wrong one is.
+            MasterPasswordOutcome.Wrong, is MasterPasswordOutcome.OlderPassword -> FinishResult.Wrong
+            is MasterPasswordOutcome.Wait -> FinishResult.Wait(outcome.untilElapsedMs)
+            MasterPasswordOutcome.NoMemory -> FinishResult.NoMemory
+            MasterPasswordOutcome.NotFinished -> FinishResult.NotFinished
+            MasterPasswordOutcome.TooLate -> FinishResult.TooLate
+        }
+    }
 
     override fun cancelNewMasterPassword() = act { engine.cancelPending() }
 
@@ -552,31 +565,38 @@ class DefaultLockManager(
         !sheetOpen && !setAside && !lockedForAScreen && offersFingerprint(engine.state.value) && prompts.canOpenByItself
 
     // ---------------------------------------------------------------------------------------------
-    // "Finish now" (lock.md F11 step 13)
+    // "Finish now" (lock.md F11 steps 9 and 13 to 19) and "It wasn't me" (F16b)
 
     /**
-     * "Finish now" on the list's banner, which opens no screen of its own: the new master password is
-     * typed where a master password is typed, on the lock screen, whose field accepts it (lock.md
-     * F11 step 13: "The lock screen's master-password field accepts it as well"). So the app is
-     * locked as "Lock now" locks it, through the session ([lockNow]: architecture.md §5.5), and when
-     * the lock has come the master-password screen is shown, with no fingerprint prompt over it; the
-     * new master password then finishes (steps 14 to 19), the old one cancels the request (step 9),
-     * and "Use PIN" leads back as on any lock screen. Only while a new master password is ready.
-     *
-     * The contract has no way yet to type the new master password in the open app (the engine's
-     * `finishPending`, a prompt over the list); build plan 5.5 may add one, and this intent would
-     * then open it instead.
+     * A right password in [finishNewMasterPassword], whose summary before the call said
+     * [replacedBefore]. The engine answers both cases with the proof of what was typed. The
+     * replacement finished (steps 14 to 18) when [proof] is the one the unlocked state holds now (the
+     * engine put it there for step 19, and D-9b runs on it as on every proof the state holds,
+     * [stateChanged]), or when the summary names a new replacement of the vault now current: a lock
+     * or `ON_STOP` that came right after may have dropped that proof already. Otherwise the vault's
+     * current master password was typed and cancelled the request (step 9); its proof, made for this
+     * call alone, has no next step: D-9b has it, then it goes (lock.md §5.8). When the app is no
+     * longer unlocked there is nothing to show.
      */
-    private fun finishPending() {
-        if (engine.state.value !is LockState.Unlocked || engine.summary.value.pending?.ready != true) return
-        lockedForAScreen = true
-        lockThen { engine.useMasterPassword() }
+    private suspend fun finishedWith(proof: MasterProof, replacedBefore: LockSummary.Replaced?): FinishResult {
+        val now = engine.state.value as? LockState.Unlocked
+        val replaced = engine.summary.value.replaced
+        val finished = now?.proof === proof || (replaced != null && replaced != replacedBefore)
+        if (finished) return if (now != null) FinishResult.Finished else FinishResult.TooLate
+        if (now == null) {
+            proof.drop()
+            return FinishResult.TooLate
+        }
+        handOver(proof) // a caller cancelled meanwhile: handOver drops it once D-9b is done with it
+        proof.drop()
+        return FinishResult.RequestCancelled
     }
 
     /**
      * Locks the open app as "Lock now" does, through the session ([lockNow]: our clip cleared, a
      * draft flushed, then [lock]; architecture.md §5.5), and runs [step] when the lock has come: for
-     * the intents of the open app that lead to a lock screen. [lock] is called only by the session.
+     * the intent of the open app that leads to a lock screen ("It wasn't me"). [lock] is called only
+     * by the session.
      */
     private fun lockThen(step: suspend () -> Unit) {
         afterLock = step

@@ -23,10 +23,12 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.github.dilshodbekmx.passwordvault.R
+import io.github.dilshodbekmx.passwordvault.core.lock.record.Shortcut
 import io.github.dilshodbekmx.passwordvault.core.model.Entry
 import io.github.dilshodbekmx.passwordvault.core.model.Vault
 import io.github.dilshodbekmx.passwordvault.lock.LockStatus
 import io.github.dilshodbekmx.passwordvault.lock.MpPurpose
+import io.github.dilshodbekmx.passwordvault.lock.PendingMasterPassword
 import io.github.dilshodbekmx.passwordvault.nav.Route
 import io.github.dilshodbekmx.passwordvault.settings.ThemeChoice
 import io.github.dilshodbekmx.passwordvault.ui.edit.NewAccountName
@@ -253,6 +255,21 @@ class PasswordsScreenTest {
         assertEquals(listOf(MpPurpose.PRACTICE), rig.lock.purposes)
         compose.onNodeWithText(text(R.string.list_practice_right)).assertIsDisplayed()
         assertEquals("the field is empty again", "", vm.practicePassword.text.toString())
+    }
+
+    @Test
+    fun finishNowOnTheReadyBanner_opensTheNewMasterPassword_andLocksNothing() {
+        // build-plan.md §12, decision 14; lock.md F11 step 13: the new master password is typed once there.
+        val (rig, vm) = passwords()
+        val ready = PendingMasterPassword(now - 2 * day, Shortcut.PIN, creditedMs = day, remainingMs = 0L, ready = true)
+        compose.runOnUiThread { rig.lock.status.value = LockStatus.NONE.copy(pending = ready) }
+        compose.waitUntil(TIMEOUT_MS) { vm.state.value.banners.firstOrNull() == ListBanner.PendingReady }
+
+        compose.onNodeWithTag(ListTags.bannerButton(ListBanner.PendingReady, "finish")).performClick()
+
+        assertEquals(Route.NewMasterPassword, rig.nav.routes.last())
+        assertTrue("nothing is sent to the lock", rig.lock.sent.isEmpty())
+        assertTrue("and nothing locks", rig.lock.lockReasons.isEmpty())
     }
 
     @Test

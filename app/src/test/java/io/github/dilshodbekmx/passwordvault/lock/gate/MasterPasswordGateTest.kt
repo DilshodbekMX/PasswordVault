@@ -19,6 +19,7 @@ import io.github.dilshodbekmx.passwordvault.lock.ChangeResult
 import io.github.dilshodbekmx.passwordvault.lock.CreateResult
 import io.github.dilshodbekmx.passwordvault.lock.FingerprintOnResult
 import io.github.dilshodbekmx.passwordvault.lock.FingerprintStatus
+import io.github.dilshodbekmx.passwordvault.lock.FinishResult
 import io.github.dilshodbekmx.passwordvault.lock.LockIntent
 import io.github.dilshodbekmx.passwordvault.lock.LockReason
 import io.github.dilshodbekmx.passwordvault.lock.LockStatus
@@ -615,6 +616,7 @@ class MasterPasswordGateTest {
         assertEquals(ChangeResult.NothingChanged, gate.changeMasterPassword(proof, "a new one".toCharArray(), "a new one".toCharArray(), null))
         assertEquals(RequestResult.Mismatch, gate.requestNewMasterPassword("x1".toCharArray(), "x2".toCharArray()))
         assertEquals(RequestResult.NotAllowed, gate.requestNewMasterPassword("x1".toCharArray(), "x1".toCharArray()))
+        assertEquals(FinishResult.TooLate, gate.finishNewMasterPassword("x1".toCharArray()))
         gate.cancelNewMasterPassword()
         assertEquals(AsideResult.NotSaved, gate.openAside(GateRig.OTHER_ID, password))
         assertEquals(AsideResult.NotSaved, gate.deleteAside(GateRig.OTHER_ID, password))
@@ -622,7 +624,7 @@ class MasterPasswordGateTest {
             LockIntent.Digit(1), LockIntent.DeleteDigit, LockIntent.ClearDigits, LockIntent.UsePin, LockIntent.UseFingerprint,
             LockIntent.NotNow, LockIntent.CantRemember, LockIntent.OpenForgotSheet, LockIntent.CloseSheet,
             LockIntent.OpenAside(GateRig.OTHER_ID), LockIntent.StartEmpty, LockIntent.RestoreFromFile, LockIntent.CancelPending,
-            LockIntent.FinishPending, LockIntent.ItWasntMe, LockIntent.GoBack,
+            LockIntent.ItWasntMe, LockIntent.GoBack,
         )) {
             gate.send(intent)
         }

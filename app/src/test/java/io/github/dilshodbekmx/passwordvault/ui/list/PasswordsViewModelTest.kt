@@ -415,12 +415,12 @@ class PasswordsViewModelTest {
         rig.lock.status.value = LockStatus.NONE.copy(pending = pending.copy(ready = true, remainingMs = 0))
         advanceUntilIdle()
         assertEquals(ListBanner.PendingReady, vm.state.value.banners.first())
-        vm.finishPending()
+        // "Finish now" opens Route.NewMasterPassword and sends nothing (decision 14; PasswordsScreenTest).
         vm.pendingLater()
         advanceUntilIdle()
         assertFalse(vm.state.value.banners.any { it == ListBanner.PendingReady })
         vm.itWasntMe()
-        assertEquals(listOf(LockIntent.CancelPending, LockIntent.FinishPending, LockIntent.ItWasntMe), rig.lock.sent)
+        assertEquals(listOf(LockIntent.CancelPending, LockIntent.ItWasntMe), rig.lock.sent)
 
         // A lock forgets what was put off until the next unlock.
         rig.repository.close()

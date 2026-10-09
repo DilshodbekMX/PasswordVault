@@ -84,9 +84,6 @@ sealed interface LockIntent {
     /** "Cancel it" on the banner of a pending new master password (lock.md F11 step 9). */
     data object CancelPending : LockIntent
 
-    /** "Finish now" when the new master password is ready (lock.md F11 step 13). */
-    data object FinishPending : LockIntent
-
     /** "It wasn't me" on the "replaced" notice (lock.md F16b). */
     data object ItWasntMe : LockIntent
 

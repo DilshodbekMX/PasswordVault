@@ -26,9 +26,9 @@ import org.junit.Test
  * with Back (lock.md F17: `StartEmpty`, `OpenAside`, `GoBack`); the lock screen of a vault put aside
  * (§13.2); the answers to the notices (§13.4: `NoticeAnswered`), the older-copy answer among them;
  * Settings › Old passwords under that vault's own guard (`openAside`, `deleteAside`); a pending and a
- * replaced master password as the status shows them, with `CancelPending`, `FinishPending` and
- * `ItWasntMe`; the flows of F8 and F11 that go straight to the engine; and a phone without secure
- * hardware (F18).
+ * replaced master password as the status shows them, with `CancelPending` and `ItWasntMe` ("Finish
+ * now" is `NewMasterPasswordTest`'s); the flows of F8 and F11 that go straight to the engine; and a
+ * phone without secure hardware (F18).
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class VaultsAndNoticesTest {
@@ -264,9 +264,11 @@ class VaultsAndNoticesTest {
         assertEquals(Shortcut.PIN, pending.by)
         assertTrue("after the unlock: who asked, when, and how long is left", rig.notices.single() is Notice.Pending)
 
-        rig.send(LockIntent.FinishPending)
-        assertTrue("\"Finish now\" before its time changes nothing", rig.isUnlocked)
-        assertEquals("and asks for no lock", 0, rig.lockNows)
+        // "Finish now" opens Route.NewMasterPassword, whose call tries nothing before its time (decision 14; NewMasterPasswordTest).
+        assertEquals(FinishResult.NotFinished, rig.manager.finishNewMasterPassword(NEW_PASSWORD.toCharArray()))
+        rig.settle()
+        assertTrue(rig.isUnlocked)
+        assertEquals("and nothing locks", 0, rig.lockNows)
 
         rig.advance(pending.remainingMs - 1)
         assertFalse(rig.status.pending!!.ready)
@@ -291,59 +293,6 @@ class VaultsAndNoticesTest {
         rig.toFront()
         assertTrue(rig.isUnlocked)
         assertTrue("the return asks the engine again", rig.status.pending!!.ready)
-    }
-
-    @Test
-    fun finishNowAsksForTheMasterPasswordOnTheLockScreen_withNoFingerprintPromptOverIt() = runTest {
-        val rig = LockRig(this)
-        withAPendingPassword(rig, creditedMs = DAY_MS, fingerprint = true)
-        rig.promptError(10) // this visit's own prompt
-        rig.typePin()
-        assertTrue(rig.status.pending!!.ready)
-        assertTrue(rig.notices.single() is Notice.PendingReady)
-        val promptsBefore = rig.window.shows.count { it.use == PromptUse.UNLOCK }
-
-        rig.send(LockIntent.FinishPending) // "Finish now" on the list's banner
-
-        assertEquals("the lock is the session's, as \"Lock now\" (architecture.md §5.5)", 1, rig.lockNows)
-        // lock.md F11 step 13: "The lock screen's master-password field accepts it as well."
-        val field = rig.field
-        assertNull(field.reason)
-        assertNull("it is ready: no line about hours left", field.pendingReadyInMs)
-        assertTrue("the PIN leads back as on any lock screen", field.canUsePin)
-        assertEquals("no fingerprint prompt opens over the field", promptsBefore, rig.window.shows.count { it.use == PromptUse.UNLOCK })
-
-        val typed = try {
-            rig.unlockWith(NEW_PASSWORD)
-        } catch (e: NotImplementedError) {
-            assertTrue("PasswordFlows.typedPending is package 4.4's: the entry reached it", LockRig.isStubOf44(e, "F11 step 13"))
-            return@runTest
-        }
-        // The planted wrap is no real one, so this password does not open it: it is wrong, and counted as such.
-        assertEquals(MpResult.Wrong, typed)
-        rig.send(LockIntent.UsePin)
-        assertTrue(rig.screen is LockScreen.Pad)
-    }
-
-    @Test
-    fun afterFinishNow_theNextVisitsPromptOpensByItselfAgain() = runTest {
-        val rig = LockRig(this)
-        withAPendingPassword(rig, creditedMs = DAY_MS, fingerprint = true)
-        rig.promptError(10) // this visit's own prompt
-        rig.typePin()
-        rig.send(LockIntent.FinishPending)
-        assertTrue(rig.screen is LockScreen.MasterPassword)
-        val before = rig.window.shows.count { it.use == PromptUse.UNLOCK }
-
-        rig.away() // the owner leaves before typing the new master password
-        rig.toFront() // a new visit, on the pad
-
-        assertTrue(rig.pad.fingerprintKey)
-        assertEquals(
-            "lock.md §9.2 rule 7: once per visit the prompt opens by itself; \"Finish now\" kept it off its own lock screen only",
-            before + 1,
-            rig.window.shows.count { it.use == PromptUse.UNLOCK },
-        )
     }
 
     @Test
@@ -402,6 +351,46 @@ class VaultsAndNoticesTest {
         val field = rig.field
         assertEquals("the old vault's own lock screen (lock.md F16b step 2)", AsideLine.FromBefore(replacedAt), field.aside)
         assertEquals(MpReason.FromBefore(replacedAt), field.reason)
+    }
+
+    @Test
+    fun afterItWasntMe_noPromptOpensOverTheLockScreenItLockedFor_andBackToTheCurrentVaultOpensIt() = runTest {
+        // lock.md §9.2 rule 7 around "It wasn't me", the one intent of the open app that still locks (the prompts were
+        // shown around "Finish now" until decision 14 of build-plan.md §12 made "Finish now" lock nothing).
+        val rig = LockRig(this)
+        rig.port.seedAside(OLD_VAULT, "the owner's password".toByteArray(), putAsideAtMs = rig.clock.wallMs())
+        rig.port.seed(VAULT, LockRig.PASSWORD.toByteArray())
+        val replacedAt = rig.clock.wallMs()
+        rig.putState(
+            StateRecord(
+                vaultId = OLD_VAULT,
+                practice = StateRecord.Practice(replacedAt, 3, null),
+                mpGuard = StateRecord.MpGuard(0, null, 0),
+                mpChange = null,
+                pendingMp = null,
+                replaced = StateRecord.Replaced(VAULT, replacedAt, Shortcut.PIN, creditedMs = 0, seenElapsedMs = rig.clock.elapsedMs()),
+                maxGeneration = StateRecord.MaxGeneration(1, replacedAt),
+            ),
+        )
+        rig.startInFront()
+        assertTrue(rig.unlockWith(LockRig.PASSWORD) is MpResult.Right)
+        rig.fingerprintOn(rig.unlocked.proof!!)
+        val before = rig.window.shows.count { it.use == PromptUse.UNLOCK }
+
+        rig.send(LockIntent.ItWasntMe)
+
+        assertEquals("the old vault's own lock screen", AsideLine.FromBefore(replacedAt), rig.field.aside)
+        assertEquals("no prompt opened over the lock screen the lock showed first", before, rig.window.shows.count { it.use == PromptUse.UNLOCK })
+
+        rig.away() // the owner leaves without typing
+        rig.toFront() // a new visit, still on the old vault's screen, which has no fingerprint
+        assertEquals(AsideLine.FromBefore(replacedAt), rig.field.aside)
+        assertEquals(before, rig.window.shows.count { it.use == PromptUse.UNLOCK })
+
+        rig.send(LockIntent.GoBack) // Back: the current vault's lock screen, where fingerprint is the way in
+
+        assertTrue(rig.screen is LockScreen.FingerprintOnly)
+        assertEquals("its prompt opens by itself, once", before + 1, rig.window.shows.count { it.use == PromptUse.UNLOCK })
     }
 
     @Test

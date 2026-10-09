@@ -237,11 +237,6 @@ class PasswordsViewModel(
         lock.send(LockIntent.CancelPending)
     }
 
-    /** "Finish now" when the new master password is ready (lock.md F11 step 13). */
-    fun finishPending() {
-        lock.send(LockIntent.FinishPending)
-    }
-
     /** "Later" on the "ready" banner: it waits until the next unlock. */
     fun pendingLater() {
         dismissed.update { it + Dismissed.PENDING_READY }

@@ -262,6 +262,9 @@ class MasterPasswordGate(
 
     override fun leaveNewMasterPassword() = Unit
 
+    /** Nothing is ever pending here: no request can be made (above). */
+    override suspend fun finishNewMasterPassword(chars: CharArray): FinishResult = FinishResult.TooLate
+
     override fun cancelNewMasterPassword() = Unit
 
     /** The gate opens no vault put aside (lock.md F17 comes with build plan 4.1 and 5.2). */
