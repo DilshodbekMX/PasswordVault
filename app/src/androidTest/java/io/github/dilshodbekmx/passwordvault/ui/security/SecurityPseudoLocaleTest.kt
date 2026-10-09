@@ -23,6 +23,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import io.github.dilshodbekmx.passwordvault.R
+import io.github.dilshodbekmx.passwordvault.i18n.AppLanguages
+import io.github.dilshodbekmx.passwordvault.i18n.Formatters
 import io.github.dilshodbekmx.passwordvault.settings.ThemeChoice
 import io.github.dilshodbekmx.passwordvault.ui.theme.PasswordVaultTheme
 import org.junit.After
@@ -88,6 +90,13 @@ class SecurityPseudoLocaleTest {
         securityShell("screencap -p ${SecurityShots.DIR}/pseudo/security-$name.png")
     }
 
+    /**
+     * [n] as the screens write it in [context]'s language: a pseudo-locale formats numbers as itself, so
+     * Android 7's ICU writes ar-XB's in Arabic-Indic digits.
+     */
+    private fun number(context: Context, n: Int): String =
+        Formatters(AppLanguages.screenLocale(AppLanguages.localesOf(context.resources.configuration)), false).number(n.toLong())
+
     @Test
     fun everySecurityStringIsPseudoLocalized() {
         val english = compose.activity
@@ -145,7 +154,7 @@ class SecurityPseudoLocaleTest {
         save("tab-top-$tag")
         compose.onNodeWithTag(SecurityTags.LIST).performScrollToNode(hasTestTag(SecurityTags.card(SecurityTags.LEFT_OUT)))
         compose.onNodeWithText(res.getString(R.string.security_left_out_title)).assertExists()
-        compose.onNodeWithText(res.getQuantityString(R.plurals.security_left_out_count, 2, "2")).assertExists()
+        compose.onNodeWithText(res.getQuantityString(R.plurals.security_left_out_count, 2, number(context, 2))).assertExists()
         save("tab-end-$tag")
     }
 
@@ -163,8 +172,8 @@ class SecurityPseudoLocaleTest {
         compose.waitForIdle()
         val res = context.resources
         compose.onNodeWithText(res.getString(R.string.security_list_reused)).assertExists()
-        compose.onNodeWithText(res.getQuantityString(R.plurals.security_group_reused, 7, "7")).assertExists()
-        compose.onNodeWithText(res.getQuantityString(R.plurals.security_reused_progress, 7, "3", "7")).assertExists()
+        compose.onNodeWithText(res.getQuantityString(R.plurals.security_group_reused, 7, number(context, 7))).assertExists()
+        compose.onNodeWithText(res.getQuantityString(R.plurals.security_reused_progress, 7, number(context, 3), number(context, 7))).assertExists()
         compose.onAllNodesWithText(res.getString(R.string.security_change)).onFirst().assertExists()
         save("group-$tag")
     }
