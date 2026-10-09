@@ -190,6 +190,20 @@ pvl_expect() {
     return 1
 }
 
+# pvl_text_shown KIND NAME [SECONDS]: some node on the screen (a dialog, a snackbar, a line) shows that
+# resource's text within SECONDS (default 10).
+pvl_text_shown() {
+    local kind=$1 name=$2 deadline=$((SECONDS + ${3:-10})) text
+    while :; do
+        while IFS= read -r text; do
+            [ -n "$text" ] || continue
+            pvl_expect "$text" "$kind" "$name" 2>/dev/null && return 0
+        done < <( { pv_ui_nodes; pv_ui_nodes_all 2>/dev/null; } | cut -d'|' -f1)
+        [ $SECONDS -lt $deadline ] || { pv_log "no node shows $kind $name ('$(pvl_res "$kind" "$name")'); ids: $(pva_ids)"; return 1; }
+        pv_sleep 1
+    done
+}
+
 # pvl_text_is ID KIND NAME [N]: the node ID shows that text (pvl_expect).
 pvl_text_is() {
     local id=$1 text
