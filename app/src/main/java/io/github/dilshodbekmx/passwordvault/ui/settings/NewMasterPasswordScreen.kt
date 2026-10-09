@@ -51,7 +51,7 @@ private fun NewStep(vm: NewMasterPasswordViewModel, ui: NewMasterPasswordUi) {
     when (ui.stage) {
         NewStage.EXPLAIN -> Explanation(ui, onContinue = vm::proveWithoutPin, onCancel = vm::close)
         NewStage.PIN -> ProofPad(vm, ui)
-        NewStage.PIN_GONE -> MasterPage(heading = stringResource(R.string.master_new_title)) {
+        NewStage.PIN_GONE -> MasterPage(heading = stringResource(R.string.master_pin_gone_heading)) {
             MasterText(stringResource(R.string.master_proof_pin_gone))
             ui.line?.let { MasterLine(it) }
             if (ui.proving) MasterBusy(stringResource(R.string.master_proof_fingerprint), MasterTags.FINGERPRINT_PROMPT)
@@ -78,10 +78,10 @@ private fun NewStep(vm: NewMasterPasswordViewModel, ui: NewMasterPasswordUi) {
                 onShowAgain = vm::showAgain,
             )
         }
-        NewStage.REQUESTING -> MasterPage(heading = stringResource(R.string.master_new_title)) {
+        NewStage.REQUESTING -> MasterPage(heading = stringResource(R.string.master_requesting_heading)) {
             MasterBusy(stringResource(R.string.master_requesting), MasterTags.REQUESTING)
         }
-        NewStage.REQUEST_FAILED -> MasterPage(heading = stringResource(R.string.master_new_title)) {
+        NewStage.REQUEST_FAILED -> MasterPage(heading = stringResource(R.string.master_requesting_heading)) {
             ui.line?.let { MasterLine(it) }
             Button(onClick = vm::retryRequest, modifier = Modifier.fillMaxWidth().testTag(MasterTags.RETRY)) {
                 Text(stringResource(R.string.common_try_again))
@@ -96,7 +96,7 @@ private fun NewStep(vm: NewMasterPasswordViewModel, ui: NewMasterPasswordUi) {
                 Text(stringResource(R.string.common_done))
             }
         }
-        NewStage.STOPPED -> MasterPage(heading = stringResource(R.string.master_new_title)) {
+        NewStage.STOPPED -> MasterPage(heading = stringResource(R.string.master_stopped_heading)) {
             ui.line?.let { MasterLine(it) }
             Button(onClick = vm::close, modifier = Modifier.fillMaxWidth().testTag(MasterTags.OK)) {
                 Text(stringResource(R.string.common_ok))
@@ -121,7 +121,7 @@ private fun NewStep(vm: NewMasterPasswordViewModel, ui: NewMasterPasswordUi) {
  */
 @Composable
 private fun Explanation(ui: NewMasterPasswordUi, onContinue: () -> Unit, onCancel: () -> Unit) {
-    MasterPage(heading = stringResource(R.string.master_new_title)) {
+    MasterPage(heading = stringResource(R.string.master_explain_heading)) {
         MasterText(
             stringResource(if (ui.by == Shortcut.PIN) R.string.master_explain_pin else R.string.master_explain_fingerprint),
             Modifier.testTag(MasterTags.EXPLAIN),

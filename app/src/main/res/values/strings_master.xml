@@ -66,6 +66,10 @@
     <!-- The change was made, but the app cannot tell whether the new copy reached the storage
          (lock.md F8 step 6). -->
     <string name="master_unclear">Saving may not have finished. Next time, try your new master password first, then your old one.</string>
+    <!-- The heading over "Couldn't change your master password. …" and over too little memory. -->
+    <string name="master_not_changed_heading">Your master password was not changed</string>
+    <!-- The heading over "Saving may not have finished. …". -->
+    <string name="master_unclear_heading">Your master password may have changed</string>
     <!-- The phone had too little free memory to make the new key. Followed by "Try again". -->
     <string name="master_change_no_memory">Your phone doesn’t have enough free memory to change your master password. Close other apps or restart the phone, then try again.</string>
     <!-- Done: the heading of the last step, and the message Settings shows afterwards. -->
@@ -98,6 +102,8 @@
 
     <!-- The title of the screen in its top bar, and what TalkBack calls it (glossary 138). -->
     <string name="master_new_title">New master password</string>
+    <!-- The heading of the explanation (lock.md F11 step 2), as on the lock screen's sheet. -->
+    <string name="master_explain_heading">Forgot your master password?</string>
     <!-- Step 1, the explanation, when the app PIN still opens the app (lock.md F11 step 2). -->
     <string name="master_explain_pin">You can choose a new master password because your PIN still opens the app on this phone. For your safety it starts working after 24 hours with the phone switched on. Until then nothing changes. Backups you made before will still need your old master password.</string>
     <!-- The same when there is no PIN and fingerprint opens the app. -->
@@ -116,10 +122,14 @@
     <string name="master_proof_pin_forgot">Forgot your PIN as well? After 5 wrong tries the PIN is turned off, and you can then continue with your fingerprint.</string>
     <!-- Step 2 without a PIN: the phone's fingerprint prompt is open. -->
     <string name="master_proof_fingerprint">Touch the sensor to confirm with your fingerprint.</string>
+    <!-- The heading when the PIN was turned off by wrong tries in this step. -->
+    <string name="master_pin_gone_heading">Your PIN was turned off</string>
     <!-- After the PIN was turned off by wrong tries in this step, when fingerprint unlock is on. -->
     <string name="master_proof_pin_gone">Your PIN was turned off after too many wrong tries. You can continue with your fingerprint.</string>
     <!-- The button that opens the fingerprint prompt then. -->
     <string name="master_use_fingerprint">Use fingerprint</string>
+    <!-- The heading when no new master password can be chosen now (the lines below say why). -->
+    <string name="master_stopped_heading">A new master password can’t be chosen now</string>
     <!-- The PIN cannot be checked now; the flow stops and never falls back to the fingerprint. -->
     <string name="master_proof_cannot_check">Your PIN can’t be checked right now. Try again later.</string>
     <!-- Neither the PIN nor the fingerprint can open the app now, so no new master password can be
@@ -135,6 +145,8 @@
     <!-- The PIN or the fingerprint of this flow is no longer valid (the app was left meanwhile): it is
          asked again, and the new master password chosen is kept. -->
     <string name="master_proof_again">For your safety, confirm it once more. The new master password you chose is kept.</string>
+    <!-- The heading while the new master password is saved, and when that failed. -->
+    <string name="master_requesting_heading">Saving your new master password</string>
     <!-- Shown while the new master password is asked for (about one second). -->
     <string name="master_requesting">Saving…</string>
     <!-- The request could not be saved. Followed by "Try again". -->

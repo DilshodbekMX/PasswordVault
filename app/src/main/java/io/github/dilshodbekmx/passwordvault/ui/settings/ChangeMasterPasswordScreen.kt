@@ -1,6 +1,7 @@
 package io.github.dilshodbekmx.passwordvault.ui.settings
 
 import androidx.activity.compose.BackHandler
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
@@ -112,7 +113,7 @@ private fun ChangeStep(vm: ChangeMasterPasswordViewModel, ui: ChangeMasterPasswo
                 },
             )
         }
-        ChangeStage.NO_MEMORY -> MasterPage(heading = stringResource(R.string.master_change_title)) {
+        ChangeStage.NO_MEMORY -> MasterPage(heading = stringResource(R.string.master_not_changed_heading)) {
             MasterLine(UiText.of(R.string.master_change_no_memory))
             Button(onClick = vm::retry, modifier = Modifier.fillMaxWidth().testTag(MasterTags.RETRY)) {
                 Text(stringResource(R.string.common_try_again))
@@ -121,8 +122,8 @@ private fun ChangeStep(vm: ChangeMasterPasswordViewModel, ui: ChangeMasterPasswo
                 Text(stringResource(R.string.common_later))
             }
         }
-        ChangeStage.NOT_CHANGED -> Outcome(UiText.of(R.string.master_not_changed), vm::close)
-        ChangeStage.UNCLEAR -> Outcome(UiText.of(R.string.master_unclear), vm::close)
+        ChangeStage.NOT_CHANGED -> Outcome(R.string.master_not_changed_heading, UiText.of(R.string.master_not_changed), vm::close)
+        ChangeStage.UNCLEAR -> Outcome(R.string.master_unclear_heading, UiText.of(R.string.master_unclear), vm::close)
         ChangeStage.BACKUP -> NewBackupStep(
             heading = stringResource(R.string.master_changed),
             usedElsewhere = ui.usedElsewhere,
@@ -208,10 +209,10 @@ internal fun ChoiceSteps(
 /** The three steps of choosing a new master password (ux.md §5.3 to §5.5). */
 internal enum class ChoiceStep { CHOOSE, WRITE_DOWN, TYPE_AGAIN }
 
-/** The end of a change that did not go through: what the lock said, and "OK". */
+/** The end of a change that did not go through: [heading], what the lock said, and "OK". */
 @Composable
-private fun Outcome(text: UiText, onOk: () -> Unit) {
-    MasterPage(heading = stringResource(R.string.master_change_title)) {
+private fun Outcome(@StringRes heading: Int, text: UiText, onOk: () -> Unit) {
+    MasterPage(heading = stringResource(heading)) {
         MasterLine(text)
         Button(onClick = onOk, modifier = Modifier.fillMaxWidth().testTag(MasterTags.OK)) {
             Text(stringResource(R.string.common_ok))
