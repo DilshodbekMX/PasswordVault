@@ -1,5 +1,6 @@
 package io.github.dilshodbekmx.passwordvault.data
 
+import android.icu.text.CollationKey
 import io.github.dilshodbekmx.passwordvault.core.model.Edited
 import io.github.dilshodbekmx.passwordvault.core.model.Entry
 import io.github.dilshodbekmx.passwordvault.core.model.Vault
@@ -8,6 +9,7 @@ import io.github.dilshodbekmx.passwordvault.core.strength.SecurityCheck
 import io.github.dilshodbekmx.passwordvault.core.strength.SecurityReport
 import io.github.dilshodbekmx.passwordvault.core.strength.StrengthMeter
 import io.github.dilshodbekmx.passwordvault.i18n.Collation
+import io.github.dilshodbekmx.passwordvault.i18n.SortKeys
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -170,7 +172,7 @@ class SecurityCheckRunner(
             val report = SecurityCheck.run(
                 vault = vault,
                 easyToGuess = { entry -> (known[entry] ?: scoreSafely(entry)).also { fresh[entry] = it } },
-                titleOrder = Comparator { a, b -> made.compare(a, b) },
+                titleOrder = titleOrderOf(made),
                 progress = { checked, total ->
                     job.ensureActive()
                     if (shows) progressState.value = CheckProgress(checked, total)
@@ -190,6 +192,16 @@ class SecurityCheckRunner(
                 }
             }
         }
+    }
+
+    /**
+     * The A–Z of [collation] for one check. With `SortKeys` each title's collation key is made once and
+     * the keys are compared, as the list does, instead of collating the texts at every comparison.
+     */
+    private fun titleOrderOf(collation: Collation): Comparator<String> {
+        if (collation !is SortKeys) return Comparator { a, b -> collation.compare(a, b) }
+        val keys = HashMap<String, CollationKey>()
+        return Comparator { a, b -> keys.getOrPut(a) { collation.key(a) }.compareTo(keys.getOrPut(b) { collation.key(b) }) }
     }
 
     /**
