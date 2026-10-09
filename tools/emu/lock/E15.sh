@@ -22,8 +22,9 @@
 #   - `pm clear`: no vault file, no lock directory;
 #   - `bmgr restore` of the package: the vault file is back, byte for byte the one that was backed up;
 #     no_backup/ holds no lock record (noBackupFilesDir is never in a backup, lock.md §5.2);
-#   - the app started: "Welcome back" (lock.md F14: a vault without its lock directory), and the
-#     master password opens it.
+#   - the app started (its process ended first if the restore left it running in restricted mode):
+#     "Welcome back" (lock.md F14: a vault without its lock directory), and the master password opens
+#     the same vault.
 # Prints PASS, FAIL or SKIPPED per step and a summary; exit 0 when no step failed, 1 otherwise, 2 for a
 # usage error, 3 for a refused serial.
 GIVEN_APK=0
@@ -136,7 +137,19 @@ vault_back_no_record() {
     pvl_note "E15: after the restore: files: $after; no_backup: nothing"
 }
 
+# After `bmgr restore` the app's process may still run as the restore left it: started for the backup
+# agent in restricted mode, with android.app.Application in place of PasswordVaultApp. An activity
+# started in that process fails at once (ClassCastException in MainActivity; seen with bmgr on API 28).
+# A restore on a new phone (setup wizard, cloud) does not leave the app running so, so the process is
+# ended first, as that restore and any reboot would end it, and the fact is noted.
 welcome_back() {
+    local pid
+    pid=$(pva_pid)
+    if [ -n "$pid" ]; then
+        pvl_note "E15 on API $API: after bmgr restore the app's process $pid still runs (restricted mode); it is stopped before the app is started"
+        pvl_force_stop || return 1
+    fi
+    pv_shell logcat -b crash -c >/dev/null 2>&1
     pva_start || return 1
     pvl_wait_screen master-password 60 || return 1
     pvl_text_is pv.lock.title string lock_mp_title_welcome_back || return 1
