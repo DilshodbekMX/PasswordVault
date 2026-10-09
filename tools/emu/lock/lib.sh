@@ -9,14 +9,24 @@
 # After it the script has adb.sh's pv_* functions, app.sh's pva_* functions, and:
 #   SERIAL, APK, API, VARIANT (debug or staging, read from the APK: debuggable or not), PVL_OUT (a
 #   directory for what the script saw, under this worktree's build/emu-lock/SERIAL/NAME, never in git)
-#   pvl_fresh, pvl_set_up [PIN|-] [fingerprint|-]    the app installed afresh, a vault set up
-#   pvl_status, pvl_item, pvl_pin KEY, pvl_fp KEY, pvl_state KEY, pvl_policy KEY, pvl_alias_count
-#   pvl_screen, pvl_wait_screen, pvl_status_line     what the lock shows
-#   pvl_finger N, pvl_prompt_up, pvl_prompt_down, pvl_prompt_negative   fingerprint
-#   pvl_kill9, pvl_restart                             the process
-#   pvl_res, pvl_text_is                               the app's own texts (English, as the emulators are set)
-#   pvl_later WAVE NAME -- COMMAND...                  a step that a later package enables
+#   pvl_fresh, pvl_set_up [PIN|-] [fingerprint|-], pvl_pin_steps   the app installed afresh, a vault
+#                                                      set up, 4.3's PIN steps walked
+#   pvl_lock_now, pvl_pad, pvl_to_pad, pvl_unlock_pin, pvl_to_master_password, pvl_unlock_mp,
+#   pvl_wrong_pins, pvl_wait_answer, pvl_open_list    the lock screens
+#   pvl_status, pvl_item, pvl_vault_item, pvl_pin KEY, pvl_fp KEY, pvl_state KEY, pvl_policy KEY,
+#   pvl_lock_state, pvl_alias_count, pvl_has_canary, pvl_expect_pin, pvl_expect_fp   the lock's state
+#   pvl_screen, pvl_wait_screen, pvl_status_line, pvl_nowhere, pvl_notice_lines, pvl_notice_has,
+#   pvl_answer                                         what the screen shows
+#   pvl_finger N, pvl_prompt_up, pvl_prompt_down, pvl_prompt_shown, pvl_prompt_negative,
+#   pvl_touch_prompt, pvl_enrolled_fingers             fingerprint
+#   pvl_kill9, pvl_force_stop, pvl_restart             the process
+#   pvl_res, pvl_expect, pvl_text_is, pvl_text_shown   the app's own texts (English, as the emulators are set)
+#   pvl_record, pvl_record_put, pvl_lock_files         lock records through run-as (debuggable builds)
+#   pvl_later WAVE NAME [MARKERS] -- COMMAND...        a step that a later package enables
+#   pvl_skip, pvl_note                                 a SKIPPED step; a line for the record
 #   pvl_setting_set, pvl_undo                          device changes put back when the script ends
+#   pvl_window_lib                                     tools/emu/window/lib.sh (the window helper)
+#   pvl_log_mark, pvl_log_since, pvl_screenshot
 #
 # Every adb call goes through adb.sh (pv_adb, pv_shell), so a script refuses a serial that this
 # worktree's tools/emu/boot.sh did not start, and never touches emulator-5554. The screens are found by
@@ -43,8 +53,8 @@ PVL_UNKNOWN_FINGER=5
 
 pvl_usage() { pv_usage "$PVL_SCRIPT"; }
 
-# pvl_begin NAME ARGS...: ARGS are the script's own, SERIAL [--apk FILE] [other options the script
-# took out of PVL_ARGS first]. Sets SERIAL, APK, API, VARIANT and PVL_OUT.
+# pvl_begin NAME ARGS...: ARGS are the script's own, SERIAL [--apk FILE] (a script with options of its
+# own, such as E10's --only, takes them out first). Sets SERIAL, APK, API, VARIANT and PVL_OUT.
 pvl_begin() {
     PVL_NAME=$1
     PVL_SCRIPT=${BASH_SOURCE[1]}
