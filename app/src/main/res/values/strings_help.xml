@@ -155,6 +155,8 @@
     <string name="help_licences_hide_details">Hide where the words come from</string>
     <!-- While a licence text is read from the app (glossary 124). -->
     <string name="help_licences_loading">Loading…</string>
+    <!-- In place of a licence text that could not be read from the app. -->
+    <string name="help_licences_unreadable">This text can’t be shown.</string>
     <!-- When a web address was tapped and the phone has no browser. -->
     <string name="help_licences_no_browser">No app on this phone can open web addresses.</string>
 
