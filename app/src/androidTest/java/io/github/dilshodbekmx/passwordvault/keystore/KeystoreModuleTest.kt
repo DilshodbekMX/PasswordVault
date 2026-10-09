@@ -9,6 +9,8 @@ import io.github.dilshodbekmx.passwordvault.core.lock.flow.PromptUse
 import io.github.dilshodbekmx.passwordvault.core.lock.policy.Ks
 import io.github.dilshodbekmx.passwordvault.fake.FakeLauncher
 import io.github.dilshodbekmx.passwordvault.keystore.KeystoreKit.Companion.sequence
+import io.github.dilshodbekmx.passwordvault.lock.BiometricLauncher
+import io.github.dilshodbekmx.passwordvault.lock.DefaultLockManager
 import io.github.dilshodbekmx.passwordvault.lock.LockUiState
 import io.github.dilshodbekmx.passwordvault.lock.PromptOutcome
 import javax.crypto.Cipher
@@ -30,6 +32,11 @@ import org.junit.runner.RunWith
  * (architecture.md §3.6), looked at through the app's own graph: the three Keystore classes over one
  * access, software keys allowed exactly as the build says, and the relay that stands in for the
  * prompt until the lock manager package attaches its launcher.
+ *
+ * Since the merge of round R3 the app's lock (`LockModule.create`, build plan 4.1) attaches its
+ * `PromptLauncher` to the relay when the process starts, so the relay is never empty in the app: a
+ * test that detaches it or attaches its own launcher puts the app's launcher back afterwards, or every
+ * later test of the process would run with a lock that cannot show a prompt.
  */
 @RunWith(AndroidJUnit4::class)
 class KeystoreModuleTest {
@@ -37,12 +44,15 @@ class KeystoreModuleTest {
     private val keys by lazy { kit.graph.keys }
     private val relay get() = keys.launcher as LauncherRelay
 
+    /** The launcher the app's lock attached to the relay when the process started. */
+    private val appLauncher: BiometricLauncher get() = (kit.graph.lock as DefaultLockManager).prompts
+
     @Before
     fun theDeviceIsUnlocked() = kit.requireUnlockedDevice()
 
     @After
     fun cleanUp() {
-        relay.attach(null)
+        relay.attach(appLauncher)
         kit.cleanUp()
     }
 
@@ -92,7 +102,10 @@ class KeystoreModuleTest {
 
     @Test
     fun untilALauncherIsAttachedAPromptIsNotShown() = runBlocking {
-        assertFalse("no prompt exists on this package's own branch", relay.attached)
+        assertTrue("the app's lock attached its launcher when the process started", relay.attached)
+        // The relay as it is before the lock attaches its launcher (and as it was on 3.9's own branch).
+        relay.attach(null)
+        assertFalse(relay.attached)
         val alias = kit.fingerprintAlias()
         kit.makeAesKeyWithoutAuthentication(alias)
         assertEquals(FingerprintResult.NotShown, keys.fingerprint.seal(alias, sequence(0xa0, 32), PromptUse.TURN_ON, 1))
