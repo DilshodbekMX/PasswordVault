@@ -21,8 +21,9 @@
 # The steps, each checked after a lock (the screen off: the app locks at once, and the PIN brings the
 # same route back) and after `am force-stop` (the app starts again on the list; the change is opened
 # again from the Security tab): before anything is saved; after "Create new password";
-# after each of N tries of "Create another password" (default 7, ux.md §12 check 5), one of them from
-# "Password rules"; "I'll finish later"; "No, put back the old password", which restores the
+# after each of N more tries (default 8: the fourth through "Password rules" and its "Use this
+# password", the other seven by "Create another password", so that ux.md §12 check 5's seven taps
+# are made); "I'll finish later"; "No, put back the old password", which restores the
 # original; and "Yes, it's changed", whose end ("Gmail now has its own password." with "Next:
 # Facebook") comes back after a lock. Meanwhile both passwords are copied from the change's own
 # buttons, from the list row's menu and from the account's two rows, and read from outside the app
@@ -58,7 +59,7 @@ APK=$REPO/app/build/outputs/apk/debug/app-debug.apk
 TEST_APK=$REPO/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
 SHOTS=""
 SHOTS_SET=0
-RETRIES=7
+RETRIES=8
 while [ $# -gt 0 ]; do
     case "$1" in
         --apk) [ $# -ge 2 ] || usage; APK=$2; shift 2 ;;
