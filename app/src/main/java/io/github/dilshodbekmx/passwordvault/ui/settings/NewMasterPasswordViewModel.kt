@@ -96,14 +96,17 @@ class NewMasterPasswordViewModel(
     /** A request was made in this flow: the proof was used up, and nothing is left for [leave]. */
     private var requested = false
 
-    /** The asking flow may hold a proof of step 3 now (or the lock-screen route's): [leave] tells the lock when it ends. */
-    private var asking = false
+    /**
+     * The flow may hold a proof of step 3 now: one made here, or the lock-screen route's, which
+     * stands when the route opens, on whichever step it opens (the finishing step too, when the new
+     * master password is ready). [leave] tells the lock when the flow ends.
+     */
+    private var asking = true
 
     private var countdown: Job? = null
 
     init {
         state = MutableStateFlow(startUi(lock.status.value))
-        asking = state.value.stage == NewStage.EXPLAIN
         ui = state.asStateFlow()
         viewModelScope.launch {
             lock.state.collect { if (it !is LockUiState.Unlocked) lockedNow() }
@@ -405,7 +408,7 @@ class NewMasterPasswordViewModel(
         asking = false
         dropAll()
         state.value = startUi(lock.status.value)
-        asking = state.value.stage == NewStage.EXPLAIN
+        asking = true
     }
 
     /**

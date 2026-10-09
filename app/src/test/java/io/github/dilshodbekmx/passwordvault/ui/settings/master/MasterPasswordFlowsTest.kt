@@ -468,6 +468,30 @@ class MasterPasswordFlowsTest {
     }
 
     @Test
+    fun f11_theLockScreenRoutesProof_goesWithTheRoute_alsoWhenItOpensOnFinishNow() = runTest {
+        val rig = rig()
+        readyToFinish(rig)
+        // The owner forgot the new master password as well: "Use my PIN" on the "Forgot master password?" sheet.
+        rig.lock()
+        rig.send(LockIntent.UseMasterPassword)
+        rig.send(LockIntent.CantRemember)
+        rig.typePin() // the PIN opens the app, and is the proof of step 3
+        assertTrue(rig.isUnlocked)
+        assertTrue("the open app continues with F11 (NewMasterPasswordAfterUnlock)", NewMasterPasswordAsked.take())
+        rig.answerNotices(NoticeAnswer.LATER)
+
+        val vm = newOne(rig)
+        assertEquals("the new master password is ready: the route opens on its finishing step", NewStage.FINISH, vm.ui.value.stage)
+        vm.close() // "Later"
+        rig.settle()
+        rig.send(LockIntent.CancelPending) // "Cancel it" on the banner, to ask again
+        rig.advance(HOUR_MS) // an hour later, in the same session: no lock, no ON_STOP
+
+        assertEquals("no request without the PIN again (build-plan.md §12 item 13)", RequestResult.NotAllowed, request(rig))
+        assertEquals(ProofResult.NeedsPin, prove(rig))
+    }
+
+    @Test
     fun f11_backFromChoosing_andTheRouteClosedOtherwise_dropTheProofOfTheOpenApp() = runTest {
         val rig = rig()
         phone(rig, fingerprint = false)

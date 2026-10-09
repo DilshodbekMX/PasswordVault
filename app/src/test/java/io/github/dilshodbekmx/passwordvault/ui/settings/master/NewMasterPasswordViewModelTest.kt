@@ -518,6 +518,20 @@ class NewMasterPasswordViewModelTest {
     }
 
     @Test
+    fun aRouteThatOpensOnTheFinishingStep_alsoLeavesTheFlowWhenItCloses() = runTest(dispatcher) {
+        val lock = lockWith(pending = ready)
+        val vm = model(lock)
+        assertEquals(NewStage.FINISH, vm.ui.value.stage)
+        vm.close() // "Later"
+        assertEquals(Leave.BACK, vm.ui.value.leave)
+        assertEquals(
+            "a proof that the lock-screen route left goes with the route that opened after it (build-plan.md §12, 5.5)",
+            1,
+            lock.fake.newMasterPasswordLeft,
+        )
+    }
+
+    @Test
     fun anExplanationOnScreen_becomesTheFinishingStep_whenTheNewMasterPasswordBecomesReady() = runTest(dispatcher) {
         val lock = lockWith(pending = waiting)
         val vm = model(lock)
