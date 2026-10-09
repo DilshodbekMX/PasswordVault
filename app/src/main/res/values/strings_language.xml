@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The language dialog (build plan 6.1; i18n.md §1.4.5; ux.md §5.1, §5.18), opened by the globe
+     button of the first screen and by the language row of Settings. Its choices are "System
+     language", then the four languages, each named in its own language (Oʻzbekcha, Ўзбекча,
+     English, Русский: donottranslate.xml, never translated). Every name here starts with language_.
+     Package 6.1 brings this file in all four languages; sentence case (i18n.md §4.3). -->
+<resources>
+    <!-- The dialog's title (glossary term 109, "Language"). One short line. -->
+    <string name="language_title">Language</string>
+
+    <!-- The first choice: the app follows the phone's language (glossary term 111, "System language
+         (default)", as Android's own settings call it). Under it the dialog shows the name of the
+         language the app then uses, written in that language, such as "Русский". -->
+    <string name="language_system">System language</string>
+
+    <!-- Debug builds only (i18n.md §5): the two pseudo-locales that lengthen every text and turn the
+         layout right to left, for testing. Names, never shown to users and never translated. -->
+    <string name="language_pseudo_en_xa" translatable="false">English (XA)</string>
+    <string name="language_pseudo_ar_xb" translatable="false">Arabic (XB)</string>
+</resources>

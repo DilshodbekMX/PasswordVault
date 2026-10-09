@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Русский: the language dialog (build plan 6.1; i18n.md §1.4.5). Words of the glossary (i18n.md
+     §3, terms 109 and 111, from Android's own Russian settings). -->
+<resources>
+    <string name="language_title">Язык</string>
+    <string name="language_system">Язык системы</string>
+</resources>
