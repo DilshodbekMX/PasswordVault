@@ -23,7 +23,8 @@
 #     doesn't have enough free memory to finish setup", while it passes at 320m and 384m; the script
 #     then goes on with a vault made at the image's own heap, 512m, so that the steps below still run);
 #   - one derivation at 128m/256m: Lock now, "Forgot PIN? Use master password", the master password:
-#     the app opens ("Choose a new PIN" after it, F7, is answered "Not now");
+#     the app opens ("Choose a new PIN" after it, F7, is answered "Not now"); then at once the same
+#     again: the second derivation of two close together must succeed as well;
 #   - heapsim.sh 64m 128m: 128 MiB, less than the fallback needs;
 #   - the app started; the master password: "Your phone doesn't have enough free memory to open your
 #     passwords. …" with "Try again"; no crash; `status` counts no wrong master password;
@@ -73,6 +74,20 @@ set_up_at_image_heap() {
     install_no_native && pvl_set_up "$PVL_PIN" -
 }
 
+# The second of two derivations close together: one at a time, each must succeed (the Java heap that
+# the first one used, about 134 MiB on Android 7 [L-old §2], is garbage then). Says what the screen
+# says when it does not.
+mp_again() {
+    pvl_lock_now && pvl_wait_screen 'pad|master-password' 20 || return 1
+    pvl_to_master_password || return 1
+    pva_type pv.lock.password "$PVA_PASSWORD" || return 1
+    pva_hide_keyboard
+    pva_tap pv.lock.unlock || return 1
+    if pva_unlocked Passwords 60; then pva_settle Passwords; return; fi
+    pvl_note "E16 on API $API: the second derivation at once: $(pv_ui_nodes | awk -F'|' '$3 ~ /^pv[.]lock[.]line[.]/ { f = 1 } f && $1 != "" { print $1; exit }')"
+    return 1
+}
+
 mp_opens() {
     pvl_status || return 1
     if [ "$(pvl_lock_state)" = unlocked ]; then pvl_lock_now || return 1; fi
@@ -107,6 +122,7 @@ if ! pv_step "setup at 128m/256m through the Java fallback (two derivations, one
     pv_step "the app started again: the lock screen" -- eval 'pva_start && pvl_wait_screen "pad|master-password" 60' || pvl_end
 fi
 pv_step "one derivation at 128m/256m: Lock now, the master password through the fallback: the list" -- mp_opens
+pv_step "the next derivation at once (Lock now, the master password again): the list" -- mp_again
 pv_step "heapsim.sh 64m 128m: 128 MiB, less than the fallback needs" -- heap 64m 128m || pvl_end
 pv_step "the master password: \"not enough memory\", \"Try again\", nothing counted, no crash" -- no_memory
 pv_step "the PIN opens the app" -- pin_opens
