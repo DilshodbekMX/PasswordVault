@@ -26,7 +26,8 @@
 #     reading of the clip plus the delay, as clipboard/clear.sh estimates it without run-as).
 #   sub-wave 4A (the PIN and the fingerprint): back in front the app is locked; the master password
 #     opens it and "Choose a PIN" follows: a PIN, typed again; the fingerprint offer "Use", finger 1 on
-#     the prompt; the lock's status (the debug command, also in staging) has both slots and their
+#     the prompt; the steps close onto the account's screen, where the app was (ux.md 4, "What survives
+#     a lock"); the lock's status (the debug command, also in staging) has both slots and their
 #     Keystore keys; Lock now: the prompt opens by itself (on API 24 androidx.biometric's own dialog in
 #     the activity, the path R8 broke before build check R-16) and finger 1 opens the list; Lock now,
 #     "Use PIN" on the prompt: the pad, and the PIN opens the list with the account.
@@ -350,8 +351,9 @@ smoke_pin_opens() {
 stage_pin_and_fingerprint() {
     pv_step "back in front: locked; the master password opens it, and \"Choose a PIN\" follows" -- smoke_unlock_to_pin_steps || return 1
     pv_step "a PIN is chosen and typed again" -- pva_choose_pin "$SMOKE_PIN" || return 1
-    pv_step "the fingerprint offer: Use, finger 1 on the prompt; the list" -- pva_after_pin use || return 1
+    pv_step "the fingerprint offer: Use, finger 1 on the prompt; then the account's screen again, where the app was" -- eval 'pva_after_pin use Entry && same_entry' || return 1
     pv_step "status: a PIN slot and a fingerprint slot with their Keystore keys" -- smoke_shortcuts_on
+    pv_step "Back to the list" -- eval 'pv_shell input keyevent KEYCODE_BACK >/dev/null && pva_on Passwords 20' || return 1
     pv_step "Lock now: the prompt opens by itself$([ "$API" -lt 28 ] && echo " (the library's own dialog)"); finger 1 opens the list" -- smoke_finger_opens
     pv_step "Lock now: \"Use PIN\" on the prompt, the pad; the PIN opens the list with the account" -- smoke_pin_opens
     pv_step "no crash" -- pva_no_crash

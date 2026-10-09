@@ -293,10 +293,17 @@ pva_unlocked() {
 # on "Choose a PIN" "Not now" (Back on the second PIN step, which goes back to the first), on the
 # fingerprint offer "Not now", on "Make backups" "Finish", and on a notice its answer "Later", or "OK"
 # where it has no "Later". The PIN and fingerprint stay off.
+#
+# With PVA_WATCH set to a resource id, the first text shown in or under that node while the steps are
+# walked is kept in PVA_WATCHED (a short message such as the form's "Your unsaved changes were kept.",
+# which may come and go while pva_settle waits for ROUTE to stay alone).
+PVA_WATCH=${PVA_WATCH:-}
+PVA_WATCHED=""
 pva_settle() {
     local route=$1 deadline=$((SECONDS + ${2:-120})) nodes answer
     while :; do
         nodes=$(pv_ui_nodes)
+        pva_watch "$nodes"
         if pva_in_nodes '[|]pv\.notice$' "$nodes"; then
             answer=""
             for answer in LATER OK; do
@@ -317,6 +324,7 @@ pva_settle() {
             # "Choose a PIN" and a notice come a moment after the unlock: shown alone for 3 s is settled.
             pv_sleep 3
             nodes=$(pv_ui_nodes)
+            pva_watch "$nodes"
             if pva_in_nodes "[|]pv\\.route\\.$route\$" "$nodes" \
                 && ! pva_in_nodes "[|]pv\\.(notice|route\\.($PVA_PIN_STEPS))\$" "$nodes"; then
                 return 0
@@ -325,6 +333,12 @@ pva_settle() {
         [ $SECONDS -lt $deadline ] || { pv_log "not settled on $route; ids: $(pva_ids)"; return 1; }
         pv_sleep 1
     done
+}
+
+# pva_watch NODES: keeps in PVA_WATCHED the first text in or under the node PVA_WATCH, once (pva_settle).
+pva_watch() {
+    [ -n "$PVA_WATCH" ] && [ -z "$PVA_WATCHED" ] || return 0
+    PVA_WATCHED=$(printf '%s\n' "$1" | awk -F'|' -v id="$PVA_WATCH" '$3 == id { f = 1 } f && $1 != "" { print $1; exit }')
 }
 
 # pva_in_nodes REGEX NODES: an enabled node of NODES (a pv_ui_nodes dump) matches REGEX, as

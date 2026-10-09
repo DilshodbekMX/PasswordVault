@@ -67,6 +67,10 @@
 #              when most of its pixels are the scheme's background (ui/theme/Schemes.kt). The API 37
 #              screenshots go to --shots DIR (default /home/asus/pvwork/shots-look) as
 #              4A-api37-<style>-<light|dark>-<pad|list|account|settings>.png, for the user.
+#   extras     the packages' scripts that item 4 of the merge of R3 changed for the real lock and that
+#              no device had run: shell/walk.sh, setup/create.sh --vault-file and session/autolock.sh
+#              with the debug build on API 24, 28 and 37, and walk.sh with the staging build on API 37.
+#              (clipboard/clear.sh, which item 4 did not change, is left out: about 16 minutes a device.)
 #   wave5      only when named, not part of the check (wave 5 has its own after 5.5): API 37, debug, a
 #              first walk of the merged wave-5 screens through the system's picker: a backup into
 #              Download, each export, an import of a small CSV, a restore from the lock screen that
@@ -1219,6 +1223,27 @@ skeleton_debug() { "$EMU/checks/3A.sh" skeleton debug "$1" --apk "$DEBUG_APK"; }
 skeleton_staging() { "$EMU/checks/3A.sh" skeleton staging "$1" --apk "$STAGING_APK"; }
 smoke_staging() { "$EMU/smoke.sh" staging "$1" --apk "$STAGING_APK"; }
 
+# The scripts of the packages that item 4 of the merge of R3 changed for the real lock and never ran on
+# a device, one after another on one device with the debug build: shell/walk.sh (2.5; the PIN steps
+# after setup, Settings' rows and the dialog "Appearance", the PIN after Lock now), setup/create.sh
+# --vault-file (3.3) and session/autolock.sh (3.2); on API 37 walk.sh with the staging build too.
+extras_one() {
+    local s=$1 bad=0 api script
+    api=$(PV_SERIAL=$s pv_api)
+    "$EMU/shell/walk.sh" "$s" --apk "$DEBUG_APK" > "$LOGS/walk-$s.log" 2>&1 || bad=1
+    "$EMU/setup/create.sh" "$s" --apk "$DEBUG_APK" --vault-file > "$LOGS/create-$s.log" 2>&1 || bad=1
+    "$EMU/session/autolock.sh" "$s" --apk "$DEBUG_APK" > "$LOGS/autolock-$s.log" 2>&1 || bad=1
+    if [ "$api" = 37 ]; then
+        "$EMU/shell/walk.sh" "$s" --apk "$STAGING_APK" > "$LOGS/walk-staging-$s.log" 2>&1 || bad=1
+    fi
+    for script in walk create autolock walk-staging; do
+        [ -f "$LOGS/$script-$s.log" ] || continue
+        echo "   $script.sh: $(grep -E '^SUMMARY' "$LOGS/$script-$s.log" | tail -n 1)"
+        grep -E '^(FAIL|SKIPPED)' "$LOGS/$script-$s.log" | sed 's/^/     /'
+    done
+    return $bad
+}
+
 window_checks() {
     local began rc
     began=$(date +%s)
@@ -1258,8 +1283,8 @@ if [ "${1:-}" = one ]; then
     exit $?
 fi
 
-ALL_PARTS=(merged connected lock e update skeleton smoke window back looks)
-DEVICE_PARTS=(connected lock e update skeleton smoke window back looks wave5)
+ALL_PARTS=(merged connected lock e update skeleton smoke window back looks extras)
+DEVICE_PARTS=(connected lock e update skeleton smoke window back looks extras wave5)
 parts=()
 gradle_args=()
 keep=0
@@ -1331,6 +1356,8 @@ for part in "${DEVICE_PARTS[@]}"; do
             if ls "$SHOTS"/4A-api37-*.png > /dev/null 2>&1; then
                 echo "   screenshots (API 37, debug) in $SHOTS: $(cd "$SHOTS" && ls 4A-api37-*.png | wc -l) files 4A-api37-*.png"
             fi ;;
+        extras)
+            pv_step "the scripts item 4 changed: walk.sh, create.sh --vault-file and autolock.sh, debug, API 24, 28 and 37; walk.sh staging on API 37" -- in_parallel extras extras_one -- 24 28 37 ;;
         wave5)
             pv_step "a first walk of the wave-5 screens, API 37, debug build (not part of the 4A check)" -- in_parallel wave5 wave5_debug -- 37 ;;
     esac

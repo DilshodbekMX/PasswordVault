@@ -206,10 +206,16 @@ step7() {
     pva_tap pv.gen.use && pva_need pv.edit.strength || return 1
     shown=$(form_password) || return 1
     [ -n "$generated" ] && [ "$shown" = "$generated" ] || { pv_log "the form's password is not the generated one"; return 1; }
-    pva_screen_off 3 && pva_unlock Edit || return 1
-    # The message is a snackbar that goes after a few seconds: read it from the first dump that has it.
+    # The message is a snackbar that goes after a few seconds. Since the merge of round R3 the PIN steps
+    # open over the form after the unlock and the snackbar comes when they close, while pva_settle waits
+    # for the form to stay alone: pva_settle keeps the first one it sees (PVA_WATCH), and after it the
+    # first dump that has it counts.
+    PVA_WATCH=pv.edit.message
+    PVA_WATCHED=""
+    pva_screen_off 3 && pva_unlock Edit || { PVA_WATCH=""; return 1; }
+    PVA_WATCH=""
     deadline=$((SECONDS + 15))
-    message=""
+    message=$PVA_WATCHED
     while [ -z "$message" ] && [ $SECONDS -lt $deadline ]; do
         message=$(pv_ui_nodes | awk -F'|' '$3 == "pv.edit.message" { f = 1 } f && $1 != "" { print $1; exit }')
     done
