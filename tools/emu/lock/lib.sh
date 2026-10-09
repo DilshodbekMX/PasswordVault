@@ -78,7 +78,10 @@ pvl_begin() {
     [ -f "$APK" ] || { echo "$PVL_NAME: no APK at $APK (tools/gradle.sh :app:assembleDebug or :app:assembleStaging)" >&2; exit 2; }
     PVL_OUT=$REPO/build/emu-lock/$SERIAL/$PVL_NAME
     mkdir -p "$PVL_OUT"
+    # The APK's resource table, read again for every run: another APK (staging, a newer build) may
+    # have other strings (pvl_later looks for a later package's).
     PVL_RESOURCES=$PVL_OUT/resources.txt
+    rm -f "$PVL_RESOURCES"
     VARIANT=$(pvl_apk_variant "$APK")
     PVL_RESTORE=()
     PVL_UNDO=()
