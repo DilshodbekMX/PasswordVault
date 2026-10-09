@@ -96,8 +96,31 @@ The biometric lab's `uitap.py` and `uidump.sh` are `adb.sh`'s `pv_ui_tap` and `p
   authentication) before the prompt turns into its own "Enter your PIN" screen; after the phone is
   unlocked the app's new visit opens one prompt by itself and keeps it open, and two more wrong
   fingers then bring the system's PIN screen (the emulator's sensor never resets its failure count).
-- `pm uninstall -k` and a new install on API 37: the PIN and fingerprint keys survived (E10 prints the
-  result on each level).
+- `pm uninstall -k` and a new install: the PIN and fingerprint keys survived on API 28 and 37 (E10
+  prints the result on each level).
+- The screen lock removed (E7 (b), recorded where lock.md says the images were never tried):
+  - API 37 (`locksettings clear`): the fingerprints and the fingerprint key go; canAuthenticate 11; the
+    pad says "No fingerprint is saved…"; K_pin and pv_canary stay and the PIN opens; with a screen lock
+    and a finger set again the fingerprint key is GONE (§14.2, "Fingerprint unlock was turned off…").
+  - API 28 (`locksettings clear`): the two fingerprints stay, canAuthenticate stays 0, and the next
+    visit's probe finds the fingerprint key GONE at once (the pad says "Fingerprint unlock was turned
+    off…"); its alias stays listed in the Keystore after the slot was removed (the app's delete
+    failed, which the app ignores; the sweep at the next process start is what removes it). The PIN
+    opens.
+  - API 24 (Settings › Screen lock › None): the fingerprints go, canAuthenticate 11, the pad says "No
+    fingerprint is saved…", and the fingerprint key stays. With a screen lock and finger 1 enrolled
+    again, the old key still works: the prompt opens by itself and finger 1 opens the app. The image
+    never invalidates a fingerprint key (its sensor's id never changes, lock.md §15.3 "What the
+    emulators cannot show"); whether a real Android 7 phone does is check D2's.
+- E13 on API 28: a right PIN whose check ended after the screen-off (its visit over, nothing opened)
+  still forgave the wrong PIN typed before it on that visit (row 0, total 0, unseen 0). lock.md §6.3
+  E.6 says only that the counts are as for any right PIN; E13 notes the total and does not judge it.
+- E16 on API 24 with argon2kt removed: at heapgrowthlimit 128m / heapsize 256m setup fails with "Your
+  phone doesn't have enough free memory to finish setup." (it makes the vault and opens it from disk:
+  two derivations one after the other), while one derivation (an unlock) succeeds there, and setup
+  succeeds at 320m and 384m. The lab's single 64 MiB derivation used about 138 MiB on Android 7
+  [L-old §2]; `GuardedArgon2id` asks for 160 MiB of free heap before each (`PlatformModule.fallbackNeeds`)
+  and reads it without a garbage collection first, so the first derivation's garbage may count as used.
 - After `bmgr restore` on API 28 the app's process stays alive in restricted mode (android.app.Application
   in place of PasswordVaultApp); an activity started in it fails with ClassCastException. A restore on a
   new phone does not leave the app so; E15 stops the process before it starts the app, and notes it.
