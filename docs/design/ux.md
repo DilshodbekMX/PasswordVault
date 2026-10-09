@@ -80,9 +80,9 @@ There is one entry type (a login). Character counts are Unicode code points. No 
 | `notes` | string | no | ≤ 10,000; line breaks allowed |
 | `fields` | list of {`name`, `value`, `secret`} | no | ≤ 20 per entry; `name` 1–100, one line, trimmed (formats.md §4.4 relies on it); `value` ≤ 1,000, line breaks allowed; `secret` boolean, default true for labels the app does not know |
 | `favourite` | boolean | yes, default false | |
-| `createdAt` | instant, stored as an integer: milliseconds since 1970 UTC (architecture.md §4.3, D-18; ISO 8601 text only in the JSON export) | yes, set by app | |
-| `updatedAt` | instant | yes, set by app | on any saved change |
-| `passwordChangedAt` | instant or null | no | set when the password is first set and whenever its value changes |
+| `createdAt` | instant, stored as an integer: milliseconds since 1970 UTC (architecture.md §4.3, D-18; ISO 8601 text only in the JSON export) | yes, set by app | an imported account keeps the date its file gives, else the time of the import (§5.21) |
+| `updatedAt` | instant | yes, set by app | on any saved change; an imported account keeps the date its file gives, else its `createdAt` (§5.21) |
+| `passwordChangedAt` | instant or null | no | set when the password is first set and whenever its value changes; an imported account keeps the date its file gives, else none |
 | `passwordHistory` | list of {`password`, `replacedAt`} | no | newest first; keep the **5** newest; an item is added when a saved password changes |
 | `changePending` | boolean | yes, default false | true from "Create new password" until "Yes, it's changed" or "No, put back the old password" in the guided change (§5.17) |
 | `pendingOldPassword` | string or null (**new**) | no | the password the website had when the guided change started. Set only while `changePending` is true. It is not one of the 5 previous passwords and is never pruned; it is cleared when the change ends (§5.17) |
@@ -189,7 +189,7 @@ Back rules. Predictive back is on at target 36: `onBackPressed` is not called an
 | Guided change | Back to the group list; progress is kept (`changePending`) | |
 | Lock screen | Leaves the app | The lock screen never reveals anything behind it; after unlock it is removed from the stack |
 | Setup, before the vault exists | Previous setup step; on Welcome, leaves the app | The generated passphrase stays in memory only (§5.5 covers a kill) |
-| Setup, after the vault exists | Leaves the app; the next start asks for the master password and resumes at the PIN step | There is no way back to "create master password" |
+| Setup, after the vault exists: the PIN steps | What the step's own way on does: "Not now" on "Choose a PIN" and on the fingerprint offer, "Finish" on "Make backups"; on "Enter the PIN again", back to the first entry. The app is not left (build-plan §12, decision 7). The same steps opened after a master-password unlock without a PIN do the same, and close onto the screen that unlock brought back | There is no way back to "create master password". If the process ends during the steps, the next start asks for the master password, and "Choose a PIN" follows while no PIN is set |
 | While "Opening…" or "Saving…" runs | Ignored for those 1–2 seconds | |
 
 **Auto-lock as the user experiences it.** The numbers and mechanics belong to lock.md §10.
@@ -374,8 +374,7 @@ States and messages:
 - Weak (Class 2) sensors are not offered, as in Keyguard [E: keyguard docs]: only a strong sensor can unlock a key in the phone's secure hardware. A phone that cannot keep the key in secure hardware is told: "This phone can't keep a fingerprint key in protected hardware."
 
 **Names.**
-- On Android 12+ the button and setting names come from `BiometricManager.getStrings(BIOMETRIC_STRONG)` (API 31 [V]), so a phone whose only strong biometric is the face says "face".
-- The app's own sentences say "fingerprint", or "face" when the phone has a strong face sensor and no fingerprint sensor.
+- The switch in Settings › App lock says "Fingerprint unlock" on every phone, and the app's own buttons and sentences say "fingerprint" (build-plan §12, decision 7: accepted as built). `BiometricManager.getStrings(BIOMETRIC_STRONG)` (API 31 [V]) is not used, so a phone whose only strong biometric is the face reads "fingerprint" in the app too.
 
 **The screen.**
 - Title "Use your fingerprint?" Body: "Open the app with your fingerprint instead of your PIN. Your PIN and master password still work."
@@ -998,6 +997,8 @@ Time in the picker counts as time in the app (§4).
   - Two examples from the file are shown before and after.
 - `Button` "Import 45 accounts".
 
+**Imported accounts keep their dates** (build-plan §12, decision 7: accepted as built): when they were added, last changed and had their password changed, as the file gives them (our JSON and CSV, Bitwarden, KeePassXC and Firefox files carry some of them; formats.md §8.3). Where a file gives none, as Chrome's does, an account counts as added and changed at the time of the import, and its password change has no date. The backup reminder (§5.11) goes by those dates, so accounts that a file says changed before the newest backup do not make a backup due by themselves.
+
 **Result**: "45 accounts imported." `TextButton` "Undo this import" puts the vault back exactly as it was before the import (architecture.md D-15); it is available until the screen is left. It does not remove entries by id, because an imported file can carry the id of an account that was already here (formats-review P1); such an account keeps its own id, and the imported one gets a new id and is added as "Gmail (from file)" when it differs. Then:
 - **For CSV and JSON**: "The file Chrome Passwords.csv still contains all these passwords unprotected. Delete it now?" `Button` "Delete file" (when supported) and "Keep".
 - **If many imported passwords are shared**: "Many of these accounts share a password. Open Security to fix them one by one." `TextButton` "Open Security".
@@ -1100,6 +1101,7 @@ This is for a user who has forgotten the master password while the PIN or finger
 - **Announcements**: the countdown updates every second, visually only. TalkBack hears one polite live-region message when the row appears: "Password copied. It will be removed from the clipboard in 1 minute."
 - **When the clear runs while the app is open**: "Clipboard cleared" for 2 s, then the row hides.
 - **Late jobs**: a scheduled job may run late. If the planned time has passed and the clear has not run, the row says "Clearing…" instead of a negative countdown.
+- **The system's overlay**: on Android 13 and later the system shows its own clipboard overlay at the bottom left for about six seconds after a copy, and it covers the left part of the row meanwhile (a sensitive clip shows as dots in it). The row is not moved for it (build-plan §12, decision 7: accepted as built; tools/emu/README.md, device facts).
 
 **When the clipboard is cleared**:
 - when the timer ends, on "Clear now", and on "Lock now", each time only if the clip is still the app's own or cannot be checked;
