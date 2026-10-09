@@ -194,7 +194,8 @@ class HelpScreensTest {
     }
 
     private fun inCard(key: String, text: String) {
-        compose.onNode(hasText(text) and hasAnyAncestor(hasTestTag(LicencesTags.part(key))), useUnmergedTree = true).assertExists()
+        val nodes = compose.onAllNodes(hasText(text) and hasAnyAncestor(hasTestTag(LicencesTags.part(key))), useUnmergedTree = true).fetchSemanticsNodes()
+        assertTrue("the card $key shows \"$text\"", nodes.isNotEmpty())
     }
 
     private fun awaitTag(tag: String) {

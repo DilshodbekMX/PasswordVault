@@ -131,7 +131,6 @@ object LicencesCatalog {
                 LicencedPart(
                     key = "geonames",
                     name = PartName.Fixed("GeoNames"),
-                    holders = listOf("GeoNames"),
                     use = R.string.help_licences_geonames_use,
                     licence = Licence.CC_BY_4_0,
                     source = "https://www.geonames.org/",
