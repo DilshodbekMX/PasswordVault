@@ -274,7 +274,12 @@ class ChangeMasterPasswordViewModel(
         val (first, again) = typings
         val change = work.async {
             try {
-                lock.changeMasterPassword(proved, first, again, pinCopy)
+                lock.changeMasterPassword(proved, first, again, pinCopy).also { result ->
+                    // Said here, in the app's scope, so that Settings says it also when a lock has ended
+                    // this flow meanwhile (the screen went off while "Saving…" or the prompt of step 7
+                    // waited): from step 6 on the change runs to its end (lock.md F8).
+                    if (result is ChangeResult.Changed) SettingsNotice.post(UiText.of(R.string.master_changed))
+                }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -319,11 +324,11 @@ class ChangeMasterPasswordViewModel(
      * Changed: what was typed goes, and so does the proof of step 1, which holds the old master
      * password (the lock has dropped it already). The unlocked state holds the new one's proof for
      * the steps that follow. "Choose a PIN" first when a PIN worked before and was not kept; this
-     * phone must be able to keep a PIN key.
+     * phone must be able to keep a PIN key. ([save] has left "Your master password was changed." for
+     * Settings.)
      */
     private fun changed(pinKept: Boolean) {
         dropAll()
-        SettingsNotice.post(UiText.of(R.string.master_changed))
         val choosePin = hadPin && !pinKept && lock.status.value.pin != PinStatus.NoSecureHardware
         val places = if (state.value.usedElsewhere) savedBackups().map { BackupPlace(it, PlaceState.LISTED) } else emptyList()
         state.update { it.copy(stage = ChangeStage.BACKUP, choosePin = choosePin, places = places) }

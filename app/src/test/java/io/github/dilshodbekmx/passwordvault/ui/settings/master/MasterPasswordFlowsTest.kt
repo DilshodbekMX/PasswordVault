@@ -19,6 +19,7 @@ import io.github.dilshodbekmx.passwordvault.core.lock.record.StateRecord
 import io.github.dilshodbekmx.passwordvault.i18n.UiText
 import io.github.dilshodbekmx.passwordvault.lock.FingerprintStatus
 import io.github.dilshodbekmx.passwordvault.lock.LockIntent
+import io.github.dilshodbekmx.passwordvault.lock.LockReason
 import io.github.dilshodbekmx.passwordvault.lock.LockRig
 import io.github.dilshodbekmx.passwordvault.lock.LockRig.Companion.DAY_MS
 import io.github.dilshodbekmx.passwordvault.lock.LockRig.Companion.PASSWORD
@@ -279,6 +280,29 @@ class MasterPasswordFlowsTest {
         rig.lock()
         rig.send(LockIntent.UseMasterPassword)
         assertTrue("the words chosen before the app was left are the new master password", rig.unlockWith(words) is MpResult.Right)
+    }
+
+    @Test
+    fun f8_aChangeThatEndsAfterTheAppLocked_isStillSaidInSettings() = runTest {
+        val rig = rig()
+        phone(rig, fingerprint = true)
+        val vm = change(rig)
+        val words = upToThePin(rig, vm)
+        digits(rig, PIN, vm::digit)
+        rig.advance(LockRig.CHARGE_AGE_MS) // the PIN's charge ages (lock.md §6.3)
+        rig.advance(LockRig.CHARGE_AGE_MS) // the mark of step 5 settles; the new copy is written and proven (step 6)
+        assertEquals("\"Touch the sensor to keep fingerprint unlock on.\"", PromptUse.KEEP_AFTER_CHANGE, rig.prompt.use)
+
+        rig.lock(LockReason.SCREEN_OFF) // the screen times out while the prompt of step 7 waits for a finger
+        assertFalse(rig.isUnlocked)
+        assertEquals("the lock ended the flow on the screen", ChangeStage.CURRENT, vm.ui.value.stage)
+        assertEquals(
+            "the change was made (F8: from step 6 on it runs to its end), so Settings says so after the unlock",
+            UiText.of(R.string.master_changed),
+            SettingsNotice.take(),
+        )
+        rig.send(LockIntent.UseMasterPassword)
+        assertTrue("the new master password is the vault's", rig.unlockWith(words) is MpResult.Right)
     }
 
     // =================================================================================================
