@@ -121,6 +121,14 @@ pvl_setting_set() {
 # pvl_undo COMMAND: COMMAND (one string, for the device's shell) runs when the script ends.
 pvl_undo() { PVL_UNDO+=("$1"); }
 
+# pvl_window_lib: sources tools/emu/window/lib.sh (the window helper: win_helper_build,
+# win_helper_install, win_cmd, win_a11y_*, win_control_start, win_file). That file sources app.sh
+# again, which sets the screen's size back to its defaults (1080x1920): pva_init reads it again.
+pvl_window_lib() {
+    source "$EMU/window/lib.sh"
+    pva_init
+}
+
 # pvl_note TEXT: a line for the record, not a step: what a check is asked to log or to note.
 pvl_note() { echo "NOTE $*"; }
 

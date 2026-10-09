@@ -35,7 +35,7 @@
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 pvl_begin E11 "$@"
 # The window helper's build and install (tools/emu/window/lib.sh: win_helper_build, win_helper_install).
-source "$EMU/window/lib.sh"
+pvl_window_lib
 
 # The identity of the app's activity object ("Local Activity <hash>" in dumpsys activity top): another
 # one after a recreation.

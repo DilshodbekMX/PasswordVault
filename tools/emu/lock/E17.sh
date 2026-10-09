@@ -166,7 +166,7 @@ picker_screen_off_resume() {
 # The window helper (tools/emu/window/lib.sh): its build, install and the command overlay-add.
 OVERLAY=0
 overlay_on() {
-    source "$EMU/window/lib.sh"
+    pvl_window_lib
     win_helper_build && win_helper_install || return 1
     pv_shell appops set "$WIN_HELPER" SYSTEM_ALERT_WINDOW allow >/dev/null || return 1
     win_cmd overlay-add >/dev/null || return 1

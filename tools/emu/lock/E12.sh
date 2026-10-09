@@ -45,7 +45,7 @@ if [ "$API" -lt 26 ]; then
     exit 2
 fi
 # The window helper: its build, install, commands and accessibility services (tools/emu/window/lib.sh).
-source "$EMU/window/lib.sh"
+pvl_window_lib
 KNOWN_COUNT=0
 
 known() { echo "KNOWN $1 ($2)"; KNOWN_COUNT=$((KNOWN_COUNT + 1)); }
