@@ -74,12 +74,18 @@ class SecurityPseudoLocaleTest {
         }
     }
 
-    /** Keeps a picture of the whole screen in `cache/pv-screens/` (the debug build does not set FLAG_SECURE). */
+    /**
+     * Keeps a picture of the whole screen in `cache/pv-screens/` (the debug build does not set
+     * FLAG_SECURE), and one in `/data/local/tmp/pv-shots-7.1/pseudo/`, which the uninstall after the run
+     * leaves for the package's agent to look at.
+     */
     private fun save(name: String) {
         compose.waitForIdle()
         val dir = File(compose.activity.cacheDir, "pv-screens").apply { mkdirs() }
         val bitmap = InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot() ?: return
         File(dir, "security-$name.png").outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        securityShell("mkdir -p ${SecurityShots.DIR}/pseudo")
+        securityShell("screencap -p ${SecurityShots.DIR}/pseudo/security-$name.png")
     }
 
     @Test
