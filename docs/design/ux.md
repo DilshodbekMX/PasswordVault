@@ -247,6 +247,7 @@ Back rules. Predictive back is on at target 36: `onBackPressed` is not called an
 - **"Open my previous passwords"** (lock.md F17 step 4):
   - It shows **that vault's own lock screen**, with the line "Passwords locked on 6 Oct 2026": its PIN pad and fingerprint if their records and keys still work, otherwise its master-password field. Its own PIN, fingerprint or master password opens it, with its own counts and waits (lock.md §6.8); a vault marked as replaced (§5.24) shows only its master-password field.
   - Only when it has been opened does it become the app's vault again. Back returns to Welcome and changes nothing, so a stray tap cannot swap anything. When it opened without a working PIN, the app then offers to choose one.
+  - If its own PIN, fingerprint or master password is right but no saved copy of it opens, that screen stays and says so under its line: the title "These passwords can't be opened", the text "Their files on this phone are damaged." and `Button` "Back", which does what Back does. "Restore from a backup file" is not offered there, because the passwords the app opens now are fine and a restore would put them aside. Nothing is deleted (lock.md §13.2; build-plan §12, decision 6). The same holds when it was opened from the "Forgot master password?" sheet (§5.10).
   - With several archives, a list by date comes first.
 - **States**: none beyond default. Back leaves the app.
 

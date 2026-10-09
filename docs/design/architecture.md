@@ -402,7 +402,8 @@ interface SecurityReports {                                                     
 sealed interface LockUiState {
     object Starting : LockUiState                      // records and files are being read (lock.md §5.11)
     class NoVault(val aside: List<AsideVault>) : LockUiState                 // Welcome, with "Open my previous passwords" for each
-    class Unreadable(val why: CurrentVault.Why, val aside: List<AsideVault>) : LockUiState    // "Your passwords can't be opened"; never a delete offer
+    class Unreadable(val why: CurrentVault.Why, val aside: List<AsideVault>) : LockUiState    // "Your passwords can't be opened" (the current vault's;
+                                                       // one put aside says so on its own screen, LockScreen.CannotOpen); never a delete offer
     class Locked(val screen: LockScreen) : LockUiState                       // chosen by EntryPolicy (lock.md §13.1)
     class Unlocked(val notices: List<Notice>, val proof: MasterProof?) : LockUiState
 }
@@ -422,6 +423,13 @@ sealed interface LockScreen {                          // lock.md §13.2; declar
                                                        // F16b step 3, after a replacement: that vault's master password has just opened it in
                                                        // place, and "Open the older set instead?" is asked before the two vaults change
                                                        // places; atMs: when the master password was replaced
+    class CannotOpen(override val aside: AsideLine) : LockScreen
+                                                       // the lock screen of a vault put aside, after a right PIN, fingerprint or master
+                                                       // password found that no copy of it opens (lock.md F17 step 4, §13.2; build-plan §12,
+                                                       // decision 6): that vault's screen stays, "These passwords can't be opened. Their
+                                                       // files on this phone are damaged.", with Back only (LockIntent.GoBack); never
+                                                       // LockUiState.Unreadable, which is the current vault's and offers a restore that
+                                                       // would put the current vault aside. Not chosen by EntryPolicy: it lasts for the visit
 }
 // The parts of LockScreen and Notice, declared in core.lock.flow (LockScreen.kt, Notice.kt). They hold facts and numbers, never a
 // sentence: the screens pick the texts of lock.md §13.3 and §13.4 from them, so that the language can change under them.

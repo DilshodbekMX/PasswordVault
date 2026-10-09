@@ -471,6 +471,14 @@ internal class LockVisit(val place: Place, val target: LockTarget) {
      */
     var olderSet: OlderSetQuestion? = null
 
+    /**
+     * The vault of this visit is one put aside, and a right PIN, fingerprint or master password has
+     * found that no copy of it opens (lock.md F17 step 4; build-plan.md §12, decision 6): its screen
+     * is [LockScreen.CannotOpen] for the rest of the visit, with Back only. Set by
+     * `UnlockFlows.cannotOpen`; never on the current vault's visits.
+     */
+    var cannotOpen = false
+
     /** What the entry policy decided last on this visit. */
     var decision: EntryPolicy.Decision.Locked? = null
 
@@ -804,6 +812,7 @@ internal class LockCore(
     }
 
     private fun screenOf(decision: EntryPolicy.Decision.Locked, visit: LockVisit?, target: LockTarget): LockScreen {
+        if (visit?.cannotOpen == true) decision.screen.aside?.let { return LockScreen.CannotOpen(it) }
         visit?.olderSet?.let { return LockScreen.OpenOlderSet(it.atMs, aside = decision.screen.aside) }
         val older = visit?.olderPassword
         if (older != null) {
@@ -816,7 +825,7 @@ internal class LockCore(
                 error = visit?.mpError,
                 opening = visit?.opening == true,
             )
-            is LockScreen.FingerprintOnly, is LockScreen.OlderPassword, is LockScreen.OpenOlderSet -> screen
+            is LockScreen.FingerprintOnly, is LockScreen.OlderPassword, is LockScreen.OpenOlderSet, is LockScreen.CannotOpen -> screen
         }
     }
 
@@ -1217,6 +1226,7 @@ internal class LockCore(
             is LockScreen.MasterPassword -> "master password"
             is LockScreen.OlderPassword -> "older master password"
             is LockScreen.OpenOlderSet -> "open the older set?"
+            is LockScreen.CannotOpen -> "cannot be opened (put aside)"
         }
         is LockState.Unlocked -> "unlocked, " + now.notices.size + " notice(s)"
     }

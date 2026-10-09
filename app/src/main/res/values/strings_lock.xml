@@ -268,6 +268,21 @@
          (glossary 146, not 21). %1$s is a date with the year, for example "Oct 6, 2026". -->
     <string name="lock_open_aside">Open my previous passwords (locked on %1$s)</string>
 
+    <!-- ===== A set of passwords put aside that cannot be opened (lock.md F17 step 4, §13.2, §13.3;
+         build-plan §12, decision 6): its own PIN, fingerprint or master password was right, but no
+         saved copy of that set opens. Shown under the line that names the set ("Passwords locked
+         on …" or "Your passwords from before …"). The passwords the app opens now are fine, so
+         there is no "Restore from a backup file" here; the only button is "Back" ===== -->
+
+    <!-- Title: the set of passwords named by the line above cannot be opened. One or two lines. -->
+    <string name="lock_cannot_open_title">These passwords can’t be opened</string>
+    <!-- Under the title. "Their files": the files on this phone that hold that set of passwords,
+         not the passwords the app opens now. -->
+    <string name="lock_cannot_open_text">Their files on this phone are damaged.</string>
+    <!-- Button: back to the lock screen of the passwords the app opens now (or to the first
+         screen when there are none), as the phone's Back does. Short. -->
+    <string name="lock_back">Back</string>
+
     <!-- ===== The "Forgot master password?" sheet (ux.md §5.10; lock.md F17 step 1). No option
          deletes anything, and none says "Delete" ===== -->
 

@@ -229,11 +229,28 @@ internal class UnlockFlows(private val core: LockCore) {
 
     /**
      * Holds the mutex: a right PIN, fingerprint or master password (the pending one of F11 among
-     * them), and no generation that can be used: "Your passwords can't be opened", with "Try again".
+     * them), and no generation that can be used (lock.md §13.1 row 2, F17 step 4).
+     *
+     * - On the current vault's lock screen: "Your passwords can't be opened" ([LockState.Unreadable]),
+     *   with "Try again" for an I/O error; the visit ends.
+     * - On the lock screen of a vault put aside (build-plan.md §12, decision 6): that vault's screen
+     *   stays and says that its copies cannot be opened ([LockScreen.CannotOpen]), with Back only,
+     *   for the rest of the visit. The current vault is fine, so its "Your passwords can't be
+     *   opened" is not shown: its "Restore from a backup file" would put the current vault aside.
+     *   The same words whatever [why] is. Nothing is deleted, and nothing is written but the record
+     *   of a right PIN ([flushPin]).
      */
     fun cannotOpen(visit: LockVisit, why: CurrentVault.Why, flushPin: Boolean) {
         if (flushPin) visit.target.lock.pin.flush()
         if (visit.place.hasEnded) return
+        if (visit.target.aside != null) {
+            visit.cannotOpen = true
+            visit.opening = false
+            giveUpEntry(visit) // the screen has no pad: a charge held for digits typed meanwhile is refunded (§6.3 A)
+            core.showLockScreen()
+            core.publishSummary()
+            return
+        }
         core.endVisitNow()
         core.closeVisit()
         core.target = null

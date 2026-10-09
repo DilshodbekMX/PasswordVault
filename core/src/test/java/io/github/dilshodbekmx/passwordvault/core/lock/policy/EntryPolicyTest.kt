@@ -376,6 +376,7 @@ class EntryPolicyTest {
             is LockScreen.MasterPassword -> reasonsSeen += screen.reason
             is LockScreen.OlderPassword -> throw AssertionError("the policy never chooses F16b's screen")
             is LockScreen.OpenOlderSet -> throw AssertionError("the policy never chooses F16b's question")
+            is LockScreen.CannotOpen -> throw AssertionError("the policy never chooses the screen of a vault put aside that cannot be opened")
         }
     }
 
