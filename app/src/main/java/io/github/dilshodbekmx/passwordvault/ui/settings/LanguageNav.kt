@@ -30,8 +30,8 @@ import io.github.dilshodbekmx.passwordvault.ui.setup.asideVaults
  * from the language row of Settings while it is unlocked (`NavState.allowedIn`).
  *
  * Like "Appearance" (`Route.Theme`, `SettingsNav.kt`), the dialog is a route of its own that draws the
- * screen it was opened from behind it ([LanguageBackdrop]): Welcome, or the Settings list scrolled
- * where it was ([ThemeBackdrop]). So a rotation keeps the dialog open, and a lock closes it, because
+ * screen it was opened from behind it ([LanguageBackdrop]): Welcome, or the Settings list
+ * ([SettingsBackdrop]). So a rotation keeps the dialog open, and a lock closes it, because
  * the route is not kept across a lock (`NavState.keptAcrossLock`; ux.md §4: dialogs are closed). The
  * screen behind is a picture only: it takes no tap and TalkBack does not read it.
  *
@@ -149,9 +149,11 @@ private fun WelcomeBackdrop(graph: AppGraph, state: LockUiState) {
 }
 
 /**
- * The Settings list as its route draws it, scrolled where it was when the language row was tapped
- * ([ThemeBackdrop], which the row marks); its rows do nothing here. Its view model is this route's
- * own, cleared when the dialog closes.
+ * The Settings list as its route draws it, scrolled where [ThemeBackdrop] was marked, or from its top
+ * when nothing was (the language row of `SettingsScreen` marks it as the Appearance row does once
+ * build plan 6.1's interface request is applied; until then the list behind the dialog starts at its
+ * top, and the real list is where it was when the dialog closes). Its rows do nothing here. Its view
+ * model is this route's own, cleared when the dialog closes.
  */
 @Composable
 private fun SettingsBackdrop(graph: AppGraph) {
