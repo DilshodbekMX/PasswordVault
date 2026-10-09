@@ -27,8 +27,8 @@ import androidx.compose.ui.graphics.Color
 //   `surfaceContainerLowest`.
 // - Emerald's navigation bar and search field are white, as in the table; the outlines the table
 //   names for them (#DCE5E1, #BEC9C5) are `surfaceVariant` and `outlineVariant`, which the look hands
-//   out as `Look.barOutline` and `Look.searchOutline`. Drawing them is for the screens that own the
-//   bar and the field (the looks' second step, build-plan.md §12).
+//   out as `Look.barOutline` and `Look.searchOutline`; the navigation bar and the search field draw
+//   them (`topHairline`, `VaultSearchField`; the looks' second step, build-plan.md §12).
 // - Night vault's dark `outline` is #757D86 (tone 52), not the mock-up's #5B636C (tone 42), which
 //   reaches 3:1 on the background only: on the colours of a sheet and a dialog (#161C21, #1C232A),
 //   where a text field's outline is drawn, it has 2.8:1 and 2.6:1 (ux.md §8 asks for 3:1).

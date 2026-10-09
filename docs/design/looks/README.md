@@ -52,7 +52,7 @@ The schemes the mock-ups do not show (A dark, B dark, C light) keep the hue of e
 
 Where the built schemes (`APP/ui/theme/Schemes.kt`, build plan 4.3b) differ from the table above, and why:
 - **`surface` is the screen's colour** (the table's "background") in every style, because Material 3 draws the top bar and the list's rows on `surface`. The table's "surface (cards, sheets)" colour is `surfaceContainerLow` and `surfaceContainerLowest`.
-- **Emerald's two outlines** (`#DCE5E1` around the navigation bar, `#BEC9C5` around the search field) are not a role: the look hands them out as `Look.barOutline` and `Look.searchOutline`, for the second step to draw.
+- **Emerald's two outlines** (`#DCE5E1` around the navigation bar, `#BEC9C5` around the search field) are not a role: the look hands them out as `Look.barOutline` and `Look.searchOutline`, which the navigation bar and the search field draw (the second step, below).
 - **Night vault's dark outline is `#757D86`**, not the mock-up's `#5B636C`, which has only 2.8:1 on `#161C21` (a sheet) and 2.6:1 on `#1C232A` (a dialog), under the 3:1 that an outline that carries meaning needs (ux.md §8).
 
 ## What differs between styles besides colour
@@ -70,6 +70,7 @@ Colours, the avatar tones and shape and the PIN keys came first (4.3b). The lock
 - **The "Add" button** (`Look.addButton`): tonal is `primaryContainer` with `onPrimaryContainer` (Bank blue, the phone's colours), filled is `primary` with `onPrimary` (Night vault, Emerald). Emerald's is fully rounded, a pill and a circle while it shows its icon alone; the others keep Material 3's corners of 16 dp.
 - **Emerald's two outlines** (`Look.barOutline` and `Look.searchOutline`, Emerald in light only; null elsewhere, where nothing is drawn): a line of 1 dp along the navigation bar's top edge (`topHairline`), and an outline of 1 dp around the list's search field (`VaultSearchField`).
 - **The cards** (`Look.cards`; `CardPart` and `Modifier.cardPart` in `ui/common`, each item of a list drawing its part). A card has `Look.cardColour`, the table's "surface (cards, sheets)" (`surfaceContainerLow`), lies 12 dp in from the screen's edges, has corners of 20 dp and 4 dp of room above its first row and below its last. Emerald (`ROW_GROUPS`): in the list the favourites, with "Show all favourites", on one card, every letter header and row of "All accounts" on one card (a header that sticks at the top keeps the card's colour), the search results on one card and "Recently deleted" on its own; on an account's screen the values (the username, the password or the old and the new one, the websites, the notes, the extra fields) on one card and the previous passwords, while they are shown, on another. Headings, banners, the empty and no-results states, the dates and "Previous passwords" stay on the background. Night vault (`PASSWORD_BLOCK`): the password block, the password or the old and the new one while a change is pending, with "Show in big letters", on a card with a hairline of `outlineVariant` (`Look.cardOutline`), as the mock-up draws it. Bank blue and the phone's colours: no cards.
+- **The logo** on Welcome and on the PIN pad and the fingerprint-only screen: below, "The icon and the name".
 
 ## The icon and the name
 

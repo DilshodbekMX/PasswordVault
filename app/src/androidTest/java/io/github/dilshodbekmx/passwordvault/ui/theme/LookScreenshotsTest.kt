@@ -18,6 +18,7 @@ import io.github.dilshodbekmx.passwordvault.ui.entry.EntryValue
 import io.github.dilshodbekmx.passwordvault.ui.list.ListTags
 import io.github.dilshodbekmx.passwordvault.ui.lock.LockTags
 import io.github.dilshodbekmx.passwordvault.ui.settings.SettingsTags
+import io.github.dilshodbekmx.passwordvault.ui.setup.SetupTags
 import org.junit.Before
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -27,9 +28,9 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * Pictures of the looks for the user (build plan §12, 4.3b and `w5-carry`): the lock screen's PIN
- * pad, the list, an account's screen and Settings, and the dialog "Appearance", in each style the
- * phone offers, light and dark.
+ * Pictures of the looks for the user (build plan §12, 4.3b and `w5-carry`): Welcome, the lock
+ * screen's PIN pad, the list, an account's screen and Settings, and the dialog "Appearance", in each
+ * style the phone offers, light and dark.
  * [LookShots] saves each into `/data/local/tmp/pv-shots-look/` on the device as
  * `look-api<N>-<style>-<light|dark>-<screen>.png`; the package's agent pulls them into
  * /home/asus/pvwork/shots-look/. The same walk is a test of its own: one composition is kept
@@ -73,6 +74,10 @@ class LookScreenshotsTest {
                 val look = Looks.shown(style, dark = theme == ThemeChoice.DARK, compose.activity)
                 val prefix = "look-api${Build.VERSION.SDK_INT}-${NAMES.getValue(style)}-${theme.name.lowercase()}"
 
+                show(made, LookGallery.Screen.WELCOME, SetupTags.LOGO)
+                compose.awaitPixel(SetupTags.LOGO, look.colors.primary, "$prefix: Welcome's logo", fx = 0.5f, fy = 0.08f)
+                expected += shot("$prefix-welcome")
+
                 show(made, LookGallery.Screen.LOCK, PinPadTags.DOTS)
                 compose.awaitPixel(LockTags.PAD, look.colors.background, "$prefix: the pad's screen", fx = 0.04f, fy = 0.97f)
                 expected += shot("$prefix-pad")
@@ -95,7 +100,7 @@ class LookScreenshotsTest {
                 expected += shot("$prefix-appearance")
             }
         }
-        assertEquals(styles.size * 2 * 5, expected.size)
+        assertEquals(styles.size * 2 * 6, expected.size)
         val taken = LookShots.taken()
         assertTrue("pictures missing: ${expected - taken.toSet()}", taken.containsAll(expected))
     }
