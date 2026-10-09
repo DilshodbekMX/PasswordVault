@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The Security tab: the security check, its cards, the lists behind them and the tab's dot
+     (ux.md §5.16; build plan 7.1). Every name starts with security_. Shared words (Undo, Try again)
+     are in strings_common.xml. Numbers come in as text written with the language's digit grouping
+     (%1$s); a plural follows the number it names. The passwords themselves are never shown here. -->
+<resources>
+
+    <!-- ===== The Security tab (ux.md §5.16) ===== -->
+
+    <!-- The title of the Security tab's screen, in its top bar. One line, short. -->
+    <string name="security_title">Security check</string>
+
+    <!-- The card at the top of the tab, open on the first visit, then folded (ux.md §5.16). Its
+         heading. -->
+    <string name="security_why_title">Why this matters</string>
+    <!-- The card's text: why a password should not be used on two websites, and why email comes
+         first. -->
+    <string name="security_why_text">If one website leaks your password, criminals try it on your other accounts. Give every account its own password. Start with your email — whoever controls your email can reset your other passwords.</string>
+    <!-- The button that unfolds the card, read by TalkBack. -->
+    <string name="security_why_show">Show why this matters</string>
+    <!-- The button that folds the card, read by TalkBack. -->
+    <string name="security_why_hide">Hide why this matters</string>
+
+    <!-- Under a progress bar while the passwords are checked, right after the app is opened;
+         %1$s is how many accounts are checked so far, %2$s how many there are, for example
+         “Checking 120 of 480…”. -->
+    <string name="security_checking">Checking %1$s of %2$s…</string>
+    <!-- Under a progress bar for the moment before the check knows how many accounts it checks. -->
+    <string name="security_checking_start">Checking your passwords…</string>
+
+    <!-- Shown when no account has a problem the check looks for. -->
+    <string name="security_all_clear">All your passwords are different and hard to guess. Well done.</string>
+    <!-- Shown when there are no accounts yet. -->
+    <string name="security_empty">Add some accounts first. The check runs on this phone only.</string>
+
+    <!-- Card 1: one or more accounts have the master password as their password (ux.md §5.16,
+         architecture.md D-9b). Its heading. -->
+    <string name="security_master_title">Master password used elsewhere</string>
+    <!-- Card 1 when one account has the master password; %1$s is that account's name, for example
+         “Gmail”. -->
+    <string name="security_master_one">Your master password is also the password for %1$s. Anyone who learns it from one website can open your backups. Choose a new master password now, make a new backup, and delete your old backup files.</string>
+    <!-- Card 1 when several accounts have the master password (always 2 or more); %1$s is how many,
+         %2$s the names of the first ones, for example “Gmail, Facebook…”. The plural follows %1$s. -->
+    <plurals name="security_master_many">
+        <item quantity="one">Your master password is also the password for %1$s account (%2$s). Anyone who learns it from one website can open your backups. Choose a new master password now, make a new backup, and delete your old backup files.</item>
+        <item quantity="other">Your master password is also the password for %1$s accounts (%2$s). Anyone who learns it from one website can open your backups. Choose a new master password now, make a new backup, and delete your old backup files.</item>
+    </plurals>
+    <!-- Card 1's button: opens Settings › Change master password. -->
+    <string name="security_master_choose">Choose a new master password</string>
+
+    <!-- Two account names in a card's text: %1$s and %2$s are names, for example “Gmail, Facebook”. -->
+    <string name="security_names_two">%1$s, %2$s</string>
+    <!-- The first two of more than two account names in a card's text, for example
+         “Gmail, Facebook…”. -->
+    <string name="security_names_more">%1$s, %2$s…</string>
+
+    <!-- Card 2: several accounts share one password (ux.md §5.16). Its heading. -->
+    <string name="security_reused_title">Same password on several accounts</string>
+    <!-- Card 2: how many accounts share the password of the biggest group (always 2 or more), for
+         example “17 accounts use the same password.” -->
+    <plurals name="security_reused_count">
+        <item quantity="one">%1$s account uses the same password.</item>
+        <item quantity="other">%1$s accounts use the same password.</item>
+    </plurals>
+    <!-- Card 2 and the list behind it: how far the user is with that group; %1$s is how many
+         accounts got their own password, %2$s how many still share it, for example “3 changed,
+         14 to go”. The plural follows %2$s. -->
+    <plurals name="security_reused_progress">
+        <item quantity="one">%1$s changed, %2$s to go</item>
+        <item quantity="other">%1$s changed, %2$s to go</item>
+    </plurals>
+    <!-- Card 2, one line for each other group of accounts that share a password between them
+         (always 2 or more); a tap opens that group. -->
+    <plurals name="security_reused_other">
+        <item quantity="one">%1$s account shares another password</item>
+        <item quantity="other">%1$s accounts share another password</item>
+    </plurals>
+    <!-- The button of cards 2, 3 and 5: opens the list of the accounts the card counts. -->
+    <string name="security_show_accounts">Show accounts</string>
+
+    <!-- Card 3: passwords that are easy to guess (ux.md §5.16). Its heading. -->
+    <string name="security_weak_title">Easy to guess</string>
+    <!-- Card 3: how many, for example “4 passwords are easy to guess.” -->
+    <plurals name="security_weak_count">
+        <item quantity="one">%1$s password is easy to guess.</item>
+        <item quantity="other">%1$s passwords are easy to guess.</item>
+    </plurals>
+
+    <!-- Card 4: password changes the user started and did not finish (ux.md §5.16, §5.17). Its
+         heading. -->
+    <string name="security_pending_title">Changes not finished</string>
+    <!-- Card 4: how many, and the names of the first accounts in brackets, for example “1 password
+         change is waiting for your answer (Gmail).” The plural follows %1$s. -->
+    <plurals name="security_pending_count">
+        <item quantity="one">%1$s password change is waiting for your answer (%2$s).</item>
+        <item quantity="other">%1$s password changes are waiting for your answer (%2$s).</item>
+    </plurals>
+    <!-- Card 4's button when one change waits: opens that account. -->
+    <string name="security_show_account">Show account</string>
+
+    <!-- Card 5: accounts the user left out of the check (architecture.md D-9a). Its heading. -->
+    <string name="security_left_out_title">Left out</string>
+    <!-- Card 5: how many, for example “2 accounts are left out of the check.” -->
+    <plurals name="security_left_out_count">
+        <item quantity="one">%1$s account is left out of the check.</item>
+        <item quantity="other">%1$s accounts are left out of the check.</item>
+    </plurals>
+
+    <!-- The dot on the Security tab of the bottom bar, read by TalkBack after the tab's name: the
+         check has found something the user has not seen yet (ux.md §5.16, §8). -->
+    <string name="security_new_results">New results</string>
+
+    <!-- ===== The list behind a card (ux.md §5.16, “Group list”) ===== -->
+
+    <!-- The title in the top bar of a group of accounts that share one password. One line, short.
+         (The lists behind the other cards have the card's heading as their title.) -->
+    <string name="security_list_reused">Same password</string>
+
+    <!-- The heading of a group of accounts that share one password (always 2 or more). The password
+         itself is never shown. -->
+    <plurals name="security_group_reused">
+        <item quantity="one">This %1$s account shares one password</item>
+        <item quantity="other">These %1$s accounts share one password</item>
+    </plurals>
+    <!-- The heading of the accounts whose password is easy to guess. -->
+    <plurals name="security_group_weak">
+        <item quantity="one">This %1$s password is easy to guess</item>
+        <item quantity="other">These %1$s passwords are easy to guess</item>
+    </plurals>
+    <!-- The heading of the accounts whose password change is not finished. -->
+    <plurals name="security_group_pending">
+        <item quantity="one">This %1$s password change is waiting for your answer</item>
+        <item quantity="other">These %1$s password changes are waiting for your answer</item>
+    </plurals>
+    <!-- The heading of the accounts left out of the check. -->
+    <plurals name="security_group_left_out">
+        <item quantity="one">This %1$s account is left out of the check</item>
+        <item quantity="other">These %1$s accounts are left out of the check</item>
+    </plurals>
+
+    <!-- Shown instead of the accounts when a group no longer exists: every account of it has its own
+         password now. -->
+    <string name="security_group_reused_done">These accounts no longer share a password.</string>
+    <!-- Shown when no password is easy to guess any more. -->
+    <string name="security_group_weak_done">No password is easy to guess any more.</string>
+    <!-- Shown when no password change waits for an answer any more. -->
+    <string name="security_group_pending_done">No password change is waiting for your answer.</string>
+    <!-- Shown when no account is left out of the check any more. -->
+    <string name="security_group_left_out_done">No account is left out of the check.</string>
+
+    <!-- A row's button: starts the guided change of that account's password (ux.md §5.17). Short. -->
+    <string name="security_change">Change</string>
+    <!-- That button, read by TalkBack; %1$s is the account's name. -->
+    <string name="security_change_description">Change the password of %1$s</string>
+    <!-- A row's button in the list of changes not finished: goes on with that change. Short. -->
+    <string name="security_continue">Continue</string>
+    <!-- That button, read by TalkBack; %1$s is the account's name. -->
+    <string name="security_continue_description">Continue changing the password of %1$s</string>
+    <!-- A row's button in the list of accounts left out: the check reports the account again
+         (architecture.md D-9a). -->
+    <string name="security_check_again">Check it again</string>
+    <!-- That button, read by TalkBack; %1$s is the account's name. -->
+    <string name="security_check_again_description">Check %1$s again</string>
+    <!-- A row's ⋮ menu button, read by TalkBack; %1$s is the account's name. -->
+    <string name="security_more">More options for %1$s</string>
+    <!-- The item of that menu: the check will no longer report the account, for example because
+         its password is a PIN the user cannot change. -->
+    <string name="security_leave_out">Leave out of the security check</string>
+    <!-- The back arrow of the list's top bar, read by TalkBack. -->
+    <string name="security_back">Back</string>
+
+    <!-- A short message after “Leave out of the security check”, with Undo; %1$s is the account's
+         name. -->
+    <string name="security_left_out_message">%1$s is left out of the security check.</string>
+    <!-- A short message after “Check it again”; %1$s is the account's name. -->
+    <string name="security_checked_again_message">%1$s is checked again.</string>
+    <!-- A short message when a change could not be saved, with “Try again”. -->
+    <string name="security_save_failed">Couldn\'t save. Your phone\'s storage may be full.</string>
+    <!-- A short message when a change could not be saved because the passwords no longer fit in one
+         file. -->
+    <string name="security_too_large">Your passwords no longer fit in one file. Delete accounts you don\'t need, or shorten very long notes.</string>
+
+</resources>
