@@ -10,6 +10,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import io.github.dilshodbekmx.passwordvault.R
 import java.util.Date
 import java.util.Locale
 import kotlin.math.abs
@@ -26,8 +28,12 @@ import kotlin.math.max
  * [AppLanguages.screenLocale] of the composition's configuration. Durations in settings ("After 30
  * seconds") and counted waits ("in about 5 hours") are plural strings of their screens, not these.
  * Thread-safe; the ICU objects are made on first use.
+ *
+ * @param justNow what [relative] says for less than a minute: `common_just_now` ("just now") in the
+ *   screen's language, which [rememberFormatters] gives (i18n.md §4.6); without it, ICU's own word
+ *   ("now").
  */
-class Formatters(val locale: Locale, private val hour24: Boolean) {
+class Formatters(val locale: Locale, private val hour24: Boolean, private val justNow: String? = null) {
     private val uLocale = ULocale.forLocale(locale)
     private val dates = HashMap<String, DateFormat>()
     private var numbers: NumberFormat? = null
@@ -53,11 +59,12 @@ class Formatters(val locale: Locale, private val hour24: Boolean) {
     }
 
     /**
-     * How long ago [thenMs] was at [nowMs], or how far ahead, in words: "now" under a minute, then
-     * minutes, hours under a day, "yesterday" or "tomorrow" for the day before or after, days under a
-     * week, weeks under 31 days, months under a year, then years ("5 minutes ago", "3 days ago",
-     * "2 months ago"; "kecha", "вчера"). Days and months are counted on the calendar of the phone's
-     * time zone; the number is rounded down. Fit for "Last backup: 3 days ago".
+     * How long ago [thenMs] was at [nowMs], or how far ahead, in words: "just now" under a minute,
+     * before or after ([justNow]; i18n.md §4.6), then minutes, hours under a day, "yesterday" or
+     * "tomorrow" for the day before or after, days under a week, weeks under 31 days, months under a
+     * year, then years ("5 minutes ago", "3 days ago", "2 months ago"; "kecha", "вчера"). Days and
+     * months are counted on the calendar of the phone's time zone; the number is rounded down. Fit
+     * for "Last backup: 3 days ago" and "Password changed just now".
      */
     @Synchronized
     fun relative(thenMs: Long, nowMs: Long): String {
@@ -65,9 +72,9 @@ class Formatters(val locale: Locale, private val hour24: Boolean) {
         val direction = if (thenMs <= nowMs) RelativeDateTimeFormatter.Direction.LAST else RelativeDateTimeFormatter.Direction.NEXT
         val spanMs = if (thenMs <= nowMs) nowMs - thenMs else thenMs - nowMs
         fun count(n: Long, unit: RelativeDateTimeFormatter.RelativeUnit) = format.format(n.toDouble(), direction, unit)
-        // A negative span is an overflow between two times no clock gives; it reads as "now".
+        // A negative span is an overflow between two times no clock gives; it reads as less than a minute.
         if (spanMs < MINUTE_MS) {
-            return format.format(RelativeDateTimeFormatter.Direction.PLAIN, RelativeDateTimeFormatter.AbsoluteUnit.NOW)
+            return justNow ?: format.format(RelativeDateTimeFormatter.Direction.PLAIN, RelativeDateTimeFormatter.AbsoluteUnit.NOW)
         }
         if (spanMs < HOUR_MS) return count(spanMs / MINUTE_MS, RelativeDateTimeFormatter.RelativeUnit.MINUTES)
         if (spanMs < DAY_MS) return count(spanMs / HOUR_MS, RelativeDateTimeFormatter.RelativeUnit.HOURS)
@@ -119,8 +126,9 @@ class Formatters(val locale: Locale, private val hour24: Boolean) {
 
 /**
  * The [Formatters] of this composition: the language its screens show
- * ([AppLanguages.screenLocale] of `LocalConfiguration`) and the phone's 12- or 24-hour setting. Made
- * again when either changes, as after a language switch, which recreates the activity.
+ * ([AppLanguages.screenLocale] of `LocalConfiguration`), the phone's 12- or 24-hour setting, and
+ * "just now" (`common_just_now`) in that language for a time less than a minute away. Made again
+ * when any of them changes, as after a language switch, which recreates the activity.
  */
 @Composable
 fun rememberFormatters(): Formatters {
@@ -128,5 +136,6 @@ fun rememberFormatters(): Formatters {
     val context = LocalContext.current
     val locale = AppLanguages.screenLocale(AppLanguages.localesOf(configuration))
     val hour24 = android.text.format.DateFormat.is24HourFormat(context)
-    return remember(locale, hour24) { Formatters(locale, hour24) }
+    val justNow = stringResource(R.string.common_just_now)
+    return remember(locale, hour24, justNow) { Formatters(locale, hour24, justNow) }
 }

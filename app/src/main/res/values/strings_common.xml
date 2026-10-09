@@ -56,6 +56,12 @@
     <!-- The strength meter as TalkBack reads it; %1$s is one of the four words above. -->
     <string name="common_strength_description">Password strength: %1$s</string>
 
+    <!-- A time less than a minute ago, inside a sentence that says when something happened:
+         "Password changed just now", "Last backup: just now, this phone", "(saved just now)"
+         (i18n.md §4.6). From a minute on, the phone's own words are used ("5 minutes ago"). Lower
+         case; no full stop. -->
+    <string name="common_just_now">just now</string>
+
     <!-- Shown for a few seconds at the bottom of any screen, once, when the app ignored a tap
          because another app's window (a screen filter, a chat bubble) covered it (ux.md §3). -->
     <string name="common_obscured_touch">Another app is drawing over this screen, so taps are blocked for safety. Turn off screen filters or chat bubbles and try again.</string>

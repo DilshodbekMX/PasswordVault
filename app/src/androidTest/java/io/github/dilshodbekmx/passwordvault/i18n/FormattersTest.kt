@@ -100,6 +100,27 @@ class FormattersTest {
         assertEquals(if (icu == 56) "5 daqiqadan so‘ng" else "5 daqiqadan keyin", f("uz").relative(at + 5 * MINUTE, at))
     }
 
+    /**
+     * Less than a minute, before or after, is the screen's "just now" (`common_just_now`, i18n.md
+     * §4.6), not ICU's "now", which reads wrong in "Password changed now"; a minute is ICU's again.
+     */
+    @Test
+    fun lessThanAMinuteBeforeOrAfterIsJustNow() {
+        for (tag in listOf("en", "uz", "uz-Cyrl", "ru")) {
+            val f = Formatters(Locale.forLanguageTag(tag), hour24 = true, justNow = "just now ($tag)")
+            for (span in listOf(0L, 1L, 10_000L, MINUTE - 1)) {
+                assertEquals("$tag, $span ms before", "just now ($tag)", f.relative(at - span, at))
+                assertEquals("$tag, $span ms after", "just now ($tag)", f.relative(at + span, at))
+            }
+        }
+        val en = Formatters(Locale.forLanguageTag("en"), hour24 = true, justNow = "just now")
+        assertEquals("1 minute ago", en.relative(at - MINUTE, at))
+        assertEquals("in 1 minute", en.relative(at + MINUTE, at))
+        assertEquals("1 minute ago", en.relative(at - MINUTE - 59_999L, at))
+        // Without it (a Formatters made outside a screen), ICU's own word, as relativeTimesInTheFourLanguages shows.
+        assertEquals("now", f("en").relative(at - 10_000L, at))
+    }
+
     @Test
     fun yesterdayIsTheCalendarDayBefore() {
         // 00:30 on 7 October is 10 hours and 25 minutes after 14:05 on the 6th: hours, not "yesterday".
