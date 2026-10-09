@@ -3,12 +3,14 @@
 # versions lock.md lists for each, on private emulators, the devices at the same time and the checks of
 # one device one after another.
 #
-#   tools/emu/lock/all.sh [--staging | --apk FILE] [--only E1,E6,...] [--keep] [SERIAL...]
+#   tools/emu/lock/all.sh [--staging | --apk FILE] [--only E1,E6,...] [--levels 24,28,37] [--keep] [SERIAL...]
 #       --staging  the staging build (app/build/outputs/apk/staging/app-staging.apk; R8, not
 #                  debuggable): its steps that need run-as or root print SKIPPED. Default: the debug
 #                  build. A missing APK is built with tools/gradle.sh first.
 #       --apk      any other APK (E15 always uses the backupCheck variant, which it builds itself).
 #       --only     these checks (default: all of E1 to E17).
+#       --levels   only these API levels of each check's own (default: 24, 28 and 37); a check none of
+#                  whose levels is among them is not run.
 #       --keep     leave the devices this script booted running (default: stopped at the end).
 #       SERIAL     devices of this worktree (tools/emu/boot.sh) to use, each for the checks of its API
 #                  level; without any, one device per API level that the chosen checks need is booted
@@ -33,6 +35,7 @@ source "$EMU/adb.sh"
 APK=$REPO/app/build/outputs/apk/debug/app-debug.apk
 TASK=:app:assembleDebug
 ONLY=""
+LEVELS="24 28 37"
 KEEP=0
 SERIALS=()
 while [ $# -gt 0 ]; do
@@ -40,6 +43,7 @@ while [ $# -gt 0 ]; do
         --staging) APK=$REPO/app/build/outputs/apk/staging/app-staging.apk; TASK=:app:assembleStaging ;;
         --apk) [ $# -ge 2 ] || pv_usage "${BASH_SOURCE[0]}"; APK=$2; TASK=""; shift ;;
         --only) [ $# -ge 2 ] || pv_usage "${BASH_SOURCE[0]}"; ONLY=$2; shift ;;
+        --levels) [ $# -ge 2 ] || pv_usage "${BASH_SOURCE[0]}"; LEVELS=${2//,/ }; shift ;;
         --keep) KEEP=1 ;;
         emulator-*) SERIALS+=("$1") ;;
         *) pv_usage "${BASH_SOURCE[0]}" ;;
@@ -47,7 +51,15 @@ while [ $# -gt 0 ]; do
     shift
 done
 
+# levels_of CHECK: the API levels lock.md lists for CHECK, among LEVELS.
 levels_of() {
+    local l
+    for l in $(all_levels_of "$1"); do
+        case " $LEVELS " in *" $l "*) printf '%s ' "$l" ;; esac
+    done
+}
+
+all_levels_of() {
     case "$1" in
         E1 | E2 | E3 | E6 | E7 | E10 | E11) echo "24 28 37" ;;
         E4 | E5 | E8 | E9 | E14) echo 37 ;;
@@ -61,7 +73,7 @@ CHECKS=(E1 E2 E3 E4 E5 E6 E7 E9 E10 E11 E12 E13 E14 E15 E16 E17 E8)
 if [ -n "$ONLY" ]; then
     wanted=()
     for c in "${CHECKS[@]}"; do case ",$ONLY," in *",$c,"*) wanted+=("$c") ;; esac; done
-    for c in ${ONLY//,/ }; do [ -n "$(levels_of "$c")" ] || { echo "all.sh: no check $c" >&2; exit 2; }; done
+    for c in ${ONLY//,/ }; do [ -n "$(all_levels_of "$c")" ] || { echo "all.sh: no check $c" >&2; exit 2; }; done
     CHECKS=("${wanted[@]}")
 fi
 

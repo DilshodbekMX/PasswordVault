@@ -16,7 +16,7 @@ S37=$(tools/emu/boot.sh 37)
 tools/emu/lock/E1.sh "$S37"                                    # the debug build
 tools/emu/lock/E1.sh "$S37" --apk app/build/outputs/apk/staging/app-staging.apk
 tools/emu/lock/all.sh                                          # every check on 24, 28 and 37 (boots and stops them)
-tools/emu/lock/all.sh --staging --only E1,E6 "$S24" "$S37"     # wave 4's staging repeat on given devices
+tools/emu/lock/all.sh --staging --only E1,E6 --levels 24,37 "$S24" "$S37"   # wave 4's staging repeat
 tools/emu/stop.sh "$S37"
 ```
 
@@ -41,6 +41,12 @@ tools/emu/stop.sh "$S37"
 | `E15.sh` | `bmgr backupnow`, clear, restore with the `backupCheck` variant (which it builds): the vault comes back, no lock record does | 28 37 | 3 min | — |
 | `E16.sh` | heapsim 128m/256m with argon2kt removed: the Java fallback; 64m/128m: "not enough memory" | 24 (userdebug) | 4 min | — |
 | `E17.sh` | away 31 s, "Immediately", screen off, 90 s and 6 min in the file picker, the picker and the screen off (the task resumes), an overlay over the pad; Android 7: the pad | 37 (24: the last item) | 14 min (`--short`: 8) | — |
+
+For the integration check of wave 4 (build-plan.md §6): `tools/emu/lock/all.sh S24 S28 S37` runs E1 to
+E3, E6, E7, E10 and E11 on API 24, 28 and 37, E4 (its pending wait prints SKIPPED until 5.5), E8, E9,
+E12 to E14 and E17 on 37, E15 on 28 and 37 and E16 on 24 (and, beyond that list, E12 and E13 on 28
+and E17's item for Android 7 on 24); `tools/emu/lock/all.sh --staging --only E1,E6 --levels 24,37 S24 S37`
+is the staging repeat.
 
 `all.sh` runs them on these levels, the devices at the same time and the checks of one device one after
 another, with E8 last on its device: it leaves the emulator's fingerprint sensor locked out until a
