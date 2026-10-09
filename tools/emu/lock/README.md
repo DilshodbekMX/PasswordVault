@@ -96,11 +96,39 @@ Against the app of `wave-4A-merged` (this branch), on this worktree's private de
 counts. Run by hand, one check at a time (E10 also in its parts), and E1 to E3, E6, E7 and E10 to E15
 on API 28 again through `all.sh`.
 
-RESULTS-TABLE
+| Check | API 24 | API 28 | API 37 |
+|---|---|---|---|
+| E1 | 14/0/0; staging 14/0/0 | 14/0/0; staging 14/0/0 | 14/0/0; staging 14/0/0 |
+| E2 | 13/0/0; staging 13/0/0 | 13/0/0; staging 13/0/0 | 13/0/0; staging 13/0/0 (`am force-stop` for `kill -9`) |
+| E3 | 13/0/0 | 13/0/0; staging 13/0/0 | 13/0/0 |
+| E4 | | | 9/0/2 (the 2 wait for 5.5); against 5.5's branch 11/0/0 |
+| E5 | | | 3/0/3 (waits for 5.5); staging 3/0/3 (needs-debuggable); against 5.5's branch 6/0/0 |
+| E6 | 9/0/0; staging 9/0/0 | 9/0/0; staging 9/0/0 | 9/0/0; staging 9/0/0 |
+| E7 | 12/0/1 ((a) is API 37's) | 12/0/1 | 22/0/0 |
+| E8 | | | 8/0/0 |
+| E9 | | | 8/0/0 |
+| E10 | 57/0/0 | 57/0/0; staging, the PIN rows: 18/0/0 | 57/0/0 |
+| E11 | 14/0/2 (6.1's step; the saved state needs API 26); against 6.1's branch 15/0/1 | 14/0/1 (6.1's step) | 14/0/1 (6.1's step); against 6.1's branch 15/0/0 |
+| E12 | | 11/0/0 and 1 KNOWN | 12/0/0 |
+| E13 | | 8/0/0; staging 8/0/0 | 8/0/0 |
+| E14 | | | 11/0/0 |
+| E15 | | 11/0/0 | 11/0/0 |
+| E16 | 12/2/0 and 13/1/0 (below) | | |
+| E17 | 5/0/7 (the pad; the rest is API 37's) | | 18/0/0 (6 minutes in the picker) |
+
+`all.sh emulator-5558` (API 28, debug) ran E1 to E3, E6, E7 and E10 to E15 there one after another, all
+passing; `all.sh --only E16 emulator-5560` printed its table and ended with exit status 1. "Against
+5.5's branch" and "against 6.1's branch" are runs with the debug APK built from those branches as they
+were on 2026-10-09 (5.5 at 413a5ef, 6.1 at f424702), in a scratch copy: the steps that wait for them ran
+there, all passing.
 
 What failed or was not run:
-- E16 on API 24: setup at 128m/256m through the Java fallback says "not enough memory" (below).
-- The steps that wait for 5.5 and 6.1 printed SKIPPED (above); TRY-RUNS
+- E16 on API 24 (four runs): setup at 128m/256m through the Java fallback says "not enough memory"
+  every time; a master password right after another one said so in two runs of three, and 20 s later
+  the same master password opened the app (below, "Device facts").
+- On the merged app the steps that wait for 5.5 and 6.1 print SKIPPED; they passed against those
+  branches (the table). E11's saved-state step needs the window helper (API 26), so Android 7 has only
+  the field's own part.
 
 ## Device facts found while writing these
 
@@ -136,10 +164,15 @@ What failed or was not run:
   E.6 says only that the counts are as for any right PIN; E13 notes the total and does not judge it.
 - E16 on API 24 with argon2kt removed: at heapgrowthlimit 128m / heapsize 256m setup fails with "Your
   phone doesn't have enough free memory to finish setup." (it makes the vault and opens it from disk:
-  two derivations one after the other), while one derivation (an unlock) succeeds there, and setup
-  succeeds at 320m and 384m. The lab's single 64 MiB derivation used about 138 MiB on Android 7
-  [L-old §2]; `GuardedArgon2id` asks for 160 MiB of free heap before each (`PlatformModule.fallbackNeeds`)
-  and reads it without a garbage collection first, so the first derivation's garbage may count as used.
+  two derivations one after the other; 4 runs of 4), while one derivation (an unlock) succeeds there,
+  a second unlock at once fails now and then (2 runs of 3) and succeeds 20 s later, and setup succeeds
+  at 320m and 384m. The lab's single 64 MiB derivation used about 138 MiB on Android 7 [L-old §2];
+  `GuardedArgon2id` asks for 160 MiB of free heap before each (`PlatformModule.fallbackNeeds`) and reads
+  it without a garbage collection first, so the first derivation's garbage likely counts as used (not
+  verified in ART).
+- E4 against 5.5's branch, once: after a replacement the first PIN unlock showed the list's banner of
+  the replacement and no notice within 20 s; a later unlock, and the next run, showed the notice too.
+  E4 accepts either and says which.
 - After `bmgr restore` on API 28 the app's process stays alive in restricted mode (android.app.Application
   in place of PasswordVaultApp); an activity started in it fails with ClassCastException. A restore on a
   new phone does not leave the app so; E15 stops the process before it starts the app, and notes it.
