@@ -36,7 +36,8 @@
 # with lengths only. With --shots DIR (debug builds; default /home/asus/pvwork/shots-7 on API 37)
 # pictures of the steps are saved as DIR/7.2-NN-name.png.
 #
-# Exit 0 when no step failed. About 15 minutes on API 37.
+# Exit 0 when no step failed. About 35 minutes on API 37 with the default 8 tries (measured under a
+# machine load of 20 to 40; --retries 2 takes about 20).
 set -u
 
 REPO=$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)
