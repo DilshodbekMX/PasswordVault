@@ -71,14 +71,18 @@ three_wrong() {
     pvl_text_is pv.lock.status plural lock_pad_tries_left 2
 }
 
+# not_now_shown: "Not now: use PIN" is on the master-password screen, below the field and the keyboard
+# perhaps: the keyboard closed and the screen scrolled to it.
+not_now_shown() { pva_hide_keyboard; pva_reveal pv.lock.notNow 2>/dev/null; }
+
 year_ahead_counts_kept() {
     set_clock "$YEAR_MS" || return 1
     new_visit || return 1
     pvl_expect_pin row=3 total=3 charged=false slot=set || return 1
+    [ "$(pvl_policy row)" = PRACTICE_REQUIRED ] || { pv_log "$(pvl_item policy:)"; return 1; }
     pvl_wait_screen master-password 10 || return 1
     pvl_text_is pv.lock.reason string lock_mp_reason_practice || return 1
-    pva_absent pv.lock.notNow || { pv_log "\"Not now\" is offered although practice is past its grace"; return 1; }
-    [ "$(pvl_policy row)" = PRACTICE_REQUIRED ] || { pv_log "$(pvl_item policy:)"; return 1; }
+    ! not_now_shown || { pv_log "\"Not now\" is offered although practice is past its grace"; return 1; }
 }
 
 back_counts_kept() {
@@ -101,10 +105,11 @@ practice_done_a_year_ahead() {
 practice_due_after_back() {
     set_clock 0 || return 1
     new_visit || return 1
+    pvl_status || return 1
+    [ "$(pvl_policy row)" = PRACTICE_IN_GRACE ] || { pv_log "$(pvl_item policy:); $(pvl_vault_item state.rec)"; return 1; }
     pvl_wait_screen master-password 10 || return 1
     pvl_text_is pv.lock.reason string lock_mp_reason_practice || return 1
-    pva_present pv.lock.notNow 5 || { pv_log "no \"Not now: use PIN\""; return 1; }
-    [ "$(pvl_policy row)" = PRACTICE_IN_GRACE ] || { pv_log "$(pvl_item policy:)"; return 1; }
+    not_now_shown || { pv_log "no \"Not now: use PIN\""; return 1; }
     pva_tap pv.lock.notNow && pvl_pad 15 && pva_pin "$PVL_PIN" && pvl_open_list 30
 }
 

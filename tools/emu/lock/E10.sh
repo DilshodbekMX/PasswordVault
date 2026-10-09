@@ -181,7 +181,7 @@ pin_row() {
                 arm "$row" && pva_pin "$PVL_PIN" || return 1
                 pvl_wait_screen master-password 30 || return 1
                 pvl_text_is pv.lock.reason string lock_mp_reason_pin_cannot_check || return 1
-                pva_absent pv.lock.usePin || { pv_log "the PIN is offered again on this visit"; return 1; }
+                pvl_nowhere pv.lock.usePin || { pv_log "the PIN is offered again on this visit"; return 1; }
                 spent || return 1
                 [ "$(pvl_policy pin)" = CANNOT_CHECK ] || { pv_log "policy: $(pvl_item policy:)"; return 1; }
                 unchanged "$before" || return 1

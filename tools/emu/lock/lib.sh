@@ -409,6 +409,18 @@ pvl_wait_screen() {
     done
 }
 
+# pvl_nowhere ID: no node ID on the screen, also below the fold: the keyboard closed, and looked for
+# again after each of two swipes down (only nodes that are shown are reported).
+pvl_nowhere() {
+    local i
+    pva_hide_keyboard
+    for i in 1 2 3; do
+        pva_absent "$1" || { pv_log "$1 is on the screen"; return 1; }
+        [ "$i" -lt 3 ] && pva_scroll_down
+    done
+    return 0
+}
+
 # pvl_status_line: the pad's status line (pv.lock.status), or nothing when there is none.
 pvl_status_line() { pva_node pv.lock.status | cut -d'|' -f1; }
 
