@@ -674,5 +674,10 @@ What the merge of R4 does besides merging:
 5. `MissingTranslation` and `ResourcesTest` stay warnings until the integration check of wave 6. `StrengthPerformanceTest` (JVM) and `ListPerformanceTest` (API 37) fail under machine load: a failure counts only when it fails again alone.
 6. It confirms R5 to R7 (the table) and writes "From the merge of R4 to round R5" here.
 
+**From the device check of 4A** (`tools/emu/checks/4A.sh`; tag `wave-4A-ok`), for the merge of R4:
+- The PIN steps' "Finish" on "Make backups" (and Back there) closes the steps instead of opening the list's root (`PinSetupViewModel.finish`, NavStep.Back): after a master-password unlock without a PIN they close onto the screen the unlock brought back, as ux.md §4 "What survives a lock" says; after setup or a restore only the list lies under them. After F11 step 19 they close onto what lies under them, which is `Route.NewMasterPassword` if 5.5's screen is still on the stack then: that screen leaves the stack when the change has finished.
+- `tools/emu/app.sh` has the real lock's helpers (`pva_status`, `pva_status_soon`, `pva_prompt_open`, `pva_finger`, `pva_prompt_use_pin`, `pva_choose_pin`, `pva_after_pin`, `pva_to_create_pin`, `pva_opened`, `pva_lock_now`) for 4.5's scripts; `pva_settle` can keep a message that passes while it waits (`PVA_WATCH`). `smoke.sh` has a stage for the PIN and the fingerprint; the window checks also look at the PIN steps' and the backup's master-password fields.
+- On API 37 in touch mode the keyboard does not come back after a rotation (4.2b; `w5-carry`): `TypeAgainRotationTest` failed in a full connected run and alone until the devices were put in keyboard mode first, which `checks/4A.sh` now does.
+
 **For every agent of a round.** The agents of one round share one scratchpad directory and the folders `/home/asus/pvwork/shots-*/`: keep your own files in a subdirectory or under a prefix named after your branch, and never delete a file you did not write. Android Studio's Run has landed on a private device more than once (tools/emu/README.md); a device step that fails for no visible reason is run again before it is counted.
 
