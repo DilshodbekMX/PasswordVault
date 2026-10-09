@@ -15,12 +15,15 @@
 # Java heap is at least 160 MiB below API 28 (96 MiB from API 28; PlatformModule.fallbackNeeds), and
 # otherwise says KdfUnavailable: "not enough memory" (lock.md §6.8 step 3).
 # Steps:
-#   - the copy without argon2kt's libraries made, and installed afresh;
+#   - the copy without argon2kt's libraries made;
 #   - heapsim.sh 128m 256m: a largeHeap app (PasswordVault is one) gets 256 MiB;
-#   - setup with the suggested words and the PIN: two derivations through the fallback, one after the
-#     other (the vault is made, then opened from disk with the second typing, lock.md F1 step 3): the
-#     list;
-#   - Lock now, "Forgot PIN? Use master password", the master password: the list (one more);
+#   - the copy installed afresh; setup with the suggested words and the PIN: two derivations through
+#     the fallback, one after the other (the vault is made, then opened from disk with the second
+#     typing, lock.md F1 step 3): the list. (Seen on 2026-10-09 on API 24: this fails with "Your phone
+#     doesn't have enough free memory to finish setup", while it passes at 320m and 384m; the script
+#     then goes on with a vault made at the image's own heap, 512m, so that the steps below still run);
+#   - one derivation at 128m/256m: Lock now, "Forgot PIN? Use master password", the master password:
+#     the app opens ("Choose a new PIN" after it, F7, is answered "Not now");
 #   - heapsim.sh 64m 128m: 128 MiB, less than the fallback needs;
 #   - the app started; the master password: "Your phone doesn't have enough free memory to open your
 #     passwords. …" with "Try again"; no crash; `status` counts no wrong master password;
@@ -57,10 +60,23 @@ heap() { "$LOCK_DIR/heapsim.sh" "$SERIAL" "$1" "$2"; }
 
 install_no_native() { APK=$NONATIVE pva_install "$NONATIVE" && pva_start && pva_on Welcome 30; }
 
-set_up() { pvl_set_up "$PVL_PIN" - ; }
+set_up_at_small_heap() {
+    local message
+    pvl_set_up "$PVL_PIN" - && return 0
+    message=$(pva_text pv.setup.againMessage 2>/dev/null)
+    pvl_note "E16 on API $API: setup at 128m/256m through the fallback ended with: '${message:-?}'; the app's Dalvik heap: $(pv_shell dumpsys meminfo "$PV_PACKAGE" 2>/dev/null | tr -d '\r' | grep -m 1 'Dalvik Heap' | tr -s ' ')"
+    return 1
+}
+
+set_up_at_image_heap() {
+    "$LOCK_DIR/heapsim.sh" "$SERIAL" --restore || return 1
+    install_no_native && pvl_set_up "$PVL_PIN" -
+}
 
 mp_opens() {
-    pvl_lock_now && pvl_pad 20 || return 1
+    pvl_status || return 1
+    if [ "$(pvl_lock_state)" = unlocked ]; then pvl_lock_now || return 1; fi
+    pvl_wait_screen 'pad|master-password' 20 || return 1
     pvl_unlock_mp
 }
 
@@ -88,8 +104,12 @@ pin_opens() {
 pv_step "a copy of the APK without argon2kt's libraries" -- no_native_apk || pvl_end
 pv_step "heapsim.sh 128m 256m: largeHeap gets 256 MiB" -- heap 128m 256m || pvl_end
 pv_step "the copy installed afresh: Welcome" -- install_no_native || pvl_end
-pv_step "setup through the Java fallback (two derivations, one at a time): the list" -- set_up || pvl_end
-pv_step "Lock now, the master password through the fallback: the list" -- mp_opens
+if ! pv_step "setup at 128m/256m through the Java fallback (two derivations, one after the other): the list" -- set_up_at_small_heap; then
+    pv_step "the heap of the image (512m), the copy installed afresh and set up there" -- set_up_at_image_heap || pvl_end
+    pv_step "heapsim.sh 128m 256m again" -- heap 128m 256m || pvl_end
+    pv_step "the app started again: the lock screen" -- eval 'pva_start && pvl_wait_screen "pad|master-password" 60' || pvl_end
+fi
+pv_step "one derivation at 128m/256m: Lock now, the master password through the fallback: the list" -- mp_opens
 pv_step "heapsim.sh 64m 128m: 128 MiB, less than the fallback needs" -- heap 64m 128m || pvl_end
 pv_step "the master password: \"not enough memory\", \"Try again\", nothing counted, no crash" -- no_memory
 pv_step "the PIN opens the app" -- pin_opens

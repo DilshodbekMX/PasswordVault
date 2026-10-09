@@ -29,7 +29,13 @@ pvh_get() { pv_getprop "$1"; }
 pvh_set() {
     pv_has_root || { pv_log "the image of $PV_SERIAL has no root (needs a userdebug image)"; return 1; }
     mkdir -p "$(dirname "$SAVED")"
-    [ -f "$SAVED" ] || printf '%s %s\n' "$(pvh_get dalvik.vm.heapgrowthlimit)" "$(pvh_get dalvik.vm.heapsize)" > "$SAVED"
+    # An unset growth limit (the API 24 image has none) means the heap size: saved as that.
+    if [ ! -f "$SAVED" ]; then
+        local growth heap
+        heap=$(pvh_get dalvik.vm.heapsize)
+        growth=$(pvh_get dalvik.vm.heapgrowthlimit)
+        printf '%s %s\n' "${growth:-$heap}" "$heap" > "$SAVED"
+    fi
     pv_shell "su 0 sh -c 'setprop dalvik.vm.heapgrowthlimit $1; setprop dalvik.vm.heapsize $2; stop; start'" >/dev/null 2>&1
     pv_sleep 8
     pv_wait_booted 300 || return 1
@@ -41,6 +47,7 @@ pvh_set() {
 if [ "$2" = --restore ]; then
     [ -f "$SAVED" ] || { echo "heapsim.sh: nothing saved for $1; the image's values are in force" >&2; exit 0; }
     read -r growth heap < "$SAVED"
+    [ -n "$growth" ] && [ -n "$heap" ] || { echo "heapsim.sh: $SAVED does not hold two values" >&2; exit 1; }
     pvh_set "$growth" "$heap" || exit 1
     rm -f "$SAVED"
     exit 0

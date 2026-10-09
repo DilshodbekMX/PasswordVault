@@ -175,18 +175,34 @@ pvl_res() {
 # trimmed.
 pvl_norm() { sed 's/\xc2\xa0/ /g; s/[[:space:]][[:space:]]*/ /g; s/^ //; s/ $//'; }
 
-# pvl_expect TEXT KIND NAME [N]: TEXT is the resource's text (KIND string or plural; a plural's
-# quantity is "one" for N 1 and "other" otherwise, as English has them), with %d (and %1$d) read as
-# N and %1$s as any text. Says what differs when it is not.
+# pvl_expect TEXT KIND NAME [N [M...]]: TEXT is the resource's text (KIND string or plural; a plural's
+# quantity is "one" for N 1 and "other" otherwise, as English has them), with %d and %1$d read as N,
+# %2$d as M (and so on), any other number argument as a number and %1$s (any string argument) as any
+# text. Says what differs when it is not.
 pvl_expect() {
-    local text=$1 kind=$2 name=$3 n=${4:-} want quantity=other pattern
-    [ "$n" = 1 ] && quantity=one
+    local text=$1 kind=$2 name=$3 want quantity=other
+    shift 3
+    [ "${1:-}" = 1 ] && quantity=one
     want=$(pvl_res "$kind" "$name" "$quantity") || { pv_log "no $kind $name in the APK"; return 1; }
-    pattern=$(printf '%s' "$want" | pvl_norm | sed 's/[][\.*^$+?(){}|/]/\\&/g')
-    if [ -n "$n" ]; then pattern=$(printf '%s' "$pattern" | sed "s/%\(1\\\\\$\)\{0,1\}d/$n/g"); fi
-    pattern=$(printf '%s' "$pattern" | sed 's/%\(1\\\$\)\{0,1\}s/.*/g; s/%[0-9]\\\$s/.*/g')
-    if printf '%s' "$text" | pvl_norm | grep -q -x -e "$pattern"; then return 0; fi
-    pv_log "the text is '$text'; expected $kind $name${n:+ ($n)}: '$want'"
+    if printf '%s' "$text" | pvl_norm | python3 -c '
+import re, sys
+want, args = sys.argv[1], sys.argv[2:]
+norm = lambda t: re.sub(r"\s+", " ", t.replace(" ", " ")).strip()
+pattern, pos = "", 0
+for m in re.finditer(r"%(?:(\d+)\$)?([ds])", norm(want)):
+    pattern += re.escape(norm(want)[pos:m.start()])
+    index = int(m.group(1) or 1) - 1
+    if m.group(2) == "d":
+        pattern += re.escape(args[index]) if index < len(args) else r"\d+"
+    else:
+        pattern += ".*"
+    pos = m.end()
+pattern += re.escape(norm(want)[pos:])
+sys.exit(0 if re.fullmatch(pattern, norm(sys.stdin.read())) else 1)
+' "$want" "$@"; then
+        return 0
+    fi
+    pv_log "the text is '$text'; expected $kind $name${1:+ ($*)}: '$want'"
     return 1
 }
 
