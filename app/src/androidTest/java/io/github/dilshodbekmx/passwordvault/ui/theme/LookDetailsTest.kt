@@ -9,6 +9,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.unit.dp
@@ -18,8 +19,10 @@ import io.github.dilshodbekmx.passwordvault.lock.LockUiState
 import io.github.dilshodbekmx.passwordvault.settings.StyleChoice
 import io.github.dilshodbekmx.passwordvault.settings.ThemeChoice
 import io.github.dilshodbekmx.passwordvault.ui.common.PinPadTags
+import io.github.dilshodbekmx.passwordvault.ui.list.ListTags
 import io.github.dilshodbekmx.passwordvault.ui.lock.LockTags
 import io.github.dilshodbekmx.passwordvault.ui.setup.SetupTags
+import kotlin.math.roundToInt
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -178,6 +181,39 @@ class LookDetailsTest {
             }
             assertEquals("$what: the theme's status bar icons", look.colors.background.luminance() > 0.5f, lightStatusBarIcons())
         }
+    }
+
+    /**
+     * The list's "Add" button (README "\"Add\" button"; ux.md §5.11): its colour and its label's, and
+     * its corners: fully rounded in Emerald, Material 3's 16 dp elsewhere (a point 8 dp in and 6 dp
+     * down from its corner is on the button with 16 dp corners and off a pill of 56 dp).
+     */
+    @Test
+    fun theAddButtonIsDrawnAsTheStyleSays() {
+        val made = open()
+        everyLook(made) { look, what ->
+            show(made, LookGallery.Screen.LIST, ListTags.ADD)
+            val add = look.addButton
+            val c = look.colors
+            compose.awaitPixel(ListTags.ADD, add.container(c), "$what: the Add button", fx = 0.05f, fy = 0.5f)
+            compose.awaitHasPixel(ListTags.ADD, add.content(c), Offset(0.1f, 0.3f), Offset(0.95f, 0.7f), "$what: its icon and label")
+            val corner = pixelAtDp(ListTags.ADD, 8f, 6f)
+            if (add.fullyRounded) {
+                assertFalse("$what: a pill has no corner there (${corner.hex()})", near(corner, add.container(c).toArgb(), 6))
+            } else {
+                assertTrue("$what: 16 dp corners reach there (${corner.hex()})", near(corner, add.container(c).toArgb(), 6))
+            }
+        }
+    }
+
+    /** The colour on the screen [xDp], [yDp] from the top left corner of the node [tag]. */
+    private fun pixelAtDp(tag: String, xDp: Float, yDp: Float): Int {
+        compose.waitForIdle()
+        val node = compose.node(tag)
+        val density = compose.activity.resources.displayMetrics.density
+        val x = node.positionOnScreen.x + xDp * density
+        val y = node.positionOnScreen.y + yDp * density
+        return screenshot().getPixel(x.roundToInt(), y.roundToInt())
     }
 
     /** Whether the status bar draws dark icons (for a light colour behind them) now. */

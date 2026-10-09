@@ -551,7 +551,7 @@ If fingerprint unlock is on and cannot be used now, the matching fingerprint lin
   - an "All accounts · 48" header, then all entries with sticky letter headers (headers are semantic headings);
   - last, when not empty, a row "Recently deleted (3)" (§5.23).
   - Its bottom content padding is at least the height of the Add button plus 16 dp, plus the clipboard status row when it shows. So the button never covers the last row's copy button.
-- **`ExtendedFloatingActionButton`** "Add" (collapses to the + icon while scrolling down).
+- **`ExtendedFloatingActionButton`** "Add" (collapses to the + icon while scrolling down), drawn as the style says: tonal in Bank blue and the phone's colours, filled in Night vault, filled and fully rounded in Emerald ([looks/README.md](looks/README.md)).
 - **Bottom**: the navigation bar (Passwords · Security · Settings) and, when something is copied, the clipboard status row (§6) above it. The Security item shows a dot when there are new results (§5.16).
 
 **Row** (`ListItem`):

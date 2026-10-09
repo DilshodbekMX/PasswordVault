@@ -18,10 +18,12 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
@@ -79,6 +81,7 @@ import io.github.dilshodbekmx.passwordvault.i18n.rememberFormatters
 import io.github.dilshodbekmx.passwordvault.nav.Navigator
 import io.github.dilshodbekmx.passwordvault.nav.Route
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultSearchField
+import io.github.dilshodbekmx.passwordvault.ui.theme.LocalLook
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -92,8 +95,9 @@ fun PasswordsRoute(graph: AppGraph, nav: Navigator) {
 /**
  * The Passwords screen (ux.md §5.11): the top bar with "Lock now", the search field, at most two
  * banners, the list (favourites, then every account under sticky letter headers, then "Recently
- * deleted (3)") or the search results, the "Add" button, and the snackbar, which also says "This
- * account no longer exists." when an account's screen came back for that reason (ux.md §5.12).
+ * deleted (3)") or the search results, the "Add" button (tonal, filled, or filled and fully rounded,
+ * as the style says), and the snackbar, which also says "This account no longer exists." when an
+ * account's screen came back for that reason (ux.md §5.12).
  *
  * - **Back** clears a query first (ux.md §4); otherwise it is Navigation's (it leaves the app here).
  * - **The keyboard's search key** hides the keyboard; nothing is focused when the screen opens, so
@@ -232,6 +236,8 @@ fun PasswordsScreen(viewModel: PasswordsViewModel, nav: Navigator) {
             )
         },
         floatingActionButton = {
+            // Drawn as the style says (docs/design/looks/README.md "\"Add\" button").
+            val add = LocalLook.current.addButton
             ExtendedFloatingActionButton(
                 text = { Text(stringResource(R.string.list_add)) },
                 icon = {
@@ -246,6 +252,9 @@ fun PasswordsScreen(viewModel: PasswordsViewModel, nav: Navigator) {
                 },
                 expanded = addExpanded,
                 modifier = Modifier.testTag(ListTags.ADD),
+                shape = if (add.fullyRounded) CircleShape else FloatingActionButtonDefaults.extendedFabShape,
+                containerColor = add.container(MaterialTheme.colorScheme),
+                contentColor = add.content(MaterialTheme.colorScheme),
             )
         },
         snackbarHost = { SnackbarHost(snackbar) },

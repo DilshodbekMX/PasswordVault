@@ -115,6 +115,27 @@ class LooksTest {
         for (scheme in OWN_LOOKS.filter { it.style != StyleChoice.BANK_BLUE }) assertNull("$scheme", scheme.look.lockPanel)
     }
 
+    /**
+     * The list's "Add" button (README "\"Add\" button"): tonal in Bank blue (the primary container),
+     * filled in Night vault and Emerald (the primary colour), fully rounded in Emerald only; its
+     * label "Add" can be read on it in every style (4.5:1).
+     */
+    @Test
+    fun theAddButtonIsTheStylesAndItsLabelCanBeRead() {
+        for (scheme in OWN_LOOKS) {
+            val c = scheme.colors
+            val add = scheme.look.addButton
+            val (container, content) = when (scheme.style) {
+                StyleChoice.BANK_BLUE, StyleChoice.PHONE_COLOURS -> c.primaryContainer to c.onPrimaryContainer
+                StyleChoice.EMERALD, StyleChoice.NIGHT_VAULT -> c.primary to c.onPrimary
+            }
+            assertEquals("$scheme: the button's colour", container, add.container(c))
+            assertEquals("$scheme: its label's colour", content, add.content(c))
+            assertEquals("$scheme: fully rounded", scheme.style == StyleChoice.EMERALD, add.fullyRounded)
+            assertTrue("$scheme: \"Add\" on the button", contrast(add.content(c), add.container(c)) >= 4.5)
+        }
+    }
+
     @Test
     fun everyStyleHasALightAndADarkSchemeOfItsOwn() {
         assertSame(BankBlueLight, Looks.of(StyleChoice.BANK_BLUE, dark = false).colors)

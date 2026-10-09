@@ -107,7 +107,7 @@ enum class CardsLook {
     PASSWORD_BLOCK,
 }
 
-/** The list's "Add" button. */
+/** The list's "Add" button (the README's "\"Add\" button"). */
 enum class AddButtonLook {
     /** Tonal: the primary container's colours. */
     TONAL,
@@ -117,6 +117,16 @@ enum class AddButtonLook {
 
     /** Filled and fully rounded. */
     FILLED_ROUND,
+    ;
+
+    /** The button's colour in [colors]: the primary container when tonal, the primary colour when filled. */
+    fun container(colors: ColorScheme): Color = if (this == TONAL) colors.primaryContainer else colors.primary
+
+    /** The colour of the button's icon and label: the one made to lie on [container]. */
+    fun content(colors: ColorScheme): Color = if (this == TONAL) colors.onPrimaryContainer else colors.onPrimary
+
+    /** Fully rounded: a pill, and a circle while it shows its icon alone. Otherwise Material 3's corners of 16 dp. */
+    val fullyRounded: Boolean get() = this == FILLED_ROUND
 }
 
 /**
