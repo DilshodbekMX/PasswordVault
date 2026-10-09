@@ -99,8 +99,8 @@ fun FirstCopyTipDialog(lines: List<UiText>, onOk: () -> Unit) {
  * - **After the first copy of a password**, or of another secret that is copied flagged as one (a
  *   previous password, a hidden field's value, text selected in a note: [ClipStatus.sensitive]),
  *   because the tip is about pasting a password; a username or a website does not bring it. It
- *   shows for a copy of ours that is still on the clipboard ([SecretClipboard.status], not yet
- *   cleared), while the app is unlocked, as long as `OneTime.FIRST_COPY_TIP` is not stored.
+ *   shows for a copy made while it watches that is still on the clipboard ([SecretClipboard.status],
+ *   not yet cleared), while the app is unlocked, as long as `OneTime.FIRST_COPY_TIP` is not stored.
  * - **Once.** The flag is written as the tip opens: the tip has then been shown (the flag's own
  *   meaning, `OneTime`), even if the user leaves the app to paste without answering it. If the write
  *   fails, the next copy shows it again, never the same copy twice.
@@ -125,8 +125,14 @@ class FirstCopyTipModel(
     /** The copy the tip was last opened for, so that it never opens twice for one copy. */
     private var openedFor: ClipStatus? = null
 
-    /** Follows the copies, the stored flags and the lock until cancelled. Main thread. */
+    /**
+     * Follows the copies, the stored flags and the lock until cancelled. Main thread. A clip of ours
+     * that is already pending when it starts is not a copy made now: a new process restores one from
+     * the settings (`AndroidSecretClipboard`, as "Copied text", whatever was copied), and the tip must
+     * not open at the unlock that follows.
+     */
     suspend fun watch() {
+        if (openedFor == null) openedFor = clipboard.status.value
         combine(clipboard.status, settings.oneTime, lock.state) { status, oneTime, state -> Triple(status, oneTime, state) }
             .collect { (status, oneTime, state) -> update(status, oneTime, state) }
     }

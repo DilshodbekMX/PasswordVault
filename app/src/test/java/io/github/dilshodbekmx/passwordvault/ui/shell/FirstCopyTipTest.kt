@@ -139,6 +139,17 @@ class FirstCopyTipTest {
     }
 
     @Test
+    fun aClipRestoredByANewProcessDoesNotBringIt_aCopyAfterwardsDoes() = runTest(dispatcher) {
+        // AndroidSecretClipboard restores a pending clip of ours at start as "Copied text", flagged.
+        clipboard.status.value = ClipStatus(UiText.of(R.string.help_tip_title), sensitive = true, clearsAtElapsedMs = 50_000L, delayMs = 40_000L)
+        val model = model()
+        assertFalse("no copy was made in this process", model.open.value)
+        assertFalse(OneTime.FIRST_COPY_TIP in settings.oneTime.value)
+        copyPassword()
+        assertTrue(model.open.value)
+    }
+
+    @Test
     fun notWhileTheAppIsLocked() = runTest(dispatcher) {
         lock.state.value = LockUiState.NoVault(emptyList())
         val model = model()
