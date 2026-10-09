@@ -268,6 +268,25 @@ win_lock() {
 
 win_unlock() { pva_type pv.lock.password "$WIN_MASTER" && pva_submit_open pv.lock.unlock Passwords 90; }
 
+# win_set_pin_prompt: from the open app, with no PIN: Home and back (ON_STOP drops the proof of the last
+# unlock), then Settings > "Set a PIN", which asks for the master password first (4.3's ChangePin route,
+# the stage MASTER): its field pv.pin.mp.field is shown. Since the device check of 4A.
+win_set_pin_prompt() {
+    pva_hide_keyboard
+    pva_away 2 && pva_on Passwords 30 || return 1
+    pva_tap pv.tab.Settings && pva_on Settings 20 && pva_tap pv.open.ChangePin && pva_on ChangePin 20 && pva_need pv.pin.mp.field 20
+}
+
+# win_backup_prompt: from a screen of Settings: Back to Settings, then Backup, which asks for the master
+# password (5.2's BackupScreen): its field pv.backup.password is shown. Since the device check of 4A.
+win_backup_prompt() {
+    pva_hide_keyboard
+    pva_present pv.route.Settings 2 || pv_shell input keyevent KEYCODE_BACK >/dev/null
+    pva_on Settings 20 && pva_reveal pv.open.Backup && pva_tap pv.open.Backup && pva_on Backup 20 || return 1
+    if pva_present pv.backup.continue 3; then pva_tap pv.backup.continue || return 1; fi
+    pva_need pv.backup.password 20
+}
+
 # win_long_press ID: a long press on the node, which opens a text field's toolbar.
 win_long_press() {
     local line x y

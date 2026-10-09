@@ -20,7 +20,9 @@
 # the texts typed so far, neither among its leaves nor in its bytes, in UTF-16 or UTF-8:
 #   setup: the own master password in its field, shown on "Write it down", and typed again;
 #   the list: a search; the form: name, username, password, website, notes; its dialog: a label and a
-#   secret value; the generator's sheet: the suggested password; the lock screen: the master password.
+#   secret value; the generator's sheet: the suggested password; the lock screen: the master password;
+#   since the device check of 4A the PIN steps ("Set a PIN"): the master password, and five digits of
+#   the new PIN on their pad.
 # The control is the helper app's own screen under the same probe: a platform text field saves its
 # text, and the probe must find it, or a clean result would mean nothing.
 # Prints PASS or FAIL per step and a summary; exit 0 when no step failed, 1 otherwise, 2 for a usage
@@ -204,6 +206,8 @@ echo "state.sh: the $VARIANT build"
 
 # ---- setup -------------------------------------------------------------------------------------
 typed_text "$WIN_MASTER" "the master password"
+WIN_PIN_DIGITS=58291
+typed_text "$WIN_PIN_DIGITS" "the PIN's digits"
 pv_step "setup: the own master password typed" -- eval 'win_to_own && typed pv.setup.own "$WIN_MASTER"' || win_end
 pv_step "state: setup, pv.setup.own typed, turned twice: the saved states hold nothing typed" -- clean own CreateMasterPassword turn
 pv_step "setup: the password used: \"Write it down on paper\" shows it" -- eval 'win_use_own && win_reuse_no' || win_end
@@ -236,4 +240,10 @@ pv_step "state: the form with everything typed, left with Home: the saved state 
 # ---- the lock screen ---------------------------------------------------------------------------
 pv_step "the app in front again, the sheet and the form closed, locked, the master password typed" -- eval 'pva_relaunch && pva_need pv.gen.preview 20 && pv_shell input keyevent KEYCODE_BACK >/dev/null && win_close_form && win_lock && typed pv.lock.password "$WIN_MASTER"' || win_end
 pv_step "state: the lock screen, pv.lock.password typed, turned twice: the saved states hold nothing typed" -- clean lock Locked turn
+
+# ---- the PIN steps (since the device check of 4A) ----------------------------------------------
+pv_step "the master password opens the app; Settings > \"Set a PIN\" asks for it again: typed" -- eval 'win_unlock && win_set_pin_prompt && typed pv.pin.mp.field "$WIN_MASTER"' || win_end
+pv_step "state: the PIN steps' master password, pv.pin.mp.field typed, turned twice: the saved states hold nothing typed" -- clean pinmp ChangePin turn
+pv_step "the master password accepted: the PIN steps' pad, five digits of a PIN typed" -- eval 'pva_hide_keyboard; pva_tap pv.pin.mp.next && pva_need pv.pin.key.0 60 && pva_pin "$WIN_PIN_DIGITS"' || win_end
+pv_step "state: the PIN steps' pad, five digits typed, turned twice: the saved states hold nothing typed" -- clean pindigits ChangePin turn
 win_end

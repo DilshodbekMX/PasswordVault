@@ -21,6 +21,58 @@
 #              it as a flake. Then every device-test class ran on each device with no failure and at
 #              least the tests it has there (@SdkSuppress leaves some out): 469 on API 24, 470 on 28,
 #              477 on 37 at wave-4A-merged.
+#   lock       the plan's line for 4A (build-plan.md section 6), debug build, on API 24, 28 and 37 at
+#              once: setup with a PIN and fingerprint unlock (the offer's "Use", finger 1 on the
+#              prompt); the status has both slots and their keys; Lock now: the prompt opens by itself
+#              and finger 1 opens the app; Lock now, "Use PIN": the PIN opens it; four wrong PINs, each
+#              with its line, and a fifth: the PIN is off (no slot, its key gone), fingerprint stays;
+#              the fingerprint-only screen's "Use master password"; the master password; "Choose a new
+#              PIN" follows (a notice of the wrong PINs before it answered OK); a new PIN; it opens the
+#              app, the account is still there, and finger 1 still opens it.
+#   e          lock.md 15.3 E1, E2, E3, E6 and E11 without its language step, with the debug build on
+#              API 24, 28 and 37 at once, then with the staging build (R8, not debuggable): E1 the PIN
+#              through a real Keystore key, the time from the sixth digit logged, five wrong PINs (slot
+#              and alias gone, the master password opens); E2 hold-after-charge and am force-stop, then
+#              hold-before-hmac and kill -9 (run-as, or su on API 24 and 28; on API 37 staging am
+#              force-stop, whose SIGKILL comes from the system): each counted, "interrupted" shown; E3
+#              a reboot with a charge held: counted; E6 the prompt by itself, finger 5 leaves it open,
+#              finger 1 opens with no tap, "Use PIN" (on API 24 the library's dialog in the activity)
+#              returns to the pad and no second prompt comes; E11 three digits and the charge across two
+#              rotations, the prompt open across a rotation (the result reaches the new activity), the
+#              master-password field across rotations. E11's "nothing in the saved-state bundle" is
+#              window/state.sh's (part window, API 28 and 37; the helper app cannot run on API 24).
+#   update     lock.md F14 after an update: the debug and staging APKs of wave-3C-merged (the gate of
+#              3.2, no lock records; built once from the tag in a throwaway worktree and kept in the
+#              logs) set up a vault with an account; today's build installs over it (adb install -r):
+#              "Welcome back", the master password opens it, "Choose a PIN" follows, the account is
+#              there, the lock directory with state.rec and pin.rec is made, and the PIN opens the app.
+#              Debug over debug on API 24, 28 and 37, staging over staging on API 24 and 37. The user's
+#              own emulator holds such a vault.
+#   skeleton   checks/3A.sh skeleton (steps 1 to 9, with "Choose a PIN" after setup answered "Not
+#              now"), debug on API 24, 28 and 37, staging on API 24 and 37.
+#   smoke      smoke.sh staging on API 24 and 37: with its stage of 4A, the PIN and the fingerprint (on
+#              API 24 androidx.biometric's own dialog, the path R8 broke before build check R-16).
+#   window     window/all.sh on the three devices with the debug and the staging APK: keyboard,
+#              autofill, overlay, state and a11y on API 28 and 37, a11y-old on API 24; since this check
+#              keyboard.sh and state.sh also look at the PIN steps' master password ("Set a PIN") and
+#              keyboard.sh at the backup's, and state.sh at digits typed on the PIN steps' pad.
+#   back       API 37, debug: Back with the keyboard up (5.2 found that from Android 13 on Back can
+#              reach the app first) closes the keyboard and nothing else, on the new-account form, the
+#              edit form, the lock screen's master password and the master password that "Set a PIN"
+#              asks for.
+#   looks      API 37 and 24, debug: each of the three styles in light and dark, and the phone's colours
+#              on API 37 (not offered below Android 12), chosen in Settings > Appearance: Settings has
+#              the scheme at once (the same process), the list, an account and the lock screen's pad
+#              have it, and after a new process the lock screen still has it; a screen has a scheme
+#              when most of its pixels are the scheme's background (ui/theme/Schemes.kt). The API 37
+#              screenshots go to --shots DIR (default /home/asus/pvwork/shots-look) as
+#              4A-api37-<style>-<light|dark>-<pad|list|account|settings>.png, for the user.
+#   wave5      only when named, not part of the check (wave 5 has its own after 5.5): API 37, debug, a
+#              first walk of the merged wave-5 screens through the system's picker: a backup into
+#              Download, each export, an import of a small CSV, a restore from the lock screen that
+#              keeps the lock delay (decision 13), Old passwords with the vault the restore put aside.
+#   one SERIAL VARIANT [--apk FILE] [--base FILE] CHECK...  the checks plan, e1, e2, e3, e6, e11, f14,
+#              back, looks or wave5 on one device of this worktree (no part, no devices booted).
 # Each part prints PASS, FAIL or SKIPPED per step. After a part that drives the app, a NOTE names every
 # Run that Android Studio started on one of the three devices meanwhile (its idea.log;
 # tools/emu/README.md, "Device facts"): such a Run stops, reinstalls and starts the app under whatever
@@ -784,7 +836,7 @@ back_mp_prompt() {
     pva_tap pv.tab.Settings && pva_on Settings 20 && pva_tap pv.open.ChangePin || return 1
     pva_need pv.pin.mp.field 20 || return 1
     pva_type pv.pin.mp.field "$typed" || return 1
-    back_closes_keyboard CreatePin pv.pin.mp.field "$(masks ${#typed})" || return 1
+    back_closes_keyboard ChangePin pv.pin.mp.field "$(masks ${#typed})" || return 1
     pv_shell input keyevent KEYCODE_BACK >/dev/null
     pva_on Settings 20 && pva_tap pv.tab.Passwords && pva_on Passwords 20
 }
@@ -929,6 +981,148 @@ looks() {
     ls "$LOOK_DIR" | grep "^4A-api$API-" | sed 's/^/    | /' | head -60
 }
 
+# ---- a first walk of the wave-5 screens that are merged (API 37, debug) ----
+# Not part of the 4A check (wave 5 has its own after 5.5): the part wave5 runs only when named, and what
+# fails here is reported, not a reason to hold the tag. Through the system's own picker (DocumentsUI):
+# a backup into Download, each export (CSV, JSON, Excel), an import of a small CSV, a restore from the
+# lock screen ("Forgot master password?" > "Restore from a backup file"), which keeps the lock delay
+# (the owner's decision 13), and Old passwords with the vault that the restore put aside.
+W5_DIR=/sdcard/Download
+W5_CSV=pv-4A-import.csv
+
+# picker_tap REGEX [SECONDS]: taps the first enabled node of the system's picker whose text matches
+# REGEX (anchored by the caller), once it is there.
+picker_tap() {
+    local deadline=$((SECONDS + ${2:-30})) nodes
+    while :; do
+        nodes=$(pv_ui_nodes_all 2>/dev/null)
+        if [ -n "$(printf '%s\n' "$nodes" | pv_ui_match "$1")" ]; then
+            pv_ui_tap "$1" "$nodes" >/dev/null && return 0
+        fi
+        [ $SECONDS -lt $deadline ] || { pv_log "no /$1/ in the picker; focus $(pv_focus); texts: $(printf '%s\n' "$nodes" | cut -d'|' -f1 | grep -v '^$' | tr '\n' ';' | cut -c1-500)"; return 1; }
+        pv_sleep 1
+    done
+}
+
+# picker_save: the picker that "Save as" opened: Download as the place, then SAVE.
+picker_save() {
+    pv_ui_wait '^(SAVE|Save)[|]' 30 >/dev/null 2>&1 || picker_tap '^(SAVE|Save)[|]' 1 >/dev/null 2>&1
+    pv_sleep 3
+    picker_tap '^(SAVE|Save)[|]' 30
+}
+
+# picker_open NAME: the picker that "Open" opened: the file NAME (from Recent, or from Downloads).
+picker_open() {
+    pv_sleep 3
+    picker_tap "^$(pva_re "$1")[|]" 10 && return 0
+    picker_tap '^(Show roots|Downloads)[|]' 10 && pv_sleep 2
+    picker_tap '^Downloads[|]' 5 >/dev/null 2>&1
+    pv_sleep 2
+    picker_tap "^$(pva_re "$1")[|]" 20
+}
+
+in_download() { pv_shell ls "$W5_DIR" 2>/dev/null | tr -d '\r' | grep -E -- "$1"; }
+
+w5_settings() { pva_tap pv.tab.Settings && pva_on Settings 20; }
+
+# set_lock_delay DELAY: Settings > "Lock after", the dialog's choice DELAY (LockDelay), Done.
+set_lock_delay() {
+    w5_settings && pva_reveal pv.settings.lockDelay && pva_tap pv.settings.lockDelay || return 1
+    pva_need "pv.settings.lockDelay.$1" 10 && pva_tap "pv.settings.lockDelay.$1" || return 1
+    pv_sleep 1
+    if pva_present pv.settings.dialog.done 2; then pva_tap pv.settings.dialog.done; fi
+    pva_on Settings 10
+}
+
+lock_delay_stored() { pv_shell run-as "$PV_PACKAGE" cat shared_prefs/pv_settings.xml 2>/dev/null | tr -d '\r' | grep -q "<string name=\"lock_delay\">$1</string>"; }
+
+w5_backup() {
+    w5_settings && pva_reveal pv.open.Backup && pva_tap pv.open.Backup && pva_on Backup 20 || return 1
+    if pva_present pv.backup.continue 3; then pva_tap pv.backup.continue || return 1; fi
+    pva_need pv.backup.password 20 && pva_type pv.backup.password "$PVA_PASSWORD" || return 1
+    pva_hide_keyboard
+    pva_tap pv.backup.submit || return 1
+    if pva_present pv.backup.choose 15; then pva_tap pv.backup.choose || return 1; fi
+    picker_save || return 1
+    pva_need pv.backup.done 60 || return 1
+    pv_log "the backup's last screen: $(pv_ui_nodes | awk -F'|' '$3 ~ /^pv[.]backup[.]line[.]/ { getline; } $1 != "" { print $1 }' | tr '\n' ' ' | cut -c1-300)"
+    pva_tap pv.backup.done && pva_on Settings 20
+}
+
+# w5_export csv|json|xlsx
+w5_export() {
+    w5_settings && pva_reveal pv.open.Export && pva_tap pv.open.Export && pva_on Export 20 || return 1
+    pva_need "pv.export.choice.$1" 15 && pva_tap "pv.export.choice.$1" && pva_tap pv.export.continue || return 1
+    if pva_present pv.export.understand 10; then pva_tap pv.export.understand || return 1; fi
+    if pva_present pv.export.warning.continue 5; then pva_tap pv.export.warning.continue || return 1; fi
+    pva_need pv.export.password 20 && pva_type pv.export.password "$PVA_PASSWORD" || return 1
+    pva_hide_keyboard
+    pva_tap pv.export.submit || return 1
+    picker_save || return 1
+    pva_need pv.export.saved 60 || return 1
+    pva_tap pv.export.done && pva_on Settings 20
+}
+
+w5_import() {
+    local before
+    printf 'name,url,username,password,note\r\nTashkent Metro,https://metro.uz,dilshod.m,Qx7mVb2Lp9Ws,yo%sl kartasi\r\nKapitalbank,https://kapitalbank.uz,+998901112233,Hn4Rt8Ws2Kz6,\r\n' 'ʻ' > "$LOGS_ROOT/$W5_CSV"
+    pv_adb push "$LOGS_ROOT/$W5_CSV" "$W5_DIR/$W5_CSV" >/dev/null || return 1
+    pv_shell content call --uri content://media --method scan_volume --arg external_primary >/dev/null 2>&1
+    before=$(pva_row_titles | wc -l)
+    w5_settings && pva_reveal pv.open.Import && pva_tap pv.open.Import && pva_on Import 20 || return 1
+    pva_need pv.import.chooseFile 20 && pva_tap pv.import.chooseFile || return 1
+    picker_open "$W5_CSV" || return 1
+    pva_need pv.import.import 60 || { pv_log "no Import button; ids: $(pva_ids)"; return 1; }
+    pva_tap pv.import.import || return 1
+    pva_need pv.import.done 60 && pva_tap pv.import.done || return 1
+    pva_tap pv.tab.Passwords && pva_on Passwords 20 && pva_row_with "Tashkent Metro" 15 && pva_row_with Kapitalbank 15
+}
+
+# w5_restore NAME: from the list: Lock now; the master password screen's "Forgot master password?",
+# "Restore from a backup file", the backup NAME, its master password, Restore; the PIN steps that follow
+# are answered "Not now".
+w5_restore() {
+    pva_lock_now && pva_need pv.lock.password 20 || return 1
+    pva_tap pv.lock.forgot && pva_need pv.lock.sheet 10 && pva_tap pv.lock.sheet.restore || return 1
+    pva_on Restore 20 && pva_need pv.backup.choose 20 && pva_tap pv.backup.choose || return 1
+    picker_open "$1" || return 1
+    pva_need pv.backup.password 30 && pva_type pv.backup.password "$PVA_PASSWORD" || return 1
+    pva_hide_keyboard
+    pva_tap pv.backup.submit && pva_need pv.backup.restore 60 || return 1
+    pv_log "the restore's summary: $(pva_text pv.backup.summary 2>/dev/null) / $(pva_text pv.backup.stays 2>/dev/null)"
+    pva_tap pv.backup.restore && pva_unlocked Passwords 120 && pva_settle Passwords 60
+}
+
+w5_old() {
+    w5_settings && pva_reveal pv.open.OldPasswords && pva_tap pv.open.OldPasswords && pva_on OldPasswords 20 || return 1
+    pva_need pv.backup.old.list 15 || return 1
+    pv_ui_nodes | grep -q '|pv\.backup\.old\.item\.' || { pv_log "no vault in Old passwords; ids: $(pva_ids)"; return 1; }
+    pv_log "Old passwords: $(pv_ui_nodes | grep -A 3 '|pv\.backup\.old\.item\.' | cut -d'|' -f1 | grep -v '^$' | tr '\n' ';' | cut -c1-300)"
+    pv_shell input keyevent KEYCODE_BACK >/dev/null
+    pva_on Settings 20
+}
+
+wave5() {
+    T=wave5
+    local backup
+    pv_step "wave5: the $DEV_VARIANT build installs (fresh); setup leaves the PIN off; two accounts" -- eval 'pva_install "$DEV_APK" && pva_start && pva_set_up && pva_add_account Gmail aziz.karimov@gmail.com Tr0ub4dor3x https://mail.google.com "Shaxsiy pochta" && pv_shell input keyevent KEYCODE_BACK >/dev/null && pva_add_account Payme +998901234567 Samarqand2024x https://payme.uz Karta && pv_shell input keyevent KEYCODE_BACK >/dev/null && pva_on Passwords' || return 1
+    STATE=none
+    pv_shell "rm -f $W5_DIR/PasswordVault-backup-*.pvault $W5_DIR/passwords-*.csv $W5_DIR/passwords-*.json $W5_DIR/passwords-*.xlsx $W5_DIR/$W5_CSV" >/dev/null 2>&1
+    pv_step "wave5: the lock delay is set to 5 minutes in Settings" -- eval 'set_lock_delay MINUTES_5 && lock_delay_stored 5m'
+    pv_step "wave5: a backup into Download (its master password, the system's Save)" -- w5_backup
+    backup=$(in_download '^PasswordVault-backup-.*\.pvault$' | head -n 1)
+    pv_step "wave5: the backup's file is in Download: ${backup:-none}" -- [ -n "$backup" ]
+    pv_step "wave5: export CSV into Download" -- eval 'w5_export csv && in_download "^passwords-.*\.csv$"'
+    pv_step "wave5: export JSON into Download" -- eval 'w5_export json && in_download "^passwords-.*\.json$"'
+    pv_step "wave5: export Excel into Download" -- eval 'w5_export xlsx && in_download "^passwords-.*\.xlsx$"'
+    pv_shell ls -l "$W5_DIR" 2>/dev/null | tr -d '\r' | sed 's/^/    | /'
+    pv_step "wave5: import of a small CSV (two accounts) from Download" -- w5_import
+    pv_step "wave5: a restore from the lock screen with the backup" -- w5_restore "$backup"
+    pv_step "wave5: the restore kept the lock delay (decision 13): 5 minutes in pv_settings" -- lock_delay_stored 5m
+    pv_step "wave5: Old passwords lists the vault the restore put aside" -- w5_old
+    pv_step "wave5: no crash" -- pva_no_crash
+}
+
 # dev_run SERIAL VARIANT APK BASE CHECK...: the checks on one device, then its summary.
 dev_run() {
     local check
@@ -943,7 +1137,7 @@ dev_run() {
     echo "4A checks $*, $DEV_VARIANT on $PV_SERIAL (API $API): $DEV_APK"
     for check in "$@"; do
         case "$check" in
-            plan | e1 | e2 | e3 | e6 | e11 | f14 | back | looks) "$check" ;;
+            plan | e1 | e2 | e3 | e6 | e11 | f14 | back | looks | wave5) "$check" ;;
             *) pv_die "unknown check $check" 2 ;;
         esac
     done
@@ -957,6 +1151,9 @@ e_debug() { dev_run "$1" debug "$DEBUG_APK" "$BASE_DEBUG" e1 e2 e3 e6 e11; }
 e_staging() { dev_run "$1" staging "$STAGING_APK" "$BASE_STAGING" e1 e2 e3 e6 e11; }
 update_debug() { dev_run "$1" debug "$DEBUG_APK" "$BASE_DEBUG" f14; }
 update_staging() { dev_run "$1" staging "$STAGING_APK" "$BASE_STAGING" f14; }
+back_debug() { dev_run "$1" debug "$DEBUG_APK" "$BASE_DEBUG" back; }
+looks_debug() { dev_run "$1" debug "$DEBUG_APK" "$BASE_DEBUG" looks; }
+wave5_debug() { dev_run "$1" debug "$DEBUG_APK" "$BASE_DEBUG" wave5; }
 
 # base_apks: the debug and staging APKs of wave-3C-merged (the master-password gate of 3.2, no lock
 # records), built once from the tag in a throwaway worktree and kept in LOGS_ROOT.
@@ -1018,8 +1215,8 @@ if [ "${1:-}" = one ]; then
     exit $?
 fi
 
-ALL_PARTS=(merged connected lock e update skeleton smoke window)
-DEVICE_PARTS=(connected lock e update skeleton smoke window)
+ALL_PARTS=(merged connected lock e update skeleton smoke window back looks)
+DEVICE_PARTS=(connected lock e update skeleton smoke window back looks wave5)
 parts=()
 gradle_args=()
 keep=0
@@ -1030,7 +1227,7 @@ while [ $# -gt 0 ]; do
         --) shift; gradle_args=("$@"); break ;;
         stop) parts+=("$1") ;;
         *)
-            [[ " ${ALL_PARTS[*]} " == *" $1 "* ]] || pv_usage "${BASH_SOURCE[0]}"
+            [[ " ${DEVICE_PARTS[*]} merged " == *" $1 "* ]] || pv_usage "${BASH_SOURCE[0]}"
             parts+=("$1") ;;
     esac
     shift
@@ -1084,6 +1281,15 @@ for part in "${DEVICE_PARTS[@]}"; do
             pv_step "smoke.sh staging on API 24 and 37, with the PIN and the fingerprint" -- in_parallel smoke smoke_staging -- 24 37 ;;
         window)
             pv_step "tools/emu/window/all.sh: debug and staging on API 28 and 37, a11y-old on API 24" -- window_checks ;;
+        back)
+            pv_step "Back with the keyboard up closes the keyboard and loses nothing, API 37, debug build" -- in_parallel back back_debug -- 37 ;;
+        looks)
+            pv_step "the looks: three styles in light and dark (and the phone's colours on API 37), at once and after a new process, debug build, on API 37 and 24" -- in_parallel looks looks_debug -- 37 24
+            if ls "$SHOTS"/4A-api37-*.png > /dev/null 2>&1; then
+                echo "   screenshots (API 37, debug) in $SHOTS: $(cd "$SHOTS" && ls 4A-api37-*.png | wc -l) files 4A-api37-*.png"
+            fi ;;
+        wave5)
+            pv_step "a first walk of the wave-5 screens, API 37, debug build (not part of the 4A check)" -- in_parallel wave5 wave5_debug -- 37 ;;
     esac
 done
 if needs_devices || wants stop; then

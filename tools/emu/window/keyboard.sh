@@ -10,6 +10,9 @@
 #       defaults to this worktree's app/build/outputs/apk/debug/app-debug.apk; the staging APK is
 #       checked the same way.
 #
+# The fields: setup's, the list's search, the form's and its dialog's, the lock screen's master
+# password, and since the device check of 4A the master password of the PIN steps ("Set a PIN") and of
+# the backup.
 # For every field: IME_FLAG_NO_PERSONALIZED_LEARNING is set (the keyboard is asked not to learn from
 # what is typed). For a password, a secret value, a username and a website also: no auto-correct. A
 # password or secret value is a password field (TYPE_TEXT_VARIATION_PASSWORD), a username an e-mail
@@ -147,5 +150,14 @@ fi
 # ---- the lock screen ---------------------------------------------------------------------------
 if pv_step "the form is closed and the app locked" -- eval 'win_close_form && win_lock'; then
     field pv.lock.password secret "the lock screen's master password"
+fi
+
+# ---- the PIN steps and the backup (since the device check of 4A) -------------------------------
+if pv_step "the lock screen: the master password opens the app" -- win_unlock \
+    && pv_step "Settings > \"Set a PIN\", the proof of the unlock dropped: the PIN steps ask for the master password" -- win_set_pin_prompt; then
+    field pv.pin.mp.field secret "the PIN steps' master password (Set a PIN)"
+    if pv_step "Settings > Backup asks for the master password" -- win_backup_prompt; then
+        field pv.backup.password secret "the backup's master password"
+    fi
 fi
 win_end
