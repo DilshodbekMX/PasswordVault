@@ -163,7 +163,7 @@ private fun PartCard(part: LicencedPart, shown: Boolean, onLicence: () -> Unit, 
                 is PartName.Res -> stringResource(partName.id)
             }
             Text(
-                if (part.version == null) name else "$name ${part.version}",
+                listOfNotNull(name, part.version).joinToString(separator = " "),
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.semantics { heading() },
             )
