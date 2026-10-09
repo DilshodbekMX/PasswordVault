@@ -460,7 +460,9 @@ pvl_set_up() {
 
 # pvl_pin_steps PIN|- fingerprint|- [ROUTE]: walks 4.3's PIN steps as they come (CreatePin, ConfirmPin,
 # FingerprintOffer, BackupsExplained) and answers notices "Later" or "OK", until ROUTE (default
-# Passwords) is shown alone for 3 s.
+# Passwords) is shown alone for 3 s. PVL_NOTICES gets the answers each notice offered ("LATER,OK," per
+# notice), so that a caller can say which notices came.
+PVL_NOTICES=""
 pvl_pin_steps() {
     local pin=$1 fingerprint=$2 route=${3:-Passwords} deadline=$((SECONDS + 180)) nodes answer chosen=0 confirmed=0
     while :; do
@@ -471,6 +473,8 @@ pvl_pin_steps() {
             pvl_finger "$PVL_FINGER"
             pv_sleep 2
         elif pva_in_nodes '[|]pv\.notice$' "$nodes"; then
+            # What each notice offered, for the caller (PVL_NOTICES: the answers' names, space-separated).
+            PVL_NOTICES="$PVL_NOTICES $(printf '%s\n' "$nodes" | awk -F'|' '$3 ~ /^pv[.]answer[.]/ { sub(/^pv[.]answer[.]/, "", $3); printf "%s,", $3 }')"
             answer=""
             for answer in LATER OK; do
                 [ -n "$(pva_node "pv.answer.$answer" "$nodes")" ] && break

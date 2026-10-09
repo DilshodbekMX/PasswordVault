@@ -424,21 +424,27 @@ drop_next_visit() {
     pvl_expect_pin slot=none off=key_gone row=0 total=0
 }
 
+# The master password, then "Choose a new PIN" (the PIN chosen again) and the notice "Turn fingerprint
+# unlock on again?" (lock.md §13.4 item 5, F15b step 3), answered "Later"; fingerprint is then turned
+# on again in Settings for the next part.
 drop_mp_opens() {
+    PVL_NOTICES=""
     pva_type pv.lock.password "$PVA_PASSWORD" || return 1
     pva_hide_keyboard
     pva_tap pv.lock.unlock || return 1
     pva_unlocked Passwords 90 || return 1
-    # "Choose a new PIN" and the fingerprint offer: both set up again for the next part.
-    pvl_pin_steps "$PVL_PIN" fingerprint || return 1
-    pvl_expect_pin slot=set && pvl_expect_fp slot=set
+    pvl_pin_steps "$PVL_PIN" - || return 1
+    pvl_note "E10 drop: the notices after the master password offered: ${PVL_NOTICES:-none}"
+    case "$PVL_NOTICES" in *TURN_ON_FINGERPRINT*) ;; *) pv_log "no notice offered to turn fingerprint unlock on again"; return 1 ;; esac
+    pvl_expect_pin slot=set || return 1
+    fp_turn_on
 }
 
 part_drop() {
     pv_step "drop: PIN and fingerprint on" -- ensure_fp_on || return 1
     pv_step "drop: drop-keys deletes every alias, the canary too" -- drop_keys || return 1
     pv_step "drop: the next visit: each shortcut GONE, \"stopped working\", not \"restart your phone\"" -- drop_next_visit
-    pv_step "drop: the master password opens; PIN and fingerprint set up again" -- drop_mp_opens
+    pv_step "drop: the master password opens; a new PIN; \"Turn fingerprint unlock on again?\" offered" -- drop_mp_opens
 }
 
 # ---- part reinstall ------------------------------------------------------------------------------
