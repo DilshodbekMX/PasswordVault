@@ -21,6 +21,8 @@
 #
 # Steps, after the app is installed afresh, set up with the PIN (fingerprint "Not now"), and the
 # helper's two services (the plain one, not a tool, and the tool) turned on:
+#   - control: the plain service reads a text typed into the helper's own platform field (it is
+#     connected and reading);
 #   - Lock now: the pad. The tool's view: every key 0 to 9 and delete is a clickable node with its
 #     label on it or under it, and the dots read "PIN, 0 of 6 digits entered";
 #   - the tool presses the first 3 digits of the PIN by ACTION_CLICK on their nodes, as TalkBack's
@@ -57,6 +59,26 @@ services_on() {
     pvl_setting_set secure accessibility_enabled 1 || return 1
     WIN_A11Y_KINDS=(plain tool)
     win_a11y_wait 30
+}
+
+# The control: the plain service reads what is typed into a platform text field of the helper's own
+# screen (so it is connected and reading, and a clean result on the pad means something).
+CONTROL_TEXT=ctrlEtwelveSeen
+control() {
+    win_control_start || return 1
+    pva_tap control_text || return 1
+    pv_sleep 1
+    win_a11y_wait 10 || return 1
+    mark
+    pv_shell input text "$CONTROL_TEXT" >/dev/null
+    pv_sleep 2
+    events_since plain | grep -q "text=.*$CONTROL_TEXT" \
+        || { pv_log "the service that is not a tool got no event with the text typed into the control"; return 1; }
+    pva_hide_keyboard
+    # Back to the app: the list, or its lock screen when the lock delay ran out meanwhile.
+    pva_relaunch || return 1
+    pv_ui_wait '[|]pv\.route\.(Passwords|Locked)$' 20 || return 1
+    pva_present pv.route.Passwords 2 || pvl_unlock_pin
 }
 
 # The services' event records: how many lines each has now (the next findings come after them).
@@ -149,7 +171,7 @@ plain_learned() {
     if printf '%s\n' "$view" | awk -F'|' '$2 ~ /^pv[.]pin[.]key[.][0-9]$/ || $3 ~ /^[0-9]$/ { f = 1 } END { exit !f }'; then
         found="${found:+$found; }its view of the windows has the pad's keys and labels"
     fi
-    pvl_note "E12 on API $API: the plain service got $(printf '%s\n' "$events" | grep -c . ) events of the app while 3 keys were pressed; its view has $(printf '%s\n' "$view" | grep -c 'pv\.') nodes with a pv.* id"
+    pvl_note "E12 on API $API: the plain service got $(printf '%s\n' "$events" | grep -c . ) events of the app while 3 keys were pressed; its view has $(printf '%s\n' "$view" | grep -c 'pv\.') nodes with a pv.* id; $(win_cmd a11y-status 2>/dev/null)"
     PLAIN_FOUND=$found
     [ -z "$found" ]
 }
@@ -199,6 +221,7 @@ pv_step "the window helper built and installed" -- helper || pvl_end
 pv_step "install the app afresh: Welcome" -- pvl_fresh || pvl_end
 pv_step "set up with the PIN (fingerprint not now): the list" -- set_up || pvl_end
 pv_step "the helper's accessibility services on (not a tool, and a tool)" -- services_on || pvl_end
+pv_step "control: the service that is not a tool reads a text typed into a platform field" -- control || pvl_end
 pv_step "Lock now: every key reachable and labelled for a screen reader; \"PIN, 0 of 6 digits entered\"" -- pad_reachable || pvl_end
 pv_step "a screen reader's click types 3 digits: \"PIN, 3 of 6 digits entered\"; no node holds a digit typed" -- tool_types_three
 plain_step
