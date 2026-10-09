@@ -196,6 +196,24 @@ class ChangeMasterPasswordViewModelTest {
     }
 
     @Test
+    fun aCheckThatEndsAfterTheRouteClosed_dropsTheProofItMade() = runTest(dispatcher) {
+        val lock = lockWith()
+        val vm = model(lock)
+        val made = lock.fake.proof()
+        lock.fake.mpResults += MpResult.Right(made)
+        vm.current.field.type(CURRENT)
+        vm.submitCurrent() // "Checking…": the check runs in the app's scope
+        vm.back() // Back while it runs: the route closes
+        assertEquals(Leave.BACK, vm.ui.value.leave)
+        store.clear() // the route left the back stack: its ViewModel is cleared
+        advanceUntilIdle() // now the check ends, with a right master password
+        assertThrows(
+            "lock.md §5.8: a check whose screen closed while it ran has ended its flow, and its proof goes as soon as it returns",
+            IllegalStateException::class.java,
+        ) { made.useBytes { } }
+    }
+
+    @Test
     fun iDontRememberIt_opensTheNewMasterPassword_overThisStep_withNothingKept() = runTest(dispatcher) {
         val vm = model(lockWith())
         vm.current.field.type("half typed")

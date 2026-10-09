@@ -101,6 +101,12 @@ class ChangeMasterPasswordViewModel(
     /** The six digits of step 3, kept while the change runs. */
     private var pin: ByteArray? = null
 
+    /**
+     * The route has left the back stack ([onCleared]): its flow has ended, so a check of step 1 that
+     * returns now proves nothing for it, and its proof goes at once (lock.md §5.8).
+     */
+    private var cleared = false
+
     init {
         // A lock (or the vault put aside) ends the flow: nothing typed or proved stays behind.
         viewModelScope.launch {
@@ -118,7 +124,7 @@ class ChangeMasterPasswordViewModel(
     fun submitCurrent() {
         if (state.value.stage != ChangeStage.CURRENT) return
         current.submit { right ->
-            if (state.value.stage != ChangeStage.CURRENT) {
+            if (cleared || state.value.stage != ChangeStage.CURRENT) {
                 right.drop()
                 return@submit
             }
@@ -404,6 +410,7 @@ class ChangeMasterPasswordViewModel(
     fun left() = state.update { it.copy(leave = null) }
 
     override fun onCleared() {
+        cleared = true
         dropAll()
     }
 
