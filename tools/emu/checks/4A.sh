@@ -413,6 +413,8 @@ pad_says() {
     printf '%s' "$t" | grep -qE -- "$1" || { pv_log "the pad's line: '$t'"; return 1; }
 }
 
+tries_left() { if [ "$1" = 1 ]; then echo "1 try left"; else echo "$1 tries left"; fi; }
+
 lock_to_pad() { pva_lock_now && pva_need pv.lock.pad 20; }
 
 # lock_to_pad_past_prompt: Lock now while fingerprint is on: the prompt opens by itself; "Use PIN" on it
@@ -513,7 +515,7 @@ plan() {
     for wrong in "${WRONG_PINS[@]:0:4}"; do
         n=$((n + 1))
         pva_pin "$wrong"; pv_sleep 3
-        pv_step "4A: wrong PIN $n: the pad stays and says \"Wrong PIN\" with $((5 - n)) tries left" -- pad_says "Wrong PIN.*$((5 - n))"
+        pv_step "4A: wrong PIN $n: the pad stays and says \"Wrong PIN\" with $(tries_left $((5 - n)))" -- pad_says "Wrong PIN.*$((5 - n))"
     done
     pva_pin "${WRONG_PINS[4]}"; pv_sleep 3
     pv_step "4A: the fifth wrong PIN: the PIN is off (pin.rec: no slot, off limit; its key gone), fingerprint stays" -- eval 'pva_status_has "^pin.rec: OK, slot none, off limit" && pva_status_lacks "^keystore: .*pv_pin_" && pva_status_has "^fingerprint.rec: OK, slot set"'
@@ -550,7 +552,7 @@ e1() {
     for wrong in "${WRONG_PINS[@]:0:4}"; do
         n=$((n + 1))
         pva_pin "$wrong"; pv_sleep 3
-        pv_step "E1: wrong PIN $n: the pad stays and says \"Wrong PIN\" with $((5 - n)) tries left" -- pad_says "Wrong PIN.*$((5 - n))"
+        pv_step "E1: wrong PIN $n: the pad stays and says \"Wrong PIN\" with $(tries_left $((5 - n)))" -- pad_says "Wrong PIN.*$((5 - n))"
     done
     pva_pin "${WRONG_PINS[4]}"; pv_sleep 3
     pv_step "E1: the fifth wrong PIN: the master-password screen is shown" -- pva_need pv.lock.password 20
@@ -714,6 +716,219 @@ f14() {
     pv_step "F14: no crash" -- pva_no_crash
 }
 
+# ---- Back with the keyboard open (API 37) ----
+# 5.2 found that on Android 13 and newer Back can reach the app's own callbacks before the keyboard's
+# (BackupScaffold's KeyboardFirstOnBack). On each screen below a text is typed, so the keyboard is up;
+# one Back must close the keyboard and do nothing else: the same screen, no dialog, the text kept.
+
+# masks N: N mask characters, as a VaultSecureField drawn as dots reports its text.
+masks() { printf '%*s' "$1" '' | sed 's/ /•/g'; }
+
+# back_closes_keyboard ROUTE FIELD EXPECTED: with the keyboard shown, one Back: the keyboard closes,
+# ROUTE is still shown with no dialog of the form, and FIELD's text is EXPECTED.
+back_closes_keyboard() {
+    local text
+    pva_wait_keyboard 10 || { pv_log "the keyboard is not shown before Back"; return 1; }
+    pv_shell input keyevent KEYCODE_BACK >/dev/null
+    pv_sleep 2
+    if pva_keyboard_shown; then pv_log "the keyboard is still shown after one Back"; return 1; fi
+    pva_on "$1" 5 || return 1
+    pva_absent pv.edit.dialog.discard && pva_absent pv.edit.dialog.save && pva_absent pv.edit.dialog.keep \
+        || { pv_log "a dialog of the form opened; ids: $(pva_ids)"; return 1; }
+    text=$(pva_text "$2") || return 1
+    [ "$text" = "$3" ] || { pv_log "$2 reads '$text', not '$3'"; return 1; }
+}
+
+back_new_form() {
+    pva_on Passwords 20 && pva_tap pv.list.add && pva_on Edit 20 || return 1
+    pva_type pv.edit.name Backcheck || return 1
+    back_closes_keyboard Edit pv.edit.name Backcheck || return 1
+    # The second Back leaves the form: "Discard?" (something was typed), Discard.
+    pv_shell input keyevent KEYCODE_BACK >/dev/null
+    pva_need pv.edit.dialog.discard 10 && pva_tap pv.edit.dialog.discard && pva_on Passwords 20
+}
+
+back_edit_form() {
+    local row
+    pva_on Passwords 20 || return 1
+    row=$(pv_ui_nodes | awk -F'|' '$3 ~ /^pv[.]list[.]row[.]/ { print $3; exit }')
+    [ -n "$row" ] || { pv_log "no row in the list"; return 1; }
+    pva_tap "$row" && pva_on Entry 20 && pva_tap pv.entry.edit && pva_on Edit 20 || return 1
+    pva_type pv.edit.username .more || return 1
+    back_closes_keyboard Edit pv.edit.username "$BACK_LOGIN.more" || return 1
+    # The second Back asks "Save changes?"; its Discard goes back to the account.
+    pv_shell input keyevent KEYCODE_BACK >/dev/null
+    pva_need pv.edit.dialog.discard 10 && pva_tap pv.edit.dialog.discard && pva_on Entry 20 || return 1
+    pv_shell input keyevent KEYCODE_BACK >/dev/null
+    pva_on Passwords 20
+}
+
+# The lock screen's master-password field: Back closes the keyboard; the lock screen stays in front.
+back_lock_screen() {
+    local half=${PVA_PASSWORD:0:7}
+    pva_lock_now && pva_need pv.lock.password 20 || return 1
+    pva_type pv.lock.password "$half" || return 1
+    back_closes_keyboard Locked pv.lock.password "$(masks ${#half})" || return 1
+    pva_in_front || { pv_log "the app left the front: $(pv_focus)"; return 1; }
+    pva_type pv.lock.password "${PVA_PASSWORD:7}" || return 1
+    pva_hide_keyboard
+    pva_tap pv.lock.unlock && pva_opened 90 && settle_open
+}
+
+# A master-password prompt of the open app: Settings > "Set a PIN" with no PIN asks for the master
+# password (4.3's MasterPasswordPage), once the proof of the last unlock is gone (ON_STOP drops it:
+# Home, and back within the lock delay).
+back_mp_prompt() {
+    local typed=${PVA_PASSWORD:0:9}
+    pva_away 3 && pva_opened 20 && settle_open || return 1
+    pva_tap pv.tab.Settings && pva_on Settings 20 && pva_tap pv.open.ChangePin || return 1
+    pva_need pv.pin.mp.field 20 || return 1
+    pva_type pv.pin.mp.field "$typed" || return 1
+    back_closes_keyboard CreatePin pv.pin.mp.field "$(masks ${#typed})" || return 1
+    pv_shell input keyevent KEYCODE_BACK >/dev/null
+    pva_on Settings 20 && pva_tap pv.tab.Passwords && pva_on Passwords 20
+}
+
+BACK_LOGIN=back.check@example.uz
+back() {
+    T=back
+    pv_step "back: the $DEV_VARIANT build installs (fresh); setup leaves the PIN off; an account" -- eval 'pva_install "$DEV_APK" && pva_start && pva_set_up && pva_add_account Backbank "$BACK_LOGIN" Zr8Kq2Vx6Pn4 https://back.example.uz note && pv_shell input keyevent KEYCODE_BACK >/dev/null && pva_on Passwords' || return 1
+    STATE=none
+    pv_step "back: the new-account form: Back with the keyboard up closes the keyboard; the form and the name stay" -- back_new_form
+    pv_step "back: the edit form: Back with the keyboard up closes the keyboard; no \"Save changes?\", the login as typed" -- back_edit_form
+    pv_step "back: the lock screen's master password: Back closes the keyboard; the lock screen and what was typed stay" -- back_lock_screen
+    pv_step "back: \"Set a PIN\" asks for the master password: Back closes the keyboard; the prompt and what was typed stay" -- back_mp_prompt
+    pv_step "back: no crash" -- pva_no_crash
+}
+
+# ---- the looks (4.3b; API 37 and 24, debug) ----
+# Each of the three styles in light and in dark, and "Phone's colours" from Android 12, chosen in
+# Settings > Appearance: the style reaches the screen at once (the same process; the dialog, then
+# Settings), and the lock screen with the pad, the list and an account have it; after a new process
+# the lock screen still has it. A screen "has" a scheme when the colour most of its pixels have is the
+# scheme's background (ui/theme/Schemes.kt); for the phone's colours, when it is none of the three
+# styles' backgrounds and is as light or dark as asked. The screenshots are kept: on API 37 for the user
+# in SHOTS (4A-api37-<style>-<light|dark>-<screen>.png), on API 24 in the part's logs.
+LOOK_PIN=582913
+declare -A LOOK_BG=([BANK_BLUE.LIGHT]=f8f9ff [BANK_BLUE.DARK]=111318 [EMERALD.LIGHT]=f4f8f6 [EMERALD.DARK]=0f1413
+    [NIGHT_VAULT.LIGHT]=f6fafc [NIGHT_VAULT.DARK]=0e1216)
+LOOK_DIR=""
+
+# dominant FILE: the colour most pixels of the screenshot have, between the status bar and the
+# navigation bar, as rrggbb.
+dominant() {
+    python3 - "$1" <<'EOF'
+import sys
+from PIL import Image
+im = Image.open(sys.argv[1]).convert("RGB")
+w, h = im.size
+box = im.crop((0, int(h * 0.06), w, int(h * 0.92))).resize((w // 4, int(h * 0.86) // 4), Image.NEAREST)
+count, rgb = max(box.getcolors(maxcolors=1 << 20))
+print("%02x%02x%02x" % rgb)
+EOF
+}
+
+# look_has STYLE THEME FILE: the screenshot FILE has the scheme of STYLE in THEME (above).
+look_has() {
+    local got want
+    got=$(dominant "$3") || return 1
+    if [ "$1" = PHONE_COLOURS ]; then
+        python3 - "$got" "$2" "${LOOK_BG[BANK_BLUE.$2]}" "${LOOK_BG[EMERALD.$2]}" "${LOOK_BG[NIGHT_VAULT.$2]}" <<'EOF' || { pv_log "${3##*/}: the phone's colours in $2 should not be $got"; return 1; }
+import sys
+got, theme, *styles = sys.argv[1:]
+r, g, b = (int(got[i:i + 2], 16) / 255 for i in (0, 2, 4))
+luma = 0.2126 * r + 0.7152 * g + 0.0722 * b
+ok = got not in styles and (luma < 0.25 if theme == "DARK" else luma > 0.75)
+print(f"   {theme} phone's colours: {got} (luma {luma:.2f})")
+sys.exit(0 if ok else 1)
+EOF
+        return
+    fi
+    want=${LOOK_BG[$1.$2]}
+    [ "$got" = "$want" ] || { pv_log "${3##*/}: most pixels are $got, not $want ($1, $2)"; return 1; }
+}
+
+# look_file STYLE THEME SCREEN: where the screenshot of SCREEN goes.
+look_file() {
+    local style
+    style=$(printf '%s' "$1" | tr 'A-Z_' 'a-z-')
+    printf '%s/4A-api%s-%s-%s-%s.png' "$LOOK_DIR" "$API" "$style" "$(printf '%s' "$2" | tr 'A-Z' 'a-z')" "$3"
+}
+
+# look_screen STYLE THEME SCREEN: the screen as it is now is shot and has the scheme.
+look_screen() {
+    local file
+    file=$(look_file "$1" "$2" "$3")
+    pv_sleep 1
+    pva_screenshot "$file" && look_has "$1" "$2" "$file"
+}
+
+# choose_look STYLE THEME: Settings > Appearance, the style and light or dark, Done; Settings has the
+# scheme at once, in the same process.
+choose_look() {
+    local pid
+    pid=$(pva_pid)
+    pva_tap pv.tab.Settings && pva_on Settings 20 || return 1
+    pva_reveal pv.open.Theme && pva_tap pv.open.Theme && pva_need "pv.settings.style.$1" 10 || return 1
+    pva_tap "pv.settings.style.$1" && pv_sleep 1 && pva_tap "pv.settings.theme.$2" && pv_sleep 1 || return 1
+    pva_tap pv.settings.dialog.done && pva_on Settings 10 || return 1
+    [ "$(pva_pid)" = "$pid" ] || { pv_log "the process changed: $pid -> $(pva_pid)"; return 1; }
+    look_screen "$1" "$2" settings
+}
+
+# look_walk STYLE THEME: the list, an account and the pad have the scheme; the PIN opens the list.
+look_walk() {
+    local row
+    pva_tap pv.tab.Passwords && pva_on Passwords 20 && look_screen "$1" "$2" list || return 1
+    row=$(pv_ui_nodes | awk -F'|' '$3 ~ /^pv[.]list[.]row[.]/ { print $3; exit }')
+    pva_tap "$row" && pva_on Entry 20 && look_screen "$1" "$2" account || return 1
+    pv_shell input keyevent KEYCODE_BACK >/dev/null
+    lock_to_pad && look_screen "$1" "$2" pad || return 1
+    pin_opens "$LOOK_PIN" && settle_open
+}
+
+# look_new_process STYLE THEME: am force-stop and start: the lock screen has the scheme; the PIN opens.
+look_new_process() {
+    local file
+    pv_shell am force-stop "$PV_PACKAGE" >/dev/null
+    pva_start && pva_on Locked 30 && pva_need pv.lock.pad 20 || return 1
+    file=$(look_file "$1" "$2" pad-new-process)
+    pv_sleep 1
+    pva_screenshot "$file" && look_has "$1" "$2" "$file" || return 1
+    rm -f "$file"
+    pin_opens "$LOOK_PIN" && settle_open
+}
+
+look_reset() {
+    pva_tap pv.tab.Settings && pva_on Settings 20 && pva_reveal pv.open.Theme && pva_tap pv.open.Theme || return 1
+    pva_tap pv.settings.style.BANK_BLUE && pv_sleep 1 && pva_tap pv.settings.theme.SYSTEM && pv_sleep 1 && pva_tap pv.settings.dialog.done && pva_on Settings 10
+}
+
+looks() {
+    T=looks
+    local style theme styles=(BANK_BLUE EMERALD NIGHT_VAULT)
+    [ "$API" -ge 31 ] && styles+=(PHONE_COLOURS)
+    if [ "$API" = 37 ]; then LOOK_DIR=$SHOTS; else LOOK_DIR=$LOGS_ROOT/looks-api$API; fi
+    mkdir -p "$LOOK_DIR"
+    pv_step "looks: the $DEV_VARIANT build installs (fresh); setup with a PIN, no fingerprint" -- eval 'pva_install "$DEV_APK" && pva_start && set_up_to_pin && pva_choose_pin "$LOOK_PIN" && pva_after_pin notNow' || return 1
+    STATE=pin
+    pv_step "looks: three accounts" -- eval 'pva_add_account Gmail aziz.karimov@gmail.com Tr0ub4dor3x https://mail.google.com "Shaxsiy pochta" && pv_shell input keyevent KEYCODE_BACK >/dev/null && pva_add_account Payme +998901234567 Samarqand2024x https://payme.uz Karta && pv_shell input keyevent KEYCODE_BACK >/dev/null && pva_add_account Uzcard dilshod.m Kv7Lp3Qw9Zt2 https://uzcard.uz "Bank karta" && pv_shell input keyevent KEYCODE_BACK >/dev/null && pva_on Passwords'
+    pv_step "looks: a new install starts in Bank blue (light, as the device is)" -- eval 'pva_screenshot "$LOGS_ROOT/looks-default-api$API.png" && look_has BANK_BLUE LIGHT "$LOGS_ROOT/looks-default-api$API.png"'
+    if [ "$API" -lt 31 ]; then
+        pv_step "looks: \"Phone's colours\" is not offered below Android 12" -- eval 'pva_tap pv.tab.Settings && pva_on Settings 20 && pva_reveal pv.open.Theme && pva_tap pv.open.Theme && pva_need pv.settings.style.BANK_BLUE 10 && pva_absent pv.settings.style.PHONE_COLOURS && pva_tap pv.settings.dialog.done && pva_on Settings 10'
+    fi
+    for style in "${styles[@]}"; do
+        for theme in LIGHT DARK; do
+            pv_step "looks: $style, $theme: chosen in Settings > Appearance, Settings has it at once (the same process)" -- choose_look "$style" "$theme"
+            pv_step "looks: $style, $theme: the list, an account and the lock screen's pad have it" -- look_walk "$style" "$theme"
+        done
+        pv_step "looks: $style, DARK: after a new process the lock screen still has it" -- look_new_process "$style" DARK
+    done
+    pv_step "looks: back to Bank blue, light or dark as the phone is" -- look_reset
+    pv_step "looks: no crash" -- pva_no_crash
+    ls "$LOOK_DIR" | grep "^4A-api$API-" | sed 's/^/    | /' | head -60
+}
+
 # dev_run SERIAL VARIANT APK BASE CHECK...: the checks on one device, then its summary.
 dev_run() {
     local check
@@ -728,12 +943,51 @@ dev_run() {
     echo "4A checks $*, $DEV_VARIANT on $PV_SERIAL (API $API): $DEV_APK"
     for check in "$@"; do
         case "$check" in
-            plan | e1 | e2 | e3 | e6 | e11 | f14) "$check" ;;
+            plan | e1 | e2 | e3 | e6 | e11 | f14 | back | looks) "$check" ;;
             *) pv_die "unknown check $check" 2 ;;
         esac
     done
     pva_rotate 0
     pv_summary
+}
+
+# ---- the parts that run the checks above on several devices --------------------------------------------
+plan_debug() { dev_run "$1" debug "$DEBUG_APK" "$BASE_DEBUG" plan; }
+e_debug() { dev_run "$1" debug "$DEBUG_APK" "$BASE_DEBUG" e1 e2 e3 e6 e11; }
+e_staging() { dev_run "$1" staging "$STAGING_APK" "$BASE_STAGING" e1 e2 e3 e6 e11; }
+update_debug() { dev_run "$1" debug "$DEBUG_APK" "$BASE_DEBUG" f14; }
+update_staging() { dev_run "$1" staging "$STAGING_APK" "$BASE_STAGING" f14; }
+
+# base_apks: the debug and staging APKs of wave-3C-merged (the master-password gate of 3.2, no lock
+# records), built once from the tag in a throwaway worktree and kept in LOGS_ROOT.
+base_apks() {
+    [ -s "$BASE_DEBUG" ] && [ -s "$BASE_STAGING" ] && { echo "   kept from an earlier run: ${BASE_DEBUG##*/}, ${BASE_STAGING##*/}"; return 0; }
+    local tree rc
+    tree=$(mktemp -d "${TMPDIR:-/tmp}/pv-4A-base.XXXXXX") && rmdir "$tree" || return 1
+    git -C "$REPO" worktree add --detach "$tree" wave-3C-merged > "$LOGS/base-worktree.log" 2>&1 || { cat "$LOGS/base-worktree.log"; return 1; }
+    (cd "$tree" && tools/gradle.sh :app:assembleDebug :app:assembleStaging) > "$LOGS/base-build.log" 2>&1
+    rc=$?
+    grep -E '^BUILD' "$LOGS/base-build.log" | sed 's/^/   wave-3C-merged: /'
+    if [ $rc -eq 0 ]; then
+        cp "$tree/app/build/outputs/apk/debug/app-debug.apk" "$BASE_DEBUG" && cp "$tree/app/build/outputs/apk/staging/app-staging.apk" "$BASE_STAGING" || rc=1
+    fi
+    git -C "$REPO" worktree remove --force "$tree" >> "$LOGS/base-worktree.log" 2>&1
+    return $rc
+}
+
+skeleton_debug() { "$EMU/checks/3A.sh" skeleton debug "$1" --apk "$DEBUG_APK"; }
+skeleton_staging() { "$EMU/checks/3A.sh" skeleton staging "$1" --apk "$STAGING_APK"; }
+smoke_staging() { "$EMU/smoke.sh" staging "$1" --apk "$STAGING_APK"; }
+
+window_checks() {
+    local began rc
+    began=$(date +%s)
+    "$EMU/window/all.sh" "${SER[24]}" "${SER[28]}" "${SER[37]}" > "$LOGS/all.log" 2>&1
+    rc=$?
+    grep -E '^(PASS|FAIL) .* \(exit|^SUMMARY window' "$LOGS/all.log" | sed 's/^/   /'
+    grep -E '^KNOWN ' "$LOGS/all.log" | sort | uniq -c | sed 's/^/     /'
+    studio_runs "$began" | sed 's/^/   /'
+    return $rc
 }
 
 # ---- arguments ------------------------------------------------------------------------------------------
@@ -764,8 +1018,8 @@ if [ "${1:-}" = one ]; then
     exit $?
 fi
 
-ALL_PARTS=(merged connected)
-DEVICE_PARTS=(connected)
+ALL_PARTS=(merged connected lock e update skeleton smoke window)
+DEVICE_PARTS=(connected lock e update skeleton smoke window)
 parts=()
 gradle_args=()
 keep=0
@@ -813,6 +1067,23 @@ for part in "${DEVICE_PARTS[@]}"; do
             pv_step "connectedDebugAndroidTest on API 24, 28 and 37 (adb.sh --connected; a failed class once more alone)" -- connected_tests
             pv_step "every device-test class passed on each device with at least its tests (469, 470, 477)" -- device_classes
             studio_runs "$began" ;;
+        lock)
+            pv_step "the test APK with its documents provider is not on the devices" -- no_test_apk
+            pv_step "the plan's line for 4A, debug build, on API 24, 28 and 37: set up with a PIN and a fingerprint, unlock with each, five wrong PINs, then the master password and a new PIN" -- in_parallel plan plan_debug -- 24 28 37 ;;
+        e)
+            pv_step "lock.md E1, E2, E3, E6 and E11 (without its language step), debug build, on API 24, 28 and 37" -- in_parallel e-debug e_debug -- 24 28 37
+            pv_step "lock.md E1, E2, E3, E6 and E11 (without its language step), staging build, on API 24, 28 and 37" -- in_parallel e-staging e_staging -- 24 28 37 ;;
+        update)
+            pv_step "the debug and staging APKs of wave-3C-merged (the gate of 3.2, no lock records)" -- base_apks
+            pv_step "lock.md F14 after an update from wave-3C-merged, debug over debug, on API 24, 28 and 37" -- in_parallel update-debug update_debug -- 24 28 37
+            pv_step "lock.md F14 after an update from wave-3C-merged, staging over staging, on API 24 and 37" -- in_parallel update-staging update_staging -- 24 37 ;;
+        skeleton)
+            pv_step "the skeleton steps 1 to 9 of checks/3A.sh, debug build, on API 24, 28 and 37" -- in_parallel skeleton-debug skeleton_debug -- 24 28 37
+            pv_step "the skeleton steps 1 to 9 of checks/3A.sh, staging build, on API 24 and 37" -- in_parallel skeleton-staging skeleton_staging -- 24 37 ;;
+        smoke)
+            pv_step "smoke.sh staging on API 24 and 37, with the PIN and the fingerprint" -- in_parallel smoke smoke_staging -- 24 37 ;;
+        window)
+            pv_step "tools/emu/window/all.sh: debug and staging on API 28 and 37, a11y-old on API 24" -- window_checks ;;
     esac
 done
 if needs_devices || wants stop; then
