@@ -106,8 +106,8 @@
 
     <!-- ===== Messages at the bottom of the screen ===== -->
 
-    <!-- After “Create new password” or “Create another password”: the new password is saved in the
-         account. -->
+    <!-- Shown for a moment under “Create another password” after it was used: another new password
+         is saved in the account. -->
     <string name="change_created">New password saved.</string>
     <!-- After “No, put back the old password”. -->
     <string name="change_reverted">The old password is back.</string>

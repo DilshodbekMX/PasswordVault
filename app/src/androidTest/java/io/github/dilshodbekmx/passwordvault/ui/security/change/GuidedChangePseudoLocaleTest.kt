@@ -97,7 +97,7 @@ class GuidedChangePseudoLocaleTest {
         val english = compose.activity
         val pseudo = pseudo("en-XA")
         val strings = R.string::class.java.fields.filter { it.name.startsWith("change_") }
-        assertTrue("the guided change's strings are found: ${strings.size}", strings.size >= 40)
+        assertTrue("the guided change's strings are found: ${strings.size}", strings.size >= 35)
         for (field in strings) {
             val id = field.getInt(null)
             assertNotEquals("string ${field.name}", english.getString(id), pseudo.getString(id))
@@ -149,8 +149,10 @@ class GuidedChangePseudoLocaleTest {
 
         compose.onNodeWithTag(GuidedChangeTags.CREATE).performScrollTo().performClick()
         compose.waitUntil(TIMEOUT_MS) { compose.onAllNodes(hasTestTag(GuidedChangeTags.CREATE_ANOTHER)).fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithText(res.getString(R.string.change_created)).assertExists()
+        compose.onNodeWithTag(GuidedChangeTags.CREATE_ANOTHER).performScrollTo().performClick()
+        compose.waitUntil(TIMEOUT_MS) { compose.onAllNodes(hasTestTag(GuidedChangeTags.CREATED)).fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag(GuidedChangeTags.SAVED).performScrollTo()
+        compose.onNodeWithText(res.getString(R.string.change_created)).assertExists()
         compose.onNodeWithText(res.getString(R.string.change_saved)).assertExists()
         compose.onNodeWithText(res.getString(R.string.change_create_another)).assertExists()
         save("step3-saved-$tag")

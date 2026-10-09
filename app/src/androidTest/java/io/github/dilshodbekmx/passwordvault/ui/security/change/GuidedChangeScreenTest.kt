@@ -124,7 +124,8 @@ class GuidedChangeScreenTest {
         waitFor(GuidedChangeTags.CREATE_ANOTHER)
         compose.onNodeWithTag(GuidedChangeTags.SAVED).assertTextEquals(text(R.string.change_saved))
         compose.onNodeWithTag(GuidedChangeTags.CREATE).assertDoesNotExist()
-        compose.onNodeWithText(text(R.string.change_created)).assertExists()
+        // No snackbar over steps 4 and 5, which come next; the first password needs no "saved" flash.
+        compose.onNodeWithTag(GuidedChangeTags.CREATED).assertDoesNotExist()
         val first = rig.entry()
         assertTrue(first.changePending)
         assertEquals(SHARED, first.pendingOldPassword)
@@ -142,11 +143,15 @@ class GuidedChangeScreenTest {
         compose.onNodeWithTag(GuidedChangeTags.YES).assertIsEnabled()
         assertNoPasswordReadable("after Create new password")
 
-        // "Create another password": another one, the website's still kept.
+        // "Create another password": another one, the website's still kept, and "New password saved."
+        // for a moment, since nothing else on the screen changes.
         tap(GuidedChangeTags.CREATE_ANOTHER)
         compose.waitUntil(TIMEOUT_MS) { rig.entry().password != first.password }
         assertEquals(SHARED, rig.entry().pendingOldPassword)
+        waitFor(GuidedChangeTags.CREATED)
+        compose.onNodeWithTag(GuidedChangeTags.CREATED).assertTextEquals(text(R.string.change_created))
         assertNoPasswordReadable("after Create another password")
+        compose.waitUntil(TIMEOUT_MS) { compose.onAllNodes(androidx.compose.ui.test.hasTestTag(GuidedChangeTags.CREATED)).fetchSemanticsNodes().isEmpty() }
     }
 
     @Test

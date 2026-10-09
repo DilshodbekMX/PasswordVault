@@ -83,6 +83,8 @@ import kotlinx.coroutines.launch
  *   made, and the screen says so.
  * - **A copy** turns its button's icon into a check mark for 1.5 seconds, with a haptic tick (ux.md
  *   §6 item 3); no snackbar says "copied": the clipboard row at the bottom of the app does.
+ * - **A new password** is confirmed in step 3 itself ("Saved. …", and "New password saved." for a
+ *   moment after another one), never by a snackbar, which would cover the buttons of steps 4 and 5.
  * - **No password is drawn** on this screen: only the generator sheet of "Password rules" shows the
  *   password it made (ux.md §5.15). Nothing is kept in saved state (architecture.md §5.6).
  *
@@ -107,11 +109,23 @@ fun GuidedChangeScreen(vm: GuidedChangeViewModel, nav: Navigator) {
         }
     }
 
+    // "New password saved." in step 3 for a moment after "Create another password", where nothing else
+    // on the screen changes. Not a snackbar: it would lie over the buttons of steps 4 and 5, which are
+    // the next to be used.
+    var retried by remember { mutableStateOf(0) }
+    LaunchedEffect(retried) {
+        if (retried != 0) {
+            delay(RETRY_CONFIRMATION_MS)
+            retried = 0
+        }
+    }
+
     LaunchedEffect(vm, snackbar) {
         vm.events.collect { event ->
             launch {
                 when (event) {
-                    is GuidedChangeEvent.Created -> snackbar.showSnackbar(resources.getString(R.string.change_created))
+                    // The first new password brings "Saved. Your old password is kept until you finish."
+                    is GuidedChangeEvent.Created -> if (event.again) retried++
                     GuidedChangeEvent.Reverted -> snackbar.showSnackbar(resources.getString(R.string.change_reverted))
                     GuidedChangeEvent.CopyBlocked ->
                         snackbar.showSnackbar(resources.getString(R.string.change_copy_blocked), duration = SnackbarDuration.Long)
@@ -185,7 +199,7 @@ fun GuidedChangeScreen(vm: GuidedChangeViewModel, nav: Navigator) {
     ) { padding ->
         when (val now = state) {
             GuidedChangeUiState.Loading -> Unit
-            is GuidedChangeUiState.Steps -> Steps(now, copied, actions, padding)
+            is GuidedChangeUiState.Steps -> Steps(now, copied, retried != 0, actions, padding)
             is GuidedChangeUiState.Done -> Done(now, actions, padding)
             is GuidedChangeUiState.Gone -> Page(padding) {
                 Text(
@@ -235,9 +249,12 @@ private fun Page(padding: PaddingValues, tag: String? = null, content: @Composab
     }
 }
 
-/** The account's name and username, "Last one!" when it applies, and the five steps (ux.md §5.17). */
+/**
+ * The account's name and username, "Last one!" when it applies, and the five steps (ux.md §5.17).
+ * [retried]: another password was saved a moment ago ("New password saved.").
+ */
 @Composable
-private fun Steps(steps: GuidedChangeUiState.Steps, copied: String?, actions: StepActions, padding: PaddingValues) {
+private fun Steps(steps: GuidedChangeUiState.Steps, copied: String?, retried: Boolean, actions: StepActions, padding: PaddingValues) {
     Page(padding, tag = GuidedChangeTags.STEPS) {
         Column(Modifier.padding(horizontal = 4.dp)) {
             Text(
@@ -287,6 +304,14 @@ private fun Steps(steps: GuidedChangeUiState.Steps, copied: String?, actions: St
                     modifier = Modifier.fillMaxWidth().testTag(GuidedChangeTags.CREATE_ANOTHER),
                 ) {
                     Text(stringResource(R.string.change_create_another))
+                }
+                if (retried) {
+                    Text(
+                        text = stringResource(R.string.change_created),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.testTag(GuidedChangeTags.CREATED).semantics { liveRegion = LiveRegionMode.Polite },
+                    )
                 }
                 Text(
                     text = stringResource(R.string.change_saved),
@@ -459,6 +484,9 @@ private fun Done(done: GuidedChangeUiState.Done, actions: StepActions, padding: 
 
 /** How long a copy button shows its check mark (ux.md §6 item 3). */
 private const val COPY_CONFIRMATION_MS = 1_500L
+
+/** How long "New password saved." stays in step 3 after another password was saved. */
+private const val RETRY_CONFIRMATION_MS = 4_000L
 
 /** The content is at most this wide on large screens (ux.md §3 "Layout"). */
 private val CONTENT_MAX_WIDTH = 640.dp

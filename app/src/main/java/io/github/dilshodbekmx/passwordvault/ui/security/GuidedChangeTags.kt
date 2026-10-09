@@ -20,10 +20,14 @@ object GuidedChangeTags {
     const val OPEN_WEBSITE = "pv.change.openWebsite"
     const val COPY_OLD_FIRST = "pv.change.step1.copyOld"
 
-    /** Step 3: "Create new password", "Create another password", "Saved. …" and "Password rules". */
+    /**
+     * Step 3: "Create new password", "Create another password", "Saved. …", "New password saved."
+     * (for a moment after "Create another password") and "Password rules".
+     */
     const val CREATE = "pv.change.create"
     const val CREATE_ANOTHER = "pv.change.createAnother"
     const val SAVED = "pv.change.saved"
+    const val CREATED = "pv.change.created"
     const val RULES = "pv.change.rules"
 
     /** Step 4: "Copy old password" and "Copy new password". */

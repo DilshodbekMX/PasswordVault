@@ -440,7 +440,10 @@ sealed interface GuidedChangeUiState {
 
 /** One-off messages of the guided change, shown in its snackbar. */
 sealed interface GuidedChangeEvent {
-    /** A new password was saved ([again]: in place of one made before): "New password saved." */
+    /**
+     * A new password was saved; [again]: in place of one made before, where the screen says "New
+     * password saved." for a moment, since nothing else on it changes.
+     */
     data class Created(val again: Boolean) : GuidedChangeEvent
 
     /** "No, put back the old password" was saved: "The old password is back." */
