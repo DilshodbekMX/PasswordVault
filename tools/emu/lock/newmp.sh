@@ -2,8 +2,11 @@
 # library sourced after lib.sh. They drive the screens of build plan 5.5 (Route.NewMasterPassword,
 # its MasterTags pv.master.*, setup's choice steps pv.setup.* and the PIN pad pv.pin.key.N), which
 # are built in the same round as this package: the ids below are 5.5's as its branch had them on
-# 2026-10-09, and every step that uses them runs through pvl_later 5.5, so it prints SKIPPED until
-# 5.5 is merged. Should 5.5 have renamed one, the step fails and says which id it did not find.
+# 2026-10-09 (MasterTags pv.master.*, and setup's own CreateMasterPassword, WriteDown and TypeAgain
+# screens, which 5.5 reuses for choosing: pv.setup.passphrase, pv.open.WriteDown, pv.open.TypeAgain,
+# pv.setup.again, pv.action.createVault), and every step that uses them runs through pvl_later 5.5, so
+# it prints SKIPPED until 5.5 is merged. None of them could be run here. Should 5.5 have renamed one,
+# the step fails and says which id it did not find.
 #
 #   pvn_request             from the list: Settings › Change master password › "I don't remember it",
 #                           the explanation's "Continue", the PIN, a new master password chosen with
@@ -38,6 +41,13 @@ pvn_request() {
         [ $SECONDS -lt $deadline ] || { pv_log "no wait screen after the request; ids: $(pva_ids)"; return 1; }
     done
     pva_present pv.master.done 5 && pva_tap pv.master.done
+    # The route closes onto what opened it (Change master password, Settings): back to the list.
+    local i
+    for i in 1 2 3 4 5; do
+        pva_present pv.route.Passwords 2 && break
+        if pva_present pv.tab.Passwords 1; then pva_tap pv.tab.Passwords; else pv_shell input keyevent KEYCODE_BACK >/dev/null; fi
+        pv_sleep 1.5
+    done
     pva_settle Passwords 60 || return 1
     pvl_status || return 1
     [ "$(pvl_state pending)" = yes ] || { pv_log "no pending password: $(pvl_vault_item state.rec)"; return 1; }
