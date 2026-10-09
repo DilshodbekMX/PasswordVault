@@ -2,14 +2,18 @@ package io.github.dilshodbekmx.passwordvault.ui.settings
 
 import android.os.Build
 import android.view.View
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -130,6 +134,7 @@ object MasterTags {
 @OptIn(ExperimentalMaterial3Api::class) // TopAppBar's signature names TopAppBarScrollBehavior (ux.md §10)
 @Composable
 internal fun MasterFrame(title: String, onBack: () -> Unit, backEnabled: Boolean, content: @Composable () -> Unit) {
+    KeyboardFirstOnBack()
     Scaffold(
         modifier = Modifier.semantics {
             paneTitle = title
@@ -264,6 +269,21 @@ internal fun MasterField(
         keyboardOptions = VaultFieldDefaults.Secret.copy(imeAction = ImeAction.Done),
         onKeyboardAction = KeyboardActionHandler { onDone() },
     )
+}
+
+/**
+ * Back while the keyboard is up closes the keyboard, and does nothing else, as on 5.2's screens
+ * (`BackupScaffold`): on Android 13 and newer Back reaches the app's own callbacks before the
+ * keyboard's when the app registered its callback after the keyboard was shown, which happens when
+ * a route opens over a field that kept the keyboard ("I don't remember it" under the current master
+ * password). Composed after the screen's own `BackHandler`, so that it comes first. (`w5-carry` moves
+ * 5.2's helper to `ui/common` in the same round; this copy can then give way to it.)
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun KeyboardFirstOnBack() {
+    val keyboard = LocalSoftwareKeyboardController.current
+    BackHandler(enabled = WindowInsets.isImeVisible) { keyboard?.hide() }
 }
 
 /** Whether the keyboard is shown over [view]'s window: its insets say so from Android 11 on. */
