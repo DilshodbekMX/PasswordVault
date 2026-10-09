@@ -4,7 +4,6 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.heightIn
@@ -18,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -41,6 +41,9 @@ import io.github.dilshodbekmx.passwordvault.ui.common.PinKeys
  *   is ignored for that second (ux.md §4).
  * - **Portrait:** one column that scrolls with large fonts. **Landscape:** the texts and the dots on
  *   the left, the keypad on the right (ux.md §5.9); each side scrolls on its own.
+ * - **Bank blue** (docs/design/looks/README.md "Lock screen"): the head (the line of a vault put
+ *   aside, the logo, the title, the subtitle and the dots) lies on the look's lock panel, across the
+ *   top in portrait and as a block on the left in landscape ([LockPage], [LockHead]).
  * - On the screen of a vault put aside, Back returns to the current vault (lock.md F17 step 4).
  */
 @Composable
@@ -81,7 +84,8 @@ fun PadScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    PadTexts(ui, formatters, onAction, mark = false)
+                    LockHead { PadHead(ui, formatters, logo = false) }
+                    PadFoot(ui, formatters, onAction)
                 }
                 Column(
                     modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()),
@@ -91,36 +95,45 @@ fun PadScreen(
                 }
             }
         } else {
-            LockPage {
-                PadTexts(ui, formatters, onAction, mark = true, keys = keys)
+            LockPage(head = { PadHead(ui, formatters, logo = true) }) {
+                PadFoot(ui, formatters, onAction, keys = keys)
             }
         }
     }
 }
 
 /**
- * The pad's column: the line of a vault put aside, the logo, the title, "Enter your app PIN", the
- * dots, the status line, then [keys] when they come in the same column, "Forgot PIN? Use master
- * password" and the test build's line.
+ * The pad's head: the line of a vault put aside, the logo (not in landscape), the title, "Enter your
+ * app PIN" and the dots; on the look's lock panel in its colours ([LocalLockPanel]).
  */
 @Composable
-private fun ColumnScope.PadTexts(
-    ui: PadUi,
-    formatters: Formatters,
-    onAction: (LockAction) -> Unit,
-    mark: Boolean,
-    keys: (@Composable () -> Unit)? = null,
-) {
+private fun PadHead(ui: PadUi, formatters: Formatters, logo: Boolean) {
+    val panel = LocalLockPanel.current
     ui.asideLine?.let { AsideLineText(it, formatters) }
-    if (mark) LockMark()
+    if (logo) LockMark()
     AppTitle()
     Text(
         text = stringResource(R.string.lock_pad_subtitle),
         style = MaterialTheme.typography.bodyLarge,
+        color = panel?.quiet ?: Color.Unspecified,
         textAlign = TextAlign.Center,
         modifier = Modifier.testTag(LockTags.SUBTITLE),
     )
-    PinDots(entered = ui.digits, wrongTries = ui.wrongTries, modifier = Modifier.padding(vertical = 8.dp))
+    PinDots(
+        entered = ui.digits,
+        wrongTries = ui.wrongTries,
+        modifier = Modifier.padding(vertical = 8.dp),
+        filled = panel?.content ?: MaterialTheme.colorScheme.primary,
+        empty = panel?.ring ?: MaterialTheme.colorScheme.outline,
+    )
+}
+
+/**
+ * The rest of the pad's column: the status line, then [keys] when they come in the same column,
+ * "Forgot PIN? Use master password" and the test build's line.
+ */
+@Composable
+private fun PadFoot(ui: PadUi, formatters: Formatters, onAction: (LockAction) -> Unit, keys: (@Composable () -> Unit)? = null) {
     ui.status?.let { LockLineText(it, formatters, LockTags.STATUS, centred = true) }
     keys?.invoke()
     for (button in ui.buttons) LockButtonView(button, formatters, onAction, enabled = !ui.opening)

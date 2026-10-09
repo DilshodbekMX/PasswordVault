@@ -282,6 +282,9 @@ object LockTags {
     /** The app's logo on the pad and on the fingerprint-only screen. */
     const val LOGO = "pv.lock.logo"
 
+    /** Bank blue's lock panel behind the top of the pad and of the fingerprint-only screen (absent in the other styles). */
+    const val PANEL = "pv.lock.panel"
+
     /** The pad's screen, its subtitle "Enter your app PIN", its status line and "Forgot PIN? Use master password". */
     const val PAD = "pv.lock.pad"
     const val SUBTITLE = "pv.lock.subtitle"

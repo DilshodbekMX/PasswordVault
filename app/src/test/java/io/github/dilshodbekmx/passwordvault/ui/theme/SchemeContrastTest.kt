@@ -42,7 +42,10 @@ class SchemeContrastTest {
         assertTrue("outline pairs under $GRAPHIC:1:\n" + low.joinToString("\n"), low.isEmpty())
     }
 
-    /** The PIN pad as each style draws it (`PinPad.kt`): the digits, the two icons and the dots on the screen. */
+    /**
+     * The PIN pad as each style draws it (`PinPad.kt`, `PadScreen.kt`): the digits and the two icons
+     * on the screen, and the dots on the screen or on Bank blue's lock panel.
+     */
     @Test
     fun thePinPadCanBeReadInEveryStyle() {
         for (scheme in OWN_LOOKS) {
@@ -56,8 +59,14 @@ class SchemeContrastTest {
                 assertAtLeast(GRAPHIC, c.primary, c.background, "$scheme: the fingerprint icon")
             }
             assertAtLeast(GRAPHIC, c.onSurfaceVariant, c.background, "$scheme: the delete icon")
-            assertAtLeast(GRAPHIC, c.primary, c.background, "$scheme: a filled dot")
-            assertAtLeast(GRAPHIC, c.outline, c.background, "$scheme: an empty dot's ring")
+            val panel = look.lockPanel
+            if (panel == null) {
+                assertAtLeast(GRAPHIC, c.primary, c.background, "$scheme: a filled dot")
+                assertAtLeast(GRAPHIC, c.outline, c.background, "$scheme: an empty dot's ring")
+            } else {
+                assertAtLeast(GRAPHIC, panel.content, panel.colour, "$scheme: a filled dot on the panel")
+                assertAtLeast(GRAPHIC, panel.ring, panel.colour, "$scheme: an empty dot's ring on the panel")
+            }
         }
     }
 

@@ -405,6 +405,7 @@ The states, what each shows and its English wording are lock.md §13.1 to §13.3
 - a status line (below). A line about a wrong PIN or about tries left stays until the visit ends: typing or deleting digits does not remove it, so that someone who is handed the phone sees it;
 - a 3 × 4 keypad `1 2 3 / 4 5 6 / 7 8 9 / [fingerprint] 0 [⌫]`;
 - below it, `TextButton` **"Forgot PIN? Use master password"**.
+- In Bank blue the logo, the title, the subtitle and the dots lie on a panel in the primary colour across the top of the screen, behind the status bar, whose icons are then light, with rounded lower corners; in landscape it is a block with rounded corners on the left. The other styles draw them on the screen itself ([looks/README.md](looks/README.md) "What differs between styles besides colour").
 
 **The fingerprint-only screen** (lock.md §13.1 row 6, §13.2), when fingerprint is usable and the PIN is not: the logo, the title "PasswordVault", the status line, and the buttons "Use fingerprint" and "Use master password". No pad and no dots. The prompt opens by itself.
 

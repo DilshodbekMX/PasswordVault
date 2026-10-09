@@ -1,26 +1,36 @@
 package io.github.dilshodbekmx.passwordvault.ui.lock
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -37,32 +47,91 @@ import io.github.dilshodbekmx.passwordvault.i18n.Formatters
 import io.github.dilshodbekmx.passwordvault.i18n.UiText
 import io.github.dilshodbekmx.passwordvault.i18n.resolve
 import io.github.dilshodbekmx.passwordvault.ui.common.AppLogo
+import io.github.dilshodbekmx.passwordvault.ui.theme.LocalLook
+import io.github.dilshodbekmx.passwordvault.ui.theme.LockPanel
+import io.github.dilshodbekmx.passwordvault.ui.theme.StatusBarIconsOver
 
 /*
- * The parts the lock screens share: the page, the app's logo, the line of a vault put aside, the
- * test build's line, the buttons, and texts with their dates formatted in the composition's language.
+ * The parts the lock screens share: the page with its head (on Bank blue's panel), the app's logo,
+ * the line of a vault put aside, the test build's line, the buttons, and texts with their dates
+ * formatted in the composition's language.
  */
 
 /** The widest a lock screen's column grows, so that a tablet or a phone in landscape keeps short lines. */
 internal val LOCK_COLUMN_MAX = 480.dp
 
+/** The lock panel's lower corners in portrait, as in the mock-up (32 px of a 390 px screen). */
+private val PANEL_CORNER = 32.dp
+
+/** The corners of the lock panel as a block beside the keypad (landscape). */
+private val PANEL_BLOCK_CORNER = 28.dp
+
+/** Between the parts of a lock screen's head. */
+private val PANEL_SPACING = 12.dp
+
 /**
  * A lock screen's page: a centred column of at most [LOCK_COLUMN_MAX], clear of the system bars and
  * the keyboard, that scrolls when large fonts or a small screen need it (ux.md §5.9 "nothing is cut
- * off").
+ * off"): its [head], then its [content].
+ *
+ * The head is the top of the PIN pad and of the fingerprint-only screen (the line of a vault put
+ * aside, the logo, the name, and on the pad the subtitle and the dots). Where the look has a lock
+ * panel (Bank blue, docs/design/looks/README.md "Lock screen"; `Look.lockPanel`), the head lies on
+ * it: a panel the width of the screen, from its top edge behind the status bar, whose icons are
+ * light while it shows ([StatusBarIconsOver]), with rounded lower corners. Elsewhere the head is the
+ * start of the one column.
  */
 @Composable
-internal fun LockPage(modifier: Modifier = Modifier, spacing: Dp = 16.dp, content: @Composable ColumnScope.() -> Unit) {
+internal fun LockPage(
+    modifier: Modifier = Modifier,
+    spacing: Dp = 16.dp,
+    head: (@Composable ColumnScope.() -> Unit)? = null,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    val panel = LocalLook.current.lockPanel
+    if (head == null || panel == null) {
+        Column(
+            modifier = modifier
+                .fillMaxSize()
+                .safeDrawingPadding()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp, vertical = 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Column(
+                modifier = Modifier.widthIn(max = LOCK_COLUMN_MAX).fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(spacing),
+            ) {
+                head?.invoke(this)
+                content()
+            }
+        }
+        return
+    }
+    StatusBarIconsOver(panel.colour)
     Column(
         modifier = modifier
             .fillMaxSize()
-            .safeDrawingPadding()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp, vertical = 32.dp),
+            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom))
+            .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        LockPanelBox(
+            panel = panel,
+            modifier = Modifier
+                .testTag(LockTags.PANEL)
+                .fillMaxWidth()
+                .background(panel.colour, RoundedCornerShape(bottomStart = PANEL_CORNER, bottomEnd = PANEL_CORNER))
+                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top))
+                .padding(start = 24.dp, end = 24.dp, top = 20.dp, bottom = 24.dp),
+            content = head,
+        )
         Column(
-            modifier = Modifier.widthIn(max = LOCK_COLUMN_MAX).fillMaxWidth(),
+            modifier = Modifier
+                .padding(start = 24.dp, end = 24.dp, top = spacing, bottom = 32.dp)
+                .widthIn(max = LOCK_COLUMN_MAX)
+                .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(spacing),
             content = content,
@@ -71,12 +140,67 @@ internal fun LockPage(modifier: Modifier = Modifier, spacing: Dp = 16.dp, conten
 }
 
 /**
+ * The head of a lock screen in a column of its own (the pad in landscape): on the look's lock panel,
+ * a block with rounded corners, which does not reach the status bar; without a panel, as it is.
+ */
+@Composable
+internal fun LockHead(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+    val panel = LocalLook.current.lockPanel
+    if (panel == null) {
+        Column(
+            modifier = modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(PANEL_SPACING),
+            content = content,
+        )
+    } else {
+        LockPanelBox(
+            panel = panel,
+            modifier = modifier
+                .testTag(LockTags.PANEL)
+                .fillMaxWidth()
+                .background(panel.colour, RoundedCornerShape(PANEL_BLOCK_CORNER))
+                .padding(16.dp),
+            content = content,
+        )
+    }
+}
+
+/**
+ * The panel's content in a column of at most [LOCK_COLUMN_MAX], drawn in the panel's colours (the
+ * panel itself is the background in [modifier]): its texts in [LockPanel.content], and
+ * [LocalLockPanel] for the logo, the line of a vault put aside, the subtitle and the dots.
+ */
+@Composable
+private fun LockPanelBox(panel: LockPanel, modifier: Modifier, content: @Composable ColumnScope.() -> Unit) {
+    Box(modifier, contentAlignment = Alignment.TopCenter) {
+        CompositionLocalProvider(LocalContentColor provides panel.content, LocalLockPanel provides panel) {
+            Column(
+                modifier = Modifier.widthIn(max = LOCK_COLUMN_MAX).fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(PANEL_SPACING),
+                content = content,
+            )
+        }
+    }
+}
+
+/** The lock panel that what is drawn lies on, set by [LockPage] and [LockHead]; null: the screen's own colours. */
+internal val LocalLockPanel = staticCompositionLocalOf<LockPanel?> { null }
+
+/**
  * The app's logo above the title, 64 dp (ux.md §5.9): the launcher icon's shield on a tile, as on
- * Welcome (`AppLogo`, docs/design/looks/README.md "The icon and the name"). It only decorates.
+ * Welcome (`AppLogo`, docs/design/looks/README.md "The icon and the name"); on the lock panel in its
+ * colours, as the mock-up draws it. It only decorates.
  */
 @Composable
 internal fun LockMark() {
-    AppLogo(Modifier.testTag(LockTags.LOGO))
+    val panel = LocalLockPanel.current
+    if (panel == null) {
+        AppLogo(Modifier.testTag(LockTags.LOGO))
+    } else {
+        AppLogo(Modifier.testTag(LockTags.LOGO), tile = panel.logoTile, mark = panel.content, ring = panel.logoRing)
+    }
 }
 
 /** The title "PasswordVault" of the pad and the fingerprint-only screen (ux.md §5.9), a heading. */
@@ -90,13 +214,13 @@ internal fun AppTitle() {
     )
 }
 
-/** "Passwords locked on 6 Oct 2026" above the title of a vault put aside's screen. */
+/** "Passwords locked on 6 Oct 2026" above the title of a vault put aside's screen; on the lock panel in its colour. */
 @Composable
 internal fun AsideLineText(text: UiText, formatters: Formatters) {
     Text(
         text = text.show(formatters),
         style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.primary,
+        color = LocalLockPanel.current?.content ?: MaterialTheme.colorScheme.primary,
         textAlign = TextAlign.Center,
         modifier = Modifier.testTag(LockTags.ASIDE),
     )

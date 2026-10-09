@@ -176,10 +176,15 @@ object LookShots {
  */
 class LockTop(val background: Color, val logoTile: Color, val logoMark: Color, val dotFilled: Color, val dotRing: Color) {
     companion object {
-        /** The top of the pad in [look]: on the screen's own colours, the logo on a tile of the primary colour. */
+        /**
+         * The top of the pad in [look]: on Bank blue's lock panel in the panel's colours; elsewhere on the
+         * screen's own colours, the logo on a tile of the primary colour.
+         */
         fun of(look: Look): LockTop {
             val c = look.colors
-            return LockTop(background = c.background, logoTile = c.primary, logoMark = c.onPrimary, dotFilled = c.primary, dotRing = c.outline)
+            val panel = look.lockPanel
+                ?: return LockTop(background = c.background, logoTile = c.primary, logoMark = c.onPrimary, dotFilled = c.primary, dotRing = c.outline)
+            return LockTop(background = panel.colour, logoTile = panel.logoTile, logoMark = panel.content, dotFilled = panel.content, dotRing = panel.ring)
         }
     }
 }

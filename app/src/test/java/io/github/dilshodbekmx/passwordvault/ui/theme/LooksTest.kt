@@ -6,6 +6,8 @@ import io.github.dilshodbekmx.passwordvault.settings.StyleChoice
 import io.github.dilshodbekmx.passwordvault.ui.list.EntryRow
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -24,7 +26,7 @@ class LooksTest {
                 assertEquals(PinKeyLook.FILLED, it.pinKeys)
                 assertEquals(false, it.fingerprintKeyTonal)
                 assertEquals(CircleShape, it.avatarShape)
-                assertEquals(true, it.lockPanel)
+                assertNotNull(it.lockPanel)
                 assertEquals(CardsLook.NONE, it.cards)
                 assertEquals(AddButtonLook.TONAL, it.addButton)
             }
@@ -32,7 +34,7 @@ class LooksTest {
                 assertEquals(PinKeyLook.PLAIN, it.pinKeys)
                 assertEquals(true, it.fingerprintKeyTonal)
                 assertEquals(RoundedCornerShape(percent = 30), it.avatarShape) // 12 dp of 40 dp
-                assertEquals(false, it.lockPanel)
+                assertNull(it.lockPanel)
                 assertEquals(CardsLook.ROW_GROUPS, it.cards)
                 assertEquals(AddButtonLook.FILLED_ROUND, it.addButton)
             }
@@ -40,7 +42,7 @@ class LooksTest {
                 assertEquals(PinKeyLook.OUTLINED, it.pinKeys)
                 assertEquals(false, it.fingerprintKeyTonal)
                 assertEquals(CircleShape, it.avatarShape)
-                assertEquals(false, it.lockPanel)
+                assertNull(it.lockPanel)
                 assertEquals(CardsLook.PASSWORD_BLOCK, it.cards)
                 assertEquals(AddButtonLook.FILLED, it.addButton)
             }
@@ -77,6 +79,40 @@ class LooksTest {
             assertTrue("$scheme: the shield on its tile", contrast(c.onPrimary, c.primary) >= 3.0)
             assertTrue("$scheme: the tile on the screen", contrast(c.primary, c.background) >= 3.0)
         }
+    }
+
+    /**
+     * Bank blue's lock panel (README "Lock screen"; build plan §12, `w5-carry`): the primary blue of
+     * the mock-up, #1D4E89, which is `primary` in light and `primaryContainer` in dark, and the
+     * colours made to lie on it. The name, the line of a vault put aside and the subtitle can be read
+     * on it (4.5:1), the dots and the logo's shield can be seen (3:1).
+     */
+    @Test
+    fun bankBluesLockPanelIsItsBlueAndWhatLiesOnItCanBeRead() {
+        val light = Looks.of(StyleChoice.BANK_BLUE, dark = false)
+        val dark = Looks.of(StyleChoice.BANK_BLUE, dark = true)
+        val lightPanel = checkNotNull(light.lockPanel) { "Bank blue light has a lock panel" }
+        val darkPanel = checkNotNull(dark.lockPanel) { "Bank blue dark has a lock panel" }
+        assertEquals(light.colors.primary, lightPanel.colour)
+        assertEquals(light.colors.onPrimary, lightPanel.content)
+        assertEquals(light.colors.primaryContainer, lightPanel.quiet)
+        assertEquals(light.colors.inversePrimary, lightPanel.ring)
+        assertEquals(dark.colors.primaryContainer, darkPanel.colour)
+        assertEquals(dark.colors.onPrimaryContainer, darkPanel.content)
+        assertEquals(dark.colors.primary, darkPanel.quiet)
+        assertEquals(dark.colors.primary, darkPanel.ring)
+        for ((name, panel) in listOf("light" to lightPanel, "dark" to darkPanel)) {
+            assertEquals("$name: the mock-up's blue", "#1D4E89", panel.colour.hex())
+            assertEquals("$name: the mock-up's tile", "#2C64A8", panel.logoTile.hex())
+            assertTrue("$name: the name on the panel", contrast(panel.content, panel.colour) >= 4.5)
+            assertTrue("$name: the subtitle on the panel", contrast(panel.quiet, panel.colour) >= 4.5)
+            assertTrue("$name: an empty dot's ring on the panel", contrast(panel.ring, panel.colour) >= 3.0)
+            assertTrue("$name: the shield on its tile", contrast(panel.content, panel.logoTile) >= 3.0)
+            assertTrue("$name: the subtitle is quieter than the name", contrast(panel.quiet, panel.colour) < contrast(panel.content, panel.colour))
+            assertEquals("$name: the logo's ring", panel.content.copy(alpha = 0.25f), panel.logoRing)
+        }
+        // The other styles draw the lock screen on the screen itself.
+        for (scheme in OWN_LOOKS.filter { it.style != StyleChoice.BANK_BLUE }) assertNull("$scheme", scheme.look.lockPanel)
     }
 
     @Test

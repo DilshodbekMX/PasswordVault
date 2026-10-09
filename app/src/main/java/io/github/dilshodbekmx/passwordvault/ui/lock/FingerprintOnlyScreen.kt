@@ -22,16 +22,21 @@ import io.github.dilshodbekmx.passwordvault.lock.LockIntent
  * line (a fingerprint line with "Use your master password"), the line about why there is no pad,
  * "Use fingerprint" and "Use master password", and the test build's line. No pad and no dots. The
  * system's prompt opens over it by itself (the lock decides when, lock.md §9.2 rule 7). On the
- * screen of a vault put aside, Back returns to the current vault (lock.md F17 step 4).
+ * screen of a vault put aside, Back returns to the current vault (lock.md F17 step 4). In Bank blue
+ * the line, the logo and the title lie on the lock panel, as on the pad ([LockPage]).
  */
 @Composable
 fun FingerprintOnlyScreen(ui: FingerprintOnlyUi, onAction: (LockAction) -> Unit, modifier: Modifier = Modifier) {
     BackHandler(enabled = ui.goesBack) { onAction(LockAction.Send(LockIntent.GoBack)) }
     val formatters = rememberFormatters()
-    LockPage(modifier.testTag(LockTags.FINGERPRINT_ONLY)) {
-        ui.asideLine?.let { AsideLineText(it, formatters) }
-        LockMark()
-        AppTitle()
+    LockPage(
+        modifier = modifier.testTag(LockTags.FINGERPRINT_ONLY),
+        head = {
+            ui.asideLine?.let { AsideLineText(it, formatters) }
+            LockMark()
+            AppTitle()
+        },
+    ) {
         Icon(
             painter = painterResource(R.drawable.ic_common_fingerprint),
             contentDescription = null,

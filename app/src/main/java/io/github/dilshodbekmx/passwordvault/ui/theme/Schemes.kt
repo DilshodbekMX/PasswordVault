@@ -69,6 +69,12 @@ internal val BankBlueDark = ColorScheme(
     tertiaryFixed = c(0xFFDBC9), tertiaryFixedDim = c(0xFFB68E), onTertiaryFixed = c(0x331200), onTertiaryFixedVariant = c(0x763300),
 )
 
+/**
+ * The tile of the logo on Bank blue's lock-screen panel (`LockPanel.logoTile`): the mock-up's #2C64A8,
+ * a lighter blue than the panel's #1D4E89, in light and in dark, where the panel has the same blue.
+ */
+internal val BankBluePanelTile = c(0x2C64A8)
+
 /** Emerald, light: the mock-up "B". The screen is tinted; what lies on it (sheets, dialogs, the bar) is white. */
 internal val EmeraldLight = ColorScheme(
     primary = c(0x006B5E), onPrimary = c(0xFFFFFF), primaryContainer = c(0xCDE8E1), onPrimaryContainer = c(0x00201B),
