@@ -229,7 +229,8 @@ internal fun MasterCountdown(seconds: Int) {
  * language change Android 17 no longer brings the keyboard back by itself [V-P7], so the field asks
  * for it once the window has the window focus and, where the screen can see the keyboard (Android 11
  * and newer), a few more times while it is not shown, as setup's "Type your master password again"
- * does. The keyboard's Done does what [onDone] does.
+ * does. After a check or a wait, which turn the field off, it takes the focus and the keyboard
+ * again, so that the next try can be typed at once. The keyboard's Done does what [onDone] does.
  */
 @Composable
 internal fun MasterField(
@@ -244,7 +245,8 @@ internal fun MasterField(
     val window = LocalWindowInfo.current
     val keyboard = LocalSoftwareKeyboardController.current
     val view = LocalView.current
-    LaunchedEffect(focus, window) {
+    LaunchedEffect(focus, window, enabled) {
+        if (!enabled) return@LaunchedEffect // a check or a wait: the field takes the focus again when it ends
         snapshotFlow { window.isWindowFocused }.first { it }
         try {
             focus.requestFocus()
