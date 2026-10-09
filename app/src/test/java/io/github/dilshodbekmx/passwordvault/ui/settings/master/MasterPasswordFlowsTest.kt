@@ -363,6 +363,67 @@ class MasterPasswordFlowsTest {
     }
 
     @Test
+    fun f11_theLockScreenRoute_isMarkedOnlyWhenAShortcutOpensTheAppOnThatVisit() = runTest {
+        val rig = rig()
+        phone(rig, fingerprint = false)
+
+        // An unlock without "I can't remember it": nothing follows.
+        rig.lock()
+        rig.typePin()
+        assertFalse(NewMasterPasswordAsked.take())
+        rig.answerNotices(NoticeAnswer.LATER)
+
+        // "I can't remember it", then the master password after all: nothing is forgotten.
+        rig.lock()
+        rig.send(LockIntent.UseMasterPassword)
+        rig.send(LockIntent.CantRemember)
+        rig.send(LockIntent.UseMasterPassword)
+        assertTrue(rig.unlockWith(PASSWORD) is MpResult.Right)
+        assertFalse("a master-password unlock is no lock-screen route", NewMasterPasswordAsked.take())
+        rig.answerNotices(NoticeAnswer.LATER)
+
+        // "I can't remember it", then the app is left before the PIN: that visit is over.
+        rig.lock()
+        rig.send(LockIntent.UseMasterPassword)
+        rig.send(LockIntent.CantRemember)
+        rig.away()
+        rig.toFront()
+        rig.typePin()
+        assertTrue(rig.isUnlocked)
+        assertFalse("a new visit, opened by the PIN as any visit", NewMasterPasswordAsked.take())
+        rig.answerNotices(NoticeAnswer.LATER)
+
+        // The route itself: armed at the unlock, taken once.
+        rig.lock()
+        rig.send(LockIntent.UseMasterPassword)
+        rig.send(LockIntent.CantRemember)
+        rig.typePin()
+        assertTrue(NewMasterPasswordAsked.take())
+        assertFalse("once", NewMasterPasswordAsked.take())
+    }
+
+    @Test
+    fun f11_theLockScreenRoutesMark_goesWithALock_andWithTheAppLeft() = runTest {
+        val rig = rig()
+        phone(rig, fingerprint = false)
+        rig.lock()
+        rig.send(LockIntent.UseMasterPassword)
+        rig.send(LockIntent.CantRemember)
+        rig.typePin()
+        rig.away() // nothing took the mark before the app was left
+        rig.toFront()
+        assertFalse(NewMasterPasswordAsked.take())
+
+        rig.answerNotices(NoticeAnswer.LATER)
+        rig.lock()
+        rig.send(LockIntent.UseMasterPassword)
+        rig.send(LockIntent.CantRemember)
+        rig.typePin()
+        rig.lock()
+        assertFalse(NewMasterPasswordAsked.take())
+    }
+
+    @Test
     fun f11_theLockScreenRoutesProof_goesWithItsFlow_whenTheScreenClosesWithoutARequest() = runTest {
         val rig = rig()
         phone(rig, fingerprint = false)
