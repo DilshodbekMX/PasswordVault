@@ -71,9 +71,14 @@ three_wrong() {
     pvl_text_is pv.lock.status plural lock_pad_tries_left 2
 }
 
-# not_now_shown: "Not now: use PIN" is on the master-password screen, below the field and the keyboard
-# perhaps: the keyboard closed and the screen scrolled to it.
-not_now_shown() { pva_hide_keyboard; pva_reveal pv.lock.notNow 2>/dev/null; }
+# not_now_shown: "Not now: use PIN" is on the master-password screen (LockTags.USE_PIN, labelled
+# lock_mp_not_now_pin on a practice day in grace; pv.lock.notNow is "Not now: use fingerprint"), below
+# the field and the keyboard perhaps: the keyboard closed and the screen scrolled to it.
+not_now_shown() {
+    pva_hide_keyboard
+    pva_reveal pv.lock.usePin 2>/dev/null || return 1
+    pvl_text_shown string lock_mp_not_now_pin 3
+}
 
 year_ahead_counts_kept() {
     set_clock "$YEAR_MS" || return 1
@@ -82,7 +87,9 @@ year_ahead_counts_kept() {
     [ "$(pvl_policy row)" = PRACTICE_REQUIRED ] || { pv_log "$(pvl_item policy:)"; return 1; }
     pvl_wait_screen master-password 10 || return 1
     pvl_text_is pv.lock.reason string lock_mp_reason_practice || return 1
-    ! not_now_shown || { pv_log "\"Not now\" is offered although practice is past its grace"; return 1; }
+    # Past its grace: no way round the master password ("Not now: use PIN" or "…use fingerprint").
+    pvl_nowhere pv.lock.usePin && pvl_nowhere pv.lock.notNow \
+        || { pv_log "a way round the master password is offered although practice is past its grace"; return 1; }
 }
 
 back_counts_kept() {
@@ -110,7 +117,7 @@ practice_due_after_back() {
     pvl_wait_screen master-password 10 || return 1
     pvl_text_is pv.lock.reason string lock_mp_reason_practice || return 1
     not_now_shown || { pv_log "no \"Not now: use PIN\""; return 1; }
-    pva_tap pv.lock.notNow && pvl_pad 15 && pva_pin "$PVL_PIN" && pvl_open_list 30
+    pva_tap pv.lock.usePin && pvl_pad 15 && pva_pin "$PVL_PIN" && pvl_open_list 30
 }
 
 # ---- waits for 5.5 ---------------------------------------------------------------------------------
