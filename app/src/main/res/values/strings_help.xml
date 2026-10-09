@@ -132,7 +132,7 @@
          and the licence texts are not translated. -->
 
     <!-- At the top of the page. %1$s is the app's name. -->
-    <string name="help_licences_intro">%1$s is made with the free parts below. Each one is used under its licence.</string>
+    <string name="help_licences_intro">%1$s is built with the open-source parts below. Each one is used under its licence.</string>
     <!-- A heading: the word list of the suggested master password and of the generator's passphrases. -->
     <string name="help_licences_group_passphrase">Words for passphrases</string>
     <!-- A heading: the word lists of the password strength meter (glossary 86). -->
