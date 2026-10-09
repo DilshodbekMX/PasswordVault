@@ -66,8 +66,8 @@ picker_in_front() { pv_focus | grep -q -E "$PICKER_RE"; }
 # open_picker: Settings › Import › the CSV source: the system's picker in front.
 open_picker() {
     local deadline
-    pva_on Passwords 20 || pva_on Settings 5 || pva_present pv.import.sources 3 || return 1
-    if ! pva_present pv.import.sources 2; then
+    if ! pva_present pv.import.sources 3; then
+        to_list || return 1
         pva_tap pv.tab.Settings && pva_on Settings 20 || return 1
         pva_tap pv.open.Import || return 1
         pva_need pv.import.sources 20 || return 1
@@ -79,6 +79,20 @@ open_picker() {
         pva_present pv.import.chooseFile 1 && pva_tap pv.import.chooseFile
         pv_sleep 1
     done
+}
+
+# to_list: the list, with nothing over it: Back until the list or the lock screen shows (the import's
+# screens, Settings), the PIN when locked, then the Passwords tab.
+to_list() {
+    local i
+    for i in 1 2 3 4 5; do
+        pva_present pv.route.Passwords 2 && return 0
+        if pva_present pv.route.Locked 1 || pvl_prompt_shown; then pin_opens; return; fi
+        if pva_present pv.tab.Passwords 1; then pva_tap pv.tab.Passwords; else pv_shell input keyevent KEYCODE_BACK >/dev/null; fi
+        pv_sleep 1.5
+        pva_in_front || pva_relaunch
+    done
+    pva_on Passwords 5
 }
 
 # in_picker SECONDS: the picker stays in front for SECONDS; then Back: the app, open.
@@ -230,7 +244,6 @@ else
 fi
 pv_step "a CSV pushed to Download" -- push_csv || pvl_end
 pv_step "the picker and the screen off: locked; the file picked; after the PIN the import goes on" -- picker_screen_off_resume
-pva_on Passwords 3 >/dev/null 2>&1 || { pv_shell input keyevent KEYCODE_BACK >/dev/null; pv_sleep 1; pva_tap pv.tab.Passwords >/dev/null 2>&1; }
-pvl_status >/dev/null 2>&1; case "$(pvl_lock_state)" in locked*) pin_opens >/dev/null 2>&1 ;; esac
+pv_step "back to the list" -- to_list
 pv_step "an overlay over the pad: hidden by the app (Android 12+) or its taps dropped" -- overlay_over_pad
 pvl_end

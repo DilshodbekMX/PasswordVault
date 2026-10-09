@@ -165,6 +165,6 @@ pv_step "the clock a year ahead: row 3 and total 3 kept; practice past its grace
 pv_step "the clock back: the pad, \"2 tries left\", row 3 and total 3 kept" -- back_counts_kept
 pv_step "a year ahead again, the master password typed (practice done a year from now)" -- practice_done_a_year_ahead
 pv_step "the clock back: practice due at once, with \"Not now: use PIN\"; the PIN opens" -- practice_due_after_back
-pvl_later 5.5 "a pending 24-hour wait: its credit and its hours unchanged by a year ahead and back" -- pending_unchanged
-pvl_later 5.5 "the \"replaced\" notice: shown, and still shown with the clock a year ahead" -- replaced_notice_kept
+pvl_later 5.5 "a pending 24-hour wait: its credit and its hours unchanged by a year ahead and back" needs-debuggable -- pending_unchanged
+pvl_later 5.5 "the \"replaced\" notice: shown, and still shown with the clock a year ahead" needs-debuggable -- replaced_notice_kept
 pvl_end

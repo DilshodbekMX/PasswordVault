@@ -228,14 +228,16 @@ pvl_text_is() {
     pvl_expect "$text" "$@"
 }
 
-# pvl_later WAVE NAME -- COMMAND...: a step that needs a package built after 4.5 (build plan 4.5:
+# pvl_later WAVE NAME [needs-debuggable] [needs-root] -- COMMAND...: a step that needs a package built
+# after 4.5 (build plan 4.5:
 # "written now and marked with the wave that enables them"). WAVE is 5.5 (the screens of changing and
 # replacing the master password, strings_master.xml) or 6.1 (the language switch,
 # strings_language.xml). When the APK has the package's strings the step runs as any other;
-# otherwise it prints SKIPPED with the package it waits for.
+# otherwise it prints SKIPPED with the package it waits for. The markers are pv_step's.
 pvl_later() {
-    local wave=$1 name=$2 prefix what
+    local wave=$1 name=$2 prefix what markers=()
     shift 2
+    while [ $# -gt 0 ] && [ "$1" != "--" ]; do markers+=("$1"); shift; done
     [ "${1:-}" = "--" ] && shift
     case "$wave" in
         5.5) prefix=master_; what="build plan 5.5, the screens of F8 and F11 (wave 5)" ;;
@@ -243,7 +245,7 @@ pvl_later() {
         *) pv_die "pvl_later: unknown wave $wave" 2 ;;
     esac
     if pvl_has_strings "$prefix"; then
-        pv_step "$name" -- "$@"
+        pv_step "$name" "${markers[@]}" -- "$@"
     else
         pv_report SKIPPED "$name" "waits for $what: the APK has no ${prefix}* strings"
         return 0

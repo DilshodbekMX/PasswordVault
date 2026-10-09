@@ -101,11 +101,12 @@ pad_reachable() {
     return $bad
 }
 
-# act ID ACTION: the tool service does ACTION to the node ID; true when it was done.
+# act ID ACTION: the tool service does ACTION to the node ID; true when it was done ("result=true";
+# the node may be gone half a second later, "found=false result=true", when the action opened the app).
 act() {
     local out
     out=$(win_cmd a11y-act --es kind tool --es id "$1" --es action "$2") || return 1
-    case "$out" in *"found=true result=true"*) return 0 ;; esac
+    case "$out" in *"result=true"*) return 0 ;; esac
     pv_log "a11y-act $2 on $1: $out"
     return 1
 }
