@@ -17,6 +17,7 @@ import io.github.dilshodbekmx.passwordvault.lock.LockUiState
 import io.github.dilshodbekmx.passwordvault.lock.MpPurpose
 import io.github.dilshodbekmx.passwordvault.lock.PinSetResult
 import io.github.dilshodbekmx.passwordvault.lock.PinStatus
+import io.github.dilshodbekmx.passwordvault.nav.NavState
 import io.github.dilshodbekmx.passwordvault.nav.Route
 import io.github.dilshodbekmx.passwordvault.platform.AppDispatchers
 import io.github.dilshodbekmx.passwordvault.testing.FakeClock
@@ -582,7 +583,7 @@ class PinSetupViewModelTest {
     }
 
     @Test
-    fun theReminderSwitchIsWrittenAndFinishOpensTheList() = runTest {
+    fun theReminderSwitchIsWrittenAndFinishClosesTheSteps() = runTest {
         val vm = model(unlockedWithProof())
         assertTrue("on by default", vm.backupReminder.value)
         vm.setBackupReminder(false)
@@ -595,7 +596,38 @@ class PinSetupViewModelTest {
         assertEquals(PinLine(UiText.of(R.string.settings_not_saved)), vm.ui.value.backupLine)
         vm.finish()
         assertEquals(Route.BackupsExplained, vm.ui.value.move?.from)
-        assertEquals(listOf(NavStep.Tab(Route.Passwords)), vm.ui.value.move?.steps)
+        assertEquals(listOf(NavStep.Back), vm.ui.value.move?.steps)
+    }
+
+    /**
+     * ux.md §4, "What survives a lock": after an unlock, the same screen. After a master-password
+     * unlock without a PIN, "Choose a PIN" opens the PIN steps over the screen the unlock brought back
+     * (here an account, kept across a new process), and "Finish" on "Make backups" closes them there;
+     * after setup only the list lies under them, and Finish shows the list. Found by the device check
+     * of 4A: with the list's root as the end of the steps, smoke.sh's "a new process: locked; the
+     * master password brings the same screen back" and the skeleton's U §12 check 4 (the kept draft
+     * of a form) ended on the list.
+     */
+    @Test
+    fun finishShowsTheScreenTheUnlockBroughtBack_orTheListAfterSetup() = runTest {
+        val vm = model(unlockedWithProof())
+        vm.finish()
+        val move = checkNotNull(vm.ui.value.move)
+        assertEquals(Route.BackupsExplained, move.from)
+
+        fun stepsOver(vararg under: Route): List<Route> {
+            val nav = NavState(unlocked = under.toList())
+            nav.follow(LockUiState.Unlocked(emptyList(), proof = null))
+            // "Choose a PIN" opens the steps; "Not now" and the fingerprint offer lead to "Make backups".
+            assertTrue(nav.go(Route.CreatePin))
+            assertTrue(nav.replace(Route.FingerprintOffer))
+            assertTrue(nav.replace(Route.BackupsExplained))
+            for (step in move.steps) assertTrue("$step", step.applyTo(nav))
+            return nav.visible
+        }
+        assertEquals(listOf(Route.Passwords, Route.Entry("acc-1")), stepsOver(Route.Passwords, Route.Entry("acc-1")))
+        assertEquals(listOf(Route.Passwords, Route.Edit("acc-1")), stepsOver(Route.Passwords, Route.Edit("acc-1")))
+        assertEquals(listOf<Route>(Route.Passwords), stepsOver())
     }
 
     // ---- a lock ---------------------------------------------------------------------------------------

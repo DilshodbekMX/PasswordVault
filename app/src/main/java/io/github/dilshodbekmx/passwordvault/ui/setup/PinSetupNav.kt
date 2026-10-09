@@ -90,7 +90,11 @@ object PinSetupStart {
 
 /** Which steps follow the PIN (lock.md §12). */
 enum class PinFlow {
-    /** A new vault, a restored one or one without a PIN on this phone (F1 steps 6 to 9, F13, F14, F11 step 19): fingerprint offer, "Make backups", the list. */
+    /**
+     * A new vault, a restored one or one without a PIN on this phone (F1 steps 6 to 9, F13, F14, F11
+     * step 19): fingerprint offer, "Make backups", then what lies under the steps: the list after
+     * setup, the screen an unlock brought back after a master-password unlock without a PIN.
+     */
     SETUP,
 
     /** Back to the passwords from before a replacement (F16b step 6): "Someone else may know the old one.", then the fingerprint offer. */
@@ -488,10 +492,17 @@ class PinSetupViewModel(
         }
     }
 
-    /** "Finish" (or Back): the list, alone. */
+    /**
+     * "Finish" (or Back): the PIN steps close, and what lies under them is shown again. After setup
+     * or a restore that is the list alone. After a master-password unlock without a PIN, where "Choose
+     * a PIN" opens the steps over the screen the unlock brought back, it is that screen (an account, a
+     * form with its kept draft): ux.md §4, "What survives a lock", after an unlock the same screen.
+     * The steps are never the root of the unlocked stack (they open over a tab's root), so Back
+     * always has somewhere to go.
+     */
     fun finish() {
         if (state.value.move?.from == Route.BackupsExplained) return
-        state.update { it.copy(stage = PinSetupStage.DONE, move = move(Route.BackupsExplained, NavStep.Tab(Route.Passwords))) }
+        state.update { it.copy(stage = PinSetupStage.DONE, move = move(Route.BackupsExplained, NavStep.Back)) }
     }
 
     // ---- moves and steps -------------------------------------------------------------------------
