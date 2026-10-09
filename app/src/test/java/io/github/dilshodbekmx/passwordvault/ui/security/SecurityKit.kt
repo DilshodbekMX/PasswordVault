@@ -51,7 +51,7 @@ internal object SecurityKit {
     )
 
     /** The id of account [n]: a version 4 UUID, as the app makes them. */
-    fun id(n: Int): String = "00000000-0000-4000-8000-%012d".format(n)
+    fun id(n: Int): String = "00000000-0000-4000-8000-%012d".format(Locale.ROOT, n)
 
     /**
      * The A–Z of tests: titles without case, then as they are (root locale). The locale "xx" sorts Z to

@@ -13,6 +13,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
 import java.security.MessageDigest
+import java.util.Locale
 
 /**
  * Build plan 7.1: the fixture `app/src/androidTest/assets/fixtures/fifty-accounts.csv`, which the
@@ -49,7 +50,7 @@ class SecurityFixtureTest {
 
     @Test
     fun theFixtureIsTheOneThisTestKnows() {
-        val sha = MessageDigest.getInstance("SHA-256").digest(file.readBytes()).joinToString("") { "%02x".format(it) }
+        val sha = MessageDigest.getInstance("SHA-256").digest(file.readBytes()).joinToString("") { "%02x".format(Locale.ROOT, it) }
         assertEquals(FIXTURE_SHA256, sha)
     }
 
