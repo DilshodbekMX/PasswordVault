@@ -104,15 +104,15 @@ class LanguageSwitchTest {
         }
         compose.waitUntil(TIMEOUT_MS) { nav.top == NavState.Top.UNLOCKED }
         // After a master-password unlock without a PIN the lock's "Choose a PIN" opens the PIN steps
-        // over the app (lock.md F1 step 6), and a notice may follow: walked past as a user who
-        // answers "Not now" and "Later" would (app.sh's pva_settle), until nothing is over the app.
+        // over the app (lock.md F1 step 6), and a notice may follow: walked past as a user would,
+        // with Back on the PIN steps (ux.md §4: "Not now"; their own buttons can be below the fold
+        // of a 1920-pixel screen) and "Later" or "OK" on a notice (app.sh's pva_settle), until
+        // nothing is over the app.
         compose.waitUntil(TIMEOUT_MS) {
-            when (topOf(nav)) {
-                Route.CreatePin -> tapIfShown("pv.pin.notNow")
-                Route.ConfirmPin -> compose.runOnUiThread { nav.back() }
-                Route.FingerprintOffer -> tapIfShown("pv.fingerprintOffer.notNow")
-                Route.BackupsExplained -> tapIfShown("pv.action.finish")
-                else -> if (!tapIfShown("pv.answer.LATER")) tapIfShown("pv.answer.OK")
+            if (topOf(nav) in PIN_STEPS) {
+                compose.runOnUiThread { nav.back() }
+            } else if (!tapIfShown("pv.answer.LATER")) {
+                tapIfShown("pv.answer.OK")
             }
             compose.waitForIdle()
             Thread.sleep(SETTLE_MS)
