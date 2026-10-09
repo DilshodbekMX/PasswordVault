@@ -108,6 +108,15 @@ node_any() { pv_ui_nodes | awk -F'|' -v id="$1" '$3 == id { print; exit }'; }
 # enabled_of ID: "true" or "false" for the node with id ID on the screen now; empty when not shown.
 enabled_of() { node_any "$1" | cut -d'|' -f5; }
 
+# words_of ID: the words of the button ID. A Compose button's node has no text of its own in the
+# dump: its words are on the first node with a text after it (before the next node with an id).
+words_of() {
+    pv_ui_nodes | awk -F'|' -v id="$1" '
+        $3 == id { on = 1; if ($1 != "") { print $1; exit } next }
+        on && $3 ~ /^pv[.]/ { exit }
+        on && $1 != "" { print $1; exit }'
+}
+
 # Slow swipes: a fast one leaves the list flinging, and Compose spends the next touch on stopping the
 # fling instead of the tap it was meant to be (seen under a machine load of 30).
 swipe_down() { # the content moves up, so that what is below comes into view
@@ -145,14 +154,26 @@ seek() {
 }
 
 # tap ID: ID sought and tapped (pva_tap, which keeps away from the bottom band of the system's
-# navigation bar; a node that lies there is first moved up with a slow swipe).
+# navigation bar; a node that lies there is first moved up with a slow swipe). From Android 13 on the
+# system shows its own preview of a copy at the bottom left for a few seconds, and a tap there is the
+# preview's: a node in the lower half waits until COPY_PREVIEW_S have passed since the last copy.
 tap() {
     seek "$1" || return 1
-    local y
+    local y height wait
+    height=$(pva_height)
     y=$(node_any "$1" | cut -d'|' -f7)
-    if [ -n "$y" ] && [ "$y" -ge $(($(pva_height) - 200)) ]; then swipe_down; fi
+    if [ -n "$y" ] && [ "$y" -ge $((height - 200)) ]; then
+        swipe_down
+        y=$(node_any "$1" | cut -d'|' -f7)
+    fi
+    if [ "$API" -ge 33 ] && [ -n "$y" ] && [ "$y" -gt $((height / 2)) ] && [ -n "$LAST_COPY" ]; then
+        wait=$((LAST_COPY + COPY_PREVIEW_S - SECONDS))
+        [ "$wait" -le 0 ] || pv_sleep "$wait"
+    fi
     pva_tap "$1"
 }
+LAST_COPY=""
+COPY_PREVIEW_S=8
 
 # gone ID [SECONDS]: no node ID within SECONDS (default 10).
 gone() {
@@ -183,6 +204,7 @@ expect_clip() {
         [ "$text" = "$1" ] && break
     done
     [ "$text" = "$1" ] || { pv_log "$2: the clipboard holds ${#text} characters, not the ${#1} expected"; return 1; }
+    LAST_COPY=$SECONDS
     sensitive=$(printf '%s\n' "$d" | pvc_field sensitive)
     [ "$sensitive" = true ] || { pv_log "$2: the clip is not flagged sensitive ($sensitive)"; return 1; }
 }
@@ -352,6 +374,7 @@ read_new() {
     pv_sleep 1
     got=$(pvc_get | pvc_field text) || return 1
     [ ${#got} -ge 4 ] || { pv_log "no new password on the clipboard"; return 1; }
+    LAST_COPY=$SECONDS
     [ "$got" != "$SHARED" ] || { pv_log "the new password is the old one"; return 1; }
     case " $MADE " in *" $got "*) pv_log "a new password came again"; return 1 ;; esac
     NEW=$got
@@ -468,7 +491,7 @@ retry() {
 
 later() {
     tap pv.change.later && pva_on Group 20 || return 1
-    force_stop_back && list_copies "$SHARED" "$NEW" && detail_copies "$SHARED" "$NEW"
+    force_stop_back && LIST_SHOT="" DETAIL_SHOT="" list_copies "$SHARED" "$NEW" && DETAIL_SHOT="" detail_copies "$SHARED" "$NEW"
 }
 
 revert() {
@@ -488,7 +511,7 @@ confirm() {
     lock_back GuidedChange && started && screen_copies || return 1
     tap pv.change.yes && ended || return 1
     local next
-    next=$(node_any pv.change.next | cut -d'|' -f1)
+    next=$(words_of pv.change.next)
     [ "$next" = "Next: Facebook" ] || { pv_log "the next button reads '$next'"; return 1; }
     pva_present pv.change.backupLine 5 || { pv_log "no backup line, the first end of the session"; return 1; }
     shot 09-gmail-done-next-facebook
@@ -506,7 +529,7 @@ next_accounts() {
     tap pv.change.create && started || return 1
     tap pv.change.yes && ended || return 1
     local next
-    next=$(node_any pv.change.next | cut -d'|' -f1)
+    next=$(words_of pv.change.next)
     [ "$next" = "Next: Kapitalbank" ] || { pv_log "Facebook's next button reads '$next'"; return 1; }
     [ -z "$(node_any pv.change.backupLine)" ] || { pv_log "the backup line came twice in one session"; return 1; }
     pva_tap pv.change.next || return 1
