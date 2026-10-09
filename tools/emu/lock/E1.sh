@@ -41,7 +41,9 @@ key_exists() {
 
 lock_shows_pad() {
     pvl_lock_now && pvl_pad 20 || return 1
-    pva_present pv.lock.testBuild 5 || { pv_log "no TEST BUILD line on the pad"; return 1; }
+    # Below the fold of a 1920-pixel screen (API 24 and 28): scrolled to.
+    pva_reveal pv.lock.testBuild || { pv_log "no TEST BUILD line on the pad"; return 1; }
+    pvl_text_is pv.lock.testBuild string lock_test_build
 }
 
 # timed_unlock fast|slow: the PIN, then the list; prints both times.

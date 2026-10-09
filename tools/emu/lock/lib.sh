@@ -380,6 +380,25 @@ pvl_wait_screen() {
 # pvl_status_line: the pad's status line (pv.lock.status), or nothing when there is none.
 pvl_status_line() { pva_node pv.lock.status | cut -d'|' -f1; }
 
+# pvl_notice_lines: the texts of the notice on the screen (its title, then pv.notice.line.N), one per line.
+pvl_notice_lines() { pv_ui_nodes | awk -F'|' '$3 ~ /^pv[.]notice[.](title|line[.][0-9]+)$/ { print $1 }'; }
+
+# pvl_notice_has KIND NAME [N]: a notice is shown and one of its texts is that resource's (pvl_expect).
+pvl_notice_has() {
+    local line lines
+    pva_need pv.notice 20 || return 1
+    lines=$(pvl_notice_lines)
+    while IFS= read -r line; do
+        [ -n "$line" ] || continue
+        pvl_expect "$line" "$@" 2>/dev/null && return 0
+    done <<<"$lines"
+    pv_log "no line of the notice is $1 $2${3:+ ($3)}: $(printf '%s' "$lines" | tr '\n' '/')"
+    return 1
+}
+
+# pvl_answer ANSWER: the notice's button pv.answer.ANSWER (OK, LATER, CHANGE_PIN, ...).
+pvl_answer() { pva_tap "pv.answer.$1"; }
+
 # ---- setup and unlocking ---------------------------------------------------------------------------
 # pvl_fresh: the APK installed afresh (nothing of an earlier run left) and started: Welcome.
 pvl_fresh() {
