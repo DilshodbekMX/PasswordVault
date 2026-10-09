@@ -1023,6 +1023,35 @@ picker_open() {
 
 in_download() { pv_shell ls "$W5_DIR" 2>/dev/null | tr -d '\r' | grep -E -- "$1"; }
 
+# export_holds REGEX: the export in Download whose name matches REGEX, pulled, opens as its format
+# (CSV with a header, JSON, an Excel workbook) and holds both accounts of the walk with their logins.
+export_holds() {
+    local name local_file
+    name=$(in_download "$1" | head -n 1)
+    [ -n "$name" ] || { pv_log "no file /$1/ in Download"; return 1; }
+    local_file=$LOGS_ROOT/wave5-$name
+    pv_adb pull "$W5_DIR/$name" "$local_file" >/dev/null 2>&1 || { pv_log "could not pull $name"; return 1; }
+    python3 - "$local_file" <<'PYEOF'
+import csv, io, json, sys, zipfile
+path = sys.argv[1]
+want = ["Gmail", "aziz.karimov@gmail.com", "Payme", "+998901234567"]
+if path.endswith(".csv"):
+    rows = list(csv.reader(io.open(path, encoding="utf-8-sig", newline="")))
+    text = "\n".join(",".join(r) for r in rows)
+    kind = f"CSV, header {rows[0][:5]}, {len(rows) - 1} rows"
+elif path.endswith(".json"):
+    text = json.dumps(json.load(open(path, encoding="utf-8")), ensure_ascii=False)
+    kind = "JSON"
+else:
+    z = zipfile.ZipFile(path)
+    text = "".join(z.read(n).decode("utf-8", "replace") for n in z.namelist() if n.endswith(".xml"))
+    kind = f"Excel workbook ({len(z.namelist())} parts)"
+missing = [w for w in want if w not in text]
+print(f"    | {path.rsplit('/', 1)[1]}: {kind}; " + ("holds both accounts" if not missing else f"lacks {missing}"))
+sys.exit(1 if missing else 0)
+PYEOF
+}
+
 w5_settings() { pva_tap pv.tab.Settings && pva_on Settings 20; }
 
 # set_lock_delay DELAY: Settings > "Lock after", the dialog's choice DELAY (LockDelay), Done.
@@ -1125,9 +1154,9 @@ wave5() {
     pv_step "wave5: a backup into Download (its master password, the system's Save)" -- w5_backup
     backup=$(in_download '^PasswordVault-backup-.*\.pvault$' | head -n 1)
     pv_step "wave5: the backup's file is in Download: ${backup:-none}" -- [ -n "$backup" ]
-    pv_step "wave5: export CSV into Download" -- eval 'w5_export csv && in_download "^passwords-.*\.csv$"'
-    pv_step "wave5: export JSON into Download" -- eval 'w5_export json && in_download "^passwords-.*\.json$"'
-    pv_step "wave5: export Excel into Download" -- eval 'w5_export xlsx && in_download "^passwords-.*\.xlsx$"'
+    pv_step "wave5: export CSV into Download; the file holds both accounts" -- eval 'w5_export csv && export_holds "^passwords-.*\.csv$"'
+    pv_step "wave5: export JSON into Download; the file holds both accounts" -- eval 'w5_export json && export_holds "^passwords-.*\.json$"'
+    pv_step "wave5: export Excel into Download; the workbook holds both accounts" -- eval 'w5_export xlsx && export_holds "^passwords-.*\.xlsx$"'
     pv_shell ls -l "$W5_DIR" 2>/dev/null | tr -d '\r' | sed 's/^/    | /'
     pv_step "wave5: import of a small CSV (two accounts) from Download" -- w5_import
     pv_step "wave5: a restore from the lock screen with the backup" -- w5_restore "$backup"
