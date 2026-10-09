@@ -65,8 +65,9 @@ import java.util.Locale
  * collation's order and letter headers, favourites first; search answers the latest query only,
  * with the wrong-layout retry; at most two banners in priority order; copies go to
  * `SecretClipboard` with the right flag and no password ever reaches the state; the row's edits;
- * "Type it now"; 'Add "gmal" as a new account' hands the query over in memory only; and everything
- * is dropped when the vault locks.
+ * "Type it now"; 'Add "gmal" as a new account' hands the query over in memory only; an account's
+ * screen that came back because its account is gone is said once (ux.md §5.12); and everything is
+ * dropped when the vault locks.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class PasswordsViewModelTest {
@@ -687,6 +688,56 @@ class PasswordsViewModelTest {
             assertNull("nothing typed waits in memory while locked", NewAccountName.take())
         } finally {
             NewAccountName.clear()
+        }
+    }
+
+    // ---- An account's screen that came back because its account is gone (ux.md §5.12) ----
+
+    @Test
+    fun anAccountGoneIsSaidOnceWhenTheListIsShownAgain() = runTest(dispatcher) {
+        GoneNotice.clear()
+        try {
+            val rig = rig(entry("gm", "Gmail"))
+            val vm = rig.viewModel()
+            val events = mutableListOf<ListEvent>()
+            scope.launch { vm.events.toList(events) }
+            advanceUntilIdle()
+            vm.shown() // the list as it opens: nothing to say
+            advanceUntilIdle()
+            assertTrue(events.isEmpty())
+
+            GoneNotice.mark() // an account's screen found its account gone and went back
+            vm.shown()
+            advanceUntilIdle()
+            assertEquals(listOf<ListEvent>(ListEvent.AccountGone), events)
+            // Once: shown again later, the list says nothing more.
+            vm.shown()
+            advanceUntilIdle()
+            assertEquals(listOf<ListEvent>(ListEvent.AccountGone), events)
+            assertFalse(GoneNotice.take())
+        } finally {
+            GoneNotice.clear()
+        }
+    }
+
+    @Test
+    fun aLockDropsTheMarkOfAnAccountGone() = runTest(dispatcher) {
+        GoneNotice.clear()
+        try {
+            val rig = rig(entry("gm", "Gmail"))
+            val vm = rig.viewModel()
+            val events = mutableListOf<ListEvent>()
+            scope.launch { vm.events.toList(events) }
+            advanceUntilIdle()
+            GoneNotice.mark()
+            rig.repository.close()
+            advanceUntilIdle()
+            assertFalse("nothing waits in memory while locked", GoneNotice.take())
+            vm.shown()
+            advanceUntilIdle()
+            assertTrue(events.isEmpty())
+        } finally {
+            GoneNotice.clear()
         }
     }
 

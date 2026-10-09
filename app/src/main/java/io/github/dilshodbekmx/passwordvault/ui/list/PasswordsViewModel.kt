@@ -71,10 +71,12 @@ import kotlinx.coroutines.withContext
  * reads the entry from the vault at the moment of the tap. The search text is held in [query], here
  * and never in saved state (architecture.md §5.6); the master password of "Type it now" in
  * [practicePassword], emptied after it is read. 'Add "gmal" as a new account' hands the query to the
- * new form through [NewAccountName], in memory only (architecture.md §3.6). When the vault locks,
- * this ViewModel drops what it holds itself (architecture.md §5.5 step 5): the list, the query, a
- * query handed over and not yet taken, and the dialog, because after a lock in the background its
- * screen leaves only when the activity starts again.
+ * new form through [NewAccountName], in memory only (architecture.md §3.6). An account's screen
+ * whose account is gone comes back here and leaves [GoneNotice]'s mark, which [shown] turns into
+ * "This account no longer exists." (ux.md §5.12). When the vault locks, this ViewModel drops what
+ * it holds itself (architecture.md §5.5 step 5): the list, the query, a query handed over and not
+ * yet taken, that mark, and the dialog, because after a lock in the background its screen leaves
+ * only when the activity starts again.
  *
  * Every function is called on the main thread.
  *
@@ -147,6 +149,15 @@ class PasswordsViewModel(
     }
 
     // ---- The list ----
+
+    /**
+     * The screen is shown, at first or again after a screen on top of it closed: an account's screen
+     * that went back because its account is not in the vault any more left [GoneNotice]'s mark, and
+     * the snackbar says "This account no longer exists." once (ux.md §5.12).
+     */
+    fun shown() {
+        if (GoneNotice.take()) eventChannel.trySend(ListEvent.AccountGone)
+    }
 
     /** "Show all favourites" under the first [FAVOURITES_SHOWN] (ux.md §5.11). */
     fun showAllFavourites() {
@@ -393,6 +404,7 @@ class PasswordsViewModel(
     private fun forgetAll() {
         query.clearText()
         NewAccountName.clear()
+        GoneNotice.clear()
         practicePassword.clearSecret()
         practiceState.value = null
         dismissed.value = emptySet()
@@ -494,6 +506,9 @@ sealed interface ListEvent {
 
     /** "Type it now" was answered with the right master password. */
     data object PracticeRight : ListEvent
+
+    /** An account's screen came back because its account is not in the vault any more: "This account no longer exists." (ux.md §5.12). */
+    data object AccountGone : ListEvent
 }
 
 /** The "Type it now" dialog: [checking] while the lock checks what was typed; the [error] of the last try. */

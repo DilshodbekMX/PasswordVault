@@ -384,8 +384,8 @@ sealed interface EntryUiState {
 
     /**
      * The route's account is not shown: it waits in Recently deleted ([inRecentlyDeleted]), from
-     * where it can be restored, or it is not in the vault at all: "This account no longer exists."
-     * (ux.md §5.12 "States").
+     * where it can be restored, or it is not in the vault at all, and the screen goes back to the
+     * list, which says "This account no longer exists." (ux.md §5.12 "States"; `GoneNotice`).
      */
     data class Gone(val inRecentlyDeleted: Boolean) : EntryUiState
 }

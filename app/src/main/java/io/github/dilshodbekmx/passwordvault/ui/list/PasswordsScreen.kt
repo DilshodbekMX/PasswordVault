@@ -92,7 +92,8 @@ fun PasswordsRoute(graph: AppGraph, nav: Navigator) {
 /**
  * The Passwords screen (ux.md §5.11): the top bar with "Lock now", the search field, at most two
  * banners, the list (favourites, then every account under sticky letter headers, then "Recently
- * deleted (3)") or the search results, the "Add" button, and the snackbar.
+ * deleted (3)") or the search results, the "Add" button, and the snackbar, which also says "This
+ * account no longer exists." when an account's screen came back for that reason (ux.md §5.12).
  *
  * - **Back** clears a query first (ux.md §4); otherwise it is Navigation's (it leaves the app here).
  * - **The keyboard's search key** hides the keyboard; nothing is focused when the screen opens, so
@@ -152,10 +153,13 @@ fun PasswordsScreen(viewModel: PasswordsViewModel, nav: Navigator) {
                     ListEvent.CannotDeleteExport ->
                         snackbar.showSnackbar(resources.getString(R.string.list_banner_cannot_delete), duration = SnackbarDuration.Long)
                     ListEvent.PracticeRight -> snackbar.showSnackbar(resources.getString(R.string.list_practice_right))
+                    ListEvent.AccountGone -> snackbar.showSnackbar(resources.getString(R.string.list_account_gone))
                 }
             }
         }
     }
+    // Shown, at first or again: an account's screen that went back because its account is gone says so here (ux.md §5.12).
+    LaunchedEffect(viewModel) { viewModel.shown() }
 
     val actions = remember(viewModel, nav) {
         fun confirmCopy(copied: Boolean, key: String) {

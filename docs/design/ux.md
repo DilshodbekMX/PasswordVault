@@ -640,7 +640,8 @@ Content (`LazyColumn` of `ListItem`s):
 **Delete** moves the account to Recently deleted at once, with the snackbar "Gmail deleted" and "Undo" (about 10 s). There is no confirmation dialog, because the delete can be undone for 30 days (§5.23).
 
 **States**:
-- entry not found (deleted elsewhere) → back to the list with "This account no longer exists.";
+- entry not found: the account is not in the vault at all (removed for good from Recently deleted, or gone with a restore or an undone import while its screen was kept) → back to the list by itself, whose snackbar says "This account no longer exists." (a one-time mark in memory, architecture.md §3.6);
+- deleted elsewhere and waiting in Recently deleted → in place of its details, "This account was deleted. For 30 days you can restore it in Recently deleted." with `OutlinedButton` "Open Recently deleted" and "Back";
 - long content wraps fully;
 - an empty entry (title only) shows "No details yet" and "Edit".
 
