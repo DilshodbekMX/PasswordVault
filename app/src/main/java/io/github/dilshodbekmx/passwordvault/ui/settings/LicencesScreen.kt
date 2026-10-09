@@ -76,11 +76,13 @@ fun LicencesScreen(vm: LicencesViewModel, nav: Navigator, modifier: Modifier = M
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val noBrowser = stringResource(R.string.help_licences_no_browser)
-    val openLink: (String) -> Unit = { url ->
-        try {
-            context.startActivity(Intent(Intent.ACTION_VIEW, url.toUri()).addCategory(Intent.CATEGORY_BROWSABLE))
-        } catch (e: ActivityNotFoundException) {
-            scope.launch { snackbar.showSnackbar(noBrowser) }
+    val openLink: (String) -> Unit = remember(context, scope, snackbar, noBrowser) {
+        { url ->
+            try {
+                context.startActivity(Intent(Intent.ACTION_VIEW, url.toUri()).addCategory(Intent.CATEGORY_BROWSABLE))
+            } catch (e: ActivityNotFoundException) {
+                scope.launch { snackbar.showSnackbar(noBrowser) }
+            }
         }
     }
     Scaffold(
@@ -197,7 +199,7 @@ private fun PartCard(part: LicencedPart, shown: Boolean, onLicence: () -> Unit, 
 @Composable
 private fun Link(url: String, openLink: (String) -> Unit) {
     val color = MaterialTheme.colorScheme.primary
-    val text = remember(url, color) {
+    val text = remember(url, color, openLink) {
         buildAnnotatedString {
             withLink(
                 LinkAnnotation.Url(

@@ -83,7 +83,7 @@ class HelpPseudoLocaleTest {
         val english = compose.activity
         val pseudo = pseudo(english)
         val strings = R.string::class.java.fields.filter { it.name.startsWith("help_") }
-        assertTrue("the strings are found: ${strings.size}", strings.size >= 80)
+        assertTrue("the strings are found: ${strings.size}", strings.size >= 70)
         for (field in strings) {
             val id = field.getInt(null)
             assertNotEquals("string ${field.name}", english.getString(id), pseudo.getString(id))

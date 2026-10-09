@@ -41,8 +41,8 @@ import kotlinx.coroutines.launch
 
 /**
  * The first-copy tip (ux.md §6; build plan 7.3): an alert with "OK", shown once
- * (`OneTime.FIRST_COPY_TIP`) over the unlocked screens, right after the first copy of a password,
- * which [UnlockedScaffold] hands it. It says how to paste, that the copy is removed after the delay
+ * (`OneTime.FIRST_COPY_TIP`) over the unlocked screens, where [UnlockedScaffold] calls it, right
+ * after the first copy of a password. It says how to paste, that the copy is removed after the delay
  * chosen in Settings and that anything else copied in that time may go too, never to pin a password
  * in the keyboard's clipboard, that a force-stop or "Restricted" battery use leaves the copy on the
  * clipboard until the app is opened again (architecture.md D-14), and, on a Samsung phone, how to
