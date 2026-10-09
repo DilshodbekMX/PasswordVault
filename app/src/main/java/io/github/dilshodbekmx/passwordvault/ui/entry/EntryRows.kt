@@ -25,6 +25,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemColors
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -37,6 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.autofill.ContentDataType
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -58,8 +61,11 @@ import io.github.dilshodbekmx.passwordvault.i18n.Formatters
 import io.github.dilshodbekmx.passwordvault.i18n.rememberFormatters
 import io.github.dilshodbekmx.passwordvault.ui.common.Banner
 import io.github.dilshodbekmx.passwordvault.ui.common.BannerKind
+import io.github.dilshodbekmx.passwordvault.ui.common.CardPart
 import io.github.dilshodbekmx.passwordvault.ui.common.MaskedValue
 import io.github.dilshodbekmx.passwordvault.ui.common.RevealToggle
+import io.github.dilshodbekmx.passwordvault.ui.common.cardPart
+import io.github.dilshodbekmx.passwordvault.ui.theme.LocalLook
 
 /** What the buttons, the banners and the rows' menus of an account's screen do. Made once per screen. */
 internal class EntryActions(
@@ -95,11 +101,16 @@ internal class EntryActions(
  *
  * The rows' keys are places in the account, never its texts: a list's keys reach saved state.
  *
+ * **Cards.** Where the style draws rows on cards (docs/design/looks/README.md), the values lie on one
+ * card (Emerald) or the password block does (Night vault), as [entryCardParts] decides.
+ *
  * @param copied the value whose copy button shows a check mark now.
  */
 @Composable
 internal fun EntryRows(details: EntryDetails, copied: EntryValue?, actions: EntryActions, padding: PaddingValues) {
     val formatters = rememberFormatters()
+    val cards = LocalLook.current.cards
+    val parts = remember(details, cards) { entryCardParts(details, cards) }
     Box(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding), contentAlignment = Alignment.TopCenter) {
         LazyColumn(
             modifier = Modifier.widthIn(max = CONTENT_MAX_WIDTH).fillMaxWidth().testTag(EntryTags.CONTENT),
@@ -118,19 +129,23 @@ internal fun EntryRows(details: EntryDetails, copied: EntryValue?, actions: Entr
             }
             banners(details, formatters, actions)
             if (details.username.isNotEmpty()) {
-                item(key = "username", contentType = "row") { UsernameRow(details.username, copied == EntryValue.Username, actions) }
+                item(key = "username", contentType = "row") {
+                    UsernameRow(details.username, copied == EntryValue.Username, actions, parts[EntryValue.Username])
+                }
             }
             items(details.passwords, key = { it.value.field ?: "password" }, contentType = { "row" }) { row ->
-                PasswordRow(row, details.changePending, copied == row.value, actions)
+                PasswordRow(row, details.changePending, copied == row.value, actions, parts[row.value])
             }
             items(details.websites, key = { "website.${it.index}" }, contentType = { "row" }) { row ->
-                WebsiteRowItem(row, copied == row.value, actions)
+                WebsiteRowItem(row, copied == row.value, actions, parts[row.value])
             }
             if (details.notes.isNotEmpty()) {
-                item(key = "notes", contentType = "notes") { NotesRow(details.notes, details.notesExpanded, copied == EntryValue.Notes, actions) }
+                item(key = "notes", contentType = "notes") {
+                    NotesRow(details.notes, details.notesExpanded, copied == EntryValue.Notes, actions, parts[EntryValue.Notes])
+                }
             }
             items(details.fields, key = { "field.${it.index}" }, contentType = { "row" }) { row ->
-                FieldRowItem(row, copied == row.value, actions)
+                FieldRowItem(row, copied == row.value, actions, parts[row.value])
             }
             if (details.empty) {
                 item(key = "empty", contentType = "empty") { Empty(actions.edit) }
@@ -142,7 +157,7 @@ internal fun EntryRows(details: EntryDetails, copied: EntryValue?, actions: Entr
                 }
             }
             items(details.previous, key = { "previous.${it.index}" }, contentType = { "row" }) { row ->
-                PreviousRowItem(row, formatters, copied == row.value, actions)
+                PreviousRowItem(row, formatters, copied == row.value, actions, parts[row.value])
             }
         }
     }
@@ -198,13 +213,14 @@ private fun LazyListScope.banners(details: EntryDetails, formatters: Formatters,
 
 /** The username: its text, always left to right (ux.md §3), and "Copy username". */
 @Composable
-private fun UsernameRow(username: String, copied: Boolean, actions: EntryActions) {
+private fun UsernameRow(username: String, copied: Boolean, actions: EntryActions, card: CardPart?) {
     val value = EntryValue.Username
     val copy = stringResource(R.string.entry_copy_username)
     val big = stringResource(R.string.entry_big_letters)
     ValueRow(
         value = value,
         label = stringResource(R.string.entry_username),
+        card = card,
         menu = listOf(RowMenuItem(copy) { actions.copy(value) }, RowMenuItem(big) { actions.bigLetters(value) }),
         trailing = { CopyButton(value, copied, copy, primary = false, actions.copy) },
     ) {
@@ -218,10 +234,11 @@ private fun UsernameRow(username: String, copied: Boolean, actions: EntryActions
  * website may still use, and the new one, which is not confirmed yet (ux.md §5.12, §5.17).
  */
 @Composable
-private fun PasswordRow(row: SecretRow, changePending: Boolean, copied: Boolean, actions: EntryActions) {
+private fun PasswordRow(row: SecretRow, changePending: Boolean, copied: Boolean, actions: EntryActions, card: CardPart?) {
     val old = row.value == EntryValue.OldPassword
     SecretValueRow(
         value = row.value,
+        card = card,
         shown = row.shown,
         label = stringResource(
             when {
@@ -255,9 +272,10 @@ private fun PasswordRow(row: SecretRow, changePending: Boolean, copied: Boolean,
 
 /** One of the previous passwords: the day it was replaced, dots, show and copy (ux.md §5.12). */
 @Composable
-private fun PreviousRowItem(row: PreviousRow, formatters: Formatters, copied: Boolean, actions: EntryActions) {
+private fun PreviousRowItem(row: PreviousRow, formatters: Formatters, copied: Boolean, actions: EntryActions, card: CardPart?) {
     SecretValueRow(
         value = row.value,
+        card = card,
         shown = row.shown,
         label = stringResource(R.string.entry_previous_until, formatters.date(row.replacedAtMs)),
         hiddenDescription = stringResource(R.string.entry_previous_hidden),
@@ -276,12 +294,13 @@ private fun PreviousRowItem(row: PreviousRow, formatters: Formatters, copied: Bo
  * password; any other is plain text with copy (ux.md §5.12).
  */
 @Composable
-private fun FieldRowItem(row: FieldRow, copied: Boolean, actions: EntryActions) {
+private fun FieldRowItem(row: FieldRow, copied: Boolean, actions: EntryActions, card: CardPart?) {
     val value = row.value
     val copy = stringResource(R.string.entry_copy_named, row.name)
     if (row.secret && !row.empty) {
         SecretValueRow(
             value = value,
+            card = card,
             shown = row.shown,
             label = row.name,
             hiddenDescription = stringResource(R.string.entry_field_hidden, row.name),
@@ -297,6 +316,7 @@ private fun FieldRowItem(row: FieldRow, copied: Boolean, actions: EntryActions) 
         ValueRow(
             value = value,
             label = row.name,
+            card = card,
             menu = if (row.empty) emptyList() else listOf(RowMenuItem(stringResource(R.string.entry_copy)) { actions.copy(value) }),
             trailing = { if (!row.empty) CopyButton(value, copied, copy, primary = false, actions.copy) },
         ) {
@@ -311,7 +331,7 @@ private fun FieldRowItem(row: FieldRow, copied: Boolean, actions: EntryActions) 
  * "Copy" only (ux.md §5.12).
  */
 @Composable
-private fun WebsiteRowItem(row: WebsiteRow, copied: Boolean, actions: EntryActions) {
+private fun WebsiteRowItem(row: WebsiteRow, copied: Boolean, actions: EntryActions, card: CardPart?) {
     val value = row.value
     val web = row.kind == WebsiteKind.WEB
     val app = row.kind == WebsiteKind.APP
@@ -320,6 +340,7 @@ private fun WebsiteRowItem(row: WebsiteRow, copied: Boolean, actions: EntryActio
     ValueRow(
         value = value,
         label = stringResource(R.string.entry_website),
+        card = card,
         menu = buildList {
             if (web) add(RowMenuItem(open) { actions.openWebsite(row) })
             add(RowMenuItem(copy) { actions.copy(value) })
@@ -359,9 +380,10 @@ private fun WebsiteRowItem(row: WebsiteRow, copied: Boolean, actions: EntryActio
  * positions may be (architecture.md §5.6).
  */
 @Composable
-private fun NotesRow(notes: String, expanded: Boolean, copied: Boolean, actions: EntryActions) {
+private fun NotesRow(notes: String, expanded: Boolean, copied: Boolean, actions: EntryActions, card: CardPart?) {
     var long by remember(notes) { mutableStateOf(false) }
     val selection = remember { SelectionState() }
+    val look = LocalLook.current
     ListItem(
         overlineContent = { Text(stringResource(R.string.entry_notes)) },
         headlineContent = {
@@ -385,7 +407,8 @@ private fun NotesRow(notes: String, expanded: Boolean, copied: Boolean, actions:
             }
         },
         trailingContent = { CopyButton(EntryValue.Notes, copied, stringResource(R.string.entry_copy_notes), primary = false, actions.copy) },
-        modifier = Modifier.testTag(EntryTags.NOTES),
+        colors = rowColours(card),
+        modifier = Modifier.cardPart(card, look).testTag(EntryTags.NOTES),
     )
 }
 
@@ -448,6 +471,7 @@ private fun PreviousButton(count: Int, expanded: Boolean, formatters: Formatters
 @Composable
 private fun SecretValueRow(
     value: EntryValue,
+    card: CardPart?,
     shown: String?,
     label: String,
     hiddenDescription: String,
@@ -465,6 +489,7 @@ private fun SecretValueRow(
     ValueRow(
         value = value,
         label = label,
+        card = card,
         labelSpoken = isShown,
         menu = listOf(
             RowMenuItem(copyLabel) { actions.copy(value) },
@@ -517,12 +542,14 @@ private class RowMenuItem(val label: String, val action: () -> Unit)
  * its items are also the row's TalkBack actions. The row is one node for TalkBack (label, value),
  * and each button is its own.
  *
+ * @param card the row's part of a card ([entryCardParts]); null: it lies on the screen.
  * @param labelSpoken false while the value's own description names the row ("Password, hidden").
  */
 @Composable
 private fun ValueRow(
     value: EntryValue,
     label: String,
+    card: CardPart?,
     menu: List<RowMenuItem>,
     labelSpoken: Boolean = true,
     supporting: (@Composable () -> Unit)? = null,
@@ -531,7 +558,8 @@ private fun ValueRow(
 ) {
     var open by remember { mutableStateOf(false) }
     val options = stringResource(R.string.entry_row_options)
-    Box {
+    val look = LocalLook.current
+    Box(Modifier.cardPart(card, look)) {
         ListItem(
             overlineContent = { Text(text = label, modifier = if (labelSpoken) Modifier else Modifier.clearAndSetSemantics { }) },
             headlineContent = content,
@@ -539,6 +567,7 @@ private fun ValueRow(
             trailingContent = {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(BUTTON_GAP), content = trailing)
             },
+            colors = rowColours(card),
             modifier = Modifier
                 .testTag(EntryTags.row(value))
                 .then(
@@ -605,6 +634,11 @@ private fun Modifier.notForAutofill(): Modifier = semantics { contentDataType = 
 /** The text style of a username or a website: always left to right (ux.md §3). */
 @Composable
 private fun leftToRight(): TextStyle = LocalTextStyle.current.copy(textDirection = TextDirection.Ltr)
+
+/** A row's colours: Material 3's on the screen, with no colour of its own on a card, whose colour is behind it. */
+@Composable
+private fun rowColours(card: CardPart?): ListItemColors =
+    if (card == null) ListItemDefaults.colors() else ListItemDefaults.colors(containerColor = Color.Transparent)
 
 /** A banner's place among the rows. */
 private val BANNER = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)

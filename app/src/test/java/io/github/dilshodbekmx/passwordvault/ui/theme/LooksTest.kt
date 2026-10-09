@@ -136,6 +136,28 @@ class LooksTest {
         }
     }
 
+    /**
+     * The cards that rows lie on (README "List and account screen"): the table's "surface (cards,
+     * sheets)" in every look, white in Emerald's light scheme; an outline only on Night vault's
+     * password block. A row's texts can be read on a card (`SchemeContrastTest` checks every text
+     * colour on `surfaceContainerLow`), and the card can be told from the screen.
+     */
+    @Test
+    fun aCardIsTheSurfaceOfCardsAndOnlyNightVaultsHasAnOutline() {
+        for (scheme in OWN_LOOKS) {
+            val look = scheme.look
+            assertEquals("$scheme", look.colors.surfaceContainerLow, look.cardColour)
+            assertNotEquals("$scheme: a card is not the screen", look.colors.background, look.cardColour)
+            if (scheme.style == StyleChoice.NIGHT_VAULT) {
+                assertEquals("$scheme", look.colors.outlineVariant, look.cardOutline)
+            } else {
+                assertNull("$scheme", look.cardOutline)
+            }
+        }
+        assertEquals("#FFFFFF", Looks.of(StyleChoice.EMERALD, dark = false).cardColour.hex())
+        assertEquals("#161C21", Looks.of(StyleChoice.NIGHT_VAULT, dark = true).cardColour.hex())
+    }
+
     @Test
     fun everyStyleHasALightAndADarkSchemeOfItsOwn() {
         assertSame(BankBlueLight, Looks.of(StyleChoice.BANK_BLUE, dark = false).colors)

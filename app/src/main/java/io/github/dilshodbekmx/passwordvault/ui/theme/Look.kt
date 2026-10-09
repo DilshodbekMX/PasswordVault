@@ -54,6 +54,18 @@ class Look(
     val searchOutline: Color? = null,
 ) {
     /**
+     * The colour of a card that rows lie on ([cards]): the README's "surface (cards, sheets)",
+     * `surfaceContainerLow` (white in Emerald's light scheme, lighter than the screen in a dark one).
+     */
+    val cardColour: Color get() = colors.surfaceContainerLow
+
+    /**
+     * The outline of such a card: Night vault's password block has one of the divider's colour, as
+     * its mock-up draws it; Emerald's cards have none.
+     */
+    val cardOutline: Color? get() = if (cards == CardsLook.PASSWORD_BLOCK) colors.outlineVariant else null
+
+    /**
      * The same details with other colours: a style's other mode, or the wallpaper's scheme. The two
      * outlines belong to one scheme's colours, so they are given again or left out.
      */

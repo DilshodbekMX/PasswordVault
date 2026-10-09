@@ -1,6 +1,7 @@
 package io.github.dilshodbekmx.passwordvault.ui.theme
 
 import android.os.Build
+import android.os.SystemClock
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.requiredSize
@@ -19,6 +20,7 @@ import io.github.dilshodbekmx.passwordvault.lock.LockUiState
 import io.github.dilshodbekmx.passwordvault.settings.StyleChoice
 import io.github.dilshodbekmx.passwordvault.settings.ThemeChoice
 import io.github.dilshodbekmx.passwordvault.ui.common.PinPadTags
+import io.github.dilshodbekmx.passwordvault.ui.entry.EntryTags
 import io.github.dilshodbekmx.passwordvault.ui.list.ListTags
 import io.github.dilshodbekmx.passwordvault.ui.lock.LockTags
 import io.github.dilshodbekmx.passwordvault.ui.setup.SetupTags
@@ -28,6 +30,7 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -237,6 +240,60 @@ class LookDetailsTest {
             }
             assertEquals("$what: only Emerald in light has the outlines", look === Looks.of(StyleChoice.EMERALD, dark = false), bar != null && search != null)
         }
+    }
+
+    /**
+     * The cards (README "List and account screen"; ux.md §5.11, §5.12): in Emerald the list's rows and
+     * the account's values lie on cards of the look's card colour, 12 dp in from the screen's edges;
+     * in Night vault the account's password lies on a card with a hairline of the divider's colour,
+     * and its username on the screen; in Bank blue and the phone's colours nothing lies on a card.
+     */
+    @Test
+    fun theRowsLieOnCardsAsTheStyleSays() {
+        val made = open()
+        everyLook(made) { look, what ->
+            val groups = look.cards == CardsLook.ROW_GROUPS
+            val block = look.cards == CardsLook.PASSWORD_BLOCK
+            show(made, LookGallery.Screen.LIST, ListTags.row(LookGallery.CLICK_ID))
+            assertRowPlace(ListTags.row(LookGallery.CLICK_ID), onCard = groups, look, "$what: a row of all accounts")
+            assertRowPlace(ListTags.favourite(LookGallery.TELEGRAM_ID), onCard = groups, look, "$what: a favourite")
+
+            show(made, LookGallery.Screen.ACCOUNT, EntryTags.PASSWORD)
+            assertRowPlace(EntryTags.USERNAME, onCard = groups, look, "$what: the username")
+            assertRowPlace(EntryTags.PASSWORD, onCard = groups || block, look, "$what: the password")
+            val outline = look.cardOutline
+            if (outline != null) {
+                // The card's hairline runs along the row's left edge, where the card starts.
+                compose.awaitHasPixel(EntryTags.PASSWORD, outline, Offset(0f, 0.3f), Offset(dpOfWidth(EntryTags.PASSWORD, 1.5f), 0.7f), "$what: the password block's outline")
+            }
+            assertEquals("$what: only Night vault outlines its card", look.cards == CardsLook.PASSWORD_BLOCK, outline != null)
+        }
+    }
+
+    /**
+     * Halfway down the row [tag]: 6 dp from the screen's left edge, the screen (a card lies 12 dp in);
+     * 14 dp from it, the card's colour when the row is [onCard], else the row's own colour, which is
+     * the screen's; nothing else is drawn there (a row's content starts 16 dp into it).
+     */
+    private fun assertRowPlace(tag: String, onCard: Boolean, look: Look, what: String) {
+        compose.waitForIdle()
+        val node = compose.node(tag)
+        val density = compose.activity.resources.displayMetrics.density
+        val y = (node.positionOnScreen.y + node.size.height / 2f).roundToInt()
+        val c = look.colors
+        val deadline = SystemClock.uptimeMillis() + 5_000
+        var margin: Int
+        var inside: Int
+        val wantMargin = (if (onCard) c.background else c.surface).toArgb()
+        val wantInside = (if (onCard) look.cardColour else c.surface).toArgb()
+        do {
+            val shot = screenshot()
+            margin = shot.getPixel((6 * density).roundToInt(), y)
+            inside = shot.getPixel((14 * density).roundToInt(), y)
+            if (near(margin, wantMargin) && near(inside, wantInside)) return
+            SystemClock.sleep(100)
+        } while (SystemClock.uptimeMillis() < deadline)
+        fail("$what: 6 dp in ${margin.hex()} (want ${wantMargin.hex()}), 14 dp in ${inside.hex()} (want ${wantInside.hex()})")
     }
 
     /** [dp] as a fraction of the height of the node [tag]. */

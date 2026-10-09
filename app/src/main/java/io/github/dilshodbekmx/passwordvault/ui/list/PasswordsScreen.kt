@@ -16,7 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
@@ -80,7 +80,9 @@ import io.github.dilshodbekmx.passwordvault.data.SaveProblem
 import io.github.dilshodbekmx.passwordvault.i18n.rememberFormatters
 import io.github.dilshodbekmx.passwordvault.nav.Navigator
 import io.github.dilshodbekmx.passwordvault.nav.Route
+import io.github.dilshodbekmx.passwordvault.ui.common.CardPart
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultSearchField
+import io.github.dilshodbekmx.passwordvault.ui.common.cardPart
 import io.github.dilshodbekmx.passwordvault.ui.theme.LocalLook
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -372,23 +374,30 @@ private fun ListContent(
     }
 }
 
-/** The list without a query: favourites, then all accounts under sticky letter headers (ux.md §5.11). */
+/**
+ * The list without a query: favourites, then all accounts under sticky letter headers (ux.md
+ * §5.11); in a style that groups rows on cards, each group on its card ([ListCards]).
+ */
 private fun LazyListScope.browse(body: ListBody.Browse, copiedKey: String?, actions: RowActions, onShowAllFavourites: () -> Unit) {
     if (body.favourites.isNotEmpty()) {
+        val parts = ListCards.favourites(body.favourites.size, showAll = body.moreFavourites > 0)
         item(key = "favourites", contentType = "heading") {
             Heading(stringResource(R.string.list_favourites), Modifier.testTag(ListTags.FAVOURITES))
         }
-        items(body.favourites, key = { FAVOURITE_KEY + it.id }, contentType = { "row" }) { row ->
+        itemsIndexed(body.favourites, key = { _, row -> FAVOURITE_KEY + row.id }, contentType = { _, _ -> "row" }) { index, row ->
             val key = FAVOURITE_KEY + row.id
-            EntryRowItem(row, null, copiedKey == key, key, actions, Modifier.testTag(ListTags.favourite(row.id)))
+            EntryRowItem(row, null, copiedKey == key, key, actions, Modifier.testTag(ListTags.favourite(row.id)), card = parts[index])
         }
         if (body.moreFavourites > 0) {
             item(key = "moreFavourites") {
-                TextButton(
-                    onClick = onShowAllFavourites,
-                    modifier = Modifier.padding(horizontal = 8.dp).testTag(ListTags.SHOW_ALL_FAVOURITES),
-                ) {
-                    Text(stringResource(R.string.list_show_all_favourites))
+                val look = LocalLook.current
+                Box(Modifier.fillMaxWidth().cardPart(rowGroup(look, parts.last()), look)) {
+                    TextButton(
+                        onClick = onShowAllFavourites,
+                        modifier = Modifier.padding(horizontal = 8.dp).testTag(ListTags.SHOW_ALL_FAVOURITES),
+                    ) {
+                        Text(stringResource(R.string.list_show_all_favourites))
+                    }
                 }
             }
         }
@@ -397,14 +406,16 @@ private fun LazyListScope.browse(body: ListBody.Browse, copiedKey: String?, acti
         val total = rememberFormatters().number(body.total.toLong())
         Heading(stringResource(R.string.list_all_accounts, total), Modifier.testTag(ListTags.ALL_ACCOUNTS))
     }
+    val parts = ListCards.allAccounts(body.sections.map { it.rows.size })
     body.sections.forEachIndexed { index, section ->
+        val sectionParts = parts[index]
         // Keyed by place, not by letter: a header comes from a title, and keys can reach saved state.
         stickyHeader(key = "header$index", contentType = "letter") {
-            LetterHeader(section.header, Modifier.testTag(ListTags.header(index)))
+            LetterHeader(section.header, Modifier.testTag(ListTags.header(index)), card = sectionParts.header)
         }
-        items(section.rows, key = { ENTRY_KEY + it.id }, contentType = { "row" }) { row ->
+        itemsIndexed(section.rows, key = { _, row -> ENTRY_KEY + row.id }, contentType = { _, _ -> "row" }) { i, row ->
             val key = ENTRY_KEY + row.id
-            EntryRowItem(row, null, copiedKey == key, key, actions, Modifier.testTag(ListTags.row(row.id)))
+            EntryRowItem(row, null, copiedKey == key, key, actions, Modifier.testTag(ListTags.row(row.id)), card = sectionParts.rows[i])
         }
     }
 }
@@ -420,9 +431,10 @@ private fun LazyListScope.results(body: ListBody.Results, copiedKey: String?, ac
             )
         }
     }
-    items(body.rows, key = { RESULT_KEY + it.id }, contentType = { "row" }) { row ->
+    val parts = ListCards.results(body.rows.size)
+    itemsIndexed(body.rows, key = { _, row -> RESULT_KEY + row.id }, contentType = { _, _ -> "row" }) { index, row ->
         val key = RESULT_KEY + row.id
-        EntryRowItem(row, body.searched, copiedKey == key, key, actions, Modifier.testTag(ListTags.row(row.id)))
+        EntryRowItem(row, body.searched, copiedKey == key, key, actions, Modifier.testTag(ListTags.row(row.id)), card = parts[index])
     }
 }
 
@@ -437,10 +449,15 @@ private fun Heading(text: String, modifier: Modifier = Modifier) {
     )
 }
 
-/** A sticky letter header ("A", "Ш", "Oʻ"); drawn on the surface so that the rows pass under it. */
+/**
+ * A sticky letter header ("A", "Ш", "Oʻ"); drawn on the surface so that the rows pass under it, or
+ * on its part of the card ([card]) where the style groups rows on cards.
+ */
 @Composable
-private fun LetterHeader(letter: String, modifier: Modifier = Modifier) {
-    Surface(color = MaterialTheme.colorScheme.surface, modifier = modifier.fillMaxWidth()) {
+private fun LetterHeader(letter: String, modifier: Modifier = Modifier, card: CardPart? = null) {
+    val look = LocalLook.current
+    val part = rowGroup(look, card)
+    val text: @Composable () -> Unit = {
         Text(
             text = letter,
             style = MaterialTheme.typography.titleSmall,
@@ -448,16 +465,28 @@ private fun LetterHeader(letter: String, modifier: Modifier = Modifier) {
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp).semantics { heading() },
         )
     }
+    if (part == null) {
+        Surface(color = MaterialTheme.colorScheme.surface, modifier = modifier.fillMaxWidth()) { text() }
+    } else {
+        Box(modifier.fillMaxWidth().cardPart(part, look)) { text() }
+    }
 }
 
-/** "Recently deleted (3)", the last row of the list when it is not empty (ux.md §5.23). */
+/** "Recently deleted (3)", the last row of the list when it is not empty (ux.md §5.23); on a card of its own where the style groups rows on cards. */
 @Composable
 private fun RecentlyDeletedRow(count: Int, onClick: () -> Unit) {
+    val look = LocalLook.current
+    val part = rowGroup(look, ListCards.recentlyDeleted)
     ListItem(
         headlineContent = { Text(stringResource(R.string.list_recently_deleted_row, rememberFormatters().number(count.toLong()))) },
         leadingContent = { Icon(painterResource(R.drawable.ic_list_deleted), contentDescription = null) },
         trailingContent = { Icon(painterResource(R.drawable.ic_list_chevron), contentDescription = null) },
-        modifier = Modifier.testTag(ListTags.RECENTLY_DELETED).clickable(onClick = onClick),
+        colors = rowColours(part),
+        modifier = Modifier
+            .padding(top = if (part != null) CARD_GAP else 0.dp)
+            .cardPart(part, look)
+            .testTag(ListTags.RECENTLY_DELETED)
+            .clickable(onClick = onClick),
     )
 }
 
@@ -548,6 +577,9 @@ internal const val BIG_LETTERS_PASSWORD = "password"
 private const val COPY_CONFIRMATION_MS = 1_500L
 
 private const val LOADING_SPINNER_DELAY_MS = 400L
+
+/** Above "Recently deleted" when it lies on a card of its own, after the card of all accounts. */
+private val CARD_GAP = 12.dp
 
 /** The "Add" button's height (56 dp) and its margin (16 dp), and 24 dp more: the list's bottom padding (ux.md §5.11). */
 private val LIST_BOTTOM_PADDING = 96.dp

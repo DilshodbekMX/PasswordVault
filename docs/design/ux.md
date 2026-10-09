@@ -551,6 +551,7 @@ If fingerprint unlock is on and cannot be used now, the matching fingerprint lin
   - an "All accounts · 48" header, then all entries with sticky letter headers (headers are semantic headings);
   - last, when not empty, a row "Recently deleted (3)" (§5.23).
   - Its bottom content padding is at least the height of the Add button plus 16 dp, plus the clipboard status row when it shows. So the button never covers the last row's copy button.
+  - In Emerald the rows are grouped on cards: the favourites on one, all accounts with their letter headers on another, the search results on one, "Recently deleted" on its own; the headings and banners stay on the screen ([looks/README.md](looks/README.md)).
 - **`ExtendedFloatingActionButton`** "Add" (collapses to the + icon while scrolling down), drawn as the style says: tonal in Bank blue and the phone's colours, filled in Night vault, filled and fully rounded in Emerald ([looks/README.md](looks/README.md)).
 - **Bottom**: the navigation bar (Passwords · Security · Settings) and, when something is copied, the clipboard status row (§6) above it. The Security item shows a dot when there are new results (§5.16). In Emerald's light scheme the bar has a line of 1 dp along its top edge, for the same reason as the search field.
 
@@ -620,7 +621,7 @@ Behaviour:
 
 **Layout**: a `TopAppBar` with back, the title (one line; the full title is the first line of the content), actions `IconButton` star "Add to favourites" and `IconButton` "Edit", and an overflow menu (Show in big letters · Leave out of the security check · Delete).
 
-Content (`LazyColumn` of `ListItem`s):
+Content (`LazyColumn` of `ListItem`s; in Emerald the values lie on one card and the previous passwords on another, in Night vault the password block lies on a card, [looks/README.md](looks/README.md)):
 - **Username**: the value; trailing "Copy username".
 - **Password**:
   - 8 dots; trailing `IconToggleButton` "Show password"/"Hide password" and `FilledTonalIconButton` "Copy password"; below, `TextButton` "Show in big letters".

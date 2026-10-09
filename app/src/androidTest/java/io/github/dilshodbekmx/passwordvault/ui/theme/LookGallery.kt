@@ -119,6 +119,10 @@ class LookGallery(now: Long = System.currentTimeMillis()) {
         /** The PIN pad with three digits typed and the fingerprint key, as the mock-ups show it. */
         val PAD = LockScreen.Pad(digits = 3, status = null, fingerprintKey = true, opening = false, aside = null)
 
+        /** The list's accounts "Click", the first of all accounts, and "Telegram", the favourite. */
+        const val CLICK_ID = "00000000-0000-4000-8000-000000000001"
+        const val TELEGRAM_ID = "00000000-0000-4000-8000-000000000002"
+
         /** Fingerprint only: the PIN was turned off after too many wrong tries. */
         val FINGERPRINT_ONLY = LockScreen.FingerprintOnly(status = null, pinReason = PinReason.LIMIT, aside = null)
         private const val DRIVE = "content://com.google.android.apps.docs.storage/document/backup"
