@@ -27,8 +27,9 @@
 #   - waits for build plan 5.5, debug builds: the wait made ready (credited_ms set to 24 hours in
 #     state.rec, a test shortcut: an emulator cannot wait 24 credited hours), "Finish now", the new
 #     master password: the replacement made; the next unlock shows "Your master password was replaced
-#     on … using the PIN."; the clock a year ahead: the next unlock still shows it (7 days are credited
-#     by elapsedRealtime, never by the date, lock.md §6.9).
+#     on … using the PIN." (the notice, or the list's banner with the same words); the clock a year
+#     ahead: the next unlock still shows it (7 days are credited by elapsedRealtime, never by the date,
+#     lock.md §6.9).
 # Prints PASS, FAIL or SKIPPED per step and a summary; exit 0 when no step failed, 1 otherwise, 2 for a
 # usage error, 3 for a refused serial.
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
@@ -153,17 +154,42 @@ replaced_notice_kept() {
     pva_unlocked Passwords 30 || return 1
     pva_need pv.answer.FINISH_NOW 20 && pva_tap pv.answer.FINISH_NOW || return 1
     pvn_finish || return 1
-    # The next unlock: the notice.
-    pvl_lock_now && pvl_pad 20 && pva_pin "$PVL_PIN" || return 1
+    # The next unlock: the message.
+    pvl_lock_now && pvl_to_pad 20 && pva_pin "$PVL_PIN" || return 1
     pva_unlocked Passwords 30 || return 1
-    pvl_notice_has string lock_notice_replaced_pin || return 1
-    pvl_answer OK && pva_settle Passwords || return 1
+    replaced_shown || return 1
     # A year ahead: still shown.
     set_clock "$YEAR_MS" || return 1
     pvl_lock_now && pvl_wait_screen 'pad|master-password' 20 || return 1
-    pvl_unlock_mp 2>/dev/null || { pvl_pad 10 && pva_pin "$PVL_PIN" && pva_unlocked Passwords 30; } || return 1
-    pvl_notice_has string lock_notice_replaced_pin || return 1
-    pvl_answer OK && pva_settle Passwords
+    # A year ahead practice is past its grace: the new master password, typed, with no "Use PIN".
+    if pvl_to_pad 5 2>/dev/null; then
+        pva_pin "$PVL_PIN" || return 1
+    else
+        pva_type pv.lock.password "$PVA_PASSWORD" && pva_hide_keyboard && pva_tap pv.lock.unlock || return 1
+    fi
+    pva_unlocked Passwords 60 || return 1
+    replaced_shown
+}
+
+# replaced_shown: after an unlock of the new vault, "Your master password was replaced on … using the
+# PIN." (lock.md §13.4 item 3): as the notice (answered OK), or on the list's banner of 4.2/5.5
+# (pv.list.banner.replaced); which one is noted.
+replaced_shown() {
+    local deadline=$((SECONDS + 20)) nodes
+    while :; do
+        nodes=$(pv_ui_nodes)
+        if pva_in_nodes '[|]pv\.notice$' "$nodes" && pvl_notice_has string lock_notice_replaced_pin 2>/dev/null; then
+            pvl_note "E4: the notice of the replacement is shown"
+            pvl_answer OK && pva_settle Passwords
+            return
+        fi
+        if pva_in_nodes '[|]pv\.list\.banner\.replaced$' "$nodes" && [ $SECONDS -ge $((deadline - 12)) ]; then
+            pvl_note "E4: the list's banner of the replacement is shown (no notice within 8 s)"
+            return 0
+        fi
+        [ $SECONDS -lt $deadline ] || { pv_log "neither the notice nor the banner of the replacement; ids: $(pva_ids)"; return 1; }
+        pv_sleep 1
+    done
 }
 
 trap 'clock_back_at_end; pvl_cleanup' EXIT
