@@ -85,6 +85,20 @@ mp_again() {
     pva_tap pv.lock.unlock || return 1
     if pva_unlocked Passwords 60; then pva_settle Passwords; return; fi
     pvl_note "E16 on API $API: the second derivation at once: $(pv_ui_nodes | awk -F'|' '$3 ~ /^pv[.]lock[.]line[.]/ { f = 1 } f && $1 != "" { print $1; exit }')"
+    # Recorded, for the cause: 20 s later, when the first derivation's garbage is likely collected,
+    # "Try again" (it clears the line) and the master password once more.
+    pv_sleep 20
+    pva_present pv.lock.tryAgain 3 && pva_tap pv.lock.tryAgain
+    pv_sleep 1
+    # The field may have kept the password (its mask) or have been emptied by the check.
+    [ -n "$(pva_text pv.lock.password 2>/dev/null)" ] || pva_type pv.lock.password "$PVA_PASSWORD"
+    pva_hide_keyboard
+    if pva_tap pv.lock.unlock && pva_unlocked Passwords 60; then
+        pvl_note "E16 on API $API: 20 s later the same master password opened the app"
+        pva_settle Passwords
+    else
+        pvl_note "E16 on API $API: 20 s later the master password did not open the app either: $(pv_ui_nodes | awk -F'|' '$3 ~ /^pv[.]lock[.]line[.]/ { f = 1 } f && $1 != "" { print $1; exit }')"
+    fi
     return 1
 }
 
