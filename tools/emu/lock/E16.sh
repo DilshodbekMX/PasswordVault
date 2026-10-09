@@ -96,10 +96,7 @@ no_memory() {
     pva_no_crash
 }
 
-pin_opens() {
-    pvl_pad 20 || { pv_shell input keyevent KEYCODE_BACK >/dev/null; pv_sleep 1; pvl_pad 20; } || return 1
-    pva_pin "$PVL_PIN" && pvl_open_list 30
-}
+pin_opens() { pvl_to_pad 20 && pva_pin "$PVL_PIN" && pvl_open_list 30; }
 
 pv_step "a copy of the APK without argon2kt's libraries" -- no_native_apk || pvl_end
 pv_step "heapsim.sh 128m 256m: largeHeap gets 256 MiB" -- heap 128m 256m || pvl_end

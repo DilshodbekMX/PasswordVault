@@ -116,6 +116,10 @@ push_csv() {
     printf 'name,url,username,password\nE17 Bank,https://e17.example,e17user,E17pw-Secret9\n' > "$f"
     pv_adb push "$f" "$CSV_DEVICE" >/dev/null 2>&1 || return 1
     pvl_undo "rm -f $CSV_DEVICE"
+    # So that DocumentsUI's Downloads lists it (API 30 and newer; tools/emu/README.md, the device check
+    # of 4A); older levels list the folder as it is.
+    [ "$API" -lt 30 ] || pv_shell content call --uri content://media --method scan_volume --arg external_primary >/dev/null 2>&1
+    return 0
 }
 
 # pick_file: in the picker, the pushed CSV (by its name; the Downloads root when it is not listed).

@@ -555,6 +555,17 @@ pvl_pad() {
     done
 }
 
+# pvl_to_pad [SECONDS]: the pad, from the master-password screen ("Use PIN", when the PIN is usable)
+# or from under a prompt ("Use PIN" on the prompt).
+pvl_to_pad() {
+    local now
+    now=$(pvl_screen)
+    case "$now" in
+        master-password) pva_tap pv.lock.usePin || { pv_log "no \"Use PIN\" on the master-password screen"; return 1; } ;;
+    esac
+    pvl_pad "${1:-20}"
+}
+
 # pvl_open_list [SECONDS]: right after an unlock: the list, once what comes over it (notices, "Choose
 # a PIN") is answered (pva_settle).
 pvl_open_list() { pva_unlocked Passwords "${1:-60}" && pva_settle Passwords; }

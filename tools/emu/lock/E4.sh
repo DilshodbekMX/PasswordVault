@@ -129,8 +129,7 @@ pending_unchanged() {
     line=$(pva_text pv.lock.pending) || return 1
     pvl_expect "$line" plural lock_mp_pending_hours 24 2>/dev/null || pvl_expect "$line" plural lock_mp_pending_hours 23 \
         || return 1
-    pvl_pad 10 2>/dev/null || pva_tap pv.lock.usePin
-    pvl_pad 15 && pva_pin "$PVL_PIN" && pvl_open_list 30
+    pvl_to_pad 15 && pva_pin "$PVL_PIN" && pvl_open_list 30
 }
 
 replaced_notice_kept() {
