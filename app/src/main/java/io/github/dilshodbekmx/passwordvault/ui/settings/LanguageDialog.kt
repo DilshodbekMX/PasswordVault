@@ -41,9 +41,9 @@ import java.util.Locale
  *
  * @property language the [AppLanguage] it stands for; null for a pseudo-locale.
  */
-enum class LanguageChoice(val language: AppLanguage?, private val pseudoTag: String? = null) {
+enum class LanguageChoice(val language: AppLanguage?, private val ownTag: String? = null) {
     SYSTEM(AppLanguage.SYSTEM),
-    UZ_LATN(AppLanguage.UZ_LATN),
+    UZ_LATN(AppLanguage.UZ_LATN, "uz-Latn"),
     UZ_CYRL(AppLanguage.UZ_CYRL),
     EN(AppLanguage.EN),
     RU(AppLanguage.RU),
@@ -52,11 +52,15 @@ enum class LanguageChoice(val language: AppLanguage?, private val pseudoTag: Str
     ;
 
     /**
-     * The language tags handed to Android ([AppLanguages.setTags]): empty for the system language; for
-     * the four languages exactly [AppLanguage.tag], the tags of the generated locale config, so that
-     * the phone's own per-app language setting (Android 13 and later) shows the same choice.
+     * The language tags handed to Android ([AppLanguages.setTags]): empty for the system language,
+     * [AppLanguage.tag] (the tag of the generated locale config) for Ўзбекча, English and Русский, and
+     * `uz-Latn` for Oʻzbekcha. Android 17's own page Settings › Apps › PasswordVault › Language marks
+     * `uz-Latn` as the app's language and never the config's `uz` (seen on API 37 on 2026-10-09, with
+     * `en`, `ru` and `uz-Latn` marked; it marks no Uzbek Cyrillic tag at all, `uz-Cyrl` nor the
+     * `uz-Cyrl-UZ` it sets itself). Both reach `values-uz`, whose likely script is Latin (i18n.md
+     * §1.2), and both read back as [AppLanguage.UZ_LATN].
      */
-    val tags: String get() = language?.tag ?: pseudoTag.orEmpty()
+    val tags: String get() = ownTag ?: language?.tag.orEmpty()
 
     companion object {
         /** The dialog's choices, in their order: the five, and the two pseudo-locales when [pseudo] (debug builds). */
