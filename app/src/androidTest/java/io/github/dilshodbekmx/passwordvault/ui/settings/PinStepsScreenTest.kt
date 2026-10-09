@@ -16,6 +16,7 @@ import io.github.dilshodbekmx.passwordvault.lock.MpPurpose
 import io.github.dilshodbekmx.passwordvault.lock.PinStatus
 import io.github.dilshodbekmx.passwordvault.ui.common.PinPadTags
 import io.github.dilshodbekmx.passwordvault.ui.setup.FingerprintOfferTags
+import io.github.dilshodbekmx.passwordvault.ui.setup.PinSetupStart
 import io.github.dilshodbekmx.passwordvault.ui.setup.PinTags
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -54,6 +55,7 @@ class PinStepsScreenTest {
     private fun dots(count: Int) = compose.activity.resources.getQuantityString(R.plurals.common_pin_dots, count, count, 6)
 
     private fun showSteps(canAuthenticate: Int = 0) {
+        PinSetupStart.take() // nothing left by another test of the process (the steps would say "Choose a new PIN")
         val vm = rig.pinSetupViewModel(canAuthenticate)
         compose.setContent { SettingsTestTheme { PinStepsHost(vm, rig.nav) } }
         compose.waitForIdle()

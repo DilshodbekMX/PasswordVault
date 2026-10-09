@@ -32,6 +32,7 @@ import io.github.dilshodbekmx.passwordvault.nav.Navigator
 import io.github.dilshodbekmx.passwordvault.nav.Route
 import io.github.dilshodbekmx.passwordvault.platform.AndroidClock
 import io.github.dilshodbekmx.passwordvault.settings.ThemeChoice
+import io.github.dilshodbekmx.passwordvault.ui.setup.PinSetupStart
 import io.github.dilshodbekmx.passwordvault.ui.theme.PasswordVaultTheme
 import io.github.dilshodbekmx.passwordvault.window.WindowPolicy
 import java.util.concurrent.CopyOnWriteArrayList
@@ -137,6 +138,10 @@ class NoticesScreenTest {
         compose.waitUntil(5_000) { nav.visible.lastOrNull() == Route.CreatePin }
         compose.onNodeWithTag(NoticeTags.NOTICE).assertDoesNotExist()
         assertTrue("not answered while Choose a new PIN is shown", lock.sent.isEmpty())
+        // The notice's reason was left for the PIN steps (merge of R3, item 2). No PIN screen of this
+        // rig takes it, so it is taken here: left in the process, it would reach the PIN steps of a
+        // later test (PinStepsScreenTest would show "Choose a new PIN").
+        assertEquals(ChoosePinReason.FORGOTTEN, PinSetupStart.take())
 
         // "Not now": back to the list. The notice is answered, and the backup offer comes next.
         compose.runOnUiThread { nav.back() }
