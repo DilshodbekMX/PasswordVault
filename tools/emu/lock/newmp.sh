@@ -62,6 +62,24 @@ print(json.dumps(json.load(sys.stdin).get("pending_mp")))'
 
 pvn_credited_ms() { pvn_pending_json | python3 -c 'import json, sys; p = json.load(sys.stdin); print(p["credited_ms"] if p else "")'; }
 
+# pvn_seen_ms: the pending wait's seen_elapsed_ms, the phone's elapsedRealtime() when the credit was
+# last observed (lock.md §6.9).
+pvn_seen_ms() { pvn_pending_json | python3 -c 'import json, sys; p = json.load(sys.stdin); print(p["seen_elapsed_ms"] if p else "")'; }
+
+# pvn_uptime_ms: the phone's time since boot in milliseconds (/proc/uptime: CLOCK_BOOTTIME, the clock of
+# elapsedRealtime()).
+pvn_uptime_ms() { pv_shell cat /proc/uptime 2>/dev/null | tr -d '\r' | awk '{ printf "%d\n", $1 * 1000 }'; }
+
+# pvn_credit_bound C0 SEEN0: true when the credit now is at most C0 plus the real time since SEEN0 (the
+# phone's elapsedRealtime when C0 was credited) and 5 s; prints the numbers.
+pvn_credit_bound() {
+    local c now
+    c=$(pvn_credited_ms); now=$(pvn_uptime_ms)
+    [ -n "$c" ] && [ -n "$now" ] || { pv_log "no credit or no uptime: '$c' '$now'"; return 1; }
+    printf 'credited_ms %s, %s ms more than %s; real time since that credit was observed: %s ms\n' "$c" "$((c - $1))" "$1" "$((now - $2))"
+    [ $((c - $1)) -le $((now - $2 + 5000)) ]
+}
+
 pvn_make_ready() {
     local id json
     pvl_status || return 1

@@ -122,21 +122,20 @@ practice_due_after_back() {
 
 # ---- waits for 5.5 ---------------------------------------------------------------------------------
 pending_unchanged() {
-    local c0 c1 c2 t0 t1 t2 line
+    local c0 seen0 out1 out2 rc1 rc2 line
     pv_is_debuggable || { pv_log "needs run-as (a debug build) to read the credit"; return 1; }
     pvn_request || return 1
-    c0=$(pvn_credited_ms); t0=$(date +%s%3N)
-    [ -n "$c0" ] || { pv_log "no pending_mp in state.rec"; return 1; }
+    c0=$(pvn_credited_ms); seen0=$(pvn_seen_ms)
+    [ -n "$c0" ] && [ -n "$seen0" ] || { pv_log "no pending_mp in state.rec"; return 1; }
     set_clock "$YEAR_MS" || return 1
     pvl_lock_now && pvl_wait_screen 'pad|master-password' 20 || return 1
     pva_away 3 && pvl_wait_screen 'pad|master-password' 20 || return 1
-    c1=$(pvn_credited_ms); t1=$(date +%s%3N)
+    out1=$(pvn_credit_bound "$c0" "$seen0"); rc1=$?
     set_clock 0 || return 1
     pva_away 3 && pvl_wait_screen 'pad|master-password' 20 || return 1
-    c2=$(pvn_credited_ms); t2=$(date +%s%3N)
-    pvl_note "E4: credited_ms $c0 -> $c1 (a year ahead, $((t1 - t0)) ms later) -> $c2 (back, $((t2 - t0)) ms after the first)"
-    [ $((c1 - c0)) -le $((t1 - t0 + 5000)) ] && [ $((c2 - c0)) -le $((t2 - t0 + 5000)) ] \
-        || { pv_log "the credit grew by more than the time that passed"; return 1; }
+    out2=$(pvn_credit_bound "$c0" "$seen0"); rc2=$?
+    pvl_note "E4: a year ahead: $out1; back: $out2"
+    [ $rc1 = 0 ] && [ $rc2 = 0 ] || { pv_log "the credit grew by more than the time that passed"; return 1; }
     pvl_to_master_password || return 1
     line=$(pva_text pv.lock.pending) || return 1
     pvl_expect "$line" plural lock_mp_pending_hours 24 2>/dev/null || pvl_expect "$line" plural lock_mp_pending_hours 23 \

@@ -89,6 +89,19 @@ E11 runs the lock's part of the language step now through the debug command `loc
 
 The biometric lab's `uitap.py` and `uidump.sh` are `adb.sh`'s `pv_ui_tap` and `pv_ui_nodes`.
 
+## Runs on 2026-10-09
+
+Against the app of `wave-4A-merged` (this branch), on this worktree's private devices (API 24, 28 and
+37), the debug build unless "staging" is said; each cell is passed/failed/skipped, the checks' own
+counts. Run by hand, one check at a time (E10 also in its parts), and E1 to E3, E6, E7 and E10 to E15
+on API 28 again through `all.sh`.
+
+RESULTS-TABLE
+
+What failed or was not run:
+- E16 on API 24: setup at 128m/256m through the Java fallback says "not enough memory" (below).
+- The steps that wait for 5.5 and 6.1 printed SKIPPED (above); TRY-RUNS
+
 ## Device facts found while writing these
 
 - The fingerprint prompt: on API 37 the system's `BiometricPrompt` window (focus `BiometricPrompt`;
