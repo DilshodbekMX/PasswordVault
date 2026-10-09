@@ -12,9 +12,15 @@
 # tab's placeholder opens until build plan 7.1 is merged; after the merge the script goes the real
 # way, the reuse card of the Security tab and "Change" on Gmail's row of the group list.
 #
-# The steps, each checked after a lock (the screen off: the app locks at once, and the master password
-# brings the same route back) and after `am force-stop` (the app starts again on the list; the change
-# is opened again from the Security tab): before anything is saved; after "Create new password";
+# The unlocks. At the first unlock the lock's "Choose a PIN" is answered with a PIN, as the user has
+# one (a banking-style PIN, with the master password as the root of recovery), and every later unlock
+# is with that PIN. Unlocked with the master password and no PIN, every unlock would run "Choose a
+# PIN" again, whose end ("Make backups", Finish) opens the Passwords tab in place of the route the
+# app was on (4.3's PinSetupNav: ChoosePinReason.NONE_HERE is its setup flow).
+#
+# The steps, each checked after a lock (the screen off: the app locks at once, and the PIN brings the
+# same route back) and after `am force-stop` (the app starts again on the list; the change is opened
+# again from the Security tab): before anything is saved; after "Create new password";
 # after each of N tries of "Create another password" (default 7, ux.md §12 check 5), one of them from
 # "Password rules"; "I'll finish later"; "No, put back the old password", which restores the
 # original; and "Yes, it's changed", whose end ("Gmail now has its own password." with "Next:
@@ -78,6 +84,8 @@ FACEBOOK=00000000-0000-4000-8000-00000000e002
 BANK=00000000-0000-4000-8000-00000000e003
 SHARED='Toshkent2020!'
 PVA_PASSWORD=Change-seven-two-seed-vault
+# The PIN chosen at the first "Choose a PIN": the lock screen's pad from then on, as the user has it.
+PIN=${PV_CHANGE_PIN:-582913}
 
 # The passwords seen so far: the latest new one, every new one made, and Gmail's at its end.
 NEW=""
@@ -100,10 +108,26 @@ node_any() { pv_ui_nodes | awk -F'|' -v id="$1" '$3 == id { print; exit }'; }
 # enabled_of ID: "true" or "false" for the node with id ID on the screen now; empty when not shown.
 enabled_of() { node_any "$1" | cut -d'|' -f5; }
 
+# Slow swipes: a fast one leaves the list flinging, and Compose spends the next touch on stopping the
+# fling instead of the tap it was meant to be (seen under a machine load of 30).
+swipe_down() { # the content moves up, so that what is below comes into view
+    local h
+    h=$(pva_height)
+    pv_shell input swipe $((PVA_SCREEN_W / 2)) $((h * 60 / 100)) $((PVA_SCREEN_W / 2)) $((h * 30 / 100)) 900 >/dev/null
+    pv_sleep 1.5
+}
+
+swipe_up() {
+    local h
+    h=$(pva_height)
+    pv_shell input swipe $((PVA_SCREEN_W / 2)) $((h * 30 / 100)) $((PVA_SCREEN_W / 2)) $((h * 60 / 100)) 900 >/dev/null
+    pv_sleep 1.5
+}
+
 # to_top: the scrolling screen back at its top.
 to_top() {
     local i
-    for i in 1 2 3; do pva_scroll_up; done
+    for i in 1 2 3 4; do swipe_up; done
 }
 
 # seek ID: the node ID, enabled or not, is on the screen: from the top of the scrolling screen down
@@ -112,16 +136,23 @@ seek() {
     [ -n "$(node_any "$1")" ] && return 0
     to_top
     local i
-    for i in 1 2 3 4 5 6; do
+    for i in 1 2 3 4 5 6 7 8; do
         [ -n "$(node_any "$1")" ] && return 0
-        pva_scroll_down
+        swipe_down
     done
     pv_log "no $1 after scrolling; ids: $(pva_ids)"
     return 1
 }
 
-# tap ID: ID sought and tapped (pva_tap, which keeps it out of the bottom band).
-tap() { seek "$1" && pva_tap "$1"; }
+# tap ID: ID sought and tapped (pva_tap, which keeps away from the bottom band of the system's
+# navigation bar; a node that lies there is first moved up with a slow swipe).
+tap() {
+    seek "$1" || return 1
+    local y
+    y=$(node_any "$1" | cut -d'|' -f7)
+    if [ -n "$y" ] && [ "$y" -ge $(($(pva_height) - 200)) ]; then swipe_down; fi
+    pva_tap "$1"
+}
 
 # gone ID [SECONDS]: no node ID within SECONDS (default 10).
 gone() {
@@ -156,11 +187,26 @@ expect_clip() {
     [ "$sensitive" = true ] || { pv_log "$2: the clip is not flagged sensitive ($sensitive)"; return 1; }
 }
 
-# copy_on_change ID EXPECTED WHAT: the change's copy button ID gives EXPECTED.
+# copy_on_change ID EXPECTED WHAT: the change's copy button ID gives EXPECTED. When no clip comes
+# at all, the tap is made once more (a tap that met a moving list is spent on stopping it).
 copy_on_change() {
     pvc_clear >/dev/null 2>&1
     tap "$1" || return 1
+    if ! clip_came; then
+        pv_log "$3: no clip after the tap; tapping again"
+        tap "$1" || return 1
+    fi
     expect_clip "$2" "$3"
+}
+
+# clip_came: the clipboard holds a clip within about 5 s (after pvc_clear: a new one).
+clip_came() {
+    local i
+    for i in 1 2 3 4 5; do
+        pv_sleep 1
+        [ "$(pvc_describe 2>/dev/null | pvc_field has)" = true ] && return 0
+    done
+    return 1
 }
 
 # ---- the screens ------------------------------------------------------------------------------
@@ -213,22 +259,21 @@ ended() {
     pva_present pv.change.next 5 || { pv_log "no Next; ids: $(pva_ids)"; return 1; }
 }
 
-# lock_back ROUTE: the screen off (the app locks at once, lock.md §10.2), on again, the master
-# password; then ROUTE is shown again, with what the lock puts over it walked past.
+# lock_back ROUTE: the screen off (the app locks at once, lock.md §10.2), on again, the PIN; then
+# ROUTE is shown again.
 lock_back() {
     pva_screen_off 3 || return 1
-    pva_on Locked 30 || return 1
-    pva_unlock "$1"
+    pva_pin_unlock "$1" "$PIN"
 }
 
-# force_stop_back: `am force-stop`, the app started again (on the lock screen), the master password;
-# the app opens on the list, since a force-stop ends the saved back stack too.
+# force_stop_back: `am force-stop`, the app started again (on the lock screen), the PIN; the app
+# opens on the list, since a force-stop ends the saved back stack too.
 force_stop_back() {
     pv_shell am force-stop "$PV_PACKAGE" >/dev/null || return 1
     pv_sleep 2
     [ -z "$(pva_pid)" ] || { pv_log "the app still runs after am force-stop"; return 1; }
     pva_relaunch || return 1
-    pva_unlock Passwords
+    pva_pin_unlock Passwords "$PIN"
 }
 
 # list_copies OLD NEW: on the list, Gmail's copy button offers both passwords in its menu while the
@@ -327,9 +372,44 @@ seed() {
     echo "$out" | grep -q '^OK (1 test)' || { pv_log "the seed: $(echo "$out" | tail -n 8)"; return 1; }
 }
 
+# start_unlock: the app started, the master password typed, and "Choose a PIN" answered with $PIN (its
+# second step, the fingerprint offer "Not now", "Make backups" Finish); a notice on the way ("Make a
+# backup now?") is answered "Later". The list then shows the seed's accounts.
 start_unlock() {
     pva_start || return 1
-    pva_unlock Passwords || return 1
+    pva_on Locked 30 && pva_need pv.lock.password 10 || return 1
+    pva_type pv.lock.password "$PVA_PASSWORD" || return 1
+    pva_hide_keyboard
+    pva_tap pv.lock.unlock || return 1
+    local deadline=$((SECONDS + 180)) nodes chosen=0 quiet=0 answer
+    while :; do
+        nodes=$(pv_ui_nodes)
+        if pva_in_nodes '[|]pv\.notice$' "$nodes"; then
+            answer=""
+            for answer in LATER OK; do
+                [ -n "$(pva_node "pv.answer.$answer" "$nodes")" ] && break
+                answer=""
+            done
+            [ -n "$answer" ] && pva_tap "pv.answer.$answer" || { pv_log "a notice without Later or OK; ids: $(pva_ids)"; return 1; }
+            quiet=0
+        elif pva_in_nodes '[|]pv\.route\.CreatePin$' "$nodes"; then
+            pva_pin "$PIN" && pva_on ConfirmPin 30 && pva_pin "$PIN" || return 1
+            chosen=1
+            quiet=0
+        elif pva_in_nodes '[|]pv\.route\.FingerprintOffer$' "$nodes"; then
+            pva_tap pv.fingerprintOffer.notNow || return 1
+            quiet=0
+        elif pva_in_nodes '[|]pv\.route\.BackupsExplained$' "$nodes"; then
+            pva_tap pv.action.finish || return 1
+            quiet=0
+        elif [ "$chosen" = 1 ] && pva_in_nodes '[|]pv\.route\.Passwords$' "$nodes"; then
+            # Shown alone for a while: nothing more comes.
+            quiet=$((quiet + 1))
+            [ "$quiet" -lt 3 ] || break
+        fi
+        [ $SECONDS -lt $deadline ] || { pv_log "the first unlock did not end on the list with a PIN; ids: $(pva_ids)"; return 1; }
+        pv_sleep 2
+    done
     pva_row_with Gmail && pva_row_with Facebook && pva_row_with Kapitalbank
 }
 
@@ -443,7 +523,7 @@ ended_after_force_stop() {
 }
 
 pv_step "fresh install, the seed's vault and accounts (test APK removed again)" -- seed
-pv_step "the app starts on the lock screen and opens with the master password" -- start_unlock
+pv_step "the app opens with the master password; Choose a PIN answered with a PIN" -- start_unlock
 pv_step "Gmail's guided change opens from the Security tab" -- open_change
 pv_step "steps 1 and 2: nothing saved; Copy old password gives the website's password" -- before_step3
 pv_step "before step 3: survives a lock" -- before_step3_after_lock

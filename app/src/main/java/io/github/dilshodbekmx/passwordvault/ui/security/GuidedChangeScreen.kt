@@ -362,7 +362,8 @@ private fun Steps(steps: GuidedChangeUiState.Steps, copied: String?, retried: Bo
             }
             if (!steps.started) WaitForStep3()
         }
-        Spacer(Modifier.size(8.dp))
+        // Room under the last step, so that its last button is not at the very edge of the screen.
+        Spacer(Modifier.size(END_SPACE))
     }
 }
 
@@ -490,3 +491,6 @@ private const val RETRY_CONFIRMATION_MS = 4_000L
 
 /** The content is at most this wide on large screens (ux.md §3 "Layout"). */
 private val CONTENT_MAX_WIDTH = 640.dp
+
+/** The room under the last step. */
+private val END_SPACE = 64.dp
