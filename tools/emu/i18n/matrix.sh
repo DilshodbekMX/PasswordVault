@@ -29,8 +29,8 @@
 #             the four languages; it marks the app's choice made in the app for English, Русский,
 #             Oʻzbekcha ("O‘zbek (lotin)") and "System language" ("System default"); for Ўзбекча it
 #             marks nothing, which Android 17's page does whatever the tag (printed as KNOWN, not a
-#             failure: the platform's, see LanguageDialog.kt); and choosing Русский there changes the
-#             app's language.
+#             failure: the platform's, see LanguageDialog.kt); and choosing Русский there (with the
+#             region Россия, which the page asks for) changes the app's language to ru-RU.
 #   mixing    "With two phone languages the app never mixes languages": the APK's locale config for
 #             API 35 and later has no android:defaultLocale (aapt2 on this computer); with the phone
 #             set to uz-Cyrl-UZ then ru-RU and the app on "System language" the dialog is Ўзбекча, and
@@ -85,7 +85,10 @@ fi
 echo "i18n matrix on $SERIAL (API $API): ${PARTS[*]}; $APK"
 pvl_quiet_network
 KNOWN=0
-PIN=582913
+# The prompt part's PIN: allowed by lock.md §7.2, and made of 1 to 6 only, the pad's first two rows. In
+# en-XA the PIN steps' longer texts push the row 7 8 9 under the navigation bar of a 1920-pixel screen
+# (API 24 and 28), and 0 off the screen, where a tap reaches the bar, not the key (a layout for 6.2).
+PIN=416253
 
 known() { # NAME DETAIL: a platform behaviour that is not a failure of the app
     KNOWN=$((KNOWN + 1))
@@ -331,11 +334,15 @@ page_uzbek_cyrillic() {
     pv_log "the page marks '$checked'"
 }
 
-# Choosing Русский on the phone's page: the app's language is Russian then.
+# Choosing Русский on the phone's page: the page asks for a region (Russian has several; Uzbek
+# Cyrillic, which has one, is set at once as uz-Cyrl-UZ), Россия, and the app's language is Russian.
 page_chooses() {
     pva_relaunch && pva_on Welcome 30 && switch_to SYSTEM || return 1
     page_open || return 1
     pv_ui_tap '^Русский[|]' >/dev/null || { pv_log "no row Русский on the page"; return 1; }
+    if pv_ui_wait '^Choose a region[|]|[|]Choose a region[|]' 10; then
+        pv_ui_tap '^Россия[|]' >/dev/null || { pv_log "no region Россия; texts: $(pv_ui_nodes | awk -F'|' '$1 != "" { printf "%s; ", $1 }')"; return 1; }
+    fi
     pv_sleep 3
     case "$(pvl_app_locales)" in "[ru"*) ;; *) pv_log "the app's locales are $(pvl_app_locales)"; return 1 ;; esac
     pv_log "the page set $(pvl_app_locales)"
@@ -464,9 +471,8 @@ prompt_set_up() {
     pva_on CreatePin 120 && pin_digits "$PIN" && pva_on ConfirmPin 20 && pin_digits "$PIN" && pva_on FingerprintOffer 30
 }
 
-# pin_digits DIGITS: the digits on the pad shown, taking only their own keys (pv.pin.key.N): in en-XA
-# the longer texts push the pad's last row, with 0, below the fold of a 1920-pixel screen, where
-# app.sh's pva_pin, which wants all ten keys, cannot find it (a layout for build plan 6.2).
+# pin_digits DIGITS: the digits on the pad shown, taking only their own keys (pv.pin.key.N); app.sh's
+# pva_pin wants all ten keys on the screen, and in en-XA the 0 is below it (see PIN).
 pin_digits() {
     local nodes line i d
     pva_need "pv.pin.key.${1:0:1}" 20 || return 1
@@ -497,9 +503,17 @@ prompt_texts() {
     done
     shot "prompt-en-XA"
     pv_log "the prompt: $(printf '%s\n' "$nodes" | awk -F'|' '$1 != "" { printf "%s; ", $1 }')"
-    printf '%s\n' "$nodes" | grep -qF "$button" || { pv_log "the prompt has no button '$button'"; return 1; }
-    ! printf '%s\n' "$nodes" | cut -d'|' -f1 | grep -qxF -e "$english_title" -e "$english_button" \
+    # Android 7's dialogs draw their buttons in capitals: the texts are compared ignoring case.
+    printf '%s\n' "$nodes" | has_text "$button" || { pv_log "the prompt has no button '$button'"; return 1; }
+    ! printf '%s\n' "$nodes" | has_text "$english_title" && ! printf '%s\n' "$nodes" | has_text "$english_button" \
         || { pv_log "the prompt shows English texts of the app"; return 1; }
+}
+
+# has_text TEXT: a node of the dump on stdin has the text TEXT, ignoring case.
+has_text() {
+    python3 -c 'import sys
+want = sys.argv[1].upper()
+sys.exit(0 if any(line.split("|")[0].upper() == want for line in sys.stdin) else 1)' "$1"
 }
 
 prompt_finger() {
