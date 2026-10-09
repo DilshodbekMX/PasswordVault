@@ -340,3 +340,18 @@ says `Found systemPath /home/asus/pvlab/sysimg/...`).
   covers the SAVE bar, which uidump still reports, until the keyboard is closed. Its Downloads root
   lists only DownloadManager's files: a file pushed with adb is reached only through ⋮ › Show
   internal storage › the device › Download (5.4), or through 5.1's test documents provider.
+- DocumentsUI on the API 37 image (`com.google.android.documentsui`, measured by the device check of 4A
+  on 2026-10-09): "Save as" opens in Downloads with the suggested name and its SAVE button enabled
+  (`button1`, text "SAVE"); the open picker lists "Files in Downloads", each file's name in a node with
+  the id `title`, and an `input tap` on it opens it. A file pushed with adb is listed there after
+  `adb shell content call --uri content://media --method scan_volume --arg external_primary`.
+  (`checks/4A.sh`, part `wave5`.)
+- The real lock on these images (device check of 4A): fingers 1 and 2 open the app through the
+  system's prompt on API 28 and 37 when touched 2 s after the lock says the prompt is open (the
+  debug command `status`, `prompt: UNLOCK, launch N`), and through androidx.biometric's own dialog
+  in the activity on API 24, whose button reads "USE PIN", also in the staging build (R8, build
+  check R-16). After the fifth wrong PIN with fingerprint unlock on, the lock screen is the
+  fingerprint-only screen, and the prompt does not open by itself again in that visit.
+- After a master-password unlock while the vault has no PIN, the PIN steps open over the screen the
+  unlock brought back and close onto it ("Finish" on "Make backups" goes back, since the device check
+  of 4A); a form's "Your unsaved changes were kept." shows then, for about 4 s.
