@@ -202,6 +202,14 @@ after_set() {
     line=$(pvl_status_line 2>/dev/null)
     pvl_note "E7 (b) on API $API after the screen lock and a finger were set again: state '$(pvl_lock_state)'; the pad's line: '${line:-none}'; $(pvl_item canAuthenticate:); fingerprint.rec: $(pvl_vault_item fingerprint.rec); $(pvl_item keystore:)"
     case "$(pvl_lock_state)" in unlocked) pvl_open_list 30 && pva_tap pv.list.lockNow && pvl_pad 20 ;; esac
+    # An alias that a removed slot left behind goes at the next process start (the sweep, lock.md §5.7).
+    if [ "$(pvl_fp slot)" = none ] && [ "$(pvl_alias_count fp)" != 0 ]; then
+        pvl_force_stop && pvl_restart >/dev/null 2>&1
+        pvl_status
+        pvl_note "E7 (b) on API $API: the removed fingerprint slot's alias was still listed; after a new process start the Keystore lists: $(pvl_item keystore:)"
+        pvl_pad 20 >/dev/null 2>&1 || pvl_to_pad 20 >/dev/null 2>&1
+    fi
+    return 0
 }
 
 part_b() {
