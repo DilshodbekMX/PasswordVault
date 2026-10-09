@@ -1,8 +1,10 @@
 package io.github.dilshodbekmx.passwordvault.ui.security
 
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
+import android.util.Log
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.github.dilshodbekmx.passwordvault.core.model.Entry
 import io.github.dilshodbekmx.passwordvault.core.model.Vault
@@ -31,7 +33,7 @@ import java.util.concurrent.atomic.AtomicLong
  * there within moments whatever the check does, and the main thread answers within a frame or two all
  * the while. (That the list never waits for the check is shown deterministically on the JVM, in
  * `SecurityCheckSpeedTest`, with the check held at its first account.)
- * The times are written to `/data/local/tmp/pv-shots-7.1/check-480-api<N>.txt` for the package's report.
+ * The times are logged under [LOG_TAG] (`adb logcat -d -s PvSecurity`) for the package's report.
  */
 @RunWith(AndroidJUnit4::class)
 class SecurityCheckDeviceTest {
@@ -87,10 +89,10 @@ class SecurityCheckDeviceTest {
             }
             probing.set(false)
             val worst = worstLateMs.get()
-            securityShell("mkdir -p ${SecurityShots.DIR}")
-            securityShell(
-                "echo 'API ${android.os.Build.VERSION.SDK_INT}: 480 accounts listed after $listedMs ms, checked after $checkedMs ms " +
-                    "(the meter loaded on the way); the main thread was at most $worst ms late' > ${SecurityShots.DIR}/check-480-api${android.os.Build.VERSION.SDK_INT}.txt",
+            Log.i(
+                LOG_TAG,
+                "API ${Build.VERSION.SDK_INT}: 480 accounts listed after $listedMs ms, checked after $checkedMs ms " +
+                    "(the meter loaded on the way); the main thread was at most $worst ms late",
             )
             assertTrue("the list is built ($listedMs ms)", listedMs >= 0)
             assertTrue("the check ends ($checkedMs ms)", checkedMs >= 0)
@@ -105,6 +107,8 @@ class SecurityCheckDeviceTest {
     }
 
     private companion object {
+        const val LOG_TAG = "PvSecurity"
+
         const val FRAME_MS = 16L
 
         /** The list of 480 accounts is sorted and indexed in milliseconds; seconds would mean it waited. */

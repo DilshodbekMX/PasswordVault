@@ -85,7 +85,7 @@ class SecurityScreenshotsTest {
 
         // The first visit: "Why this matters" open, the cards below it.
         SecurityShots.take(compose, "7.1-01-tab-first-visit")
-        scrollTab(SecurityTags.card(SecurityTags.WEAK))
+        scrollTab(SecurityTags.card(SecurityTags.PENDING))
         SecurityShots.take(compose, "7.1-02-tab-cards")
         scrollTab(SecurityTags.card(SecurityTags.LEFT_OUT))
         SecurityShots.take(compose, "7.1-03-tab-end")
