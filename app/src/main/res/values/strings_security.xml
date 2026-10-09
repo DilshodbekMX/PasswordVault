@@ -119,22 +119,22 @@
     <!-- The heading of a group of accounts that share one password (always 2 or more). The password
          itself is never shown. -->
     <plurals name="security_group_reused">
-        <item quantity="one">This %1$s account shares one password</item>
+        <item quantity="one">%1$s account shares one password</item>
         <item quantity="other">These %1$s accounts share one password</item>
     </plurals>
     <!-- The heading of the accounts whose password is easy to guess. -->
     <plurals name="security_group_weak">
-        <item quantity="one">This %1$s password is easy to guess</item>
+        <item quantity="one">%1$s password is easy to guess</item>
         <item quantity="other">These %1$s passwords are easy to guess</item>
     </plurals>
     <!-- The heading of the accounts whose password change is not finished. -->
     <plurals name="security_group_pending">
-        <item quantity="one">This %1$s password change is waiting for your answer</item>
+        <item quantity="one">%1$s password change is waiting for your answer</item>
         <item quantity="other">These %1$s password changes are waiting for your answer</item>
     </plurals>
     <!-- The heading of the accounts left out of the check. -->
     <plurals name="security_group_left_out">
-        <item quantity="one">This %1$s account is left out of the check</item>
+        <item quantity="one">%1$s account is left out of the check</item>
         <item quantity="other">These %1$s accounts are left out of the check</item>
     </plurals>
 
