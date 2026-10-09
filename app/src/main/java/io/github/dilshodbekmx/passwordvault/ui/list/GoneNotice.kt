@@ -2,9 +2,9 @@ package io.github.dilshodbekmx.passwordvault.ui.list
 
 /**
  * "This account no longer exists." (ux.md §5.12, "States"; architecture.md §3.6): an account's
- * screen whose account is not in the vault at all (removed for good from Recently deleted, or gone
- * with a restore or an undone import while its route was kept) goes back to the list by itself and
- * leaves this one-time mark; the list takes it each time it is shown again
+ * screen whose account is not in the vault at all (for example removed for good from Recently
+ * deleted while its screen was kept) goes back to the list by itself and leaves this one-time mark;
+ * the list takes it each time it is shown again
  * ([PasswordsViewModel.shown]) and says so once in its snackbar. A route key holds ids only, so the
  * mark waits here, in memory only: a flag, not even the account's id, and nothing secret. A later
  * [mark] or [take] replaces or uses it up, the list [clear]s it when the vault locks, and a new

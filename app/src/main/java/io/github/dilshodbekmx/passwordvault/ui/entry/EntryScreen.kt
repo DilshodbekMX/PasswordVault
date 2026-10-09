@@ -73,8 +73,8 @@ import kotlinx.coroutines.launch
  *   the app does (ux.md §6 item 4).
  * - **Delete** needs no question: the screen says "Gmail deleted" with "Undo" for about 10 seconds
  *   and then closes; the account waits in Recently deleted (ux.md §5.23).
- * - **An account that is not in the vault at all** (removed for good, or gone with a restore or an
- *   undone import while this screen was kept): the screen goes back to the list by itself and leaves
+ * - **An account that is not in the vault at all** (for example removed for good from Recently
+ *   deleted while this screen was kept): the screen goes back to the list by itself and leaves
  *   [GoneNotice]'s mark, so that the list says "This account no longer exists." (ux.md §5.12). One
  *   deleted elsewhere that waits in Recently deleted says so here, with "Open Recently deleted".
  * - **Saved state** holds only the scroll position (architecture.md §5.6).
