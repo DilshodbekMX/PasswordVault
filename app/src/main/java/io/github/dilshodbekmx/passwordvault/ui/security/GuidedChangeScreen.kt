@@ -38,6 +38,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -112,7 +113,7 @@ fun GuidedChangeScreen(vm: GuidedChangeViewModel, nav: Navigator) {
     // "New password saved." in step 3 for a moment after "Create another password", where nothing else
     // on the screen changes. Not a snackbar: it would lie over the buttons of steps 4 and 5, which are
     // the next to be used.
-    var retried by remember { mutableStateOf(0) }
+    var retried by remember { mutableIntStateOf(0) }
     LaunchedEffect(retried) {
         if (retried != 0) {
             delay(RETRY_CONFIRMATION_MS)
