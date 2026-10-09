@@ -5,6 +5,7 @@ import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
@@ -13,6 +14,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.github.dilshodbekmx.passwordvault.MainActivity
 import io.github.dilshodbekmx.passwordvault.PasswordVaultApp
+import io.github.dilshodbekmx.passwordvault.core.lock.flow.Notice
 import io.github.dilshodbekmx.passwordvault.files.AppVault
 import io.github.dilshodbekmx.passwordvault.i18n.AppLanguage
 import io.github.dilshodbekmx.passwordvault.i18n.AppLanguages
@@ -25,6 +27,7 @@ import io.github.dilshodbekmx.passwordvault.ui.setup.SetupTags
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -100,20 +103,43 @@ class LanguageSwitchTest {
             unlockedHere = true
         }
         compose.waitUntil(TIMEOUT_MS) { nav.top == NavState.Top.UNLOCKED }
-        // After a master-password unlock without a PIN the lock opens "Choose a PIN" over the app; the
-        // tab leaves it, which answers it (LockNotices).
+        // After a master-password unlock without a PIN the lock's "Choose a PIN" opens the PIN steps
+        // over the app (lock.md F1 step 6), and a notice may follow: walked past as a user who
+        // answers "Not now" and "Later" would (app.sh's pva_settle), until nothing is over the app.
         compose.waitUntil(TIMEOUT_MS) {
-            var shown = false
-            compose.runOnUiThread {
-                nav.tab(Route.Settings)
-                shown = nav.visible.lastOrNull() == Route.Settings
+            when (topOf(nav)) {
+                Route.CreatePin -> tapIfShown("pv.pin.notNow")
+                Route.ConfirmPin -> compose.runOnUiThread { nav.back() }
+                Route.FingerprintOffer -> tapIfShown("pv.fingerprintOffer.notNow")
+                Route.BackupsExplained -> tapIfShown("pv.action.finish")
+                else -> if (!tapIfShown("pv.answer.LATER")) tapIfShown("pv.answer.OK")
             }
+            compose.waitForIdle()
             Thread.sleep(SETTLE_MS)
-            var still = false
-            compose.runOnUiThread { still = nav.visible.lastOrNull() == Route.Settings }
-            shown && still
+            compose.waitForIdle()
+            topOf(nav) !in PIN_STEPS && !choosePinPending() &&
+                compose.onAllNodesWithTag("pv.notice").fetchSemanticsNodes().isEmpty()
         }
+        compose.runOnUiThread { assertTrue(nav.tab(Route.Settings)) }
+        compose.waitForIdle()
         return Route.Settings
+    }
+
+    /** Taps the node with the test tag [tag] when it is shown; whether it was. */
+    private fun tapIfShown(tag: String): Boolean {
+        if (compose.onAllNodesWithTag(tag).fetchSemanticsNodes().isEmpty()) return false
+        compose.onNodeWithTag(tag).performClick()
+        return true
+    }
+
+    /** Whether the lock still has its "Choose a PIN" notice for this unlock. */
+    private fun choosePinPending(): Boolean =
+        (app.graph.lock.state.value as? LockUiState.Unlocked)?.notices.orEmpty().any { it is Notice.ChoosePin }
+
+    private fun topOf(nav: NavState): Route? {
+        var top: Route? = null
+        compose.runOnUiThread { top = nav.visible.lastOrNull() }
+        return top
     }
 
     private fun openTheDialog(from: Route) {
@@ -171,6 +197,7 @@ class LanguageSwitchTest {
     }
 
     private companion object {
+        val PIN_STEPS = setOf(Route.CreatePin, Route.ConfirmPin, Route.FingerprintOffer, Route.BackupsExplained)
         const val TIMEOUT_MS = 30_000L
         const val SETTLE_MS = 1_000L
     }
