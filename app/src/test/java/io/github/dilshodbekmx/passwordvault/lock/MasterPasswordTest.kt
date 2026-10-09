@@ -531,6 +531,64 @@ class MasterPasswordTest {
         assertFalse("a PIN is no master-password entry", offered(38, byPin = true) { it.vault.show(changed(it)) })
     }
 
+    /** Locks, lets [wallMs] pass on the wall clock, and types the master password on the lock screen again: whether the offer came. */
+    private suspend fun offeredAgainAfter(rig: LockRig, wallMs: Long): Boolean {
+        rig.lock()
+        rig.clock.jumpWall(wallMs)
+        rig.send(LockIntent.UseMasterPassword)
+        assertTrue(rig.unlockWith(LockRig.PASSWORD) is MpResult.Right)
+        return rig.notices.any { it is Notice.BackupNow }
+    }
+
+    @Test
+    fun laterOnTheOffer_putsTheOfferAndTheBannerOffFor3Days_asTheBannersLaterDoes() = runTest {
+        // build-plan.md §12, decision 15; lock.md F12 step 2.
+        val rig = LockRig(this)
+        lockedOnTheField(rig)
+        rig.vault.show(Vault(entries = listOf(accountChangedAt(rig.clock.wallMs()))))
+        assertTrue(rig.unlockWith(LockRig.PASSWORD) is MpResult.Right)
+        assertTrue(rig.notices.last() is Notice.BackupNow)
+        val answeredAt = rig.clock.wallMs()
+
+        rig.answerNotices(NoticeAnswer.LATER)
+
+        assertEquals(
+            "the snooze of the banner's \"Later\" (ux.md §5.11), which the banner reads too",
+            answeredAt + 3 * DAY_MS,
+            rig.baseSettings.backupReminder.value.snoozedUntilMs,
+        )
+        assertFalse("two days later", offeredAgainAfter(rig, 2 * DAY_MS))
+        assertTrue("three days after \"Later\"", offeredAgainAfter(rig, DAY_MS))
+    }
+
+    @Test
+    fun theOfferComesAtMostOnceADay_answeredOrNot_inTheNextProcessToo() = runTest {
+        // build-plan.md §12, decision 15: a phone without a PIN types the master password at every unlock.
+        val rig = LockRig(this)
+        lockedOnTheField(rig)
+        val changed = Vault(entries = listOf(accountChangedAt(rig.clock.wallMs())))
+        rig.vault.show(changed)
+        val first = rig.clock.wallMs()
+        assertTrue(rig.unlockWith(LockRig.PASSWORD) is MpResult.Right)
+        assertTrue(rig.notices.any { it is Notice.BackupNow })
+        assertEquals("the time of the offer is kept in the settings", first, rig.baseSettings.backupReminder.value.offeredAtMs)
+        assertNull("not answered: nothing is snoozed", rig.baseSettings.backupReminder.value.snoozedUntilMs)
+
+        assertFalse("an hour later, the offer left unanswered", offeredAgainAfter(rig, HOUR_MS))
+        rig.restart()
+        rig.toFront()
+        rig.vault.show(changed)
+        rig.send(LockIntent.UseMasterPassword)
+        rig.clock.jumpWall(22 * HOUR_MS)
+        assertTrue(rig.unlockWith(LockRig.PASSWORD) is MpResult.Right)
+        assertFalse("a new process, 23 hours after the offer", rig.notices.any { it is Notice.BackupNow })
+
+        assertTrue("a day after the offer", offeredAgainAfter(rig, HOUR_MS))
+        assertEquals(first + DAY_MS, rig.baseSettings.backupReminder.value.offeredAtMs)
+        assertFalse("and not again the same day", offeredAgainAfter(rig, HOUR_MS))
+        assertTrue("a wall clock set back to before the last offer does not hold the next one back", offeredAgainAfter(rig, -2 * DAY_MS))
+    }
+
     private companion object {
         const val VAULT = "00000000-0000-4000-8000-000000000001"
         const val ENTRY = "00000000-0000-4000-8000-0000000000e1"

@@ -608,7 +608,7 @@ Behaviour:
 - **Many entries**: tested with 5,000; stable keys; no images; frame time within 16 ms on a mid-range phone.
 - **Long content**: titles wrap to 2 lines, then end with "…"; usernames take 1 line.
 - **Error**: a failed save shows the snackbar "Couldn't save. Your phone's storage may be full." with "Try again"; the screen keeps the user's data.
-- **Backup reminder banner**: "Your newest passwords are not in a backup yet." Buttons "Back up now" and "Later" (snooze 3 days). It shows when all of these hold:
+- **Backup reminder banner**: "Your newest passwords are not in a backup yet." Buttons "Back up now" and "Later" (snooze 3 days; "Later" on "Make a backup now?" after a master password snoozes it as well, and the banner's "Later" holds that offer back: lock.md F12 step 2). It shows when all of these hold:
   - the reminder is on;
   - there are changes not in any backup;
   - either no backup exists and the first account was added a day or more ago, or the last backup is 7 or more days old.

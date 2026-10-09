@@ -191,6 +191,7 @@ class PrefsAppSettings(
                 backupReminder = BackupReminder(
                     on = entries[BACKUP_ON] as? Boolean ?: true,
                     snoozedUntilMs = entries[BACKUP_SNOOZED_UNTIL] as? Long,
+                    offeredAtMs = entries[BACKUP_OFFERED_AT] as? Long,
                 ),
                 fileTask = readFileTask(entries),
                 oneTime = (entries[ONE_TIME] as? Set<*>).orEmpty()
@@ -238,6 +239,7 @@ class PrefsAppSettings(
                 if (new.backupReminder != old.backupReminder) {
                     put(BACKUP_ON, new.backupReminder.on)
                     put(BACKUP_SNOOZED_UNTIL, new.backupReminder.snoozedUntilMs)
+                    put(BACKUP_OFFERED_AT, new.backupReminder.offeredAtMs)
                 }
                 if (new.fileTask != old.fileTask) {
                     val task = new.fileTask
@@ -360,6 +362,7 @@ class PrefsAppSettings(
         const val GEN_ADD_NUMBER = "generator_add_number"
         const val BACKUP_ON = "backup_reminder_on"
         const val BACKUP_SNOOZED_UNTIL = "backup_reminder_snoozed_until_ms"
+        const val BACKUP_OFFERED_AT = "backup_reminder_offered_at_ms"
         const val TASK_KIND = "file_task_kind"
         const val TASK_STEP = "file_task_step"
         const val TASK_DOC = "file_task_doc"

@@ -88,9 +88,20 @@ enum class StyleChoice(val stored: String) {
 
 /**
  * The backup reminder (ux.md §5.11, §5.18): the switch "Backup reminders" ([on], on by default) and
- * "Later", which snoozes it for 3 days ([snoozedUntilMs], wall clock).
+ * "Later", which snoozes it for [SNOOZE_MS], 3 days ([snoozedUntilMs], wall clock). The list's banner
+ * and "Make a backup now?" after a master password (lock.md F12 step 2) share it: "Later" on either
+ * puts both off (build-plan.md §12, decision 15). [offeredAtMs] is when that offer was last made (wall
+ * clock): it comes at most once in [OFFER_EVERY_MS], a day.
  */
-data class BackupReminder(val on: Boolean = true, val snoozedUntilMs: Long? = null)
+data class BackupReminder(val on: Boolean = true, val snoozedUntilMs: Long? = null, val offeredAtMs: Long? = null) {
+    companion object {
+        /** How long "Later" puts the reminder off: 3 days (ux.md §5.11). */
+        const val SNOOZE_MS: Long = 3L * 86_400_000L
+
+        /** "Make a backup now?" after a master password comes at most once in this time: a day (decision 15). */
+        const val OFFER_EVERY_MS: Long = 86_400_000L
+    }
+}
 
 /** One-time tips and flags (ux.md §2 "Outside the vault"). */
 enum class OneTime(val stored: String) {

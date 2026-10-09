@@ -84,8 +84,8 @@ object ListBanners {
     /** At most this many banners at a time (ux.md §5.11). */
     const val MAX_SHOWN = 2
 
-    /** "Later" on the backup banner puts it off for this long (ux.md §5.11). */
-    const val BACKUP_SNOOZE_MS: Long = 3L * DAY_MS
+    /** "Later" on the backup banner puts it off for this long (ux.md §5.11), as "Later" on "Make a backup now?" does (decision 15). */
+    const val BACKUP_SNOOZE_MS: Long = BackupReminder.SNOOZE_MS
 
     /**
      * The banners for [vault], the lock's [status] and the backup [reminder] at the wall-clock time

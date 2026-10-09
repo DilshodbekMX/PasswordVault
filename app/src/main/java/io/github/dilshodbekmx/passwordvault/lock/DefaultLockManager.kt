@@ -16,6 +16,7 @@ import io.github.dilshodbekmx.passwordvault.core.lock.flow.MasterPasswordOutcome
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.MasterProof
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.MpReason
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.Notice
+import io.github.dilshodbekmx.passwordvault.core.lock.flow.NoticeAnswer
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.OlderPasswordAnswer
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.PinChangeOutcome
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.PinSetOutcome
@@ -27,6 +28,7 @@ import io.github.dilshodbekmx.passwordvault.core.util.Clock
 import io.github.dilshodbekmx.passwordvault.data.VaultRepository
 import io.github.dilshodbekmx.passwordvault.data.VaultState
 import io.github.dilshodbekmx.passwordvault.settings.AppSettings
+import io.github.dilshodbekmx.passwordvault.settings.BackupReminder
 import io.github.dilshodbekmx.passwordvault.settings.OneTime
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
@@ -77,7 +79,8 @@ import kotlinx.coroutines.withContext
  *   handed out for one.
  * - **"Make a backup now?"** (lock.md F12 step 2, §13.4 item 7): after a master password typed on a
  *   lock screen, when the backup reminder is on and not snoozed and some account changed or was
- *   deleted after the newest backup this app saved (architecture.md §4.3).
+ *   deleted after the newest backup this app saved (architecture.md §4.3); at most once a day, and
+ *   its "Later" snoozes the reminder for 3 days as the banner's does (build-plan.md §12, decision 15).
  * - **Setup** (lock.md §10.1): [createVault] has the engine write the default settings after the
  *   vault is proven and before the app counts as unlocked, so that the session's first decision
  *   already reads them; only on a phone that has none yet, so that a restore keeps the owner's
@@ -257,10 +260,15 @@ class DefaultLockManager(
                 act { engine.olderPasswordAnswer(answerOf(intent.choice)) }
             }
             is LockIntent.NoticeAnswered -> {
-                val olderCopy = (engine.state.value as? LockState.Unlocked)?.notices?.any { it.id == intent.id && it is Notice.OlderCopy } == true
+                val notice = (engine.state.value as? LockState.Unlocked)?.notices?.firstOrNull { it.id == intent.id }
                 act {
                     engine.answerNotice(intent.id, intent.answer)
-                    if (olderCopy) olderCopyAnswered()
+                    if (notice is Notice.OlderCopy) olderCopyAnswered()
+                }
+                // "Later" on "Make a backup now?" puts the reminder off as the banner's "Later" does (decision 15).
+                if (notice is Notice.BackupNow && intent.answer == NoticeAnswer.LATER) {
+                    val until = clock.wallMs() + BackupReminder.SNOOZE_MS
+                    changeReminder { it.copy(snoozedUntilMs = until) }
                 }
             }
             LockIntent.CancelPending -> act { engine.cancelPending() }
@@ -619,12 +627,41 @@ class DefaultLockManager(
         }
     }
 
-    /** lock.md F12 step 2: "Make a backup now?" on the entry just made on the lock screen, when a backup is due. */
+    /**
+     * lock.md F12 step 2: "Make a backup now?" on the entry just made on the lock screen, when a
+     * backup is due and the reminder is on and not snoozed (by "Later" on the banner or on this
+     * offer); at most once a day (build-plan.md §12, decision 15), so the time of an offer made is
+     * kept in the settings, for the next process too. A wall clock set back to before the last offer
+     * does not hold the next one back.
+     */
     private suspend fun offerBackupIfDue() {
         val open = vault.state.value as? VaultState.Unlocked ?: return
         val reminder = settings.backupReminder.value
-        if (!reminder.on || reminder.snoozedUntilMs?.let { clock.wallMs() < it } == true) return
-        if (backupDue(open.vault)) engine.offerBackup()
+        val now = clock.wallMs()
+        if (!reminder.on || reminder.snoozedUntilMs?.let { now < it } == true) return
+        if (reminder.offeredAtMs?.let { now >= it && now - it < BackupReminder.OFFER_EVERY_MS } == true) return
+        if (!backupDue(open.vault)) return
+        engine.offerBackup()
+        if ((engine.state.value as? LockState.Unlocked)?.notices?.any { it is Notice.BackupNow } == true) {
+            changeReminder { it.copy(offeredAtMs = now) }
+        }
+    }
+
+    /**
+     * Changes the backup reminder in the settings, off the main thread, from the value stored when
+     * the write runs. Best effort: a write that fails is not tried again (the offer may then come once
+     * more).
+     */
+    private fun changeReminder(change: (BackupReminder) -> BackupReminder) {
+        scope.launch(io) {
+            try {
+                settings.update { it.backupReminder = change(it.backupReminder) }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // Not kept; see above.
+            }
+        }
     }
 
     /**

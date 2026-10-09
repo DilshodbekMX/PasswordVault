@@ -1213,7 +1213,7 @@ Without this route every backup becomes unopenable, and the next PIN lockout or 
 
 1. Settings › Backup & transfer › "Make a backup", or "Export" and a format (ux.md §5.19, §5.20).
 2. **Master password.** Typed now and checked against the vault's own password slot (6.8). A typo can therefore never produce a backup that the real password does not open (I3). It counts as practice.
-   - **Encrypted backup only:** when the user typed the master password a moment ago in the same flow (practice, a master-password unlock, a change, the end of F11) and a backup is due, the app offers "Make a backup now?" and uses that entry. The typed bytes are kept only until the offer is answered.
+   - **Encrypted backup only:** when the user typed the master password a moment ago in the same flow (practice, a master-password unlock, a change, the end of F11) and a backup is due, the app offers "Make a backup now?" and uses that entry. The typed bytes are kept only until the offer is answered. After a master-password unlock the offer follows the backup banner's snooze (ux.md §5.11): "Later" on it puts the offer and the banner off for 3 days, as the banner's "Later" does, and it comes at most once a day, answered or not (the owner's decision 15 of 2026-10-08).
    - **Plain export:** always typed now.
    - Neither is possible while a new master password is pending (F11 step 10).
 3. Backup: a new container with its own key, salt and one password slot made from the typed password (formats.md §3). Plain export: formats.md.

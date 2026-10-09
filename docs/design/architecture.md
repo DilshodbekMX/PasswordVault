@@ -569,7 +569,7 @@ interface AppSettings {                                // SharedPreferences "pv_
     val style: StateFlow<StyleChoice>                  // the colours (looks/README.md); missing or unreadable: Bank blue, as is a stored
                                                        // "Phone's colours" on a phone before Android 12, where it cannot be set either
     val generator: StateFlow<GeneratorOptions>
-    val backupReminder: StateFlow<BackupReminder>      // on or off, snoozed until; when a backup is due is computed from the vault (4.3)
+    val backupReminder: StateFlow<BackupReminder>      // on or off, snoozed until, last offered; when a backup is due is computed from the vault (4.3)
     val fileTask: StateFlow<FileTask?>                 // an unfinished backup, export, import or restore: kind, step, DocRef; nothing secret
     val oneTime: StateFlow<Set<OneTime>>               // WORDS_SHOWN (ux.md §5.5), FIRST_COPY_TIP, BACKUP_EXPLAINED, NO_SECURE_HARDWARE_TOLD
     val purgeArm: StateFlow<PurgeArm?>                 // the two-step purge of Recently deleted (4.3)
@@ -594,7 +594,10 @@ interface SettingsEditor {                             // the values update() ca
 // enum class StyleChoice(stored) { BANK_BLUE, EMERALD, NIGHT_VAULT, PHONE_COLOURS }   // Settings › Appearance › "Colours"; DEFAULT = BANK_BLUE;
 //                                                    // offered(phoneColours) leaves PHONE_COLOURS out before Android 12 (API 31), and
 //                                                    // read(stored, phoneColours) is what a stored text stands for on this phone
-// class BackupReminder(val on: Boolean = true, val snoozedUntilMs: Long? = null)    // "Later" snoozes it for 3 days (wall clock)
+// class BackupReminder(val on: Boolean = true, val snoozedUntilMs: Long? = null, val offeredAtMs: Long? = null)
+//                                                    // "Later" on the list's banner or on "Make a backup now?" snoozes both for 3 days
+//                                                    // (SNOOZE_MS, wall clock); offeredAtMs: when that offer was last made, at most once a
+//                                                    // day (OFFER_EVERY_MS; lock.md F12 step 2, build-plan §12 decision 15)
 // enum class OneTime(stored) { WORDS_SHOWN, FIRST_COPY_TIP, BACKUP_EXPLAINED, NO_SECURE_HARDWARE_TOLD }
 // class PurgeArm(val vaultId: String, val armedAtMs: Long, val credit: Credit)      // D-24; Credit is core.lock.guard's (lock.md §6.9)
 // class PendingClip(val token: String, val deadlineMs: Long)                       // the token in the clip's extras (hex), the wall-clock deadline

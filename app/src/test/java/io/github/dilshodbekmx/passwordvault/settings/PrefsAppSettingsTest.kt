@@ -4,6 +4,7 @@ import io.github.dilshodbekmx.passwordvault.core.generator.GeneratorOptions
 import io.github.dilshodbekmx.passwordvault.core.lock.guard.Credit
 import io.github.dilshodbekmx.passwordvault.files.DocRef
 import io.github.dilshodbekmx.passwordvault.files.FileTask
+import io.github.dilshodbekmx.passwordvault.settings.PrefsAppSettings.Companion.BACKUP_OFFERED_AT
 import io.github.dilshodbekmx.passwordvault.settings.PrefsAppSettings.Companion.BACKUP_ON
 import io.github.dilshodbekmx.passwordvault.settings.PrefsAppSettings.Companion.BACKUP_SNOOZED_UNTIL
 import io.github.dilshodbekmx.passwordvault.settings.PrefsAppSettings.Companion.CLIP_DEADLINE
@@ -104,6 +105,17 @@ class PrefsAppSettingsTest {
         assertTrue(settings.writeDefaults())
         assertTrue(settings.hasSettings())
         assertTrue(start().hasSettings())
+    }
+
+    @Test
+    fun theTimeOfTheLastBackupOfferSurvivesARestart_andAnUnreadableOneReadsAsNone() {
+        // build-plan.md §12, decision 15: "Make a backup now?" comes at most once a day, in every process.
+        val settings = start()
+        assertTrue(settings.update { it.backupReminder = it.backupReminder.copy(offeredAtMs = 1_790_000_000_000L) })
+        assertEquals(BackupReminder(on = true, snoozedUntilMs = null, offeredAtMs = 1_790_000_000_000L), start().backupReminder.value)
+        assertEquals(1_790_000_000_000L, file.stored[BACKUP_OFFERED_AT])
+        file.stored = mapOf(BACKUP_OFFERED_AT to "yesterday")
+        assertNull(start().backupReminder.value.offeredAtMs)
     }
 
     @Test
