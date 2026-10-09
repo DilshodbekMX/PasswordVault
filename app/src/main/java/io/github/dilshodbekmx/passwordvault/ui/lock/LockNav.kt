@@ -19,10 +19,10 @@ import io.github.dilshodbekmx.passwordvault.nav.Route
  * the PIN pad, the fingerprint-only screen, the master-password screen, "This is an older master
  * password", "Open the older set instead?" (lock.md F16b step 3), or "Your passwords can't be
  * opened"; each also as the screen of a vault put aside, with its line, and for a vault put aside
- * whose copies cannot be opened, "These passwords can't be opened" (decision 6). Over it, the "Forgot master
- * password?" sheet and the questions asked once more. Its [LockViewModel] belongs to the route's
- * entry, so a rotation keeps it and an unlock clears it (architecture.md §5.5 step 5). "Restore from
- * a backup file" opens [Route.Restore] over it.
+ * whose copies cannot be opened, "These passwords can't be opened" (decision 6). Over it, the
+ * "Forgot master password?" sheet and the questions asked once more. Its [LockViewModel] belongs to
+ * the route's entry, so a rotation keeps it and an unlock clears it (architecture.md §5.5 step 5).
+ * "Restore from a backup file" opens [Route.Restore] over it.
  */
 fun EntryProviderScope<Route>.lockNav(graph: AppGraph, nav: Navigator) {
     entry<Route.Locked> { LockRoute(graph, nav) }
