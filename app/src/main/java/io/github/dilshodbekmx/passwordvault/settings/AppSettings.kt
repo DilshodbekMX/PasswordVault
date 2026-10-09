@@ -52,8 +52,18 @@ interface AppSettings {
     val pendingClip: StateFlow<PendingClip?>
 
     /**
+     * Whether this phone has the app's settings already: a lock or clipboard delay is stored, so a
+     * setup or a restore wrote the defaults here before, and the user may have changed them since.
+     * False after a new install and after "Clear storage". `LockManager.createVault` writes the
+     * defaults only while it is false: a restore keeps the settings the phone has (lock.md §10.1;
+     * build-plan.md §12, decision 13).
+     */
+    fun hasSettings(): Boolean
+
+    /**
      * Writes the setup defaults: a 30-second lock delay and a 1-minute clipboard delay (lock.md
-     * §10.1, D-7). Called by `LockManager.createVault` after the vault is proven. False: not written.
+     * §10.1, D-7). Called by `LockManager.createVault` after the vault is proven, on a phone that has
+     * no settings yet ([hasSettings]). False: not written.
      */
     fun writeDefaults(): Boolean
 

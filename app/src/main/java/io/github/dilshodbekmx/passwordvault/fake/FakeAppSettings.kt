@@ -40,6 +40,14 @@ class FakeAppSettings : AppSettings {
     var writes: Int = 0
         private set
 
+    /**
+     * Whether a lock or clipboard delay is stored, as `pv_settings` holds one once setup has written
+     * the defaults ([hasSettings]): set by a write that changes either; a test may set it.
+     */
+    var delaysStored: Boolean = false
+
+    override fun hasSettings(): Boolean = delaysStored
+
     override fun writeDefaults(): Boolean = update {
         it.lockDelay = LockDelay.SETUP
         it.clipDelay = ClipDelay.SETUP
@@ -49,6 +57,7 @@ class FakeAppSettings : AppSettings {
         if (failWrites) return false
         val editor = Editor()
         change(editor)
+        if (editor.lockDelay != lockDelay.value || editor.clipDelay != clipDelay.value) delaysStored = true
         lockDelay.value = editor.lockDelay
         clipDelay.value = editor.clipDelay
         theme.value = editor.theme

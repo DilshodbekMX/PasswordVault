@@ -940,7 +940,7 @@ Not seen on a real phone: lockout lengths (the emulator's were 1.5 to 8.5 s; rea
 | "Lock now" | At once | — |
 | A system screen the app opened itself (file picker, share sheet) | Does not lock for up to **10 minutes**; screen-off still locks (10.3) | No |
 | The "write it down" and "type it again" screens of a master-password change or replacement (F8, F11) | The screen is kept on (`FLAG_KEEP_SCREEN_ON`). ux.md §5.4 does not keep it on, and a screen that times out while six words are being copied to paper would lock at once and throw the flow away [A]. The 5 minutes without a touch still apply; a lock discards the flow, and nothing was changed | No |
-| The setting is missing or unreadable | Treated as "Immediately" [V-P9]. Setup writes the default explicitly. The delay is kept in the app's settings, not in a lock record (5.2) | — |
+| The setting is missing or unreadable | Treated as "Immediately" [V-P9]. Setup writes the default explicitly, on a phone that has no settings yet (a new install, or after "Clear storage"; a restore on a new phone, F13, too). A phone that has them keeps them through a restore, from Welcome or from the lock screen (F17 step 3), and through a new setup: the lock delay, the clipboard delay, the theme, the colours and the language stay as they are (the owner's decision 13 of 2026-10-08). The delay is kept in the app's settings, not in a lock record (5.2) | — |
 
 Why 30 seconds and not "Immediately": copying a password means leaving for the browser and often coming back for the user name. A bank app is not used that way. Screen-off, the strongest sign that the phone was put down, locks at once in every setting.
 

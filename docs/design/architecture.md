@@ -575,7 +575,10 @@ interface AppSettings {                                // SharedPreferences "pv_
     val purgeArm: StateFlow<PurgeArm?>                 // the two-step purge of Recently deleted (4.3)
     val pendingClip: StateFlow<PendingClip?>           // a clip of ours still to be cleared (D-14), so that an overdue one is cleared when
                                                        // the app next comes to the front after a force-stop cancelled its alarm
-    fun writeDefaults(): Boolean                       // called by createVault after the vault is proven (lock.md §10.1)
+    fun hasSettings(): Boolean                         // a lock or clipboard delay is stored: a setup or restore wrote the defaults here before,
+                                                       // and the user may have changed them since; false after a new install or "Clear storage"
+    fun writeDefaults(): Boolean                       // called by createVault after the vault is proven, only while hasSettings() is false:
+                                                       // a restore keeps the settings the phone has (lock.md §10.1; build-plan §12, decision 13)
     fun update(change: (SettingsEditor) -> Unit): Boolean        // commit(); false = not written, nothing changed; off the main thread
 }
 interface SettingsEditor {                             // the values update() can set, each starting as the current one

@@ -48,7 +48,10 @@ interface LockManager {
     /**
      * Creates the vault (lock.md F1; F13 and F17 step 3 with [restoreFrom]): the two typings are
      * compared before anything is derived ([CreateResult.Mismatch]), then the vault is written and
-     * proven with [again], and `AppSettings.writeDefaults` runs (lock.md §10.1).
+     * proven with [again]. On a phone that has no settings yet (`AppSettings.hasSettings`: a new
+     * install, or after "Clear storage") `AppSettings.writeDefaults` runs then (lock.md §10.1). A
+     * phone that has them keeps them, a restore included: the lock delay, the clipboard delay, the
+     * theme, the colours and the language stay as they are (build-plan.md §12, decision 13).
      */
     suspend fun createVault(first: CharArray, again: CharArray, restoreFrom: Vault?): CreateResult
 

@@ -80,7 +80,8 @@ import kotlinx.coroutines.withContext
  *   deleted after the newest backup this app saved (architecture.md §4.3).
  * - **Setup** (lock.md §10.1): [createVault] has the engine write the default settings after the
  *   vault is proven and before the app counts as unlocked, so that the session's first decision
- *   already reads them.
+ *   already reads them; only on a phone that has none yet, so that a restore keeps the owner's
+ *   (build-plan.md §12, decision 13).
  * - **"This phone can't keep a key in protected hardware"** (lock.md F18) is given as the reason of
  *   the master-password screen "the first time only": once an unlock has followed a screen that
  *   showed it, that is kept in the settings (`OneTime.NO_SECURE_HARDWARE_TOLD`).
@@ -321,7 +322,7 @@ class DefaultLockManager(
         }
 
     override suspend fun createVault(first: CharArray, again: CharArray, restoreFrom: Vault?): CreateResult =
-        when (val outcome = engine.createVault(first, again, restoreFrom, created = ::writeDefaults)) {
+        when (val outcome = engine.createVault(first, again, restoreFrom, created = ::writeDefaultsIfNone)) {
             is CreateOutcome.Created -> CreateResult.Created(outcome.vaultId)
             CreateOutcome.Mismatch -> CreateResult.Mismatch
             is CreateOutcome.Unassigned -> CreateResult.Unassigned(outcome.codePoint)
@@ -626,9 +627,13 @@ class DefaultLockManager(
         if (backupDue(open.vault)) engine.offerBackup()
     }
 
-    /** lock.md §10.1: setup writes its defaults, off the main thread; a failure leaves the strictest values. */
-    private suspend fun writeDefaults() {
-        withContext(io) { settings.writeDefaults() }
+    /**
+     * lock.md §10.1: setup writes its defaults, off the main thread, on a phone that has no settings
+     * yet; a failure leaves the strictest values. A phone that has settings keeps them, a restore
+     * included (build-plan.md §12, decision 13): asked once the vault is proven, as the write was.
+     */
+    private suspend fun writeDefaultsIfNone() {
+        withContext(io) { if (!settings.hasSettings()) settings.writeDefaults() }
     }
 
     // ---------------------------------------------------------------------------------------------

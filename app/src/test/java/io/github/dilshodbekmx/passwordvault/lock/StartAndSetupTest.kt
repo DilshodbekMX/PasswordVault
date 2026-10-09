@@ -12,6 +12,8 @@ import io.github.dilshodbekmx.passwordvault.core.model.Entry
 import io.github.dilshodbekmx.passwordvault.core.model.Vault
 import io.github.dilshodbekmx.passwordvault.settings.ClipDelay
 import io.github.dilshodbekmx.passwordvault.settings.LockDelay
+import io.github.dilshodbekmx.passwordvault.settings.StyleChoice
+import io.github.dilshodbekmx.passwordvault.settings.ThemeChoice
 import io.github.dilshodbekmx.passwordvault.testing.lock.FakeRecordFiles
 import io.github.dilshodbekmx.passwordvault.testing.lock.FakeVaultPort
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -220,6 +222,52 @@ class StartAndSetupTest {
         assertEquals(PinStatus.NotSet, rig.status.pin)
         assertEquals(FingerprintStatus.Off, rig.status.fingerprint)
         assertEquals(emptyList<Throwable>(), rig.crashes)
+    }
+
+    @Test
+    fun aRestoreKeepsTheSettingsThePhoneHas_noDefaultsAreWrittenOverThem() = runTest {
+        // build-plan.md §12, decision 13; lock.md §10.1. The owner chose stricter delays and a look; a
+        // restore from the lock screen (F17 step 3) keeps all of it.
+        val rig = LockRig(this)
+        rig.setUpWithPin()
+        rig.answerNotices(NoticeAnswer.LATER)
+        assertEquals(listOf("writeDefaults while NoVault"), rig.log)
+        assertTrue(
+            rig.settings.update {
+                it.lockDelay = LockDelay.IMMEDIATELY
+                it.clipDelay = ClipDelay.MINUTES_5
+                it.theme = ThemeChoice.DARK
+                it.style = StyleChoice.EMERALD
+            },
+        )
+        rig.lock()
+
+        val restored = rig.manager.createVault(LockRig.OTHER_PASSWORD.toCharArray(), LockRig.OTHER_PASSWORD.toCharArray(), Vault())
+        rig.settle()
+
+        assertTrue(restored is CreateResult.Created)
+        assertEquals("no defaults over the settings the phone has", listOf("writeDefaults while NoVault"), rig.log)
+        assertEquals(LockDelay.IMMEDIATELY, rig.settings.lockDelay.value)
+        assertEquals(ClipDelay.MINUTES_5, rig.settings.clipDelay.value)
+        assertEquals(ThemeChoice.DARK, rig.settings.theme.value)
+        assertEquals(StyleChoice.EMERALD, rig.settings.style.value)
+    }
+
+    @Test
+    fun aRestoreOnAPhoneWithoutSettings_writesTheDefaultsAsSetupDoes() = runTest {
+        // F13, a new phone: Welcome, no settings yet.
+        val rig = LockRig(this)
+        rig.startInFront()
+        assertFalse(rig.settings.hasSettings())
+
+        val restored = rig.manager.createVault(LockRig.PASSWORD.toCharArray(), LockRig.PASSWORD.toCharArray(), Vault())
+        rig.settle()
+
+        assertTrue(restored is CreateResult.Created)
+        assertEquals(listOf("writeDefaults while NoVault"), rig.log)
+        assertEquals(LockDelay.SECONDS_30, rig.settings.lockDelay.value)
+        assertEquals(ClipDelay.MINUTE_1, rig.settings.clipDelay.value)
+        assertTrue(rig.settings.hasSettings())
     }
 
     @Test

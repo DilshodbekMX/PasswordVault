@@ -95,8 +95,21 @@ class PrefsAppSettingsTest {
     }
 
     @Test
+    fun hasSettings_isFalseOnANewInstall_andTrueOnceADelayIsStored_inTheNextProcessToo() {
+        // build-plan.md §12, decision 13: the lock writes the defaults only while this is false.
+        val settings = start()
+        assertFalse(settings.hasSettings())
+        assertTrue(settings.update { it.oneTime = setOf(OneTime.WORDS_SHOWN) }) // setup's own flag is no setting of the owner's
+        assertFalse(settings.hasSettings())
+        assertTrue(settings.writeDefaults())
+        assertTrue(settings.hasSettings())
+        assertTrue(start().hasSettings())
+    }
+
+    @Test
     fun writeDefaultsReplacesEarlierChoices() {
-        // A second setup ("Start with an empty app", lock.md F17) after the user had chosen others.
+        // writeDefaults itself writes over earlier choices. Since decision 13 (build-plan.md §12) the lock
+        // calls it only on a phone that has no settings (hasSettings), so a restore keeps them.
         val settings = start()
         assertTrue(settings.update { it.lockDelay = LockDelay.MINUTES_5; it.clipDelay = ClipDelay.MINUTES_2 })
         assertTrue(settings.writeDefaults())

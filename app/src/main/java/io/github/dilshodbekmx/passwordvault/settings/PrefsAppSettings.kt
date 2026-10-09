@@ -81,6 +81,8 @@ class PrefsAppSettings(
     override val purgeArm: StateFlow<PurgeArm?> = purgeArmFlow.asStateFlow()
     override val pendingClip: StateFlow<PendingClip?> = pendingClipFlow.asStateFlow()
 
+    override fun hasSettings(): Boolean = prefs.contains(LOCK_DELAY) || prefs.contains(CLIP_DELAY)
+
     override fun writeDefaults(): Boolean = update {
         it.lockDelay = LockDelay.SETUP
         it.clipDelay = ClipDelay.SETUP
