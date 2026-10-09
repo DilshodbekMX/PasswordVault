@@ -531,12 +531,21 @@ next_accounts() {
     local next
     next=$(words_of pv.change.next)
     [ "$next" = "Next: Kapitalbank" ] || { pv_log "Facebook's next button reads '$next'"; return 1; }
-    [ -z "$(node_any pv.change.backupLine)" ] || { pv_log "the backup line came twice in one session"; return 1; }
+    # The step before locked the app: a new session, whose first end shows the backup line again.
+    pva_present pv.change.backupLine 5 || { pv_log "no backup line at the first end of a new session"; return 1; }
     pva_tap pv.change.next || return 1
     pva_on GuidedChange 20 && account_is Kapitalbank || return 1
     to_top
     pva_need pv.change.lastOne 10 || return 1
     shot 11-kapitalbank-last-one
+    tap pv.change.create && started || return 1
+    tap pv.change.yes || return 1
+    # The last one: nobody has the old password any more, and the session showed its backup line.
+    pva_need pv.change.done 20 && pva_need pv.change.finish 10 || return 1
+    [ -z "$(node_any pv.change.next)" ] || { pv_log "a Next after the last one"; return 1; }
+    [ -z "$(node_any pv.change.backupLine)" ] || { pv_log "the backup line came twice in one session"; return 1; }
+    shot 12-kapitalbank-done-for-now
+    pva_tap pv.change.finish && pva_on Group 20
 }
 
 # Gmail's change is over: one password, its new one, on the list and on its screen.
@@ -566,7 +575,7 @@ pv_step "I'll finish later, then am force-stop: both passwords from the list and
 pv_step "No, put back the old password restores the original, also after am force-stop" -- revert
 pv_step "a new change survives a lock; Yes, it's changed ends it with Next: Facebook and the backup line" -- confirm
 pv_step "the end of the change survives a lock" -- ended_after_lock
-pv_step "Next: Facebook, then Next: Kapitalbank with Last one!" -- next_accounts
+pv_step "Next: Facebook (a new session: the backup line again), then Kapitalbank with Last one!, ended with Done for now and no second backup line" -- next_accounts
 pv_step "Gmail's new password survives am force-stop (list and account, one password)" -- ended_after_force_stop
 pv_step "the app did not crash" -- pva_no_crash
 pv_summary
