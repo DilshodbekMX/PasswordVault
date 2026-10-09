@@ -741,7 +741,12 @@ pvl_kill9() {
     fi
     local i
     for i in 1 2 3 4 5 6 7 8 9 10; do
-        [ "$(pva_pid)" != "$pid" ] && return 0
+        if [ "$(pva_pid)" != "$pid" ]; then
+            # The system learns of the death a moment later ("has died", "app died, no saved state");
+            # a launcher intent sent before that goes to the dying activity and is lost.
+            pv_sleep 2
+            return 0
+        fi
         pv_sleep 0.5
     done
     pv_log "the process $pid is still there"
@@ -761,8 +766,14 @@ pvl_force_stop() {
 }
 
 # pvl_restart: the launcher's intent starts the app again (a new process if it had none): the lock
-# screen.
-pvl_restart() { pva_relaunch && pva_on Locked 30; }
+# screen (or a prompt over it). Once more when nothing of the app shows within 15 s: an intent that
+# reached a process in the middle of dying is lost.
+pvl_restart() {
+    pva_relaunch || return 1
+    pvl_wait_screen 'pad|fingerprint-only|master-password|prompt|older|older-set|unreadable' 15 2>/dev/null && return 0
+    pv_log "the lock screen did not show; the launcher's intent once more"
+    pva_relaunch && pvl_wait_screen 'pad|fingerprint-only|master-password|prompt|older|older-set|unreadable' 30
+}
 
 # ---- the app's files (debuggable builds: run-as) -------------------------------------------------
 # pvl_lock_files: the files of the app's lock directories (no_backup/lock/*/), one per line.
