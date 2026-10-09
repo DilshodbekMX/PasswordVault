@@ -242,7 +242,7 @@ pv_step "the app in front again, the sheet and the form closed, locked, the mast
 pv_step "state: the lock screen, pv.lock.password typed, turned twice: the saved states hold nothing typed" -- clean lock Locked turn
 
 # ---- the PIN steps (since the device check of 4A) ----------------------------------------------
-pv_step "the master password opens the app; Settings > \"Set a PIN\" asks for it again: typed" -- eval 'win_unlock && win_set_pin_prompt && typed pv.pin.mp.field "$WIN_MASTER"' || win_end
+pv_step "the master password typed above opens the app; Settings > \"Set a PIN\" asks for it again: typed" -- eval 'pva_hide_keyboard; pva_submit_open pv.lock.unlock Passwords 90 && win_set_pin_prompt && typed pv.pin.mp.field "$WIN_MASTER"' || win_end
 pv_step "state: the PIN steps' master password, pv.pin.mp.field typed, turned twice: the saved states hold nothing typed" -- clean pinmp ChangePin turn
 pv_step "the master password accepted: the PIN steps' pad, five digits of a PIN typed" -- eval 'pva_hide_keyboard; pva_tap pv.pin.mp.next && pva_need pv.pin.key.0 60 && pva_pin "$WIN_PIN_DIGITS"' || win_end
 pv_step "state: the PIN steps' pad, five digits typed, turned twice: the saved states hold nothing typed" -- clean pindigits ChangePin turn
