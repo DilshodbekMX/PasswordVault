@@ -435,6 +435,131 @@ pva_debug() {
     case "$out" in *'result=1,'*) return 0 ;; *) pv_log "debug command '$*': ${out:-no answer}"; return 1 ;; esac
 }
 
+# ---- the PIN and the fingerprint (since the device check of 4A) --------------------------------------
+# These drive the real lock of build plan 4.1 to 4.3: the PIN steps, the pad, the fingerprint prompt
+# (the system's from API 28 on; on API 24 androidx.biometric draws its own dialog in the activity), and
+# read the lock's state through the debug command `status` (debug and staging builds; lock.md 15.3).
+
+# pva_status: the lock's `status` answer, one item per line (the answer separates them with "; ").
+pva_status() { pva_debug status 2>&1 | tr -d '\r' | sed 's/; /\n/g'; }
+
+# pva_status_has REGEX: an item of the status matches REGEX (grep -E).
+pva_status_has() {
+    local out
+    out=$(pva_status)
+    printf '%s\n' "$out" | grep -qE -- "$1" || { pv_log "status lacks /$1/: $(printf '%s' "$out" | tr '\n' ';' | cut -c1-900)"; return 1; }
+}
+
+# pva_status_lacks REGEX: the status was read, and no item matches REGEX.
+pva_status_lacks() {
+    local out
+    out=$(pva_status)
+    [ -n "$out" ] && ! printf '%s\n' "$out" | grep -qE -- "$1" || { pv_log "status has /$1/ (or is empty): $(printf '%s' "$out" | tr '\n' ';' | cut -c1-900)"; return 1; }
+}
+
+# pva_status_soon REGEX [SECONDS]: an item of the status matches REGEX within SECONDS (default 15).
+pva_status_soon() {
+    local deadline=$((SECONDS + ${2:-15}))
+    until pva_status | grep -qE -- "$1"; do
+        [ $SECONDS -lt $deadline ] || { pv_log "status never had /$1/: $(pva_status | tr '\n' ';' | cut -c1-900)"; return 1; }
+        pv_sleep 1
+    done
+}
+
+# pva_prompt_open USE [SECONDS]: the lock says that its fingerprint prompt for USE (UNLOCK, TURN_ON, ...)
+# is open, within SECONDS (default 20).
+pva_prompt_open() { pva_status_soon "^prompt: $1," "${2:-20}"; }
+
+# pva_no_prompt [SECONDS]: the lock says that no prompt is open, within SECONDS (default 10).
+pva_no_prompt() { pva_status_soon '^prompt: none' "${1:-10}"; }
+
+# pva_prompt_launch: the launch number of the prompt that is open now (status), for "the same prompt".
+pva_prompt_launch() { pva_status | sed -n 's/^prompt: .*launch \([0-9]*\).*/\1/p'; }
+
+# pva_finger N: finger N on the emulator's sensor (1 and 2 are enrolled on the bases, any other is not
+# recognized). It waits 2 s first: the system's prompt (API 28 and later) listens only once it is drawn,
+# and a touch before that is lost, as no finger could give it. Touches sent together are merged.
+pva_finger() {
+    pv_sleep 2
+    pv_adb emu finger touch "$1" >/dev/null || return 1
+    pv_sleep 0.5
+    pv_adb emu finger remove >/dev/null
+    pv_sleep 1
+}
+
+# pva_prompt_use_pin: "Use PIN", the prompt's negative button: the system's prompt (API 28 and later)
+# or the library's dialog inside the activity (API 24, "USE PIN"), read from every window.
+pva_prompt_use_pin() {
+    local i
+    for i in 1 2 3 4 5 6 7 8; do
+        pv_ui_tap '^(Use PIN|USE PIN)[|]' "$(pv_ui_nodes_all 2>/dev/null || pv_ui_nodes)" >/dev/null && return 0
+        pv_sleep 1
+    done
+    pv_log "no \"Use PIN\" on the prompt: $(pv_ui_nodes_all 2>/dev/null | cut -d'|' -f1-3 | tr '\n' ';' | cut -c1-600)"
+    return 1
+}
+
+# pva_choose_pin PIN: on "Choose a PIN" (CreatePin) the PIN, on "Enter the PIN again" (ConfirmPin) the
+# same PIN.
+pva_choose_pin() {
+    pva_on CreatePin 30 || return 1
+    pv_sleep 1
+    pva_pin "$1" || return 1
+    pva_on ConfirmPin 20 || return 1
+    pv_sleep 1
+    pva_pin "$1"
+}
+
+# pva_opened [SECONDS]: the app is unlocked within SECONDS (default 30): the list, the PIN steps or a
+# notice is shown, and the lock's status says unlocked.
+pva_opened() {
+    pv_ui_wait "[|]pv\.(route\.(Passwords|$PVA_PIN_STEPS)|notice)\$" "${1:-30}" \
+        || { pv_log "the app did not open; ids: $(pva_ids)"; return 1; }
+    pva_status_soon '^state: unlocked' 10
+}
+
+# pva_after_pin use|notNow [ROUTE]: after the PIN steps' second PIN: the fingerprint offer, where it is
+# made, answered "Use" (the prompt for TURN_ON, finger 1) or "Not now"; "Make backups" (after setup)
+# answered "Finish"; then ROUTE (default Passwords) with nothing over it (pva_settle answers "Make a
+# backup now?" "Later"). "use" fails when no offer is made.
+pva_after_pin() {
+    local route=${2:-Passwords}
+    if pv_ui_wait '[|]pv\.route\.FingerprintOffer$' 25; then
+        if [ "$1" = use ]; then
+            pva_tap pv.fingerprintOffer.use && pva_prompt_open TURN_ON 20 && pva_finger 1 || return 1
+        else
+            pva_tap pv.fingerprintOffer.notNow || return 1
+        fi
+    elif [ "$1" = use ]; then
+        pv_log "no fingerprint offer; ids: $(pva_ids)"
+        return 1
+    fi
+    pv_ui_wait "[|]pv\\.(route\\.(BackupsExplained|$route)|notice)\$" 30 || { pv_log "after the PIN steps; ids: $(pva_ids)"; return 1; }
+    if pva_present pv.route.BackupsExplained 2; then pva_tap pv.action.finish || return 1; fi
+    pva_settle "$route" 60
+}
+
+# pva_to_create_pin [SECONDS]: after a master-password unlock without a usable PIN, "Choose a PIN" (the
+# PIN steps' first route) is shown within SECONDS (default 60); a notice before it (the wrong PINs of
+# lock.md 13.4 item 4, "Make a backup now?") is answered "OK", or "Later" where it has no "OK".
+pva_to_create_pin() {
+    local deadline=$((SECONDS + ${1:-60})) nodes
+    while :; do
+        nodes=$(pv_ui_nodes)
+        pva_in_nodes '[|]pv\.route\.CreatePin$' "$nodes" && return 0
+        if pva_in_nodes '[|]pv\.notice$' "$nodes"; then
+            pv_log "a notice: $(printf '%s\n' "$nodes" | awk -F'|' '$3 == "pv.notice.title" { f = 1 } f && $1 != "" { print $1; exit }')"
+            if [ -n "$(pva_node pv.answer.OK "$nodes")" ]; then pva_tap pv.answer.OK; else pva_tap pv.answer.LATER; fi
+        fi
+        [ $SECONDS -lt $deadline ] || { pv_log "no \"Choose a PIN\"; ids: $(pva_ids)"; return 1; }
+        pv_sleep 1
+    done
+}
+
+# pva_lock_now: Lock now on the list; the lock's status says locked (the lock screen may lie under the
+# fingerprint prompt, whose window is then the one in front).
+pva_lock_now() { pva_on Passwords 20 && pva_tap pv.list.lockNow && pva_status_soon '^state: locked' 20; }
+
 # pva_screenshot FILE: the screen as PNG (debug builds; the secure window of staging gives black).
 pva_screenshot() {
     mkdir -p "$(dirname "$1")"

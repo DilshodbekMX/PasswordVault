@@ -24,6 +24,12 @@
 #     the password, and the status row is shown; Home: the clip is still there 4 s before its time and
 #     gone 4 s after it at the latest, with the delay setup wrote (1 minute; the time is the first
 #     reading of the clip plus the delay, as clipboard/clear.sh estimates it without run-as).
+#   sub-wave 4A (the PIN and the fingerprint): back in front the app is locked; the master password
+#     opens it and "Choose a PIN" follows: a PIN, typed again; the fingerprint offer "Use", finger 1 on
+#     the prompt; the lock's status (the debug command, also in staging) has both slots and their
+#     Keystore keys; Lock now: the prompt opens by itself (on API 24 androidx.biometric's own dialog in
+#     the activity, the path R8 broke before build check R-16) and finger 1 opens the list; Lock now,
+#     "Use PIN" on the prompt: the pad, and the PIN opens the list with the account.
 # Prints PASS, FAIL or SKIPPED per step and a summary line. Exit codes: 0 every step passed or
 # was skipped; 1 a step failed; 2 usage; 3 SERIAL refused.
 set -u
@@ -310,5 +316,46 @@ stage_clipboard() {
     pv_step "no crash" -- pva_no_crash
 }
 
-stage_install_and_start && stage_skeleton && stage_clipboard
+# ---- stage: the PIN and the fingerprint (sub-wave 4A) ---------------------------------------------
+SMOKE_PIN=582913
+
+# Back in front after the clipboard stage, the app is locked (setup's 30 s delay); the master password
+# opens it, and with no PIN "Choose a PIN" opens the PIN steps (lock.md F1 step 6, F7).
+smoke_unlock_to_pin_steps() {
+    pva_relaunch && pva_on Locked 30 && pva_need pv.lock.password 20 || return 1
+    pva_type pv.lock.password "$PVA_PASSWORD" || return 1
+    pva_hide_keyboard
+    pva_tap pv.lock.unlock && pva_opened 90 && pva_to_create_pin
+}
+
+smoke_shortcuts_on() {
+    pva_status_has '^pin.rec: OK, slot set' && pva_status_has '^fingerprint.rec: OK, slot set' \
+        && pva_status_has '^keystore: .*pv_pin_' && pva_status_has '^keystore: .*pv_fp_'
+}
+
+smoke_finger_opens() {
+    pva_lock_now && pva_prompt_open UNLOCK 20 || return 1
+    if [ "$API" -lt 28 ]; then
+        # Android 7: androidx.biometric draws its own dialog inside the activity (lock.md 9.1, E6).
+        pv_ui_nodes | grep -q '^USE PIN|' || { pv_log "not the library's dialog: $(pv_ui_nodes | cut -d'|' -f1 | grep -v '^$' | tr '\n' ';' | cut -c1-300)"; return 1; }
+    fi
+    pva_finger 1 && pva_opened 20 && pva_no_prompt && pva_settle Passwords 60
+}
+
+smoke_pin_opens() {
+    pva_lock_now && pva_prompt_open UNLOCK 20 && pva_prompt_use_pin && pva_no_prompt && pva_need pv.lock.pad 20 || return 1
+    pva_pin "$SMOKE_PIN" && pva_opened 30 && pva_settle Passwords 60 && pva_row_with Smoketest 10
+}
+
+stage_pin_and_fingerprint() {
+    pv_step "back in front: locked; the master password opens it, and \"Choose a PIN\" follows" -- smoke_unlock_to_pin_steps || return 1
+    pv_step "a PIN is chosen and typed again" -- pva_choose_pin "$SMOKE_PIN" || return 1
+    pv_step "the fingerprint offer: Use, finger 1 on the prompt; the list" -- pva_after_pin use || return 1
+    pv_step "status: a PIN slot and a fingerprint slot with their Keystore keys" -- smoke_shortcuts_on
+    pv_step "Lock now: the prompt opens by itself$([ "$API" -lt 28 ] && echo " (the library's own dialog)"); finger 1 opens the list" -- smoke_finger_opens
+    pv_step "Lock now: \"Use PIN\" on the prompt, the pad; the PIN opens the list with the account" -- smoke_pin_opens
+    pv_step "no crash" -- pva_no_crash
+}
+
+stage_install_and_start && stage_skeleton && stage_clipboard && stage_pin_and_fingerprint
 pv_summary
