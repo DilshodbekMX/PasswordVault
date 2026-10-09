@@ -83,6 +83,7 @@ if [ ${#PARTS[@]} -eq 0 ]; then
     if [ "$API" -ge 33 ]; then PARTS=(phone switch survives page mixing formats); else PARTS=(phone switch survives formats prompt); fi
 fi
 echo "i18n matrix on $SERIAL (API $API): ${PARTS[*]}; $APK"
+pvl_quiet_network
 KNOWN=0
 PIN=582913
 
@@ -460,7 +461,23 @@ prompt_set_up() {
     PVA_PASSWORD=$(pva_text pv.setup.passphrase) || return 1
     pva_tap pv.open.WriteDown && pva_on WriteDown && pva_tap pv.open.TypeAgain && pva_on TypeAgain || return 1
     pva_type pv.setup.again "$PVA_PASSWORD" && pva_hide_keyboard && pva_tap pv.action.createVault || return 1
-    pva_on CreatePin 120 && pva_pin "$PIN" && pva_on ConfirmPin 20 && pva_pin "$PIN" && pva_on FingerprintOffer 30
+    pva_on CreatePin 120 && pin_digits "$PIN" && pva_on ConfirmPin 20 && pin_digits "$PIN" && pva_on FingerprintOffer 30
+}
+
+# pin_digits DIGITS: the digits on the pad shown, taking only their own keys (pv.pin.key.N): in en-XA
+# the longer texts push the pad's last row, with 0, below the fold of a 1920-pixel screen, where
+# app.sh's pva_pin, which wants all ten keys, cannot find it (a layout for build plan 6.2).
+pin_digits() {
+    local nodes line i d
+    pva_need "pv.pin.key.${1:0:1}" 20 || return 1
+    nodes=$(pv_ui_nodes)
+    for ((i = 0; i < ${#1}; i++)); do
+        d=${1:$i:1}
+        line=$(printf '%s\n' "$nodes" | pv_ui_match "[|]pv\.pin\.key\.$d\$")
+        [ -n "$line" ] || { pv_log "no key $d; ids: $(pva_ids)"; return 1; }
+        pv_shell input tap "$(printf '%s\n' "$line" | cut -d'|' -f6)" "$(printf '%s\n' "$line" | cut -d'|' -f7)" >/dev/null
+        pv_sleep 0.4
+    done
 }
 
 prompt_texts() {

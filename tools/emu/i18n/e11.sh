@@ -52,6 +52,7 @@ LOGS=$REPO/build/emu-i18n/$SERIAL
 SHOTS=${SHOTS:-$LOGS/shots}
 mkdir -p "$LOGS" "$SHOTS"
 echo "lock.md E11, the language step, on $SERIAL (API $API): $APK"
+pvl_quiet_network
 PID=""
 
 shot() { pva_screenshot "$SHOTS/$1.png" && pv_log "screenshot $SHOTS/$1.png"; }

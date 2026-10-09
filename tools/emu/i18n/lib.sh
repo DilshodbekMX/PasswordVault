@@ -204,3 +204,15 @@ $(pvl_own_name "${PVL_PHONE_SHOWN:-EN}")"
 # read with run-as (debug builds); nothing when it does not exist.
 PVL_RECORD=files/androidx.appcompat.app.AppCompatDelegate.application_locales_record_file
 pvl_record_file() { pv_shell run-as "$PV_PACKAGE" cat "$PVL_RECORD" 2>/dev/null | tr -d '\r'; }
+
+# pvl_quiet_network: on Android 11 and later, airplane mode on. The API 37 base is a Google Play
+# image with network: left on, the Play Store updates Play services, Gboard, Chrome and more within
+# the first twenty minutes and fills the 6 GB data partition to 96 % (seen on 2026-10-09: installs
+# then fail with "Requested internal only, but not enough space"). The app needs no network.
+pvl_quiet_network() {
+    [ "$(pv_api)" -ge 30 ] || return 0
+    pv_shell cmd connectivity airplane-mode enable >/dev/null 2>&1
+    [ "$(pv_shell settings get global airplane_mode_on 2>/dev/null | tr -d '\r')" = 1 ] \
+        || { pv_log "airplane mode did not turn on"; return 1; }
+    pv_log "airplane mode on (free on /data: $(pv_shell df -h /data/user/0 2>/dev/null | tr -d '\r' | awk 'NR == 2 { print $4 }'))"
+}
