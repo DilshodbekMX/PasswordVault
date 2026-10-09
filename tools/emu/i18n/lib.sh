@@ -84,5 +84,123 @@ pvl_icu_version() { pvl_run icu; }
 
 # The app's own languages as the system keeps them, Android 13 and later: "[uz-Cyrl]", "[]".
 pvl_app_locales() {
-    pv_shell cmd locale get-app-locales "$PV_PACKAGE" 2>/dev/null | tr -d '\r' | sed -n 's/.*Locales: *\(\[.*\]\).*/\1/p' | head -n 1
+    pv_shell cmd locale get-app-locales "$PV_PACKAGE" 2>/dev/null | tr -d '\r' | sed -n 's/^Locales for .* are \(\[.*\]\)$/\1/p' | head -n 1
 }
+
+# ---- the app's language dialog (LanguageTags: pv.language.dialog, pv.language.<CHOICE>, pv.language.cancel)
+
+# The title and the System row of each language (strings_language.xml), and the language's own name
+# (donottranslate.xml), by choice; the pseudo-locales' titles come from the APK (pvl_apk_string).
+pvl_title() {
+    case "$1" in
+        UZ_LATN) echo "Til" ;;
+        UZ_CYRL) echo "Тил" ;;
+        RU) echo "Язык" ;;
+        *) echo "Language" ;;
+    esac
+}
+pvl_system_name() {
+    case "$1" in
+        UZ_LATN) echo "Tizim tili" ;;
+        UZ_CYRL) echo "Тизим тили" ;;
+        RU) echo "Язык системы" ;;
+        *) echo "System language" ;;
+    esac
+}
+pvl_own_name() {
+    case "$1" in
+        UZ_LATN) echo "Oʻzbekcha" ;;
+        UZ_CYRL) echo "Ўзбекча" ;;
+        RU) echo "Русский" ;;
+        *) echo "English" ;;
+    esac
+}
+
+# pvl_apk_string APK NAME [QUALIFIER]: the text of string NAME in APK for QUALIFIER (aapt2's spelling:
+# en-rXA, b+uz+Cyrl, ru; default the default), read with the SDK's aapt2 on this computer.
+pvl_apk_string() {
+    local aapt2 q=${3:-}
+    aapt2=$(ls -d "$PV_SDK"/build-tools/*/aapt2 2>/dev/null | sort -V | tail -n 1)
+    [ -n "$aapt2" ] || { pv_log "no aapt2 under $PV_SDK/build-tools"; return 1; }
+    "$aapt2" dump resources "$1" 2>/dev/null | awk -v n="string/$2" -v q="($q)" '
+        $1 == "resource" && $3 == n { f = 1; next }
+        f && $1 == "resource" { exit }
+        f && $1 == q { sub(/^[^"]*"/, ""); sub(/"$/, ""); print; exit }
+    '
+}
+
+# pvl_open_language: the language dialog from the screen shown (Welcome's globe button or the
+# language row of Settings, both pv.open.Language), waited for in its own window.
+pvl_open_language() {
+    pva_tap pv.open.Language || return 1
+    pva_need pv.language.dialog 15
+}
+
+# pvl_settled ROUTE [SECONDS]: ROUTE is shown with no dialog over it, the app's window has the focus,
+# and that stays so for 2 s: a language change recreates the activity a moment after the dialog
+# closes (default deadline 30 s).
+pvl_settled() {
+    local deadline=$((SECONDS + ${2:-30})) nodes
+    while :; do
+        nodes=$(pv_ui_nodes)
+        if pva_in_nodes "[|]pv\\.route\\.$1\$" "$nodes" && ! pva_in_nodes '[|]pv\.language\.dialog$' "$nodes" && pva_in_front; then
+            pv_sleep 2
+            nodes=$(pv_ui_nodes)
+            pva_in_nodes "[|]pv\\.route\\.$1\$" "$nodes" && ! pva_in_nodes '[|]pv\.language\.dialog$' "$nodes" && return 0
+        fi
+        [ $SECONDS -lt $deadline ] || { pv_log "not settled on $1; ids: $(pva_ids)"; return 1; }
+        pv_sleep 1
+    done
+}
+
+# pvl_choose CHOICE ROUTE: in the open dialog, taps CHOICE's row; the dialog closes and ROUTE (the
+# screen it was opened from) is shown again, settled after the recreation.
+pvl_choose() {
+    pva_tap "pv.language.$1" || return 1
+    pvl_settled "$2"
+}
+
+# pvl_cancel ROUTE: "Cancel"; the dialog closes and ROUTE is shown.
+pvl_cancel() {
+    pva_tap pv.language.cancel || return 1
+    pvl_settled "$1" 15
+}
+
+# pvl_dialog_texts: the open dialog's title, its System row's name and the language under it, one
+# per line (from one dump).
+pvl_dialog_texts() {
+    pv_ui_nodes | awk -F'|' '
+        $3 == "pv.language.dialog" { d = 1; next }
+        d && !t && $1 != "" { print $1; t = 1; next }
+        $3 == "pv.language.SYSTEM" { s = 1; n = 0; next }
+        s && $3 ~ /^pv[.]/ { s = 0 }
+        s && $1 != "" { print $1; n++; if (n == 2) s = 0 }
+    '
+}
+
+# pvl_selected: the CHOICE whose row is checked. Compose drops the click action of a selected radio
+# button from its accessibility node, so the one row that is not clickable is the checked one.
+pvl_selected() {
+    pv_ui_nodes | awk -F'|' '$3 ~ /^pv[.]language[.][A-Z_]+$/ && $4 == "false" { sub(/^pv[.]language[.]/, "", $3); print $3 }'
+}
+
+# pvl_dialog_is CHOICE [SHOWN]: the open dialog has CHOICE checked and is written in SHOWN (default
+# CHOICE; for SYSTEM the language the phone's languages give, EN by default): its title, its System
+# row's name, and under it the own name of the language the app shows with the phone's languages
+# (PVL_PHONE_SHOWN, default EN).
+pvl_dialog_is() {
+    local choice=$1 shown=${2:-$1} texts want selected
+    [ "$shown" = SYSTEM ] && shown=${PVL_PHONE_SHOWN:-EN}
+    texts=$(pvl_dialog_texts)
+    want="$(pvl_title "$shown")
+$(pvl_system_name "$shown")
+$(pvl_own_name "${PVL_PHONE_SHOWN:-EN}")"
+    [ "$texts" = "$want" ] || { pv_log "the dialog says '$(printf '%s' "$texts" | tr '\n' ';')', not '$(printf '%s' "$want" | tr '\n' ';')'"; return 1; }
+    selected=$(pvl_selected)
+    [ "$selected" = "$choice" ] || { pv_log "the checked row is '$selected', not $choice"; return 1; }
+}
+
+# pvl_record_file: AppCompat's record of the app's language on Android 7 to 12 (i18n.md §1.4.3),
+# read with run-as (debug builds); nothing when it does not exist.
+PVL_RECORD=files/androidx.appcompat.app.AppCompatDelegate.application_locales_record_file
+pvl_record_file() { pv_shell run-as "$PV_PACKAGE" cat "$PVL_RECORD" 2>/dev/null | tr -d '\r'; }

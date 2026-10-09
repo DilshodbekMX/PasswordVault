@@ -1,5 +1,7 @@
 package io.github.dilshodbekmx.passwordvault.ui.settings
 
+import android.content.Context
+import android.os.Build
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -56,7 +58,7 @@ private fun LanguageRoute(graph: AppGraph, nav: Navigator) {
     val pseudo = BuildConfig.DEBUG
     // The activity's context: recreated with each language, so these are read again after a change.
     val current = remember(context) { LanguageChoice.of(AppLanguages.appLocales(context), pseudo) }
-    val systemShown = remember(context) { AppLanguages.systemShown(context) }
+    val systemShown = remember(context) { phoneShown(context) }
     LanguageSwitch(
         choices = LanguageChoice.offered(pseudo),
         current = current,
@@ -65,6 +67,22 @@ private fun LanguageRoute(graph: AppGraph, nav: Navigator) {
         apply = { choice -> AppLanguages.setTags(context, choice.tags) },
     )
 }
+
+/**
+ * The language the app shows when it follows the phone: the line under "System language". From
+ * Android 13 that is [AppLanguages.systemShown] of the phone's own list (`LocaleManager`). Before, it
+ * is the application's configuration, which AppCompat leaves in the phone's languages (i18n.md
+ * §1.4.3) and whose first locale Android has already chosen among the APK's languages; the list of
+ * `Resources.getSystem()`, which `AppLanguages.systemShown` reads there, is ordered for the
+ * framework's own translations instead, which have no Uzbek Cyrillic: with the phone set to
+ * Ўзбекча, then English, it puts English first (seen on API 24).
+ */
+private fun phoneShown(context: Context): AppLanguage =
+    if (Build.VERSION.SDK_INT >= 33) {
+        AppLanguages.systemShown(context)
+    } else {
+        AppLanguages.shown(AppLanguages.localesOf(context.applicationContext.resources.configuration))
+    }
 
 /**
  * The language dialog with what its buttons do: a choice closes the dialog ([Navigator.back]) and,
