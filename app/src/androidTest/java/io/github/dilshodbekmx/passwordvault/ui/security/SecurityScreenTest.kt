@@ -1,11 +1,24 @@
 package io.github.dilshodbekmx.passwordvault.ui.security
 
 import androidx.activity.ComponentActivity
+import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Text
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.test.ComposeTimeoutException
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -14,6 +27,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import io.github.dilshodbekmx.passwordvault.R
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.Notice
 import io.github.dilshodbekmx.passwordvault.core.model.Vault
 import io.github.dilshodbekmx.passwordvault.data.CheckProgress
@@ -38,7 +52,8 @@ import org.junit.runner.RunWith
  * Build plan 7.1 on a device: the Security tab and the lists behind its cards (ux.md §5.16), drawn by
  * the app's check over a vault in memory. Every card says what it counts and its button opens its
  * list; the visit clears the dot with one write of `securitySeenAt`, never under a notice; the dot is
- * Material's small badge, read as "New results"; a group lists its accounts email first, and its rows
+ * Material's small badge, and a tab like the bottom bar's is read "Security, new results" through its
+ * state; a group lists its accounts email first, and its rows
  * open the account, the guided change, and "Leave out of the security check" with Undo.
  */
 @RunWith(AndroidJUnit4::class)
@@ -158,7 +173,7 @@ class SecurityScreenTest {
     }
 
     @Test
-    fun theDotIsASmallBadgeReadAsNewResults() {
+    fun theDotIsDrawnOnlyWhileThereIsSomethingNew() {
         val shown = MutableStateFlow(true)
         compose.setContent {
             PasswordVaultTheme(ThemeChoice.LIGHT) {
@@ -166,11 +181,42 @@ class SecurityScreenTest {
                 SecurityDot(on)
             }
         }
-        compose.onNodeWithContentDescription("New results").assertIsDisplayed()
         compose.onNodeWithTag(SecurityTags.BADGE).assertIsDisplayed()
         shown.value = false
         compose.waitForIdle()
-        assertEquals(0, compose.onAllNodes(hasContentDescription("New results")).fetchSemanticsNodes().size)
+        assertEquals(0, count(SecurityTags.BADGE))
+    }
+
+    /**
+     * The bottom bar's Security item as `UnlockedScaffold` draws it, a label and the dot in a
+     * `BadgedBox` in the icon slot, with the state [securityTabState] gives (the shell's part of the
+     * interface request): the tab's state carries "New results". (material3 clears the icon slot's
+     * semantics when the item has a label, so nothing drawn there is read; in the real app on API 37
+     * the Security tab's node had only its "Security" text below it while the dot showed.)
+     */
+    @Test
+    fun aTabLikeTheBottomBarsIsReadSecurityNewResultsWhileTheDotShows() {
+        val shown = MutableStateFlow(true)
+        compose.setContent {
+            PasswordVaultTheme(ThemeChoice.LIGHT) {
+                val on by shown.collectAsState()
+                val state = newResultsState(on)
+                NavigationBar {
+                    NavigationBarItem(
+                        selected = false,
+                        onClick = {},
+                        icon = { BadgedBox(badge = { SecurityDot(on) }) { Icon(painterResource(R.drawable.ic_shell_security), contentDescription = null) } },
+                        label = { Text("Security") },
+                        modifier = Modifier.testTag(TAB).semantics { if (state != null) stateDescription = state },
+                    )
+                }
+            }
+        }
+        compose.onNodeWithTag(TAB).assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "New results"))
+        compose.onNodeWithTag(TAB).assert(hasText("Security"))
+        shown.value = false
+        compose.waitForIdle()
+        compose.onNodeWithTag(TAB).assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.StateDescription))
     }
 
     @Test
@@ -280,5 +326,6 @@ class SecurityScreenTest {
 
     private companion object {
         const val WAIT_MS = 15_000L
+        const val TAB = "test.tab.Security"
     }
 }

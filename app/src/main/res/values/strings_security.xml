@@ -106,8 +106,9 @@
         <item quantity="other">%1$s accounts are left out of the check.</item>
     </plurals>
 
-    <!-- The dot on the Security tab of the bottom bar, read by TalkBack after the tab's name: the
-         check has found something the user has not seen yet (ux.md §5.16, §8). -->
+    <!-- The state of the Security tab of the bottom bar while its dot shows, read by TalkBack after
+         the tab's name ("Security, new results"): the check has found something the user has not
+         seen yet (ux.md §5.16, §8). -->
     <string name="security_new_results">New results</string>
 
     <!-- ===== The list behind a card (ux.md §5.16, “Group list”) ===== -->
