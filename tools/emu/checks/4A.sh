@@ -1042,10 +1042,9 @@ w5_backup() {
     pva_need pv.backup.password 20 && pva_type pv.backup.password "$PVA_PASSWORD" || return 1
     pva_hide_keyboard
     pva_tap pv.backup.submit || return 1
-    if pva_present pv.backup.choose 15; then pva_tap pv.backup.choose || return 1; fi
     picker_save || return 1
     pva_need pv.backup.done 60 || return 1
-    pv_log "the backup's last screen: $(pv_ui_nodes | awk -F'|' '$3 ~ /^pv[.]backup[.]line[.]/ { getline; } $1 != "" { print $1 }' | tr '\n' ' ' | cut -c1-300)"
+    pv_log "the backup's last screen: $(pva_text pv.backup.line.0 2>/dev/null)"
     pva_tap pv.backup.done && pva_on Settings 20
 }
 
@@ -1060,6 +1059,7 @@ w5_export() {
     pva_tap pv.export.submit || return 1
     picker_save || return 1
     pva_need pv.export.saved 60 || return 1
+    pv_log "the export's last screen: $(pva_text pv.export.saved 2>/dev/null)"
     pva_tap pv.export.done && pva_on Settings 20
 }
 
@@ -1070,11 +1070,16 @@ w5_import() {
     pv_shell content call --uri content://media --method scan_volume --arg external_primary >/dev/null 2>&1
     before=$(pva_row_titles | wc -l)
     w5_settings && pva_reveal pv.open.Import && pva_tap pv.open.Import && pva_on Import 20 || return 1
-    pva_need pv.import.chooseFile 20 && pva_tap pv.import.chooseFile || return 1
+    pva_need pv.import.source.csv 20 && pva_tap pv.import.source.csv || return 1
     picker_open "$W5_CSV" || return 1
     pva_need pv.import.import 60 || { pv_log "no Import button; ids: $(pva_ids)"; return 1; }
-    pva_tap pv.import.import || return 1
-    pva_need pv.import.done 60 && pva_tap pv.import.done || return 1
+    pv_log "the preview: $(pva_text pv.import.found 2>/dev/null) $(pva_text pv.import.encoding 2>/dev/null)"
+    pva_tap pv.import.import && pva_need pv.import.done 60 || return 1
+    pv_log "the import: $(pva_text pv.import.done 2>/dev/null)"
+    # "Delete it now?" about the file that holds the passwords unprotected: Delete file.
+    if pva_present pv.import.deleteFile 5; then pva_tap pv.import.deleteFile && pva_need pv.import.fileOutcome 20 || return 1; fi
+    pva_tap pv.import.finish && pva_on Settings 20 || return 1
+    [ -z "$(in_download "^$(pva_re "$W5_CSV")\$")" ] || { pv_log "the imported file is still in Download"; return 1; }
     pva_tap pv.tab.Passwords && pva_on Passwords 20 && pva_row_with "Tashkent Metro" 15 && pva_row_with Kapitalbank 15
 }
 
@@ -1093,13 +1098,21 @@ w5_restore() {
     pva_tap pv.backup.restore && pva_unlocked Passwords 120 && pva_settle Passwords 60
 }
 
+# w5_old: Settings > "Old passwords" lists the vault the restore put aside; its "Open" with that
+# vault's master password adds its accounts (the two imported ones) to the current vault.
 w5_old() {
+    local open
     w5_settings && pva_reveal pv.open.OldPasswords && pva_tap pv.open.OldPasswords && pva_on OldPasswords 20 || return 1
     pva_need pv.backup.old.list 15 || return 1
-    pv_ui_nodes | grep -q '|pv\.backup\.old\.item\.' || { pv_log "no vault in Old passwords; ids: $(pva_ids)"; return 1; }
-    pv_log "Old passwords: $(pv_ui_nodes | grep -A 3 '|pv\.backup\.old\.item\.' | cut -d'|' -f1 | grep -v '^$' | tr '\n' ';' | cut -c1-300)"
+    open=$(pv_ui_nodes | grep -o 'pv\.backup\.old\.open\.[0-9a-f-]*' | head -n 1)
+    [ -n "$open" ] || { pv_log "no vault in Old passwords; ids: $(pva_ids)"; return 1; }
+    pv_log "Old passwords: $(pv_ui_nodes | grep -A 1 '|pv\.backup\.old\.item\.' | cut -d'|' -f1 | grep -v '^$' | tr '\n' ';' | cut -c1-200)"
+    pva_tap "$open" && pva_need pv.backup.password 20 && pva_type pv.backup.password "$PVA_PASSWORD" || return 1
+    pva_hide_keyboard
+    pva_tap pv.backup.submit && pva_need pv.backup.old.done 60 || return 1
+    pv_log "$(pva_text pv.backup.old.done)"
     pv_shell input keyevent KEYCODE_BACK >/dev/null
-    pva_on Settings 20
+    pva_on Settings 20 && pva_tap pv.tab.Passwords && pva_on Passwords 20 && pva_row_with "Tashkent Metro" 15 && pva_row_with Kapitalbank 15
 }
 
 wave5() {
@@ -1119,7 +1132,8 @@ wave5() {
     pv_step "wave5: import of a small CSV (two accounts) from Download" -- w5_import
     pv_step "wave5: a restore from the lock screen with the backup" -- w5_restore "$backup"
     pv_step "wave5: the restore kept the lock delay (decision 13): 5 minutes in pv_settings" -- lock_delay_stored 5m
-    pv_step "wave5: Old passwords lists the vault the restore put aside" -- w5_old
+    pv_step "wave5: after the restore the list has the backup's accounts only" -- eval 'pva_on Passwords 20 && pva_row_with Gmail 10 && [ -z "$(pva_row_titles | grep -x "Tashkent Metro")" ]'
+    pv_step "wave5: Old passwords lists the vault the restore put aside; Open adds its accounts" -- w5_old
     pv_step "wave5: no crash" -- pva_no_crash
 }
 
