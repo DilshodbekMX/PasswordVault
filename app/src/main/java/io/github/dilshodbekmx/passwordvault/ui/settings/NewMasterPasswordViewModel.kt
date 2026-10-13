@@ -273,10 +273,14 @@ class NewMasterPasswordViewModel(
                 choice.refuseUnassigned()
                 state.update { it.copy(stage = NewStage.CHOOSE) }
             }
-            // The proof went meanwhile (the app was left, lock.md §5.8): asked again, the password kept.
-            RequestResult.NotAllowed -> {
+            // The proof went meanwhile (the app was left, lock.md §5.8): asked again, the password kept. The pad
+            // only while a PIN exists; without one the fingerprint is asked on the explanation, as at first.
+            RequestResult.NotAllowed -> if (lock.status.value.pin == PinStatus.On) {
                 state.update { it.copy(stage = NewStage.PIN, line = UiText.of(R.string.master_proof_again), entered = 0) }
-                if (lock.status.value.pin != PinStatus.On) proveWithoutPin()
+            } else {
+                state.update { it.copy(stage = NewStage.EXPLAIN, entered = 0) }
+                proveWithoutPin()
+                state.update { it.copy(line = UiText.of(R.string.master_proof_again)) } // says why, also after a closed prompt
             }
             RequestResult.Cancelled -> {
                 choice.wipe()

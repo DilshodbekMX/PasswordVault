@@ -329,6 +329,27 @@ class NewMasterPasswordViewModelTest {
     }
 
     @Test
+    fun aFingerprintProofThatWentWhileThePasswordWasChosen_isAskedAgainWithoutThePad() = runTest(dispatcher) {
+        val lock = lockWith(pin = PinStatus.NotSet, fingerprint = FingerprintStatus.On)
+        val vm = model(lock)
+        lock.fake.proofResults += ProofResult.Proven(Shortcut.FINGERPRINT)
+        vm.proveWithoutPin()
+        advanceUntilIdle()
+        lock.fake.requestResults += RequestResult.NotAllowed
+        lock.fake.proofResults += ProofResult.Cancelled // the prompt that asks again is closed
+        val words = chooseAndTypeAgain(vm)
+        advanceUntilIdle()
+        assertEquals("the fingerprint asked again, never a PIN", listOf(false, false), lock.fake.proofPins.toList())
+        assertEquals("no PIN pad without a PIN (lock.md F11 step 3)", NewStage.EXPLAIN, vm.ui.value.stage)
+        assertEquals(UiText.of(R.string.master_proof_again), vm.ui.value.line)
+        lock.fake.proofResults += ProofResult.Proven(Shortcut.FINGERPRINT)
+        vm.proveWithoutPin() // "Continue": the prompt again
+        advanceUntilIdle()
+        assertEquals("asked straight away with the typings kept", listOf(words to words, words to words), lock.requests)
+        assertEquals(NewStage.WAIT, vm.ui.value.stage)
+    }
+
+    @Test
     fun aFailedRequest_tryAgainUsesTheSameTypings() = runTest(dispatcher) {
         for ((result, line) in listOf(RequestResult.NotSaved to R.string.master_request_not_saved, RequestResult.NoMemory to R.string.master_request_no_memory)) {
             val lock = lockWith()
