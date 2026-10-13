@@ -24,7 +24,7 @@ API level can run at once (each is its own read-only instance of the base).
 
 | Script | What it does |
 |---|---|
-| `boot.sh API` | API 24 (Android 7.0), 28 (Android 9) or 37 (Android 17). Hands out a console port, starts the base with `-read-only`, waits for `sys.boot_completed` and the package manager, dismisses the lock screen with the PIN 1111, waits for the launcher, prints the serial. `--slot-wait S` (default 1800) is how long it waits for a free slot; `--boot-timeout S` (default 300). A boot that is not ready in time (a guest now and then hangs while booting) is stopped and started once more; after a second failure: exit 1 and no device, entry or overlay left behind. |
+| `boot.sh API` | API 24 (Android 7.0), 28 (Android 9) or 37 (Android 17). Hands out a console port, starts the base with `-read-only`, waits for `sys.boot_completed` and the package manager, dismisses the lock screen with the PIN 1111, waits for the launcher, puts an API 37 device in airplane mode (below, "Device facts"; `PV_BOOT_NETWORK=on` keeps the network), prints the serial. `--slot-wait S` (default 1800) is how long it waits for a free slot; `--boot-timeout S` (default 300). A boot that is not ready in time (a guest now and then hangs while booting) is stopped and started once more; after a second failure: exit 1 and no device, entry or overlay left behind. |
 | `boot.sh --integrator API` | The integrator's fixed ports: 5580 (API 37), 5582 (API 28), 5584 (API 24). They do not count toward the six. |
 | `boot.sh --list` | Every device `boot.sh` started, with its worktree, mode, pid and whether it still runs. |
 | `boot.sh --verify-base [API]` | sha1 of each base disk image against the record written at provisioning. |

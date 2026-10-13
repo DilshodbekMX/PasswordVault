@@ -9,6 +9,10 @@
 #       fixed port instead: 5580 for API 37, 5582 for 28, 5584 for 24. Waits until the device has
 #       booted and the lock screen is dismissed with the device PIN 1111, then prints its serial
 #       (emulator-PORT) on stdout; messages go to stderr. Stop it with tools/emu/stop.sh SERIAL.
+#       An API 37 device is put in airplane mode once it is ready: with the network on, the Play
+#       Store updates its apps within about 20 minutes of a boot and fills the 6 GB /data to 96 %,
+#       after which installs fail ("Requested internal only, but not enough space"; build plan 6.1,
+#       2026-10-09). PV_BOOT_NETWORK=on keeps the network.
 #   tools/emu/boot.sh --list               the devices boot.sh started, for every worktree
 #   tools/emu/boot.sh --verify-base [API]  the base's disk images against their sha1 record
 #   tools/emu/boot.sh --provision API      (once) make the base again from its system image and
@@ -378,6 +382,11 @@ pv_boot() { # API MODE SLOT-WAIT BOOT-TIMEOUT -> prints the serial
     if [ "$(pv_shell settings get global animator_duration_scale | tr -d '\r')" != 0 ] \
         && [ "$(pv_shell settings get global animator_duration_scale | tr -d '\r')" != 0.0 ]; then
         pv_log "warning: animations are on; the base does not look provisioned"
+    fi
+    if [ "$api" = 37 ] && [ "${PV_BOOT_NETWORK:-off}" != on ]; then
+        # The app needs no network (it never gets the INTERNET permission); only the Play Store's updates do.
+        pv_shell cmd connectivity airplane-mode enable >/dev/null 2>&1 \
+            || pv_log "warning: airplane mode could not be turned on; long runs may fill /data"
     fi
     PV_BOOT_DONE=1
     pv_log "emulator-$port is ready (API $api)"
