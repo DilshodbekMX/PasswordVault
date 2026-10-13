@@ -250,9 +250,19 @@ passwords_routes() {
     present pv.list.recentlyDeleted && tap pv.list.recentlyDeleted && on RecentlyDeleted && back Passwords
 }
 
+# The Security tab (7.1) and the guided change (7.2): two accounts with one password make the reuse
+# card, whose button opens Group; a row's "Change" there (pv.group.action.<id>) opens GuidedChange.
+# The check runs in the background after the accounts are saved, so the card may take a moment.
 security_routes() {
-    tap pv.tab.Security && on Security && present pv.tab.Settings \
-        && open Group && open GuidedChange && back Group && back Security
+    local action
+    pva_add_account Walk2 walk2 Wk7Pq2Nz9Rt4Lm9 https://walk2.uz x && back Passwords \
+        && pva_add_account Walk3 walk3 Wk7Pq2Nz9Rt4Lm9 https://walk3.uz x && back Passwords \
+        && tap pv.tab.Security && on Security && present pv.tab.Settings \
+        && pv_ui_wait '[|]pv[.]security[.]card[.]reused[.]open$' 60 \
+        && tap pv.security.card.reused.open && on Group || return 1
+    action=$(pv_ui_nodes | awk -F'|' '$3 ~ /^pv[.]group[.]action[.]/ { print $3; exit }')
+    [ -n "$action" ] || { pv_log "no row's Change on Group"; return 1; }
+    tap "$action" && on GuidedChange && back Group && back Security
 }
 
 # Settings (build plan 4.3): the App lock rows are in the list itself, so no row opens AppLock or
