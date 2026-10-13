@@ -9,8 +9,8 @@
 #   tools/emu/lock/E17.sh SERIAL [--apk FILE] [--short]
 #       SERIAL comes from tools/emu/boot.sh; the APK defaults to the debug build. On API 26 and newer
 #       every item runs (about 14 minutes: the 6 minutes in the picker); --short leaves the 6 minutes out.
-#       On Android 7 (API 24 and 25) only the last item runs, and the others print SKIPPED (lock.md
-#       lists them for Android 17).
+#       On Android 7 (API 24 and 25) only the last item runs; the others are NOTE lines, not steps
+#       (lock.md lists them for Android 17).
 #
 # The file picker is the system's (DocumentsUI), opened the way the app opens it for an import:
 # Settings › Import › "Another password app or a spreadsheet saved as CSV" (OpenDocument; the app calls
@@ -104,8 +104,12 @@ in_picker() {
         picker_in_front || { pv_log "the picker left the front after $waited s: $(pv_focus)"; return 1; }
     done
     pv_shell input keyevent KEYCODE_BACK >/dev/null
-    pv_sleep 2
-    pva_in_front || { pv_log "the app is not in front after Back: $(pv_focus)"; return 1; }
+    local deadline=$((SECONDS + 10))
+    until pva_in_front; do
+        [ $SECONDS -lt $deadline ] || { pv_log "the app is not in front 10 s after Back: $(pv_focus)"; return 1; }
+        pv_sleep 0.5
+    done
+    pv_ui_wait '[|]pv\.(route\.Import|import\.(sources|help))$' 15 || { pv_log "not back on the import's screen; ids: $(pva_ids)"; return 1; }
     pva_absent pv.route.Locked || { pv_log "the app locked"; return 1; }
     pvl_status || return 1
     [ "$(pvl_lock_state)" = unlocked ] || { pv_log "the lock is '$(pvl_lock_state)'"; return 1; }
@@ -150,9 +154,7 @@ picker_screen_off_resume() {
     pv_shell input keyevent KEYCODE_WAKEUP >/dev/null
     pv_sleep 1
     pv_unlock || return 1
-    pv_sleep 2
-    pvl_status || return 1
-    case "$(pvl_lock_state)" in "locked: "*) ;; *) pv_log "the app did not lock at the screen-off: '$(pvl_lock_state)'"; return 1 ;; esac
+    pvl_wait_lock_state '^locked: ' 10 || { pv_log "the app did not lock at the screen-off"; return 1; }
     picker_in_front || { pv_log "the picker is not in front after the screen came back: $(pv_focus)"; return 1; }
     pick_file || return 1
     pvl_wait_screen 'pad|prompt' 20 || return 1
@@ -227,7 +229,7 @@ if [ "$API" -lt 26 ]; then
     for item in "away 31 s: locked" "Immediately: away 2 s: locked" "the screen off: locked at once" \
         "90 s in the file picker with Immediately: still open" "6 minutes in the file picker: still open" \
         "the picker and the screen off: locked; the task resumes after the unlock" "taps through an overlay dropped"; do
-        pvl_skip "$item" "lock.md lists it for Android 17; on Android 7 E17 checks only the pad"
+        pvl_not_here "$item" "lock.md lists it for Android 17; on Android 7 E17 checks only the pad"
     done
     pvl_end
 fi

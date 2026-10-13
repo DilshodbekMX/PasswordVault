@@ -25,7 +25,7 @@
 #       the language changed in Settings › Language (Русский, then System language): the same, through
 #       the dialog of build plan 6.1 (pvl_later: SKIPPED until 6.1 is merged);
 #   - the app stopped and started again under the window helper's saved-state probe (StateProbe of
-#     tools/emu/window/helper, API 26 and newer: SKIPPED on Android 7); the master password typed on the
+#     tools/emu/window/helper, API 26 and newer; a NOTE on Android 7); the master password typed on the
 #     lock screen; turned to landscape and back: the field still holds as many characters as were
 #     typed (its mask), and no saved Bundle holds the password, in UTF-8 or UTF-16, while each names
 #     the route Locked (so it is the screen's whole state); Unlock opens the app with what the field
@@ -42,6 +42,18 @@ pvl_window_lib
 activity_object() {
     pv_shell dumpsys activity top 2>/dev/null | tr -d '\r' \
         | awk -v a="ACTIVITY $PV_PACKAGE/" 'index($0, a) { f = 1 } f && /Local Activity/ { print $3; exit }'
+}
+
+# recreated OLD [SECONDS]: the app's activity is another object than OLD within SECONDS (default 15);
+# prints the new one.
+recreated() {
+    local deadline=$((SECONDS + ${2:-15})) now
+    while :; do
+        now=$(activity_object)
+        [ -n "$now" ] && [ "$now" != "$1" ] && { echo "$now"; return 0; }
+        [ $SECONDS -lt $deadline ] || { pv_log "the activity was not recreated: $1 -> ${now:-none}"; return 1; }
+        pv_sleep 1
+    done
 }
 
 dots() { pva_node pv.pin.dots | cut -d'|' -f2; }
@@ -62,10 +74,8 @@ three_digits() {
 }
 
 rotate_keeps_digits() {
-    local after
     pva_rotate 1
-    after=$(activity_object)
-    [ -n "$after" ] && [ "$after" != "$ACT" ] || { pv_log "the activity was not recreated: $ACT -> $after"; return 1; }
+    recreated "$ACT" >/dev/null || return 1
     pvl_wait_screen pad 10 || return 1
     pvl_expect "$(dots)" plural common_pin_dots 3 || return 1
     pvl_status || return 1
@@ -91,10 +101,8 @@ prompt_open() {
 }
 
 rotate_with_prompt() {
-    local after
     pva_rotate 1
-    after=$(activity_object)
-    [ -n "$after" ] && [ "$after" != "$PROMPT_ACT" ] || { pv_log "the activity was not recreated: $PROMPT_ACT -> $after"; return 1; }
+    recreated "$PROMPT_ACT" >/dev/null || return 1
     pvl_prompt_up 10 || return 1
     pvl_status || return 1
     case "$(pvl_item prompt:)" in "prompt: UNLOCK, launch "*) ;; *) pv_log "$(pvl_item prompt:)"; return 1 ;; esac
@@ -117,16 +125,15 @@ immediately() {
 
 # still_open ROUTE PID ACT: ROUTE shown, not locked, the same process, another activity object.
 still_open() {
-    local route=$1 pid=$2 act=$3 now
+    local route=$1 pid=$2 act=$3
+    recreated "$act" 20 >/dev/null || return 1
     pva_on "$route" 20 || return 1
     pv_sleep 3
-    pva_absent pv.route.Locked || { pv_log "the app locked"; return 1; }
     pva_on "$route" 5 || return 1
+    pva_absent pv.route.Locked || { pv_log "the app locked"; return 1; }
     pvl_status || return 1
     [ "$(pvl_lock_state)" = unlocked ] || { pv_log "the lock is '$(pvl_lock_state)'"; return 1; }
     [ "$(pva_pid)" = "$pid" ] || { pv_log "the process changed: $pid -> $(pva_pid)"; return 1; }
-    now=$(activity_object)
-    [ -n "$now" ] && [ "$now" != "$act" ] || { pv_log "the activity was not recreated: $act -> $now"; return 1; }
 }
 
 locale_command() {
@@ -135,9 +142,11 @@ locale_command() {
     pid=$(pva_pid); act=$(activity_object)
     out=$(pva_debug locale ru) || return 1
     pvl_note "E11: $out"
+    case "$out" in "locale: ru (was "*) ;; *) pv_log "the app's languages did not become ru: $out"; return 1 ;; esac
     still_open Settings "$pid" "$act" || return 1
     act=$(activity_object)
     out=$(pva_debug locale system) || return 1
+    case "$out" in "locale: system (was ru)"*) ;; *) pv_log "the app's languages did not go back: $out"; return 1 ;; esac
     still_open Settings "$pid" "$act"
 }
 
@@ -261,7 +270,7 @@ else
     pv_step "the app started again: the lock screen" -- eval 'pvl_force_stop && pva_relaunch && pvl_wait_screen "pad|prompt" 30'
     pv_step "the master password typed on the lock screen (its mask has every character)" -- mp_typed || pvl_end
     pv_step "turned to landscape and back: the field keeps its text" -- eval 'pva_rotate 1; pva_rotate 0; pva_hide_keyboard; [ "$(pva_text pv.lock.password)" = "$(printf "%*s" "${#PVA_PASSWORD}" "" | sed "s/ /•/g")" ]'
-    pvl_skip "no saved Bundle holds the master password" "the window helper's saved-state probe needs API 26 (tools/emu/window/state.sh); $SERIAL has API $API"
+    pvl_not_here "no saved Bundle holds the master password" "the window helper's saved-state probe needs API 26 (tools/emu/window/state.sh); E11 checks the Bundle on API 28 and 37"
     pv_step "Unlock opens the app with what the field kept" -- mp_unlocks
 fi
 pv_shell am force-stop "$PV_PACKAGE" >/dev/null 2>&1

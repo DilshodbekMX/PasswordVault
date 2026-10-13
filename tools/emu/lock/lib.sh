@@ -135,12 +135,22 @@ pvl_setting_set() {
 pvl_undo() { PVL_UNDO+=("$1"); }
 
 # pvl_window_lib: sources tools/emu/window/lib.sh (the window helper: win_helper_build,
-# win_helper_install, win_cmd, win_a11y_*, win_control_start, win_file). That file sources app.sh
-# again, which sets the screen's size back to its defaults (1080x1920): pva_init reads it again.
+# win_helper_install, win_cmd, win_a11y_*, win_control_start, win_file), once. That file sources
+# adb.sh and app.sh again, whose top level sets their variables back to their defaults (the screen's
+# size to 1080x1920, so that on a 2400-pixel screen a button at y 1897 was taken for the navigation
+# bar): every PV_* and PVA_* variable is kept as the script had it and put back afterwards.
 pvl_window_lib() {
+    local saved
+    [ -z "${WIN_HELPER:-}" ] || return 0
+    saved=$(declare -p $(compgen -v | grep -E '^PVA?_') 2>/dev/null | sed 's/^declare /declare -g /')
     source "$EMU/window/lib.sh"
-    pva_init
+    eval "$saved"
 }
+
+# pvl_not_here NAME REASON: a part of a check that lock.md (or a tool the check needs) does not have
+# on this API level: a NOTE line, not a step, so it counts as neither PASS nor SKIPPED (SKIPPED is
+# kept for what a staging build or a missing root prevents, and for a later package's steps).
+pvl_not_here() { pvl_note "not on API $API: $1 ($2)"; }
 
 # pvl_note TEXT: a line for the record, not a step: what a check is asked to log or to note.
 pvl_note() { echo "NOTE $*"; }
@@ -430,13 +440,17 @@ pvl_wait_screen() {
     done
 }
 
-# pvl_nowhere ID: no node ID on the screen, also below the fold: the keyboard closed, and looked for
-# again after each of two swipes down (only nodes that are shown are reported).
+# pvl_nowhere ID [ANCHOR]: no node ID on the screen, also below the fold: the keyboard closed, and
+# looked for again after each of two swipes down (only nodes that are shown are reported). Every dump
+# must show ANCHOR (default pv.route.Locked), so that a failed or empty dump never reads as "absent".
 pvl_nowhere() {
-    local i
+    local i nodes anchor=${2:-pv.route.Locked}
     pva_hide_keyboard
     for i in 1 2 3; do
-        pva_absent "$1" || { pv_log "$1 is on the screen"; return 1; }
+        nodes=$(pv_ui_nodes)
+        pva_in_nodes "[|]$(pva_re "$anchor")\$" "$nodes" \
+            || { pv_log "looking for $1: the dump does not show $anchor; ids: $(pva_ids)"; return 1; }
+        [ -z "$(pva_node "$1" "$nodes")" ] || { pv_log "$1 is on the screen"; return 1; }
         [ "$i" -lt 3 ] && pva_scroll_down
     done
     return 0

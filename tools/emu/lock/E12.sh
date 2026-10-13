@@ -91,10 +91,16 @@ mark() {
 
 events_since() { win_file "a11y-$1-events.log" | tail -n "+$(( $( [ "$1" = plain ] && echo "$MARK_PLAIN" || echo "$MARK_TOOL") + 1 ))"; }
 
-# tool_view: the tool service's view as "depth|id|text|desc|clickable" lines (every window).
+# tool_view KIND: what the service KIND (tool or plain) reaches, as "depth|id|text|desc|clickable"
+# lines (every window); status 1 when its dump failed (win_a11y_dump checks the dump's nonce, so a
+# view is never an earlier one) or holds no node at all.
 tool_view() {
-    win_a11y_dump "$1" | awk -F'\t' "$WIN_AWK_VAL"'
-        $1 == "NODE" { id = $5; sub(/.*\//, "", id); if (id == "null") id = ""; print $2 "|" id "|" val("text") "|" val("desc") "|" val("clickable") }'
+    local dump view
+    dump=$(win_a11y_dump "$1") || return 1
+    view=$(printf '%s\n' "$dump" | awk -F'\t' "$WIN_AWK_VAL"'
+        $1 == "NODE" { id = $5; sub(/.*\//, "", id); if (id == "null") id = ""; print $2 "|" id "|" val("text") "|" val("desc") "|" val("clickable") }')
+    [ -n "$view" ] || { pv_log "the $1 service's dump has no node"; return 1; }
+    printf '%s\n' "$view"
 }
 
 # labelled VIEW ID LABEL: the node ID is clickable, and it or a node below it has LABEL as its text or
@@ -133,14 +139,21 @@ act() {
     return 1
 }
 
+# dots_read N [SECONDS]: the tool reads the dots as "PIN, N of 6 digits entered" within SECONDS
+# (default 5).
 dots_read() {
-    local view
-    view=$(tool_view tool) || return 1
-    pvl_expect "$(printf '%s\n' "$view" | awk -F'|' '$2 == "pv.pin.dots" { print $4; exit }')" plural common_pin_dots "$1"
+    local view deadline=$((SECONDS + ${2:-5})) desc
+    while :; do
+        view=$(tool_view tool) || return 1
+        desc=$(printf '%s\n' "$view" | awk -F'|' '$2 == "pv.pin.dots" { print $4; exit }')
+        pvl_expect "$desc" plural common_pin_dots "$1" 2>/dev/null && return 0
+        [ $SECONDS -lt $deadline ] || { pvl_expect "$desc" plural common_pin_dots "$1"; return 1; }
+        pv_sleep 0.5
+    done
 }
 
 tool_types_three() {
-    local i view
+    local i view nodes
     mark
     for ((i = 0; i < 3; i++)); do
         act "pv.pin.key.${PVL_PIN:$i:1}" focus >/dev/null 2>&1
@@ -148,22 +161,31 @@ tool_types_three() {
         pv_sleep 0.5
     done
     dots_read 3 || return 1
-    # No node anywhere holds a run of the digits typed.
+    # No node anywhere holds a run of the digits typed: in the tool's view of every window, and in
+    # uiautomator's dump of the app's (each must show the pad, so that an empty dump is not "clean").
     view=$(tool_view tool) || return 1
     printf '%s\n' "$view" > "$PVL_OUT/tool-view-3.txt"
+    printf '%s\n' "$view" | grep -q '^[0-9]*|pv\.pin\.dots|' || { pv_log "the tool's view has no pad"; return 1; }
     ! printf '%s\n' "$view" | awk -F'|' '{ print $3; print $4 }' | grep -q -F -e "${PVL_PIN:0:2}" -e "${PVL_PIN:1:2}" \
         || { pv_log "a node holds digits that were typed"; return 1; }
-    ! pv_ui_nodes | cut -d'|' -f1,2 | grep -q -F -e "${PVL_PIN:0:2}" -e "${PVL_PIN:1:2}" \
+    nodes=$(pv_ui_nodes)
+    pva_in_nodes '[|]pv\.lock\.pad$' "$nodes" || { pv_log "uiautomator's dump has no pad; ids: $(pva_ids)"; return 1; }
+    ! printf '%s\n' "$nodes" | cut -d'|' -f1,2 | grep -q -F -e "${PVL_PIN:0:2}" -e "${PVL_PIN:1:2}" \
         || { pv_log "uiautomator reads digits that were typed"; return 1; }
 }
 
 # What the plain service (not a tool) learned while the tool typed: events of the app that name a key,
 # and keys in its view.
+# PLAIN_ERROR is set when nothing could be learned (the service not connected, or no view of it):
+# that is a FAIL on every level, never KNOWN or PASS.
+PLAIN_ERROR=""
 plain_learned() {
     local events view found=""
+    # Still connected, both (the control showed the plain one reading before the pad came).
+    win_a11y_wait 10 || { PLAIN_ERROR="the services are not connected"; return 1; }
     events=$(events_since plain | grep -F "$PV_PACKAGE" )
     printf '%s\n' "$events" > "$PVL_OUT/plain-events-while-typing.txt"
-    view=$(tool_view plain) || return 1
+    view=$(tool_view plain) || { PLAIN_ERROR="no view of the windows from the service that is not a tool"; return 1; }
     printf '%s\n' "$view" > "$PVL_OUT/plain-view-pad.txt"
     if printf '%s\n' "$events" | grep -q -E 'pv\.pin\.(key\.[0-9]|delete)|	text=[0-9]	|	desc=[0-9]	'; then
         found="its events name the keys pressed ($(printf '%s\n' "$events" | grep -c -E 'pv\.pin\.key\.[0-9]|text=[0-9]	') events)"
@@ -181,6 +203,8 @@ plain_step() {
     local name="the service that is not an accessibility tool sees no key press and no key"
     if plain_learned; then
         pv_report PASS "$name"
+    elif [ -n "$PLAIN_ERROR" ]; then
+        pv_report FAIL "$name" "$PLAIN_ERROR"
     elif [ "$API" -ge 34 ]; then
         pv_report FAIL "$name" "$PLAIN_FOUND"
     else
@@ -194,7 +218,7 @@ tool_deletes() {
         act pv.pin.delete click || return 1
         pv_sleep 0.4
     done
-    dots_read 0
+    dots_read 0 5
 }
 
 tool_unlocks() {
