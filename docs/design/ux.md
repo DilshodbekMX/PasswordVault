@@ -180,6 +180,7 @@ Back rules. Predictive back is on at target 36: `onBackPressed` is not called an
 
 | Where | Back does | Notes |
 |---|---|---|
+| Any screen with the keyboard up | Closes the keyboard and nothing else; the next Back does what the rows below say | From Android 13 Back can reach the app before the keyboard, when a screen's `BackHandler` was turned on after the keyboard came up (typing a search query, a form's first change) or the screen opened over a field that kept the keyboard. Every screen with a text field and a `BackHandler` adds `KeyboardFirstOnBack` (`ui/common`) after it (build-plan §12, w5-carry) |
 | Passwords (root) | Leaves the app (system back-to-home animation) | Leaving starts the lock delay. No "press back again to exit" |
 | Security or Settings root | Goes to Passwords, then leaves | Fixed start destination |
 | Passwords with a search query | Clears the query first | Then normal |

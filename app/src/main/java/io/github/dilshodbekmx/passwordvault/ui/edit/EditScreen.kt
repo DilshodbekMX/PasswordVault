@@ -74,6 +74,7 @@ import io.github.dilshodbekmx.passwordvault.i18n.Formatters
 import io.github.dilshodbekmx.passwordvault.i18n.rememberFormatters
 import io.github.dilshodbekmx.passwordvault.nav.Navigator
 import io.github.dilshodbekmx.passwordvault.nav.Route
+import io.github.dilshodbekmx.passwordvault.ui.common.KeyboardFirstOnBack
 import io.github.dilshodbekmx.passwordvault.ui.common.StrengthBar
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultDialog
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultFieldDefaults
@@ -100,6 +101,7 @@ fun EditScreen(vm: EditViewModel, nav: Navigator) {
     val focus = rememberFieldFocus(vm)
 
     BackHandler(enabled = ui.backHandled) { vm.close() }
+    KeyboardFirstOnBack() // Back with the keyboard up closes it, not the form ("Save changes?")
 
     LaunchedEffect(ui.done) {
         when (val done = ui.done) {

@@ -32,6 +32,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import io.github.dilshodbekmx.passwordvault.R
 import io.github.dilshodbekmx.passwordvault.i18n.resolve
+import io.github.dilshodbekmx.passwordvault.ui.common.KeyboardFirstOnBack
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultFieldDefaults
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultSecureField
 import io.github.dilshodbekmx.passwordvault.ui.common.rememberFieldKeyboard
@@ -60,6 +61,7 @@ fun TypeAgainScreen(
 ) {
     if (keepScreenOn) KeepScreenOn()
     BackHandler(enabled = state.settingUp) { /* ignored while the vault is made (ux.md §4) */ }
+    KeyboardFirstOnBack()
     val focus = remember { FocusRequester() }
     val fieldKeyboard = rememberFieldKeyboard()
     var fieldFocused by remember { mutableStateOf(false) }

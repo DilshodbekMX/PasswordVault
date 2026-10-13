@@ -81,6 +81,7 @@ import io.github.dilshodbekmx.passwordvault.i18n.rememberFormatters
 import io.github.dilshodbekmx.passwordvault.nav.Navigator
 import io.github.dilshodbekmx.passwordvault.nav.Route
 import io.github.dilshodbekmx.passwordvault.ui.common.CardPart
+import io.github.dilshodbekmx.passwordvault.ui.common.KeyboardFirstOnBack
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultSearchField
 import io.github.dilshodbekmx.passwordvault.ui.common.cardPart
 import io.github.dilshodbekmx.passwordvault.ui.theme.LocalLook
@@ -133,6 +134,7 @@ fun PasswordsScreen(viewModel: PasswordsViewModel, nav: Navigator) {
 
     val hasQuery = viewModel.query.text.isNotEmpty()
     BackHandler(enabled = hasQuery) { viewModel.clearQuery() }
+    KeyboardFirstOnBack() // Back with the keyboard up closes it and keeps the query
 
     LaunchedEffect(viewModel, snackbar) {
         viewModel.events.collect { event ->

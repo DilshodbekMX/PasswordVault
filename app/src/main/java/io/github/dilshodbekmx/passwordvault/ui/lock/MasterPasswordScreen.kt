@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import io.github.dilshodbekmx.passwordvault.R
 import io.github.dilshodbekmx.passwordvault.i18n.rememberFormatters
 import io.github.dilshodbekmx.passwordvault.lock.LockIntent
+import io.github.dilshodbekmx.passwordvault.ui.common.KeyboardFirstOnBack
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultFieldDefaults
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultSecureField
 import io.github.dilshodbekmx.passwordvault.ui.common.rememberFieldKeyboard
@@ -71,6 +72,7 @@ fun MasterPasswordScreen(
     }
 
     BackHandler(enabled = ui.goesBack) { onAction(LockAction.Send(LockIntent.GoBack)) }
+    KeyboardFirstOnBack()
 
     MasterPasswordContent(
         ui = ui,
