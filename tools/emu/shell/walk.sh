@@ -257,9 +257,9 @@ security_routes() {
 
 # Settings (build plan 4.3): the App lock rows are in the list itself, so no row opens AppLock or
 # CreatePin. Its rows open ChangePin ("Change PIN": a PIN is set), ChangeMasterPassword (5.5's
-# placeholder, with NewMasterPassword), Backup, Export and Import (5.2 to 5.4), Language (6.1's
-# placeholder), the dialog "Appearance" (Route.Theme), the Help pages, Licences and Version. tap
-# only scrolls down, so the rows are taken from the top down.
+# screen; its "I don't remember it" carries pv.open.NewMasterPassword), Backup, Export and Import
+# (5.2 to 5.4), Language (6.1's placeholder), the dialog "Appearance" (Route.Theme), the Help pages,
+# Licences and Version. tap only scrolls down, so the rows are taken from the top down.
 settings_routes() {
     tap pv.tab.Settings && on Settings && to_top \
         && open ChangePin && back Settings \
