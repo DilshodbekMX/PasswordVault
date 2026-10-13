@@ -1,21 +1,39 @@
 package io.github.dilshodbekmx.passwordvault.ui.settings
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.runtime.EntryProviderScope
 import io.github.dilshodbekmx.passwordvault.AppGraph
 import io.github.dilshodbekmx.passwordvault.nav.HelpPage
 import io.github.dilshodbekmx.passwordvault.nav.Navigator
 import io.github.dilshodbekmx.passwordvault.nav.Route
-import io.github.dilshodbekmx.passwordvault.ui.shell.RoutePlaceholder
-import io.github.dilshodbekmx.passwordvault.ui.shell.openAction
 
 /**
- * The routes of Help (ux.md §5.22): Help(page) and Licences. Placeholders until the help package
- * (build plan 7.3) replaces this body; each page's placeholder opens the next page.
+ * The routes of Help (ux.md §5.22; build plan 7.3): `Route.Help(page)`, a help page ([HelpScreen],
+ * whose text [HelpPages] gives with the clipboard delay chosen in Settings), and `Route.Licences`,
+ * the open-source licences ([LicencesScreen]). Settings › Help opens them, and the pages open each
+ * other where one points to another. Nothing on them is typed or secret.
  */
 fun EntryProviderScope<Route>.helpNav(graph: AppGraph, nav: Navigator) {
-    entry<Route.Help> { route ->
-        val next = HelpPage.entries.getOrNull(route.page.ordinal + 1)
-        RoutePlaceholder(route, nav, if (next == null) listOf(openAction(nav, Route.Licences)) else listOf(openAction(nav, Route.Help(next))))
+    entry<Route.Help> { route -> HelpRoute(graph, nav, route.page) }
+    entry<Route.Licences> { LicencesRoute(graph, nav) }
+}
+
+@Composable
+private fun HelpRoute(graph: AppGraph, nav: Navigator, page: HelpPage) {
+    val clipDelay by graph.settings.clipDelay.collectAsStateWithLifecycle()
+    val blocks = remember(page, clipDelay) { HelpPages.blocks(page, HelpFacts.of(clipDelay)) }
+    HelpScreen(page, blocks, nav)
+}
+
+@Composable
+private fun LicencesRoute(graph: AppGraph, nav: Navigator) {
+    val vm = viewModel {
+        val reader = LicenceTextReader(graph.app.resources)
+        LicencesViewModel(reader::read, graph.dispatchers.io)
     }
-    entry<Route.Licences> { route -> RoutePlaceholder(route, nav) }
+    LicencesScreen(vm, nav)
 }

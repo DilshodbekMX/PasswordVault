@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Help, the open-source licences and the first-copy tip (build plan 7.3; ux.md §5.22, §6, §7;
+     lock.md §2.3, §16.2 item 12; architecture.md D-14). Every name starts with help_.
+
+     Plain English at about level B1 (ux.md §7): short sentences, one idea per sentence, "you" and
+     "your", no technical words, numbers as digits, the glossary's words (i18n.md §3). Sentence case
+     for titles and buttons (i18n.md §4.3). Quoted names of buttons and screens are those the app
+     shows; keep them the same as in their own files when you translate.
+
+     The app's name is never written in these texts: %1$s stands for it wherever a text names the
+     app, because the name may still change (architecture.md D-23, docs/design/looks/README.md).
+     English only until wave 6; build plan 6.3 and 6.4 translate this file (build-plan.md §12). -->
+<resources>
+
+    <!-- ===== The help pages (ux.md §5.22, §7.6), from Settings › Help ===== -->
+
+    <!-- Title in the bar at the top of every help page. Short: one line. -->
+    <string name="help_title">Help</string>
+    <!-- The heading at the top of the page; the same words as its row in Settings. -->
+    <string name="help_protection_title">How your passwords are protected</string>
+    <!-- The heading at the top of the page; the same words as its row in Settings. -->
+    <string name="help_lost_title">If you lose your phone or move to a new one</string>
+    <!-- The heading at the top of the page; the same words as its row in Settings. -->
+    <string name="help_forgot_mp_title">If you forget your master password</string>
+    <!-- The heading at the top of the page; the same words as its row in Settings. -->
+    <string name="help_forgot_pin_title">If you forget your PIN</string>
+    <!-- Title of the page with the app's version (glossary 121); the same word as its row in Settings. -->
+    <string name="help_version_title">Version</string>
+    <!-- Title of the licences page (glossary 120); the same words as its row in Settings. Short: one line. -->
+    <string name="help_licences_title">Open-source licences</string>
+
+    <!-- ===== How your passwords are protected ===== -->
+
+    <string name="help_protection_file">Your passwords are kept in a locked file on this phone. Only your master password can unlock it.</string>
+    <string name="help_protection_offline">The app never connects to the internet; it does not have permission to. So it cannot tell you if a website leaked your password.</string>
+    <string name="help_protection_screenshots">Screenshots of the app are blocked.</string>
+
+    <!-- A heading inside the page. -->
+    <string name="help_protection_heading_copy">Copied passwords</string>
+    <!-- When the app removes a copied password, in seconds (the chosen setting: 30). The second
+         sentence: on some phones the app cannot see what is on the clipboard, so it clears it
+         whatever it holds. -->
+    <plurals name="help_protection_copy_seconds">
+        <item quantity="one">Passwords you copy are removed from the clipboard after %d&#160;second. Anything else you copy in that time may be removed too.</item>
+        <item quantity="other">Passwords you copy are removed from the clipboard after %d&#160;seconds. Anything else you copy in that time may be removed too.</item>
+    </plurals>
+    <!-- The same in minutes (the chosen setting: 1, 2 or 5). -->
+    <plurals name="help_protection_copy_minutes">
+        <item quantity="one">Passwords you copy are removed from the clipboard after %d&#160;minute. Anything else you copy in that minute may be removed too.</item>
+        <item quantity="other">Passwords you copy are removed from the clipboard after %d&#160;minutes. Anything else you copy in that time may be removed too.</item>
+    </plurals>
+    <!-- On the help page and in the first-copy tip (architecture.md D-14). "Force stop" and the
+         battery setting "Restricted" are the names in the phone's settings for this app; use the
+         words the phone's settings use in your language. -->
+    <string name="help_force_stop">If you force-stop this app, or set its battery use to “Restricted”, a copied password stays on the clipboard until you open the app again.</string>
+    <!-- On the help page and in the first-copy tip: some keyboards let you pin copied text, and
+         pinned text is never removed (ux.md §6). -->
+    <string name="help_never_pin">Never pin a password in your keyboard’s clipboard: pinned items are never removed.</string>
+
+    <!-- A heading inside the page. -->
+    <string name="help_protection_heading_pin">Your PIN and fingerprint</string>
+    <string name="help_protection_fingerprint">Anyone whose fingerprint is saved in this phone’s settings can open the app.</string>
+    <string name="help_protection_pin_reuse">Don’t use your phone’s unlock PIN or your bank card PIN as the app PIN. Someone who knows it could open the app.</string>
+    <!-- "Rooted": a phone whose protections were removed, so that apps can do anything on it. -->
+    <string name="help_protection_rooted">On a rooted phone, someone can try every PIN in a few hours. Your master password still protects your passwords, so make it strong and never use it anywhere else.</string>
+    <!-- lock.md F11: the PIN can start a new master password, which works after 24 hours with the
+         phone switched on. "Cancel it" is the button on that message (glossary 141). -->
+    <string name="help_protection_new_mp">Someone who knows your PIN can choose a new master password for the app. It starts working only after 24 hours with the phone switched on, and until then the app tells you about it each time you open it. If it wasn’t you, tap “Cancel it” and change your PIN.</string>
+
+    <!-- A heading inside the page. -->
+    <string name="help_protection_heading_limits">What the app cannot protect you from</string>
+    <!-- The list that follows the heading above, as one sentence. "Accessibility": the name of the
+         phone's settings page where an app is allowed to control the phone. -->
+    <string name="help_protection_limits">A phone that has been hacked or “rooted”, a harmful keyboard app, or an app you allowed to control your phone (accessibility).</string>
+    <!-- Password boxes show dots to other apps; a password shown on the screen can be read by such
+         an app on Android 13 and older (lock.md §2.3, §13.5). -->
+    <string name="help_protection_accessibility">Passwords shown as dots stay hidden from other apps, even from an app that may control your phone. On Android 13 and older, such an app can read a password while you show it on the screen.</string>
+    <!-- Harmful app files are sent around in Telegram channels; keep the brand name Telegram. -->
+    <string name="help_protection_apk">Never install an app file (APK) sent to you in Telegram or offered by a website, even if it seems to come from someone you know. Never let an app control your phone (accessibility) unless you need it because of a disability.</string>
+    <!-- On this page and on "If you forget your PIN" (lock.md §16.2 item 12). "Clear storage" is
+         the button in the phone's settings for this app; use the words the phone uses. -->
+    <string name="help_clear_storage">Never use “Clear storage” to fix a problem with your PIN: it deletes your passwords, and the ones from before a replaced master password with them.</string>
+    <string name="help_protection_delete">Anyone who has your unlocked phone can delete the app, and your passwords with it. Only a backup kept outside the phone survives that.</string>
+
+    <!-- ===== If you lose your phone or move to a new one ===== -->
+
+    <!-- "Turned off" (glossary 135), not "deleted": nothing is deleted. -->
+    <string name="help_lost_locked">If your phone is lost or stolen, your passwords stay locked. After 5 wrong PINs in a row the PIN is turned off, and then only your fingerprint or your master password opens the app.</string>
+    <!-- %1$s is the app's name. "Restore from a backup file" is the button on the app's first screen. -->
+    <string name="help_lost_restore">To get your passwords on a new phone, install %1$s there, tap “Restore from a backup file”, choose your newest backup and type your master password. Without a backup, your passwords can’t be brought back.</string>
+    <!-- "Copy apps and data" is what the phone's own setup offers when you move to a new phone; use
+         the words the phone uses. -->
+    <string name="help_lost_transfer">Moving your apps to a new phone, for example with “Copy apps and data”, does not bring your passwords. Make a backup on the old phone and restore it on the new one.</string>
+    <!-- %1$s is the app's name. "Welcome back" is the title of the app's lock screen in this case. -->
+    <string name="help_lost_welcome_back">If %1$s on the new phone says “Welcome back”, type your master password once. Then choose a PIN for the new phone.</string>
+    <string name="help_lost_backup">Make a new backup whenever you have added or changed passwords. Keep it outside this phone: in Google Drive, on a computer, or sent to yourself.</string>
+
+    <!-- ===== If you forget your master password ===== -->
+
+    <string name="help_forgot_mp_nobody">Nobody can reset your master password: it is not stored anywhere.</string>
+    <!-- The way through the app's screens: the Settings tab, the group "App lock", the row "Change
+         master password", the button "I don’t remember it". Use the names those screens show. -->
+    <string name="help_forgot_mp_new">If your PIN or fingerprint still opens the app, open it and choose a new master password: Settings › App lock › Change master password › I don’t remember it.</string>
+    <string name="help_forgot_mp_wait">The new master password starts working after 24 hours with the phone switched on. The countdown stops while the phone is switched off, so open the app in the morning and again in the evening. Until then, open the app with your PIN or fingerprint as usual.</string>
+    <string name="help_forgot_mp_backup">Then make a new backup. Your old backups still open only with your old master password.</string>
+    <!-- "Forgot master password?" and "Open my passwords from before …" are buttons on the lock
+         screen (glossary 132, 145). -->
+    <string name="help_forgot_mp_replaced">If someone else replaced your master password, your own still opens your passwords as they were: “Forgot master password?”, then “Open my passwords from before …”.</string>
+    <string name="help_forgot_mp_cant_open">If you can’t open the app at all: try the words on your paper, or restore a backup whose master password you remember. You can also start with an empty app. Your old passwords stay on the phone, locked, in case you remember the password later.</string>
+
+    <!-- ===== If you forget your PIN ===== -->
+
+    <!-- "Forgot PIN? Use master password" is the button under the PIN pad. -->
+    <string name="help_forgot_pin_how">Tap “Forgot PIN? Use master password”, type your master password, and choose a new PIN.</string>
+    <!-- "Turned off" (glossary 135), not "deleted". -->
+    <string name="help_forgot_pin_limit">After 5 wrong PINs in a row, the PIN is turned off. Nothing is deleted: type your master password, then choose a new PIN.</string>
+
+    <!-- ===== Version ===== -->
+
+    <!-- Under the app's name: %1$s is the version, for example "1.0"; %2$d is the build number, for example 1. -->
+    <string name="help_version_number">Version %1$s (%2$d)</string>
+    <!-- %1$s is the app's name. -->
+    <string name="help_version_about">%1$s keeps your passwords on this phone only. It never connects to the internet.</string>
+    <!-- %1$s is the phone's Android version, for example "14". -->
+    <string name="help_version_android">This phone: Android %1$s</string>
+    <!-- Only in test builds, which keep the PIN and fingerprint keys outside the phone's protected
+         hardware. The app the user installs never shows it. -->
+    <string name="help_version_test_build">Test build: made for checking the app. Don’t keep your real passwords in it.</string>
+
+    <!-- ===== Open-source licences (ux.md §5.22; architecture.md §7.1; VERIFICATION.md V-C13) =====
+         The names of the parts, their copyright lines, the names of the licences, the web addresses
+         and the licence texts are not translated. -->
+
+    <!-- At the top of the page. %1$s is the app's name. -->
+    <string name="help_licences_intro">%1$s is built with the open-source parts below. Each one is used under its licence.</string>
+    <!-- A heading: the word list of the suggested master password and of the generator's passphrases. -->
+    <string name="help_licences_group_passphrase">Words for passphrases</string>
+    <!-- A heading: the word lists of the password strength meter (glossary 86). -->
+    <string name="help_licences_group_strength">Words for the strength meter</string>
+    <!-- Under that heading, before its four sources. -->
+    <string name="help_licences_strength_intro">The strength meter knows these Uzbek and Russian words, names and places, so that it can warn you about passwords made of them. For this app they were chosen, counted, and written in both Uzbek scripts, in Russian and in Latin letters. The list is shared under CC BY-SA 4.0.</string>
+    <!-- A heading: the program parts the app is built with. -->
+    <string name="help_licences_group_libraries">Libraries</string>
+    <!-- A heading: the small pictures on buttons and rows. -->
+    <string name="help_licences_group_icons">Icons</string>
+    <!-- %1$s is the name of a licence, for example "MIT License". -->
+    <string name="help_licences_licence">Licence: %1$s</string>
+    <!-- Button: shows the full text of the licence under the part. -->
+    <string name="help_licences_show_licence">Show licence</string>
+    <!-- The same button while the text is shown: hides it. -->
+    <string name="help_licences_hide_licence">Hide licence</string>
+    <!-- Button: shows the full account of where a word list comes from and what was changed. -->
+    <string name="help_licences_show_details">Show where the words come from</string>
+    <!-- The same button while that account is shown: hides it. -->
+    <string name="help_licences_hide_details">Hide where the words come from</string>
+    <!-- While a licence text is read from the app (glossary 124). -->
+    <string name="help_licences_loading">Loading…</string>
+    <!-- In place of a licence text that could not be read from the app. -->
+    <string name="help_licences_unreadable">This text can’t be shown.</string>
+    <!-- When a web address was tapped and the phone has no browser. -->
+    <string name="help_licences_no_browser">No app on this phone can open web addresses.</string>
+
+    <!-- What each part does in the app, under its name. -->
+    <string name="help_licences_eff_use">The words of the suggested master password and of the passphrases the generator makes.</string>
+    <!-- What was changed in the EFF list (V-C13): the only word with a hyphen was left out. -->
+    <string name="help_licences_eff_change">Changed: the word “yo-yo” was left out, because its hyphen would look like the sign between two words.</string>
+    <string name="help_licences_geonames_use">Names of Uzbekistan’s regions, districts and towns.</string>
+    <string name="help_licences_uzwiki_use">Common Uzbek words, first names and districts.</string>
+    <string name="help_licences_wiktionary_use">Russian and Uzbek first names.</string>
+    <string name="help_licences_frequencywords_use">Common Russian words.</string>
+    <string name="help_licences_zxcvbn4j_use">Tells how easy a password is to guess.</string>
+    <string name="help_licences_zxcvbn_use">zxcvbn4j is a Java version of it, with its English word lists.</string>
+    <string name="help_licences_argon2kt_use">Turns your master password into the key that locks your passwords.</string>
+    <string name="help_licences_argon2_use">The Argon2 code inside Argon2kt. Used here under the Apache License 2.0.</string>
+    <string name="help_licences_bouncycastle_use">Does the same on phones where Argon2kt can’t run.</string>
+    <string name="help_licences_androidx_use">The building blocks of the app: Jetpack Compose with Material 3, Navigation 3, Lifecycle, Activity, AppCompat and Core.</string>
+    <!-- lock.md §9.1: the alpha version is chosen on purpose. -->
+    <string name="help_licences_biometric_use">Fingerprint unlock. This early version is used on purpose: with the older, stable version, fingerprint unlock does not work on Android 7 and 8.</string>
+    <string name="help_licences_kotlin_use">The language the app is written in, with its standard library, kotlinx.coroutines and kotlinx.serialization.</string>
+    <string name="help_licences_others_use">Small parts that the libraries above need.</string>
+    <!-- Android Studio's Vector Asset Studio is a tool that offers Google's Material Icons; keep its name. -->
+    <string name="help_licences_material_icons_use">The icons of the buttons and of the settings rows, taken from Android Studio’s Vector Asset Studio.</string>
+    <!-- Name of the entry for the icons made for this app. -->
+    <string name="help_licences_own_icons">The app’s own icons</string>
+    <!-- librsvg is the name of a program; keep it. -->
+    <string name="help_licences_own_icons_use">The app’s icon and logo and the icons of the bottom bar were drawn for this app. The icon’s pictures for older phones are made from its drawing with librsvg.</string>
+
+    <!-- ===== The first-copy tip (ux.md §6): once, after the first copy of a password ===== -->
+
+    <!-- The tip's title. -->
+    <string name="help_tip_title">How to paste</string>
+    <!-- "Paste" is the word the phone shows when you touch and hold a text box. -->
+    <string name="help_tip_paste">Now open the app or website, touch and hold the password box, and tap Paste.</string>
+    <!-- When the copied password is removed, in seconds (the chosen setting: 30). -->
+    <plurals name="help_tip_cleared_seconds">
+        <item quantity="one">The password is removed from the clipboard after %d&#160;second. Anything else you copy in that time may be removed too.</item>
+        <item quantity="other">The password is removed from the clipboard after %d&#160;seconds. Anything else you copy in that time may be removed too.</item>
+    </plurals>
+    <!-- The same in minutes (the chosen setting: 1, 2 or 5). -->
+    <plurals name="help_tip_cleared_minutes">
+        <item quantity="one">The password is removed from the clipboard after %d&#160;minute. Anything else you copy in that minute may be removed too.</item>
+        <item quantity="other">The password is removed from the clipboard after %d&#160;minutes. Anything else you copy in that time may be removed too.</item>
+    </plurals>
+    <!-- On Samsung phones only. "Samsung Keyboard" is the name of Samsung's keyboard app. -->
+    <string name="help_tip_samsung">Samsung phones keep a list of copied text. To keep passwords out of it, turn off or clear the clipboard history in Samsung Keyboard settings.</string>
+    <!-- On other phones. -->
+    <string name="help_tip_keyboards">Some keyboards keep their own list of copied text; you can turn it off in the keyboard’s settings.</string>
+
+</resources>
