@@ -26,6 +26,7 @@ import io.github.dilshodbekmx.passwordvault.lock.LockUiState
 import io.github.dilshodbekmx.passwordvault.lock.MpPurpose
 import io.github.dilshodbekmx.passwordvault.lock.PinSetResult
 import io.github.dilshodbekmx.passwordvault.lock.PinStatus
+import io.github.dilshodbekmx.passwordvault.nav.NavState
 import io.github.dilshodbekmx.passwordvault.nav.Navigator
 import io.github.dilshodbekmx.passwordvault.nav.Route
 import io.github.dilshodbekmx.passwordvault.platform.AppDispatchers
@@ -92,11 +93,20 @@ object PinSetupStart {
 /** Which steps follow the PIN (lock.md §12). */
 enum class PinFlow {
     /**
-     * A new vault, a restored one or one without a PIN on this phone (F1 steps 6 to 9, F13, F14, F11
-     * step 19): fingerprint offer, "Make backups", then what lies under the steps: the list after
-     * setup, the screen an unlock brought back after a master-password unlock without a PIN.
+     * A new vault, a restored one or one without a PIN on this phone (F1 steps 6 to 9, F13, F14):
+     * fingerprint offer, "Make backups", then what lies under the steps: the list after setup, the
+     * screen an unlock brought back after a master-password unlock without a PIN.
      */
     SETUP,
+
+    /**
+     * A new master password finished in the open app (F11 step 19, "Finish now"): the lock's "Choose
+     * a PIN" (`ChoosePinReason.NONE_HERE`) opens the steps over `Route.NewMasterPassword`. The PIN
+     * and the fingerprint offer as in setup (F1 steps 5 to 7), then back to that screen, whose own
+     * backup step follows ("Make a new backup now. Your old backups still open only with your old
+     * master password."); setup's "Make backups" (F1 step 8) is left out.
+     */
+    AFTER_NEW_MASTER_PASSWORD,
 
     /** Back to the passwords from before a replacement (F16b step 6): "Someone else may know the old one.", then the fingerprint offer. */
     NEW_PIN_WITH_OFFER,
@@ -260,15 +270,17 @@ class PinSetupViewModel(
 
     /**
      * The first step is shown. Unless the steps are under way already, it decides the flow (the
-     * opener's mark, a "Choose a PIN" notice, or the lock's status), starts the fingerprint question
-     * where an offer may follow, and asks for the master password when this flow has no proof.
+     * opener's mark, a "Choose a PIN" notice, or the lock's status, and [under], the route the steps
+     * were opened over), starts the fingerprint question where an offer may follow, and asks for the
+     * master password when this flow has no proof.
      */
-    fun start() {
+    fun start(under: Route? = null) {
         if (state.value.stage != PinSetupStage.START) return
         val reason = PinSetupStart.take() ?: choosePinNotice()?.reason
+        val setup = if (under == Route.NewMasterPassword) PinFlow.AFTER_NEW_MASTER_PASSWORD else PinFlow.SETUP
         val flow = when (reason) {
-            null -> if (lock.status.value.pin == PinStatus.NotSet) PinFlow.SETUP else PinFlow.NEW_PIN
-            ChoosePinReason.NONE_HERE -> PinFlow.SETUP
+            null -> if (lock.status.value.pin == PinStatus.NotSet) setup else PinFlow.NEW_PIN
+            ChoosePinReason.NONE_HERE -> setup
             ChoosePinReason.SOMEONE_MAY_KNOW -> PinFlow.NEW_PIN_WITH_OFFER
             ChoosePinReason.TURNED_OFF, ChoosePinReason.FORGOTTEN, ChoosePinReason.STOPPED_WORKING, ChoosePinReason.MASTER_CHANGED -> PinFlow.NEW_PIN
         }
@@ -286,7 +298,7 @@ class PinSetupViewModel(
         state.value = PinSetupUi(
             stage = if (proof() != null) PinSetupStage.CHOOSE else PinSetupStage.MASTER,
             flow = flow,
-            newPin = flow != PinFlow.SETUP,
+            newPin = flow != PinFlow.SETUP && flow != PinFlow.AFTER_NEW_MASTER_PASSWORD,
             someoneMayKnow = reason == ChoosePinReason.SOMEONE_MAY_KNOW,
         )
     }
@@ -611,7 +623,8 @@ class PinSetupViewModel(
     /**
      * After the PIN (saved, skipped, or not saved and skipped), from the step [from]: the
      * fingerprint offer when lock.md §9.4 says so, "Make backups" in setup, otherwise back to where
-     * the user was. The PIN steps leave the back stack.
+     * the user was (after F11 step 19, the new master password's screen). The PIN steps leave the
+     * back stack.
      */
     private fun decideAfterPin(from: Route) {
         deciding = true
@@ -727,7 +740,7 @@ class PinSetupViewModel(
 private fun CreatePinRoute(graph: AppGraph, nav: Navigator) {
     val vm = pinSetupViewModel(graph)
     PinStepScope(Route.CreatePin, vm)
-    LaunchedEffect(vm) { vm.start() }
+    LaunchedEffect(vm) { vm.start(under = routeUnderPinSteps(nav)) }
     PerformMoves(vm, Route.CreatePin, nav)
     val ui by vm.ui.collectAsStateWithLifecycle()
     BackHandler(enabled = ui.stage == PinSetupStage.MASTER || ui.stage == PinSetupStage.CHOOSE) { vm.notNow() }
@@ -794,6 +807,17 @@ private fun BackupsExplainedRoute(graph: AppGraph, nav: Navigator) {
     val remind by vm.backupReminder.collectAsStateWithLifecycle()
     BackHandler { vm.finish() }
     BackupsExplainedScreen(remind = remind, line = ui.backupLine, onRemindChange = vm::setBackupReminder, onFinish = vm::finish)
+}
+
+/**
+ * The route the PIN steps were opened over: the one under [Route.CreatePin] on the unlocked back
+ * stack (`Route.NewMasterPassword` after F11 step 19, [PinFlow.AFTER_NEW_MASTER_PASSWORD]), or null
+ * when [nav] is not the app's [NavState] or nothing lies under the step.
+ */
+internal fun routeUnderPinSteps(nav: Navigator): Route? {
+    val stack = (nav as? NavState)?.stack(NavState.Top.UNLOCKED) ?: return null
+    val at = stack.lastIndexOf(Route.CreatePin)
+    return if (at > 0) stack[at - 1] else null
 }
 
 /**

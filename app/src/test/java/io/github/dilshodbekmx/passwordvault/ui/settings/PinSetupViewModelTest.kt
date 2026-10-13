@@ -28,6 +28,7 @@ import io.github.dilshodbekmx.passwordvault.ui.setup.PinSetupStage
 import io.github.dilshodbekmx.passwordvault.ui.setup.PinSetupStart
 import io.github.dilshodbekmx.passwordvault.ui.setup.PinSetupUi
 import io.github.dilshodbekmx.passwordvault.ui.setup.PinSetupViewModel
+import io.github.dilshodbekmx.passwordvault.ui.setup.routeUnderPinSteps
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -355,6 +356,58 @@ class PinSetupViewModelTest {
         vm.fingerprintNotNow()
         assertEquals("then back, without \"Make backups\"", PinSetupStage.DONE, vm.ui.value.stage)
         assertEquals(listOf(NavStep.Back), vm.ui.value.move?.steps)
+    }
+
+    /**
+     * lock.md F11 step 19 (5.5's interface request 2): after "Finish now" the lock's "Choose a PIN"
+     * (NONE_HERE) opens the steps over `Route.NewMasterPassword`. The PIN and the fingerprint offer
+     * come as in setup, then the steps close onto that screen, whose own backup step follows; setup's
+     * "Make backups" (F1 step 8) is left out. Over any other screen NONE_HERE stays setup's flow.
+     */
+    @Test
+    fun afterANewMasterPasswordTheStepsCloseOntoItsScreen_withoutMakeBackups() = runTest {
+        val nav = NavState(unlocked = listOf(Route.Passwords, Route.NewMasterPassword))
+        nav.follow(LockUiState.Unlocked(emptyList(), proof = null))
+        assertTrue(nav.go(Route.CreatePin))
+        assertEquals("the steps know what they were opened over", Route.NewMasterPassword, routeUnderPinSteps(nav))
+
+        PinSetupStart.offer(ChoosePinReason.NONE_HERE)
+        val offered = model(unlockedWithProof(), canAuthenticate = 0)
+        offered.start(under = routeUnderPinSteps(nav))
+        runCurrent()
+        assertEquals(PinFlow.AFTER_NEW_MASTER_PASSWORD, offered.ui.value.flow)
+        assertFalse("\"Choose a 6-digit PIN\": no PIN was kept for the new vault", offered.ui.value.newPin)
+        offered.type(Pins.ALLOWED, Route.CreatePin)
+        offered.performMove()
+        offered.type(Pins.ALLOWED, Route.ConfirmPin)
+        advanceUntilIdle()
+        assertEquals("the fingerprint offer, as in setup (F1 step 7)", PinSetupStage.FINGERPRINT, offered.ui.value.stage)
+        offered.performMove()
+        offered.fingerprintNotNow()
+        assertEquals("then back to the new master password's screen", PinSetupStage.DONE, offered.ui.value.stage)
+        assertEquals(Route.FingerprintOffer, offered.ui.value.move?.from)
+        assertEquals(listOf(NavStep.Back), offered.ui.value.move?.steps)
+        assertTrue(nav.replace(Route.FingerprintOffer))
+        for (step in checkNotNull(offered.ui.value.move).steps) assertTrue("$step", step.applyTo(nav))
+        assertEquals(listOf(Route.Passwords, Route.NewMasterPassword), nav.visible)
+
+        PinSetupStart.offer(ChoosePinReason.NONE_HERE)
+        val notOffered = model(unlockedWithProof(), canAuthenticate = 11)
+        notOffered.start(under = Route.NewMasterPassword)
+        runCurrent()
+        notOffered.notNow()
+        advanceUntilIdle()
+        assertEquals("no offer: straight back, without \"Make backups\"", PinSetupStage.DONE, notOffered.ui.value.stage)
+        assertEquals(listOf(NavStep.Back), notOffered.ui.value.move?.steps)
+
+        PinSetupStart.offer(ChoosePinReason.NONE_HERE)
+        val elsewhere = model(unlockedWithProof(), canAuthenticate = 11)
+        elsewhere.start(under = Route.Entry("acc-1"))
+        runCurrent()
+        assertEquals("over any other screen: setup's steps", PinFlow.SETUP, elsewhere.ui.value.flow)
+        elsewhere.notNow()
+        advanceUntilIdle()
+        assertEquals(PinSetupStage.BACKUPS, elsewhere.ui.value.stage)
     }
 
     @Test
