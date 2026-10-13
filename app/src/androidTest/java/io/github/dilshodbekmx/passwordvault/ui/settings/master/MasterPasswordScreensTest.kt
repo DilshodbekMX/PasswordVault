@@ -1,9 +1,12 @@
 package io.github.dilshodbekmx.passwordvault.ui.settings.master
 
 import androidx.activity.ComponentActivity
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -16,6 +19,7 @@ import io.github.dilshodbekmx.passwordvault.core.lock.record.Shortcut
 import io.github.dilshodbekmx.passwordvault.lock.ChangeResult
 import io.github.dilshodbekmx.passwordvault.lock.FingerprintStatus
 import io.github.dilshodbekmx.passwordvault.lock.FinishResult
+import io.github.dilshodbekmx.passwordvault.lock.LockManager
 import io.github.dilshodbekmx.passwordvault.lock.LockUiState
 import io.github.dilshodbekmx.passwordvault.lock.MpPurpose
 import io.github.dilshodbekmx.passwordvault.lock.NewMasterPasswordAsked
@@ -61,12 +65,12 @@ class MasterPasswordScreensTest {
 
     private fun text(id: Int): String = compose.activity.getString(id)
 
-    private fun changeScreen(made: MasterRig): ChangeMasterPasswordViewModel {
+    private fun changeScreen(made: MasterRig, over: LockManager = made.lock): ChangeMasterPasswordViewModel {
         rig = made
         lateinit var vm: ChangeMasterPasswordViewModel
         compose.setContent {
             SettingsTestTheme {
-                vm = viewModel { made.change() }
+                vm = viewModel { made.change(over) }
                 ChangeMasterPasswordScreen(vm, made.nav)
             }
         }
@@ -170,6 +174,47 @@ class MasterPasswordScreensTest {
         compose.onNodeWithTag(MasterTags.OK).performClick()
         compose.awaitThat { made.nav.steps.isNotEmpty() }
         assertEquals(listOf("back"), made.nav.steps.toList())
+    }
+
+    @Test
+    fun withoutAUsablePin_savingShowsNoPinStep() {
+        // No PIN, fingerprint on: from "Type it again" straight to "Saving…", with the prompt of F8 step 7.
+        val made = MasterRig(pin = PinStatus.NotSet, fingerprint = FingerprintStatus.On)
+        val held = HeldLock(made.lock).apply { holdChange = true }
+        val vm = changeScreen(made, held)
+        compose.onNodeWithTag(MasterTags.CURRENT_FIELD).performTextInput("correct horse battery staple")
+        compose.onNodeWithTag(MasterTags.CURRENT_NEXT).performClick()
+        compose.awaitThat { vm.ui.value.stage == ChangeStage.CHOOSE }
+        chooseTheWords { vm.choice.state.value.chosen!!.text() }
+        compose.awaitThat { vm.ui.value.stage == ChangeStage.SAVING }
+        compose.waitForIdle()
+        compose.onNodeWithText(text(R.string.master_saving)).assertIsDisplayed()
+        compose.onNodeWithText(text(R.string.master_touch_sensor)).assertIsDisplayed()
+        compose.onAllNodesWithText(text(R.string.master_keep_pin_title), useUnmergedTree = true)
+            .assertCountEquals(0) // ux.md §5.18 step 3: "Enter your app PIN to keep using it." only when a PIN is usable
+        compose.onAllNodesWithTag(PinPadTags.DOTS, useUnmergedTree = true).assertCountEquals(0) // no PIN was typed: no six dots
+        compose.runOnUiThread { held.openChange() }
+        compose.awaitThat { vm.ui.value.stage == ChangeStage.BACKUP }
+    }
+
+    @Test
+    fun notNowOnThePin_savingShowsNoPinTyped() {
+        val made = MasterRig(pin = PinStatus.On, fingerprint = FingerprintStatus.Off)
+        val held = HeldLock(made.lock).apply { holdChange = true }
+        val vm = changeScreen(made, held)
+        compose.onNodeWithTag(MasterTags.CURRENT_FIELD).performTextInput("correct horse battery staple")
+        compose.onNodeWithTag(MasterTags.CURRENT_NEXT).performClick()
+        compose.awaitThat { vm.ui.value.stage == ChangeStage.CHOOSE }
+        chooseTheWords { vm.choice.state.value.chosen!!.text() }
+        compose.awaitThat { vm.ui.value.stage == ChangeStage.PIN }
+        compose.onNodeWithTag(MasterTags.PIN_NOT_NOW).performScrollTo().performClick()
+        compose.awaitThat { vm.ui.value.stage == ChangeStage.SAVING }
+        compose.waitForIdle()
+        compose.onNodeWithText(text(R.string.master_saving)).assertIsDisplayed()
+        compose.onAllNodesWithTag(PinPadTags.DOTS, useUnmergedTree = true).assertCountEquals(0) // "Not now": no six dots as if the PIN had been typed
+        compose.onAllNodesWithText(text(R.string.master_keep_pin_title), useUnmergedTree = true).assertCountEquals(0)
+        compose.runOnUiThread { held.openChange() }
+        compose.awaitThat { vm.ui.value.stage == ChangeStage.BACKUP }
     }
 
     // ---- a new master password -------------------------------------------------------------------------

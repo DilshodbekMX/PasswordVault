@@ -269,7 +269,13 @@ class ChangeMasterPasswordViewModel(
         val pinCopy = withPin?.copyOf()
         wipePin()
         state.update {
-            it.copy(stage = ChangeStage.SAVING, line = null, entered = 0, fingerprintOn = lock.status.value.fingerprint == FingerprintStatus.On)
+            it.copy(
+                stage = ChangeStage.SAVING,
+                line = null,
+                entered = 0,
+                pinTyped = pinCopy != null,
+                fingerprintOn = lock.status.value.fingerprint == FingerprintStatus.On,
+            )
         }
         val (first, again) = typings
         val change = work.async {
@@ -533,6 +539,8 @@ enum class PlaceState { LISTED, DELETING, DELETED, NOT_DELETABLE, NOT_NOTED }
  * @property line the line under the dots: a wrong PIN with the tries left; on step 1, that the
  *   current master password is asked again with the new one kept.
  * @property shakes grows with each wrong PIN: the dots shake.
+ * @property pinTyped the change runs with the PIN typed on step 3: "Saving…" stays over its six dots;
+ *   without one (no PIN is usable, or "Not now") "Saving…" is a page of its own.
  * @property fingerprintOn fingerprint unlock was on when the change started: "Touch the sensor …".
  * @property usedElsewhere the old master password is also the password of some account (D-9b).
  * @property choosePin "Choose a PIN" opens once, before the backup step.
@@ -544,6 +552,7 @@ data class ChangeMasterPasswordUi(
     val entered: Int = 0,
     val line: UiText? = null,
     val shakes: Int = 0,
+    val pinTyped: Boolean = false,
     val fingerprintOn: Boolean = false,
     val usedElsewhere: Boolean = false,
     val choosePin: Boolean = false,

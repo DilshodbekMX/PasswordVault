@@ -9,6 +9,7 @@ import io.github.dilshodbekmx.passwordvault.core.model.Vault
 import io.github.dilshodbekmx.passwordvault.fake.FakeLockManager
 import io.github.dilshodbekmx.passwordvault.fake.FakeVaultRepository
 import io.github.dilshodbekmx.passwordvault.lock.FingerprintStatus
+import io.github.dilshodbekmx.passwordvault.lock.LockManager
 import io.github.dilshodbekmx.passwordvault.lock.LockUiState
 import io.github.dilshodbekmx.passwordvault.lock.PendingMasterPassword
 import io.github.dilshodbekmx.passwordvault.lock.PinStatus
@@ -52,8 +53,9 @@ class MasterRig(
         lock.status.value = lock.status.value.copy(pin = pin, fingerprint = fingerprint, pending = pending)
     }
 
-    fun change(): ChangeMasterPasswordViewModel = ChangeMasterPasswordViewModel(
-        lock = lock,
+    /** "Change master password" over [over]: the fake lock, or a [HeldLock] around it that holds the change. */
+    fun change(over: LockManager = lock): ChangeMasterPasswordViewModel = ChangeMasterPasswordViewModel(
+        lock = over,
         repository = repository,
         clock = AndroidClock,
         random = FakeRandom(seed = 21L),

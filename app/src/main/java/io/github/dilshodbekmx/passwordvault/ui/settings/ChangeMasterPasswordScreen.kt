@@ -85,6 +85,12 @@ private fun ChangeStep(vm: ChangeMasterPasswordViewModel, ui: ChangeMasterPasswo
                 onShowAgain = vm::showAgain,
             )
         }
+        // "Saving…" when no PIN was typed (none is usable, or "Not now"): a page of its own, for "Enter your app PIN to keep
+        // using it." is shown only when a PIN is usable, and no six dots stand for a PIN that was not typed (ux.md §5.18).
+        ChangeStage.SAVING if !ui.pinTyped -> MasterPage(heading = stringResource(R.string.master_requesting_heading)) {
+            if (ui.fingerprintOn) MasterText(stringResource(R.string.master_touch_sensor), Modifier.testTag(MasterTags.TOUCH_SENSOR))
+            MasterBusy(stringResource(R.string.master_saving), MasterTags.SAVING)
+        }
         ChangeStage.PIN, ChangeStage.SAVING -> {
             val saving = ui.stage == ChangeStage.SAVING
             val savingText = stringResource(R.string.master_saving)

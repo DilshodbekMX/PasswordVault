@@ -145,7 +145,8 @@
     <!-- The PIN or the fingerprint of this flow is no longer valid (the app was left meanwhile): it is
          asked again, and the new master password chosen is kept. -->
     <string name="master_proof_again">For your safety, confirm it once more. The new master password you chose is kept.</string>
-    <!-- The heading while the new master password is saved, and when that failed. -->
+    <!-- The heading while the new master password is saved, and when that failed; also over
+         "Saving…" on Change master password when no PIN was typed (none is usable, or "Not now"). -->
     <string name="master_requesting_heading">Saving your new master password</string>
     <!-- Shown while the new master password is asked for (about one second). -->
     <string name="master_requesting">Saving…</string>
