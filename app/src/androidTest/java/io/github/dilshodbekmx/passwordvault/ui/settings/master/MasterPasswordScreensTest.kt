@@ -294,6 +294,19 @@ class MasterPasswordScreensTest {
     }
 
     @Test
+    fun laterOnFinishNow_closesTheRoute_andTellsTheLock() {
+        // The route opens on its finishing step also after the lock-screen route ("Use my PIN" on the sheet, then the
+        // PIN): the proof that entry made goes with the route when it closes (lock.md F11 step 3; build-plan.md §12).
+        val made = MasterRig(pending = MasterRig.READY)
+        newScreen(made)
+        compose.onNodeWithText(text(R.string.master_finish_heading)).assertIsDisplayed()
+        compose.onNodeWithTag(MasterTags.LATER).performScrollTo().performClick()
+        compose.awaitThat { made.nav.steps.isNotEmpty() }
+        assertEquals(listOf("back"), made.nav.steps.toList())
+        assertEquals("the proof of step 3, if any, goes with the flow", 1, made.lock.newMasterPasswordLeft)
+    }
+
+    @Test
     fun afterTheLockScreenRoute_theRouteOpensOnce() {
         val made = MasterRig().also { rig = it }
         NewMasterPasswordAsked.arm()
