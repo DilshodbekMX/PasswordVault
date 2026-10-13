@@ -4,6 +4,7 @@ import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import io.github.dilshodbekmx.passwordvault.core.formats.BitwardenJson
 import io.github.dilshodbekmx.passwordvault.core.formats.ColumnMeaning
 import io.github.dilshodbekmx.passwordvault.core.formats.GoogleCsv
+import io.github.dilshodbekmx.passwordvault.core.formats.ImportChange
 import io.github.dilshodbekmx.passwordvault.core.formats.TextDecoding
 import io.github.dilshodbekmx.passwordvault.core.model.CustomField
 import io.github.dilshodbekmx.passwordvault.core.model.Vault
@@ -14,6 +15,7 @@ import io.github.dilshodbekmx.passwordvault.ui.transfer.BackupError
 import io.github.dilshodbekmx.passwordvault.ui.transfer.ColumnsScreen
 import io.github.dilshodbekmx.passwordvault.ui.transfer.FileOutcome
 import io.github.dilshodbekmx.passwordvault.ui.transfer.ImportMove
+import io.github.dilshodbekmx.passwordvault.ui.transfer.ImportPreview
 import io.github.dilshodbekmx.passwordvault.ui.transfer.ImportProblem
 import io.github.dilshodbekmx.passwordvault.ui.transfer.ImportScreen
 import io.github.dilshodbekmx.passwordvault.ui.transfer.ImportSource
@@ -436,6 +438,31 @@ class ImportFlowTest {
         val bank = vault().entries.single()
         assertEquals(listOf(CustomField("Hidden value #1", "4071", secret = true)), bank.fields)
         assertFalse(bank.notes.contains("4071"))
+    }
+
+    @Test
+    fun aHiddenValueTooLongToKeepHiddenIsListedAndNotImported_neverPutInTheNotes() = ImportKit.run {
+        // The owner's decision 20: a hidden value over 1,000 characters cannot be a field, and the
+        // notes would show it, so it is not imported; the preview lists it on its account.
+        val secret = "Rk-" + "7".repeat(1_000)
+        recorded(
+            utf8(
+                """{"encrypted": false, "items": [{"type": 1, "name": "Bank", "notes": "Main branch",
+                   "fields": [{"name": "Recovery key", "value": "$secret", "type": 1}, {"name": "PIN", "value": "4071", "type": 1}],
+                   "login": {"username": "aziz", "password": "Pw-Bank", "uris": [{"uri": "https://bank.uz"}]}}]}""",
+            ),
+        )
+        val file = file()
+        assertEquals(
+            listOf(ImportPreview.ChangeRow(ImportPreview.AccountName.Title("Bank"), ImportChange.Kind.HIDDEN_VALUES_NOT_IMPORTED, 1)),
+            preview(file).changes,
+        )
+        file.importNow()
+        settle()
+        val bank = vault().entries.single()
+        assertEquals(listOf(CustomField("PIN", "4071", secret = true)), bank.fields)
+        assertEquals("Main branch", bank.notes)
+        assertFalse(bank.notes.contains(secret))
     }
 
     @Test

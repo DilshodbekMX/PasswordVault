@@ -211,7 +211,8 @@ class ImporterTest {
         val urls = (1..13).joinToString(",") { "{\"uri\":\"https://s$it.example\"}" }
         val longValue = "v".repeat(1_200)
         val item = """{"type":1,"name":"$title","notes":"$notes","fields":[{"name":"","value":"orphan","type":0},""" +
-            """{"name":"${"F".repeat(120)}","value":"v","type":0},{"name":"Long value","value":"$longValue","type":1}],""" +
+            // A visible long value: a hidden one is not imported (decision 20, the test below).
+            """{"name":"${"F".repeat(120)}","value":"v","type":0},{"name":"Long value","value":"$longValue","type":0}],""" +
             """"login":{"username":"$username","password":"pw","uris":[$urls]}}"""
         val file = file("""{"encrypted":false,"folders":[],"items":[$item]}""")
         val a = file.accounts.single()
@@ -536,6 +537,49 @@ class ImporterTest {
         val back = file(own).accounts.single()
         assertEquals(listOf(hidden("Hidden value 1", "4321")), back.entry.fields)
         assertEquals("note line", back.entry.notes)
+    }
+
+    /**
+     * Build-plan §12, decision 20 (formats.md §8.4): a hidden value that cannot stay a hidden field
+     * because of a limit of D-10f, a value over 1,000 characters or a field beyond the 20 an account
+     * holds, is not moved into the notes, where it would show unmasked: it is not imported, and its
+     * account lists it. A visible one moves into the notes as before. Before it both went into the
+     * notes, the hidden one as "Recovery key: …" for anyone to read.
+     */
+    @Test
+    fun aHiddenValueThatALimitKeepsFromBeingAFieldIsNotImportedButListed_neverMovedIntoTheNotes() {
+        val longSecret = "S3cr3t-" + "k".repeat(1_000)
+        val longVisible = "Seen-" + "v".repeat(1_000)
+        fun field(name: String, value: String, type: Int) = "{\"name\":\"$name\",\"value\":\"$value\",\"type\":$type}"
+        val long = listOf(field("Recovery key", longSecret, 1), field("Memo", longVisible, 0), field("", longSecret.reversed(), 1), field("PIN", "4071", 1))
+        val many = (1..22).map { field("Code $it", "c$it", 1) } + listOf(field("Branch", "Chilonzor", 0), field("Manager", "Aziz", 0))
+        val json = """{"encrypted":false,"folders":[],"items":[""" +
+            """{"type":1,"name":"Bank","notes":"Branch office","login":{"username":"ali","password":"pw"},"fields":${long.joinToString(",", "[", "]")}},""" +
+            """{"type":1,"name":"Codes","login":{"username":"c","password":"q"},"fields":${many.joinToString(",", "[", "]")}}]}"""
+        val (bank, codes) = file(json).accounts
+
+        // Over 1,000 characters: the visible value goes into the notes as before; the hidden ones, named or not, are left out.
+        assertEquals(listOf(hidden("PIN", "4071")), bank.entry.fields)
+        assertEquals("Branch office\n\nMemo: $longVisible", bank.entry.notes)
+        assertEquals("[LONG_FIELDS_MOVED×1, HIDDEN_VALUES_NOT_IMPORTED×2]", bank.changes.toString())
+
+        // Beyond 20 fields: the first 20 hidden ones are kept, the visible ones go into the notes, the 2 hidden ones left are not imported.
+        assertEquals((1..20).map { hidden("Code $it", "c$it") }, codes.entry.fields)
+        assertEquals("Branch: Chilonzor\nManager: Aziz", codes.entry.notes)
+        assertEquals("[FIELDS_MOVED×2, HIDDEN_VALUES_NOT_IMPORTED×2]", codes.changes.toString())
+        for (a in listOf(bank, codes)) {
+            for (secret in listOf(longSecret, longSecret.reversed(), "c21", "c22")) assertFalse("${a.entry.title}: $secret", a.entry.notes.contains(secret))
+        }
+
+        // The same in a CSV: a column with a secret header whose value is over the limit.
+        val csvFile = file(csv("name,url,username,password,PIN code", "Card,https://bank.uz,ali,pw,${"9".repeat(1_001)}"))
+        val card = csvFile.accounts.single()
+        assertTrue(card.entry.fields.isEmpty())
+        assertEquals("", card.entry.notes)
+        assertEquals("[HIDDEN_VALUES_NOT_IMPORTED×1]", card.changes.toString())
+
+        // The plan counts it, so the preview lists it on its account.
+        assertEquals(2, ImportFixtures.plan(file(json)).count(ImportChange.Kind.HIDDEN_VALUES_NOT_IMPORTED))
     }
 
     /** The review of 3.15: a JSON password that is not text is listed on its account, and a secure note keeps its login. */

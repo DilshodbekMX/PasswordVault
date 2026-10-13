@@ -981,6 +981,7 @@ Time in the picker counts as time in the app (§4).
   - "1 note was longer than 10,000 characters and was shortened." Other values over a limit move into the notes or the extra fields and are listed ("Gmail: 3 websites moved to notes").
   - Passwords are never changed: an account whose password holds a tab or another invisible character is imported as it is and listed ("Gmail: the password contains a tab") (formats-review P14).
   - A hidden value without a name is kept as a hidden field named "Hidden value 1", "Hidden value 2", in the file's order; it is never moved into the notes, where it would show (build-plan §12, decision 11).
+  - A hidden value that a limit would move into the notes (a value over 1,000 characters, or a field beyond the 20 an account holds) is not imported either, and is listed: "Gmail: 1 hidden value was too long to keep hidden and was not imported" (build-plan §12, decision 20).
   - Our own JSON from a newer version of the app, with data this version does not know at the top of the file: "Some data from a newer version of the app will not be imported." That data is not kept (build-plan §12, decision 9).
 - **Exact repeats.** Rows that repeat exactly (same website, username and password) are imported once.
 - **Same login on related websites** [E: critique M6; V-A6]. Chrome writes one row per affiliated domain, so one login can arrive as several rows. Rows with the same username and password are kept as **one account with all its websites** only when:

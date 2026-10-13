@@ -310,6 +310,14 @@
         <item quantity="one">%1$d very long extra field moved to notes</item>
         <item quantity="other">%1$d very long extra fields moved to notes</item>
     </plurals>
+    <!-- Hidden values (PIN codes, security answers…) that could not stay hidden fields: each was
+         longer than 1,000 characters, or beyond the 20 extra fields an account holds. They are
+         not moved to the notes, where anyone would see them, so they are not imported (the
+         owner's decision 20 of 2026-10-13). -->
+    <plurals name="import_change_hidden_not_imported">
+        <item quantity="one">%1$d hidden value was too long to keep hidden and was not imported</item>
+        <item quantity="other">%1$d hidden values were too long to keep hidden and were not imported</item>
+    </plurals>
     <!-- Values without a name. -->
     <plurals name="import_change_nameless">
         <item quantity="one">%1$d value without a name moved to notes</item>
