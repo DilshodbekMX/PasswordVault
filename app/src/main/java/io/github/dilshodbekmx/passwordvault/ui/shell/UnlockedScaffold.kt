@@ -20,6 +20,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import io.github.dilshodbekmx.passwordvault.AppGraph
 import io.github.dilshodbekmx.passwordvault.R
@@ -29,6 +30,7 @@ import io.github.dilshodbekmx.passwordvault.nav.Route
 import io.github.dilshodbekmx.passwordvault.ui.lock.LockNotices
 import io.github.dilshodbekmx.passwordvault.ui.common.topHairline
 import io.github.dilshodbekmx.passwordvault.ui.security.SecurityBadge
+import io.github.dilshodbekmx.passwordvault.ui.security.securityTabState
 import io.github.dilshodbekmx.passwordvault.ui.settings.NewMasterPasswordAfterUnlock
 import io.github.dilshodbekmx.passwordvault.ui.theme.LocalLook
 
@@ -78,7 +80,7 @@ fun UnlockedScaffold(graph: AppGraph, nav: NavState, content: @Composable (Paddi
 private fun TabBar(graph: AppGraph, nav: NavState) {
     NavigationBar(Modifier.testTag(TAB_BAR_TAG).topHairline(LocalLook.current.barOutline)) {
         Tab(nav, Route.Passwords, R.drawable.ic_shell_passwords, R.string.shell_tab_passwords)
-        Tab(nav, Route.Security, R.drawable.ic_shell_security, R.string.shell_tab_security) { SecurityBadge(graph) }
+        Tab(nav, Route.Security, R.drawable.ic_shell_security, R.string.shell_tab_security, state = securityTabState(graph)) { SecurityBadge(graph) }
         Tab(nav, Route.Settings, R.drawable.ic_shell_settings, R.string.shell_tab_settings)
     }
 }
@@ -86,8 +88,20 @@ private fun TabBar(graph: AppGraph, nav: NavState) {
 /** The navigation bar's test tag; its items are `pv.tab.<Route>`. */
 const val TAB_BAR_TAG = "pv.tabBar"
 
+/**
+ * One tab of the bar. [state] is what TalkBack says after the tab's name ("Security, new results",
+ * ux.md §8): material3's `NavigationBarItem` clears the semantics of its icon slot, where [badge]
+ * sits, whenever the item has a label, so the badge itself is never read.
+ */
 @Composable
-private fun RowScope.Tab(nav: NavState, root: Route, @DrawableRes icon: Int, @StringRes label: Int, badge: (@Composable () -> Unit)? = null) {
+private fun RowScope.Tab(
+    nav: NavState,
+    root: Route,
+    @DrawableRes icon: Int,
+    @StringRes label: Int,
+    state: String? = null,
+    badge: (@Composable () -> Unit)? = null,
+) {
     NavigationBarItem(
         selected = nav.tabRoot == root,
         onClick = { nav.tab(root) },
@@ -99,6 +113,6 @@ private fun RowScope.Tab(nav: NavState, root: Route, @DrawableRes icon: Int, @St
             }
         },
         label = { Text(stringResource(label)) },
-        modifier = Modifier.testTag("pv.tab.${root.name}"),
+        modifier = Modifier.testTag("pv.tab.${root.name}").semantics { if (state != null) stateDescription = state },
     )
 }
