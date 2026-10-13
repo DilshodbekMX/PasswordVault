@@ -113,6 +113,20 @@ fun ComposeTestRule.awaitPixel(tag: String, expected: Color, what: String, fx: F
 }
 
 /**
+ * Waits until the PIN pad's screen [padTag] shows [expected] beside the keypad: 4 per cent in from
+ * its left edge, at the height of the middle of the key [keyTag]. That point is clear of Bank blue's
+ * lock panel above and of the navigation bar below, which Android 9 and older draw with a scrim
+ * over the bottom of the screen, where the pad's screen reaches behind it.
+ */
+fun ComposeTestRule.awaitPadScreen(padTag: String, keyTag: String, expected: Color, what: String) {
+    waitForIdle()
+    val pad = node(padTag)
+    val key = node(keyTag)
+    val fy = (key.positionOnScreen.y + key.size.height / 2f - pad.positionOnScreen.y) / pad.size.height
+    awaitPixel(padTag, expected, what, fx = 0.04f, fy = fy)
+}
+
+/**
  * Whether some pixel of the part of the node [tag] between the fractions [from] and [to] (of its
  * width and of its height) is [colour], within [tolerance]: for a thin thing whose exact place is
  * not known, such as a digit, an icon or a ring.

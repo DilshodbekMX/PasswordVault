@@ -140,7 +140,7 @@ class LockScreenLookTest {
         compose.waitForIdle()
 
         // The screen and the logo's tile.
-        compose.awaitPixel(LockTags.PAD, c.background, "$what: the lock screen's background", fx = 0.04f, fy = 0.97f)
+        compose.awaitPadScreen(LockTags.PAD, PinPadTags.key(5), c.background, "$what: the lock screen's background")
         compose.awaitPixel(LockTags.LOGO, top.logoTile, "$what: the logo's tile", fx = 0.5f, fy = 0.08f)
         compose.awaitHasPixel(LockTags.LOGO, top.logoMark, Offset(0.3f, 0.3f), Offset(0.7f, 0.7f), "$what: the logo on its tile")
 

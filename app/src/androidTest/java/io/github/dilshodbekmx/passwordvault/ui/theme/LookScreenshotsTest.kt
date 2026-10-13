@@ -79,7 +79,7 @@ class LookScreenshotsTest {
                 expected += shot("$prefix-welcome")
 
                 show(made, LookGallery.Screen.LOCK, PinPadTags.DOTS)
-                compose.awaitPixel(LockTags.PAD, look.colors.background, "$prefix: the pad's screen", fx = 0.04f, fy = 0.97f)
+                compose.awaitPadScreen(LockTags.PAD, PinPadTags.key(5), look.colors.background, "$prefix: the pad's screen")
                 expected += shot("$prefix-pad")
 
                 show(made, LookGallery.Screen.LIST, ListTags.LIST)
