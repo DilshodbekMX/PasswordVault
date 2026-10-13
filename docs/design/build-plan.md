@@ -659,6 +659,13 @@ What the packages of R4 build on:
   - A date in a title can break across two lines ("Oct / 7, 2026"): `Formatters` puts no-break spaces inside a date.
   - `ObscuredTouchNotice` (2.8's) is drawn in Bank blue whatever the style.
 
+**The owner's decisions of 2026-10-13** on the five questions below (16 to 20), built by `w5-carry` step 3 and `w5-carry2` before the merge of R4:
+16. A damaged `pin.rec` is handled like decision 1: the next master-password unlock replaces it with a record without a slot and offers "Choose a new PIN", so it no longer blocks the key sweep (question 1, answer A).
+17. When the swap after "Open my passwords from 7 Oct" fails, the master-password field says "Couldn't open your passwords from 7 Oct. Nothing was changed." (an `MpError`; lock.md §13.3) (question 2, answer A).
+18. The title above the older-set question stays as built: "Your passwords from before 7 Oct 2026" (question 3, answer A).
+19. On the fingerprint-only screen the prompt's "Use master password" (code 13) opens the master-password screen (question 4, answer A).
+20. From the job "main: reviews in": a place that is not the phone shows one line only, decision 8's "This place may upload the file later. Open it there once to check that it arrived." (the older "It is uploaded when the phone is online." goes); a hidden value that cannot stay a hidden field because of a limit of D-10f (over 1,000 characters, or beyond 20 fields) is not moved into the notes unmasked but listed as not imported ("A hidden value was too long to keep hidden and was not imported."), so decision 11 holds without exception; decision 12's tie rule stays as built (Windows-1251, with "Read as UTF-8" in the preview).
+
 The owner's questions still open (none blocks R4; whoever builds an answer changes the document in the same commit):
 1. A damaged `pin.rec` blocks the key sweep until a new PIN is set (4.4 and its review; decision 1 covers `fingerprint.rec` only). A: handle it like decision 1, so that the next master-password unlock replaces it with a record without a slot and offers "Choose a new PIN". B: accept it as it is.
 2. When the swap after "Open my passwords from 7 Oct" fails (a storage error in F16b step 4), that vault's master-password field comes back without a word (4.2b). A: a line "Couldn't open your passwords from 7 Oct. Nothing was changed." (an `MpError`, and lock.md §13.3). B: keep it silent.
