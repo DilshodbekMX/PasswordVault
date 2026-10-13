@@ -29,6 +29,7 @@ import io.github.dilshodbekmx.passwordvault.nav.Route
 import io.github.dilshodbekmx.passwordvault.ui.lock.LockNotices
 import io.github.dilshodbekmx.passwordvault.ui.common.topHairline
 import io.github.dilshodbekmx.passwordvault.ui.security.SecurityBadge
+import io.github.dilshodbekmx.passwordvault.ui.settings.NewMasterPasswordAfterUnlock
 import io.github.dilshodbekmx.passwordvault.ui.theme.LocalLook
 
 /**
@@ -36,7 +37,9 @@ import io.github.dilshodbekmx.passwordvault.ui.theme.LocalLook
  * it draws, at the bottom, the clipboard status row (`ClipboardRowSlot`, ux.md §6) and, on the
  * three tabs' roots, the navigation bar (Passwords · Security · Settings, ux.md §4), whose Security
  * item carries `SecurityBadge`; over the screens it calls `LockNotices` (the notices after unlock,
- * lock.md §13.4) and `FirstCopyTip` (ux.md §6). While the app is in setup or locked it draws nothing
+ * lock.md §13.4), `NewMasterPasswordAfterUnlock` (`Route.NewMasterPassword` once, after the PIN or
+ * fingerprint opened the app on the lock-screen route of lock.md F11 steps 1 and 3) and
+ * `FirstCopyTip` (ux.md §6). While the app is in setup or locked it draws nothing
  * of its own, so the lock screen shows nothing of what is behind it.
  *
  * [content] is the one navigation display of the app, given the bottom area's padding; it stays in
@@ -60,6 +63,7 @@ fun UnlockedScaffold(graph: AppGraph, nav: NavState, content: @Composable (Paddi
             content(padding)
             if (unlocked) {
                 LockNotices(graph, nav)
+                NewMasterPasswordAfterUnlock(nav)
                 FirstCopyTip(graph)
             }
         }
