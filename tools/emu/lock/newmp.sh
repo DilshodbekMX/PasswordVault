@@ -101,16 +101,18 @@ pvn_finish() {
     pva_hide_keyboard
     pva_tap pv.master.finish || return 1
     deadline=$((SECONDS + 120))
-    until pva_present pv.route.Passwords 2 || pva_present pv.route.CreatePin 2 || pva_present pv.notice 2 || pva_present pv.master.done 2; do
+    until pva_present pv.route.CreatePin 2 || pva_present pv.notice 2 || pva_present pv.master.later 2; do
         [ $SECONDS -lt $deadline ] || { pv_log "the finishing did not end; ids: $(pva_ids)"; return 1; }
     done
-    pva_present pv.master.done 2 && pva_tap pv.master.done
-    # F11 step 19: "Choose a PIN" for the new vault, and 5.5's backup step, answered "Later".
-    local i
-    for i in 1 2 3; do
-        pva_present pv.master.later 2 && pva_tap pv.master.later
-        pvl_pin_steps "$PVL_PIN" - Passwords && break
-        pva_present pv.master.later 2 || return 1
-    done
+    # F11 step 19: where the phone can hold keys, "Choose a PIN" for the new vault opens over 5.5's
+    # screen: the PIN, the fingerprint offer "Not now", and the steps close onto that screen without
+    # setup's "Make backups" (PinFlow.AFTER_NEW_MASTER_PASSWORD, merge of R4). Then 5.5's backup step,
+    # answered "Later", which closes the route onto the list the notice was answered on.
+    # (The backup step may show for a moment before the lock's notice opens the PIN steps over it.)
+    if pva_present pv.route.CreatePin 5 || pva_present pv.notice 1; then
+        pvl_pin_steps "$PVL_PIN" - NewMasterPassword || return 1
+    fi
+    pva_need pv.master.later 20 && pva_tap pv.master.later || return 1
+    pva_on Passwords 30 || return 1
     PVA_PASSWORD=$PVN_NEW_PASSWORD
 }
