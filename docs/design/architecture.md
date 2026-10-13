@@ -472,6 +472,8 @@ interface LockManager {
                                                        // OpenAside(vaultId), StartEmpty, RestoreFromFile, OlderPasswordAnswer(choice: OlderPasswordChoice),
                                                        // NoticeAnswered(id, answer), CancelPending, ItWasntMe, GoBack ("Finish now" is
                                                        // no intent: it opens Route.NewMasterPassword, decision 14);
+                                                       // "It wasn't me", on the list's banner and on the notice alike, is
+                                                       //   ItWasntMe, never NoticeAnswered: it locks through Session.lockNow (5.5)
                                                        // enum class OlderPasswordChoice { TRY_AGAIN, OPEN_FROM_BEFORE, OK,
                                                        //   OPEN_OLDER_SET, KEEP_NEWER_SET }: the last two are the buttons of
                                                        //   LockScreen.OpenOlderSet, "Open my passwords from 7 Oct" and "Cancel"

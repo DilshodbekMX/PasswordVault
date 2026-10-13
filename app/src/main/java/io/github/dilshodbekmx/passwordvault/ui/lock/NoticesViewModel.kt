@@ -39,9 +39,10 @@ import kotlinx.coroutines.launch
  * `LockUiState.Unlocked.notices`, one at a time, in the lock's order.
  *
  * - **A notice** ([notice]) is a dialog with the texts of §13.4 and its answers; each answer goes to
- *   the lock as `LockIntent.NoticeAnswered`, and some open a screen ([NoticeButton.route]): "Make a
- *   backup now" the backup, "Change PIN" Change PIN, "Choose a new master password" and "Finish
- *   now" the new master password, "Choose a new PIN" Set a PIN, "Turn on" Settings › App lock.
+ *   the lock as `LockIntent.NoticeAnswered` ("It wasn't me" as `LockIntent.ItWasntMe`, [answer]), and
+ *   some open a screen ([NoticeButton.route]): "Make a backup now" the backup, "Change PIN" Change
+ *   PIN, "Choose a new master password" and "Finish now" the new master password, "Choose a new PIN"
+ *   Set a PIN, "Turn on" Settings › App lock.
  * - **"Choose a PIN" with the proof of this unlock** has no dialog: the "Choose a new PIN" screen
  *   follows at once (lock.md F1 step 6, F5 step 4, F7 step 3; ux.md §5.9 "After an unlock through
  *   'Forgot PIN?' …"; `Notice.ChoosePin`'s KDoc). [choosePin] names it; [choosePinStep] leaves the
@@ -107,9 +108,15 @@ class NoticesViewModel(
         }
     }
 
-    /** The answer [answer] to the notice [id]; "Type master password" also opens [prompt]. The screen to open is the button's [NoticeButton.route]. */
+    /**
+     * The answer [answer] to the notice [id]; "Type master password" also opens [prompt]. The screen
+     * to open is the button's [NoticeButton.route]. "It wasn't me" is `LockIntent.ItWasntMe`, as on the
+     * list's banner: the open app is locked through the session, as "Lock now" locks it (our clip
+     * cleared, a draft flushed; architecture.md §5.5), and then the old vault's lock screen shows
+     * (lock.md F16b). The lock takes the notice away with the unlocked state.
+     */
     fun answer(id: Long, answer: NoticeAnswer) {
-        lock.send(LockIntent.NoticeAnswered(id, answer))
+        lock.send(if (answer == NoticeAnswer.IT_WASNT_ME) LockIntent.ItWasntMe else LockIntent.NoticeAnswered(id, answer))
         if (answer == NoticeAnswer.TYPE_MASTER_PASSWORD) {
             password.clearSecret()
             promptState.value = PromptState()
