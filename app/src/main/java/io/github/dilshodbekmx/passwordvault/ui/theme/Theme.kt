@@ -65,8 +65,7 @@ fun PasswordVaultTheme(style: StyleChoice, theme: ThemeChoice, content: @Composa
 
 /**
  * The default style, Bank blue, in a fixed [theme], without touching the system bars: for previews
- * and tests, and for the few parts drawn outside the app's theme (the window kit's notice of an
- * obscured touch).
+ * and tests.
  */
 @Composable
 fun PasswordVaultTheme(theme: ThemeChoice, content: @Composable () -> Unit) {

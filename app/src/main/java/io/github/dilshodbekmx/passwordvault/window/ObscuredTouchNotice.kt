@@ -28,8 +28,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.dilshodbekmx.passwordvault.R
-import io.github.dilshodbekmx.passwordvault.settings.ThemeChoice
-import io.github.dilshodbekmx.passwordvault.ui.theme.PasswordVaultTheme
+import io.github.dilshodbekmx.passwordvault.ui.theme.LocalLook
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -45,7 +44,9 @@ import kotlinx.coroutines.flow.asStateFlow
  *
  * It is not a dialog: a dialog's buttons would be blocked by the same overlay. A card at the bottom,
  * read once by TalkBack (a polite live region), that goes at the next touch that is not obscured,
- * or after 10 seconds (longer when the user asked Android for more time to read).
+ * or after 10 seconds (longer when the user asked Android for more time to read). It is drawn in
+ * the inverse colours of the style and the light or dark the user chose (`LocalLook`: `AppRoot`
+ * puts the app's theme around `WindowPolicy.Root`).
  *
  * Only the activity's window is watched, as ux.md §3 says: a dialog or sheet drops obscured touches
  * too (`VaultWindow`), but without the notice.
@@ -72,28 +73,28 @@ private fun NoticeLayer() {
         delay(shownForMs)
         ObscuredTouches.dismiss()
     }
-    // Drawn outside the app's theme (WindowPolicy.Root wraps it), so with the phone's own light or dark.
-    PasswordVaultTheme(ThemeChoice.SYSTEM) {
-        Box(
-            modifier = Modifier.fillMaxSize().safeDrawingPadding().padding(16.dp),
-            contentAlignment = Alignment.BottomCenter,
+    // In the style and the light or dark that the user chose: the app's theme lies around WindowPolicy.Root
+    // (AppRoot), and LocalLook is its look; outside any theme (a test's host) it is Bank blue in light.
+    val colors = LocalLook.current.colors
+    Box(
+        modifier = Modifier.fillMaxSize().safeDrawingPadding().padding(16.dp),
+        contentAlignment = Alignment.BottomCenter,
+    ) {
+        Surface(
+            color = colors.inverseSurface,
+            contentColor = colors.inverseOnSurface,
+            shape = MaterialTheme.shapes.small,
+            shadowElevation = 6.dp,
+            modifier = Modifier
+                .widthIn(max = 600.dp)
+                .testTag(NOTICE_TAG)
+                .semantics { liveRegion = LiveRegionMode.Polite },
         ) {
-            Surface(
-                color = MaterialTheme.colorScheme.inverseSurface,
-                contentColor = MaterialTheme.colorScheme.inverseOnSurface,
-                shape = MaterialTheme.shapes.small,
-                shadowElevation = 6.dp,
-                modifier = Modifier
-                    .widthIn(max = 600.dp)
-                    .testTag(NOTICE_TAG)
-                    .semantics { liveRegion = LiveRegionMode.Polite },
-            ) {
-                Text(
-                    text = stringResource(R.string.common_obscured_touch),
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(16.dp),
-                )
-            }
+            Text(
+                text = stringResource(R.string.common_obscured_touch),
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(16.dp),
+            )
         }
     }
 }

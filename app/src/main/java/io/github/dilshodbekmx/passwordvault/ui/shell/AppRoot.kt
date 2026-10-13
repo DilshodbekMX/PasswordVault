@@ -8,18 +8,20 @@ import io.github.dilshodbekmx.passwordvault.ui.theme.PasswordVaultTheme
 import io.github.dilshodbekmx.passwordvault.window.WindowPolicy
 
 /**
- * The root content of the activity (architecture.md §3.6): the window policy around everything
- * (`NoPersonalizedLearning`, `ObscuredTouchNotice`), the clipboard bridge, the theme, then the
- * navigation.
+ * The root content of the activity (architecture.md §3.6): the theme, then the window policy
+ * around everything else (`NoPersonalizedLearning`, `ObscuredTouchNotice`), the clipboard bridge,
+ * then the navigation.
  *
  * The look follows `graph.settings.style` and `graph.settings.theme` (Settings › Appearance;
  * docs/design/looks/README.md), as §3.6 writes the call; it is the window kit's (build plan 2.8).
+ * It lies outermost, so that the notice of an obscured touch, which the window policy draws over
+ * everything, has the chosen style too.
  */
 @Composable
 fun AppRoot(graph: AppGraph) {
-    WindowPolicy.Root {
-        ClipboardRoot(graph) {
-            PasswordVaultTheme(graph.settings) {
+    PasswordVaultTheme(graph.settings) {
+        WindowPolicy.Root {
+            ClipboardRoot(graph) {
                 AppNavHost(graph)
             }
         }
