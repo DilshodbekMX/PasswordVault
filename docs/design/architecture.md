@@ -708,7 +708,7 @@ class Data(val repository: VaultRepository, val port: VaultPort, val lists: List
 | `ui/transfer/BackupNav.kt` | Backup, Restore, OldPasswords | backup and restore |
 | `ui/transfer/ExportNav.kt` | Export(step: Int) | export |
 | `ui/transfer/ImportNav.kt` | Import(step: Int), ColumnMapping | import |
-| `ui/security/SecurityNav.kt` | Security, Group(id) | security tab |
+| `ui/security/SecurityNav.kt` | Security, Group(id) (a group of reused passwords by its `ReuseGroup.id`, or one of the fixed ids `weak`, `pending` and `left-out` of the cards that list accounts, ux.md §5.16) | security tab |
 | `ui/security/ChangeNav.kt` | GuidedChange(entryId) | guided change |
 
 A screen that needs a new route asks for it as an interface request.

@@ -162,7 +162,12 @@ sealed interface Route {
     @Serializable
     data object Security : Route
 
-    /** The group list of reused passwords [id] (`ReuseGroup.id`). */
+    /**
+     * The list behind a card of the Security tab (ux.md §5.16): a group of reused passwords by its
+     * [id] (`ReuseGroup.id`, an entry's UUID), or one of the fixed ids "weak", "pending" and
+     * "left-out" (`GroupKind`): the passwords easy to guess, the changes not finished, the accounts
+     * left out of the check.
+     */
     @Serializable
     data class Group(val id: String) : Route
 
