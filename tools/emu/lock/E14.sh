@@ -74,9 +74,12 @@ mp_opens_while_full() {
 }
 
 free_space() {
+    local avail
     pv_shell rm -f "$FILL" "$FILL.rest" >/dev/null 2>&1
     pv_sleep 2
-    pvl_note "E14: /data has $(available_kib) KiB available after the files were removed"
+    avail=$(available_kib)
+    pvl_note "E14: /data has $avail KiB available after the files were removed"
+    [ "${avail:-0}" -gt 65536 ] 2>/dev/null || { pv_log "/data has only ${avail:-?} KiB available after the files were removed"; return 1; }
 }
 
 pin_opens() { to_pad && pva_pin "$PVL_PIN" && pvl_open_list 30 && pvl_expect_pin charged=false row=0 total=0; }

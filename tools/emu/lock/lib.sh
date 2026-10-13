@@ -15,15 +15,16 @@
 #   pvl_wrong_pins, pvl_wait_answer, pvl_open_list    the lock screens
 #   pvl_status, pvl_item, pvl_vault_item, pvl_pin KEY, pvl_fp KEY, pvl_state KEY, pvl_policy KEY,
 #   pvl_lock_state, pvl_alias_count, pvl_has_canary, pvl_expect_pin, pvl_expect_fp   the lock's state
-#   pvl_screen, pvl_wait_screen, pvl_status_line, pvl_nowhere, pvl_notice_lines, pvl_notice_has,
-#   pvl_answer                                         what the screen shows
+#   pvl_screen, pvl_wait_screen, pvl_status_line, pvl_nowhere, pvl_pad_lacks, pvl_notice_lines,
+#   pvl_notice_has, pvl_answer                         what the screen shows
 #   pvl_finger N, pvl_prompt_up, pvl_prompt_down, pvl_prompt_shown, pvl_prompt_negative,
-#   pvl_touch_prompt, pvl_enrolled_fingers             fingerprint
+#   pvl_prompt_message, pvl_no_prompt, pvl_touch_prompt, pvl_enrolled_fingers   fingerprint
 #   pvl_kill9, pvl_force_stop, pvl_restart             the process
 #   pvl_res, pvl_expect, pvl_text_is, pvl_text_shown   the app's own texts (English, as the emulators are set)
 #   pvl_record, pvl_record_put, pvl_lock_files         lock records through run-as (debuggable builds)
 #   pvl_later WAVE NAME [MARKERS] -- COMMAND...        a step that a later package enables
-#   pvl_skip, pvl_note                                 a SKIPPED step; a line for the record
+#   pvl_skip, pvl_note, pvl_not_here                   a SKIPPED step (staging, no root); a line for the
+#                                                      record; a part this API level does not have
 #   pvl_setting_set, pvl_undo                          device changes put back when the script ends
 #   pvl_window_lib                                     tools/emu/window/lib.sh (the window helper)
 #   pvl_log_mark, pvl_log_since, pvl_screenshot
@@ -459,6 +460,24 @@ pvl_nowhere() {
 # pvl_status_line: the pad's status line (pv.lock.status), or nothing when there is none.
 pvl_status_line() { pva_node pv.lock.status | cut -d'|' -f1; }
 
+# pvl_pad_lacks ID...: one dump that shows the pad (pv.lock.pad) has none of the nodes ID (the
+# fingerprint key, the status line, ...), so that a failed or empty dump never reads as "absent".
+pvl_pad_lacks() {
+    local nodes id
+    nodes=$(pv_ui_nodes)
+    pva_in_nodes '[|]pv\.lock\.pad$' "$nodes" || { pv_log "the dump does not show the pad; ids: $(pva_ids)"; return 1; }
+    for id in "$@"; do
+        [ -z "$(pva_node "$id" "$nodes")" ] || { pv_log "the pad shows $id: $(pva_node "$id" "$nodes" | cut -d'|' -f1)"; return 1; }
+    done
+}
+
+# pvl_prompt_message: the line of the fingerprint prompt that says what happened ("Touch the
+# fingerprint sensor", "Not recognized", ...): the system's indicator (API 37) or error (API 28), or
+# the library's own dialog's fingerprint_error (API 24); nothing when no prompt is shown.
+pvl_prompt_message() {
+    pvl_prompt_nodes | awk -F'|' '$3 ~ /^(indicator|error|fingerprint_error)$/ && $1 != "" { print $1; exit }'
+}
+
 # pvl_notice_lines: the texts of the notice on the screen (its title, then pv.notice.line.N), one per line.
 pvl_notice_lines() { pv_ui_nodes | awk -F'|' '$3 ~ /^pv[.]notice[.](title|line[.][0-9]+)$/ { print $1 }'; }
 
@@ -723,6 +742,16 @@ pvl_prompt_negative() {
     pv_ui_tap '[|](button_negative|negative_button|button2)$' "$nodes" >/dev/null && return 0
     pv_ui_tap '^(Use PIN|USE PIN|Use master password|USE MASTER PASSWORD|Cancel|CANCEL|Not now|NOT NOW)[|]' "$nodes" >/dev/null && return 0
     pv_log "no negative button on the prompt"
+    return 1
+}
+
+# pvl_no_prompt: no fingerprint prompt is open: none on the screen (focus and nodes), and the app's own
+# `status` says "prompt: none", which does not depend on a dump of the screen.
+pvl_no_prompt() {
+    if pvl_prompt_shown; then pv_log "a fingerprint prompt is on the screen"; return 1; fi
+    pvl_status || return 1
+    case "$(pvl_item prompt:)" in "prompt: none"*) return 0 ;; esac
+    pv_log "the app has a prompt open: $(pvl_item prompt:)"
     return 1
 }
 

@@ -4,7 +4,14 @@ The checks E1 to E17 of lock.md §15.3, as scripts (build plan 4.5). Each runs u
 private emulator of `tools/emu/boot.sh`, against the APK it is given (the debug build by default),
 prints `PASS`, `FAIL` or `SKIPPED` per step (and `NOTE` lines for what lock.md asks to be recorded),
 ends with `SUMMARY SERIAL: N passed, N failed, N skipped`, and exits 0 when no step failed, 1
-otherwise, 2 for a usage error, 3 for a refused serial. Everything goes through `tools/emu/adb.sh` and
+otherwise, 2 for a usage error, 3 for a refused serial. `SKIPPED` is kept for what a staging build
+(no `run-as`) or an image without root prevents, for the steps of a later package (`pvl_later`,
+below) and for E17's `--short`; a part that lock.md does not list for an API level, or that a tool
+cannot do there (E11's saved-state probe needs API 26), is a `NOTE not on API N: …` line and not a
+step. E12 prints `KNOWN` for what lock.md §2.3 accepts (an accessibility service reading the pad
+before Android 14); `KNOWN` is neither a failure nor a pass. A step reads the state it judges from a
+fresh `status` or a fresh dump that shows the screen it expects (an empty or failed dump never
+counts as "absent"), and waits for a state with a deadline rather than for a fixed time. Everything goes through `tools/emu/adb.sh` and
 `tools/emu/app.sh` (`pv_use`, `pv_adb`, `pv_step`, `pva_*`): a serial that this worktree's `boot.sh`
 did not start is refused, and `emulator-5554` is never touched. Screens are found by their resource
 ids (LockTags `pv.lock.*`, PinPadTags `pv.pin.*`, NoticeTags `pv.notice*`, the routes `pv.route.*`);
@@ -80,7 +87,7 @@ E11 runs the lock's part of the language step now through the debug command `loc
 
 | File | What |
 |---|---|
-| `lib.sh` | `pvl_begin NAME "$@"` (SERIAL [--apk FILE]; sets SERIAL, APK, API, VARIANT, PVL_OUT) and `pvl_end`; `pvl_fresh`, `pvl_set_up PIN\|- fingerprint\|-` (setup with the suggested words, then 4.3's PIN steps), `pvl_pin_steps`, `pvl_lock_now`, `pvl_pad`, `pvl_unlock_pin`, `pvl_unlock_mp`, `pvl_to_master_password`, `pvl_wrong_pins`; `pvl_status` and its readers `pvl_item`, `pvl_pin KEY`, `pvl_fp KEY`, `pvl_state KEY`, `pvl_policy KEY`, `pvl_lock_state`, `pvl_alias_count`, `pvl_expect_pin KEY=VALUE…`; `pvl_screen` (pad, fingerprint-only, master-password, prompt, notice, list, …), `pvl_wait_screen`, `pvl_status_line`, `pvl_notice_has`, `pvl_answer`; `pvl_finger N`, `pvl_prompt_up`, `pvl_prompt_down`, `pvl_prompt_negative`, `pvl_touch_prompt`; `pvl_kill9`, `pvl_force_stop`, `pvl_restart`; `pvl_res`, `pvl_expect`, `pvl_text_is`, `pvl_text_shown` (the APK's own texts); `pvl_record`, `pvl_record_put` (a lock record through run-as, framed as lock.md §5.3); `pvl_later`, `pvl_skip`, `pvl_note`; `pvl_setting_set`, `pvl_undo` (put back at the end) |
+| `lib.sh` | `pvl_begin NAME "$@"` (SERIAL [--apk FILE]; sets SERIAL, APK, API, VARIANT, PVL_OUT) and `pvl_end`; `pvl_fresh`, `pvl_set_up PIN\|- fingerprint\|-` (setup with the suggested words, then 4.3's PIN steps), `pvl_pin_steps`, `pvl_lock_now`, `pvl_pad`, `pvl_unlock_pin`, `pvl_unlock_mp`, `pvl_to_master_password`, `pvl_wrong_pins`; `pvl_status` and its readers `pvl_item`, `pvl_pin KEY`, `pvl_fp KEY`, `pvl_state KEY`, `pvl_policy KEY`, `pvl_lock_state`, `pvl_alias_count`, `pvl_expect_pin KEY=VALUE…`; `pvl_screen` (pad, fingerprint-only, master-password, prompt, notice, list, …), `pvl_wait_screen`, `pvl_status_line`, `pvl_nowhere ID [ANCHOR]` and `pvl_pad_lacks ID…` (absent from a dump that shows the screen), `pvl_notice_has`, `pvl_answer`; `pvl_finger N`, `pvl_prompt_up`, `pvl_prompt_down`, `pvl_prompt_negative`, `pvl_prompt_message` (the prompt's own line, "Not recognized"), `pvl_touch_prompt`; `pvl_kill9`, `pvl_force_stop`, `pvl_restart`; `pvl_res`, `pvl_expect`, `pvl_text_is`, `pvl_text_shown` (the APK's own texts); `pvl_record`, `pvl_record_put` (a lock record through run-as, framed as lock.md §5.3); `pvl_later`, `pvl_skip`, `pvl_note`, `pvl_not_here`; `pvl_setting_set`, `pvl_undo` (put back at the end); `pvl_window_lib` (`tools/emu/window/lib.sh`, which sources `adb.sh` and `app.sh` again: every `PV_*` and `PVA_*` variable is kept across it) |
 | `phone.sh` | the phone's settings: `pvp_enroll FINGER`, `pvp_delete_all_fingers`, `pvp_lock_clear`, `pvp_lock_set`, `pvp_fingers`, `pvp_has_lock`, `pvp_restore_base` |
 | `newmp.sh` | F11 through 5.5's screens: `pvn_request`, `pvn_credited_ms`, `pvn_make_ready`, `pvn_finish` |
 | `lab.sh SERIAL CMD [WORDS]` | one debug command and the PVLOCK/PVDEBUG lines it caused (from the biometric lab's `lab.sh`) |

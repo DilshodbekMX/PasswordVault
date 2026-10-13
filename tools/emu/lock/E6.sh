@@ -66,10 +66,22 @@ prompt_opens_itself() {
     pvl_note "E6 on API $API ($VARIANT): the unlock prompt is drawn in '$focus'"
 }
 
+# The prompt must show that it got the finger ("Not recognized" on its line), so that a touch lost
+# before the prompt was drawn does not pass as "the prompt stayed open".
 unknown_finger_leaves_it_open() {
+    local before line deadline
     pv_sleep 2
+    before=$(pvl_prompt_message)
     pvl_finger "$PVL_UNKNOWN_FINGER" || return 1
-    pv_sleep 3
+    deadline=$((SECONDS + 6))
+    while :; do
+        line=$(pvl_prompt_message)
+        printf '%s\n' "$line" | grep -q -i 'not recogni' && break
+        [ $SECONDS -lt $deadline ] || { pv_log "the prompt never said that finger $PVL_UNKNOWN_FINGER was not recognized (its line: '${line:-none}', before the touch: '${before:-none}')"; return 1; }
+        pv_sleep 0.3
+    done
+    pvl_note "E6 on API $API: after finger $PVL_UNKNOWN_FINGER the prompt's line went from '${before:-none}' to '$line'"
+    pv_sleep 2
     pvl_prompt_shown || { pv_log "the prompt closed after an unknown finger"; return 1; }
     pvl_status || return 1
     case "$(pvl_lock_state)" in "locked: "*) ;; *) pv_log "the lock is '$(pvl_lock_state)'"; return 1 ;; esac
@@ -90,7 +102,7 @@ use_pin_returns_to_pad() {
     pvl_prompt_down 10 || return 1
     pvl_wait_screen pad 10 || return 1
     pv_sleep 3
-    ! pvl_prompt_shown || { pv_log "a prompt opened again by itself on the same visit"; return 1; }
+    pvl_no_prompt || { pv_log "a prompt opened again by itself on the same visit"; return 1; }
     pvl_wait_screen pad 5
 }
 

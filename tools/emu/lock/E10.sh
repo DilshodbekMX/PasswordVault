@@ -234,7 +234,7 @@ fp_row() {
                 pvl_wait_screen pad 20 || return 1
                 pv_sleep 3
                 ! pvl_prompt_shown || { pv_log "a prompt opened after a TEMPORARY probe"; return 1; }
-                pva_absent pv.pin.fingerprint || { pv_log "the fingerprint key is still on the pad"; return 1; }
+                pvl_pad_lacks pv.pin.fingerprint || return 1
                 pvl_text_is pv.lock.status string lock_fingerprint_cannot_check_pin || return 1
                 spent || return 1
                 unchanged "$before" || return 1
@@ -305,13 +305,13 @@ prompt_row() {
     spent || return 1
     case "$class" in
         CLOSED)
-            [ -z "$(pvl_status_line)" ] || { pv_log "a line after a closed prompt: $(pvl_status_line)"; return 1; }
+            pvl_pad_lacks pv.lock.status || { pv_log "a line after a closed prompt"; return 1; }
             pva_present pv.pin.fingerprint 3 || { pv_log "no fingerprint key after a closed prompt"; return 1; }
             unchanged "$before" || return 1 ;;
         TEMPORARY)
             pvl_text_is pv.lock.status string "$line" || return 1
             case "$line" in
-                lock_fingerprint_cannot_check_pin) pva_absent pv.pin.fingerprint || { pv_log "the key is not hidden"; return 1; } ;;
+                lock_fingerprint_cannot_check_pin) pvl_pad_lacks pv.pin.fingerprint || { pv_log "the key is not hidden"; return 1; } ;;
                 *) pva_present pv.pin.fingerprint 3 || { pv_log "the fingerprint key is hidden"; return 1; } ;;
             esac
             unchanged "$before" || return 1 ;;
@@ -474,11 +474,23 @@ keys_after_reinstall() {
     pvl_note "E10 on API $API ($VARIANT): after pm uninstall -k and a new install the PIN key survived: $pin, the fingerprint key survived: $fp (before: $before; after: $now)"
 }
 
-# Each shortcut that lost its key says that it stopped working; one that kept it works.
+# Each shortcut that lost its key says that it stopped working; one that kept it works: a fingerprint
+# key that survived opens the app from the pad's fingerprint key, a PIN key with the PIN.
 shortcuts_after_reinstall() {
     local now
     now=$(pvl_screen)
     [ "$now" = prompt ] && { pvl_prompt_negative; pv_sleep 1; now=$(pvl_screen); }
+    case "$SURVIVED" in
+        *"fp=yes"*)
+            [ "$now" = pad ] || { pv_log "no pad (the screen is '$now')"; return 1; }
+            pvl_status || return 1
+            [ "$(pvl_fp slot)" = set ] || { pv_log "the fingerprint key survived but its slot is gone: $(pvl_show_status)"; return 1; }
+            pva_tap pv.pin.fingerprint || return 1
+            pvl_touch_prompt "$PVL_FINGER" 15 && pvl_prompt_down 15 && pvl_open_list 30 \
+                || { pv_log "the fingerprint key that survived did not open the app"; return 1; }
+            lock_to_pad || return 1
+            now=pad ;;
+    esac
     case "$SURVIVED" in
         *"fp=no"*)
             pvl_status || return 1

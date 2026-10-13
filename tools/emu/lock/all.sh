@@ -111,7 +111,7 @@ trap stop_booted EXIT
 
 # run_device API SERIAL: the chosen checks of that level, one after another.
 run_device() {
-    local api=$1 s=$2 c rc
+    local api=$1 s=$2 c rc summary
     for c in "${CHECKS[@]}"; do
         case " $(levels_of "$c") " in *" $api "*) ;; *) continue ;; esac
         if [ "$c" = E15 ]; then
@@ -120,7 +120,8 @@ run_device() {
             "$LOCK_DIR/$c.sh" "$s" --apk "$APK" > "$OUT/$s-$c.log" 2>&1
         fi
         rc=$?
-        printf '%s %s (API %s): %s\n' "$c" "$s" "$api" "$(grep -m 1 '^SUMMARY' "$OUT/$s-$c.log" | sed 's/^SUMMARY [^:]*: //' || echo "no summary, exit $rc")" | tee -a "$OUT/results.txt"
+        summary=$(grep -m 1 '^SUMMARY' "$OUT/$s-$c.log" | sed 's/^SUMMARY [^:]*: //')
+        printf '%s %s (API %s): %s\n' "$c" "$s" "$api" "${summary:-no summary, exit $rc}" | tee -a "$OUT/results.txt"
         echo "$c $s $api $rc" >> "$OUT/status.txt"
     done
 }

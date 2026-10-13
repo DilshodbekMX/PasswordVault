@@ -49,7 +49,7 @@ hidden_with_its_line() {
         pv_sleep 1
         ! pvl_prompt_shown || { pv_log "a prompt opened"; return 1; }
     done
-    pva_absent pv.pin.fingerprint || { pv_log "the pad shows the fingerprint key"; return 1; }
+    pvl_pad_lacks pv.pin.fingerprint || return 1
     pvl_text_is pv.lock.status string lock_fingerprint_not_for_apps_pin || return 1
     pvl_status || return 1
     case "$(pvl_item canAuthenticate:)" in "canAuthenticate: 1,"*) ;; *) pv_log "$(pvl_item canAuthenticate:)"; return 1 ;; esac

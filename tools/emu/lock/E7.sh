@@ -79,7 +79,7 @@ next_visit() {
 # gone_with_text: the visit found the fingerprint key GONE.
 gone_with_text() {
     pv_sleep 2
-    ! pvl_prompt_shown || { pv_log "a prompt opened"; pvl_prompt_negative; return 1; }
+    pvl_no_prompt || { pvl_prompt_shown && pvl_prompt_negative; return 1; }
     pvl_wait_screen pad 15 || return 1
     pvl_text_is pv.lock.status string lock_fingerprint_turned_off_pin || return 1
     pvl_expect_fp slot=none off=key_gone || return 1
@@ -110,9 +110,9 @@ none_saved_on_pad() {
     pvl_wait_screen pad 20 || return 1
     for i in 1 2 3; do
         pv_sleep 1
-        ! pvl_prompt_shown || { pv_log "a prompt opened"; return 1; }
+        pvl_no_prompt || return 1
     done
-    pva_absent pv.pin.fingerprint || { pv_log "the pad shows the fingerprint key"; return 1; }
+    pvl_pad_lacks pv.pin.fingerprint || return 1
     pvl_text_is pv.lock.status string lock_fingerprint_none_saved_pin || return 1
     pvl_status || return 1
     case "$(pvl_item canAuthenticate:)" in "canAuthenticate: 11,"*) ;; *) pv_log "$(pvl_item canAuthenticate:)"; return 1 ;; esac
@@ -238,7 +238,7 @@ pv_step "install the app afresh: Welcome" -- pvl_fresh || pvl_end
 pv_step "the phone as the base has it: a screen lock and enrolled fingers" -- pvp_restore_base || pvl_end
 pv_step "set up with the PIN and fingerprint unlock (finger 1)" -- set_up || pvl_end
 if want a; then
-    if [ "$API" = 37 ]; then part_a; else pvl_skip "(a) fingers" "API 37 only: the Android 7 and 9 images never change their sensor's id"; fi
+    if [ "$API" = 37 ]; then part_a; else pvl_not_here "(a) fingers" "lock.md lists (a) for Android 17: the Android 7 and 9 images never change their sensor's id"; fi
 fi
 want b && part_b
 pv_step "the phone put back as the base has it: the screen lock 1111, fingers 1 and 2" -- pvp_restore_base

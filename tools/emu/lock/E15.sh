@@ -113,7 +113,7 @@ restored() {
     local out sets token
     out=$(PV_ADB_TIMEOUT=300 pv_shell bmgr restore "$PV_PACKAGE" 2>&1 | tr -d '\r')
     printf '%s\n' "$out" > "$PVL_OUT/restore.txt"
-    if ! printf '%s\n' "$out" | grep -q -i 'restoreFinished: 0\|done'; then
+    if ! printf '%s\n' "$out" | grep -q 'restoreFinished: 0'; then
         # Older bmgr: a restore set's token first.
         sets=$(pv_shell bmgr list sets 2>/dev/null | tr -d '\r')
         token=$(printf '%s\n' "$sets" | awk '{ print $1; exit }')
@@ -123,6 +123,7 @@ restored() {
     fi
     pv_sleep 3
     pvl_note "E15: bmgr restore said: $(printf '%s' "$out" | tr '\n' ' ' | cut -c1-300)"
+    printf '%s\n' "$out" | grep -q 'restoreFinished: 0' || { pv_log "the restore did not finish with 0"; return 1; }
 }
 
 vault_back_no_record() {
