@@ -365,6 +365,34 @@ class FingerprintFlowTest {
     }
 
     @Test
+    fun decision19_onTheFingerprintOnlyScreen_thePromptsUseMasterPassword_opensTheMasterPasswordScreen() {
+        withFingerprint(pin = false)
+        val fingerprintOnly = LockScreen.FingerprintOnly(status = null, pinReason = null, aside = null)
+        assertEquals(fingerprintOnly, f.screen)
+
+        // The prompt's negative button there is "Use master password" (lock.md §9.2 rule 5): code 13.
+        f.keys.scriptPrompt(FakeKeys.Prompt.Close(13))
+        await { f.engine.promptIfDue() }
+        val chosen = f.screen
+        assertTrue("the master-password screen, not the fingerprint-only screen again: $chosen", chosen is LockScreen.MasterPassword)
+
+        // It is the screen that the fingerprint-only screen's own "Use master password" shows.
+        f.leaveAndReturn()
+        assertEquals(fingerprintOnly, f.screen)
+        await { f.engine.useMasterPassword() }
+        assertEquals(chosen, f.screen)
+
+        // Back or the X (10) and the system's cancel (5) leave the fingerprint-only screen where it was.
+        for (code in listOf(10, 5)) {
+            f.leaveAndReturn()
+            f.keys.scriptPrompt(FakeKeys.Prompt.Close(code))
+            await { f.engine.promptIfDue() }
+            assertEquals("code $code", fingerprintOnly, f.screen)
+        }
+        assertEquals(finger, f.fingerprintRecord().slot) // nothing changes
+    }
+
+    @Test
     fun onAPracticeScreen_thePromptDoesNotOpenByItself() {
         f.fingerprintKey = watched
         f.rebuild()

@@ -408,7 +408,7 @@ The states, what each shows and its English wording are lock.md §13.1 to §13.3
 - below it, `TextButton` **"Forgot PIN? Use master password"**.
 - In Bank blue the logo, the title, the subtitle and the dots lie on a panel in the primary colour across the top of the screen, behind the status bar, whose icons are then light, with rounded lower corners; in landscape it is a block with rounded corners on the left. The other styles draw them on the screen itself ([looks/README.md](looks/README.md) "What differs between styles besides colour").
 
-**The fingerprint-only screen** (lock.md §13.1 row 6, §13.2), when fingerprint is usable and the PIN is not: the logo, the title "PasswordVault", the status line, and the buttons "Use fingerprint" and "Use master password". No pad and no dots. The prompt opens by itself.
+**The fingerprint-only screen** (lock.md §13.1 row 6, §13.2), when fingerprint is usable and the PIN is not: the logo, the title "PasswordVault", the status line, and the buttons "Use fingerprint" and "Use master password". No pad and no dots. The prompt opens by itself; its "Use master password" opens the master-password screen at once (build-plan §12, decision 19).
 
 Details:
 - **Keys.** At least **64 dp** (72 dp preferred); digits in `headlineMedium`; a ripple and `HapticFeedbackType.VirtualKey` on press (Compose 1.12 has it [V: bytecode]).

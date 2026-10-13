@@ -1046,7 +1046,7 @@ If the app is killed after step 3, the next start finds a vault without `pin.rec
 4. On success: `result.cryptoObject.cipher.doFinal(ct)` must give 32 bytes; storage opens the vault with them (I7). If the visit ended while the prompt was open, the key is dropped and the app stays locked (6.3).
 5. A charge, if one is held, is refunded. No count is reset (6.4), and nothing is forgiven or hidden: the notice after this unlock reports every wrong PIN, those of this visit too (13.4).
 6. Notices (13.4).
-7. Closed, or an error: the pad with the message of 13.3. Nothing changes except what section 14 says.
+7. Closed, or an error: the pad with the message of 13.3. Nothing changes except what section 14 says. On the fingerprint-only screen the prompt's "Use master password" (code 13, its negative button there, 9.2 rule 5) opens the master-password screen, as the screen's own "Use master password" does (build-plan §12, decision 19).
 
 ### F4. A wrong PIN
 
@@ -1473,7 +1473,7 @@ These are the settings that ran in the window lab on Android 17 [L-win, "Final c
 | **GONE** | The platform states that this key, or this wrap, can never work again | Remove that one slot, delete its alias, fall back to the next way in |
 | **TEMPORARY** | Anything else that stopped a shortcut | Use another way this time. Change nothing and store nothing, except a refund |
 | **WRONG** | The PIN was checked and is wrong | Counted (6.3) |
-| **CLOSED** | The user or the system closed the prompt | Show the pad |
+| **CLOSED** | The user or the system closed the prompt | Show the pad; on the fingerprint-only screen, its negative button "Use master password" (13) shows the master-password screen (decision 19) |
 | **NOT NOW** | A shortcut cannot be set up at this moment | Say why; nothing changes |
 
 Removing a slot never costs data by itself. But for an owner who has forgotten the master password it can cost everything, so GONE is reserved for what the platform says outright, and every doubt is TEMPORARY [J-R D2-3].
@@ -1523,7 +1523,7 @@ fun load(alias: String): Ks<SecretKey> {
 | | `AEADBadTagException` | **GONE** (`bad_wrap`) | The stored wrap does not match the key; seen with an altered wrap [L-bio] |
 | | A result that is not 32 bytes | **GONE** (`bad_wrap`) | — |
 | | Any other exception, for example `IllegalBlockSizeException` caused by "Key user not authenticated" | TEMPORARY | Seen after the phone's PIN was typed on the prompt's lockout screen [L-bio finding b] |
-| `onAuthenticationError` | 10 user cancelled, 13 negative button, 5 cancelled | CLOSED | — |
+| `onAuthenticationError` | 10 user cancelled, 13 negative button, 5 cancelled | CLOSED | 13 on the fingerprint-only screen: the master-password screen (F3 step 7) |
 | | 7 lockout, 9 permanent lockout | TEMPORARY | Lockout text |
 | | 1 hardware unavailable | TEMPORARY | The "fingerprint for apps" text [L-bio finding d] |
 | | 11 none enrolled, 12 no hardware, 2, 3, 4, 8, 14, 15, any unknown code | TEMPORARY | If the key really died, the next `Cipher.init` says so |

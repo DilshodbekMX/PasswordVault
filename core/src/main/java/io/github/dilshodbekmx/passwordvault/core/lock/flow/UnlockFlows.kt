@@ -433,7 +433,14 @@ internal class UnlockFlows(private val core: LockCore) {
                     VaultOpen.Unreadable -> cannotOpen(visit, CurrentVault.Why.IO, flushPin = false)
                 }
             }
-            is FingerprintResult.Closed -> core.showLockScreen() // codes 10, 13 and 5 show the pad
+            is FingerprintResult.Closed -> {
+                // Codes 10, 13 and 5 show the pad. On the fingerprint-only screen the prompt's negative button is
+                // "Use master password" (lock.md §9.2 rule 5): its code 13 opens the master-password screen, as the
+                // screen's own button does (build-plan.md §12, decision 19).
+                val screen = (core.state.value as? LockState.Locked)?.screen
+                if (result.code == KeystoreErrors.ERROR_NEGATIVE_BUTTON && screen is LockScreen.FingerprintOnly) visit.masterPasswordChosen = true
+                core.showLockScreen()
+            }
             is FingerprintResult.Gone -> fingerprintGone(visit, result.why)
             is FingerprintResult.Temporary -> {
                 visit.fingerprintLine = KeystoreErrors.temporaryLine(result.code)
