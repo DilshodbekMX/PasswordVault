@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Changing and replacing the master password (build plan 5.5; ux.md §5.18 "Change master
+     password", §5.24; lock.md F8, F11, §13.3, §13.4): Settings › App lock › Change master password,
+     and the screen of a new master password chosen while the old one is forgotten, with "Finish now".
+     Every name starts with master_. Shared words (OK, Cancel, Not now, Later, Try again, Delete,
+     Done) are in strings_common.xml; the steps "Choose your master password", "Write it down on
+     paper" and "Type your master password again" are setup's (strings_setup.xml). Plain words at B1
+     level, "you" and "your", numbers as digits (ux.md §7). "Master password" is glossary 48, "new
+     master password" (one chosen with the PIN that is not working yet) glossary 138, "replaced"
+     glossary 143. The app's own PIN is "app PIN" or "PIN", never the phone's. -->
+<resources>
+
+    <!-- ===== Change master password (ux.md §5.18; lock.md F8) ===== -->
+
+    <!-- The title of the screen in its top bar, and what TalkBack calls it (glossary 51). -->
+    <string name="master_change_title">Change master password</string>
+    <!-- The back arrow in the top bar, read by TalkBack. -->
+    <string name="master_back">Back</string>
+    <!-- Step 1: the heading above the field for the master password used now. -->
+    <string name="master_current_heading">Type your current master password</string>
+    <!-- Step 1: under the heading. -->
+    <string name="master_current_text">Type the master password you use now. Then you choose a new one.</string>
+    <!-- Step 1 again, after the new master password was chosen: the app was left meanwhile, which
+         ends what step 1 proved. -->
+    <string name="master_current_again">For your safety, type your current master password once more. The new one you chose is kept.</string>
+    <!-- The label of the field of step 1. -->
+    <string name="master_current_label">Current master password</string>
+    <!-- The button under a master-password field: checks it and goes on. Short. -->
+    <string name="master_next">Next</string>
+    <!-- Text button on step 1: the user has forgotten the master password; opens the screen of a new
+         master password chosen with the PIN or fingerprint (ux.md §5.24). -->
+    <string name="master_dont_remember">I don’t remember it</string>
+    <!-- Shown while the typed master password is checked (about one second). -->
+    <string name="master_checking">Checking…</string>
+    <!-- After a wrong master password (lock.md §13.3). -->
+    <string name="master_wrong">That’s not the right master password. Check the keyboard language (Latin or Cyrillic) and capital letters.</string>
+    <!-- After several wrong master passwords the field waits 30 seconds (lock.md §6.8). -->
+    <string name="master_wait">Wait 30 seconds, then try again. Take your time and look at your paper.</string>
+    <!-- The countdown of that wait, once a second. -->
+    <plurals name="master_wait_seconds">
+        <item quantity="one">Try again in %d&#160;second.</item>
+        <item quantity="other">Try again in %d&#160;seconds.</item>
+    </plurals>
+    <!-- The phone has too little free memory to check a master password (lock.md §6.8 step 3). -->
+    <string name="master_no_memory">Your phone doesn’t have enough free memory to check your master password. Close other apps or restart the phone, then try again.</string>
+
+    <!-- Step 3 (lock.md F8 step 3): the app PIN keeps working with the new master password only when
+         it is typed now. Title above the PIN pad. -->
+    <string name="master_keep_pin_title">Enter your app PIN to keep using it</string>
+    <!-- Under that title. "Not now" is the button that skips this step. -->
+    <string name="master_keep_pin_text">Your master password is changing, so your PIN must be confirmed to keep working. With “Not now”, you choose a PIN again afterwards.</string>
+    <!-- A wrong PIN on that step or on the step that proves a new master password; it is counted. -->
+    <plurals name="master_pin_wrong">
+        <item quantity="one">Wrong PIN. %d&#160;try left.</item>
+        <item quantity="other">Wrong PIN. %d&#160;tries left.</item>
+    </plurals>
+    <!-- The same wrong PIN typed again: not counted again (lock.md §6.6). -->
+    <string name="master_pin_same_again">You already tried that PIN. It was not counted again.</string>
+
+    <!-- Step 4: while the new master password is saved, written, read back and checked. -->
+    <string name="master_saving">Saving…</string>
+    <!-- Step 5, under "Saving…" when fingerprint unlock is on: the phone's fingerprint prompt opens. -->
+    <string name="master_touch_sensor">Touch the sensor to keep fingerprint unlock on.</string>
+    <!-- The change could not be made, and everything stays as it was (lock.md F8 step 6). -->
+    <string name="master_not_changed">Couldn’t change your master password. Nothing was changed. Your old master password, PIN and fingerprint still work.</string>
+    <!-- The change was made, but the app cannot tell whether the new copy reached the storage
+         (lock.md F8 step 6). -->
+    <string name="master_unclear">Saving may not have finished. Next time, try your new master password first, then your old one.</string>
+    <!-- The heading over "Couldn't change your master password. …" and over too little memory. -->
+    <string name="master_not_changed_heading">Your master password was not changed</string>
+    <!-- The heading over "Saving may not have finished. …". -->
+    <string name="master_unclear_heading">Your master password may have changed</string>
+    <!-- The phone had too little free memory to make the new key. Followed by "Try again". -->
+    <string name="master_change_no_memory">Your phone doesn’t have enough free memory to change your master password. Close other apps or restart the phone, then try again.</string>
+    <!-- Done: the heading of the last step, and the message Settings shows afterwards. -->
+    <string name="master_changed">Your master password was changed.</string>
+
+    <!-- ===== After the change or the replacement: the new backup (lock.md F8 step 9, F11 step 19) ===== -->
+
+    <!-- Why a new backup is needed now. Followed by "Back up now" and "Later". -->
+    <string name="master_backup_text">Make a new backup now. Your old backups still open only with your old master password.</string>
+    <!-- The button that opens the backup with the master password just typed, so it is not asked again. -->
+    <string name="master_back_up_now">Back up now</string>
+    <!-- Above the list of the backups this app saved, when the old master password is also the
+         password of some account (ux.md §5.16 card 1): others may know it. -->
+    <string name="master_places_heading">Your old master password may be known to others. Delete the backups made with it:</string>
+    <!-- The same when this app noted no saved backup: some may have been sent with another app. -->
+    <string name="master_places_none">Your old master password may be known to others. Delete the backups you made with it.</string>
+    <!-- One backup in that list: %1$s is its file name, %2$s the day it was saved, for example
+         "Oct 6, 2026". -->
+    <string name="master_place">%1$s, saved %2$s</string>
+    <!-- Under that list. Telegram and email are kept as they are. -->
+    <string name="master_places_also">Also delete copies you sent to Telegram or by email.</string>
+    <!-- Shown in place of a backup's "Delete" button once it was deleted. -->
+    <string name="master_place_deleted">Deleted</string>
+    <!-- The place where that backup is saved does not let the app delete it. -->
+    <string name="master_place_not_deletable">The app can’t delete this file. Delete it yourself in the place where it is saved.</string>
+    <!-- The file was deleted, but the app could not note it. -->
+    <string name="master_place_not_noted">The file was deleted, but the app couldn’t note it. It may still be listed later.</string>
+
+    <!-- ===== A new master password, the old one forgotten (ux.md §5.24; lock.md F11) ===== -->
+
+    <!-- The title of the screen in its top bar, and what TalkBack calls it (glossary 138). -->
+    <string name="master_new_title">New master password</string>
+    <!-- The heading of the explanation (lock.md F11 step 2), as on the lock screen's sheet. -->
+    <string name="master_explain_heading">Forgot your master password?</string>
+    <!-- Step 1, the explanation, when the app PIN still opens the app (lock.md F11 step 2). -->
+    <string name="master_explain_pin">You can choose a new master password because your PIN still opens the app on this phone. For your safety it starts working after 24 hours with the phone switched on. Until then nothing changes. Backups you made before will still need your old master password.</string>
+    <!-- The same when there is no PIN and fingerprint opens the app. -->
+    <string name="master_explain_fingerprint">You can choose a new master password because your fingerprint still opens the app on this phone. For your safety it starts working after 24 hours with the phone switched on. Until then nothing changes. Backups you made before will still need your old master password.</string>
+    <!-- Added to the explanation while another new master password is still waiting (lock.md F11
+         step 5: a new request replaces it, and its wait starts again). -->
+    <string name="master_explain_replaces">A new master password is already waiting to start working. If you choose another one, its 24 hours start again.</string>
+    <!-- The button under the explanation. -->
+    <string name="master_continue">Continue</string>
+    <!-- Step 2 (lock.md F11 step 3): title above the PIN pad. The PIN typed now proves that the
+         owner asks; an app that is open already is not enough. -->
+    <string name="master_proof_pin_title">Enter your app PIN</string>
+    <!-- Under that title. -->
+    <string name="master_proof_pin_text">For your safety, type your PIN now, even though the app is open.</string>
+    <!-- Added under that text when fingerprint unlock is on (lock.md F11 step 3). -->
+    <string name="master_proof_pin_forgot">Forgot your PIN as well? After 5 wrong tries the PIN is turned off, and you can then continue with your fingerprint.</string>
+    <!-- Step 2 without a PIN: the phone's fingerprint prompt is open. -->
+    <string name="master_proof_fingerprint">Touch the sensor to confirm with your fingerprint.</string>
+    <!-- The heading when the PIN was turned off by wrong tries in this step. -->
+    <string name="master_pin_gone_heading">Your PIN was turned off</string>
+    <!-- After the PIN was turned off by wrong tries in this step, when fingerprint unlock is on. -->
+    <string name="master_proof_pin_gone">Your PIN was turned off after too many wrong tries. You can continue with your fingerprint.</string>
+    <!-- The button that opens the fingerprint prompt then. -->
+    <string name="master_use_fingerprint">Use fingerprint</string>
+    <!-- The heading when no new master password can be chosen now (the lines below say why). -->
+    <string name="master_stopped_heading">A new master password can’t be chosen now</string>
+    <!-- The PIN cannot be checked now; the flow stops and never falls back to the fingerprint. -->
+    <string name="master_proof_cannot_check">Your PIN can’t be checked right now. Try again later.</string>
+    <!-- Neither the PIN nor the fingerprint can open the app now, so no new master password can be
+         chosen (lock.md F11 step 3, "Neither"). -->
+    <string name="master_not_offered">You can choose a new master password only while your PIN or your fingerprint opens the app on this phone. Neither works now.</string>
+    <!-- The fingerprint did not confirm (lock.md §13.3, said for this step). -->
+    <string name="master_fingerprint_did_not_confirm">Fingerprint did not confirm it this time. Try again.</string>
+    <string name="master_fingerprint_locked">Fingerprint is locked for now. Try again later.</string>
+    <string name="master_fingerprint_not_for_apps">Fingerprint can’t be used in apps right now. In your phone’s settings, check that fingerprint may be used to verify it’s you in apps.</string>
+    <string name="master_fingerprint_none_saved">No fingerprint is saved on this phone now. Add one in your phone’s settings.</string>
+    <string name="master_fingerprint_update_needed">Your phone needs a security update before fingerprint can be used.</string>
+    <string name="master_fingerprint_cannot_check">Fingerprint can’t be checked right now. Try again later.</string>
+    <!-- The PIN or the fingerprint of this flow is no longer valid (the app was left meanwhile): it is
+         asked again, and the new master password chosen is kept. -->
+    <string name="master_proof_again">For your safety, confirm it once more. The new master password you chose is kept.</string>
+    <!-- The heading while the new master password is saved, and when that failed; also over
+         "Saving…" on Change master password when no PIN was typed (none is usable, or "Not now"). -->
+    <string name="master_requesting_heading">Saving your new master password</string>
+    <!-- Shown while the new master password is asked for (about one second). -->
+    <string name="master_requesting">Saving…</string>
+    <!-- The request could not be saved. Followed by "Try again". -->
+    <string name="master_request_not_saved">Couldn’t save. Your phone’s storage may be full.</string>
+    <!-- The phone had too little free memory to make the key. Followed by "Try again". -->
+    <string name="master_request_no_memory">Your phone doesn’t have enough free memory. Close other apps or restart the phone, then try again.</string>
+    <!-- The app was left or locked while the request was made, so nothing was asked for. -->
+    <string name="master_request_cancelled">Nothing was changed, because the app was left. Start again.</string>
+    <!-- Step 4, the wait: the heading. -->
+    <string name="master_wait_heading">Your new master password is chosen</string>
+    <!-- Step 4, the wait (lock.md F11 step 6). No date or time is promised: only hours with the phone
+         switched on count. -->
+    <string name="master_wait_text">Your new master password starts working after about 24 hours with the phone switched on. Keep the paper. Until then, open the app with your PIN or fingerprint as usual. The countdown stops while the phone is switched off. To keep it moving, open this app in the morning and again in the evening.</string>
+
+    <!-- ===== Finish now (lock.md F11 steps 13 to 19; build-plan.md §12, decision 14) ===== -->
+
+    <!-- The heading of the step that finishes a new master password whose 24 hours are counted. -->
+    <string name="master_finish_heading">Type your new master password</string>
+    <!-- Under that heading. The app stays open; no PIN or fingerprint is asked for. -->
+    <string name="master_finish_text">Your new master password is ready. Type it once to finish. Your passwords stay open.</string>
+    <!-- The label of the field. -->
+    <string name="master_finish_label">New master password</string>
+    <!-- The button under the field. Short. -->
+    <string name="master_finish">Finish</string>
+    <!-- While the new master password is checked and the passwords are moved to it (a few seconds). -->
+    <string name="master_finishing">Finishing…</string>
+    <!-- The finish failed, and nothing changed (lock.md F11 steps 15 and 16). -->
+    <string name="master_not_finished">Couldn’t finish now. Nothing was changed. Try again later.</string>
+    <!-- Done: the heading after the finish. -->
+    <string name="master_finished">Your new master password works now.</string>
+</resources>

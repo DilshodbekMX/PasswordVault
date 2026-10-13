@@ -152,6 +152,13 @@ class DefaultLockManager(
     /** What an intent of the open app does once the lock it asked the session for has come ([lockThen]). */
     private var afterLock: (suspend () -> Unit)? = null
 
+    /**
+     * "I can't remember it" (`LockIntent.CantRemember`) was sent on the current vault's lock screen,
+     * on the visit shown now (lock.md F11 step 1): when the PIN or the fingerprint ends this visit by
+     * opening the app, the open app continues with F11 ([NewMasterPasswordAsked]). Build plan 5.5.
+     */
+    private var cantRememberSent = false
+
     /** The app is visible: between the process-level `ON_START` and `ON_STOP`. */
     private val visible = MutableStateFlow(false)
 
@@ -233,6 +240,7 @@ class DefaultLockManager(
             }
             LockIntent.CantRemember -> {
                 lockScreenUsed()
+                cantRememberSent = (engine.state.value as? LockState.Locked)?.let { it.screen.aside == null } == true
                 act { engine.cantRemember() }
             }
             LockIntent.OpenForgotSheet -> {
@@ -298,6 +306,7 @@ class DefaultLockManager(
      * check still running opens nothing (lock.md §6.3, decision 29; build-plan.md §12, decision 2).
      */
     override suspend fun lock(reason: LockReason) {
+        forgetCantRemember() // a lock, and a screen-off on the lock screen, end the visit it was chosen on
         engine.lock(causeOf(reason))
     }
 
@@ -445,6 +454,7 @@ class DefaultLockManager(
     private fun wentAway() {
         visible.value = false
         lockedForAScreen = false // the visit it was for has ended: the next one opens its prompt as any visit does
+        forgetCantRemember() // and so has the visit of "I can't remember it", whose proof goes now (lock.md §5.8)
         act { engine.appStopped() }
     }
 
@@ -477,6 +487,10 @@ class DefaultLockManager(
             setAside = false
             lockedForAScreen = false
         }
+        // The lock-screen route of F11 (lock.md F11 steps 1 and 3): a shortcut, not the master password
+        // (an unlock with a proof), opened the app on the visit "I can't remember it" was chosen on.
+        if (now is LockState.Unlocked && before is LockState.Locked && cantRememberSent && now.proof == null) NewMasterPasswordAsked.arm()
+        if (now !is LockState.Locked) cantRememberSent = false
         val proof = (now as? LockState.Unlocked)?.proof
         if (proof !== stateProof) {
             stateProof = proof
@@ -524,6 +538,12 @@ class DefaultLockManager(
             }
             act { engine.noSecureHardwareShown() }
         }
+    }
+
+    /** The visit on which "I can't remember it" was chosen has ended, or the app locked: nothing follows from it. */
+    private fun forgetCantRemember() {
+        cantRememberSent = false
+        NewMasterPasswordAsked.disarm()
     }
 
     /** An intent that only a lock screen sends arrived: the lock screen is what the user is using. */
@@ -844,5 +864,38 @@ class DefaultLockManager(
                 }
             }
         }
+    }
+}
+
+/**
+ * The lock-screen route of a new master password (lock.md F11 steps 1 and 3; ux.md §5.10 "Use my
+ * PIN" → §5.24; build plan 5.5): "I can't remember it" on a practice screen, or "Use my PIN" or "Use
+ * my fingerprint" on the "Forgot master password?" sheet, and then the PIN (or, where there is no
+ * PIN, the fingerprint) opened the app. [DefaultLockManager] arms it at that unlock; the open app
+ * takes it once, right after the unlock (`NewMasterPasswordAfterUnlock`), and opens
+ * `Route.NewMasterPassword`, whose screen takes the proof that entry made (`LockManager
+ * .proveForNewMasterPassword`) or tells the lock when it closes without a request
+ * (`leaveNewMasterPassword`). A lock or the app stopping being visible disarms it. In memory only,
+ * nothing secret; a new process has none. A one-time holder (architecture.md §3.6).
+ */
+object NewMasterPasswordAsked {
+    @Volatile
+    private var armed = false
+
+    /** The app was opened by the lock-screen route of F11. */
+    internal fun arm() {
+        armed = true
+    }
+
+    /** That unlock is no longer the last thing that happened: a lock, or the app left. */
+    internal fun disarm() {
+        armed = false
+    }
+
+    /** Whether the app was just opened by the lock-screen route of F11; once. */
+    fun take(): Boolean {
+        val was = armed
+        armed = false
+        return was
     }
 }
