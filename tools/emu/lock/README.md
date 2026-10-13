@@ -96,11 +96,38 @@ E11 runs the lock's part of the language step now through the debug command `loc
 
 The biometric lab's `uitap.py` and `uidump.sh` are `adb.sh`'s `pv_ui_tap` and `pv_ui_nodes`.
 
+## Runs on 2026-10-13
+
+Against the same app (`wave-4A-merged`; the APKs built on 2026-10-09 from it, as this branch changes
+only `tools/emu/lock/`), on this worktree's private devices (API 24, 28 and 37), the debug build unless
+"staging" is said; each cell is passed/failed/skipped. Every check that changed since 2026-10-09 was
+run again on its levels with the scripts as committed; the checks that did not change (E1, E2, E3, E5,
+E8, E13, E16) keep the runs of 2026-10-09 below. A part that a level does not have is now a `NOTE`,
+so E7 on 24 and 28, E11 on 24 and E17 on 24 have one SKIPPED less than on 2026-10-09.
+
+| Check | API 24 | API 28 | API 37 |
+|---|---|---|---|
+| E4 | | | 9/0/2 (the 2 wait for 5.5) |
+| E6 | 9/0/0; staging 9/0/0 | 9/0/0 | 9/0/0; staging: not run today |
+| E7 | 12/0/0 ((a) a NOTE) | 12/0/0 ((a) a NOTE) | 22/0/0 |
+| E9 | | | 8/0/0 |
+| E10 | the parts fp, prompt, reinstall 34/0/0; pin, drop 22/0/0 | fp, prompt, reinstall 34/0/0; fp, drop 20/0/0 | the whole check: not finished today |
+| E11 | 14/0/1 (6.1's step; the saved state a NOTE) | 14/0/1 (6.1's step) | 14/0/1 (6.1's step) |
+| E12 | | 11/0/0 and 1 KNOWN | 12/0/0 |
+| E14 | | | 11/0/0 |
+| E15 | | 11/0/0 | 11/0/0 |
+| E17 | 5/0/0 (the pad; the rest NOTE lines) | | 18/0/0 (6 minutes in the picker) |
+
+E11, E12 and E17 ran first, after `pvl_window_lib` was made to keep every `PV_*` and `PVA_*` variable
+across `window/lib.sh`'s second sourcing of `app.sh`. E10's fp, prompt and reinstall parts on 24 and 28
+ran before `pvl_no_prompt` was used in E10, its pin, drop and fp parts after, and the whole of E10 on
+37 after. E6's runs above are with its final "Not recognized" and `pvl_no_prompt` steps.
+
 ## Runs on 2026-10-09
 
 Against the app of `wave-4A-merged` (this branch), on this worktree's private devices (API 24, 28 and
 37), the debug build unless "staging" is said; each cell is passed/failed/skipped, the checks' own
-counts. Run by hand, one check at a time (E10 also in its parts), and E1 to E3, E6, E7 and E10 to E15
+counts (under the rule of that day: a part that a level does not have printed SKIPPED). Run by hand, one check at a time (E10 also in its parts), and E1 to E3, E6, E7 and E10 to E15
 on API 28 again through `all.sh`.
 
 | Check | API 24 | API 28 | API 37 |
@@ -177,6 +204,11 @@ What failed or was not run:
   `GuardedArgon2id` asks for 160 MiB of free heap before each (`PlatformModule.fallbackNeeds`) and reads
   it without a garbage collection first, so the first derivation's garbage likely counts as used (not
   verified in ART).
+- E6, the unknown finger 5: the prompt's own line says "Not recognized" on API 24 (the library's
+  `fingerprint_error`, "Touch the fingerprint sensor" before), 28 (`error`, the same before) and 37
+  (`indicator`, empty before), and the prompt stays open.
+- `pm uninstall -k` and a new install on API 24 (2026-10-13): the PIN and fingerprint keys survived
+  there too, and the fingerprint key that survived opened the app.
 - E4 against 5.5's branch, once: after a replacement the first PIN unlock showed the list's banner of
   the replacement and no notice within 20 s; a later unlock, and the next run, showed the notice too.
   E4 accepts either and says which.
