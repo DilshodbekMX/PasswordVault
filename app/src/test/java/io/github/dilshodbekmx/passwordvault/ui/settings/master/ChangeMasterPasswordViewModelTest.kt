@@ -105,6 +105,9 @@ class ChangeMasterPasswordViewModelTest {
         return lock
     }
 
+    /** How often "Later" put the backup reminder off (decisions 15 and 21). */
+    private var snoozes = 0
+
     private fun TestScope.model(lock: MasterLock, vault: Vault = Vault(entries = listOf(GMAIL, BANK))): ChangeMasterPasswordViewModel {
         val repository = FakeVaultRepository(vault)
         val factory = viewModelFactory {
@@ -121,6 +124,7 @@ class ChangeMasterPasswordViewModelTest {
                         deleted += ref
                         deleteAnswers.removeFirstOrNull() ?: NoteDeleted.DELETED
                     },
+                    snoozeReminder = { snoozes++ },
                 )
             }
         }
@@ -534,6 +538,30 @@ class ChangeMasterPasswordViewModelTest {
         assertNull(vm.ui.value.leave)
         advanceUntilIdle()
         assertEquals(ChangeStage.BACKUP, vm.ui.value.stage)
+    }
+
+    /**
+     * Decision 21 (build-plan.md §12) when the change ended a moment before the lock reached the
+     * route (the screen already off): the backup step, not answered yet, is kept for the unlock and
+     * is not replaced by step 1; its "Later" puts the reminder off. A step answered before the lock
+     * ("Back up now" already leaving) is not kept.
+     */
+    @Test
+    fun aBackupStepNotAnsweredWhenTheAppLocks_isShownAgainAfterTheUnlock() = runTest(dispatcher) {
+        val lock = lockWith(pin = PinStatus.NotSet)
+        val vm = model(lock)
+        upToThePin(vm)
+        advanceUntilIdle()
+        assertEquals(ChangeStage.BACKUP, vm.ui.value.stage)
+        assertFalse(vm.ui.value.afterLock)
+        lock.fake.lock(LockReason.SCREEN_OFF)
+        advanceUntilIdle()
+        assertEquals("kept for the unlock", ChangeStage.BACKUP, vm.ui.value.stage)
+        assertTrue(vm.ui.value.afterLock)
+        assertFalse(vm.ui.value.choosePin)
+        vm.close()
+        assertEquals(1, snoozes)
+        assertEquals(Leave.BACK, vm.ui.value.leave)
     }
 
     @Test

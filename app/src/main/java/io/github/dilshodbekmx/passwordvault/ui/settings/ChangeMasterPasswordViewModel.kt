@@ -64,8 +64,9 @@ import kotlinx.coroutines.launch
  * A lock ends the flow: nothing typed, chosen or proved stays (lock.md §10.1: "a lock discards the
  * flow, and nothing was changed"); after the unlock the route starts again at step 1. A change that
  * was already running ("Saving…", step 4 on) runs to its end all the same (lock.md F8); when it ends
- * changed, the route shows step 5's "Your master password was changed." with "Make a new backup
- * now. …", "Back up now" and "Later" after the unlock instead ([ChangeMasterPasswordUi.afterLock];
+ * changed, or had ended with its backup step not yet answered, the route shows step 5's "Your
+ * master password was changed." with "Make a new backup now. …", "Back up now" and "Later" after the
+ * unlock instead ([ChangeMasterPasswordUi.afterLock];
  * build-plan.md §12, the owner's decision 21), and "Later" there puts the backup reminder off as the
  * list's "Later" does ([snoozeReminder], decision 15). A rotation or a language change keeps
  * everything (the route's ViewModel; lock.md §11).
@@ -479,13 +480,21 @@ class ChangeMasterPasswordViewModel(
 
     /**
      * The app locked: the flow is over; after the unlock the route starts again at step 1, unless a
-     * change that was running then ends changed ([changedWhileLocked]).
+     * change that was running then ends changed ([changedWhileLocked]), or the change has ended and
+     * its backup step was not answered yet: the change may have ended a moment before the lock
+     * reached this ViewModel, with the screen already off. That step is kept for the unlock as
+     * [changedWhileLocked] keeps it (decision 21); it holds nothing secret.
      */
     private fun lockedNow() {
-        if (state.value.stage == ChangeStage.SAVING) lockedWhileSaving = true
-        if (state.value.afterLock) return // shown after this lock's unlock: it stays until it is answered
+        val now = state.value
+        if (now.stage == ChangeStage.SAVING) lockedWhileSaving = true
+        if (now.afterLock) return // shown after this lock's unlock: it stays until it is answered
         dropAll()
-        state.value = ChangeMasterPasswordUi()
+        state.value = if (now.stage == ChangeStage.BACKUP && now.leave == null) {
+            now.copy(afterLock = true, choosePin = false)
+        } else {
+            ChangeMasterPasswordUi()
+        }
     }
 
     private fun wipePin() {
