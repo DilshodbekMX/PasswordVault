@@ -151,7 +151,7 @@ fun SettingsScreen(vm: SettingsViewModel, nav: Navigator, modifier: Modifier = M
                 val own = language.ownName
                 SettingsItem(
                     title = stringResource(AppLanguages.switchLabel),
-                    supporting = if (own == null) stringResource(R.string.settings_language_system) else stringResource(own),
+                    supporting = if (own == null) stringResource(R.string.language_system) else stringResource(own),
                     icon = R.drawable.ic_settings_language,
                     tag = SettingsTags.open(Route.Language),
                     onClick = {

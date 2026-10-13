@@ -10,7 +10,8 @@
 
     <!-- The first choice: the app follows the phone's language (glossary term 111, "System language
          (default)", as Android's own settings call it). Under it the dialog shows the name of the
-         language the app then uses, written in that language, such as "Русский". -->
+         language the app then uses, written in that language, such as "Русский". Also the line under
+         the language row of Settings while the app follows the phone. -->
     <string name="language_system">System language</string>
 
     <!-- Debug builds only (i18n.md §5): the two pseudo-locales that lengthen every text and turn the

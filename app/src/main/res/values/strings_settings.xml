@@ -125,9 +125,6 @@
 
     <!-- Heading of the group. -->
     <string name="settings_group_appearance">Appearance &amp; language</string>
-    <!-- Under the language row (whose title is the same in every language, i18n.md §1.4.5): the app
-         follows the phone's language. -->
-    <string name="settings_language_system">System language</string>
     <!-- Row: opens the dialog "Appearance", where the user chooses the colours of the app and light or
          dark. Also the title of that dialog. Short: one line. -->
     <string name="settings_appearance">Appearance</string>
