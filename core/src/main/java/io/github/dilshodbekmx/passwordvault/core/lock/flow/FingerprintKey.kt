@@ -62,7 +62,11 @@ sealed interface FingerprintResult {
      */
     class Ok(val bytes: ByteArray, val nonce: ByteArray) : FingerprintResult
 
-    /** CLOSED: the user or the system closed the prompt; [code] is 10, 13 or 5 (lock.md §14.3). The pad shows. */
+    /**
+     * CLOSED: the user or the system closed the prompt; [code] is 10, 13 or 5 (lock.md §14.3). The pad
+     * shows; on the fingerprint-only screen 13, its "Use master password", opens the master-password
+     * screen (build-plan.md §12, decision 19).
+     */
     data class Closed(val code: Int) : FingerprintResult
 
     /** GONE: the key was permanently invalidated, is not there any more, or the wrap does not match it ("bad_wrap"). */

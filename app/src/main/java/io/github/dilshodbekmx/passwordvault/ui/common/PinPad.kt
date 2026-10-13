@@ -113,9 +113,18 @@ fun PinPad(
  * the new count is read after each key. Marked sensitive (ux.md §3).
  *
  * @param wrongTries each increase shakes the row (not when animations are off) with a reject haptic.
+ * @param filled a filled dot's colour: the primary colour, or what lies on a panel behind the dots.
+ * @param empty an empty dot's ring.
  */
 @Composable
-fun PinDots(entered: Int, modifier: Modifier = Modifier, length: Int = PIN_LENGTH, wrongTries: Int = 0) {
+fun PinDots(
+    entered: Int,
+    modifier: Modifier = Modifier,
+    length: Int = PIN_LENGTH,
+    wrongTries: Int = 0,
+    filled: Color = MaterialTheme.colorScheme.primary,
+    empty: Color = MaterialTheme.colorScheme.outline,
+) {
     val count = entered.coerceIn(0, length)
     val description = pluralStringResource(R.plurals.common_pin_dots, count, count, length)
     val shake = remember { Animatable(0f) }
@@ -141,8 +150,6 @@ fun PinDots(entered: Int, modifier: Modifier = Modifier, length: Int = PIN_LENGT
             )
         }
     }
-    val filled = MaterialTheme.colorScheme.primary
-    val empty = MaterialTheme.colorScheme.outline
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
         Row(
             modifier = modifier

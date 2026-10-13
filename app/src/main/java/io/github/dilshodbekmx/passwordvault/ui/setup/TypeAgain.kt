@@ -1,7 +1,5 @@
 package io.github.dilshodbekmx.passwordvault.ui.setup
 
-import android.os.Build
-import android.view.View
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -16,15 +14,15 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -32,14 +30,12 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import io.github.dilshodbekmx.passwordvault.R
 import io.github.dilshodbekmx.passwordvault.i18n.resolve
+import io.github.dilshodbekmx.passwordvault.ui.common.KeyboardFirstOnBack
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultFieldDefaults
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultSecureField
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.first
+import io.github.dilshodbekmx.passwordvault.ui.common.rememberFieldKeyboard
 
 /**
  * "Type your master password again" (ux.md §5.5; lock.md F1 steps 2 and 3): the field has the focus
@@ -65,36 +61,27 @@ fun TypeAgainScreen(
 ) {
     if (keepScreenOn) KeepScreenOn()
     BackHandler(enabled = state.settingUp) { /* ignored while the vault is made (ux.md §4) */ }
+    KeyboardFirstOnBack()
     val focus = remember { FocusRequester() }
-    val window = LocalWindowInfo.current
-    val keyboard = LocalSoftwareKeyboardController.current
-    val view = LocalView.current
+    val fieldKeyboard = rememberFieldKeyboard()
+    var fieldFocused by remember { mutableStateOf(false) }
     // Every new composition, the first and the one after a rotation, gives the field the focus and asks for the
-    // keyboard, which Android 17 no longer brings back by itself [V-P7]:
-    //  - once the window has the window focus, because a keyboard asked for before that is dropped. After a
-    //    rotation the new window gets it a moment after its first layout, and on Android 7 that layout has
-    //    already given the field the focus, so asking for the focus alone brings no keyboard (seen on API 24);
-    //  - again for a moment while it is not shown, where the screen can see that (Android 11 and newer): a
-    //    keyboard asked for while the field's input connection is still being made can close again (seen on
-    //    API 37 in landscape, where Gboard opened full screen for the editor before the field's and then closed).
-    LaunchedEffect(focus, window) {
-        snapshotFlow { window.isWindowFocused }.first { it }
+    // keyboard, which Android 17 no longer brings back by itself [V-P7], once the window has the window focus:
+    // a keyboard asked for before that is dropped. After a rotation the new window gets it a moment after its
+    // first layout, and on Android 7 that layout has already given the field the focus, so asking for the focus
+    // alone brings no keyboard (seen on API 24). FieldKeyboard asks again for about a second while the keyboard
+    // is not shown: on API 37 in landscape Gboard can close again by itself (its KDoc).
+    LaunchedEffect(focus, fieldKeyboard) {
+        fieldKeyboard.awaitWindowFocus()
         focus.requestFocus()
-        keyboard?.show()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            repeat(KEYBOARD_RETRIES) {
-                delay(KEYBOARD_RETRY_MS)
-                if (keyboardShown(view)) return@LaunchedEffect
-                keyboard?.show()
-            }
-        }
+        fieldKeyboard.show { fieldFocused }
     }
     val message = state.againMessage
     SetupPage(title = stringResource(R.string.setup_again_title)) {
         Text(text = stringResource(R.string.setup_again_body), style = MaterialTheme.typography.bodyLarge)
         VaultSecureField(
             state = field,
-            modifier = Modifier.fillMaxWidth().focusRequester(focus).testTag(SetupTags.AGAIN_FIELD),
+            modifier = Modifier.fillMaxWidth().focusRequester(focus).onFocusChanged { fieldFocused = it.isFocused }.testTag(SetupTags.AGAIN_FIELD),
             label = { Text(stringResource(R.string.setup_field_label)) },
             keyboardOptions = VaultFieldDefaults.Secret.copy(imeAction = ImeAction.Done),
             onKeyboardAction = KeyboardActionHandler { onNext() },
@@ -128,10 +115,3 @@ fun TypeAgainScreen(
         }
     }
 }
-
-/** Whether the keyboard is shown over [view]'s window: its insets say so from Android 11 on. */
-private fun keyboardShown(view: View): Boolean = ViewCompat.getRootWindowInsets(view)?.isVisible(WindowInsetsCompat.Type.ime()) == true
-
-/** How many more times, and how often, the keyboard is asked for while it is not shown. */
-private const val KEYBOARD_RETRIES = 6
-private const val KEYBOARD_RETRY_MS = 250L

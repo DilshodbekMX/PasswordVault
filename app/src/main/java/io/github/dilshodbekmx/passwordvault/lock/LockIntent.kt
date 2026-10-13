@@ -84,7 +84,11 @@ sealed interface LockIntent {
     /** "Cancel it" on the banner of a pending new master password (lock.md F11 step 9). */
     data object CancelPending : LockIntent
 
-    /** "It wasn't me" on the "replaced" notice (lock.md F16b). */
+    /**
+     * "It wasn't me" on the "replaced" notice and on the list's banner (lock.md F16b): the open app is
+     * locked through `Session.lockNow` (our clip cleared, a draft flushed; architecture.md §5.5), then
+     * the old vault's lock screen shows. The notice's answer is sent as this, never as [NoticeAnswered].
+     */
     data object ItWasntMe : LockIntent
 
     /** Back on the lock screen of a vault put aside: returns to the current vault and changes nothing (lock.md F17 step 4). */

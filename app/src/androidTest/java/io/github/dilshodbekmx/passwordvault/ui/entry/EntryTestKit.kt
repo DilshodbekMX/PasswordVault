@@ -85,20 +85,23 @@ class EntryRig(vault: Vault) {
     }
 }
 
-/** A [Navigator] that records where the screens asked to go, and allows it. */
+/** A [Navigator] that records where the screens asked to go, and allows it ([backAllowed]: Back too). */
 class RecordingNav : Navigator {
     val opened: MutableList<Route> = CopyOnWriteArrayList()
     val replaced: MutableList<Route> = CopyOnWriteArrayList()
     private val back = AtomicInteger()
 
-    /** How many times the screens went back. */
+    /** False: [back] answers as at the root of a stack, where there is nowhere to go back to. */
+    @Volatile var backAllowed: Boolean = true
+
+    /** How many times the screens went back, or tried to. */
     val backs: Int get() = back.get()
 
     override fun go(route: Route): Boolean = opened.add(route)
 
     override fun back(): Boolean {
         back.incrementAndGet()
-        return true
+        return backAllowed
     }
 
     override fun replace(route: Route): Boolean = replaced.add(route)

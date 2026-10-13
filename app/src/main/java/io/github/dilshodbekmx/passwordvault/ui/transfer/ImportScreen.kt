@@ -51,6 +51,7 @@ import io.github.dilshodbekmx.passwordvault.nav.Navigator
 import io.github.dilshodbekmx.passwordvault.nav.Route
 import io.github.dilshodbekmx.passwordvault.ui.common.Banner
 import io.github.dilshodbekmx.passwordvault.ui.common.BannerKind
+import io.github.dilshodbekmx.passwordvault.ui.common.KeyboardFirstOnBack
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultFieldDefaults
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultSecureField
 
@@ -69,6 +70,7 @@ internal fun ImportScreen(vm: ImportViewModel, nav: Navigator) {
     val texts = remember(resources, formatters) { ImportTexts(resources, formatters) }
     LaunchedEffect(vm, texts) { vm.start(texts) }
     BackHandler { vm.back() }
+    KeyboardFirstOnBack()
     LaunchedEffect(ui.move) {
         when (ui.move ?: return@LaunchedEffect) {
             ImportMove.COLUMNS -> nav.go(Route.ColumnMapping)

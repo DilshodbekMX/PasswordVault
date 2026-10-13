@@ -76,6 +76,7 @@ import io.github.dilshodbekmx.passwordvault.i18n.rememberFormatters
 import io.github.dilshodbekmx.passwordvault.nav.Navigator
 import io.github.dilshodbekmx.passwordvault.nav.Route
 import io.github.dilshodbekmx.passwordvault.ui.common.Banner
+import io.github.dilshodbekmx.passwordvault.ui.common.KeyboardFirstOnBack
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultFieldDefaults
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultSecureField
 
@@ -103,6 +104,7 @@ fun ExportScreen(vm: ExportViewModel, nav: Navigator) {
         }
     }
     BackHandler(enabled = vm.takesBack(state)) { vm.back() }
+    KeyboardFirstOnBack()
     val actions = remember(vm, nav) {
         ExportActions(
             choose = vm::choose,

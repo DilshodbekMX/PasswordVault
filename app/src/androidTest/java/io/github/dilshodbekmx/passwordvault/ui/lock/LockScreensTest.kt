@@ -40,9 +40,10 @@ import org.junit.runner.RunWith
 /**
  * Build plan 4.2, [device]: the fingerprint-only screen, "This is an older master password" in both
  * forms with its question, "Open the older set instead?" (lock.md F16b step 3; build plan 4.2b),
- * and "Your passwords can't be opened", as drawn over `FakeLockManager`: each shows its texts
- * (dates in the phone's language) and its buttons tell the lock; Back on the screen of a vault put
- * aside goes back to the current vault.
+ * the screen of a vault put aside that cannot be opened (build-plan §12, decision 6), and "Your
+ * passwords can't be opened", as drawn over `FakeLockManager`: each shows its texts (dates in the
+ * phone's language) and its buttons tell the lock; Back on the screen of a vault put aside goes back
+ * to the current vault.
  */
 @RunWith(AndroidJUnit4::class)
 class LockScreensTest {
@@ -251,6 +252,74 @@ class LockScreensTest {
         compose.onNodeWithTag(LockTags.UNREADABLE_TEXT).assertTextEquals(resources.getString(R.string.lock_unreadable_damaged))
         compose.onNodeWithTag(LockTags.UNREADABLE_TRY_AGAIN).assertDoesNotExist()
         compose.onNodeWithTag(LockTags.RESTORE).assertExists()
+    }
+
+    /** Build-plan §12, decision 6 (lock.md F17 step 4, §13.2): a vault put aside whose copies cannot be opened. */
+    @Test
+    fun aVaultPutAsideThatCannotBeOpenedSaysSoUnderItsLine_andOffersBackOnly() {
+        LockShots.touchMode()
+        val lock = show(LockUiState.Locked(LockScreen.CannotOpen(AsideLine.LockedOn(ASIDE_AT))))
+        compose.onNodeWithTag(LockTags.CANNOT_OPEN).assertExists()
+        compose.onNodeWithTag(LockTags.ASIDE)
+            .assertTextEquals(resources.getString(R.string.lock_aside_locked_on, formatters().date(ASIDE_AT)))
+        compose.onNodeWithTag(LockTags.TITLE).assertTextEquals(resources.getString(R.string.lock_cannot_open_title))
+        compose.onNodeWithTag(LockTags.CANNOT_OPEN_TEXT).assertTextEquals(resources.getString(R.string.lock_cannot_open_text))
+        compose.onNodeWithTag(LockTags.BACK).assertTextEquals(resources.getString(R.string.lock_back))
+        // Nothing to type into, and no restore, which would put the passwords the app opens now aside.
+        compose.onNodeWithTag(LockTags.RESTORE).assertDoesNotExist()
+        compose.onNodeWithTag(LockTags.FIELD).assertDoesNotExist()
+        compose.onNodeWithTag(LockTags.PAD).assertDoesNotExist()
+        compose.onNodeWithTag(LockTags.FORGOT).assertDoesNotExist()
+        compose.onNodeWithTag(LockTags.UNREADABLE).assertDoesNotExist()
+        LockShots.take("w5-carry-cannot-open")
+
+        compose.onNodeWithTag(LockTags.BACK).performScrollTo().performClick()
+        compose.waitForIdle()
+        assertEquals(listOf<LockIntent>(LockIntent.GoBack), lock.sent)
+        // The phone's Back does the same, and does not leave the app.
+        Espresso.pressBack()
+        compose.waitForIdle()
+        assertEquals(listOf<LockIntent>(LockIntent.GoBack, LockIntent.GoBack), lock.sent)
+        assertFalse(compose.activity.isFinishing)
+        assertEquals("nothing opened the restore screens", 0, restores.get())
+
+        // The vault from before a replacement says so under its own line.
+        compose.runOnUiThread { lock.state.value = LockUiState.Locked(LockScreen.CannotOpen(AsideLine.FromBefore(REPLACED_AT))) }
+        compose.waitForIdle()
+        compose.onNodeWithTag(LockTags.ASIDE).assertTextEquals(resources.getString(R.string.lock_from_before, formatters().date(REPLACED_AT)))
+        compose.onNodeWithTag(LockTags.CANNOT_OPEN_TEXT).assertTextEquals(resources.getString(R.string.lock_cannot_open_text))
+    }
+
+    /**
+     * As the lock does it (decision 6): the right master password of a vault put aside finds no copy
+     * that opens, the lock publishes `LockScreen.CannotOpen` and the check ends with
+     * `MpResult.TooLate`. The screen takes the field's place, empty, and the keyboard goes with it.
+     */
+    @Test
+    fun afterTheRightPasswordTheScreenTakesTheFieldsPlace_andTheKeyboardGoes() {
+        val field = PLAIN_SCREEN.copy(aside = AsideLine.LockedOn(ASIDE_AT))
+        val fake = FakeLockManager(initial = LockUiState.Locked(field))
+        val lock = object : LockManager by fake {
+            override suspend fun submitMasterPassword(chars: CharArray, purpose: MpPurpose): MpResult {
+                fake.purposes += purpose
+                fake.state.value = LockUiState.Locked(LockScreen.CannotOpen(AsideLine.LockedOn(ASIDE_AT)))
+                return MpResult.TooLate
+            }
+        }
+        val vm = AtomicReference<LockViewModel>()
+        compose.setContent { LockRouteHost(lock) { vm.set(it) } }
+        compose.waitForIdle()
+        assertTrue("the field has the keyboard", waitForKeyboard(shown = true))
+
+        compose.onNodeWithTag(LockTags.FIELD).performTextInput("the words of that set")
+        compose.onNodeWithTag(LockTags.UNLOCK).performScrollTo().performClick()
+        compose.waitForIdle()
+        assertEquals(listOf(MpPurpose.UNLOCK), fake.purposes)
+        compose.onNodeWithTag(LockTags.CANNOT_OPEN).assertExists()
+        compose.onNodeWithTag(LockTags.FIELD).assertDoesNotExist()
+        compose.onNodeWithTag(LockTags.OPENING).assertDoesNotExist()
+        assertEquals("", vm.get().password.text.toString())
+        assertTrue("the keyboard goes with the field", waitForKeyboard(shown = false))
     }
 
     /** Waits up to 10 s for the on-screen keyboard to be [shown] or not ([keyboardShown]). */

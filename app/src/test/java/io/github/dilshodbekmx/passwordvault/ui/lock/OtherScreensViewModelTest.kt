@@ -52,9 +52,10 @@ import org.junit.Test
 /**
  * Build plan 4.2, [JVM], U §12 check 17: the fingerprint-only screen (lock.md §13.3, its second
  * table), "This is an older master password" in both forms (F16b), "Open the older set instead?"
- * (F16b step 3, `LockScreen.OpenOlderSet`; build plan 4.2b), and "Your passwords can't be opened"
- * for each reason (§13.1 row 2), from `FakeLockManager`: every text, every button and what it tells
- * the lock. None of them offers to delete.
+ * (F16b step 3, `LockScreen.OpenOlderSet`; build plan 4.2b), the screen of a vault put aside that
+ * cannot be opened (`LockScreen.CannotOpen`; build-plan §12, decision 6), and "Your passwords can't
+ * be opened" for each reason (§13.1 row 2), from `FakeLockManager`: every text, every button and
+ * what it tells the lock. None of them offers to delete.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class OtherScreensViewModelTest {
@@ -367,6 +368,97 @@ class OtherScreensViewModelTest {
         assertEquals("every choice has its button", OlderPasswordChoice.entries.toSet(), (choices + older).toSet())
     }
 
+    // ---- A vault put aside that cannot be opened (lock.md F17 step 4; build-plan §12, decision 6) ----
+
+    @Test
+    fun aVaultPutAsideThatCannotBeOpened_saysSoUnderItsLine_withBackOnly() = runTest {
+        val lock = FakeLockManager(initial = LockUiState.Locked(LockScreen.CannotOpen(AsideLine.LockedOn(ASIDE_AT))))
+        val vm = vm(lock)
+        assertEquals(
+            CannotOpenUi(
+                asideLine = text(R.string.lock_aside_locked_on, LockDate(ASIDE_AT, LockDate.Style.DATE)),
+                title = text(R.string.lock_cannot_open_title),
+                text = text(R.string.lock_cannot_open_text),
+                buttons = listOf(LockButton(text(R.string.lock_back), send(LockIntent.GoBack), LockTags.BACK, ButtonStyle.FILLED)),
+            ),
+            vm.screen.value,
+        )
+        assertTrue("Back returns to the current vault", cannotOpenUi(vm).goesBack)
+        // No field, no sheet and no question come with it, and nothing was told to the lock.
+        assertNull(vm.masterPassword.value)
+        assertNull(vm.sheet.value)
+        assertNull(vm.confirm.value)
+        assertTrue(lock.sent.isEmpty())
+
+        // The vault from before a replacement: its own line, the same sentences.
+        lock.state.value = LockUiState.Locked(LockScreen.CannotOpen(AsideLine.FromBefore(REPLACED_AT)))
+        runCurrent()
+        assertEquals(text(R.string.lock_from_before, LockDate(REPLACED_AT, LockDate.Style.DATE)), cannotOpenUi(vm).asideLine)
+        assertEquals(text(R.string.lock_cannot_open_text), cannotOpenUi(vm).text)
+
+        // "Back" tells the lock; there is nothing to restore, open or delete from here.
+        vm.onAction(cannotOpenUi(vm).buttons.single().action)
+        assertEquals(listOf<LockIntent>(LockIntent.GoBack), lock.sent)
+        assertEquals(listOf(LockTags.BACK), cannotOpenUi(vm).buttons.map { it.tag })
+    }
+
+    @Test
+    fun aSheetAndAQuestionOpenWhenAVaultPutAsideCannotBeOpened_areClosed_soNoRestoreLiesOverIt() = runTest {
+        val lock = FakeLockManager(initial = LockUiState.Locked(masterPassword(aside = AsideLine.LockedOn(ASIDE_AT))))
+        lock.status.value = LockStatus.NONE.copy(aside = listOf(aside(VAULT_A, ASIDE_AT)))
+        val vm = vm(lock)
+        vm.onAction(LockAction.OpenSheet)
+        vm.onAction(LockAction.AskStartEmpty)
+        runCurrent()
+        assertTrue(vm.sheet.value != null && vm.confirm.value == LockConfirm.StartEmpty)
+
+        // As the lock does it: the right master password found no copy that opens, and the check ends with TooLate.
+        lock.state.value = LockUiState.Locked(LockScreen.CannotOpen(AsideLine.LockedOn(ASIDE_AT)))
+        runCurrent()
+        assertTrue(vm.screen.value is CannotOpenUi)
+        assertNull("no 'Restore from a backup file' over it", vm.sheet.value)
+        assertNull(vm.confirm.value)
+        assertEquals(listOf<LockIntent>(LockIntent.OpenForgotSheet, LockIntent.CloseSheet), lock.sent)
+
+        // Back on the current vault's screen, neither comes back by itself.
+        vm.onAction(cannotOpenUi(vm).buttons.single().action)
+        lock.state.value = LockUiState.Locked(LockKit.pad())
+        runCurrent()
+        assertTrue(vm.screen.value is PadUi)
+        assertNull(vm.sheet.value)
+        assertNull(vm.confirm.value)
+        assertEquals(listOf<LockIntent>(LockIntent.OpenForgotSheet, LockIntent.CloseSheet, LockIntent.GoBack), lock.sent)
+    }
+
+    @Test
+    fun theFieldIsEmptyWhenTheScreenTakesItsPlace_andNothingOfTheCheckIsLeft() = runTest {
+        // As the lock does it (decision 6): it publishes the screen, and the check ends with TooLate.
+        val field = masterPassword(aside = AsideLine.LockedOn(ASIDE_AT))
+        val fake = FakeLockManager(initial = LockUiState.Locked(field))
+        val lock = object : LockManager by fake {
+            override suspend fun submitMasterPassword(chars: CharArray, purpose: MpPurpose): MpResult {
+                fake.purposes += purpose
+                fake.state.value = LockUiState.Locked(LockScreen.CannotOpen(AsideLine.LockedOn(ASIDE_AT)))
+                return MpResult.TooLate
+            }
+        }
+        val vm = lockViewModel(store, lock, clock)
+        vm.password.setTextAndPlaceCursorAtEnd("the words of that set")
+        vm.submit()
+        runCurrent()
+        assertEquals(listOf(MpPurpose.UNLOCK), fake.purposes)
+        assertTrue(vm.screen.value is CannotOpenUi)
+        assertNull(vm.masterPassword.value)
+        assertEquals("", vm.password.text.toString())
+        // Back: that vault's field comes back later as the lock shows it, without a line or "Opening…".
+        fake.state.value = LockUiState.Locked(field)
+        runCurrent()
+        val again = vm.screen.value as MasterPasswordUi
+        assertFalse(again.opening)
+        assertTrue(again.lines.isEmpty())
+        assertTrue(again.canSubmit)
+    }
+
     // ---- "Your passwords can't be opened" --------------------------------------------------------
 
     @Test
@@ -480,4 +572,6 @@ class OtherScreensViewModelTest {
         masterPassword(reason = MpReason.FromBefore(REPLACED_AT), aside = AsideLine.FromBefore(REPLACED_AT))
 
     private fun unreadable(vm: LockViewModel): UnreadableUi = vm.screen.value as UnreadableUi
+
+    private fun cannotOpenUi(vm: LockViewModel): CannotOpenUi = vm.screen.value as CannotOpenUi
 }

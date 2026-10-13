@@ -92,6 +92,11 @@ import kotlinx.coroutines.launch
  *   nothing. Both go straight to the lock (`LockIntent.OlderPasswordAnswer`): the screen is the
  *   question, so neither is asked once more. A sheet or a question that was open when the lock asks
  *   is closed, and the screen itself has no button that opens one, so nothing lies over it.
+ * - **A vault put aside that cannot be opened** (`LockScreen.CannotOpen`, lock.md F17 step 4;
+ *   build-plan.md §12, decision 6) is [CannotOpenUi]: under that vault's line, "These passwords
+ *   can't be opened", "Their files on this phone are damaged." and "Back" (`LockIntent.GoBack`).
+ *   As with the question, a sheet or a question that was open is closed when it shows, so that no
+ *   "Restore from a backup file" lies over it.
  *
  * @param testBuild `BuildConfig.ALLOW_SOFTWARE_KEYSTORE`: every lock screen shows "TEST BUILD: PIN
  *   keys are not protected" (lock.md §4.5, §13.3; architecture.md §7.2).
@@ -151,9 +156,11 @@ class LockViewModel(
                 if (state !is LockUiState.Locked && state !is LockUiState.Unreadable) password.clearSecret()
                 // No sheet or question outlives the lock screen it was asked on.
                 if (state !is LockUiState.Locked && overlay.value != Overlay()) overlay.value = Overlay()
-                // And none lies over the lock's own question (lock.md F16b step 3): the app is still
-                // locked, so the lock is told that the sheet closed, as on its "Try again".
-                if ((state as? LockUiState.Locked)?.screen is LockScreen.OpenOlderSet) {
+                // And none lies over the lock's own question (lock.md F16b step 3), or over the screen
+                // of a vault put aside that cannot be opened, which offers Back only (decision 6): the
+                // app is still locked, so the lock is told that the sheet closed, as on its "Try again".
+                val shownScreen = (state as? LockUiState.Locked)?.screen
+                if (shownScreen is LockScreen.OpenOlderSet || shownScreen is LockScreen.CannotOpen) {
                     overlay.update { it.copy(confirm = null) }
                     closeSheet()
                 }
@@ -316,6 +323,7 @@ class LockViewModel(
             is LockScreen.MasterPassword -> masterPasswordUi(screen, inputs.local, inputs.status, now)
             is LockScreen.OlderPassword -> olderPasswordUi(screen)
             is LockScreen.OpenOlderSet -> olderSetUi(screen)
+            is LockScreen.CannotOpen -> cannotOpenUi(screen)
         }
         is LockUiState.Unreadable -> unreadableUi(shown.why, shown.aside, inputs.status.replaced)
         else -> null
@@ -373,6 +381,17 @@ class LockViewModel(
             LockButton(UiText.of(R.string.common_cancel), olderAnswer(OlderPasswordChoice.KEEP_NEWER_SET), LockTags.OLDER_SET_CANCEL, ButtonStyle.OUTLINED),
         ),
         goesBack = screen.aside != null,
+    )
+
+    /**
+     * The screen of a vault put aside whose copies cannot be opened (lock.md F17 step 4, §13.3;
+     * decision 6): its line, the owner's two sentences, and "Back" only.
+     */
+    private fun cannotOpenUi(screen: LockScreen.CannotOpen): CannotOpenUi = CannotOpenUi(
+        asideLine = LockTexts.asideLine(screen.aside),
+        title = UiText.of(R.string.lock_cannot_open_title),
+        text = UiText.of(R.string.lock_cannot_open_text),
+        buttons = listOf(LockButton(UiText.of(R.string.lock_back), LockAction.Send(LockIntent.GoBack), LockTags.BACK, ButtonStyle.FILLED)),
     )
 
     private fun unreadableUi(why: CurrentVault.Why, aside: List<AsideVault>, replaced: ReplacedNotice?): UnreadableUi = UnreadableUi(

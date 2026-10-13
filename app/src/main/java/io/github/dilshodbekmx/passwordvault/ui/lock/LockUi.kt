@@ -132,9 +132,31 @@ data class OlderSetUi(
 ) : LockScreenUi
 
 /**
+ * The lock screen of a vault put aside whose copies cannot be opened (`LockScreen.CannotOpen`;
+ * lock.md F17 step 4, §13.2, §13.3; build-plan.md §12, decision 6): its right PIN, fingerprint or
+ * master password found that no copy of it opens, and that vault's screen stays.
+ *
+ * @property asideLine that vault's line, "Passwords locked on 6 Oct 2026" or "Your passwords from
+ *   before 7 Oct 2026", always shown.
+ * @property title "These passwords can't be opened".
+ * @property text "Their files on this phone are damaged.", whatever storage found.
+ * @property buttons "Back" only (`LockIntent.GoBack`), as the phone's Back. Never "Restore from a
+ *   backup file": the current vault is fine, and a restore would put it aside.
+ */
+data class CannotOpenUi(
+    override val asideLine: UiText,
+    val title: UiText,
+    val text: UiText,
+    val buttons: List<LockButton>,
+) : LockScreenUi {
+    override val goesBack: Boolean get() = true
+}
+
+/**
  * "Your passwords can't be opened" (lock.md §13.1 row 2; ux.md §5.9 "File damaged"): no generation
- * can be read. [body] says why; "Try again" only for an I/O error; "Restore from a backup file"; and
- * "Open my previous passwords (locked on …)" for each vault put aside. Never an offer to delete.
+ * of the current vault can be read. [body] says why; "Try again" only for an I/O error; "Restore
+ * from a backup file"; and "Open my previous passwords (locked on …)" for each vault put aside.
+ * Never an offer to delete. A vault put aside says so on its own screen ([CannotOpenUi]).
  */
 data class UnreadableUi(
     val body: UiText,
@@ -257,6 +279,12 @@ object LockTags {
     const val FROM_BEFORE = "pv.lock.fromBefore"
     const val TRY_AGAIN = "pv.lock.tryAgain"
 
+    /** The app's logo on the pad and on the fingerprint-only screen. */
+    const val LOGO = "pv.lock.logo"
+
+    /** Bank blue's lock panel behind the top of the pad and of the fingerprint-only screen (absent in the other styles). */
+    const val PANEL = "pv.lock.panel"
+
     /** The pad's screen, its subtitle "Enter your app PIN", its status line and "Forgot PIN? Use master password". */
     const val PAD = "pv.lock.pad"
     const val SUBTITLE = "pv.lock.subtitle"
@@ -284,6 +312,11 @@ object LockTags {
     const val OLDER_SET_TEXT = "pv.lock.olderSetText"
     const val OLDER_SET_OPEN = "pv.lock.olderSetOpen"
     const val OLDER_SET_CANCEL = "pv.lock.olderSetCancel"
+
+    /** The screen of a vault put aside that cannot be opened (build-plan §12, decision 6): the screen, its text and "Back". */
+    const val CANNOT_OPEN = "pv.lock.cannotOpen"
+    const val CANNOT_OPEN_TEXT = "pv.lock.cannotOpenText"
+    const val BACK = "pv.lock.back"
 
     /** "Your passwords can't be opened": the screen, its text, "Try again" and "Restore from a backup file". */
     const val UNREADABLE = "pv.lock.unreadable"

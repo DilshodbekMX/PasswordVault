@@ -80,9 +80,9 @@ There is one entry type (a login). Character counts are Unicode code points. No 
 | `notes` | string | no | ≤ 10,000; line breaks allowed |
 | `fields` | list of {`name`, `value`, `secret`} | no | ≤ 20 per entry; `name` 1–100, one line, trimmed (formats.md §4.4 relies on it); `value` ≤ 1,000, line breaks allowed; `secret` boolean, default true for labels the app does not know |
 | `favourite` | boolean | yes, default false | |
-| `createdAt` | instant, stored as an integer: milliseconds since 1970 UTC (architecture.md §4.3, D-18; ISO 8601 text only in the JSON export) | yes, set by app | |
-| `updatedAt` | instant | yes, set by app | on any saved change |
-| `passwordChangedAt` | instant or null | no | set when the password is first set and whenever its value changes |
+| `createdAt` | instant, stored as an integer: milliseconds since 1970 UTC (architecture.md §4.3, D-18; ISO 8601 text only in the JSON export) | yes, set by app | an imported account keeps the date its file gives, else the time of the import (§5.21) |
+| `updatedAt` | instant | yes, set by app | on any saved change; an imported account keeps the date its file gives, else its `createdAt` (§5.21) |
+| `passwordChangedAt` | instant or null | no | set when the password is first set and whenever its value changes; an imported account keeps the date its file gives, else none |
 | `passwordHistory` | list of {`password`, `replacedAt`} | no | newest first; keep the **5** newest; an item is added when a saved password changes |
 | `changePending` | boolean | yes, default false | true from "Create new password" until "Yes, it's changed" or "No, put back the old password" in the guided change (§5.17) |
 | `pendingOldPassword` | string or null (**new**) | no | the password the website had when the guided change started. Set only while `changePending` is true. It is not one of the 5 previous passwords and is never pruned; it is cleared when the change ends (§5.17) |
@@ -180,6 +180,7 @@ Back rules. Predictive back is on at target 36: `onBackPressed` is not called an
 
 | Where | Back does | Notes |
 |---|---|---|
+| Any screen with the keyboard up | Closes the keyboard and nothing else; the next Back does what the rows below say | From Android 13 Back can reach the app before the keyboard, when a screen's `BackHandler` was turned on after the keyboard came up (typing a search query, a form's first change) or the screen opened over a field that kept the keyboard. Every screen with a text field and a `BackHandler` adds `KeyboardFirstOnBack` (`ui/common`) after it (build-plan §12, w5-carry) |
 | Passwords (root) | Leaves the app (system back-to-home animation) | Leaving starts the lock delay. No "press back again to exit" |
 | Security or Settings root | Goes to Passwords, then leaves | Fixed start destination |
 | Passwords with a search query | Clears the query first | Then normal |
@@ -189,7 +190,7 @@ Back rules. Predictive back is on at target 36: `onBackPressed` is not called an
 | Guided change | Back to the group list; progress is kept (`changePending`) | |
 | Lock screen | Leaves the app | The lock screen never reveals anything behind it; after unlock it is removed from the stack |
 | Setup, before the vault exists | Previous setup step; on Welcome, leaves the app | The generated passphrase stays in memory only (§5.5 covers a kill) |
-| Setup, after the vault exists | Leaves the app; the next start asks for the master password and resumes at the PIN step | There is no way back to "create master password" |
+| Setup, after the vault exists: the PIN steps | What the step's own way on does: "Not now" on "Choose a PIN" and on the fingerprint offer, "Finish" on "Make backups"; on "Enter the PIN again", back to the first entry. The app is not left (build-plan §12, decision 7). The same steps opened after a master-password unlock without a PIN do the same, and close onto the screen that unlock brought back | There is no way back to "create master password". If the process ends during the steps, the next start asks for the master password, and "Choose a PIN" follows while no PIN is set |
 | While "Opening…" or "Saving…" runs | Ignored for those 1–2 seconds | |
 
 **Auto-lock as the user experiences it.** The numbers and mechanics belong to lock.md §10.
@@ -235,7 +236,7 @@ Back rules. Predictive back is on at target 36: `onBackPressed` is not called an
 
 ### 5.1 Welcome (first run)
 
-- **Layout**: app icon, title "Your passwords, safe on this phone", and three short lines with icons:
+- **Layout**: the app's logo (the launcher icon's shield on a tile in the style's primary colour, [looks/README.md](looks/README.md) "The icon and the name"), title "Your passwords, safe on this phone", and three short lines with icons:
   - "Everything stays on this phone. No sign-up, no internet."
   - "Open the app with a PIN or your fingerprint, like a bank app."
   - "Copy a password with one tap when you need it."
@@ -247,6 +248,7 @@ Back rules. Predictive back is on at target 36: `onBackPressed` is not called an
 - **"Open my previous passwords"** (lock.md F17 step 4):
   - It shows **that vault's own lock screen**, with the line "Passwords locked on 6 Oct 2026": its PIN pad and fingerprint if their records and keys still work, otherwise its master-password field. Its own PIN, fingerprint or master password opens it, with its own counts and waits (lock.md §6.8); a vault marked as replaced (§5.24) shows only its master-password field.
   - Only when it has been opened does it become the app's vault again. Back returns to Welcome and changes nothing, so a stray tap cannot swap anything. When it opened without a working PIN, the app then offers to choose one.
+  - If its own PIN, fingerprint or master password is right but no saved copy of it opens, that screen stays and says so under its line: the title "These passwords can't be opened", the text "Their files on this phone are damaged." and `Button` "Back", which does what Back does. "Restore from a backup file" is not offered there, because the passwords the app opens now are fine and a restore would put them aside. Nothing is deleted (lock.md §13.2; build-plan §12, decision 6). The same holds when it was opened from the "Forgot master password?" sheet (§5.10).
   - With several archives, a list by date comes first.
 - **States**: none beyond default. Back leaves the app.
 
@@ -373,8 +375,7 @@ States and messages:
 - Weak (Class 2) sensors are not offered, as in Keyguard [E: keyguard docs]: only a strong sensor can unlock a key in the phone's secure hardware. A phone that cannot keep the key in secure hardware is told: "This phone can't keep a fingerprint key in protected hardware."
 
 **Names.**
-- On Android 12+ the button and setting names come from `BiometricManager.getStrings(BIOMETRIC_STRONG)` (API 31 [V]), so a phone whose only strong biometric is the face says "face".
-- The app's own sentences say "fingerprint", or "face" when the phone has a strong face sensor and no fingerprint sensor.
+- The switch in Settings › App lock says "Fingerprint unlock" on every phone, and the app's own buttons and sentences say "fingerprint" (build-plan §12, decision 7: accepted as built). `BiometricManager.getStrings(BIOMETRIC_STRONG)` (API 31 [V]) is not used, so a phone whose only strong biometric is the face reads "fingerprint" in the app too.
 
 **The screen.**
 - Title "Use your fingerprint?" Body: "Open the app with your fingerprint instead of your PIN. Your PIN and master password still work."
@@ -400,13 +401,14 @@ States and messages:
 The states, what each shows and its English wording are lock.md §13.1 to §13.3; this section is the look, and its texts are lock.md's.
 
 **Layout** (portrait):
-- app icon 64 dp; title "PasswordVault"; subtitle **"Enter your app PIN"**. "App" tells it apart from the phone's own PIN, which the system's fingerprint prompt asks for after several wrong fingers (lock.md §9.3);
+- the app's logo, 64 dp (as on Welcome, §5.1); title "PasswordVault"; subtitle **"Enter your app PIN"**. "App" tells it apart from the phone's own PIN, which the system's fingerprint prompt asks for after several wrong fingers (lock.md §9.3);
 - a row of 6 dots, filled as digits are entered;
 - a status line (below). A line about a wrong PIN or about tries left stays until the visit ends: typing or deleting digits does not remove it, so that someone who is handed the phone sees it;
 - a 3 × 4 keypad `1 2 3 / 4 5 6 / 7 8 9 / [fingerprint] 0 [⌫]`;
 - below it, `TextButton` **"Forgot PIN? Use master password"**.
+- In Bank blue the logo, the title, the subtitle and the dots lie on a panel in the primary colour across the top of the screen, behind the status bar, whose icons are then light, with rounded lower corners; in landscape it is a block with rounded corners on the left. The other styles draw them on the screen itself ([looks/README.md](looks/README.md) "What differs between styles besides colour").
 
-**The fingerprint-only screen** (lock.md §13.1 row 6, §13.2), when fingerprint is usable and the PIN is not: title "PasswordVault", the status line, and the buttons "Use fingerprint" and "Use master password". No pad and no dots. The prompt opens by itself.
+**The fingerprint-only screen** (lock.md §13.1 row 6, §13.2), when fingerprint is usable and the PIN is not: the logo, the title "PasswordVault", the status line, and the buttons "Use fingerprint" and "Use master password". No pad and no dots. The prompt opens by itself; its "Use master password" opens the master-password screen at once (build-plan §12, decision 19).
 
 Details:
 - **Keys.** At least **64 dp** (72 dp preferred); digits in `headlineMedium`; a ripple and `HapticFeedbackType.VirtualKey` on press (Compose 1.12 has it [V: bytecode]).
@@ -535,7 +537,7 @@ If fingerprint unlock is on and cannot be used now, the matching fingerprint lin
 
 **Layout** (`Scaffold`):
 - **`TopAppBar`**: title "Passwords"; action `IconButton` "Lock now" (lock icon).
-- **Search field**, directly below: `SearchBarDefaults.InputField` from the Material 3 `SearchBar` family, used as an in-place filter (the full-screen expanded mode is not used). Placeholder "Search accounts".
+- **Search field**, directly below: `SearchBarDefaults.InputField` from the Material 3 `SearchBar` family, used as an in-place filter (the full-screen expanded mode is not used). Placeholder "Search accounts". In Emerald's light scheme it has an outline of 1 dp, because it is white on a nearly white screen ([looks/README.md](looks/README.md)).
 - **Banners** (`OutlinedCard`), **at most two at a time**, in this priority order (the others wait):
   1. the lock's banner (`LockStatus`, architecture.md §3.5), one of two that never show together:
      - a new master password waiting to start working (§5.24): who asked, when, and about how many hours are left, with "Cancel it";
@@ -550,8 +552,9 @@ If fingerprint unlock is on and cannot be used now, the matching fingerprint lin
   - an "All accounts · 48" header, then all entries with sticky letter headers (headers are semantic headings);
   - last, when not empty, a row "Recently deleted (3)" (§5.23).
   - Its bottom content padding is at least the height of the Add button plus 16 dp, plus the clipboard status row when it shows. So the button never covers the last row's copy button.
-- **`ExtendedFloatingActionButton`** "Add" (collapses to the + icon while scrolling down).
-- **Bottom**: the navigation bar (Passwords · Security · Settings) and, when something is copied, the clipboard status row (§6) above it. The Security item shows a dot when there are new results (§5.16).
+  - In Emerald the rows are grouped on cards: the favourites on one, all accounts with their letter headers on another, the search results on one, "Recently deleted" on its own; the headings and banners stay on the screen ([looks/README.md](looks/README.md)).
+- **`ExtendedFloatingActionButton`** "Add" (collapses to the + icon while scrolling down), drawn as the style says: tonal in Bank blue and the phone's colours, filled in Night vault, filled and fully rounded in Emerald ([looks/README.md](looks/README.md)).
+- **Bottom**: the navigation bar (Passwords · Security · Settings) and, when something is copied, the clipboard status row (§6) above it. The Security item shows a dot when there are new results (§5.16). In Emerald's light scheme the bar has a line of 1 dp along its top edge, for the same reason as the search field.
 
 **Row** (`ListItem`):
 - leading: a 40 dp circle with the first letter of the title (first grapheme; colour picked from 8 tones by a hash of the title, letter contrast ≥ 4.5:1);
@@ -619,7 +622,7 @@ Behaviour:
 
 **Layout**: a `TopAppBar` with back, the title (one line; the full title is the first line of the content), actions `IconButton` star "Add to favourites" and `IconButton` "Edit", and an overflow menu (Show in big letters · Leave out of the security check · Delete).
 
-Content (`LazyColumn` of `ListItem`s):
+Content (`LazyColumn` of `ListItem`s; in Emerald the values lie on one card and the previous passwords on another, in Night vault the password block lies on a card, [looks/README.md](looks/README.md)):
 - **Username**: the value; trailing "Copy username".
 - **Password**:
   - 8 dots; trailing `IconToggleButton` "Show password"/"Hide password" and `FilledTonalIconButton` "Copy password"; below, `TextButton` "Show in big letters".
@@ -640,7 +643,8 @@ Content (`LazyColumn` of `ListItem`s):
 **Delete** moves the account to Recently deleted at once, with the snackbar "Gmail deleted" and "Undo" (about 10 s). There is no confirmation dialog, because the delete can be undone for 30 days (§5.23).
 
 **States**:
-- entry not found (deleted elsewhere) → back to the list with "This account no longer exists.";
+- entry not found: the account is not in the vault at all (for example it was removed for good from Recently deleted while its screen was kept, or a screen kept across a lock names an account that is gone) → back to the list by itself, whose snackbar says "This account no longer exists." (a one-time mark in memory, architecture.md §3.6);
+- deleted elsewhere and waiting in Recently deleted → in place of its details, "This account was deleted. For 30 days you can restore it in Recently deleted." with `OutlinedButton` "Open Recently deleted" and "Back";
 - long content wraps fully;
 - an empty entry (title only) shows "No details yet" and "Edit".
 
@@ -997,6 +1001,8 @@ Time in the picker counts as time in the app (§4).
   - Two examples from the file are shown before and after.
 - `Button` "Import 45 accounts".
 
+**Imported accounts keep their dates** (build-plan §12, decision 7: accepted as built): when they were added, last changed and had their password changed, as the file gives them (our JSON and CSV, Bitwarden, KeePassXC and Firefox files carry some of them; formats.md §8.3). Where a file gives none, as Chrome's does, an account counts as added and changed at the time of the import, and its password change has no date. The backup reminder (§5.11) goes by those dates, so accounts that a file says changed before the newest backup do not make a backup due by themselves.
+
 **Result**: "45 accounts imported." `TextButton` "Undo this import" puts the vault back exactly as it was before the import (architecture.md D-15); it is available until the screen is left. It does not remove entries by id, because an imported file can carry the id of an account that was already here (formats-review P1); such an account keeps its own id, and the imported one gets a new id and is added as "Gmail (from file)" when it differs. Then:
 - **For CSV and JSON**: "The file Chrome Passwords.csv still contains all these passwords unprotected. Delete it now?" `Button` "Delete file" (when supported) and "Keep".
 - **If many imported passwords are shared**: "Many of these accounts share a password. Open Security to fix them one by one." `TextButton` "Open Security".
@@ -1099,6 +1105,7 @@ This is for a user who has forgotten the master password while the PIN or finger
 - **Announcements**: the countdown updates every second, visually only. TalkBack hears one polite live-region message when the row appears: "Password copied. It will be removed from the clipboard in 1 minute."
 - **When the clear runs while the app is open**: "Clipboard cleared" for 2 s, then the row hides.
 - **Late jobs**: a scheduled job may run late. If the planned time has passed and the clear has not run, the row says "Clearing…" instead of a negative countdown.
+- **The system's overlay**: on Android 13 and later the system shows its own clipboard overlay at the bottom left for about six seconds after a copy, and it covers the left part of the row meanwhile (a sensitive clip shows as dots in it). The row is not moved for it (build-plan §12, decision 7: accepted as built; tools/emu/README.md, device facts).
 
 **When the clipboard is cleared**:
 - when the timer ends, on "Clear now", and on "Lock now", each time only if the clip is still the app's own or cannot be checked;

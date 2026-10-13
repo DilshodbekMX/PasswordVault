@@ -56,6 +56,7 @@ import io.github.dilshodbekmx.passwordvault.R
 import io.github.dilshodbekmx.passwordvault.data.SaveProblem
 import io.github.dilshodbekmx.passwordvault.nav.Navigator
 import io.github.dilshodbekmx.passwordvault.nav.Route
+import io.github.dilshodbekmx.passwordvault.ui.list.GoneNotice
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -72,6 +73,10 @@ import kotlinx.coroutines.launch
  *   the app does (ux.md §6 item 4).
  * - **Delete** needs no question: the screen says "Gmail deleted" with "Undo" for about 10 seconds
  *   and then closes; the account waits in Recently deleted (ux.md §5.23).
+ * - **An account that is not in the vault at all** (for example removed for good from Recently
+ *   deleted while this screen was kept): the screen goes back to the list by itself and leaves
+ *   [GoneNotice]'s mark, so that the list says "This account no longer exists." (ux.md §5.12). One
+ *   deleted elsewhere that waits in Recently deleted says so here, with "Open Recently deleted".
  * - **Saved state** holds only the scroll position (architecture.md §5.6).
  *
  * The test tags (resource ids, for the emulator scripts) are in [EntryTags].
@@ -133,6 +138,15 @@ fun EntryScreen(vm: EntryViewModel, nav: Navigator) {
         } else if (vm.state.value is EntryUiState.Deleted) {
             nav.back()
         }
+    }
+
+    // Not in the vault at all: back to the list by itself, which says "This account no longer exists."
+    // (ux.md §5.12) from the mark left for it. Should there be nowhere to go back to, this screen says it.
+    val notThere = (state as? EntryUiState.Gone)?.inRecentlyDeleted == false
+    LaunchedEffect(notThere) {
+        if (!notThere) return@LaunchedEffect
+        GoneNotice.mark()
+        if (!nav.back()) GoneNotice.clear()
     }
 
     val actions = remember(vm, nav) {

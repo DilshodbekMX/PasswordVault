@@ -1,7 +1,6 @@
 package io.github.dilshodbekmx.passwordvault.ui.edit
 
 import android.os.Build
-import android.view.View
 import android.view.WindowInsets
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
@@ -42,7 +41,6 @@ import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,9 +48,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalResources
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
@@ -66,8 +62,6 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -80,12 +74,13 @@ import io.github.dilshodbekmx.passwordvault.i18n.Formatters
 import io.github.dilshodbekmx.passwordvault.i18n.rememberFormatters
 import io.github.dilshodbekmx.passwordvault.nav.Navigator
 import io.github.dilshodbekmx.passwordvault.nav.Route
+import io.github.dilshodbekmx.passwordvault.ui.common.KeyboardFirstOnBack
 import io.github.dilshodbekmx.passwordvault.ui.common.StrengthBar
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultDialog
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultFieldDefaults
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultSecureField
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultTextField
-import kotlinx.coroutines.flow.first
+import io.github.dilshodbekmx.passwordvault.ui.common.rememberFieldKeyboard
 
 /**
  * Add and edit (ux.md §5.14): a top bar with Close (X), "New account" or "Edit account" and Save,
@@ -106,6 +101,7 @@ fun EditScreen(vm: EditViewModel, nav: Navigator) {
     val focus = rememberFieldFocus(vm)
 
     BackHandler(enabled = ui.backHandled) { vm.close() }
+    KeyboardFirstOnBack() // Back with the keyboard up closes it, not the form ("Save changes?")
 
     LaunchedEffect(ui.done) {
         when (val done = ui.done) {
@@ -604,15 +600,16 @@ private class FieldFocus(private val vm: EditViewModel, private val lifecycle: L
      * nothing gets the focus, Android 17 hides the keyboard (`HIDE_UNSPECIFIED_WINDOW`), and a
      * request that comes while it does so is dropped (`PHASE_SERVER_ABORT_SHOW_IME_POST_LAYOUT`,
      * seen on the emulator). Once the window has the focus the keyboard is asked for once more if
-     * it is not seen, for the versions that act only on a request from a focused window.
+     * it is not seen, for the versions that act only on a request from a focused window, and then
+     * again for about a second while the field keeps the focus and the keyboard is not shown
+     * (`FieldKeyboard`: on API 37 in landscape Gboard can close again by itself).
      */
     @Composable
     fun RestoreAfterRecreation(inDialog: Boolean) {
         val key = restore ?: return
         val dialogKey = key == FieldKey.AddFieldName || key == FieldKey.AddFieldValue
         if (dialogKey != inDialog) return
-        val window = LocalWindowInfo.current
-        val keyboard = LocalSoftwareKeyboardController.current
+        val fieldKeyboard = rememberFieldKeyboard()
         val view = LocalView.current
         LaunchedEffect(Unit) {
             // The field may be laid out a frame later (the Scaffold places its content while measuring).
@@ -624,15 +621,10 @@ private class FieldFocus(private val vm: EditViewModel, private val lifecycle: L
             }
             if (!focused) return@LaunchedEffect
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) view.windowInsetsController?.show(WindowInsets.Type.ime())
-            snapshotFlow { window.isWindowFocused }.first { it }
-            if (focusedHere == key && !keyboardShown(view)) keyboard?.show()
+            fieldKeyboard.awaitWindowFocus()
+            if (focusedHere == key) fieldKeyboard.show { focusedHere == key }
         }
     }
-
-    /** Whether the keyboard is on screen, as far as Android tells an app (API 30 and later); false below. */
-    private fun keyboardShown(view: View): Boolean =
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
-            ViewCompat.getRootWindowInsets(view)?.isVisible(WindowInsetsCompat.Type.ime()) == true
 }
 
 /** A field of the form: full width, its focus told to [focus] as [key], and its test tag [tag]. */

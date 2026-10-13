@@ -45,6 +45,7 @@ import io.github.dilshodbekmx.passwordvault.ui.entry.EntryRig.Companion.SECRETS
 import io.github.dilshodbekmx.passwordvault.ui.entry.EntryRig.Companion.USERNAME
 import io.github.dilshodbekmx.passwordvault.ui.entry.EntryRig.Companion.bare
 import io.github.dilshodbekmx.passwordvault.ui.entry.EntryRig.Companion.gmail
+import io.github.dilshodbekmx.passwordvault.ui.list.GoneNotice
 import io.github.dilshodbekmx.passwordvault.ui.theme.PasswordVaultTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -72,9 +73,13 @@ class EntryScreenTest {
     private lateinit var clips: RecordingClipboard
     private val toolbar = RecordingToolbar()
 
-    /** Shows the account [id] of [vault] as the app's root would: its own clipboard and toolbar provided above the theme. */
-    private fun show(vault: Vault, id: String = GMAIL, justSaved: Boolean = false) {
+    /**
+     * Shows the account [id] of [vault] as the app's root would: its own clipboard and toolbar
+     * provided above the theme. [backAllowed] false: Back has nowhere to go ([RecordingNav.backAllowed]).
+     */
+    private fun show(vault: Vault, id: String = GMAIL, justSaved: Boolean = false, backAllowed: Boolean = true) {
         rig = EntryRig(vault)
+        rig.nav.backAllowed = backAllowed
         clips = RecordingClipboard(compose.activity)
         compose.setContent {
             CompositionLocalProvider(LocalClipboard provides clips, LocalTextContextMenuToolbarProvider provides toolbar) {
@@ -464,15 +469,37 @@ class EntryScreenTest {
     }
 
     @Test
-    fun anAccountThatIsGoneSaysSo() {
-        // Not in the vault: "This account no longer exists." and Back.
-        show(Vault(entries = listOf(gmail())), id = BANK)
-        compose.onNodeWithTag(EntryTags.GONE).assertTextEquals(text(R.string.entry_gone))
-        compose.onNodeWithTag(EntryTags.GONE_OPEN_DELETED).assertDoesNotExist()
-        compose.onNodeWithTag(EntryTags.EDIT).assertDoesNotExist()
-        compose.onNodeWithTag(EntryTags.GONE_BACK).performClick()
-        compose.waitForIdle()
-        assertEquals(1, rig.nav.backs)
+    fun anAccountThatIsNotThereGoesBackToTheList_whichSaysSo() {
+        // Not in the vault at all: back to the list by itself, with the mark the list turns into
+        // "This account no longer exists." (ux.md §5.12; PasswordsScreenTest shows the list's side).
+        GoneNotice.clear()
+        try {
+            show(Vault(entries = listOf(gmail())), id = BANK)
+            compose.waitUntil(TIMEOUT_MS) { rig.nav.backs == 1 }
+            assertTrue("the list is to say so", GoneNotice.take())
+            compose.onNodeWithTag(EntryTags.GONE_OPEN_DELETED).assertDoesNotExist()
+            compose.onNodeWithTag(EntryTags.EDIT).assertDoesNotExist()
+            compose.waitForIdle()
+            assertEquals("once", 1, rig.nav.backs)
+        } finally {
+            GoneNotice.clear()
+        }
+    }
+
+    @Test
+    fun withNowhereToGoBack_anAccountThatIsNotThereSaysSoItself() {
+        GoneNotice.clear()
+        try {
+            show(Vault(entries = listOf(gmail())), id = BANK, backAllowed = false)
+            compose.waitUntil(TIMEOUT_MS) { rig.nav.backs == 1 }
+            assertFalse("no list is shown to say it", GoneNotice.take())
+            compose.onNodeWithTag(EntryTags.GONE).assertTextEquals(text(R.string.entry_gone))
+            compose.onNodeWithTag(EntryTags.GONE_BACK).performClick()
+            compose.waitForIdle()
+            assertEquals(2, rig.nav.backs)
+        } finally {
+            GoneNotice.clear()
+        }
     }
 
     @Test

@@ -30,6 +30,7 @@ import io.github.dilshodbekmx.passwordvault.nav.Navigator
 import io.github.dilshodbekmx.passwordvault.nav.Route
 import io.github.dilshodbekmx.passwordvault.platform.AppDispatchers
 import io.github.dilshodbekmx.passwordvault.settings.AppSettings
+import io.github.dilshodbekmx.passwordvault.ui.common.KeyboardFirstOnBack
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
@@ -730,6 +731,7 @@ private fun CreatePinRoute(graph: AppGraph, nav: Navigator) {
     PerformMoves(vm, Route.CreatePin, nav)
     val ui by vm.ui.collectAsStateWithLifecycle()
     BackHandler(enabled = ui.stage == PinSetupStage.MASTER || ui.stage == PinSetupStage.CHOOSE) { vm.notNow() }
+    KeyboardFirstOnBack()
     if (ui.stage == PinSetupStage.MASTER) {
         MasterPasswordPage(ask = vm.masterPassword, onNext = vm::submitMasterPassword, onNotNow = vm::notNow)
     } else {

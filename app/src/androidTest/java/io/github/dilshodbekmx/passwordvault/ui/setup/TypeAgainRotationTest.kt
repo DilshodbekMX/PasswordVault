@@ -7,6 +7,7 @@ import android.content.Context
 import android.os.Build
 import android.os.Bundle
 import android.os.ParcelFileDescriptor
+import android.os.SystemClock
 import android.view.inputmethod.InputMethodManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -29,6 +30,7 @@ import io.github.dilshodbekmx.passwordvault.fake.FakeLockManager
 import io.github.dilshodbekmx.passwordvault.platform.AppDispatchers
 import io.github.dilshodbekmx.passwordvault.settings.ThemeChoice
 import io.github.dilshodbekmx.passwordvault.testing.FakeRandom
+import io.github.dilshodbekmx.passwordvault.ui.common.FieldKeyboard
 import io.github.dilshodbekmx.passwordvault.ui.theme.PasswordVaultTheme
 import java.util.concurrent.atomic.AtomicReference
 import org.junit.After
@@ -120,7 +122,9 @@ class TypeAgainRotationTest {
         assertSame("the activity keeps the view model", setup, model.get())
         assertEquals("the typed text is kept (the field's state is in the view model)", "vowel-shiny", fieldText())
 
-        // The keyboard closed by hand; the check sees it closed.
+        // The keyboard closed by hand, once the screen has stopped asking for it (FieldKeyboard asks again for
+        // about a second after a rotation); the check sees it closed.
+        SystemClock.sleep(FieldKeyboard.AGAIN_MS + 300)
         val activity = current.get()!!
         instrumentation.runOnMainSync {
             val imm = activity.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager

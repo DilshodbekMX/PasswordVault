@@ -10,6 +10,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import io.github.dilshodbekmx.passwordvault.R
+import java.text.AttributedCharacterIterator
+import java.text.CharacterIterator
 import java.util.Date
 import java.util.Locale
 import kotlin.math.abs
@@ -26,24 +30,37 @@ import kotlin.math.max
  * [AppLanguages.screenLocale] of the composition's configuration. Durations in settings ("After 30
  * seconds") and counted waits ("in about 5 hours") are plural strings of their screens, not these.
  * Thread-safe; the ICU objects are made on first use.
+ *
+ * @param justNow what [relative] says for less than a minute: `common_just_now` ("just now") in the
+ *   screen's language, which [rememberFormatters] gives (i18n.md §4.6); without it, ICU's own word
+ *   ("now").
  */
-class Formatters(val locale: Locale, private val hour24: Boolean) {
+class Formatters(val locale: Locale, private val hour24: Boolean, private val justNow: String? = null) {
     private val uLocale = ULocale.forLocale(locale)
     private val dates = HashMap<String, DateFormat>()
     private var numbers: NumberFormat? = null
     private var relatives: RelativeDateTimeFormatter? = null
 
-    /** The date with a short month: "Oct 6, 2026", "6-okt, 2026", "6 окт, 2026", "6 окт. 2026 г." (skeleton yMMMd). */
-    fun date(ms: Long): String = format("yMMMd", ms)
+    /**
+     * The date with a short month: "Oct 6, 2026", "6-okt, 2026", "6 окт, 2026", "6 окт. 2026 г."
+     * (skeleton yMMMd), its spaces no-break spaces ([unbroken]).
+     */
+    fun date(ms: Long): String = unbroken(format("yMMMd", ms))
 
-    /** The day and short month without the year: "Sep 12", "12 сент." (skeleton MMMd), as in "since 12 Sep". */
-    fun dayMonth(ms: Long): String = format("MMMd", ms)
+    /** The day and short month without the year: "Sep 12", "12 сент." (skeleton MMMd), as in "since 12 Sep"; [unbroken]. */
+    fun dayMonth(ms: Long): String = unbroken(format("MMMd", ms))
 
     /** The time of day in the phone's 12- or 24-hour clock: "2:05 PM" or "14:05". */
     fun time(ms: Long): String = format(if (hour24) "Hm" else "hm", ms)
 
-    /** [date] and [time] together, as the language joins them. */
-    fun dateTime(ms: Long): String = format(if (hour24) "yMMMdHm" else "yMMMdhm", ms)
+    /**
+     * [date] and [time] together, as the language joins them: "Oct 6, 2026, 14:05". The spaces
+     * inside the date are no-break spaces, as in [date]; the line may still break between the date
+     * and the time.
+     */
+    @Synchronized
+    fun dateTime(ms: Long): String =
+        dateUnbroken(formatter(if (hour24) "yMMMdHm" else "yMMMdhm").formatToCharacterIterator(Date(ms)))
 
     /** A whole number with the language's grouping: "1,234,567" or "1 234 567". */
     @Synchronized
@@ -53,11 +70,12 @@ class Formatters(val locale: Locale, private val hour24: Boolean) {
     }
 
     /**
-     * How long ago [thenMs] was at [nowMs], or how far ahead, in words: "now" under a minute, then
-     * minutes, hours under a day, "yesterday" or "tomorrow" for the day before or after, days under a
-     * week, weeks under 31 days, months under a year, then years ("5 minutes ago", "3 days ago",
-     * "2 months ago"; "kecha", "вчера"). Days and months are counted on the calendar of the phone's
-     * time zone; the number is rounded down. Fit for "Last backup: 3 days ago".
+     * How long ago [thenMs] was at [nowMs], or how far ahead, in words: "just now" under a minute,
+     * before or after ([justNow]; i18n.md §4.6), then minutes, hours under a day, "yesterday" or
+     * "tomorrow" for the day before or after, days under a week, weeks under 31 days, months under a
+     * year, then years ("5 minutes ago", "3 days ago", "2 months ago"; "kecha", "вчера"). Days and
+     * months are counted on the calendar of the phone's time zone; the number is rounded down. Fit
+     * for "Last backup: 3 days ago" and "Password changed just now".
      */
     @Synchronized
     fun relative(thenMs: Long, nowMs: Long): String {
@@ -65,9 +83,9 @@ class Formatters(val locale: Locale, private val hour24: Boolean) {
         val direction = if (thenMs <= nowMs) RelativeDateTimeFormatter.Direction.LAST else RelativeDateTimeFormatter.Direction.NEXT
         val spanMs = if (thenMs <= nowMs) nowMs - thenMs else thenMs - nowMs
         fun count(n: Long, unit: RelativeDateTimeFormatter.RelativeUnit) = format.format(n.toDouble(), direction, unit)
-        // A negative span is an overflow between two times no clock gives; it reads as "now".
+        // A negative span is an overflow between two times no clock gives; it reads as less than a minute.
         if (spanMs < MINUTE_MS) {
-            return format.format(RelativeDateTimeFormatter.Direction.PLAIN, RelativeDateTimeFormatter.AbsoluteUnit.NOW)
+            return justNow ?: format.format(RelativeDateTimeFormatter.Direction.PLAIN, RelativeDateTimeFormatter.AbsoluteUnit.NOW)
         }
         if (spanMs < HOUR_MS) return count(spanMs / MINUTE_MS, RelativeDateTimeFormatter.RelativeUnit.MINUTES)
         if (spanMs < DAY_MS) return count(spanMs / HOUR_MS, RelativeDateTimeFormatter.RelativeUnit.HOURS)
@@ -91,10 +109,13 @@ class Formatters(val locale: Locale, private val hour24: Boolean) {
     }
 
     @Synchronized
-    private fun format(skeleton: String, ms: Long): String {
+    private fun format(skeleton: String, ms: Long): String = formatter(skeleton).format(Date(ms))
+
+    /** The format of [skeleton], set to the phone's time zone now. Under the lock of this object. */
+    private fun formatter(skeleton: String): DateFormat {
         val format = dates.getOrPut(skeleton) { DateFormat.getInstanceForSkeleton(skeleton, uLocale) }
         format.timeZone = zone()
-        return format.format(Date(ms))
+        return format
     }
 
     /** The phone's time zone now: it may change while the app runs. */
@@ -110,17 +131,72 @@ class Formatters(val locale: Locale, private val hour24: Boolean) {
         return calendar.get(Calendar.YEAR) * 12L + calendar.get(Calendar.MONTH)
     }
 
-    private companion object {
-        const val MINUTE_MS = 60_000L
-        const val HOUR_MS = 3_600_000L
-        const val DAY_MS = 86_400_000L
+    companion object {
+        private const val MINUTE_MS = 60_000L
+        private const val HOUR_MS = 3_600_000L
+        private const val DAY_MS = 86_400_000L
+
+        /** U+00A0: a space at which a line never breaks. */
+        const val NO_BREAK_SPACE = '\u00A0'
+
+        /** The fields of a formatted date and time that belong to the time of day; every other field is the date's. */
+        private val TIME_FIELDS: Set<DateFormat.Field> = setOf(
+            DateFormat.Field.HOUR0,
+            DateFormat.Field.HOUR1,
+            DateFormat.Field.HOUR_OF_DAY0,
+            DateFormat.Field.HOUR_OF_DAY1,
+            DateFormat.Field.MINUTE,
+            DateFormat.Field.SECOND,
+            DateFormat.Field.MILLISECOND,
+            DateFormat.Field.AM_PM,
+            DateFormat.Field.TIME_ZONE,
+        )
+
+        /**
+         * [text] with each space a no-break space, so that a date never breaks across two lines
+         * ("Oct / 7, 2026" in a title; build-plan.md §12, w5-carry). ICU writes U+0020 between the
+         * parts of a date; its U+202F (before "г." and "PM" from ICU 72) does not break already.
+         */
+        fun unbroken(text: String): String = text.replace(' ', NO_BREAK_SPACE)
+
+        /**
+         * The text of [formatted], a date with a time, with the spaces of its date part [unbroken]:
+         * from the first character of the date to its last letter, digit or full stop (the "г." of
+         * ICU 56 and 60 belongs to the date), on the side of the time where the date stands. The
+         * time and the separator between the two keep their spaces.
+         */
+        private fun dateUnbroken(formatted: AttributedCharacterIterator): String {
+            val text = StringBuilder()
+            var firstTime = -1
+            var lastTime = -1
+            var c = formatted.first()
+            while (c != CharacterIterator.DONE) {
+                val index = text.length
+                if (formatted.attributes.keys.any { it in TIME_FIELDS }) {
+                    if (firstTime < 0) firstTime = index
+                    lastTime = index
+                }
+                text.append(c)
+                c = formatted.next()
+            }
+            if (firstTime < 0) return unbroken(text.toString())
+            fun dateChar(ch: Char) = ch.isLetterOrDigit() || ch == '.'
+            // The date before the time: up to its last letter, digit or full stop.
+            val before = (firstTime - 1 downTo 0).firstOrNull { dateChar(text[it]) } ?: -1
+            for (i in 0..before) if (text[i] == ' ') text.setCharAt(i, NO_BREAK_SPACE)
+            // Or after it: from its first letter or digit.
+            val after = (lastTime + 1 until text.length).firstOrNull { text[it].isLetterOrDigit() } ?: text.length
+            for (i in after until text.length) if (text[i] == ' ') text.setCharAt(i, NO_BREAK_SPACE)
+            return text.toString()
+        }
     }
 }
 
 /**
  * The [Formatters] of this composition: the language its screens show
- * ([AppLanguages.screenLocale] of `LocalConfiguration`) and the phone's 12- or 24-hour setting. Made
- * again when either changes, as after a language switch, which recreates the activity.
+ * ([AppLanguages.screenLocale] of `LocalConfiguration`), the phone's 12- or 24-hour setting, and
+ * "just now" (`common_just_now`) in that language for a time less than a minute away. Made again
+ * when any of them changes, as after a language switch, which recreates the activity.
  */
 @Composable
 fun rememberFormatters(): Formatters {
@@ -128,5 +204,6 @@ fun rememberFormatters(): Formatters {
     val context = LocalContext.current
     val locale = AppLanguages.screenLocale(AppLanguages.localesOf(configuration))
     val hour24 = android.text.format.DateFormat.is24HourFormat(context)
-    return remember(locale, hour24) { Formatters(locale, hour24) }
+    val justNow = stringResource(R.string.common_just_now)
+    return remember(locale, hour24, justNow) { Formatters(locale, hour24, justNow) }
 }

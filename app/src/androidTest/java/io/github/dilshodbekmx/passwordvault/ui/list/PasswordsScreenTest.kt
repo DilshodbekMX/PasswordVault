@@ -35,6 +35,7 @@ import io.github.dilshodbekmx.passwordvault.ui.edit.NewAccountName
 import io.github.dilshodbekmx.passwordvault.ui.theme.PasswordVaultTheme
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -45,7 +46,8 @@ import org.junit.runner.RunWith
  * Build plan 3.5, [device]: the list's screens as a person and TalkBack use them (ux.md §5.11,
  * §5.23, §6, §8), over the fakes: rows and their copy buttons, the long-press menu and the same
  * actions for TalkBack, bold matches and the wrong-layout line, Back clearing a query, the empty
- * and no-result states, a banner's button, and Recently deleted's restore and deletions.
+ * and no-result states, a banner's button, "This account no longer exists." after an account's
+ * screen came back (ux.md §5.12), and Recently deleted's restore and deletions.
  */
 @RunWith(AndroidJUnit4::class)
 class PasswordsScreenTest {
@@ -92,6 +94,7 @@ class PasswordsScreenTest {
     fun closeRig() {
         rig?.close()
         NewAccountName.clear()
+        GoneNotice.clear()
     }
 
     private fun passwords(vault: Vault = Vault(entries = accounts)): Pair<ListRig, PasswordsViewModel> {
@@ -270,6 +273,17 @@ class PasswordsScreenTest {
         assertEquals(Route.NewMasterPassword, rig.nav.routes.last())
         assertTrue("nothing is sent to the lock", rig.lock.sent.isEmpty())
         assertTrue("and nothing locks", rig.lock.lockReasons.isEmpty())
+    }
+
+    @Test
+    fun anAccountsScreenThatCameBackBecauseItsAccountIsGone_isSaidHereOnce() {
+        // ux.md §5.12: the account's screen left the mark and went back (EntryScreenTest shows that side).
+        GoneNotice.mark()
+        passwords()
+        val gone = text(R.string.list_account_gone)
+        compose.waitUntil(TIMEOUT_MS) { compose.onAllNodes(hasText(gone)).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText(gone).assertIsDisplayed()
+        assertFalse("the mark is used up", GoneNotice.take())
     }
 
     @Test

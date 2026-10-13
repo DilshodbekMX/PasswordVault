@@ -10,14 +10,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
@@ -28,9 +30,10 @@ import androidx.compose.ui.unit.dp
 import io.github.dilshodbekmx.passwordvault.R
 import io.github.dilshodbekmx.passwordvault.i18n.rememberFormatters
 import io.github.dilshodbekmx.passwordvault.lock.LockIntent
+import io.github.dilshodbekmx.passwordvault.ui.common.KeyboardFirstOnBack
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultFieldDefaults
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultSecureField
-import kotlinx.coroutines.flow.first
+import io.github.dilshodbekmx.passwordvault.ui.common.rememberFieldKeyboard
 
 /**
  * The master-password lock screen (ux.md §5.10; lock.md §13.2, §13.3), shown by the lock route
@@ -41,9 +44,11 @@ import kotlinx.coroutines.flow.first
  * again after a wait: at the first show, after a rotation, which builds the screen again and where
  * Android 17 no longer brings the keyboard back by itself (architecture.md §5.4, [V-P7]), on "Try
  * again", and when the sheet over it closes. It asks once the window has focus, so that the request
- * reaches the keyboard. While the "Forgot master password?" sheet or a question [covered] the screen,
- * the keyboard is put away, so that it hides nothing of them. On the screen of a vault put aside,
- * Back returns to the current vault (lock.md F17 step 4).
+ * reaches the keyboard, and again for about a second while the keyboard is not shown
+ * (`FieldKeyboard`: on API 37 in landscape Gboard can close again by itself). While the "Forgot
+ * master password?" sheet or a question [covered] the screen, the keyboard is put away, so that it
+ * hides nothing of them. On the screen of a vault put aside, Back returns to the current vault
+ * (lock.md F17 step 4).
  */
 @Composable
 fun MasterPasswordScreen(
@@ -55,17 +60,19 @@ fun MasterPasswordScreen(
 ) {
     val focusRequester = remember { FocusRequester() }
     val keyboard = LocalSoftwareKeyboardController.current
-    val windowInfo = LocalWindowInfo.current
+    val fieldKeyboard = rememberFieldKeyboard()
+    var fieldFocused by remember { mutableStateOf(false) }
 
-    LaunchedEffect(ui.fieldEnabled, covered) {
+    LaunchedEffect(ui.fieldEnabled, covered, fieldKeyboard) {
         if (covered) keyboard?.hide()
         if (!ui.fieldEnabled || covered) return@LaunchedEffect
-        snapshotFlow { windowInfo.isWindowFocused }.first { it }
+        fieldKeyboard.awaitWindowFocus()
         focusRequester.requestFocus()
-        keyboard?.show()
+        fieldKeyboard.show { fieldFocused }
     }
 
     BackHandler(enabled = ui.goesBack) { onAction(LockAction.Send(LockIntent.GoBack)) }
+    KeyboardFirstOnBack()
 
     MasterPasswordContent(
         ui = ui,
@@ -79,7 +86,7 @@ fun MasterPasswordScreen(
             }
         },
         modifier = modifier,
-        fieldModifier = Modifier.focusRequester(focusRequester),
+        fieldModifier = Modifier.focusRequester(focusRequester).onFocusChanged { fieldFocused = it.isFocused },
     )
 }
 

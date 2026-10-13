@@ -4,6 +4,8 @@ import android.icu.util.VersionInfo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -36,20 +38,45 @@ class FormattersTest {
     private fun f(tag: String, hour24: Boolean = true) = Formatters(Locale.forLanguageTag(tag), hour24)
 
     /** U+202F, which ICU 78 writes before "PM" and "г.". */
-    private val narrow = if (icu >= 72) " " else " "
+    private val narrow = if (icu >= 72) "\u202F" else " "
+
+    /** [text] with its spaces as the no-break spaces that a date on the screen has. */
+    private fun nb(text: String) = text.replace(' ', '\u00A0')
 
     @Test
     fun datesAsI18nSection4Point6ShowsThem() {
-        assertEquals("Oct 6, 2026", f("en").date(at))
-        assertEquals("6 Oct 2026", f("en-GB").date(at))
-        assertEquals("6-okt, 2026", f("uz").date(at))
-        assertEquals(if (icu == 56) "2026 Окт 6" else "6 окт, 2026", f("uz-Cyrl").date(at))
-        assertEquals("6 окт. 2026${narrow}г.", f("ru").date(at))
+        assertEquals(nb("Oct 6, 2026"), f("en").date(at))
+        assertEquals(nb("6 Oct 2026"), f("en-GB").date(at))
+        assertEquals(nb("6-okt, 2026"), f("uz").date(at))
+        assertEquals(nb(if (icu == 56) "2026 Окт 6" else "6 окт, 2026"), f("uz-Cyrl").date(at))
+        assertEquals(nb("6 окт. 2026${narrow}г."), f("ru").date(at))
 
-        assertEquals("Oct 6", f("en").dayMonth(at))
+        assertEquals(nb("Oct 6"), f("en").dayMonth(at))
         assertEquals("6-okt", f("uz").dayMonth(at))
-        assertEquals(if (icu == 56) "Окт 6" else "6 окт", f("uz-Cyrl").dayMonth(at))
-        assertEquals("6 окт.", f("ru").dayMonth(at))
+        assertEquals(nb(if (icu == 56) "Окт 6" else "6 окт"), f("uz-Cyrl").dayMonth(at))
+        assertEquals(nb("6 окт."), f("ru").dayMonth(at))
+    }
+
+    /**
+     * A date never breaks across two lines ("Oct / 7, 2026" in a title; build-plan.md §12, w5-carry
+     * step 3 item 4): no breakable space inside [Formatters.date], [Formatters.dayMonth] or the date
+     * of [Formatters.dateTime], in any of the four languages, on the 12- and the 24-hour clock; the
+     * line may still break between the date and the time.
+     */
+    @Test
+    fun aDateHasNoSpaceALineCanBreakAt() {
+        for (tag in listOf("en", "uz", "uz-Cyrl", "ru")) {
+            for (hour24 in listOf(true, false)) {
+                val f = f(tag, hour24)
+                val date = f.date(at)
+                assertFalse("$tag date '$date'", date.contains(' '))
+                assertFalse("$tag dayMonth", f.dayMonth(at).contains(' '))
+                val dateTime = f.dateTime(at)
+                assertTrue("$tag $hour24 dateTime '$dateTime' starts with the date", dateTime.startsWith(date))
+                assertFalse("$tag $hour24 dateTime '$dateTime': its date part", dateTime.substring(0, date.length).contains(' '))
+                assertTrue("$tag $hour24 dateTime '$dateTime': a break before the time", dateTime.substring(date.length).contains(' '))
+            }
+        }
     }
 
     @Test
@@ -62,9 +89,9 @@ class FormattersTest {
             else -> "2:05${narrow}PM"
         }
         assertEquals(ruPm, f("ru", hour24 = false).time(at))
-        assertEquals("Oct 6, 2026, 14:05", f("en").dateTime(at))
-        assertEquals("6-okt, 2026, 14:05", f("uz").dateTime(at))
-        assertEquals("6 окт. 2026${narrow}г., 14:05", f("ru").dateTime(at))
+        assertEquals(nb("Oct 6, 2026") + ", 14:05", f("en").dateTime(at))
+        assertEquals(nb("6-okt, 2026") + ", 14:05", f("uz").dateTime(at))
+        assertEquals(nb("6 окт. 2026${narrow}г.") + ", 14:05", f("ru").dateTime(at))
     }
 
     @Test
@@ -98,6 +125,27 @@ class FormattersTest {
         assertEquals("in 3 days", f("en").relative(at + 3 * DAY, at))
         assertEquals("через 5 минут", f("ru").relative(at + 5 * MINUTE, at))
         assertEquals(if (icu == 56) "5 daqiqadan so‘ng" else "5 daqiqadan keyin", f("uz").relative(at + 5 * MINUTE, at))
+    }
+
+    /**
+     * Less than a minute, before or after, is the screen's "just now" (`common_just_now`, i18n.md
+     * §4.6), not ICU's "now", which reads wrong in "Password changed now"; a minute is ICU's again.
+     */
+    @Test
+    fun lessThanAMinuteBeforeOrAfterIsJustNow() {
+        for (tag in listOf("en", "uz", "uz-Cyrl", "ru")) {
+            val f = Formatters(Locale.forLanguageTag(tag), hour24 = true, justNow = "just now ($tag)")
+            for (span in listOf(0L, 1L, 10_000L, MINUTE - 1)) {
+                assertEquals("$tag, $span ms before", "just now ($tag)", f.relative(at - span, at))
+                assertEquals("$tag, $span ms after", "just now ($tag)", f.relative(at + span, at))
+            }
+        }
+        val en = Formatters(Locale.forLanguageTag("en"), hour24 = true, justNow = "just now")
+        assertEquals("1 minute ago", en.relative(at - MINUTE, at))
+        assertEquals("in 1 minute", en.relative(at + MINUTE, at))
+        assertEquals("1 minute ago", en.relative(at - MINUTE - 59_999L, at))
+        // Without it (a Formatters made outside a screen), ICU's own word, as relativeTimesInTheFourLanguages shows.
+        assertEquals("now", f("en").relative(at - 10_000L, at))
     }
 
     @Test

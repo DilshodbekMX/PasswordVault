@@ -4,6 +4,7 @@ import io.github.dilshodbekmx.passwordvault.core.lock.flow.AsideLine
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.ChoosePinReason
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.CreateOutcome
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.CurrentVault
+import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockCause
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockScreen
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockState
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.MasterPasswordOutcome
@@ -453,6 +454,153 @@ class PreviousPasswordsFlowTest {
         await { f.engine.showAside(OTHER_VAULT) }
         assertEquals(AsideLine.LockedOn(lockedOn), f.pad.aside)
         f.type(Secrets.OTHER_PIN)
+        assertEquals(OTHER_VAULT, f.port.current!!.vaultId)
+        assertEquals(listOf("swapIn $OTHER_VAULT"), f.port.writingCalls)
+    }
+
+    // ---- step 4, build-plan §12 decision 6: a vault put aside whose copies cannot be opened ---------
+
+    @Test
+    fun f17step4_decision6_aRightPinThatFindsNoCopyThatOpens_staysOnThatVaultsScreen_withBackOnly() {
+        val phone = twoVaults(otherFingerprint = true)
+        f.startInFront()
+        await { f.engine.showAside(OTHER_VAULT) }
+        assertEquals(AsideLine.LockedOn(lockedOn), f.pad.aside)
+        f.port.vault(OTHER_VAULT)!!.live.forEach { it.state = FakeVaultPort.FileState.DAMAGED } // since its lock screen was drawn
+
+        f.type(Secrets.OTHER_PIN)
+
+        // That vault's own screen stays and says so, never the current vault's "Your passwords can't be
+        // opened" (§13.1 row 2), whose "Restore from a backup file" would put the current vault aside.
+        val cannotOpen = LockScreen.CannotOpen(AsideLine.LockedOn(lockedOn))
+        assertEquals(cannotOpen, f.screen)
+        // The PIN was right, and its record says so (§6.3 E.6); nothing else changed: no swap, nothing
+        // open, nothing deleted, no shortcut removed.
+        assertEquals(PinRecord.Guard(false, 0, 0), f.pinRecord(OTHER_VAULT).guard)
+        assertEquals(emptyList<String>(), f.port.writingCalls)
+        assertEquals(emptyList<String>(), f.port.writes)
+        assertNull(f.port.openVaultId)
+        assertNull(f.port.openAsideId)
+        assertEquals(VAULT, f.port.current!!.vaultId)
+        assertEquals(listOf(OTHER_VAULT), f.port.asideVaults.map { it.vaultId })
+        assertEquals(phone.otherPin, f.pinRecord(OTHER_VAULT).slot)
+        assertEquals(phone.otherFingerprint, f.fingerprintRecord(OTHER_VAULT).slot)
+        assertEquals(emptyList<String>(), f.keys.deleted)
+        assertEquals(listOf(OTHER_VAULT), f.engine.summary.value.aside.map { it.vaultId })
+
+        // Back is all it offers: no pad, no field, no fingerprint, and it does not change by itself.
+        f.type("1")
+        await { f.engine.useMasterPassword() }
+        await { f.engine.usePin() }
+        await { f.engine.notNow() }
+        await { f.engine.cantRemember() }
+        await { f.engine.promptIfDue() }
+        await { f.engine.useFingerprint() }
+        await { f.engine.refresh() }
+        assertEquals(cannotOpen, f.screen)
+        assertFalse(f.pinRecord(OTHER_VAULT).guard.charged)
+        assertTrue(f.keys.prompts.isEmpty())
+        assertFalse(await { f.engine.startEmpty() })
+        assertEquals(emptyList<String>(), f.port.writingCalls)
+
+        // Back: the current vault's lock screen, as it was.
+        await { f.engine.goBack() }
+        assertEquals(LockScreen.Pad(digits = 0, status = null, fingerprintKey = false, opening = false, aside = null), f.screen)
+        f.type(PIN)
+        assertEquals(VAULT, f.port.openVaultId)
+        assertEquals(emptyList<String>(), f.port.writingCalls)
+    }
+
+    @Test
+    fun f17step4_decision6_aRightMasterPasswordThatFindsNoCopyThatOpens_isNotCounted_andNothingCanBeTypedThere() {
+        twoVaults(otherPin = false)
+        f.startInFront()
+        await { f.engine.showAside(OTHER_VAULT) }
+        assertEquals(AsideLine.LockedOn(lockedOn), f.field.aside)
+        // A copy above the one its slot opens cannot be read now (an I/O error): storage never opens past it.
+        f.port.vault(OTHER_VAULT)!!.save().state = FakeVaultPort.FileState.UNREADABLE
+
+        assertEquals(MasterPasswordOutcome.TooLate, f.unlockWith(Secrets.OTHER))
+
+        assertEquals(LockScreen.CannotOpen(AsideLine.LockedOn(lockedOn)), f.screen)
+        assertEquals(0, f.stateRecord(OTHER_VAULT).mpGuard.failures) // neither right nor wrong: not counted (§6.8)
+        assertNull(f.port.openAsideId)
+        assertEquals(VAULT, f.port.current!!.vaultId)
+        assertEquals(emptyList<String>(), f.port.writingCalls)
+        // No field: a password sent anyway is not checked.
+        val checks = f.port.calls.count { it.startsWith("openWithPassword") }
+        assertEquals(MasterPasswordOutcome.TooLate, f.unlockWith(Secrets.OTHER))
+        assertEquals(checks, f.port.calls.count { it.startsWith("openWithPassword") })
+        assertEquals(LockScreen.CannotOpen(AsideLine.LockedOn(lockedOn)), f.screen)
+    }
+
+    @Test
+    fun f17step4_decision6_aFingerprintThatFindsNoCopyThatOpens_getsTheSameScreen() {
+        val phone = twoVaults(otherFingerprint = true)
+        f.startInFront()
+        await { f.engine.showAside(OTHER_VAULT) }
+        assertTrue(f.pad.fingerprintKey)
+        f.port.vault(OTHER_VAULT)!!.live.first().state = FakeVaultPort.FileState.NEWER // written by a newer version of the app
+
+        await { f.engine.useFingerprint() }
+
+        assertEquals(1, f.keys.prompts.size)
+        assertEquals(LockScreen.CannotOpen(AsideLine.LockedOn(lockedOn)), f.screen)
+        assertEquals(phone.otherFingerprint, f.fingerprintRecord(OTHER_VAULT).slot) // nothing is removed (I6)
+        assertEquals(VAULT, f.port.current!!.vaultId)
+        assertEquals(emptyList<String>(), f.port.writingCalls)
+    }
+
+    @Test
+    fun f17step4_decision6_theVaultFromBeforeAReplacement_keepsItsOwnLine_andIsAskedNothing() {
+        val at = f.clock.wallMs() - 2 * PracticeSchedule.DAY_MS
+        val marked = StateRecord(
+            OTHER_VAULT, StateRecord.Practice(f.clock.wallMs(), 3, null), StateRecord.MpGuard(0, null, 0), null, null,
+            StateRecord.Replaced(VAULT, at, Shortcut.PIN, 0L, f.clock.elapsedMs()), StateRecord.MaxGeneration(1, f.clock.wallMs()),
+        )
+        twoVaults(otherState = marked)
+        f.startInFront()
+        await { f.engine.showAside(OTHER_VAULT) }
+        assertEquals(MpReason.FromBefore(at), f.field.reason)
+        f.port.vault(OTHER_VAULT)!!.live.forEach { it.state = FakeVaultPort.FileState.DAMAGED }
+
+        assertEquals(MasterPasswordOutcome.TooLate, f.unlockWith(Secrets.OTHER))
+
+        // Its line, and not the question of F16b step 3: nothing opened, so there is nothing to ask.
+        assertEquals(LockScreen.CannotOpen(AsideLine.FromBefore(at)), f.screen)
+        assertNotNull(f.stateRecord(OTHER_VAULT).replaced)
+        assertNull(f.port.openAsideId)
+        assertEquals(emptyList<String>(), f.port.writingCalls)
+        await { f.engine.goBack() }
+        assertNull(f.pad.aside)
+        assertEquals(listOf(OTHER_VAULT), f.port.asideVaults.map { it.vaultId })
+    }
+
+    @Test
+    fun f17step4_decision6_theScreenLastsForItsVisit_andTheVaultOpensOnceItsFileCanBeRead() {
+        twoVaults()
+        f.startInFront()
+        await { f.engine.showAside(OTHER_VAULT) }
+        val generation = f.port.vault(OTHER_VAULT)!!.live.first()
+        generation.state = FakeVaultPort.FileState.UNREADABLE // a passing storage error
+        val pad = LockScreen.Pad(digits = 0, status = null, fingerprintKey = false, opening = false, aside = AsideLine.LockedOn(lockedOn))
+
+        f.type(Secrets.OTHER_PIN)
+        assertTrue(f.screen is LockScreen.CannotOpen)
+
+        // The app was left and is back: a new visit, and that vault's own pad again.
+        f.leaveAndReturn()
+        assertEquals(pad, f.screen)
+        // A screen-off lock ends the visit too (lock.md §6.3, decision 29).
+        f.type(Secrets.OTHER_PIN)
+        assertTrue(f.screen is LockScreen.CannotOpen)
+        f.lock(LockCause.SCREEN_OFF)
+        assertEquals(pad, f.screen)
+
+        // Its file can be read again: its PIN opens it, and only now do the two vaults change places.
+        generation.state = FakeVaultPort.FileState.OK
+        f.type(Secrets.OTHER_PIN)
+        assertTrue(f.state is LockState.Unlocked)
         assertEquals(OTHER_VAULT, f.port.current!!.vaultId)
         assertEquals(listOf("swapIn $OTHER_VAULT"), f.port.writingCalls)
     }

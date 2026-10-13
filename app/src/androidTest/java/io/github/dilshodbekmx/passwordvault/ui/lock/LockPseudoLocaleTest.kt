@@ -152,6 +152,8 @@ class LockPseudoLocaleTest {
             LockUiState.Locked(LockScreen.OlderPassword(AT, unfinishedChange = false, aside = AsideLine.LockedOn(AT))),
             LockUiState.Locked(LockScreen.OpenOlderSet(AT, AsideLine.FromBefore(AT))),
             LockUiState.Locked(LockScreen.OpenOlderSet(AT, AsideLine.LockedOn(AT))),
+            LockUiState.Locked(LockScreen.CannotOpen(AsideLine.LockedOn(AT))),
+            LockUiState.Locked(LockScreen.CannotOpen(AsideLine.FromBefore(AT))),
             LockUiState.Unreadable(CurrentVault.Why.IO, listOf(AsideVault("00000000-0000-4000-8000-0000000000aa", AT, null))),
             LockUiState.Unreadable(CurrentVault.Why.DAMAGED, emptyList()),
             LockUiState.Unreadable(CurrentVault.Why.NEWER, emptyList()),

@@ -229,11 +229,28 @@ internal class UnlockFlows(private val core: LockCore) {
 
     /**
      * Holds the mutex: a right PIN, fingerprint or master password (the pending one of F11 among
-     * them), and no generation that can be used: "Your passwords can't be opened", with "Try again".
+     * them), and no generation that can be used (lock.md §13.1 row 2, F17 step 4).
+     *
+     * - On the current vault's lock screen: "Your passwords can't be opened" ([LockState.Unreadable]),
+     *   with "Try again" for an I/O error; the visit ends.
+     * - On the lock screen of a vault put aside (build-plan.md §12, decision 6): that vault's screen
+     *   stays and says that its copies cannot be opened ([LockScreen.CannotOpen]), with Back only,
+     *   for the rest of the visit. The current vault is fine, so its "Your passwords can't be
+     *   opened" is not shown: its "Restore from a backup file" would put the current vault aside.
+     *   The same words whatever [why] is. Nothing is deleted, and nothing is written but the record
+     *   of a right PIN ([flushPin]).
      */
     fun cannotOpen(visit: LockVisit, why: CurrentVault.Why, flushPin: Boolean) {
         if (flushPin) visit.target.lock.pin.flush()
         if (visit.place.hasEnded) return
+        if (visit.target.aside != null) {
+            visit.cannotOpen = true
+            visit.opening = false
+            giveUpEntry(visit) // the screen has no pad: a charge held for digits typed meanwhile is refunded (§6.3 A)
+            core.showLockScreen()
+            core.publishSummary()
+            return
+        }
         core.endVisitNow()
         core.closeVisit()
         core.target = null
@@ -416,7 +433,14 @@ internal class UnlockFlows(private val core: LockCore) {
                     VaultOpen.Unreadable -> cannotOpen(visit, CurrentVault.Why.IO, flushPin = false)
                 }
             }
-            is FingerprintResult.Closed -> core.showLockScreen() // codes 10, 13 and 5 show the pad
+            is FingerprintResult.Closed -> {
+                // Codes 10, 13 and 5 show the pad. On the fingerprint-only screen the prompt's negative button is
+                // "Use master password" (lock.md §9.2 rule 5): its code 13 opens the master-password screen, as the
+                // screen's own button does (build-plan.md §12, decision 19).
+                val screen = (core.state.value as? LockState.Locked)?.screen
+                if (result.code == KeystoreErrors.ERROR_NEGATIVE_BUTTON && screen is LockScreen.FingerprintOnly) visit.masterPasswordChosen = true
+                core.showLockScreen()
+            }
             is FingerprintResult.Gone -> fingerprintGone(visit, result.why)
             is FingerprintResult.Temporary -> {
                 visit.fingerprintLine = KeystoreErrors.temporaryLine(result.code)

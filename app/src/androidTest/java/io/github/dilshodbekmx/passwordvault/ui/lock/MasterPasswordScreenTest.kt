@@ -40,6 +40,7 @@ import io.github.dilshodbekmx.passwordvault.lock.LockUiState
 import io.github.dilshodbekmx.passwordvault.lock.MpPurpose
 import io.github.dilshodbekmx.passwordvault.lock.MpResult
 import io.github.dilshodbekmx.passwordvault.lock.PinStatus
+import io.github.dilshodbekmx.passwordvault.ui.common.FieldKeyboard
 import java.util.concurrent.atomic.AtomicReference
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -194,6 +195,9 @@ class MasterPasswordScreenTest {
     fun backOnTheScreenOfAVaultPutAsideGoesBackToTheCurrentVault() {
         val lock = FakeLockManager(initial = LockUiState.Locked(PLAIN_SCREEN.copy(aside = AsideLine.LockedOn(1_791_244_800_000L))))
         show(lock)
+        // The field has the keyboard; once the screen has stopped asking for it (FieldKeyboard), it is closed by hand.
+        compose.waitUntil(5_000) { isFocused(LockTags.FIELD) }
+        SystemClock.sleep(FieldKeyboard.AGAIN_MS + 300)
         Espresso.closeSoftKeyboard()
         Espresso.pressBack()
         compose.waitForIdle()

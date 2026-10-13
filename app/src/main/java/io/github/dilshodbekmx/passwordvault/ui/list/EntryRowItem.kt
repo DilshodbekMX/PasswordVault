@@ -10,6 +10,8 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemColors
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -21,6 +23,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -39,7 +42,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.dilshodbekmx.passwordvault.R
 import io.github.dilshodbekmx.passwordvault.core.search.matchedRanges
+import io.github.dilshodbekmx.passwordvault.ui.common.CardPart
+import io.github.dilshodbekmx.passwordvault.ui.common.cardPart
+import io.github.dilshodbekmx.passwordvault.ui.theme.CardsLook
 import io.github.dilshodbekmx.passwordvault.ui.theme.LocalLook
+import io.github.dilshodbekmx.passwordvault.ui.theme.Look
 
 /**
  * What a row's taps, its menu and its TalkBack actions do (ux.md §5.11). Made once per screen.
@@ -74,9 +81,19 @@ internal class RowActions(
  *
  * @param key the row's key in the list, which the copy button's tag and [copied] refer to.
  * @param modifier for the row itself, the merged node that TalkBack reads.
+ * @param card the row's part of its group's card ([ListCards]); drawn only where the style groups
+ *   rows on cards (Emerald, docs/design/looks/README.md).
  */
 @Composable
-internal fun EntryRowItem(row: EntryRow, searched: String?, copied: Boolean, key: String, actions: RowActions, modifier: Modifier = Modifier) {
+internal fun EntryRowItem(
+    row: EntryRow,
+    searched: String?,
+    copied: Boolean,
+    key: String,
+    actions: RowActions,
+    modifier: Modifier = Modifier,
+    card: CardPart? = null,
+) {
     var menu by remember { mutableStateOf(false) }
     val title = remember(row.title, searched) { bold(row.title, searched) }
     val detail = remember(row.detail, searched) { bold(row.detail, searched) }
@@ -91,7 +108,9 @@ internal fun EntryRowItem(row: EntryRow, searched: String?, copied: Boolean, key
         edit = stringResource(R.string.list_menu_edit),
         delete = stringResource(R.string.common_delete),
     )
-    Box {
+    val look = LocalLook.current
+    val part = rowGroup(look, card)
+    Box(Modifier.cardPart(part, look)) {
         ListItem(
             headlineContent = { Text(title, maxLines = 2, overflow = TextOverflow.Ellipsis) },
             supportingContent = if (row.detail.isEmpty()) {
@@ -108,6 +127,7 @@ internal fun EntryRowItem(row: EntryRow, searched: String?, copied: Boolean, key
             },
             leadingContent = { InitialBadge(row) },
             trailingContent = { RowEnd(row, copied, key, actions) },
+            colors = rowColours(part),
             // The merged node that TalkBack reads ("Gmail, aziz@gmail.com"), with the row's actions.
             modifier = modifier
                 .combinedClickable(onLongClick = { menu = true }, onClick = { actions.open(row) })
@@ -239,6 +259,14 @@ private fun InitialBadge(row: EntryRow) {
         Text(row.initial, color = tone.letter, style = MaterialTheme.typography.titleMedium, maxLines = 1)
     }
 }
+
+/** [part] where [look] groups the list's rows on cards (Emerald, `CardsLook.ROW_GROUPS`); null elsewhere. */
+internal fun rowGroup(look: Look, part: CardPart?): CardPart? = if (look.cards == CardsLook.ROW_GROUPS) part else null
+
+/** A row's colours: Material 3's on the screen, with no colour of its own on a card, whose colour is behind it. */
+@Composable
+internal fun rowColours(part: CardPart?): ListItemColors =
+    if (part == null) ListItemDefaults.colors() else ListItemDefaults.colors(containerColor = Color.Transparent)
 
 /** [text] with the parts that [query] matched in bold (search.md §2 `matchedRanges`); plain without a query. */
 internal fun bold(text: String, query: String?): AnnotatedString {

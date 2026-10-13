@@ -48,6 +48,7 @@ import io.github.dilshodbekmx.passwordvault.lock.PinChange
 import io.github.dilshodbekmx.passwordvault.lock.PinSetResult
 import io.github.dilshodbekmx.passwordvault.lock.PinStatus
 import io.github.dilshodbekmx.passwordvault.nav.Navigator
+import io.github.dilshodbekmx.passwordvault.ui.common.KeyboardFirstOnBack
 import io.github.dilshodbekmx.passwordvault.ui.common.PIN_LENGTH
 import io.github.dilshodbekmx.passwordvault.ui.setup.BodyText
 import io.github.dilshodbekmx.passwordvault.ui.setup.BusyCover
@@ -469,6 +470,7 @@ fun ChangePinScreen(vm: ChangePinViewModel, nav: Navigator, modifier: Modifier =
     }
     BackHandler(enabled = ui.stage == ChangePinViewModel.Stage.SAVING) { /* ignored while the lock saves (ux.md §4) */ }
     BackHandler(enabled = ui.stage == ChangePinViewModel.Stage.CONFIRM) { vm.backFromConfirm() }
+    KeyboardFirstOnBack()
     val title = stringResource(if (ui.mode == ChangePinViewModel.Mode.CHANGE) R.string.settings_change_pin else R.string.settings_set_pin)
     Scaffold(
         modifier = modifier.semantics {

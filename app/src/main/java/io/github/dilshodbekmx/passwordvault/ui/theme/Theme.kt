@@ -13,11 +13,14 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.Hyphens
 import androidx.compose.ui.text.style.LineBreak
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.dilshodbekmx.passwordvault.settings.AppSettings
 import io.github.dilshodbekmx.passwordvault.settings.StyleChoice
@@ -62,8 +65,7 @@ fun PasswordVaultTheme(style: StyleChoice, theme: ThemeChoice, content: @Composa
 
 /**
  * The default style, Bank blue, in a fixed [theme], without touching the system bars: for previews
- * and tests, and for the few parts drawn outside the app's theme (the window kit's notice of an
- * obscured touch).
+ * and tests.
  */
 @Composable
 fun PasswordVaultTheme(theme: ThemeChoice, content: @Composable () -> Unit) {
@@ -146,6 +148,29 @@ private fun SystemBarsFollow(dark: Boolean) {
         onDispose { }
     }
 }
+
+/**
+ * While this is composed, the status bar's icons are drawn for [colour], which the screen draws
+ * behind the status bar: light icons on a dark colour, dark icons on a light one. When it leaves
+ * the composition they are as they were, which is what the theme set ([SystemBarsFollow]). For
+ * Bank blue's lock-screen panel (docs/design/looks/README.md "Lock screen"), whose blue reaches the
+ * top of the screen also in a light theme, where the theme draws dark icons.
+ */
+@Composable
+fun StatusBarIconsOver(colour: androidx.compose.ui.graphics.Color) {
+    val view = LocalView.current
+    val window = LocalActivity.current?.window ?: return
+    val lightBehind = colour.luminance() > HALF
+    DisposableEffect(window, view, lightBehind) {
+        val controller = WindowCompat.getInsetsController(window, view)
+        val before = controller.isAppearanceLightStatusBars
+        controller.isAppearanceLightStatusBars = lightBehind
+        onDispose { controller.isAppearanceLightStatusBars = before }
+    }
+}
+
+/** Above this relative luminance a colour is light: dark icons go on it. */
+private const val HALF = 0.5f
 
 /** androidx.activity's navigation bar scrims (`EdgeToEdge.kt`, internal there). */
 private val LIGHT_SCRIM = Color.argb(0xe6, 0xFF, 0xFF, 0xFF)

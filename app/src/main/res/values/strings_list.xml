@@ -102,6 +102,10 @@
     <string name="list_no_browser">No browser found on this phone.</string>
     <!-- Message when the phone refused to copy (some phone makers' builds do, ux.md §6). -->
     <string name="list_copy_blocked">This phone blocked copying. Open the password with Show in big letters and type it.</string>
+    <!-- Short message at the bottom when the screen of an account came back to this list by itself,
+         because that account is not in the app any more (for example it was removed for good from
+         “Recently deleted”, ux.md §5.12). -->
+    <string name="list_account_gone">This account no longer exists.</string>
 
     <!-- ===== Banners at the top of the list: at most two at a time (ux.md §5.11) ===== -->
 

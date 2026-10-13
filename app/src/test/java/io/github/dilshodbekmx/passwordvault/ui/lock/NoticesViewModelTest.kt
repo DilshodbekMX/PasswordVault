@@ -252,6 +252,22 @@ class NoticesViewModelTest {
     }
 
     @Test
+    fun itWasntMeOnTheNoticeGoesThroughTheSession_asTheBannersDoes() = runTest {
+        // build-plan.md §12, w5-carry step 3 item 1: the notice's answer as NoticeAnswered(IT_WASNT_ME) made the engine
+        // lock from inside, without Session.lockNow, so our clip stayed and a draft was not flushed.
+        val lock = FakeLockManager(initial = unlocked(Notice.Replaced(4, REPLACED_AT, Shortcut.PIN, LockKit.VAULT_A), Notice.BackupNow(5)))
+        val vm = vm(lock)
+        assertEquals(4L, vm.notice.value!!.id)
+        vm.answer(4, NoticeAnswer.IT_WASNT_ME)
+        runCurrent()
+        assertEquals(listOf<LockIntent>(LockIntent.ItWasntMe), lock.sent)
+        // Its other answer is an answer to the notice as any other.
+        lock.sent.clear()
+        vm.answer(4, NoticeAnswer.OK)
+        assertEquals(listOf<LockIntent>(LockIntent.NoticeAnswered(4, NoticeAnswer.OK)), lock.sent)
+    }
+
+    @Test
     fun choosePinWithAProofOpensTheScreenAndIsAnsweredWhenThePinScreensAreLeft() = runTest {
         val lock = FakeLockManager(initial = unlocked(Notice.ChoosePin(5, ChoosePinReason.NONE_HERE, needsMasterPassword = false), Notice.BackupNow(6)))
         val vm = vm(lock)

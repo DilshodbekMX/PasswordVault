@@ -20,11 +20,10 @@ import io.github.dilshodbekmx.passwordvault.settings.StyleChoice
  * differs between styles besides colour"). A screen reads them from the theme, [LocalLook], and
  * never asks which style is chosen; the colours are also `MaterialTheme.colorScheme`.
  *
- * [pinKeys], [fingerprintKeyTonal], [avatarShape] and [avatarTones] are drawn today (the PIN pad, the
- * list). [lockPanel], [cards] and [addButton] are the table's other rows, and [barOutline] and
- * [searchOutline] the two outlines of its colour table, for the screens that own the lock screen, the
- * list, the account's screen and the frame of the tabs: the looks' second step (build-plan.md §12,
- * `w5-carry`).
+ * [pinKeys], [fingerprintKeyTonal], [avatarShape] and [avatarTones] are drawn by the PIN pad and the
+ * list (4.3b). [lockPanel], [cards] and [addButton] are the table's other rows, and [barOutline] and
+ * [searchOutline] the two outlines of its colour table, drawn by the lock screen, the list, the
+ * account's screen and the frame of the tabs: the looks' second step (build-plan.md §12, `w5-carry`).
  *
  * @property colors the Material 3 colour scheme.
  * @property pinKeys how a digit key of the PIN pad is drawn.
@@ -32,9 +31,8 @@ import io.github.dilshodbekmx.passwordvault.settings.StyleChoice
  *   fill and its icon has the primary colour.
  * @property avatarShape the shape of an account's badge in the list.
  * @property avatarTones the badge's [AVATAR_TONES] tones.
- * @property lockPanel the lock screen's icon, name, subtitle and dots sit on a panel in the primary
- *   colour with rounded lower corners. (The mock-up shows it in light; in Bank blue's dark scheme the
- *   blue of that panel, #1D4E89, is `primaryContainer`.)
+ * @property lockPanel the lock screen's logo, name, subtitle and dots sit on a panel of these colours
+ *   (Bank blue only); null: they lie on the screen.
  * @property cards which rows of the list and of an account's screen lie on cards.
  * @property addButton how the list's "Add" button is drawn.
  * @property barOutline the colour of a hairline along the navigation bar's upper edge, where the bar
@@ -49,12 +47,24 @@ class Look(
     val fingerprintKeyTonal: Boolean,
     val avatarShape: Shape,
     val avatarTones: List<AvatarTone>,
-    val lockPanel: Boolean,
+    val lockPanel: LockPanel?,
     val cards: CardsLook,
     val addButton: AddButtonLook,
     val barOutline: Color? = null,
     val searchOutline: Color? = null,
 ) {
+    /**
+     * The colour of a card that rows lie on ([cards]): the README's "surface (cards, sheets)",
+     * `surfaceContainerLow` (white in Emerald's light scheme, lighter than the screen in a dark one).
+     */
+    val cardColour: Color get() = colors.surfaceContainerLow
+
+    /**
+     * The outline of such a card: Night vault's password block has one of the divider's colour, as
+     * its mock-up draws it; Emerald's cards have none.
+     */
+    val cardOutline: Color? get() = if (cards == CardsLook.PASSWORD_BLOCK) colors.outlineVariant else null
+
     /**
      * The same details with other colours: a style's other mode, or the wallpaper's scheme. The two
      * outlines belong to one scheme's colours, so they are given again or left out.
@@ -62,8 +72,27 @@ class Look(
     internal fun copy(
         colors: ColorScheme = this.colors,
         avatarTones: List<AvatarTone> = this.avatarTones,
-        lockPanel: Boolean = this.lockPanel,
+        lockPanel: LockPanel? = this.lockPanel,
     ): Look = Look(colors, pinKeys, fingerprintKeyTonal, avatarShape, avatarTones, lockPanel, cards, addButton)
+}
+
+/**
+ * Bank blue's lock-screen panel (docs/design/looks/README.md "Lock screen"): the panel behind the
+ * lock screen's logo, name, subtitle and dots, and the colours of what lies on it. The mock-up shows
+ * it in light, where the panel is the primary colour; in the dark scheme the same blue, #1D4E89, is
+ * `primaryContainer`.
+ *
+ * @property colour the panel.
+ * @property content the name, the line of a vault put aside and the filled dots.
+ * @property quiet the subtitle "Enter your app PIN", a step quieter than [content].
+ * @property ring an empty dot's ring.
+ * @property logoTile the logo's tile on the panel, a lighter blue than the panel (the mock-up's);
+ *   the shield on it is [content], inside a ring of [content] at a quarter ([logoRing]).
+ */
+@Immutable
+class LockPanel(val colour: Color, val content: Color, val quiet: Color, val ring: Color, val logoTile: Color) {
+    /** The logo's hairline on the panel: [content] at a quarter, as in the mock-up. */
+    val logoRing: Color get() = content.copy(alpha = LOGO_RING_ALPHA)
 }
 
 /** A digit key of the PIN pad. */
@@ -90,7 +119,7 @@ enum class CardsLook {
     PASSWORD_BLOCK,
 }
 
-/** The list's "Add" button. */
+/** The list's "Add" button (the README's "\"Add\" button"). */
 enum class AddButtonLook {
     /** Tonal: the primary container's colours. */
     TONAL,
@@ -100,6 +129,16 @@ enum class AddButtonLook {
 
     /** Filled and fully rounded. */
     FILLED_ROUND,
+    ;
+
+    /** The button's colour in [colors]: the primary container when tonal, the primary colour when filled. */
+    fun container(colors: ColorScheme): Color = if (this == TONAL) colors.primaryContainer else colors.primary
+
+    /** The colour of the button's icon and label: the one made to lie on [container]. */
+    fun content(colors: ColorScheme): Color = if (this == TONAL) colors.onPrimaryContainer else colors.onPrimary
+
+    /** Fully rounded: a pill, and a circle while it shows its icon alone. Otherwise Material 3's corners of 16 dp. */
+    val fullyRounded: Boolean get() = this == FILLED_ROUND
 }
 
 /**
@@ -116,11 +155,27 @@ object Looks {
         fingerprintKeyTonal = false,
         avatarShape = CircleShape,
         avatarTones = BankBlueLightTones,
-        lockPanel = true,
+        lockPanel = LockPanel(
+            colour = BankBlueLight.primary,
+            content = BankBlueLight.onPrimary,
+            quiet = BankBlueLight.primaryContainer,
+            ring = BankBlueLight.inversePrimary,
+            logoTile = BankBluePanelTile,
+        ),
         cards = CardsLook.NONE,
         addButton = AddButtonLook.TONAL,
     )
-    private val bankBlueDark = bankBlueLight.copy(colors = BankBlueDark, avatarTones = BankBlueDarkTones)
+    private val bankBlueDark = bankBlueLight.copy(
+        colors = BankBlueDark,
+        avatarTones = BankBlueDarkTones,
+        lockPanel = LockPanel(
+            colour = BankBlueDark.primaryContainer,
+            content = BankBlueDark.onPrimaryContainer,
+            quiet = BankBlueDark.primary,
+            ring = BankBlueDark.primary,
+            logoTile = BankBluePanelTile,
+        ),
+    )
 
     private val emeraldLight = Look(
         colors = EmeraldLight,
@@ -128,7 +183,7 @@ object Looks {
         fingerprintKeyTonal = true,
         avatarShape = RoundedCornerShape(percent = AVATAR_SQUARE_CORNER),
         avatarTones = EmeraldLightTones,
-        lockPanel = false,
+        lockPanel = null,
         cards = CardsLook.ROW_GROUPS,
         addButton = AddButtonLook.FILLED_ROUND,
         // The README's "#FFFFFF with an outline #DCE5E1" and "#FFFFFF with an outline #BEC9C5".
@@ -143,7 +198,7 @@ object Looks {
         fingerprintKeyTonal = false,
         avatarShape = CircleShape,
         avatarTones = NightVaultDarkTones,
-        lockPanel = false,
+        lockPanel = null,
         cards = CardsLook.PASSWORD_BLOCK,
         addButton = AddButtonLook.FILLED,
     )
@@ -168,7 +223,7 @@ object Looks {
     fun phone(context: Context, dark: Boolean): Look =
         of(StyleChoice.BANK_BLUE, dark).copy(
             colors = if (dark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context),
-            lockPanel = false,
+            lockPanel = null,
         )
 
     /** The look to draw [style] with on this phone: [phone] where the phone has colours of its own, else [of]. */
@@ -178,3 +233,6 @@ object Looks {
 
 /** A square badge's corner, in per cent of its side: 12 dp of 40 dp. */
 private const val AVATAR_SQUARE_CORNER = 30
+
+/** The mock-up's ring of the logo on the panel: white at 25 per cent. */
+private const val LOGO_RING_ALPHA = 0.25f

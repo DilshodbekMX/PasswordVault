@@ -149,6 +149,11 @@ class PasswordFlowsVaultWriteTest {
                         await { f.engine.useMasterPassword() }
                         return emptySet()
                     }
+                    is LockScreen.CannotOpen -> { // build-plan §12, decision 6: Back is all it offers
+                        log += "led: back from a vault put aside that cannot be opened"
+                        await { f.engine.goBack() }
+                        return emptySet()
+                    }
                     is LockScreen.MasterPassword -> {
                         val own = passwordsOf(target.vaultId)
                         val candidates = own + listOf(NEW_PASSWORD, THIRD_PASSWORD)

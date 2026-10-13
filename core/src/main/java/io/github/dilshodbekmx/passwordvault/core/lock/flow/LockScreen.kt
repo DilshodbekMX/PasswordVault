@@ -85,6 +85,20 @@ sealed interface LockScreen {
      * while `LockVisit.olderSet` is set.
      */
     data class OpenOlderSet(val atMs: Long, override val aside: AsideLine?) : LockScreen
+
+    /**
+     * The lock screen of a vault put aside, once a right PIN, fingerprint or master password has
+     * found that no copy of it opens (lock.md F17 step 4, §13.2; build-plan.md §12, decision 6):
+     * that vault's screen stays, with its line ([aside]), "These passwords can't be opened. Their
+     * files on this phone are damaged." and "Back" only, which returns to the current vault
+     * (`LockEngine.goBack`). No field and no pad, and never "Restore from a backup file": the
+     * current vault is fine, and a restore would put it aside. "Your passwords can't be opened"
+     * (`LockState.Unreadable`) is the current vault's screen only. Nothing is deleted.
+     *
+     * `EntryPolicy` never chooses this screen: it is shown for the rest of the visit on which the
+     * entry was made (`LockVisit.cannotOpen`); the next visit shows that vault's own screen again.
+     */
+    data class CannotOpen(override val aside: AsideLine) : LockScreen
 }
 
 /** The line on the lock screen of a vault put aside (lock.md §13.2, F17 step 4, F16b). */
