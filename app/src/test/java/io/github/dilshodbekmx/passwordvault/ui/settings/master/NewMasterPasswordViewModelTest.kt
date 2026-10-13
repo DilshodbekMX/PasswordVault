@@ -439,6 +439,27 @@ class NewMasterPasswordViewModelTest {
         assertEquals(0, lock.fake.newMasterPasswordLeft)
     }
 
+    @Test
+    fun aRequestMadeBeforeALock_doesNotKeepTheNextFlowFromLeaving() = runTest(dispatcher) {
+        val lock = lockWith()
+        val vm = model(lock)
+        vm.proveWithoutPin()
+        advanceUntilIdle()
+        chooseAndTypeAgain(vm)
+        advanceUntilIdle()
+        assertEquals(NewStage.WAIT, vm.ui.value.stage)
+        lock.fake.lock(LockReason.LEFT) // the screen went off on the wait; the route stays
+        advanceUntilIdle()
+        lock.fake.state.value = LockUiState.Unlocked(emptyList(), null) // opened again
+        advanceUntilIdle()
+        assertEquals("the route starts again", NewStage.EXPLAIN, vm.ui.value.stage)
+        vm.proveWithoutPin() // a new flow with a new proof
+        advanceUntilIdle()
+        assertEquals(NewStage.CHOOSE, vm.ui.value.stage)
+        vm.back() // Back from choosing: this flow ends without a request
+        assertEquals("the new flow's proof goes with it (lock.md F11 step 3)", 1, lock.fake.newMasterPasswordLeft)
+    }
+
     // ---- "Finish now" (lock.md F11 steps 13 to 19; decision 14) ---------------------------------------
 
     @Test

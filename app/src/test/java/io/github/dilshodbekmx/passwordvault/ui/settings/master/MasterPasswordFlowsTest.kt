@@ -520,6 +520,38 @@ class MasterPasswordFlowsTest {
     }
 
     @Test
+    fun f11_aRouteThatMadeARequestBeforeALock_stillEndsTheProofOfItsNextFlow() = runTest {
+        val rig = rig()
+        phone(rig, fingerprint = false)
+        val vm = newOne(rig)
+        ask(rig, vm) {
+            vm.proveWithoutPin()
+            rig.settle()
+            digits(rig, PIN, vm::digit)
+            rig.advance(LockRig.CHARGE_AGE_MS)
+        }
+        assertNotNull(rig.status.pending)
+
+        // The screen goes off on the wait; the PIN opens the app again, on the same route.
+        rig.lock()
+        rig.typePin()
+        assertTrue(rig.isUnlocked)
+        rig.answerNotices(NoticeAnswer.LATER)
+        assertEquals("the route starts again", NewStage.EXPLAIN, vm.ui.value.stage)
+        vm.proveWithoutPin()
+        rig.settle()
+        digits(rig, PIN, vm::digit)
+        rig.advance(LockRig.CHARGE_AGE_MS)
+        assertEquals(NewStage.CHOOSE, vm.ui.value.stage)
+        vm.back() // Back from choosing: this flow ends without a request
+        rig.settle()
+        rig.advance(HOUR_MS) // an hour later, in the same session: no lock, no ON_STOP
+
+        assertEquals("no request without the PIN again (build-plan.md §12 item 13)", RequestResult.NotAllowed, request(rig))
+        assertEquals(ProofResult.NeedsPin, prove(rig))
+    }
+
+    @Test
     fun f11_theAppLeftWhileThePasswordIsChosen_thePinIsAskedAgain_andTheRequestFollows() = runTest {
         val rig = rig()
         phone(rig, fingerprint = false)

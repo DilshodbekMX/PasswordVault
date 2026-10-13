@@ -403,11 +403,16 @@ class NewMasterPasswordViewModel(
         countdown = null
     }
 
-    /** The app locked: the flow is over (the lock dropped the proof itself); after the unlock the route starts again. */
+    /**
+     * The app locked: the flow is over (the lock dropped the proof itself); after the unlock the route
+     * starts again with a new flow, in which no request was made yet, so that its proof, too, goes
+     * when it ends without one.
+     */
     private fun lockedNow() {
         asking = false
         dropAll()
         state.value = startUi(lock.status.value)
+        requested = false
         asking = true
     }
 
