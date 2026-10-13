@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The guided change of one password (ux.md §5.17; build plan 7.2): one screen with five numbered
+     steps that the person comes back to several times while they change the password on the
+     website, and the end of the change. Every name starts with change_. Sentence case, "you" and
+     plain words (i18n.md §4, ux.md §7). English only until the translations (build plan §12, "What
+     follows from the order").
+
+     Passwords are named from the website's point of view: the OLD password is the one the website
+     has now; the NEW password is the one the app created. An account's name (%1$s) is a text the
+     person typed, such as “Gmail” or “Kapitalbank”: where one stands in a sentence, write the
+     sentence so that its ending never has to change (add a noun such as “account” or “website” in
+     languages that would have to add an ending to the name). -->
+<resources>
+
+    <!-- ===== The top bar ===== -->
+
+    <!-- The screen's title, at most about 20 characters (glossary 95, “Change password”). -->
+    <string name="change_title">Change password</string>
+    <!-- The back arrow in the top bar, read by TalkBack. -->
+    <string name="change_back">Back</string>
+
+    <!-- ===== Above the steps ===== -->
+
+    <!-- Shown above the steps when every other account that used the same password has a new one
+         already, so that this account is the last one that has it. -->
+    <string name="change_last_one">Last one! After this, your old password is not used anywhere.</string>
+    <!-- A small label above each step's title: %1$d is the step's number (1 to 5), %2$d how many
+         steps there are (5). -->
+    <string name="change_step_number">Step %1$d of %2$d</string>
+
+    <!-- ===== Step 1 ===== -->
+
+    <!-- Step 1's title. %1$s is the account's name, usually a website or a company, for example
+         “Gmail”: open its website or its app and sign in there. -->
+    <string name="change_step1">Open %1$s and sign in.</string>
+    <!-- Button: opens the account's website in the browser. -->
+    <string name="change_open_website">Open website</string>
+    <!-- Button: copies the password the website has now, to paste it there. -->
+    <string name="change_copy_old">Copy old password</string>
+
+    <!-- ===== Step 2 ===== -->
+
+    <!-- Step 2's title: find the website's own page or button for a new password. “Change
+         password” is what the button is called on most websites; keep the quotation marks of the
+         language. -->
+    <string name="change_step2">Find “Change password”.</string>
+    <!-- Under step 2's title: where websites usually put it. Settings, Security, Account and
+         Password are the names of a website's menus; › leads from a menu to an item in it. -->
+    <string name="change_step2_where">It is usually in Settings › Security, or Account › Password.</string>
+
+    <!-- ===== Step 3 ===== -->
+
+    <!-- Step 3's title. -->
+    <string name="change_step3">Create the new password.</string>
+    <!-- Button: the app makes a strong new password and saves it in the account at once. -->
+    <string name="change_create">Create new password</string>
+    <!-- The same button once a new password was made: the website did not take it, so the app makes
+         another one. -->
+    <string name="change_create_another">Create another password</string>
+    <!-- Under the button once a new password was made and saved. -->
+    <string name="change_saved">Saved. Your old password is kept until you finish.</string>
+    <!-- Text button: opens the password generator to choose the length and the kinds of characters,
+         for a website that refuses some of them. -->
+    <string name="change_rules">Password rules</string>
+
+    <!-- ===== Step 4 ===== -->
+
+    <!-- Step 4's title: paste both passwords into the website's form. -->
+    <string name="change_step4">Paste the passwords into the website.</string>
+    <!-- Button: copies the password the app has just made. -->
+    <string name="change_copy_new">Copy new password</string>
+    <!-- A hint under step 4. -->
+    <string name="change_hint_ask">Websites usually ask for the old password once and the new one twice.</string>
+    <!-- A hint under step 4: the browser may offer its own password; the person must paste the one
+         this app made, which is saved here. Chrome is the name of Google's browser. -->
+    <string name="change_hint_chrome">If Chrome offers to create a password for you, don\'t use it. Paste ours.</string>
+    <!-- Under steps 4 and 5 while no new password was made yet: their buttons are off until then. -->
+    <string name="change_first_step3">First create the new password in step 3.</string>
+
+    <!-- ===== Step 5 ===== -->
+
+    <!-- Step 5's title: whether the website now takes the new password. -->
+    <string name="change_step5">Did the website accept the new password?</string>
+    <!-- Button: the website took the new password; the change ends. -->
+    <string name="change_yes">Yes, it\'s changed</string>
+    <!-- Button: the website did not take it; the account gets the old password back. -->
+    <string name="change_no">No, put back the old password</string>
+    <!-- Text button: leaves the screen; the change stays open, with both passwords kept. -->
+    <string name="change_later">I\'ll finish later</string>
+
+    <!-- ===== The end of the change ===== -->
+
+    <!-- Shown in place of the steps after “Yes, it's changed”. %1$s is the account's name, for
+         example “Gmail”: no other account has its password any more. -->
+    <string name="change_done">%1$s now has its own password.</string>
+    <!-- Button: the next account that still has the same old password; %1$s is its name, for example
+         “Facebook”. -->
+    <string name="change_next">Next: %1$s</string>
+    <!-- Button: ends the guided change for now; the person can come back later. -->
+    <string name="change_done_for_now">Done for now</string>
+    <!-- Shown once per session under the end of a change while some passwords are in no backup yet.
+         %1$s is the account's name, for example “Gmail”. -->
+    <string name="change_backup_only_here">%1$s\'s new password is only on this phone until you make a backup.</string>
+    <!-- Text button next to that sentence: opens Make a backup. -->
+    <string name="change_back_up_now">Back up now</string>
+
+    <!-- ===== Messages at the bottom of the screen ===== -->
+
+    <!-- Shown for a moment under “Create another password” after it was used: another new password
+         is saved in the account. -->
+    <string name="change_created">New password saved.</string>
+    <!-- After “No, put back the old password”. -->
+    <string name="change_reverted">The old password is back.</string>
+    <!-- A change could not be saved; with the button “Try again”. -->
+    <string name="change_save_failed">Couldn\'t save. Your phone\'s storage may be full.</string>
+    <!-- A change could not be saved because the passwords no longer fit in the app's one file; trying
+         again cannot help (the same sentence as elsewhere in the app). -->
+    <string name="change_too_large">Your passwords no longer fit in one file. Delete accounts you don\'t need, or shorten very long notes.</string>
+    <!-- After “Open website” when the phone has no browser. -->
+    <string name="change_no_browser">No browser found on this phone.</string>
+    <!-- The phone refused to copy. Show in big letters is the name of a button on the account's
+         screen. -->
+    <string name="change_copy_blocked">This phone blocked copying. Open the account and use Show in big letters to type the password.</string>
+
+    <!-- ===== The account is not there ===== -->
+
+    <!-- Shown in place of the steps when the account was removed. -->
+    <string name="change_gone">This account no longer exists.</string>
+    <!-- Shown in place of the steps when the account was deleted and waits in Recently deleted. -->
+    <string name="change_gone_deleted">This account was deleted. For 30&#160;days you can restore it in Recently deleted.</string>
+
+    <!-- ===== What was copied (the clipboard row at the bottom of the app, ux.md §6) ===== -->
+
+    <!-- %1$s is the account's name: “Old password for Gmail”. -->
+    <string name="change_copied_old">Old password for %1$s</string>
+    <!-- %1$s is the account's name: “New password for Gmail”. -->
+    <string name="change_copied_new">New password for %1$s</string>
+    <!-- Read by TalkBack for 1.5 seconds after a copy button was used, in place of its name. -->
+    <string name="change_copied">Copied</string>
+</resources>
