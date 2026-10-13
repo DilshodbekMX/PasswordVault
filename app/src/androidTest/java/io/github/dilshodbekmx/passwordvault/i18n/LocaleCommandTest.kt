@@ -59,11 +59,14 @@ class LocaleCommandTest {
 
     private fun localesOf(activity: MainActivity): List<Locale> = AppLanguages.localesOf(activity.resources.configuration)
 
-    /** A text of the shell in [tag] alone: the English one when the APK has no texts in [tag]. */
+    /**
+     * A text of the language dialog (build plan 6.1's strings_language.xml, which comes in all four
+     * languages) in [tag] alone: the English one when the APK has no texts in [tag].
+     */
     private fun textIn(tag: String): String {
         val configuration = Configuration(app.resources.configuration)
         configuration.setLocales(LocaleList.forLanguageTags(tag))
-        return app.createConfigurationContext(configuration).getString(R.string.shell_tab_passwords)
+        return app.createConfigurationContext(configuration).getString(R.string.language_title)
     }
 
     /** Waits until a new activity, not [before], is shown and [ready] holds for it, and returns it. */
