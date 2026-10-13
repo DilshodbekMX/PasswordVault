@@ -797,6 +797,13 @@ Passwords are named from the website's point of view:
 
 Last account of a group: "Last one! After this, your old password is not used anywhere."
 
+**Choices the build made where the steps above are silent** (build plan 7.2):
+- "Create new password" and "Create another password" use the generator's options as last chosen (§5.15 remembers them; the defaults until changed), so rules set in "Password rules" for a website also hold for the next try.
+- Steps 4 and 5 wait for a new password: their buttons are off, with "First create the new password in step 3."
+- After "Create another password", step 3 says "New password saved." for a moment, in the step itself. There is no snackbar, because it would cover the buttons of steps 4 and 5.
+- After "No, put back the old password" the steps start again from step 3, with "The old password is back."
+- The end ("Gmail now has its own password.") shows again after a lock, until the screen is left. "Once per session" for the backup line means from an unlock to the next lock.
+
 **Why save before the website change.** The classic failure is a password changed on the website but never saved. `pendingOldPassword` keeps the website's password whatever happens [I]. SOUPS 2025 recommends nudges that "encourage users to change weak passwords immediately", and better audit presentation [E].
 
 ### 5.18 Settings
