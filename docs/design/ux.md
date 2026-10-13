@@ -861,9 +861,11 @@ The app is stricter on locking because the user asked for a bank-like lock. It k
    - The cost: the paper is kept at home, and typing a long passphrase for every backup makes backups rarer. The offer after each master-password entry is how the app makes up for it.
 3. **File picker** (`CreateDocument`, suggested name `PasswordVault-backup-2026-10-06.pvault`). Google Drive appears in the picker when its app is installed. Time in the picker counts as time in the app (§4).
 4. **"Saving…" then "Checking the saved file…"** The backup was made and opened with the master password before the picker opened (lock.md F12 step 4); the saved file is read back and must be that backup, byte for byte, before success is shown [E: storage.md §5.4; V-S6].
-5. **Result**: "Backup saved: PasswordVault-backup-2026-10-06.pvault (52 accounts)." One line follows, which depends on the place, recognised by the document's provider:
+5. **Result**: "Backup saved: PasswordVault-backup-2026-10-06.pvault (52 accounts)." What follows depends on the place, recognised by the document's provider:
    - **Phone storage** (the Downloads provider, or the main storage root of the external-storage provider): "This copy is on this phone. If the phone is lost, this copy is lost too. Keep a copy somewhere else." `Button` "Send to another app…".
-   - **Every place that is not the phone**, Google Drive (Drive's document provider [I: check its authority on a device]) and anywhere else (SD card, USB drive, other apps): "This place may upload the file later. Open it there once to check that it arrived." That is the only line: the check after saving reads the copy the place keeps on this phone, and whether the place has sent it on cannot be seen from here (build-plan §12, decisions 8 and 20). Anywhere else has `OutlinedButton` "Send to another app…"; Google Drive has none.
+   - **Google Drive** (Drive's document provider [I: check its authority on a device]): "Saved to Google Drive."
+   - **Anywhere else** (SD card, USB drive, other apps): "Saved to <the place's name>." `OutlinedButton` "Send to another app…".
+   - **Every place that is not the phone**, Google Drive and anywhere else, then adds one line: "This place may upload the file later. Open it there once to check that it arrived." The check after saving reads the copy the place keeps on this phone, and whether the place has sent it on cannot be seen from here (build-plan §12, decisions 8 and 20; Google Drive's older "It is uploaded when the phone is online." went, the place's name stays, as the owner corrected decision 20 on 2026-10-13).
 6. **"Send to another app…"** (encrypted backup only) opens the share sheet with the file through a `FileProvider` (Telegram Saved Messages, email to yourself, Drive).
    - Text: "The file is locked with your master password. Keep your master password strong."
    - The shared copy is encrypted and is kept until the next app start, so a receiving app can still read it after this app has locked.
@@ -914,7 +916,7 @@ Exact file layouts are in formats.md. This section covers what the user sees.
   - `OutlinedButton` "Delete it now" (`DocumentsContract.deleteDocument`; possible when the provider reports `FLAG_SUPPORTS_DELETE` [V: Android "documents and files" guide]). Afterwards the screen says only "passwords-2026-10-06.xlsx was deleted.", with "Done".
 
   The primary button is "Done" because the user just asked for this file.
-- **A place that is not the phone** (Google Drive or any other) adds one line, that of §5.19 step 5: "This place may upload the file later. Open it there once to check that it arrived." (build-plan §12, decisions 8 and 20).
+- **A place that is not the phone** (Google Drive or any other) adds the last line of §5.19 step 5: "This place may upload the file later. Open it there once to check that it arrived." (build-plan §12, decisions 8 and 20). "Saved: passwords-2026-10-06.xlsx." already names the file, so the export has no "Saved to <the place's name>." line.
 - **The banner.** The app takes a persistable permission on the file and stores its location inside the vault. Until the user deletes the file or chooses "I deleted it myself", a banner on Passwords says "You have an unprotected file with your passwords: passwords-2026-10-06.xlsx (saved 2 hours ago)." Buttons "Delete" and "I deleted it myself".
 - If deletion is not supported: "This place doesn't let apps delete files. Delete it yourself in your Files app."
 

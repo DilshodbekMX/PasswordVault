@@ -132,22 +132,48 @@ class BackupPartsTest {
     // ---- The texts of a saved backup --------------------------------------------------------------
 
     /**
-     * The owner's decision 20 (build-plan.md §12): a place that is not the phone shows one line only,
-     * that it may upload the file later (decision 8). Before it Google Drive also said "Saved to
-     * Google Drive. It is uploaded when the phone is online.", which repeated it, and another place
-     * "Saved to SD card.".
+     * The owner's decision 20 (build-plan.md §12) with its correction of 2026-10-13: a place that is
+     * not the phone says where the file was saved, "Saved to Google Drive." or "Saved to SD card.",
+     * then that it may upload the file later (decision 8). Only Google Drive's "It is uploaded when
+     * the phone is online." went, which repeated that line; the first reading of decision 20 had
+     * dropped the place's name as well.
      */
     @Test
-    fun aSavedBackupSaysWhereItIsOrThatThePlaceMayUploadItLater_inOneLine() {
+    fun aSavedBackupSaysWhereItIs_andThatAPlaceThatIsNotThePhoneMayUploadItLater() {
         val name = "PasswordVault-backup-2026-10-08.pvault"
         val saved = UiText.plural(R.plurals.backup_saved, 52, 52, name)
+        val later = UiText.of(R.string.backup_upload_later)
         assertEquals(
             listOf(saved, UiText.of(R.string.backup_place_phone)),
             BackupTexts.saved(BackupStep.Saved(name, 52, Place.PhoneStorage)),
         )
-        for (place in listOf(Place.GoogleDrive, Place.Other("SD card"))) {
-            assertEquals("$place", listOf(saved, UiText.of(R.string.backup_upload_later)), BackupTexts.saved(BackupStep.Saved(name, 52, place)))
+        assertEquals(
+            listOf(saved, UiText.of(R.string.backup_place_drive), later),
+            BackupTexts.saved(BackupStep.Saved(name, 52, Place.GoogleDrive)),
+        )
+        assertEquals(
+            listOf(saved, UiText.of(R.string.backup_place_other, "SD card"), later),
+            BackupTexts.saved(BackupStep.Saved(name, 52, Place.Other("SD card"))),
+        )
+    }
+
+    @Test
+    fun theLinesOfAPlaceThatIsNotThePhone_sayWhatTheOwnerAskedFor() {
+        assertEquals("Saved to Google Drive.", englishBackupString("backup_place_drive"))
+        assertEquals("Saved to %1\$s.", englishBackupString("backup_place_other"))
+        assertEquals("This place may upload the file later. Open it there once to check that it arrived.", englishBackupString("backup_upload_later"))
+    }
+
+    /** The English text of the string [name] in the app's `values/strings_backup.xml`. */
+    private fun englishBackupString(name: String): String {
+        val dir = generateSequence(java.io.File("").absoluteFile) { it.parentFile }.map { java.io.File(it, "app/src/main/res/values") }.first { it.isDirectory }
+        val xml = javax.xml.parsers.DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(java.io.File(dir, "strings_backup.xml"))
+        val nodes = xml.getElementsByTagName("string")
+        for (i in 0 until nodes.length) {
+            val e = nodes.item(i) as org.w3c.dom.Element
+            if (e.getAttribute("name") == name) return e.textContent
         }
+        throw AssertionError("no string $name")
     }
 
     @Test

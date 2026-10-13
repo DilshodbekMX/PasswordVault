@@ -73,9 +73,14 @@
     </plurals>
     <!-- Under the result when the place is the phone's own storage (Downloads and the like). -->
     <string name="backup_place_phone">This copy is on this phone. If the phone is lost, this copy is lost too. Keep a copy somewhere else.</string>
-    <!-- Under the result when the place is not the phone's own storage (Google Drive, an SD card,
-         a USB drive, another app), the only line there: the app can read the file back but
-         cannot see whether it was uploaded. -->
+    <!-- Under the result when the place is Google Drive. -->
+    <string name="backup_place_drive">Saved to Google Drive.</string>
+    <!-- Under the result for any other place that is not the phone's own storage; %1$s is the
+         place's name as the phone shows it, for example "SD card" or the name of another app. -->
+    <string name="backup_place_other">Saved to %1$s.</string>
+    <!-- After the line above, for Google Drive and any other place that is not the phone's own
+         storage (an SD card, a USB drive, another app): the app can read the file back but cannot
+         see whether it was uploaded. -->
     <string name="backup_upload_later">This place may upload the file later. Open it there once to check that it arrived.</string>
     <!-- Button: opens the phone's list of apps to send the backup file to (Telegram Saved
          Messages, email to yourself, Drive). The file stays locked. -->

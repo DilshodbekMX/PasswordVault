@@ -84,7 +84,7 @@ class BackupScreensTest {
     }
 
     @Test
-    fun aBackupInGoogleDriveSaysItMayBeUploadedLaterAndOffersNoSending() {
+    fun aBackupInGoogleDriveSaysSoAndThatItMayBeUploadedLater_andOffersNoSending() {
         BackupScreensRig().use { rig ->
             rig.opens()
             val drive = "content://com.google.android.apps.docs.storage/document/acc%3D1%3Bdoc%3D9"
@@ -97,15 +97,16 @@ class BackupScreensTest {
             compose.waitUntil(TIMEOUT_MS) { rig.launcher.calls.isNotEmpty() }
             rig.answerSaveAs(drive)
             compose.waitUntil(TIMEOUT_MS) { vm.ui.value.step is BackupStep.Saved }
-            // One line about the place (decision 20): the result, then only "This place may upload the file later. …".
-            compose.onNodeWithTag(BackupTags.line(1)).assertTextEquals(text(R.string.backup_upload_later))
-            compose.onNodeWithTag(BackupTags.line(2)).assertDoesNotExist()
+            // Decision 20 as the owner corrected it: "Saved to Google Drive.", then "This place may upload the file later. …".
+            compose.onNodeWithTag(BackupTags.line(1)).assertTextEquals(text(R.string.backup_place_drive))
+            compose.onNodeWithTag(BackupTags.line(2)).assertTextEquals(text(R.string.backup_upload_later))
+            compose.onNodeWithTag(BackupTags.line(3)).assertDoesNotExist()
             compose.onNodeWithTag(BackupTags.SEND).assertDoesNotExist()
         }
     }
 
     @Test
-    fun aBackupOnAnotherPlaceSaysOnlyThatItMayBeUploadedLaterAndOffersSending() {
+    fun aBackupOnAnotherPlaceSaysItsNameAndThatItMayBeUploadedLater_andOffersSending() {
         BackupScreensRig().use { rig ->
             rig.opens()
             val card = "content://com.android.externalstorage.documents/document/1A2B-3C4D%3APasswordVault-backup.pvault"
@@ -118,9 +119,10 @@ class BackupScreensTest {
             compose.waitUntil(TIMEOUT_MS) { rig.launcher.calls.isNotEmpty() }
             rig.answerSaveAs(card)
             compose.waitUntil(TIMEOUT_MS) { vm.ui.value.step is BackupStep.Saved }
-            // One line about the place (decision 20): no "Saved to SD card." before it any more.
-            compose.onNodeWithTag(BackupTags.line(1)).assertTextEquals(text(R.string.backup_upload_later))
-            compose.onNodeWithTag(BackupTags.line(2)).assertDoesNotExist()
+            // Decision 20 as the owner corrected it: "Saved to SD card." stays, then "This place may upload the file later. …".
+            compose.onNodeWithTag(BackupTags.line(1)).assertTextEquals(text(R.string.backup_place_other, "SD card"))
+            compose.onNodeWithTag(BackupTags.line(2)).assertTextEquals(text(R.string.backup_upload_later))
+            compose.onNodeWithTag(BackupTags.line(3)).assertDoesNotExist()
             compose.onNodeWithTag(BackupTags.SEND).performScrollTo().assertIsDisplayed()
         }
     }
