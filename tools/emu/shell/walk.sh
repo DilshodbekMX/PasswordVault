@@ -201,7 +201,7 @@ start() {
 # The suggested words, read on step 1 and typed again on step 3: the master password from then on.
 setup_routes() {
     on Welcome && absent pv.tab.Passwords \
-        && open Language && back Welcome \
+        && language_dialog Welcome \
         && open Restore && back Welcome \
         && open CreateMasterPassword && pva_reveal pv.setup.passphrase || return 1
     PVA_PASSWORD=$(pva_text pv.setup.passphrase) || return 1
@@ -258,8 +258,8 @@ security_routes() {
 # Settings (build plan 4.3): the App lock rows are in the list itself, so no row opens AppLock or
 # CreatePin. Its rows open ChangePin ("Change PIN": a PIN is set), ChangeMasterPassword (5.5's
 # screen; its "I don't remember it" carries pv.open.NewMasterPassword), Backup, Export and Import
-# (5.2 to 5.4), Language (6.1's placeholder), the dialog "Appearance" (Route.Theme), the Help pages,
-# Licences and Version. tap only scrolls down, so the rows are taken from the top down.
+# (5.2 to 5.4), the language dialog (Route.Language, 6.1), the dialog "Appearance" (Route.Theme),
+# the Help pages, Licences and Version. tap only scrolls down, so the rows are taken from the top down.
 settings_routes() {
     tap pv.tab.Settings && on Settings && to_top \
         && open ChangePin && back Settings \
@@ -267,7 +267,7 @@ settings_routes() {
         && open Backup && back Settings \
         && open Export && back Settings \
         && open Import && back Settings \
-        && open Language && back Settings \
+        && language_dialog Settings \
         && appearance \
         && help_pages
 }
@@ -281,6 +281,14 @@ appearance() {
     tap pv.settings.style.EMERALD && present pv.settings.style.EMERALD \
         && tap pv.settings.style.BANK_BLUE && present pv.settings.theme.SYSTEM \
         && back Settings
+}
+
+# Route.Language draws the language dialog (6.1), a window of its own, so its route's node is not in
+# the active window's dump, as with "Appearance": its rows show it. Back closes it with nothing changed.
+language_dialog() {
+    tap pv.open.Language && present pv.language.SYSTEM && present pv.language.RU || return 1
+    seen Language
+    back "$1"
 }
 
 # The Help rows (the help package's placeholders until build plan 7.3): each page, Licences, Version.
