@@ -36,8 +36,9 @@ import kotlinx.coroutines.withContext
  *   content that "w" leaves behind fails the comparison. What the read-back shows is what the
  *   provider gives back on this phone. A provider that keeps the bytes in a copy of its own and
  *   sends them on later (a cloud app) answers from that copy: whether they ever reach its server
- *   is not checked here and cannot be, which is why the result line for Google Drive says "It is
- *   uploaded when the phone is online" (ux.md §5.19).
+ *   is not checked here and cannot be, which is why the result of a backup or an export saved
+ *   anywhere but the phone says "This place may upload the file later. Open it there once to check
+ *   that it arrived." (ux.md §5.19 step 5).
  * - **Read** reads at most `maxBytes + 1` bytes, so that the caller can tell "too long"; anything
  *   that keeps the document from being read, a missing permission included, is an [IOException].
  * - **Keep** takes the persistable permission that the picker's result granted, read and write

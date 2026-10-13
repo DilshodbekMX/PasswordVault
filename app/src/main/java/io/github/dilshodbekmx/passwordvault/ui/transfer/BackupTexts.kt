@@ -59,19 +59,17 @@ object BackupTexts {
     }
 
     /**
-     * The result (ux.md §5.19 step 5): "Backup saved: … (52 accounts).", then the line of its place,
-     * then, for any place that is not the phone, that it may upload the file later (the owner's
-     * decision 8 of 2026-10-08).
+     * The result (ux.md §5.19 step 5): "Backup saved: … (52 accounts).", then one line about its
+     * place: that the copy is on this phone, or, for any place that is not the phone, Google Drive
+     * included, that it may upload the file later (the owner's decisions 8 and 20, build-plan.md §12).
      */
-    fun saved(saved: BackupStep.Saved): List<UiText> = buildList {
-        add(UiText.plural(R.plurals.backup_saved, saved.accounts, saved.accounts, saved.name))
-        when (val place = saved.place) {
-            Place.PhoneStorage -> add(UiText.of(R.string.backup_place_phone))
-            Place.GoogleDrive -> add(UiText.of(R.string.backup_place_drive))
-            is Place.Other -> add(UiText.of(R.string.backup_place_other, place.name))
-        }
-        if (saved.place != Place.PhoneStorage) add(UiText.of(R.string.backup_upload_later))
-    }
+    fun saved(saved: BackupStep.Saved): List<UiText> = listOf(
+        UiText.plural(R.plurals.backup_saved, saved.accounts, saved.accounts, saved.name),
+        when (saved.place) {
+            Place.PhoneStorage -> UiText.of(R.string.backup_place_phone)
+            Place.GoogleDrive, is Place.Other -> UiText.of(R.string.backup_upload_later)
+        },
+    )
 
     /** A restore's message (ux.md §5.2 "States and messages"). */
     fun restoreProblem(problem: RestoreProblem): UiText = UiText.of(
