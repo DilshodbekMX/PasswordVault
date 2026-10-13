@@ -435,7 +435,10 @@ sealed interface LockScreen {                          // lock.md §13.2; declar
 //                          | NoSecureHardware
 // class Practice(val notNow: Shortcut?)              // "Not now" uses this shortcut; null past the grace. Shortcut { PIN, FINGERPRINT }
 //                                                    // is core.lock.record's (StateRecord.kt)
-// MpError: Wrong(offerForgot: Boolean, replaced: ReplacedLine?) | NoMemory
+// MpError: Wrong(offerForgot: Boolean, replaced: ReplacedLine?) | NoMemory | OlderSetNotOpened(atMs)
+//                                                    // OlderSetNotOpened: "Open my passwords from 7 Oct" was chosen and the swap of
+//                                                    // lock.md F16b step 4 failed; atMs: when the master password was replaced (build-plan
+//                                                    // §12, decision 17)
 // class ReplacedLine(val atMs: Long, val by: Shortcut, val oldVaultId: String?)   // oldVaultId null: replaced more than once; the
 //                                                                                  // button opens the "Forgot master password?" sheet
 // Notice, each with val id: Long, in the order of lock.md §13.4: OlderCopy(openedCreatedMs) | OlderThanLastTime(lastOpenedAtMs)

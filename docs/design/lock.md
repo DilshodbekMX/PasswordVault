@@ -1280,7 +1280,7 @@ This happens when a vault is on the phone without its lock directory: the app di
 1. **How the owner gets there.** A wrong master password on the current vault's screen adds: "The master password was replaced on 7 Oct using the PIN. If you didn't do that, open your passwords from before." with the button "Open my passwords from before 7 Oct". The same entry is on the "Forgot master password?" sheet (F17 step 1) and behind "It wasn't me" on the notice of 13.4. The typed password is not tried against the old vault behind the user's back.
 2. **The old vault's own lock screen** (F17 step 4): "Your passwords from before 7 Oct 2026. Type the master password you used then." It has only the master-password field, because a `replaced` vault has no shortcuts. Its own `mp_guard` applies (6.8).
 3. The master password opens it in place. Then the app asks: "These are your passwords as they were on 7 Oct. Passwords added or changed after that are in the newer set, which stays on this phone. Open the older set instead?" Buttons "Open my passwords from 7 Oct" and "Cancel". Cancel changes nothing.
-4. Storage puts the current vault aside and makes the old one current (the swap of F17 step 4). The lock touches nothing of the vault that is now put aside: it keeps its records and keys, and its own PIN, fingerprint or master password opens it again from the sheet.
+4. Storage puts the current vault aside and makes the old one current (the swap of F17 step 4). The lock touches nothing of the vault that is now put aside: it keeps its records and keys, and its own PIN, fingerprint or master password opens it again from the sheet. If storage cannot make the swap (a storage error), nothing changed: that vault's own master-password field comes back, saying "Couldn't open your passwords from 7 Oct. Nothing was changed." (13.3), and typing its master password again asks the question of step 3 again.
 5. The lock writes the old vault's records: both slots removed if start-up has not done so yet (`off = replaced`, aliases deleted), `pending_mp = null`, `replaced = null`. A write that fails is made good by start-up (5.11).
 6. "Choose a new PIN. Someone else may know the old one." (F6 from step 3; the proof is the master password just typed), then the fingerprint offer of F9 with its sentence about whose fingers are saved on the phone.
 
@@ -1358,7 +1358,7 @@ The look (layout, key sizes, haptics, landscape) is in ux.md §5.9 and §5.10. T
 | Master password, opening | "Opening…" while Argon2id runs (0.3 to 1 s) | Unlocked, wrong, older password, the question of F16b step 3 |
 | Master password, waiting | Field disabled, countdown from 0:30 | Idle |
 | Older master password | F16b | Idle, unlocked |
-| Open the older set? | On the lock screen of a vault from before a replacement, once its master password has opened it (F16b step 3): the title "Your passwords from before 7 Oct 2026", the question of F16b step 3, "Open my passwords from 7 Oct" and "Cancel". No field and no pad | Unlocked, with the two vaults changing places; that vault's master-password field again ("Cancel"); back to the current vault |
+| Open the older set? | On the lock screen of a vault from before a replacement, once its master password has opened it (F16b step 3): the title "Your passwords from before 7 Oct 2026", the question of F16b step 3, "Open my passwords from 7 Oct" and "Cancel". No field and no pad | Unlocked, with the two vaults changing places; that vault's master-password field again ("Cancel", or a swap that failed, with its line in 13.3); back to the current vault |
 | Forgot sheet | F17 step 1 | — |
 | A vault that was put aside | That vault's own pad, fingerprint-only or master-password screen, with its line (F17 step 4, F16b) | Unlocked, with the two vaults changing places; or back to the current vault |
 
@@ -1424,6 +1424,7 @@ There is no "Try again in 0:30" for the PIN: the PIN has no waits. There is neve
 | A new master password is pending and not ready | under the field: "Your new master password starts working in about 20 hours." |
 | Waiting | "Wait 30 seconds, then try again. Take your time and look at your paper." |
 | Not enough memory | "Your phone doesn't have enough free memory to open your passwords. Close other apps or restart the phone, then try again." with "Try again" |
+| "Open my passwords from 7 Oct" was chosen and the vaults could not change places (F16b step 4, a storage error) | "Couldn't open your passwords from 7 Oct. Nothing was changed." on that vault's master-password field. The date is the one the question named, when the master password was replaced |
 
 If fingerprint unlock is on and cannot be used now, the matching fingerprint line of the pad's table is shown under the reason, with "Use your master password".
 

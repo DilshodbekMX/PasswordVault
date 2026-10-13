@@ -272,6 +272,28 @@ class LockViewModelTest {
     }
 
     @Test
+    fun aSwapThatFailedSaysThePasswordsFrom7OctWereNotOpened_andTheFieldIsNotMarkedWrong() = runTest {
+        // Build-plan §12, decision 17 (lock.md §13.3): on the field of the passwords from before a
+        // replacement, after "Open my passwords from 7 Oct" could not swap the two sets.
+        val lock = FakeLockManager(
+            initial = LockUiState.Locked(
+                screen(reason = MpReason.FromBefore(REPLACED_AT), aside = AsideLine.FromBefore(REPLACED_AT), error = MpError.OlderSetNotOpened(REPLACED_AT)),
+            ),
+        )
+        val vm = viewModel(lock)
+        val line = LockLine(UiText.of(R.string.lock_mp_older_set_not_opened, LockDate(REPLACED_AT, LockDate.Style.DAY_MONTH)), alert = true)
+        assertEquals(listOf(line), ui(vm).lines)
+        assertFalse("not the field's fault", ui(vm).fieldError)
+        assertTrue(ui(vm).fieldEnabled)
+        assertTrue(ui(vm).canSubmit)
+
+        // The lock takes it away when the question is asked again: the screen is the question then.
+        lock.state.value = LockUiState.Locked(screen(reason = MpReason.FromBefore(REPLACED_AT), aside = AsideLine.FromBefore(REPLACED_AT)))
+        runCurrent()
+        assertEquals(emptyList<LockLine>(), ui(vm).lines)
+    }
+
+    @Test
     fun theWaitDisablesTheFieldAndCountsDownEverySecond() = runTest {
         val lock = FakeLockManager(
             initial = LockUiState.Locked(screen(waitUntilElapsedMs = START + 30_000, error = MpError.Wrong(false, null))),
