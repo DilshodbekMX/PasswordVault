@@ -233,7 +233,7 @@ fp_row() {
                 pva_tap pv.list.lockNow || return 1
                 pvl_wait_screen pad 20 || return 1
                 pv_sleep 3
-                ! pvl_prompt_shown || { pv_log "a prompt opened after a TEMPORARY probe"; return 1; }
+                pvl_no_prompt || { pv_log "a prompt opened after a TEMPORARY probe"; return 1; }
                 pvl_pad_lacks pv.pin.fingerprint || return 1
                 pvl_text_is pv.lock.status string lock_fingerprint_cannot_check_pin || return 1
                 spent || return 1
@@ -245,7 +245,7 @@ fp_row() {
             pva_tap pv.list.lockNow || return 1
             pvl_wait_screen pad 20 || return 1
             pv_sleep 2
-            ! pvl_prompt_shown || { pv_log "a prompt opened after a GONE probe"; return 1; }
+            pvl_no_prompt || { pv_log "a prompt opened after a GONE probe"; return 1; }
             pvl_text_is pv.lock.status string lock_fingerprint_turned_off_pin || return 1
             spent || return 1
             pvl_expect_fp slot=none off=key_gone || return 1
@@ -414,7 +414,7 @@ drop_next_visit() {
     pva_tap pv.list.lockNow || return 1
     pvl_wait_screen pad 20 || return 1
     pv_sleep 2
-    ! pvl_prompt_shown || { pv_log "a prompt opened"; return 1; }
+    pvl_no_prompt || return 1
     pvl_text_is pv.lock.status string lock_fingerprint_turned_off_pin || return 1
     pvl_expect_fp slot=none off=key_gone || return 1
     pvl_has_canary || { pv_log "the canary was not made again: $(pvl_item keystore:)"; return 1; }
