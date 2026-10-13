@@ -659,6 +659,13 @@ What the packages of R4 build on:
   - A date in a title can break across two lines ("Oct / 7, 2026"): `Formatters` puts no-break spaces inside a date.
   - `ObscuredTouchNotice` (2.8's) is drawn in Bank blue whatever the style.
 
+**The owner's decisions of 2026-10-13** on the five questions below (16 to 20), built by `w5-carry` step 3 and `w5-carry2` before the merge of R4:
+16. A damaged `pin.rec` is handled like decision 1: the next master-password unlock replaces it with a record without a slot and offers "Choose a new PIN", so it no longer blocks the key sweep (question 1, answer A).
+17. When the swap after "Open my passwords from 7 Oct" fails, the master-password field says "Couldn't open your passwords from 7 Oct. Nothing was changed." (an `MpError`; lock.md §13.3) (question 2, answer A).
+18. The title above the older-set question stays as built: "Your passwords from before 7 Oct 2026" (question 3, answer A).
+19. On the fingerprint-only screen the prompt's "Use master password" (code 13) opens the master-password screen (question 4, answer A).
+20. From the job "main: reviews in": a place that is not the phone shows one line only, decision 8's "This place may upload the file later. Open it there once to check that it arrived." (the older "It is uploaded when the phone is online." goes); a hidden value that cannot stay a hidden field because of a limit of D-10f (over 1,000 characters, or beyond 20 fields) is not moved into the notes unmasked but listed as not imported ("A hidden value was too long to keep hidden and was not imported."), so decision 11 holds without exception; decision 12's tie rule stays as built (Windows-1251, with "Read as UTF-8" in the preview).
+
 The owner's questions still open (none blocks R4; whoever builds an answer changes the document in the same commit):
 1. A damaged `pin.rec` blocks the key sweep until a new PIN is set (4.4 and its review; decision 1 covers `fingerprint.rec` only). A: handle it like decision 1, so that the next master-password unlock replaces it with a record without a slot and offers "Choose a new PIN". B: accept it as it is.
 2. When the swap after "Open my passwords from 7 Oct" fails (a storage error in F16b step 4), that vault's master-password field comes back without a word (4.2b). A: a line "Couldn't open your passwords from 7 Oct. Nothing was changed." (an `MpError`, and lock.md §13.3). B: keep it silent.
@@ -673,6 +680,11 @@ What the merge of R4 does besides merging:
 4. Once 7.1 has replaced `FakeSecurityReports` and no file under `src/main` names a fake, it moves `APP/fake/` to `app/src/debug/` (section 1).
 5. `MissingTranslation` and `ResourcesTest` stay warnings until the integration check of wave 6. `StrengthPerformanceTest` (JVM) and `ListPerformanceTest` (API 37) fail under machine load: a failure counts only when it fails again alone.
 6. It confirms R5 to R7 (the table) and writes "From the merge of R4 to round R5" here.
+
+**From the device check of 4A** (`tools/emu/checks/4A.sh`; tag `wave-4A-ok`), for the merge of R4:
+- The PIN steps' "Finish" on "Make backups" (and Back there) closes the steps instead of opening the list's root (`PinSetupViewModel.finish`, NavStep.Back): after a master-password unlock without a PIN they close onto the screen the unlock brought back, as ux.md §4 "What survives a lock" says; after setup or a restore only the list lies under them. After F11 step 19 they close onto what lies under them, which is `Route.NewMasterPassword` if 5.5's screen is still on the stack then: that screen leaves the stack when the change has finished.
+- `tools/emu/app.sh` has the real lock's helpers (`pva_status`, `pva_status_soon`, `pva_prompt_open`, `pva_finger`, `pva_prompt_use_pin`, `pva_choose_pin`, `pva_after_pin`, `pva_to_create_pin`, `pva_opened`, `pva_lock_now`) for 4.5's scripts; `pva_settle` can keep a message that passes while it waits (`PVA_WATCH`). `smoke.sh` has a stage for the PIN and the fingerprint; the window checks also look at the PIN steps' and the backup's master-password fields.
+- On API 37 in touch mode the keyboard does not come back after a rotation (4.2b; `w5-carry`): `TypeAgainRotationTest` failed in a full connected run and alone until the devices were put in keyboard mode first, which `checks/4A.sh` now does.
 
 **For every agent of a round.** The agents of one round share one scratchpad directory and the folders `/home/asus/pvwork/shots-*/`: keep your own files in a subdirectory or under a prefix named after your branch, and never delete a file you did not write. Android Studio's Run has landed on a private device more than once (tools/emu/README.md); a device step that fails for no visible reason is run again before it is counted.
 

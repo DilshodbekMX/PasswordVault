@@ -83,15 +83,19 @@ on() {
 seen() { case " $SEEN " in *" $1 "*) ;; *) SEEN="$SEEN $1" ;; esac; }
 
 # The screen's height in pixels, and the bottom band where the bottom bar and the system's
-# navigation bar are: a node of a screen whose centre is there is scrolled up before a tap.
+# navigation bar are: a node of a screen whose centre is there is scrolled up before a tap. With the
+# app's bottom bar shown the band begins BAR_HALF pixels above the centre of its tabs (half of the bar's
+# 80 dp at 420 dpi is 105 px, and a margin): a fixed 420 px band, as before, held the last row of
+# Settings ("Version") on the 2400-pixel screen of API 37, where that row cannot scroll any higher
+# (device check of 4A).
 SCREEN_H=$(pv_shell wm size 2>/dev/null | tr -d '\r' | sed -n 's/^Physical size: *[0-9]*x\([0-9]*\)$/\1/p' | head -n 1)
 SCREEN_H=${SCREEN_H:-1920}
-SAFE_BOTTOM=$((SCREEN_H - 420))
+BAR_HALF=140
 
 # tap ID: taps the node whose resource id is ID, after scrolling it onto the screen (a real screen's
 # button can be below the fold: "Use these words" on a 1920-pixel screen) and above the bottom band.
 tap() {
-    local id_re="[|]$(re "$1")\$" nodes line="" y=0 i bottom
+    local id_re="[|]$(re "$1")\$" nodes line="" y=0 i bottom tab_y
     for i in 1 2 3 4 5 6; do
         nodes=$(pv_ui_nodes)
         line=$(printf '%s\n' "$nodes" | pv_ui_match "$id_re")
@@ -100,7 +104,8 @@ tap() {
             case "$1" in pv.tab.*) y=0 ;; esac
             # Without the app's bottom bar (setup, the lock) only the system's navigation bar is there.
             bottom=$((SCREEN_H - 160))
-            printf '%s\n' "$nodes" | grep -q '[|]pv[.]tab[.]' && bottom=$SAFE_BOTTOM
+            tab_y=$(printf '%s\n' "$nodes" | awk -F'|' '$3 ~ /^pv[.]tab[.]/ { print $7; exit }')
+            [ -z "$tab_y" ] || bottom=$((tab_y - BAR_HALF))
             if [ "$y" -lt "$bottom" ]; then
                 pv_ui_tap "$id_re" "$nodes"
                 return
