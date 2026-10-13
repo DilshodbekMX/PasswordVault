@@ -24,9 +24,11 @@
 # skeleton stage of smoke.sh.
 
 # The master password the last pva_set_up chose (the suggested words), and pva_unlock's default.
+# The values are kept when this file is sourced again (tools/emu/window/lib.sh does, after a script
+# has called pva_init), so that a second source does not reset API 37's 2400-pixel screen (4.5).
 PVA_PASSWORD=${PVA_PASSWORD:-}
-PVA_SCREEN_H=1920
-PVA_SCREEN_W=1080
+PVA_SCREEN_H=${PVA_SCREEN_H:-1920}
+PVA_SCREEN_W=${PVA_SCREEN_W:-1080}
 
 # pva_init: reads the screen's size (portrait). Call it once after pv_use.
 pva_init() {
@@ -298,7 +300,7 @@ pva_unlocked() {
 # walked is kept in PVA_WATCHED (a short message such as the form's "Your unsaved changes were kept.",
 # which may come and go while pva_settle waits for ROUTE to stay alone).
 PVA_WATCH=${PVA_WATCH:-}
-PVA_WATCHED=""
+PVA_WATCHED=${PVA_WATCHED:-}
 pva_settle() {
     local route=$1 deadline=$((SECONDS + ${2:-120})) nodes answer
     while :; do
