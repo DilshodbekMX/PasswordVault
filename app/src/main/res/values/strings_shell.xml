@@ -3,12 +3,4 @@
     <string name="shell_tab_passwords">Passwords</string>
     <string name="shell_tab_security">Security</string>
     <string name="shell_tab_settings">Settings</string>
-
-    <!-- The placeholder screens, until each screen package replaces its route file. Developer text,
-         not translated: the placeholders are gone before a build is handed to the user. -->
-    <string name="shell_placeholder_title" translatable="false">Placeholder: %1$s</string>
-    <string name="shell_placeholder_body" translatable="false">This screen comes with a later part of the build. Its buttons only move between screens.</string>
-    <string name="shell_placeholder_state" translatable="false">State: %1$s</string>
-    <string name="shell_placeholder_open" translatable="false">Open %1$s</string>
-    <string name="shell_placeholder_back" translatable="false">Back</string>
 </resources>

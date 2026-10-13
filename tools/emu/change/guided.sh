@@ -8,15 +8,14 @@
 # The accounts. On a fresh install of the APK (default the debug build) the test APK's
 # GuidedChangeSeed (APP-AT/ui/security/change/) makes a vault with a master password of its own and
 # four accounts with fixed ids: Gmail, Facebook and Kapitalbank share the password Toshkent2020!,
-# Uzum Market has its own. The test APK is removed again at once. Gmail's id is the one the Security
-# tab's placeholder opens until build plan 7.1 is merged; after the merge the script goes the real
-# way, the reuse card of the Security tab and "Change" on Gmail's row of the group list.
+# Uzum Market has its own. The test APK is removed again at once. The change is opened the real way:
+# the reuse card of the Security tab (7.1) and "Change" on Gmail's row of the group list.
 #
 # The unlocks. At the first unlock the lock's "Choose a PIN" is answered with a PIN, as the user has
 # one (a banking-style PIN, with the master password as the root of recovery), and every later unlock
 # is with that PIN. Unlocked with the master password and no PIN, every unlock would run "Choose a
-# PIN" again, whose end ("Make backups", Finish) opens the Passwords tab in place of the route the
-# app was on (4.3's PinSetupNav: ChoosePinReason.NONE_HERE is its setup flow).
+# PIN" again, with the fingerprint offer and "Make backups" (4.3's PinSetupNav: ChoosePinReason
+# .NONE_HERE is its setup flow), before the route the app was on shows again.
 #
 # The steps, each checked after a lock (the screen off: the app locks at once, and the PIN brings the
 # same route back) and after `am force-stop` (the app starts again on the list; the change is opened
@@ -235,19 +234,14 @@ clip_came() {
 
 # ---- the screens ------------------------------------------------------------------------------
 
-# open_change: Gmail's guided change, from the Security tab (a tab's root: the stack is new). Through
-# 7.1's reuse card and group list when they are there, otherwise through the shell's placeholders,
-# which open GuidedChange(PLACEHOLDER_ENTRY_ID), Gmail's id.
+# open_change: Gmail's guided change, from the Security tab (a tab's root: the stack is new), through
+# 7.1's reuse card and group list.
 open_change() {
     tab Security && pva_on Security 20 || return 1
-    if pva_present pv.open.Group 5; then
-        pva_tap pv.open.Group && pva_on Group && pva_tap pv.open.GuidedChange || return 1
-    else
-        # The check runs in the background after the unlock ("Checking 3 of 4…").
-        pva_present pv.security.card.reused.open 60 || { pv_log "no reuse card; ids: $(pva_ids)"; return 1; }
-        tap pv.security.card.reused.open && pva_on Group 20 || return 1
-        tap "pv.group.action.$GMAIL" || return 1
-    fi
+    # The check runs in the background after the unlock ("Checking 3 of 4…").
+    pva_present pv.security.card.reused.open 60 || { pv_log "no reuse card; ids: $(pva_ids)"; return 1; }
+    tap pv.security.card.reused.open && pva_on Group 20 || return 1
+    tap "pv.group.action.$GMAIL" || return 1
     pva_on GuidedChange 20 || return 1
     account_is Gmail
 }

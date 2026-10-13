@@ -10,7 +10,6 @@ import io.github.dilshodbekmx.passwordvault.core.model.VaultEdits
 import io.github.dilshodbekmx.passwordvault.data.SaveResult
 import io.github.dilshodbekmx.passwordvault.lock.CreateResult
 import io.github.dilshodbekmx.passwordvault.lock.LockUiState
-import io.github.dilshodbekmx.passwordvault.ui.shell.PLACEHOLDER_ENTRY_ID
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -32,10 +31,9 @@ import org.junit.runner.RunWith
  * ```
  *
  * It makes the vault as setup does (`LockManager.createVault`) and adds the accounts as an import
- * does (`VaultEdits.addImported`, which keeps an id that is a free UUID). [GMAIL] is the id that the
- * Security tab's placeholder opens (`PLACEHOLDER_ENTRY_ID`) until package 7.1 is merged, and the id
- * of Gmail's row in 7.1's group list after. Without the argument, as in every connected run, it does
- * nothing.
+ * does (`VaultEdits.addImported`, which keeps an id that is a free UUID). [GMAIL] is the id of
+ * Gmail's row in 7.1's group list (`pv.group.action.<id>`). Without the argument, as in every
+ * connected run, it does nothing.
  */
 @RunWith(AndroidJUnit4::class)
 class GuidedChangeSeed {
@@ -66,7 +64,7 @@ class GuidedChangeSeed {
         const val ARGUMENT = "pvChangeSeed"
 
         /** Gmail: the account whose password the script changes. */
-        const val GMAIL = PLACEHOLDER_ENTRY_ID
+        const val GMAIL = "00000000-0000-4000-8000-00000000e001"
         const val FACEBOOK = "00000000-0000-4000-8000-00000000e002"
         const val BANK = "00000000-0000-4000-8000-00000000e003"
         const val UZUM = "00000000-0000-4000-8000-00000000e004"
