@@ -207,7 +207,9 @@ object VaultEdits {
 
     /**
      * After a correct master-password entry: the entries whose password equals it ([entryIds]),
-     * kept in the vault's order; ids of no entry are left out.
+     * kept in the vault's order; ids of no entry are left out. When the list gains an entry,
+     * [Vault.securitySeenAt] goes back to null, so that the Security tab's dot shows for it even when
+     * it was last edited before the last visit (architecture.md §4.3; build-plan.md §12, decision 23).
      */
     fun setMasterPasswordMatches(entryIds: Collection<String>): VaultChange<Unit> =
         { vault, _ -> VaultData.setMasterPasswordMatches(vault, entryIds) }

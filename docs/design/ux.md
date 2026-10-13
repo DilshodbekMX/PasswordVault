@@ -752,7 +752,7 @@ Other states:
 - No breach ("leaked password") check: it needs the internet, which the app does not have; Help says so.
 
 **Badge** on the Security tab:
-- It is a small dot, never a number, shown when the results contain something the user has not seen since last opening the tab.
+- It is a small dot, never a number, shown when the results contain something the user has not seen since last opening the tab. An account newly found to share the master password (card 1) is such a result even when it was last edited before that visit, as after a master-password change made the master password equal to an old account's password (build-plan §12, decision 23).
 - For this user, cards 1–3 cover nearly every account for months, and a red "50" at every unlock is the nagging principle 5 rules out.
 - No notifications.
 

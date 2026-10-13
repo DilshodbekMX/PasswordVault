@@ -90,6 +90,25 @@ class VaultDataTest {
         assertTrue(VaultEdits.setMasterPasswordMatches(emptyList())(set.vault, T0).vault.masterPasswordMatches.isEmpty())
     }
 
+    /**
+     * The owner's decision 23 (build-plan.md §12): an account found to share the master password is
+     * a new result even when it was last edited before the last visit of the Security tab (after a
+     * master-password change made it equal to an old account's password, say), so a list that gains
+     * an entry resets [Vault.securitySeenAt]: the dot shows. Losing one, or the same list, keeps it.
+     */
+    @Test
+    fun aNewMasterPasswordMatch_resetsTheSecurityTabsVisit() {
+        val v = vault(entry(1), entry(2), entry(3)).copy(masterPasswordMatches = listOf(id(1)), securitySeenAt = T0 + MINUTE)
+        val gained = VaultEdits.setMasterPasswordMatches(listOf(id(1), id(2)))(v, T0 + 2 * MINUTE).vault
+        assertEquals(listOf(id(1), id(2)), gained.masterPasswordMatches)
+        assertNull("a new result: the dot shows again", gained.securitySeenAt)
+        val swapped = VaultEdits.setMasterPasswordMatches(listOf(id(3)))(v, T0).vault
+        assertNull("one lost and one gained is still a new one", swapped.securitySeenAt)
+        val lost = VaultEdits.setMasterPasswordMatches(emptyList())(v, T0).vault
+        assertEquals("nothing new: the visit stands", T0 + MINUTE, lost.securitySeenAt)
+        assertSame("the same list: nothing written", v, VaultEdits.setMasterPasswordMatches(listOf(id(1), id(9)))(v, T0).vault)
+    }
+
     @Test
     fun securitySeen() {
         val seen = VaultEdits.markSecuritySeen()(Vault(), T0 + MINUTE).vault

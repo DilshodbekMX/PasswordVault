@@ -833,7 +833,7 @@ Key names are those of ux.md §2 (camel case; the header keeps the snake case of
 | `plainExports` | array of `{"uri", "name", "savedAt"}` | `[]` | Unprotected exports not yet deleted (ux.md §5.20) |
 | `backups` | array of `{"uri", "name", "savedAt"}` | `[]` | Backups this app saved (ux.md §5.18). A backup is due when some entry's `updatedAt` or `deletedAt` is later than the newest `savedAt` here; no counter is kept |
 | `masterPasswordMatches` | array of entry ids | `[]` | Entries whose password equals the master password (ux.md §5.16) |
-| `securitySeenAt` | integer or null | null | When the Security tab was last opened; the dot shows when a flagged entry has a later `updatedAt`. Written only when it would clear a dot, so opening the tab does not make a generation each time |
+| `securitySeenAt` | integer or null | null | When the Security tab was last opened; the dot shows when a flagged entry has a later `updatedAt`. Written only when it would clear a dot, so opening the tab does not make a generation each time. Reset to null when `masterPasswordMatches` gains an entry, so that an account newly found to share the master password gets the dot even when it was last edited before the last visit (build-plan §12, decision 23); the tab then also opens "Why this matters" again, as on a first visit |
 
 | Entry key | Type | Default when missing |
 |---|---|---|

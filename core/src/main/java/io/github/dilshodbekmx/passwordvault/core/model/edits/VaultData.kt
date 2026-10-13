@@ -43,7 +43,11 @@ internal object VaultData {
         val wanted = entryIds.toHashSet()
         val matches = vault.entries.asSequence().map { it.id }.filter { it in wanted }.distinct().toList()
         if (matches == vault.masterPasswordMatches) return Edited(vault, Unit)
-        return Edited(vault.copy(masterPasswordMatches = matches), Unit)
+        // An account newly found to share the master password is a new result even when it was last
+        // edited before the last visit of the Security tab: the dot shows again (decision 23).
+        val known = vault.masterPasswordMatches.toHashSet()
+        val seenAt = if (matches.any { it !in known }) null else vault.securitySeenAt
+        return Edited(vault.copy(masterPasswordMatches = matches, securitySeenAt = seenAt), Unit)
     }
 
     fun markSecuritySeen(vault: Vault, nowMs: Long): Edited<Unit> =

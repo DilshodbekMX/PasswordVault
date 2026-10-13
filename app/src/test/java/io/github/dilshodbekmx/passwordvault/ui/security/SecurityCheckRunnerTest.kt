@@ -322,6 +322,32 @@ class SecurityCheckRunnerTest {
         assertFalse("the same instant as the visit is seen", dot(fb, gmail.copy(updatedAt = seenAt)))
     }
 
+    /**
+     * The owner's decision 23 (build-plan.md §12): an account found to share the master password gets
+     * the dot even when it was last edited before the last visit, as after a master-password change
+     * that made the master password equal to an old account's password. Before, the card appeared
+     * without a dot, because the rule looks only at `updatedAt` (7.1's open question).
+     */
+    @Test
+    fun anAccountNewlyFoundToShareTheMasterPassword_getsTheDot_evenIfEditedBeforeTheVisit() = runTest {
+        val seenAt = NOW - DAY
+        val old = entry(1, "Old mail", password = "Tog'-Daryo-Osmon-7", updatedAt = seenAt - 30 * DAY)
+        val rig = started(Vault(entries = listOf(old, entry(2, "Other", password = "Other-Own-Pw-8", updatedAt = seenAt - DAY)), securitySeenAt = seenAt))
+        try {
+            rig.done(this)
+            assertFalse("seen after every change", rig.runner.unseen.value)
+            rig.repository.edit(VaultEdits.setMasterPasswordMatches(listOf(id(1)))) // the lock found it after the change (D-9b)
+            rig.done(this)
+            assertEquals(listOf(id(1)), rig.runner.report.value!!.sameAsMasterPassword)
+            assertTrue("a new result: the dot", rig.runner.unseen.value)
+            assertTrue("the visit clears it", rig.runner.markSeen())
+            rig.done(this)
+            assertFalse(rig.runner.unseen.value)
+        } finally {
+            rig.scope.cancel()
+        }
+    }
+
     @Test
     fun securitySeenAtIsWrittenOnlyWhenItClearsTheDot() = runTest {
         val quiet = Vault(entries = listOf(entry(1, "Alone"), entry(2, "Other")), securitySeenAt = null)
