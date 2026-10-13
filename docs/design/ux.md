@@ -614,7 +614,8 @@ Behaviour:
 - **Backup reminder banner**: "Your newest passwords are not in a backup yet." Buttons "Back up now" and "Later" (snooze 3 days; "Later" on "Make a backup now?" after a master password snoozes it as well, and the banner's "Later" holds that offer back: lock.md F12 step 2). It shows when all of these hold:
   - the reminder is on;
   - there are changes not in any backup;
-  - either no backup exists and the first account was added a day or more ago, or the last backup is 7 or more days old.
+  - either no backup exists and the first account was added a day or more ago, or the last backup is 7 or more days old;
+  - no new master password is pending (§5.24): no backup can be made then (lock.md F11 step 10).
 
   The guided change also offers a backup right after a password is changed (§5.17).
 

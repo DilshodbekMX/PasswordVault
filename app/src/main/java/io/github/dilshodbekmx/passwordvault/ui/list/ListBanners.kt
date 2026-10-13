@@ -13,7 +13,8 @@ import io.github.dilshodbekmx.passwordvault.settings.BackupReminder
  * 1. the lock's banner, from `LockStatus` (lock.md §13.4 items 2, 3 and 6): at most one of
  *    [PendingMasterPassword], [PendingReady], [Replaced] and [PracticeOverdue];
  * 2. [UnprotectedExport], an export without protection not yet deleted (ux.md §5.20);
- * 3. [BackupDue] (ux.md §5.11's rule, [ListBanners.backupDue]);
+ * 3. [BackupDue] (ux.md §5.11's rule, [ListBanners.backupDue]), never while a new master password
+ *    is pending: no backup can be made then (lock.md F11 step 10);
  * 4. [ChangesPending], password changes waiting for the user's answer (ux.md §5.17).
  *
  * At most [ListBanners.MAX_SHOWN] show at a time; the others wait.
@@ -60,7 +61,11 @@ sealed interface ListBanner {
         override fun toString(): String = "UnprotectedExport(savedAtMs=$savedAtMs)"
     }
 
-    /** "Your newest passwords are not in a backup yet." "Back up now" and "Later" (3 days). */
+    /**
+     * "Your newest passwords are not in a backup yet." "Back up now" and "Later" (3 days). Not while
+     * a new master password is pending (lock.md F11 step 10): the backup screen would only say "You
+     * can make a backup when your new master password has started working."
+     */
     data object BackupDue : ListBanner {
         override val priority: Int get() = 3
     }
@@ -100,7 +105,7 @@ object ListBanners {
         buildList {
             lockBanner(status, dismissed)?.let(::add)
             vault.plainExports.firstOrNull()?.let { add(ListBanner.UnprotectedExport(it.uri, it.name, it.savedAt)) }
-            if (backupDue(vault, reminder, nowMs)) add(ListBanner.BackupDue)
+            if (status.pending == null && backupDue(vault, reminder, nowMs)) add(ListBanner.BackupDue)
             changesPending(vault)?.let(::add)
         }
 

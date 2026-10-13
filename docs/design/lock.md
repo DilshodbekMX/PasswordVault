@@ -1174,7 +1174,7 @@ Without this route every backup becomes unopenable, and the next PIN lockout or 
 7. Time is credited by 6.9.
 8. After every unlock a banner says who asked, when, and how long is left, with "Cancel it" (13.4). Cancelling needs no proof and deletes `pending_mp`.
 9. Any correct current master password, typed anywhere, also deletes it: "You typed your master password, so the new one was cancelled."
-10. Practice is not asked. A backup cannot be made (ux.md §5.19): "You can make a backup when your new master password has started working."
+10. Practice is not asked. A backup cannot be made (ux.md §5.19): "You can make a backup when your new master password has started working." So nothing asks for one meanwhile: the list shows no backup reminder banner (ux.md §5.11), and "Make a backup now?" is not offered (F12 step 2).
 11. Before the last PIN try the warning says what is at stake (13.3).
 12. The new password is not tried before its time. Under the master-password field: "Your new master password starts working in about N hours."
 

@@ -118,6 +118,33 @@ class ListBannersTest {
         assertNull(ListBanners.lockBanner(LockStatus.NONE))
     }
 
+    /**
+     * lock.md F11 step 10: while a new master password is pending (waiting, or ready and put off
+     * with "Later") no backup can be made, so the list does not ask for one; the backup screen would
+     * only say "You can make a backup when your new master password has started working." The other
+     * banners stay. Before, the list showed "Your newest passwords are not in a backup yet." beside
+     * the pending banner.
+     */
+    @Test
+    fun noBackupBannerWhileANewMasterPasswordIsPending() {
+        val waiting = LockStatus.NONE.copy(pending = pending)
+        assertEquals(
+            listOf(
+                ListBanner.PendingMasterPassword(pending.requestedAtMs, Shortcut.PIN, 20),
+                ListBanner.UnprotectedExport(export.uri, export.name, export.savedAt),
+                ListBanner.ChangesPending(2, "a", "Title a"),
+            ),
+            ListBanners.all(busy, waiting, BackupReminder(), now),
+        )
+        val readyLater = LockStatus.NONE.copy(pending = ready)
+        assertEquals(
+            "\"Later\" on the ready banner: still pending",
+            listOf(ListBanner.UnprotectedExport(export.uri, export.name, export.savedAt), ListBanner.ChangesPending(2, "a", "Title a")),
+            ListBanners.all(busy, readyLater, BackupReminder(), now, setOf(Dismissed.PENDING_READY)),
+        )
+        assertTrue("due again once nothing is pending", ListBanner.BackupDue in ListBanners.all(busy, LockStatus.NONE, BackupReminder(), now))
+    }
+
     @Test
     fun hoursLeftAreRoundedUpAndAtLeastOne() {
         assertEquals(20, ListBanners.hoursLeft(20 * hour))
