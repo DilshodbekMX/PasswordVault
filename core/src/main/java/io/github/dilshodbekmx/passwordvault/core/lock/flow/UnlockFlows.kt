@@ -712,7 +712,9 @@ internal class UnlockFlows(private val core: LockCore) {
      *    password that never reached the disk is forgotten (§5.6).
      * 4. The notices, in the order of §13.4, and the proof of a typed master password (§5.8). After
      *    a master-password unlock a `fingerprint.rec` that read DAMAGED is replaced by one without a
-     *    slot, with the offer "Turn fingerprint unlock on again?" (§5.3, §13.4 item 5).
+     *    slot, with the offer "Turn fingerprint unlock on again?", and a `pin.rec` that read DAMAGED
+     *    the same way, with the offer "Choose a new PIN" (§5.3, §13.4 item 5; build-plan.md §12,
+     *    decisions 1 and 16).
      * 5. **The list is shown** ([LockState.Unlocked]) before any of these records is written: the
      *    record of a right PIN is written right after, still under the mutex, so that no other step
      *    can overtake it (§6.3 E.6, decision 27), and the other writes follow it. All are best effort.
@@ -792,6 +794,10 @@ internal class UnlockFlows(private val core: LockCore) {
         if ((fingerprintOff in FINGERPRINT_AGAIN || fingerprintDamaged) && !core.noSecureHardware) {
             notices += Notice.FingerprintAgain(core.nextNoticeId())
         }
+        // A damaged `pin.rec` the same way, as F15b handles a PIN key that is gone (§5.3, decision 16):
+        // "Choose a new PIN" comes with that unlock (`choosePin`: the PIN stopped working), and the
+        // damaged record goes at that unlock, so that it no longer blocks the key sweep.
+        val pinDamaged = by == UnlockBy.MASTER_PASSWORD && lock.pinRead is RecordRead.Damaged
         if (by == UnlockBy.MASTER_PASSWORD && anyUnreadable(lock)) notices += Notice.StorageUnreadable(core.nextNoticeId())
 
         val proof = proofBytes?.let { core.newProof(it, lock.vaultId) }
@@ -801,6 +807,7 @@ internal class UnlockFlows(private val core: LockCore) {
         // The writes nobody waits for, the right PIN's record first.
         lock.pin.flush()
         if (fingerprintDamaged) lock.fingerprint.replaceDamaged()
+        if (pinDamaged) lock.pin.replaceDamaged()
         if (before == null) {
             val read = lock.master.lastRead
             if (read is RecordRead.Missing || read is RecordRead.Damaged) {

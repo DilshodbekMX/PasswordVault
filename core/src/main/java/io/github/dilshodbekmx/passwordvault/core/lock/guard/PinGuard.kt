@@ -193,12 +193,13 @@ enum class PinCharge {
  * disk: a correct master password ([masterPasswordCorrect], §6.4, §6.8 step 5), a new PIN
  * ([setPin], F6 step 7), the wraps kept at an unlock ([keepWrapsFor], §5.4), the wrap of a
  * master-password change ([changeWraps], F8 step 5), a slot removed for another reason
- * ([removeSlot]: F15b, §5.11 step 3, F16b step 5), and the notice of wrong tries
- * ([unseenShown], §13.4 item 4).
+ * ([removeSlot]: F15b, §5.11 step 3, F16b step 5), the notice of wrong tries ([unseenShown],
+ * §13.4 item 4), and a damaged record replaced at a master-password unlock ([replaceDamaged], §5.3).
  *
  * **Records it never writes:** a `pin.rec` that read DAMAGED, NEWER or UNREADABLE is not used and
- * not rewritten (lock.md §5.3); only a new PIN ([setPin], "set it up again") replaces a DAMAGED or
- * UNREADABLE one, and nothing replaces a NEWER one.
+ * not rewritten (lock.md §5.3), with two exceptions: a new PIN ([setPin], "set it up again")
+ * replaces a DAMAGED or UNREADABLE one, and a DAMAGED one goes at the next master-password unlock
+ * ([replaceDamaged]; build-plan.md §12, decision 16). Nothing replaces a NEWER one.
  *
  * It deletes a PIN key only where lock.md says "at once": when its slot is removed (at a limit,
  * GONE, a slot left without wraps, [removeSlot]). A key whose slot is *replaced* by [setPin] is left
@@ -542,6 +543,32 @@ class PinGuard(
         read = RecordRead.Ok(next)
         startUpFailed = false
         forgetMemory()
+        return true
+    }
+
+    /**
+     * A `pin.rec` that read DAMAGED goes (lock.md §5.3; build-plan.md §12, decision 16), at the
+     * master-password unlock that offers "Choose a new PIN": it is replaced by a record without a
+     * slot, with `off = key_gone`, as F15b leaves one, so that the lock screen and the offer stay
+     * those of a PIN that stopped working. It is not repaired: what it held cannot be read, its
+     * counts and its unseen wrong tries included, and which key it named cannot be known, so
+     * nothing is deleted here; with every record readable again the key sweep runs at the next
+     * start and deletes the key that no record names (§5.7). Returns whether the new record is on
+     * disk; when the write fails the record stays damaged, here and on disk, and the next
+     * master-password unlock tries again. Nothing happens to a record that did not read DAMAGED.
+     */
+    fun replaceDamaged(): Boolean {
+        if (rec != null || read !is RecordRead.Damaged) return true
+        val next = PinRecord(
+            vaultId = vaultId,
+            slot = null,
+            guard = PinRecord.Guard(charged = false, row = 0, total = 0),
+            off = PinRecord.Off(PinRecord.OffReason.KEY_GONE, clock.wallMs()),
+            unseen = PinRecord.Unseen(count = 0, lastAtMs = null, interrupted = false),
+        )
+        if (!write(next)) return false
+        rec = next
+        read = RecordRead.Ok(next)
         return true
     }
 
