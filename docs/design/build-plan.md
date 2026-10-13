@@ -464,7 +464,7 @@ After `wave-6-ok`. From here every package ships its strings in all four languag
 - **Accepted when:** [JVM] card order, the dot only for results not yet seen, `securitySeenAt` written only when it clears a dot, groups ordered email first, the "left out" count; the check of 480 entries finishes in the background without blocking the list.
 
 ### 7.2 Guided change
-- **Owns:** `APP/ui/security/GuidedChange*.kt`, the body of `ChangeNav.kt`, `strings_change.xml` in all four directories, `APP-T/ui/security/change/`, `APP-AT/ui/security/change/`.
+- **Owns:** `APP/ui/security/GuidedChange*.kt`, the body of `ChangeNav.kt`, `strings_change.xml` in all four directories, `APP-T/ui/security/change/`, `APP-AT/ui/security/change/`, `tools/emu/change/` (its [script] line).
 - **Inputs:** U §5.17, §12 check 5; the guided-change edits of 2.4.
 - **Accepted when:** [JVM] ViewModel tests pass; [script] on the emulator the change survives a lock and `am force-stop` at every step, and both passwords can be copied from the list and the detail screen meanwhile.
 
