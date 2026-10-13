@@ -1039,7 +1039,7 @@ Short pages of plain text (the text is in §7.6):
 - "If you lose your phone or move to a new one";
 - "If you forget your master password";
 - "If you forget your PIN";
-- "Open-source licences" (EFF wordlist CC BY, zxcvbn4j MIT, the dictionary sources, the Argon2 library, fonts);
+- "Open-source licences": the EFF word list (CC BY 4.0, with the change made to it); the strength list's sources (GeoNames CC BY 4.0; the Uzbek Wikipedia, Wiktionary and FrequencyWords/OpenSubtitles CC BY-SA 4.0); zxcvbn4j and zxcvbn (MIT); Argon2kt (MIT) with the Argon2 reference code (CC0 or Apache 2.0); Bouncy Castle (MIT); AndroidX with androidx.biometric 1.4.0-alpha07 (and why that version), Kotlin and kotlinx, and the small libraries they pull in (Apache 2.0); Material Icons (Apache 2.0); the app's own icons, drawn for it. No font, since none is bundled (architecture.md D-22). Each part has its full licence text;
 - "Version".
 
 ### 5.23 Recently deleted
@@ -1121,8 +1121,8 @@ This departs from platform.md §1 item 3 ("clear on lock"), and architecture.md 
 
 **What no app can do** (architecture.md D-14, measured in the clipboard lab): after a **force-stop**, Android cancels the app's alarms, and while the app's battery use is set to **"Restricted"** neither the alarm nor the timer runs once the app has been in the background for about a minute. In both cases the copy stays until the app is opened again, which then clears it. The first-copy tip and Help say so.
 
-**First-copy tip** (once; an `AlertDialog` with "OK"):
-- The main text: "Now open the app or website, touch and hold the password box, and tap Paste. The password is removed from the clipboard after 1 minute. Anything else you copy in that minute may be removed too. Never pin a password in your keyboard's clipboard: pinned items are never removed."
+**First-copy tip** (once; an `AlertDialog` with "OK"): it opens after the first copy of a password or of another secret copied with the sensitive flag (not a username or a website); `OneTime.FIRST_COPY_TIP` is written as it opens, and a clip that a new process restores does not open it (build plan 7.3).
+- The main text: "Now open the app or website, touch and hold the password box, and tap Paste. The password is removed from the clipboard after 1 minute. Anything else you copy in that minute may be removed too. Never pin a password in your keyboard's clipboard: pinned items are never removed." "1 minute" is the delay chosen in Settings.
 - Then: "If you force-stop this app, or set its battery use to 'Restricted', a copied password stays on the clipboard until you open the app again."
 - Reason: Gboard's pinned clips survive every clear, including Android's own one-hour clear [E: V-P2].
 - **On Samsung phones** it adds: "Samsung phones keep a list of copied text. To keep passwords out of it, turn off or clear the clipboard history in Samsung Keyboard settings." A 2025 report says One UI's clipboard history stores copied text, including passwords, in plain text with no expiry [2: cyberpress.org, 2025-04-22]. Whether it honours the sensitive flag is unknown.
@@ -1158,19 +1158,26 @@ Rules for all text:
 
 **7.6 Help pages**
 - *How your passwords are protected*:
-  - "Your passwords are kept in a locked file. Only your master password can unlock it. The app never connects to the internet; it does not have permission to. Screenshots of the app are blocked. Passwords you copy are removed from the clipboard after 1 minute."
+  - "Your passwords are kept in a locked file. Only your master password can unlock it. The app never connects to the internet; it does not have permission to. Screenshots of the app are blocked. Passwords you copy are removed from the clipboard after 1 minute. Anything else you copy in that time may be removed too." ("1 minute" is the delay chosen in Settings.)
   - "If you force-stop the app, or set its battery use to 'Restricted', a copied password stays on the clipboard until you open the app again." (architecture.md D-14)
   - "Anyone whose fingerprint is saved in this phone's settings can open the app." (lock.md §9.4)
+  - "Don't use your phone's unlock PIN or your bank card PIN as the app PIN. Someone who knows it could open the app." (lock.md §2.3)
+  - "Someone who knows your PIN can choose a new master password for the app. It starts working only after 24 hours with the phone switched on, and until then the app tells you about it each time you open it. If it wasn't you, tap 'Cancel it' and change your PIN." (lock.md F11)
+  - "Passwords shown as dots stay hidden from other apps, even from an app that may control your phone. On Android 13 and older, such an app can read a password while you show it on the screen." (lock.md §2.3, §13.5; build plan 3.12)
   - "What the app cannot protect you from: a phone that has been hacked or 'rooted', a harmful keyboard app, or an app you allowed to control your phone (accessibility)."
   - "On a rooted phone, someone can try every PIN in a few hours. Your master password still protects your passwords, so make it strong and never use it anywhere else." (lock.md §2.3)
   - "Never use 'Clear storage' to fix a problem with your PIN: it deletes your passwords, and the ones from before a replaced master password with them." (lock.md §16.2 item 12)
   - "Never install an app file (APK) sent to you in Telegram or offered by a website, even if it seems to come from someone you know. Never let an app control your phone (accessibility) unless you need it because of a disability."
+  - "Anyone who has your unlocked phone can delete the app, and your passwords with it. Only a backup kept outside the phone survives that."
   - "The app cannot tell you if a website leaked your password, because it does not use the internet."
 
   The local threat: Group-IB's Ajina.Banker campaign spread malicious APKs through Telegram channels, mostly aimed at users in Uzbekistan, and abused accessibility services [E: critique m11, group-ib.com/blog/ajina-malware]. "Install apps only from Google Play" was dropped, because this app itself may be installed from a file.
 - *If you lose your phone or move to a new one*:
   - "Install PasswordVault on your new phone, tap 'Restore from a backup file', choose your newest backup and type your master password. Without a backup, your passwords cannot be brought back."
-  - "If you moved your apps with 'Copy apps and data', open PasswordVault on the new phone and type your master password once. Then choose a PIN for the new phone."
+  - "Moving your apps to a new phone, for example with 'Copy apps and data', does not bring your passwords. Make a backup on the old phone and restore it on the new one." (architecture.md §7.3: the vault is kept out of device-to-device transfer.)
+  - "If PasswordVault on the new phone says 'Welcome back', type your master password once. Then choose a PIN for the new phone."
+  - "If your phone is lost or stolen, your passwords stay locked. After 5 wrong PINs in a row the PIN is turned off, and then only your fingerprint or your master password opens the app."
+  - The app's name in these texts comes from `app_name` (D-23), never written into the sentence.
 - *If you forget your master password*:
   - "If your PIN or fingerprint still opens the app, open it and choose a new master password: Settings › App lock › Change master password › I don't remember it."
   - "The new master password starts working after 24 hours with the phone switched on. The countdown stops while the phone is switched off, so open the app in the morning and again in the evening. Until then, open the app with your PIN or fingerprint as usual. Then make a new backup." (lock.md F11)
