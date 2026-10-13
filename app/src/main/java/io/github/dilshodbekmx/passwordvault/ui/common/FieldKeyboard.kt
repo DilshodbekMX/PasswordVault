@@ -1,6 +1,7 @@
 package io.github.dilshodbekmx.passwordvault.ui.common
 
 import android.os.Build
+import android.os.SystemClock
 import android.view.View
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
@@ -13,8 +14,10 @@ import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.platform.WindowInfo
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withContext
 
 /**
  * The keyboard of a field that has the focus when its screen is made: at the first show, and after
@@ -28,8 +31,8 @@ import kotlinx.coroutines.flow.first
  * closes itself again (`HIDE_SOFT_INPUT_EXTRACT_INPUT_CHANGED`) after the screen's request; nothing
  * asked again, and the keyboard stayed hidden (job 4.2b, 2026-10-08: 17 of 17 rotations on the lock
  * screen). So [show] asks again for about a second, whenever the field still has the focus and the
- * keyboard is not shown. A keyboard closed by hand within that second comes back once more; after
- * it, nothing is asked.
+ * keyboard is not shown. A keyboard closed by hand within that second comes back; after it,
+ * nothing is asked.
  */
 @Stable
 class FieldKeyboard internal constructor(
@@ -61,8 +64,12 @@ class FieldKeyboard internal constructor(
     suspend fun show(focused: () -> Boolean) {
         if (!shown()) keyboard?.show()
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return
-        repeat((AGAIN_MS / STEP_MS).toInt()) {
-            delay(STEP_MS)
+        // The keyboard closes itself in real time, so the second is the phone's, also under a test's clock, which
+        // holds back the delays of a composition: the waits run on Dispatchers.Default and the end is uptime.
+        val end = SystemClock.uptimeMillis() + AGAIN_MS
+        while (true) {
+            withContext(Dispatchers.Default) { delay(STEP_MS) }
+            if (SystemClock.uptimeMillis() > end) return
             if (focused() && !shown()) keyboard?.show()
         }
     }
