@@ -3,7 +3,6 @@ package io.github.dilshodbekmx.passwordvault.i18n
 import android.app.LocaleManager
 import android.content.Context
 import android.content.res.Configuration
-import android.content.res.Resources
 import android.os.Build
 import android.os.LocaleList
 import androidx.annotation.StringRes
@@ -118,12 +117,19 @@ object AppLanguages {
     /** The locales of [configuration], first the one its resources prefer. */
     fun localesOf(configuration: Configuration): List<Locale> = configuration.locales.toList()
 
-    /** The phone's own languages, which the [AppLanguage.SYSTEM] choice follows. */
+    /**
+     * The phone's own languages, which the [AppLanguage.SYSTEM] choice follows. From Android 13 the
+     * system's list (`LocaleManager.systemLocales`). Before, the application context's configuration:
+     * AppCompat leaves the application context in the phone's languages (i18n.md §1.4.3), with
+     * Android's choice among the APK's languages first. The list of `Resources.getSystem()` is ordered
+     * for the framework's own translations instead, which have no Uzbek Cyrillic: with the phone set
+     * to Ўзбекча, then English, it put English first (build plan 6.1, seen on API 24).
+     */
     fun systemLocales(context: Context): List<Locale> =
         if (Build.VERSION.SDK_INT >= 33) {
             context.getSystemService(LocaleManager::class.java).systemLocales.toList()
         } else {
-            Resources.getSystem().configuration.locales.toList()
+            context.applicationContext.resources.configuration.locales.toList()
         }
 
     /** The language the app would show with [AppLanguage.SYSTEM]: the dialog's second line under it. */
