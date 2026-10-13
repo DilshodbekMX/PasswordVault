@@ -465,6 +465,29 @@ class ImportFlowTest {
         assertFalse(bank.notes.contains(secret))
     }
 
+    /**
+     * The owner's correction of decision 20 (2026-10-13): the line also stands for hidden fields
+     * beyond the 20 an account holds, which are not too long, so it says why without a length:
+     * "Bank: 1 hidden value could not be kept hidden and was not imported".
+     */
+    @Test
+    fun theHiddenValuesLine_saysTheyCouldNotBeKeptHidden_forEitherLimit() {
+        val dir = generateSequence(java.io.File("").absoluteFile) { it.parentFile }.map { java.io.File(it, "app/src/main/res/values") }.first { it.isDirectory }
+        val xml = javax.xml.parsers.DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(java.io.File(dir, "strings_import.xml"))
+        val plurals = xml.getElementsByTagName("plurals")
+        val items = (0 until plurals.length).map { plurals.item(it) as org.w3c.dom.Element }
+            .single { it.getAttribute("name") == "import_change_hidden_not_imported" }
+            .getElementsByTagName("item")
+        val forms = (0 until items.length).associate { (items.item(it) as org.w3c.dom.Element).let { e -> e.getAttribute("quantity") to e.textContent } }
+        assertEquals(
+            mapOf(
+                "one" to "%1\$d hidden value could not be kept hidden and was not imported",
+                "other" to "%1\$d hidden values could not be kept hidden and were not imported",
+            ),
+            forms,
+        )
+    }
+
     @Test
     fun dataOfANewerVersionIsSaidNotToBeImported() = ImportKit.run {
         val entries = listOf(account("66666666-6666-4666-8666-666666666666", "Mail", "u", "P-1", "https://mail.uz"))

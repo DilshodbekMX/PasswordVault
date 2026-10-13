@@ -1086,8 +1086,8 @@ class ImportChange(val kind: Kind, val count: Int) {
         /**
          * [count] hidden values were not imported: each was over 1,000 characters or beyond the 20
          * fields an account holds, and the notes, where it would show unmasked, are no place for it
-         * (formats.md §8.4; build-plan §12, decision 20). "Gmail: 1 hidden value was too long to
-         * keep hidden and was not imported."
+         * (formats.md §8.4; build-plan §12, decision 20). "Gmail: 1 hidden value could not be
+         * kept hidden and was not imported."
          */
         HIDDEN_VALUES_NOT_IMPORTED,
 
