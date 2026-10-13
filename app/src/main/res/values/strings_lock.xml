@@ -120,6 +120,12 @@
          (lock.md F11 steps 15 and 16). Nothing changed: the new master password stays ready, and
          PIN and fingerprint work as before. -->
     <string name="lock_mp_not_finished">Couldn’t finish now. Nothing was changed. Try again later.</string>
+    <!-- On the field of the passwords from before a replacement, after "Open my passwords from …"
+         (lock_older_set_open) was tapped and the app could not put them in place of the newer set
+         (lock.md F16b step 4). Nothing changed: the newer set is still the one in use, and typing
+         the master password again asks once more. %1$s is the day and month of that button, for
+         example "Oct 7". -->
+    <string name="lock_mp_older_set_not_opened">Couldn’t open your passwords from %1$s. Nothing was changed.</string>
     <!-- After several wrong master passwords the field waits 30 seconds (lock.md §6.8). -->
     <string name="lock_mp_wait">Wait 30 seconds, then try again. Take your time and look at your paper.</string>
     <!-- The countdown of that wait, once a second (i18n.md glossary 59, used only here). -->

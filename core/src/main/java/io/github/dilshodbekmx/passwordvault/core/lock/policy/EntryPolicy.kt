@@ -63,7 +63,10 @@ import io.github.dilshodbekmx.passwordvault.core.lock.record.StateRecord
  * **A damaged `fingerprint.rec`** (§5.3) is not offered, as after a fingerprint key that is gone
  * (F15a), and the screen says that fingerprint unlock stopped working on this phone
  * ([DAMAGED_FINGERPRINT_LINE]); a master-password unlock then offers to turn fingerprint unlock on
- * again (§13.4 item 5).
+ * again (§13.4 item 5). **A damaged `pin.rec`** is a PIN that stopped working
+ * ([PinState.STOPPED_WORKING]), as after a PIN key that is gone (F15b); the master-password unlock
+ * that then offers "Choose a new PIN" replaces it with a record without a slot (build-plan.md §12,
+ * decisions 1 and 16), which this function reads the same way.
  *
  * The screens hold facts, never sentences (lock.md §11); the lock screens pick the texts of §13.3
  * from them.

@@ -177,6 +177,33 @@ class MasterPasswordScreenTest {
         assertEquals(listOf(LockIntent.OpenAside(OLD_VAULT), LockIntent.UsePin), lock.sent)
     }
 
+    /**
+     * Build-plan §12, decision 17 (lock.md §13.3): after "Open my passwords from 7 Oct" could not
+     * swap the two sets, the field of the passwords from before says so, with the date of that
+     * button, and can be typed in again.
+     */
+    @Test
+    fun aSwapThatFailedSaysThePasswordsFromThatDayWereNotOpened() {
+        val replacedAt = 1_791_331_200_000L
+        val lock = FakeLockManager(
+            initial = LockUiState.Locked(
+                PLAIN_SCREEN.copy(
+                    reason = MpReason.FromBefore(replacedAt),
+                    aside = AsideLine.FromBefore(replacedAt),
+                    error = MpError.OlderSetNotOpened(replacedAt),
+                ),
+            ),
+        )
+        show(lock)
+        val formatters = Formatters(AppLanguages.screenLocale(AppLanguages.localesOf(resources.configuration)), hour24 = true)
+        compose.onNodeWithTag(LockTags.TITLE).assertTextEquals(UiText.of(R.string.lock_from_before, formatters.date(replacedAt)).resolve(resources))
+        compose.onNodeWithTag(LockTags.line(0))
+            .assertTextEquals(UiText.of(R.string.lock_mp_older_set_not_opened, formatters.dayMonth(replacedAt)).resolve(resources))
+        assertEquals("one line only", 0, compose.onAllNodesWithTagCount(LockTags.line(1)))
+        compose.onNodeWithTag(LockTags.FIELD).assertIsEnabled().performTextInput(SECRET)
+        compose.onNodeWithTag(LockTags.UNLOCK).assertIsEnabled()
+    }
+
     @Test
     fun theWaitDisablesTheFieldAndCountsDown() {
         val until = SystemClock.elapsedRealtime() + 3_000

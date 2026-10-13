@@ -4,6 +4,7 @@ import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -96,9 +97,31 @@ class BackupScreensTest {
             compose.waitUntil(TIMEOUT_MS) { rig.launcher.calls.isNotEmpty() }
             rig.answerSaveAs(drive)
             compose.waitUntil(TIMEOUT_MS) { vm.ui.value.step is BackupStep.Saved }
-            compose.onNodeWithText(text(R.string.backup_place_drive)).assertIsDisplayed()
-            compose.onNodeWithText(text(R.string.backup_upload_later)).assertIsDisplayed()
+            // One line about the place (decision 20): the result, then only "This place may upload the file later. …".
+            compose.onNodeWithTag(BackupTags.line(1)).assertTextEquals(text(R.string.backup_upload_later))
+            compose.onNodeWithTag(BackupTags.line(2)).assertDoesNotExist()
             compose.onNodeWithTag(BackupTags.SEND).assertDoesNotExist()
+        }
+    }
+
+    @Test
+    fun aBackupOnAnotherPlaceSaysOnlyThatItMayBeUploadedLaterAndOffersSending() {
+        BackupScreensRig().use { rig ->
+            rig.opens()
+            val card = "content://com.android.externalstorage.documents/document/1A2B-3C4D%3APasswordVault-backup.pvault"
+            rig.documents.places[card] = Place.Other("SD card")
+            rig.documents.names[card] = NAME
+            val vm = rig.backup()
+            compose.setContent { PasswordVaultTheme(ThemeChoice.LIGHT) { BackupScreen(vm, rig.nav) } }
+            compose.onNodeWithTag(BackupTags.FIELD).performTextInput(PASSWORD)
+            compose.onNodeWithTag(BackupTags.SUBMIT).performClick()
+            compose.waitUntil(TIMEOUT_MS) { rig.launcher.calls.isNotEmpty() }
+            rig.answerSaveAs(card)
+            compose.waitUntil(TIMEOUT_MS) { vm.ui.value.step is BackupStep.Saved }
+            // One line about the place (decision 20): no "Saved to SD card." before it any more.
+            compose.onNodeWithTag(BackupTags.line(1)).assertTextEquals(text(R.string.backup_upload_later))
+            compose.onNodeWithTag(BackupTags.line(2)).assertDoesNotExist()
+            compose.onNodeWithTag(BackupTags.SEND).performScrollTo().assertIsDisplayed()
         }
     }
 

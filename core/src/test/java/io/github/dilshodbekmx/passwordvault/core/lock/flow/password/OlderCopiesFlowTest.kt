@@ -7,6 +7,7 @@ import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockCause
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockScreen
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.LockState
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.MasterPasswordOutcome
+import io.github.dilshodbekmx.passwordvault.core.lock.flow.MpError
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.MpReason
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.Notice
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.OlderPasswordAnswer
@@ -435,7 +436,7 @@ class OlderCopiesFlowTest {
     }
 
     @Test
-    fun f16b_afterAReplacement_whenTheSwapFails_nothingChanged_andThatVaultsOwnLockScreenAgain() {
+    fun f16b_afterAReplacement_whenTheSwapFails_nothingChanged_andThatVaultsOwnFieldSaysSo() {
         afterAReplacement()
         f.unlockWith(PASSWORD)
         f.port.failWrites(FakeVaultPort.WriteFault.REFUSED)
@@ -443,13 +444,39 @@ class OlderCopiesFlowTest {
         f.answerOlder(OlderPasswordAnswer.OPEN_OLDER_SET)
 
         assertEquals(MpReason.FromBefore(replacedAt), f.field.reason)
+        // "Couldn't open your passwords from 7 Oct. Nothing was changed." (§13.3; build-plan §12,
+        // decision 17), with the date the question named; before it the field came back without a word.
+        assertEquals(MpError.OlderSetNotOpened(replacedAt), f.field.error)
+        assertEquals(AsideLine.FromBefore(replacedAt), f.field.aside)
         assertNull(f.port.openAsideId)
         assertEquals(n, f.port.current!!.vaultId)
         assertNotNull(f.stateRecord(VAULT).replaced)
         assertNotNull(f.pinRecord(VAULT).slot)
+        // Its master password typed again asks the question again, and the line is gone.
         f.unlockWith(PASSWORD)
+        assertEquals(question, f.screen)
         f.answerOlder(OlderPasswordAnswer.OPEN_OLDER_SET)
         assertEquals(VAULT, f.port.current!!.vaultId)
+    }
+
+    @Test
+    fun f16b_afterAReplacement_theLineOfASwapThatFailed_goesWithTheVisit_andWithAWrongPassword() {
+        afterAReplacement()
+        f.unlockWith(PASSWORD)
+        f.port.failWrites(FakeVaultPort.WriteFault.REFUSED)
+        f.answerOlder(OlderPasswordAnswer.OPEN_OLDER_SET)
+        assertEquals(MpError.OlderSetNotOpened(replacedAt), f.field.error)
+
+        assertEquals(MasterPasswordOutcome.Wrong, f.unlockWith("not the words of then"))
+        assertTrue(f.field.error is MpError.Wrong)
+
+        f.unlockWith(PASSWORD)
+        f.port.failWrites(FakeVaultPort.WriteFault.REFUSED)
+        f.answerOlder(OlderPasswordAnswer.OPEN_OLDER_SET)
+        assertEquals(MpError.OlderSetNotOpened(replacedAt), f.field.error)
+        f.leaveAndReturn()
+        assertEquals(MpReason.FromBefore(replacedAt), f.field.reason)
+        assertNull("a new visit starts without it", f.field.error)
     }
 
     @Test

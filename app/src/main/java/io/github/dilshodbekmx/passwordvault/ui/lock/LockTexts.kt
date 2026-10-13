@@ -155,6 +155,13 @@ internal object LockTexts {
     /** The button "Open my passwords from 7 Oct". */
     fun olderSetOpen(atMs: Long): UiText = UiText.of(R.string.lock_older_set_open, LockDate(atMs, LockDate.Style.DAY_MONTH))
 
+    /**
+     * "Couldn't open your passwords from 7 Oct. Nothing was changed.": that button was tapped and the
+     * vaults could not change places (`MpError.OlderSetNotOpened`, lock.md §13.3; build-plan.md §12,
+     * decision 17). The date is the button's.
+     */
+    fun olderSetNotOpened(atMs: Long): UiText = UiText.of(R.string.lock_mp_older_set_not_opened, LockDate(atMs, LockDate.Style.DAY_MONTH))
+
     // ---- "Your passwords can't be opened" -------------------------------------------------------
 
     fun unreadable(why: CurrentVault.Why): UiText = UiText.of(

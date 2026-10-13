@@ -131,22 +131,23 @@ class BackupPartsTest {
 
     // ---- The texts of a saved backup --------------------------------------------------------------
 
+    /**
+     * The owner's decision 20 (build-plan.md §12): a place that is not the phone shows one line only,
+     * that it may upload the file later (decision 8). Before it Google Drive also said "Saved to
+     * Google Drive. It is uploaded when the phone is online.", which repeated it, and another place
+     * "Saved to SD card.".
+     */
     @Test
-    fun aSavedBackupSaysWhereItIsAndWhetherThePlaceMayUploadItLater() {
+    fun aSavedBackupSaysWhereItIsOrThatThePlaceMayUploadItLater_inOneLine() {
         val name = "PasswordVault-backup-2026-10-08.pvault"
         val saved = UiText.plural(R.plurals.backup_saved, 52, 52, name)
         assertEquals(
             listOf(saved, UiText.of(R.string.backup_place_phone)),
             BackupTexts.saved(BackupStep.Saved(name, 52, Place.PhoneStorage)),
         )
-        assertEquals(
-            listOf(saved, UiText.of(R.string.backup_place_drive), UiText.of(R.string.backup_upload_later)),
-            BackupTexts.saved(BackupStep.Saved(name, 52, Place.GoogleDrive)),
-        )
-        assertEquals(
-            listOf(saved, UiText.of(R.string.backup_place_other, "SD card"), UiText.of(R.string.backup_upload_later)),
-            BackupTexts.saved(BackupStep.Saved(name, 52, Place.Other("SD card"))),
-        )
+        for (place in listOf(Place.GoogleDrive, Place.Other("SD card"))) {
+            assertEquals("$place", listOf(saved, UiText.of(R.string.backup_upload_later)), BackupTexts.saved(BackupStep.Saved(name, 52, place)))
+        }
     }
 
     @Test

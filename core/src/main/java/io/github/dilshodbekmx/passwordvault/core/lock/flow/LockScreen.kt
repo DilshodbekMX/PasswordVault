@@ -232,6 +232,15 @@ sealed interface MpError {
 
     /** "Your phone doesn't have enough free memory to open your passwords. …" with "Try again". */
     data object NoMemory : MpError
+
+    /**
+     * "Couldn't open your passwords from 7 Oct. Nothing was changed." (lock.md §13.3; build-plan.md
+     * §12, decision 17): on the field of a vault from before a replacement, "Open my passwords from
+     * 7 Oct" ([LockScreen.OpenOlderSet]) was chosen and storage could not make the two vaults change
+     * places (F16b step 4). [atMs] is the date the question named: when the master password was
+     * replaced.
+     */
+    data class OlderSetNotOpened(val atMs: Long) : MpError
 }
 
 /**

@@ -531,6 +531,8 @@ class MasterPasswordFlowTest {
 
     @Test
     fun item5_aDamagedPinRecord_isNeverRepairedInPlace_andANewPinIsOfferedAfterTheMasterPassword() {
+        // Since decision 16 (build-plan.md §12) that unlock replaces it with a record without a slot,
+        // as F15b leaves one; DamagedPinRecordTest has the rest.
         val vault = f.seedVault()
         f.plantPin(vault)
         f.plantState()
@@ -542,8 +544,10 @@ class MasterPasswordFlowTest {
         assertEquals(LockSummary.Pin.Off(PinReason.STOPPED_WORKING), f.engine.summary.value.pin)
         assertTrue(f.unlockWith(PASSWORD) is MasterPasswordOutcome.Right)
         assertEquals(ChoosePinReason.STOPPED_WORKING, (f.notices.single() as Notice.ChoosePin).reason)
-        assertArrayEquals(damaged, f.files.bytes(f.dirOf(VAULT), "pin.rec"))
-        assertEquals(1, f.keys.aliases.size) // a damaged record blocks the sweep: its key may be named there
+        assertFalse("not repaired: replaced", damaged.contentEquals(f.files.bytes(f.dirOf(VAULT), "pin.rec")))
+        assertEquals(PinRecord.Off(PinRecord.OffReason.KEY_GONE, f.clock.wallMs()), f.pinRecord().off)
+        assertNull(f.pinRecord().slot)
+        assertEquals(1, f.keys.aliases.size) // its key, which nobody can name now, waits for the sweep at the next start
     }
 
     @Test

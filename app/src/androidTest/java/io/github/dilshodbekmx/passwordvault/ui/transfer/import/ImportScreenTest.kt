@@ -91,6 +91,32 @@ class ImportScreenTest {
         noPasswordShown()
     }
 
+    /**
+     * The owner's decision 20: a hidden value over 1,000 characters is not imported, and the preview
+     * lists it on its account: "Bank: 1 hidden value was too long to keep hidden and was not
+     * imported". No text of the preview shows any of it.
+     */
+    @Test
+    fun aHiddenValueTooLongToKeepHiddenIsListedOnItsAccountAndNeverShown() {
+        val secret = "Qz8" + (1..250).joinToString("") { "Xy${it % 10}w" }
+        rig.recorded(
+            (
+                """{"encrypted": false, "items": [{"type": 1, "name": "Bank", "fields": [{"name": "Recovery key", "value": "$secret", "type": 1}],""" +
+                    """ "login": {"username": "aziz", "password": "Pw-Bank-1", "uris": [{"uri": "https://bank.uz"}]}}]}"""
+                ).toByteArray(),
+            name = "bitwarden.json",
+        )
+        val vm = rig.file()
+        compose.setContent { ImportTestTheme { ImportScreen(vm, rig.nav) } }
+        compose.waitUntil(TIMEOUT_MS) { vm.ui.value.screen is ImportScreen.Preview }
+        compose.onNodeWithTag(ImportTags.PREVIEW).performScrollToKey("changes")
+        compose.waitForIdle()
+        val line = plural(R.plurals.import_change_hidden_not_imported, 1, 1)
+        compose.onNodeWithText(string(R.string.import_change, "Bank", line), useUnmergedTree = true).assertExists()
+        val texts = compose.shownTexts()
+        assertTrue("the value is not shown", texts.none { text -> secret.windowed(12, 50).any { it in text } })
+    }
+
     @Test
     fun importThenTheQuestionAboutTheFile() {
         rig.recorded(CHROME_CSV.toByteArray())

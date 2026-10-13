@@ -854,11 +854,9 @@ The app is stricter on locking because the user asked for a bank-like lock. It k
    - The cost: the paper is kept at home, and typing a long passphrase for every backup makes backups rarer. The offer after each master-password entry is how the app makes up for it.
 3. **File picker** (`CreateDocument`, suggested name `PasswordVault-backup-2026-10-06.pvault`). Google Drive appears in the picker when its app is installed. Time in the picker counts as time in the app (§4).
 4. **"Saving…" then "Checking the saved file…"** The backup was made and opened with the master password before the picker opened (lock.md F12 step 4); the saved file is read back and must be that backup, byte for byte, before success is shown [E: storage.md §5.4; V-S6].
-5. **Result**: "Backup saved: PasswordVault-backup-2026-10-06.pvault (52 accounts)." The next line depends on the place, recognised by the document's provider:
+5. **Result**: "Backup saved: PasswordVault-backup-2026-10-06.pvault (52 accounts)." One line follows, which depends on the place, recognised by the document's provider:
    - **Phone storage** (the Downloads provider, or the main storage root of the external-storage provider): "This copy is on this phone. If the phone is lost, this copy is lost too. Keep a copy somewhere else." `Button` "Send to another app…".
-   - **Google Drive** (Drive's document provider [I: check its authority on a device]): "Saved to Google Drive. It is uploaded when the phone is online."
-   - **Anywhere else** (SD card, USB drive, other apps): "Saved to <the place's name>." `OutlinedButton` "Send to another app…".
-   - **Every place that is not the phone** (Google Drive and anywhere else) adds a line: "This place may upload the file later. Open it there once to check that it arrived." The check after saving reads the copy the place keeps on this phone; whether the place has sent it on cannot be seen from here (build-plan §12, decision 8).
+   - **Every place that is not the phone**, Google Drive (Drive's document provider [I: check its authority on a device]) and anywhere else (SD card, USB drive, other apps): "This place may upload the file later. Open it there once to check that it arrived." That is the only line: the check after saving reads the copy the place keeps on this phone, and whether the place has sent it on cannot be seen from here (build-plan §12, decisions 8 and 20). Anywhere else has `OutlinedButton` "Send to another app…"; Google Drive has none.
 6. **"Send to another app…"** (encrypted backup only) opens the share sheet with the file through a `FileProvider` (Telegram Saved Messages, email to yourself, Drive).
    - Text: "The file is locked with your master password. Keep your master password strong."
    - The shared copy is encrypted and is kept until the next app start, so a receiving app can still read it after this app has locked.
@@ -909,7 +907,7 @@ Exact file layouts are in formats.md. This section covers what the user sees.
   - `OutlinedButton` "Delete it now" (`DocumentsContract.deleteDocument`; possible when the provider reports `FLAG_SUPPORTS_DELETE` [V: Android "documents and files" guide]). Afterwards the screen says only "passwords-2026-10-06.xlsx was deleted.", with "Done".
 
   The primary button is "Done" because the user just asked for this file.
-- **A place that is not the phone** (Google Drive or any other) adds the line of §5.19 step 5: "This place may upload the file later. Open it there once to check that it arrived." (build-plan §12, decision 8).
+- **A place that is not the phone** (Google Drive or any other) adds one line, that of §5.19 step 5: "This place may upload the file later. Open it there once to check that it arrived." (build-plan §12, decisions 8 and 20).
 - **The banner.** The app takes a persistable permission on the file and stores its location inside the vault. Until the user deletes the file or chooses "I deleted it myself", a banner on Passwords says "You have an unprotected file with your passwords: passwords-2026-10-06.xlsx (saved 2 hours ago)." Buttons "Delete" and "I deleted it myself".
 - If deletion is not supported: "This place doesn't let apps delete files. Delete it yourself in your Files app."
 
@@ -987,6 +985,7 @@ Time in the picker counts as time in the app (§4).
   - "1 note was longer than 10,000 characters and was shortened." Other values over a limit move into the notes or the extra fields and are listed ("Gmail: 3 websites moved to notes").
   - Passwords are never changed: an account whose password holds a tab or another invisible character is imported as it is and listed ("Gmail: the password contains a tab") (formats-review P14).
   - A hidden value without a name is kept as a hidden field named "Hidden value 1", "Hidden value 2", in the file's order; it is never moved into the notes, where it would show (build-plan §12, decision 11).
+  - A hidden value that a limit would move into the notes (a value over 1,000 characters, or a field beyond the 20 an account holds) is not imported either, and is listed: "Gmail: 1 hidden value was too long to keep hidden and was not imported" (build-plan §12, decision 20).
   - Our own JSON from a newer version of the app, with data this version does not know at the top of the file: "Some data from a newer version of the app will not be imported." That data is not kept (build-plan §12, decision 9).
 - **Exact repeats.** Rows that repeat exactly (same website, username and password) are imported once.
 - **Same login on related websites** [E: critique M6; V-A6]. Chrome writes one row per affiliated domain, so one login can arrive as several rows. Rows with the same username and password are kept as **one account with all its websites** only when:
@@ -1075,7 +1074,7 @@ This is for a user who has forgotten the master password while the PIN or finger
 
 **After a replacement** (lock.md §13.4 item 3, F16b). Until 7 days with the phone on have been counted, every unlock shows: "Your master password was replaced on 7 Oct using the PIN. If you didn't do this, your passwords from before are still on this phone." Buttons "OK" and "It wasn't me".
 - "It wasn't me", the sheet's "Open my passwords from before 7 Oct 2026" (§5.10), and the line under a wrong master password (§5.10) all lead to the old vault's own lock screen: title "Your passwords from before 7 Oct 2026", "Type the master password you used then." Only its master-password field: it has no PIN or fingerprint, and its own waits apply.
-- Once that password opens it, the app asks: "These are your passwords as they were on 7 Oct. Passwords added or changed after that are in the newer set, which stays on this phone. Open the older set instead?" Buttons "Open my passwords from 7 Oct" and "Cancel". Cancel changes nothing.
+- Once that password opens it, the app asks: "These are your passwords as they were on 7 Oct. Passwords added or changed after that are in the newer set, which stays on this phone. Open the older set instead?" Buttons "Open my passwords from 7 Oct" and "Cancel". Cancel changes nothing. If the two sets cannot change places (a storage error), the master-password field comes back with "Couldn't open your passwords from 7 Oct. Nothing was changed."
 - After the swap: "Choose a new PIN. Someone else may know the old one.", then the fingerprint offer with its sentence about whose fingers are saved on the phone. The newer set stays on the phone, put aside, and "Open my previous passwords" brings it back (§5.1).
 
 **The wait** is lock.md's decision (§6.9, F11; architecture.md D-5): 24 hours counted while the phone is switched on, which the date setting and reboots cannot shorten. Whether 24 hours suit a phone that is switched off at night is a question for the user (lock.md §18.7, architecture.md §8.6 item 12).

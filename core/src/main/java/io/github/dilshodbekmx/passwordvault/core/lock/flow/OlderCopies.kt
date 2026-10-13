@@ -76,7 +76,9 @@ internal class OlderCopies(private val core: LockCore) {
      *    old master password, typed there, opens the vault.
      *
      * And the two answers on "Open the older set instead?" (`LockScreen.OpenOlderSet`, F16b after a
-     * replacement, step 3), only while `LockVisit.olderSet` is set. OPEN_OLDER_SET: steps 4 to 6.
+     * replacement, step 3), only while `LockVisit.olderSet` is set. OPEN_OLDER_SET: steps 4 to 6;
+     * when storage cannot swap the vaults, nothing changed, and that vault's field comes back with
+     * `MpError.OlderSetNotOpened` (§13.3).
      * KEEP_NEWER_SET ("Cancel"): nothing changes; the question is taken off the visit, its bytes are
      * wiped and the vault that opened in place is dropped (`VaultPort.dropAside`). An answer that
      * does not belong to the screen shown does nothing.
@@ -134,7 +136,10 @@ internal class OlderCopies(private val core: LockCore) {
         try {
             // Step 4: the current vault goes aside and the old one is current, in storage's one step.
             if (!core.vault.swapIn(target.vaultId)) {
-                dropAsideHeld() // nothing changed: that vault's own lock screen again
+                // Nothing changed: that vault's own lock screen again, whose field says so (§13.3,
+                // decision 17), and its master password typed again asks the question again.
+                dropAsideHeld()
+                visit.mpError = MpError.OlderSetNotOpened(question.atMs)
                 if (core.visit === visit && !visit.place.hasEnded) core.showLockScreen()
                 core.publishSummary()
                 return

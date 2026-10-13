@@ -334,6 +334,7 @@ private fun changeText(row: ImportPreview.ChangeRow): String = when (row.kind) {
     ImportChange.Kind.LONG_WEBSITES_MOVED -> pluralStringResource(R.plurals.import_change_long_websites, row.count, row.count)
     ImportChange.Kind.FIELDS_MOVED -> pluralStringResource(R.plurals.import_change_fields, row.count, row.count)
     ImportChange.Kind.LONG_FIELDS_MOVED -> pluralStringResource(R.plurals.import_change_long_fields, row.count, row.count)
+    ImportChange.Kind.HIDDEN_VALUES_NOT_IMPORTED -> pluralStringResource(R.plurals.import_change_hidden_not_imported, row.count, row.count)
     ImportChange.Kind.NAMELESS_FIELDS_MOVED -> pluralStringResource(R.plurals.import_change_nameless, row.count, row.count)
     ImportChange.Kind.FIELD_NAMES_CUT -> pluralStringResource(R.plurals.import_change_field_names, row.count, row.count)
     ImportChange.Kind.NOTES_CUT -> stringResource(R.string.import_change_notes_cut)

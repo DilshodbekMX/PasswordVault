@@ -119,6 +119,7 @@ class LockPseudoLocaleTest {
                 waitUntilElapsedMs = SystemClock.elapsedRealtime() + 600_000,
             ),
             screen(reason = MpReason.OlderCopy(AT), opening = true),
+            screen(reason = MpReason.FromBefore(AT), aside = AsideLine.FromBefore(AT), error = MpError.OlderSetNotOpened(AT)),
         )
         val lock = FakeLockManager(initial = LockUiState.Locked(states.first()))
         compose.setContent {

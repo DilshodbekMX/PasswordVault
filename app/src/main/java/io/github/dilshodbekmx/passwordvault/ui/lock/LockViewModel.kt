@@ -429,6 +429,8 @@ class LockViewModel(
                         alert = true,
                     ),
                 )
+                // The swap after "Open my passwords from 7 Oct" failed (decision 17): not the field's fault.
+                is MpError.OlderSetNotOpened -> add(LockLine(LockTexts.olderSetNotOpened(error.atMs), alert = true))
                 null -> if (answer?.notFinished == true && !opening) add(LockLine(UiText.of(R.string.lock_mp_not_finished), alert = true))
             }
             if (waitLeft != null) add(LockLine(UiText.of(R.string.lock_mp_wait)))

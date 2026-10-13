@@ -837,8 +837,11 @@ object Importer {
          * feeds. A hidden value without a name is named "Hidden value 1", "Hidden value 2" in the order
          * of the file ([EditTexts.hiddenValue]; build-plan §12, decision 11) and stays a hidden field:
          * it never moves into the notes, where it would show, for want of a name. A visible value
-         * without a name, a value over 1,000 characters and the fields beyond 20 go to [moved]; of more
-         * than 20, the hidden ones are kept first.
+         * without a name, a visible value over 1,000 characters and the visible fields beyond 20 go to
+         * [moved]; of more than 20, the hidden ones are kept first. A hidden value that a limit keeps
+         * from being a field (over 1,000 characters, or beyond the 20 an account holds) never moves
+         * into the notes either: it is not imported, and the account lists it
+         * ([ImportChange.Kind.HIDDEN_VALUES_NOT_IMPORTED]; formats.md §8.4, build-plan §12, decision 20).
          */
         private fun fields(raw: List<CustomField>, moved: MutableList<String>, changes: Changes): List<CustomField> {
             val candidates = ArrayList<CustomField>(raw.size)
@@ -846,6 +849,7 @@ object Importer {
             var hiddenNameless = 0
             var longValues = 0
             var cutNames = 0
+            var hiddenLeftOut = 0
             for (f in raw) {
                 val clean = fieldName(f.name)
                 var name = clean.name
@@ -861,8 +865,12 @@ object Importer {
                     }
                 }
                 if (EntryRules.length(value) > EntryRules.FIELD_VALUE_MAX) {
-                    moved.add("$name: $value")
-                    longValues++
+                    if (f.secret) {
+                        hiddenLeftOut++ // decision 20: not into the notes, where it would show
+                    } else {
+                        moved.add("$name: $value")
+                        longValues++
+                    }
                     continue
                 }
                 if (clean.cut != null) {
@@ -874,8 +882,12 @@ object Importer {
             changes.add(ImportChange.Kind.NAMELESS_FIELDS_MOVED, nameless)
             changes.add(ImportChange.Kind.LONG_FIELDS_MOVED, longValues)
             changes.add(ImportChange.Kind.FIELD_NAMES_CUT, cutNames)
-            if (candidates.size <= EntryRules.FIELDS_MAX) return candidates
-            // More than 20: the hidden values stay fields (masked), the visible ones go to the notes first.
+            if (candidates.size <= EntryRules.FIELDS_MAX) {
+                changes.add(ImportChange.Kind.HIDDEN_VALUES_NOT_IMPORTED, hiddenLeftOut)
+                return candidates
+            }
+            // More than 20: the hidden values stay fields (masked), the visible ones go to the notes
+            // first; hidden values beyond 20 are not imported (decision 20).
             val keep = BooleanArray(candidates.size)
             var room = EntryRules.FIELDS_MAX
             for (pass in 0..1) {
@@ -893,12 +905,15 @@ object Importer {
                 val f = candidates[i]
                 if (keep[i]) {
                     out.add(f)
+                } else if (f.secret) {
+                    hiddenLeftOut++
                 } else {
                     moved.add("${f.name}: ${f.value}")
                     count++
                 }
             }
             changes.add(ImportChange.Kind.FIELDS_MOVED, count)
+            changes.add(ImportChange.Kind.HIDDEN_VALUES_NOT_IMPORTED, hiddenLeftOut)
             return out
         }
 
@@ -1062,11 +1077,19 @@ class ImportChange(val kind: Kind, val count: Int) {
         /** [count] websites longer than 2,048 characters moved to the notes. */
         LONG_WEBSITES_MOVED,
 
-        /** [count] extra fields beyond the 20 an account holds moved to the notes (visible ones first). */
+        /** [count] visible extra fields beyond the 20 an account holds moved to the notes (the hidden ones are kept first). */
         FIELDS_MOVED,
 
-        /** [count] extra fields whose value is longer than 1,000 characters moved to the notes. */
+        /** [count] visible extra fields whose value is longer than 1,000 characters moved to the notes. */
         LONG_FIELDS_MOVED,
+
+        /**
+         * [count] hidden values were not imported: each was over 1,000 characters or beyond the 20
+         * fields an account holds, and the notes, where it would show unmasked, are no place for it
+         * (formats.md §8.4; build-plan §12, decision 20). "Gmail: 1 hidden value was too long to
+         * keep hidden and was not imported."
+         */
+        HIDDEN_VALUES_NOT_IMPORTED,
 
         /**
          * [count] visible values without a name moved to the notes. A hidden one stays a hidden field,
