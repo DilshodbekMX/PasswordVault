@@ -128,7 +128,7 @@ class PlatformModuleTest {
     @Test
     fun withoutTheLibraryAndWithoutEnoughHeapItIsKdfUnavailable() {
         val fallback = CountingFallback()
-        val argon2 = CryptoFactory.guardedArgon2id(null, fallback, freeHeap = { 0L }, fallbackNeeds = PlatformModule.fallbackNeeds(Build.VERSION.SDK_INT))
+        val argon2 = CryptoFactory.guardedArgon2id(null, fallback, freeHeap = { 0L }, fallbackNeeds = PlatformModule.fallbackNeeds(Build.VERSION.SDK_INT), collect = {})
         try {
             deriveVector(argon2)
             fail("KdfUnavailable expected")

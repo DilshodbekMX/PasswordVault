@@ -12,8 +12,10 @@ import org.junit.Test
 /**
  * `GuardedArgon2id` through [CryptoFactory.guardedArgon2id] (architecture.md §3.2, §8.1; [V-C2]):
  * the native implementation when there is one; without it the fallback, but only with enough free
- * heap, else `KdfUnavailable` with nothing called; an `OutOfMemoryError` from either as
- * `KdfUnavailable`. The implementations are recording fakes, except in the last test.
+ * heap, asked again after a garbage collection when it looks too small (build-plan.md §12, the
+ * owner's decision 22), else `KdfUnavailable` with nothing called; an `OutOfMemoryError` of the
+ * fallback tried once more after a collection, and one that stays as `KdfUnavailable`. The
+ * implementations are recording fakes, except in the last test.
  */
 class GuardedArgon2idTest {
 
@@ -33,12 +35,21 @@ class GuardedArgon2idTest {
         }
     }
 
-    /** The free heap the guard is told, and how often it asked. */
-    private class Heap(var free: Long) {
+    /**
+     * The free heap the guard is told, and how often it asked. [garbage] counts as used until a
+     * collection ([collect]) frees it, as the work area of a derivation that has returned does in ART.
+     */
+    private class Heap(var free: Long, var garbage: Long = 0) {
         var asked = 0
+        var collections = 0
         fun read(): Long {
             asked++
-            return free
+            return free - garbage
+        }
+
+        fun collect() {
+            collections++
+            garbage = 0
         }
     }
 
@@ -47,7 +58,7 @@ class GuardedArgon2idTest {
     private val needs = 96L * 1024 * 1024
 
     private fun guard(native: Argon2id?, fallback: Argon2id, heap: Heap) =
-        CryptoFactory.guardedArgon2id(native, fallback, heap::read, needs)
+        CryptoFactory.guardedArgon2id(native, fallback, heap::read, needs, heap::collect)
 
     private fun Argon2id.derive() = String(derive(password, salt, Argon2Params.V1), Charsets.US_ASCII)
 
@@ -72,6 +83,7 @@ class GuardedArgon2idTest {
         assertEquals(1, native.calls)
         assertEquals(0, fallback.calls)
         assertEquals(0, heap.asked)
+        assertEquals(0, heap.collections)
     }
 
     @Test
@@ -102,9 +114,11 @@ class GuardedArgon2idTest {
     fun anOutOfMemoryErrorOfTheNativeImplementation_isKdfUnavailable_andTheFallbackIsNotTried() {
         val error = OutOfMemoryError("Direct buffer memory")
         val fallback = Recording("fallback")
-        val caught = unavailable(guard(Recording("native") { throw error }, fallback, Heap(Long.MAX_VALUE)))
+        val heap = Heap(Long.MAX_VALUE)
+        val caught = unavailable(guard(Recording("native") { throw error }, fallback, heap))
         assertSame(error, caught.cause)
         assertEquals(0, fallback.calls)
+        assertEquals("its work area is not on the Java heap", 0, heap.collections)
     }
 
     @Test
@@ -150,12 +164,13 @@ class GuardedArgon2idTest {
     // --- without a native implementation ---
 
     @Test
-    fun withoutANativeImplementation_andEnoughHeap_theFallbackDerives() {
+    fun withoutANativeImplementation_andEnoughHeap_theFallbackDerives_withoutACollection() {
         val fallback = Recording("fallback")
         val heap = Heap(needs + 1)
         assertEquals("fallback", guard(null, fallback, heap).derive())
         assertEquals(1, fallback.calls)
         assertEquals(1, heap.asked)
+        assertEquals(0, heap.collections)
     }
 
     @Test
@@ -165,13 +180,34 @@ class GuardedArgon2idTest {
     }
 
     @Test
-    fun withTooLittleFreeHeap_itIsKdfUnavailable_andNothingIsCalled() {
+    fun withTooLittleFreeHeapEvenAfterACollection_itIsKdfUnavailable_andNothingIsCalled() {
         val fallback = Recording("fallback")
         val heap = Heap(needs - 1)
         val caught = unavailable(guard(null, fallback, heap))
         assertNull(caught.cause)
         assertEquals(0, fallback.calls)
-        assertEquals(1, heap.asked)
+        assertEquals("asked, then asked again after the collection", 2, heap.asked)
+        assertEquals(1, heap.collections)
+    }
+
+    /**
+     * lock.md E16 on API 24 (heap 256 MiB, argon2kt missing): setup derives twice, one after the
+     * other (the vault is made, then opened from disk), and the first derivation's work area, about
+     * 134 MiB on Android 7, is garbage that counts as used until a collection. Without one the second
+     * derivation was refused: "Your phone doesn't have enough free memory to finish setup." (4 runs
+     * of 4 on 2026-10-09 and once more on 2026-10-13).
+     */
+    @Test
+    fun theWorkAreaOfTheDerivationBefore_isCollected_beforeTheHeapIsCalledTooSmall() {
+        val mib = 1024L * 1024
+        val heap = Heap(free = 245 * mib)
+        val fallback = Recording("fallback") { heap.garbage += 134 * mib }
+        val guard = CryptoFactory.guardedArgon2id(null, fallback, heap::read, 160 * mib, heap::collect)
+        assertEquals("fallback", guard.derive())
+        assertEquals("no collection while the heap is large enough", 0, heap.collections)
+        assertEquals("the second derivation at once", "fallback", guard.derive())
+        assertEquals(1, heap.collections)
+        assertEquals(2, fallback.calls)
     }
 
     @Test
@@ -184,18 +220,50 @@ class GuardedArgon2idTest {
         unavailable(guard)
         heap.free = needs
         assertEquals("fallback", guard.derive())
-        assertEquals(3, heap.asked)
+        assertEquals(4, heap.asked)
         assertEquals(2, fallback.calls)
     }
 
     @Test
-    fun anOutOfMemoryErrorOfTheFallback_isKdfUnavailable_withTheErrorAsItsCause() {
+    fun anOutOfMemoryErrorOfTheFallbackThatStays_isKdfUnavailable_withTheFirstErrorAsItsCause() {
+        val errors = ArrayDeque(listOf(OutOfMemoryError("Failed to allocate a 1040 byte allocation"), OutOfMemoryError("again")))
+        val first = errors.first()
+        val heap = Heap(Long.MAX_VALUE)
+        val fallback = Recording("fallback") { errors.removeFirstOrNull()?.let { throw it } }
+        val guard = guard(null, fallback, heap)
+        assertSame(first, unavailable(guard).cause)
+        assertEquals("tried once more after a collection", 2, fallback.calls)
+        assertEquals(1, heap.collections)
+        assertEquals("the next derivation runs", "fallback", guard.derive())
+    }
+
+    @Test
+    fun anOutOfMemoryErrorOfTheFallback_isTriedOnceMoreAfterACollection() {
         val error = OutOfMemoryError("Failed to allocate a 1040 byte allocation")
         var fail = true
-        val guard = guard(null, Recording("fallback") { if (fail) throw error }, Heap(Long.MAX_VALUE))
-        assertSame(error, unavailable(guard).cause)
-        fail = false
-        assertEquals("the next derivation runs", "fallback", guard.derive())
+        val heap = Heap(Long.MAX_VALUE)
+        val fallback = Recording("fallback") {
+            if (fail) {
+                fail = false
+                throw error
+            }
+        }
+        assertEquals("fallback", guard(null, fallback, heap).derive())
+        assertEquals(2, fallback.calls)
+        assertEquals(1, heap.collections)
+    }
+
+    @Test
+    fun anOutOfMemoryErrorOfTheFallback_withTooLittleHeapAfterTheCollection_isKdfUnavailable_withoutASecondTry() {
+        val error = OutOfMemoryError("Failed to allocate a 1040 byte allocation")
+        val heap = Heap(needs)
+        val fallback = Recording("fallback") {
+            heap.free = needs - 1 // something else holds the heap now
+            throw error
+        }
+        assertSame(error, unavailable(guard(null, fallback, heap)).cause)
+        assertEquals(1, fallback.calls)
+        assertEquals(1, heap.collections)
     }
 
     @Test
@@ -212,7 +280,7 @@ class GuardedArgon2idTest {
     @Test
     fun aNegativeNeedIsRefused() {
         try {
-            CryptoFactory.guardedArgon2id(null, Recording("fallback"), { 0L }, -1)
+            CryptoFactory.guardedArgon2id(null, Recording("fallback"), { 0L }, -1, {})
             fail("a negative need was accepted")
         } catch (e: IllegalArgumentException) {
             // expected
@@ -223,7 +291,7 @@ class GuardedArgon2idTest {
 
     @Test
     fun theBouncyCastleFallbackGivesTheVaultVector() {
-        val guard = CryptoFactory.guardedArgon2id(null, CryptoFactory.bouncyCastleArgon2id(), { Long.MAX_VALUE }, needs)
+        val guard = CryptoFactory.guardedArgon2id(null, CryptoFactory.bouncyCastleArgon2id(), { Long.MAX_VALUE }, needs, {})
         val key = guard.derive("correct horse battery staple".toByteArray(Charsets.UTF_8), FakeRandom.sequence(0, 16), Argon2Params.V1)
         assertEquals("853b272a44db1421c02962669a55eb0994f3cab385ed1c4c79253eee19bab49e", Bytes.hex(key))
     }

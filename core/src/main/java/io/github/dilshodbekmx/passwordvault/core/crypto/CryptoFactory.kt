@@ -16,11 +16,12 @@ object CryptoFactory {
     /**
      * `GuardedArgon2id`: [native] when it is there (null when loading it threw any `Throwable`
      * [V-C2]); otherwise [fallback], but only when `freeHeap()` is at least [fallbackNeeds] bytes,
-     * else `KdfUnavailable`. An `OutOfMemoryError` becomes `KdfUnavailable`. A `LinkageError` at a
-     * call of [native] counts as a failed load from then on.
+     * read again after [collect] when it is not, else `KdfUnavailable`. An `OutOfMemoryError` of
+     * [fallback] is tried once more after [collect]; one that stays becomes `KdfUnavailable`. A
+     * `LinkageError` at a call of [native] counts as a failed load from then on.
      */
-    fun guardedArgon2id(native: Argon2id?, fallback: Argon2id, freeHeap: () -> Long, fallbackNeeds: Long): Argon2id =
-        GuardedArgon2id(native, fallback, freeHeap, fallbackNeeds)
+    fun guardedArgon2id(native: Argon2id?, fallback: Argon2id, freeHeap: () -> Long, fallbackNeeds: Long, collect: () -> Unit): Argon2id =
+        GuardedArgon2id(native, fallback, freeHeap, fallbackNeeds, collect)
 
     /**
      * `GatedMasterKdf`: the process-wide gate over [argon2], deriving on [dispatcher]. Every

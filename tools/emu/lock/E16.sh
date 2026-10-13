@@ -12,16 +12,18 @@
 # [V-C2]): a copy of the APK without lib/*/libargon2jni.so and libargon2native.so, aligned with
 # zipalign and signed with the debug key (~/.android/debug.keystore) by the SDK's apksigner. argon2kt's
 # load then throws UnsatisfiedLinkError, and GuardedArgon2id derives with Bouncy Castle when the free
-# Java heap is at least 160 MiB below API 28 (96 MiB from API 28; PlatformModule.fallbackNeeds), and
-# otherwise says KdfUnavailable: "not enough memory" (lock.md §6.8 step 3).
+# Java heap is at least 160 MiB below API 28 (96 MiB from API 28; PlatformModule.fallbackNeeds), read
+# again after a garbage collection when it looks smaller, and otherwise says KdfUnavailable: "not
+# enough memory" (lock.md §6.8 step 3; build-plan.md §12, the owner's decision 22).
 # Steps:
 #   - the copy without argon2kt's libraries made;
 #   - heapsim.sh 128m 256m: a largeHeap app (PasswordVault is one) gets 256 MiB;
 #   - the copy installed afresh; setup with the suggested words and the PIN: two derivations through
 #     the fallback, one after the other (the vault is made, then opened from disk with the second
-#     typing, lock.md F1 step 3): the list. (Seen on 2026-10-09 on API 24: this fails with "Your phone
-#     doesn't have enough free memory to finish setup", while it passes at 320m and 384m; the script
-#     then goes on with a vault made at the image's own heap, 512m, so that the steps below still run);
+#     typing, lock.md F1 step 3): the list. (Until decision 22 this failed on API 24 with "Your phone
+#     doesn't have enough free memory to finish setup", while it passed at 320m and 384m; should it
+#     fail, the script goes on with a vault made at the image's own heap, 512m, so that the steps
+#     below still run);
 #   - one derivation at 128m/256m: Lock now, "Forgot PIN? Use master password", the master password:
 #     the app opens ("Choose a new PIN" after it, F7, is answered "Not now"); then at once the same
 #     again: the second derivation of two close together must succeed as well;

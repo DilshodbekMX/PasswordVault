@@ -60,6 +60,7 @@ class DerivedKeysTest {
                 fallback = CryptoFactory.bouncyCastleArgon2id(),
                 freeHeap = { Long.MAX_VALUE },
                 fallbackNeeds = 96L * 1024 * 1024,
+                collect = {},
             ),
             Dispatchers.Default,
         )

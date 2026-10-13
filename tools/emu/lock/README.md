@@ -96,6 +96,22 @@ E11 runs the lock's part of the language step now through the debug command `loc
 
 The biometric lab's `uitap.py` and `uidump.sh` are `adb.sh`'s `pv_ui_tap` and `pv_ui_nodes`.
 
+## E16 after the owner's decision 22 (2026-10-13, the merge of R4)
+
+`GuardedArgon2id` now asks for a garbage collection (`Runtime.gc()`) when the free heap looks too small,
+and reads it again before it refuses (architecture.md §3.2, lock.md §6.8 step 3). On the integrator's
+API 24 device (`emulator-5584`), with main's APKs:
+
+| APK | Steps | Setup at 128m/256m | Two unlocks in a row | 64m/128m |
+|---|---|---|---|---|
+| debug before the fix (c6126ca) | 12/2/0 | "not enough memory" (`dumpsys meminfo` afterwards: Dalvik heap 15,247 KiB, 11,151 KiB allocated, 163,087 KiB resident: the work area was garbage by then) | the second said "not enough memory"; 20 s later the same password opened the app | "not enough memory", nothing counted |
+| debug with the fix | 11/0/0 | the list | the list, both | "not enough memory", nothing counted |
+| staging with the fix | 11/0/0 | the list | the list, both | "not enough memory", nothing counted |
+
+11 steps instead of 14: setup at the small heap passed, so the three steps that set the vault up at the
+image's own heap did not run. The 64 MiB of Argon2id fit on a 256 MiB heap once the first derivation's
+garbage (about 134 MiB on Android 7) is collected; nothing about the derivation's parameters changed.
+
 ## Runs on 2026-10-13
 
 Against the same app (`wave-4A-merged`; the APKs built on 2026-10-09 from it, as this branch changes
@@ -148,7 +164,7 @@ on API 28 again through `all.sh`.
 | E13 | | 8/0/0; staging 8/0/0 | 8/0/0 |
 | E14 | | | 11/0/0 |
 | E15 | | 11/0/0 | 11/0/0 |
-| E16 | 12/2/0 and 13/1/0 (below) | | |
+| E16 | 12/2/0 and 13/1/0 (below; passes since decision 22, above) | | |
 | E17 | 5/0/7 (the pad; the rest is API 37's) | | 18/0/0 (6 minutes in the picker) |
 
 `all.sh emulator-5558` (API 28, debug) ran E1 to E3, E6, E7 and E10 to E15 there one after another, all
@@ -197,14 +213,14 @@ What failed or was not run:
 - E13 on API 28: a right PIN whose check ended after the screen-off (its visit over, nothing opened)
   still forgave the wrong PIN typed before it on that visit (row 0, total 0, unseen 0). lock.md §6.3
   E.6 says only that the counts are as for any right PIN; E13 notes the total and does not judge it.
-- E16 on API 24 with argon2kt removed: at heapgrowthlimit 128m / heapsize 256m setup fails with "Your
-  phone doesn't have enough free memory to finish setup." (it makes the vault and opens it from disk:
-  two derivations one after the other; 4 runs of 4), while one derivation (an unlock) succeeds there,
-  a second unlock at once fails now and then (2 runs of 3) and succeeds 20 s later, and setup succeeds
-  at 320m and 384m. The lab's single 64 MiB derivation used about 138 MiB on Android 7 [L-old §2];
-  `GuardedArgon2id` asks for 160 MiB of free heap before each (`PlatformModule.fallbackNeeds`) and reads
-  it without a garbage collection first, so the first derivation's garbage likely counts as used (not
-  verified in ART).
+- E16 on API 24 with argon2kt removed (2026-10-09): at heapgrowthlimit 128m / heapsize 256m setup failed
+  with "Your phone doesn't have enough free memory to finish setup." (it makes the vault and opens it
+  from disk: two derivations one after the other; 4 runs of 4), while one derivation (an unlock)
+  succeeded there, a second unlock at once failed now and then (2 runs of 3) and succeeded 20 s later,
+  and setup succeeded at 320m and 384m. The cause was as suspected: `GuardedArgon2id` asks for 160 MiB
+  of free heap before each derivation (`PlatformModule.fallbackNeeds`) and read it without a garbage
+  collection, so the first derivation's garbage counted as used. Since decision 22 it collects and
+  reads again before refusing, and E16 passes (above).
 - E6, the unknown finger 5: the prompt's own line says "Not recognized" on API 24 (the library's
   `fingerprint_error`, "Touch the fingerprint sensor" before), 28 (`error`, the same before) and 37
   (`indicator`, empty before), and the prompt stays open.

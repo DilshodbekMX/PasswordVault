@@ -50,7 +50,10 @@ object PlatformModule {
     /**
      * The app's `GuardedArgon2id` (architecture.md §3.2, [V-C2]): [native] while it works, else
      * [fallback] when the free heap, `maxMemory − totalMemory + freeMemory` of [runtime], is at least
-     * [fallbackNeeds] for [sdk], else `KdfUnavailable`.
+     * [fallbackNeeds] for [sdk], also when it is so only after a garbage collection (`Runtime.gc()`,
+     * which ART runs when asked; `System.gc()` may skip it), else `KdfUnavailable`. The collection
+     * runs only when the heap looks too small: on Android 7 the 134 MiB work area of the derivation
+     * before counts as used until it is collected (build-plan.md §12, decision 22; lock.md E16).
      */
     internal fun argon2id(
         native: Argon2id?,
@@ -62,6 +65,7 @@ object PlatformModule {
         fallback = fallback,
         freeHeap = { runtime.maxMemory() - runtime.totalMemory() + runtime.freeMemory() },
         fallbackNeeds = fallbackNeeds(sdk),
+        collect = { runtime.gc() },
     )
 
     /**
