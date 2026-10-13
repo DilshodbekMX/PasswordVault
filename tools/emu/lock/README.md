@@ -108,10 +108,10 @@ so E7 on 24 and 28, E11 on 24 and E17 on 24 have one SKIPPED less than on 2026-1
 | Check | API 24 | API 28 | API 37 |
 |---|---|---|---|
 | E4 | | | 9/0/2 (the 2 wait for 5.5) |
-| E6 | 9/0/0; staging 9/0/0 | 9/0/0 | 9/0/0; staging: not run today |
+| E6 | 9/0/0; staging 9/0/0 | 9/0/0 | 9/0/0; staging 9/0/0 |
 | E7 | 12/0/0 ((a) a NOTE) | 12/0/0 ((a) a NOTE) | 22/0/0 |
 | E9 | | | 8/0/0 |
-| E10 | the parts fp, prompt, reinstall 34/0/0; pin, drop 22/0/0 | fp, prompt, reinstall 34/0/0; fp, drop 20/0/0 | the whole check: not finished today |
+| E10 | the parts fp, prompt, reinstall 34/0/0; pin, drop 22/0/0 | fp, prompt, reinstall 34/0/0; fp, drop 20/0/0 | 57/0/0 (the whole check) |
 | E11 | 14/0/1 (6.1's step; the saved state a NOTE) | 14/0/1 (6.1's step) | 14/0/1 (6.1's step) |
 | E12 | | 11/0/0 and 1 KNOWN | 12/0/0 |
 | E14 | | | 11/0/0 |
@@ -121,7 +121,8 @@ so E7 on 24 and 28, E11 on 24 and E17 on 24 have one SKIPPED less than on 2026-1
 E11, E12 and E17 ran first, after `pvl_window_lib` was made to keep every `PV_*` and `PVA_*` variable
 across `window/lib.sh`'s second sourcing of `app.sh`. E10's fp, prompt and reinstall parts on 24 and 28
 ran before `pvl_no_prompt` was used in E10, its pin, drop and fp parts after, and the whole of E10 on
-37 after. E6's runs above are with its final "Not recognized" and `pvl_no_prompt` steps.
+37 after. E6's runs above are with its final "Not recognized" and `pvl_no_prompt` steps. No step failed
+on 2026-10-13; the devices were stopped afterwards.
 
 ## Runs on 2026-10-09
 
