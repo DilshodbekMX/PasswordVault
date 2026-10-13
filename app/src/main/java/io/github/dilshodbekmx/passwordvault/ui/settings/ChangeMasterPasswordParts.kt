@@ -1,19 +1,13 @@
 package io.github.dilshodbekmx.passwordvault.ui.settings
 
-import android.os.Build
-import android.view.View
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -34,15 +28,15 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
@@ -55,17 +49,16 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import io.github.dilshodbekmx.passwordvault.R
 import io.github.dilshodbekmx.passwordvault.core.model.FileRef
 import io.github.dilshodbekmx.passwordvault.i18n.UiText
 import io.github.dilshodbekmx.passwordvault.i18n.rememberFormatters
 import io.github.dilshodbekmx.passwordvault.i18n.resolve
+import io.github.dilshodbekmx.passwordvault.ui.common.FieldKeyboard
+import io.github.dilshodbekmx.passwordvault.ui.common.KeyboardFirstOnBack
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultFieldDefaults
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultSecureField
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.first
+import io.github.dilshodbekmx.passwordvault.ui.common.rememberFieldKeyboard
 
 // The parts that "Change master password" and the screen of a new master password share (build plan
 // 5.5): the frame with its top bar, a page of text and buttons, a master-password field that has the
@@ -227,10 +220,11 @@ internal fun MasterCountdown(seconds: Int) {
  * A master-password field ([VaultSecureField], R-13; its state is the ViewModel's) that takes the
  * focus and the keyboard when it appears, and again in every new composition: after a rotation or a
  * language change Android 17 no longer brings the keyboard back by itself [V-P7], so the field asks
- * for it once the window has the window focus and, where the screen can see the keyboard (Android 11
- * and newer), a few more times while it is not shown, as setup's "Type your master password again"
- * does. After a check or a wait, which turn the field off, it takes the focus and the keyboard
- * again, so that the next try can be typed at once. The keyboard's Done does what [onDone] does.
+ * for it once the window has the window focus, through `ui/common`'s [FieldKeyboard], which asks
+ * again for about a second while the field has the focus and the keyboard is not shown (as setup's
+ * "Type your master password again" and the lock screen's field do). After a check or a wait, which
+ * turn the field off, it takes the focus and the keyboard again, so that the next try can be typed at
+ * once. The keyboard's Done does what [onDone] does.
  */
 @Composable
 internal fun MasterField(
@@ -242,29 +236,21 @@ internal fun MasterField(
     isError: Boolean = false,
 ) {
     val focus = remember { FocusRequester() }
-    val window = LocalWindowInfo.current
-    val keyboard = LocalSoftwareKeyboardController.current
-    val view = LocalView.current
-    LaunchedEffect(focus, window, enabled) {
+    val fieldKeyboard = rememberFieldKeyboard()
+    var focused by remember { mutableStateOf(false) }
+    LaunchedEffect(focus, fieldKeyboard, enabled) {
         if (!enabled) return@LaunchedEffect // a check or a wait: the field takes the focus again when it ends
-        snapshotFlow { window.isWindowFocused }.first { it }
+        fieldKeyboard.awaitWindowFocus()
         try {
             focus.requestFocus()
         } catch (e: IllegalStateException) {
             return@LaunchedEffect // not laid out any more: the step changed meanwhile
         }
-        keyboard?.show()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            repeat(KEYBOARD_RETRIES) {
-                delay(KEYBOARD_RETRY_MS)
-                if (keyboardShown(view)) return@LaunchedEffect
-                keyboard?.show()
-            }
-        }
+        fieldKeyboard.show { focused }
     }
     VaultSecureField(
         state = state,
-        modifier = Modifier.fillMaxWidth().focusRequester(focus).testTag(tag),
+        modifier = Modifier.fillMaxWidth().focusRequester(focus).onFocusChanged { focused = it.isFocused }.testTag(tag),
         label = { Text(label) },
         enabled = enabled,
         isError = isError,
@@ -272,24 +258,6 @@ internal fun MasterField(
         onKeyboardAction = KeyboardActionHandler { onDone() },
     )
 }
-
-/**
- * Back while the keyboard is up closes the keyboard, and does nothing else, as on 5.2's screens
- * (`BackupScaffold`): on Android 13 and newer Back reaches the app's own callbacks before the
- * keyboard's when the app registered its callback after the keyboard was shown, which happens when
- * a route opens over a field that kept the keyboard ("I don't remember it" under the current master
- * password). Composed after the screen's own `BackHandler`, so that it comes first. (`w5-carry` moves
- * 5.2's helper to `ui/common` in the same round; this copy can then give way to it.)
- */
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun KeyboardFirstOnBack() {
-    val keyboard = LocalSoftwareKeyboardController.current
-    BackHandler(enabled = WindowInsets.isImeVisible) { keyboard?.hide() }
-}
-
-/** Whether the keyboard is shown over [view]'s window: its insets say so from Android 11 on. */
-private fun keyboardShown(view: View): Boolean = ViewCompat.getRootWindowInsets(view)?.isVisible(WindowInsetsCompat.Type.ime()) == true
 
 /**
  * The last step of a change (lock.md F8 step 9) and of a replacement (F11 step 19): [heading] ("Your
@@ -364,7 +332,3 @@ private fun Places(places: List<BackupPlace>, onDelete: (FileRef) -> Unit) {
         Text(text = stringResource(R.string.master_places_also), style = MaterialTheme.typography.bodyMedium)
     }
 }
-
-/** How many more times, and how often, the keyboard is asked for while it is not shown. */
-private const val KEYBOARD_RETRIES = 6
-private const val KEYBOARD_RETRY_MS = 250L
