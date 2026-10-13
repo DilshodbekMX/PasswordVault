@@ -333,6 +333,7 @@ copy_password() {
     before=$CLIP_TOKEN
     pva_tap pv.entry.password.copy || return 1
     await_new_clip "$before" && clip_is_flagged || return 1
+    pva_tip_ok # the first copy of this install opens the first-copy tip over the screen (7.3)
     [ -z "$CLIP_LABEL" ] || { pv_log "the clip's label is '$CLIP_LABEL', not empty"; return 1; }
     for i in 1 2 3 4 5 6 7 8 9 10; do
         if [ "$(prefs_token)" = "$TOKEN" ]; then deadline=$(prefs_deadline); [ -z "$deadline" ] || break; fi

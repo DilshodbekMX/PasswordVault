@@ -91,6 +91,7 @@ DELAY_S=60       # what setup writes (D-7); set_delay changes it
 DEBUGGABLE=0
 COPY_ID=""
 TOKEN=""         # the token of the clip the last copy made
+TIP_CLOSED=""    # the first-copy tip of this install was closed (7.3)
 DEADLINE=0       # its planned clear on the device's wall clock, ms
 DEADLINE_KNOWN=0 # 1: read from pv_settings; 0: the time of the copy plus the delay
 echo "clear.sh on $SERIAL (API $API): $APK"
@@ -217,6 +218,7 @@ copy() {
         pv_log "no new clip of the app's after the tap (try $try): $(clip_says); ids: $(pva_ids)"
         [ "$try" -lt 2 ] || return 1
     done
+    [ -n "$TIP_CLOSED" ] || { pva_tip_ok; TIP_CLOSED=1; } # the first copy of an install opens the first-copy tip (7.3)
     TOKEN=$CLIP_TOKEN
     DEADLINE=$((CLIP_NOW + DELAY_S * 1000))
     DEADLINE_KNOWN=0
@@ -345,6 +347,7 @@ screen_is_off() {
 install_fresh() {
     [ -f "$APK" ] || { pv_log "no APK at $APK; build it with tools/gradle.sh :app:assembleDebug"; return 1; }
     pva_install "$APK" || return 1
+    TIP_CLOSED="" # a new install shows the first-copy tip again
     pvc_clear
 }
 

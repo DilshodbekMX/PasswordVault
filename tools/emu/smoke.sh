@@ -274,6 +274,7 @@ smoke_copy() {
     [ "$SMOKE_SENSITIVE" = true ] || { pv_log "the sensitive flag is '${SMOKE_SENSITIVE:-absent}'"; return 1; }
     SMOKE_TOKEN=$SMOKE_CLIP
     SMOKE_DEADLINE=$((SMOKE_NOW + SMOKE_DELAY_MS))
+    pva_tip_ok # the first copy of this install opens the first-copy tip over the screen (7.3)
     pva_need pv.clip.row 5 || return 1
     text=$(pvc_get | pvc_field text) || return 1
     [ "$text" = "$SMOKE_PASSWORD" ] || { pv_log "the clip does not hold the password (${#text} characters)"; return 1; }

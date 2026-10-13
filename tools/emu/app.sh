@@ -574,6 +574,16 @@ pva_to_create_pin() {
 # fingerprint prompt, whose window is then the one in front).
 pva_lock_now() { pva_on Passwords 20 && pva_tap pv.list.lockNow && pva_status_soon '^state: locked' 20; }
 
+# pva_tip_ok: closes the first-copy tip (ux.md §6, build plan 7.3) if it is shown. The tip opens once
+# per install, over the screen, right after the first copy of a password (or of another secret copied
+# with the sensitive flag); until it is closed, pv_ui_nodes sees only the tip's window, and a tap
+# outside it closes the tip instead of pressing what is under it. Nothing happens when it has not
+# opened within 2 s. Call it right after a copy that may be the first of an install.
+pva_tip_ok() {
+    pva_present pv.tip.ok 2 || return 0
+    pva_tap pv.tip.ok && pv_sleep 1
+}
+
 # pva_screenshot FILE: the screen as PNG (debug builds; the secure window of staging gives black).
 pva_screenshot() {
     mkdir -p "$(dirname "$1")"

@@ -174,6 +174,7 @@ tap() {
     pva_tap "$1"
 }
 LAST_COPY=""
+TIP_CLOSED="" # the first-copy tip of this install was closed (7.3)
 COPY_PREVIEW_S=8
 
 # gone ID [SECONDS]: no node ID within SECONDS (default 10).
@@ -208,6 +209,8 @@ expect_clip() {
     LAST_COPY=$SECONDS
     sensitive=$(printf '%s\n' "$d" | pvc_field sensitive)
     [ "$sensitive" = true ] || { pv_log "$2: the clip is not flagged sensitive ($sensitive)"; return 1; }
+    # The first copy of this install opens the first-copy tip over the screen (7.3): closed once.
+    [ -n "$TIP_CLOSED" ] || { pva_tip_ok; TIP_CLOSED=1; }
 }
 
 # copy_on_change ID EXPECTED WHAT: the change's copy button ID gives EXPECTED. When no clip comes
@@ -382,6 +385,7 @@ read_new() {
 seed() {
     [ -f "$TEST_APK" ] || { pv_log "no test APK at $TEST_APK (tools/gradle.sh :app:assembleDebugAndroidTest)"; return 1; }
     pva_install "$APK" || return 1
+    TIP_CLOSED="" # a new install shows the first-copy tip again
     local out
     out=$(PV_ADB_TIMEOUT=180 pv_adb install -r -t "$TEST_APK" 2>&1)
     echo "$out" | grep -q '^Success' || { pv_log "test APK: $out"; return 1; }
