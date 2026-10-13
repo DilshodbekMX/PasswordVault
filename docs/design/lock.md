@@ -1111,6 +1111,7 @@ Version 1 has no switch to turn the PIN off. It can be skipped at setup and set 
    - GONE (the key was invalidated or is missing): the slot is removed, as in F15a or F15b.
 8. `state.rec`: practice step 0, `last_ok` now, counters zero, `mp_change = null`. `pin.rec`: guard zero.
 9. "Make a new backup now. Your old backups still open only with your old master password." "Back up now" uses the master password just typed (F12).
+   - **The app locked while the change ran** (the screen went off during "Saving…" or while the prompt of step 7 waited): the change runs to its end all the same, as a save does, and the next unlock shows "Your master password was changed." with this offer, "Back up now" and "Later". "Later" there puts the backup reminder off as "Later" on the list's banner and on "Make a backup now?" do (3 days; build-plan §12, decisions 15 and 21). "Back up now" uses the master password of that unlock when it was typed; after a PIN or fingerprint unlock the backup asks for it (F12). A PIN that was not kept is offered by that unlock (13.4 item 5).
 10. **Later.** Storage retires the generations under the old password once the new one, typed, has opened the vault from disk at a later app start [V-C5, V-S5]. The wraps for `vk_id1` then go by the rule of 5.4: every unlock drops the wraps whose `vk_id` no kept generation carries. A slot left without any wrap is removed (`off = master_changed`).
 
 | The process dies, or the change fails | Afterwards |

@@ -842,6 +842,7 @@ The app is stricter on locking because the user asked for a bank-like lock. It k
 4. "Saving…": the new copy is written, read back and opened with the second typing before anything else changes. If it does not prove: "Couldn't change your master password. Nothing was changed. Your old master password, PIN and fingerprint still work." If even that cannot be tidied up: "Saving may not have finished. Next time, try your new master password first, then your old one."
 5. **"Touch the sensor to keep fingerprint unlock on."** Only when it was on. "Not now" or a closed prompt leaves Settings showing "Fingerprint unlock: turn on again".
 6. **"Make a new backup now. Your old backups still open only with your old master password."** [Back up now] [Later] [E: crypto.md §11]. "Back up now" uses the master password just typed (§5.19).
+   - If the app locked while "Saving…" (or the fingerprint step) showed, the change still runs to its end. After the next unlock this screen shows "Your master password was changed." with this step instead of asking for the current master password again; its "Later" puts the backup reminder off for 3 days, as the banner's "Later" does (lock.md F8 step 9; build-plan §12, decisions 15 and 21).
    - If the change was started from the security check's card 1 (§5.16), the old password may be known to others. This screen then also lists the places where this app saved backups, with "Delete" where the place allows it, and says "Also delete copies you sent to Telegram or by email."
 
 **Change PIN and Set a PIN** (lock.md F6, §8.2).

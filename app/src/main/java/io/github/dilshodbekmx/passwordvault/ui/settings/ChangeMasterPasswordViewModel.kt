@@ -21,6 +21,7 @@ import io.github.dilshodbekmx.passwordvault.lock.LockUiState
 import io.github.dilshodbekmx.passwordvault.lock.MpPurpose
 import io.github.dilshodbekmx.passwordvault.lock.PinStatus
 import io.github.dilshodbekmx.passwordvault.platform.AppDispatchers
+import io.github.dilshodbekmx.passwordvault.settings.BackupReminder
 import io.github.dilshodbekmx.passwordvault.ui.setup.MasterPasswordAsk
 import io.github.dilshodbekmx.passwordvault.ui.setup.PinDigits
 import io.github.dilshodbekmx.passwordvault.ui.transfer.BackupFiles
@@ -61,11 +62,18 @@ import kotlinx.coroutines.launch
  *    copies you sent to Telegram or by email."
  *
  * A lock ends the flow: nothing typed, chosen or proved stays (lock.md §10.1: "a lock discards the
- * flow, and nothing was changed"); after the unlock the route starts again at step 1. A rotation or
- * a language change keeps everything (the route's ViewModel; lock.md §11).
+ * flow, and nothing was changed"); after the unlock the route starts again at step 1. A change that
+ * was already running ("Saving…", step 4 on) runs to its end all the same (lock.md F8); when it ends
+ * changed, the route shows step 5's "Your master password was changed." with "Make a new backup
+ * now. …", "Back up now" and "Later" after the unlock instead ([ChangeMasterPasswordUi.afterLock];
+ * build-plan.md §12, the owner's decision 21), and "Later" there puts the backup reminder off as the
+ * list's "Later" does ([snoozeReminder], decision 15). A rotation or a language change keeps
+ * everything (the route's ViewModel; lock.md §11).
  *
  * @param offerBackup `BackupOffer.offer`: the backup screen opened next uses this proof.
  * @param deleteBackup `BackupNotes.delete`: deletes a backup this app saved and forgets it.
+ * @param snoozeReminder puts the backup reminder off for `BackupReminder.SNOOZE_MS` (decision 15),
+ *   for "Later" on the backup step shown after a lock (decision 21).
  */
 class ChangeMasterPasswordViewModel(
     private val lock: LockManager,
@@ -76,6 +84,7 @@ class ChangeMasterPasswordViewModel(
     private val work: CoroutineScope,
     private val offerBackup: (MasterProof) -> Unit,
     private val deleteBackup: suspend (FileRef) -> NoteDeleted,
+    private val snoozeReminder: () -> Unit = {},
     rules: (CharArray) -> MasterPasswordCheck = { MasterPasswordRules.check(it) },
 ) : ViewModel() {
 
@@ -106,6 +115,9 @@ class ChangeMasterPasswordViewModel(
      * returns now proves nothing for it, and its proof goes at once (lock.md §5.8).
      */
     private var cleared = false
+
+    /** A lock ended the flow while the change ran ("Saving…"): its result is shown after the unlock (decision 21). */
+    private var lockedWhileSaving = false
 
     init {
         // A lock (or the vault put aside) ends the flow: nothing typed or proved stays behind.
@@ -278,6 +290,8 @@ class ChangeMasterPasswordViewModel(
             )
         }
         val (first, again) = typings
+        val usedElsewhere = state.value.usedElsewhere
+        lockedWhileSaving = false
         val change = work.async {
             try {
                 lock.changeMasterPassword(proved, first, again, pinCopy).also { result ->
@@ -296,11 +310,15 @@ class ChangeMasterPasswordViewModel(
                 pinCopy?.fill(0)
             }
         }
-        viewModelScope.launch { afterSave(change.await()) }
+        viewModelScope.launch { afterSave(change.await(), usedElsewhere) }
     }
 
-    private fun afterSave(result: ChangeResult) {
-        if (state.value.stage != ChangeStage.SAVING) return
+    private fun afterSave(result: ChangeResult, usedElsewhere: Boolean) {
+        if (state.value.stage != ChangeStage.SAVING) {
+            if (lockedWhileSaving && result is ChangeResult.Changed) changedWhileLocked(usedElsewhere)
+            lockedWhileSaving = false
+            return
+        }
         when (result) {
             is ChangeResult.Changed -> changed(pinKept = result.pinKept)
             ChangeResult.Mismatch -> {
@@ -340,6 +358,20 @@ class ChangeMasterPasswordViewModel(
         state.update { it.copy(stage = ChangeStage.BACKUP, choosePin = choosePin, places = places) }
     }
 
+    /**
+     * The change ended changed after a lock had ended the flow (build-plan.md §12, decision 21): the
+     * route, under the lock screen now, shows "Your master password was changed." with "Make a new
+     * backup now. …" when the app is unlocked again, and nothing of the earlier steps. A PIN that was
+     * not kept is offered by the lock itself at that unlock (`ChoosePinReason.MASTER_CHANGED`), so
+     * "Choose a PIN" does not open from here. "Back up now" hands over the proof of that unlock when
+     * the master password made it; after a PIN or fingerprint unlock the backup screen asks for it.
+     */
+    private fun changedWhileLocked(usedElsewhere: Boolean) {
+        dropAll()
+        val places = if (usedElsewhere) savedBackups().map { BackupPlace(it, PlaceState.LISTED) } else emptyList()
+        state.value = ChangeMasterPasswordUi(stage = ChangeStage.BACKUP, usedElsewhere = usedElsewhere, places = places, afterLock = true)
+    }
+
     /** The screen opened "Choose a PIN" (or could not): it is not opened again. */
     fun pinStepsOpened() = state.update { it.copy(choosePin = false) }
 
@@ -356,9 +388,14 @@ class ChangeMasterPasswordViewModel(
         state.update { it.copy(leave = Leave.BACKUP) }
     }
 
-    /** "Later", "OK", or Back at the end: the route closes. */
+    /**
+     * "Later", "OK", or Back at the end: the route closes. "Later" (or Back) on the backup step shown
+     * after a lock also puts the backup reminder off for 3 days (decisions 15 and 21).
+     */
     fun close() {
-        if (state.value.stage == ChangeStage.SAVING) return
+        val now = state.value
+        if (now.stage == ChangeStage.SAVING) return
+        if (now.stage == ChangeStage.BACKUP && now.afterLock && now.leave == null) snoozeReminder()
         dropAll()
         state.update { it.copy(leave = Leave.BACK) }
     }
@@ -440,8 +477,13 @@ class ChangeMasterPasswordViewModel(
     private fun setPlace(ref: FileRef, to: PlaceState) =
         state.update { now -> now.copy(places = now.places.map { if (it.ref == ref) it.copy(state = to) else it }) }
 
-    /** The app locked: the flow is over; after the unlock the route starts again at step 1. */
+    /**
+     * The app locked: the flow is over; after the unlock the route starts again at step 1, unless a
+     * change that was running then ends changed ([changedWhileLocked]).
+     */
     private fun lockedNow() {
+        if (state.value.stage == ChangeStage.SAVING) lockedWhileSaving = true
+        if (state.value.afterLock) return // shown after this lock's unlock: it stays until it is answered
         dropAll()
         state.value = ChangeMasterPasswordUi()
     }
@@ -474,7 +516,26 @@ class ChangeMasterPasswordViewModel(
                 work = graph.appScope,
                 offerBackup = offers::offer,
                 deleteBackup = notes::delete,
+                snoozeReminder = { snoozeReminder(graph) },
             )
+        }
+
+        /**
+         * "Later" on a backup offer: the backup reminder is put off for `BackupReminder.SNOOZE_MS`, off
+         * the main thread, as the list's banner and the lock's "Make a backup now?" do (decision 15).
+         * Best effort: a write that fails is not tried again (the reminder may then come once more).
+         */
+        private fun snoozeReminder(graph: AppGraph) {
+            val until = graph.platform.clock.wallMs() + BackupReminder.SNOOZE_MS
+            graph.appScope.launch(graph.dispatchers.io) {
+                try {
+                    graph.settings.update { it.backupReminder = it.backupReminder.copy(snoozedUntilMs = until) }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    // Not kept; see above.
+                }
+            }
         }
     }
 }
@@ -545,6 +606,9 @@ enum class PlaceState { LISTED, DELETING, DELETED, NOT_DELETABLE, NOT_NOTED }
  * @property usedElsewhere the old master password is also the password of some account (D-9b).
  * @property choosePin "Choose a PIN" opens once, before the backup step.
  * @property places the backups this app saved, when [usedElsewhere].
+ * @property afterLock the backup step ([ChangeStage.BACKUP]) of a change that ended after a lock had
+ *   ended the flow, shown after the unlock (build-plan.md §12, decision 21): "Later" puts the backup
+ *   reminder off for 3 days.
  * @property leave the route ends, and where it goes.
  */
 data class ChangeMasterPasswordUi(
@@ -557,5 +621,6 @@ data class ChangeMasterPasswordUi(
     val usedElsewhere: Boolean = false,
     val choosePin: Boolean = false,
     val places: List<BackupPlace> = emptyList(),
+    val afterLock: Boolean = false,
     val leave: Leave? = null,
 )

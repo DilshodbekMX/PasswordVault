@@ -39,6 +39,7 @@ import io.github.dilshodbekmx.passwordvault.ui.list.ListBanner
 import io.github.dilshodbekmx.passwordvault.ui.list.ListBanners
 import io.github.dilshodbekmx.passwordvault.ui.settings.ChangeMasterPasswordViewModel
 import io.github.dilshodbekmx.passwordvault.ui.settings.ChangeStage
+import io.github.dilshodbekmx.passwordvault.ui.settings.Leave
 import io.github.dilshodbekmx.passwordvault.ui.settings.NewMasterPasswordChoice
 import io.github.dilshodbekmx.passwordvault.ui.settings.NewMasterPasswordViewModel
 import io.github.dilshodbekmx.passwordvault.ui.settings.NewStage
@@ -86,6 +87,9 @@ class MasterPasswordFlowsTest {
     private val random = FakeRandom(seed = 9L)
     private var models = 0
 
+    /** How often "Later" put the backup reminder off (decisions 15 and 21). */
+    private var snoozes = 0
+
     @Before
     fun clearHolders() {
         NewMasterPasswordAsked.take()
@@ -118,6 +122,7 @@ class MasterPasswordFlowsTest {
                     work = backgroundScope,
                     offerBackup = { offered += it },
                     deleteBackup = { NoteDeleted.DELETED },
+                    snoozeReminder = { snoozes++ },
                 )
             }
         }
@@ -213,6 +218,7 @@ class MasterPasswordFlowsTest {
         assertEquals(UiText.of(R.string.master_changed), SettingsNotice.take())
 
         // F8 step 9: "Back up now" uses the new master password just typed.
+        assertFalse("shown in the flow, not after a lock", vm.ui.value.afterLock)
         vm.backUpNow()
         assertEquals(words, offered.single().useBytes { String(it, Charsets.UTF_8) })
 
@@ -295,7 +301,6 @@ class MasterPasswordFlowsTest {
 
         rig.lock(LockReason.SCREEN_OFF) // the screen times out while the prompt of step 7 waits for a finger
         assertFalse(rig.isUnlocked)
-        assertEquals("the lock ended the flow on the screen", ChangeStage.CURRENT, vm.ui.value.stage)
         assertEquals(
             "the change was made (F8: from step 6 on it runs to its end), so Settings says so after the unlock",
             UiText.of(R.string.master_changed),
@@ -303,6 +308,47 @@ class MasterPasswordFlowsTest {
         )
         rig.send(LockIntent.UseMasterPassword)
         assertTrue("the new master password is the vault's", rig.unlockWith(words) is MpResult.Right)
+    }
+
+    /**
+     * The owner's decision 21 (build-plan.md §12): when the change ends after the app locked, the
+     * next unlock shows "Your master password was changed." with the backup offer of F8 step 9, and
+     * "Later" there puts the backup reminder off as the list's "Later" does (decision 15). Before it,
+     * the route started again at step 1 and asked for the "current" master password, as if nothing
+     * had changed.
+     */
+    @Test
+    fun f8_aChangeThatEndsAfterTheAppLocked_showsItsBackupStepAfterTheUnlock_andLaterSnoozesTheReminder() = runTest {
+        val rig = rig()
+        phone(rig, fingerprint = true)
+        val vm = change(rig)
+        val words = upToThePin(rig, vm)
+        digits(rig, PIN, vm::digit)
+        rig.advance(LockRig.CHARGE_AGE_MS)
+        rig.advance(LockRig.CHARGE_AGE_MS)
+        assertEquals(PromptUse.KEEP_AFTER_CHANGE, rig.prompt.use)
+
+        rig.lock(LockReason.SCREEN_OFF) // the change runs to its end under the lock screen
+        assertFalse(rig.isUnlocked)
+        assertEquals("kept for the unlock", ChangeStage.BACKUP, vm.ui.value.stage)
+        assertTrue(vm.ui.value.afterLock)
+        assertFalse("the lock offers a PIN that was not kept itself", vm.ui.value.choosePin)
+
+        rig.send(LockIntent.UseMasterPassword)
+        assertTrue(rig.unlockWith(words) is MpResult.Right)
+        rig.settle()
+        assertTrue(rig.isUnlocked)
+        val shown = vm.ui.value
+        assertEquals("\"Your master password was changed.\" with \"Make a new backup now. …\"", ChangeStage.BACKUP, shown.stage)
+        assertTrue(shown.afterLock)
+        assertNull("nothing of the earlier steps", shown.line)
+        assertEquals(0, snoozes)
+
+        vm.close() // "Later"
+        assertEquals("decision 15's snooze", 1, snoozes)
+        assertEquals(Leave.BACK, vm.ui.value.leave)
+        vm.close()
+        assertEquals("once", 1, snoozes)
     }
 
     // =================================================================================================
