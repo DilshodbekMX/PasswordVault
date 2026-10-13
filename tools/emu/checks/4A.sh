@@ -20,11 +20,10 @@
 #              more, alone, on that device; it counts as passed when it passes alone, and the step names
 #              it as a flake. Then every device-test class ran on each device with no failure and at
 #              least the tests it has there (@SdkSuppress leaves some out): 469 on API 24, 470 on 28,
-#              477 on 37 at wave-4A-merged. The devices are put in keyboard mode first (a key event), as
-#              after boot.sh, and again before a class runs alone: the other parts' taps leave them in
-#              touch mode, where on API 37 the keyboard does not come back after a rotation (4.2b;
-#              w5-carry's item) and the two rotation tests of the master-password fields fail about
-#              every second time.
+#              477 on 37 at wave-4A-merged. (Until the merge of R4 the devices were put in keyboard mode
+#              first, because on API 37 in touch mode the keyboard did not come back after a rotation;
+#              w5-carry step 3's FieldKeyboard fixed that, so the tests now run in whatever mode the
+#              other parts left.)
 #   lock       the plan's line for 4A (build-plan.md section 6), debug build, on API 24, 28 and 37 at
 #              once: setup with a PIN and fingerprint unlock (the offer's "Use", finger 1 on the
 #              prompt); the status has both slots and their keys; Lock now: the prompt opens by itself
@@ -263,21 +262,10 @@ for dev, cls in sorted(out):
 EOF
 }
 
-# keyboard_mode SERIAL...: a key event (Tab) on each device ends touch mode, the state a device is in
-# after boot.sh and during a standard connected run (tools/emu/README.md, "Device facts"); the scripts'
-# taps leave it in touch mode, where the keyboard does not come back after a rotation to landscape on
-# API 37 (job 4.2b's finding, w5-carry's item in R4) and TypeAgainRotationTest and
-# MasterPasswordRotationTest fail about every second time.
-keyboard_mode() {
-    local s
-    for s in "$@"; do PV_SERIAL=$s pv_shell input keyevent 61 > /dev/null 2>&1; done
-}
-
 connected_tests() {
     local dir=$LOGS_ROOT/connected rc s cls again=0
     rm -rf "$dir"
     mkdir -p "$dir/full"
-    keyboard_mode "${SER[24]}" "${SER[28]}" "${SER[37]}"
     "$EMU/adb.sh" --connected "${SER[24]}" "${SER[28]}" "${SER[37]}" ${gradle_args[@]+-- "${gradle_args[@]}"} > "$dir/full.log" 2>&1
     rc=$?
     cp -r "$RESULTS/." "$dir/full/" 2> /dev/null
@@ -295,9 +283,8 @@ connected_tests() {
     [ -s "$dir/failed" ] || return 1
     # One run per class: with class=A,B the runner ran A only (seen on API 28 on 2026-10-08).
     while read -r s cls; do
-        echo "   $s: $cls failed in the full run; run again alone there, in keyboard mode"
+        echo "   $s: $cls failed in the full run; run again alone there"
         mkdir -p "$dir/again/$s/$cls"
-        keyboard_mode "$s"
         "$EMU/adb.sh" --connected "$s" -- "$RUNNER_ARG.class=$cls" ${gradle_args[@]+"${gradle_args[@]}"} > "$dir/again/$s/$cls.log" 2>&1 < /dev/null || again=1
         cp -r "$RESULTS/." "$dir/again/$s/$cls/" 2> /dev/null
         grep -E '^(PASS|FAIL) connected' "$dir/again/$s/$cls.log" | sed 's/^/     alone: /'
