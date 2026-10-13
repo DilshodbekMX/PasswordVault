@@ -154,7 +154,10 @@ fun SettingsScreen(vm: SettingsViewModel, nav: Navigator, modifier: Modifier = M
                     supporting = if (own == null) stringResource(R.string.settings_language_system) else stringResource(own),
                     icon = R.drawable.ic_settings_language,
                     tag = SettingsTags.open(Route.Language),
-                    onClick = { nav.go(Route.Language) },
+                    onClick = {
+                        ThemeBackdrop.mark(listState.firstVisibleItemIndex, listState.firstVisibleItemScrollOffset)
+                        nav.go(Route.Language)
+                    },
                 )
             }
             item(key = "theme") {
@@ -204,9 +207,10 @@ fun SettingsScreen(vm: SettingsViewModel, nav: Navigator, modifier: Modifier = M
 }
 
 /**
- * Where the Settings list was scrolled when "Appearance" was tapped: the dialog's route (`Route.Theme`)
- * draws the list behind its dialog from the same place, so that nothing moves when the dialog opens
- * or closes (each route draws its own screen). In memory only; main thread only.
+ * Where the Settings list was scrolled when "Appearance" or "Language" was tapped: the dialog's route
+ * (`Route.Theme`, `Route.Language`) draws the list behind its dialog from the same place, so that
+ * nothing moves when the dialog opens or closes (each route draws its own screen). In memory only;
+ * main thread only.
  */
 object ThemeBackdrop {
     private var index = 0
