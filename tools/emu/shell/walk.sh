@@ -12,21 +12,23 @@
 #       its own empty record into the system once, at the first start, i18n.md §1.4.3.)
 #
 # The walk finds screens by the resource ids the app gives them (architecture.md §3.6):
-# pv.route.<Route> on each screen, pv.open.<Route> on the buttons and rows that open a route (a
-# placeholder's, the setup screens', Settings'), pv.action.* for the few that do something else,
+# pv.route.<Route> on each screen, pv.open.<Route> on the buttons and rows that open a route (the
+# setup screens', Settings', "I don't remember it"), pv.action.* for the few that do something else,
 # pv.tab.* on the bottom bar, and the ids of the real screens (pv.setup.*, pv.lock.*, pv.pin.*,
 # pv.list.*, pv.edit.*, pv.settings.*, through tools/emu/app.sh). So it does not depend on the
 # language. Since the merge of round R3 the lock is DefaultLockManager (build plan 4.1) with the lock
-# screens of 4.2, the PIN steps and Settings are 4.3's, and Backup, Restore, Export and Import are
-# 5.2 to 5.4's; the routes of later packages are still placeholders. It installs the APK afresh, then:
+# screens of 4.2, the PIN steps and Settings are 4.3's, Backup, Restore, Export and Import are 5.2 to
+# 5.4's, and since the merge of round R4 every other route has its real screen too (5.5, 6.1, 7.1 to
+# 7.3); no placeholder is left. It installs the APK afresh, then:
 #   a setup step left by a new process (Home, am kill, or kill -9 through run-as or su; relaunch:
 #   the words are not kept, so setup starts again at step 1 with "Setup was interrupted", ux.md §5.5;
 #   SKIPPED where nothing ends the process) ->
-#   setup (Welcome, Language, Restore, the three steps with the suggested words typed again, the
+#   setup (Welcome, the language dialog, Restore, the three steps with the suggested words typed again, the
 #   vault made) -> "Choose a PIN", which the lock opens after setup (lock.md F1 step 6): a PIN, the
 #   same PIN again, the fingerprint offer "Not now", "Make backups" Finish -> Passwords: an account
 #   added through the form, its screen, big letters, its form; a second account, the first deleted
-#   through its row's menu, Recently deleted -> Security and below it -> Settings and every route its
+#   through its row's menu, Recently deleted -> two accounts with one password, the Security tab, the
+#   reuse card's list (Group) and a row's guided change -> Settings and every route its
 #   rows open (the dialog "Appearance" with two of its colours, the Help pages) -> Lock now (the pad,
 #   no bottom bar) -> the PIN (the same route comes back) -> a rotation keeps the route -> Back leaves
 #   the app.
@@ -301,14 +303,14 @@ language_dialog() {
     back "$1"
 }
 
-# The Help rows (the help package's placeholders until build plan 7.3): each page, Licences, Version.
+# The Help rows: each page (its column's tag pv.help.<PAGE>, build plan 7.3), Licences, Version.
 help_pages() {
     help_page PROTECTION && help_page LOST_PHONE && help_page FORGOT_MASTER_PASSWORD && help_page FORGOT_PIN \
         && open Licences && back Settings \
         && help_page VERSION
 }
 
-help_page() { tap "pv.open.Help.$1" && on Help "Help\\(page=$1\\)" && back Settings; }
+help_page() { tap "pv.open.Help.$1" && on Help "[|]pv\\.help\\.$1\$" && back Settings; }
 
 # Lock now (an App lock row, at the top of Settings): the lock screen with the pad, without the bottom
 # bar; the PIN chosen after setup opens the same route again.
