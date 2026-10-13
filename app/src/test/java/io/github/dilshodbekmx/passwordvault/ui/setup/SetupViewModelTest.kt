@@ -274,6 +274,7 @@ class SetupViewModelTest {
         assertEquals("", setup.again.text.toString())
         assertEquals("", setup.own.text.toString())
         assertFalse(state.settingUp)
+        assertTrue("the PIN steps after setup end with \"Make backups\" (decision 24)", PinSetupStart.takeNewVault())
     }
 
     @Test
@@ -295,8 +296,10 @@ class SetupViewModelTest {
         lock.createResults += CreateResult.NotSaved
         lock.createResults += CreateResult.NoMemory
         setup.again.type(password)
+        PinSetupStart.newVault() // as if left by an earlier try
         setup.submitAgain()
         advanceUntilIdle()
+        assertFalse("no vault was made: no mark for the PIN steps", PinSetupStart.takeNewVault())
         assertEquals(UiText.of(R.string.setup_again_not_saved), setup.state.value.againMessage)
         assertTrue(setup.state.value.canRetry)
         assertEquals("the typing stays for Try again", password, setup.again.text.toString())

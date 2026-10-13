@@ -74,6 +74,7 @@ class PinSetupViewModelTest {
     fun setUp() {
         Dispatchers.setMain(dispatcher)
         PinSetupStart.take()
+        PinSetupStart.takeNewVault()
     }
 
     @After
@@ -110,8 +111,12 @@ class PinSetupViewModelTest {
         moved(move)
     }
 
-    /** Setup up to a saved PIN and the decision after it. */
-    private fun TestScope.chooseAndSave(vm: PinSetupViewModel, pin: String = Pins.ALLOWED) {
+    /**
+     * Setup up to a saved PIN and the decision after it: [newVault] leaves setup's mark first, as
+     * `SetupViewModel` and `RestoreViewModel` do before the lock makes the vault (decision 24).
+     */
+    private fun TestScope.chooseAndSave(vm: PinSetupViewModel, pin: String = Pins.ALLOWED, newVault: Boolean = true) {
+        if (newVault) PinSetupStart.newVault()
         vm.start()
         runCurrent()
         vm.type(pin, Route.CreatePin)
@@ -129,8 +134,58 @@ class PinSetupViewModelTest {
         runCurrent()
         val ui = vm.ui.value
         assertEquals(PinSetupStage.CHOOSE, ui.stage)
-        assertEquals("no PIN on this phone: the steps of setup", PinFlow.SETUP, ui.flow)
+        assertEquals("no PIN on this phone, no vault just made: the steps of an unlock", PinFlow.AFTER_UNLOCK, ui.flow)
         assertFalse("\"Choose a 6-digit PIN\"", ui.newPin)
+        PinSetupStart.newVault()
+        val afterSetup = model(unlockedWithProof())
+        afterSetup.start()
+        runCurrent()
+        assertEquals("a vault just made: the steps of setup", PinFlow.SETUP, afterSetup.ui.value.flow)
+        assertFalse(afterSetup.ui.value.newPin)
+    }
+
+    /**
+     * The owner's decision 24 (build-plan.md §12): "Make backups" follows only the first setup and a
+     * restore, which leave [PinSetupStart.newVault] before the lock makes the vault, not every
+     * master-password unlock without a PIN. After such an unlock the PIN and the fingerprint offer
+     * come as in setup, and the steps close onto the screen the unlock brought back; the backup
+     * reminder after an unlock is the lock's "Make a backup now?" (decision 15). Before, every such
+     * unlock ended on "Make backups".
+     */
+    @Test
+    fun makeBackupsFollowsOnlyANewVault_notAnUnlockWithoutAPin() = runTest {
+        PinSetupStart.offer(ChoosePinReason.NONE_HERE) // the lock's "Choose a PIN" after the unlock
+        val offered = model(unlockedWithProof(), canAuthenticate = 0)
+        chooseAndSave(offered, newVault = false)
+        assertEquals(PinFlow.AFTER_UNLOCK, offered.ui.value.flow)
+        assertEquals("the fingerprint offer, as in setup", PinSetupStage.FINGERPRINT, offered.ui.value.stage)
+        offered.performMove()
+        offered.fingerprintNotNow()
+        assertEquals("then back to the screen the unlock brought back", PinSetupStage.DONE, offered.ui.value.stage)
+        assertEquals(listOf(NavStep.Back), offered.ui.value.move?.steps)
+
+        PinSetupStart.offer(ChoosePinReason.NONE_HERE)
+        val notOffered = model(unlockedWithProof(), canAuthenticate = 11)
+        chooseAndSave(notOffered, newVault = false)
+        assertEquals("no offer: straight back, without \"Make backups\"", PinSetupStage.DONE, notOffered.ui.value.stage)
+        assertEquals(listOf(NavStep.Back, NavStep.Back), notOffered.ui.value.move?.steps)
+
+        PinSetupStart.offer(ChoosePinReason.NONE_HERE)
+        val skipped = model(unlockedWithProof(), canAuthenticate = 11)
+        skipped.start()
+        runCurrent()
+        skipped.notNow()
+        advanceUntilIdle()
+        assertEquals("\"Not now\": back as well", PinSetupStage.DONE, skipped.ui.value.stage)
+        assertEquals(listOf(NavStep.Back), skipped.ui.value.move?.steps)
+
+        PinSetupStart.offer(ChoosePinReason.NONE_HERE)
+        val setup = model(unlockedWithProof(), canAuthenticate = 11)
+        chooseAndSave(setup) // setup or a restore made the vault
+        assertEquals(PinFlow.SETUP, setup.ui.value.flow)
+        assertEquals("after a new vault: \"Make backups\"", PinSetupStage.BACKUPS, setup.ui.value.stage)
+        assertEquals(listOf(NavStep.Back, NavStep.Replace(Route.BackupsExplained)), setup.ui.value.move?.steps)
+        assertFalse("the mark is used once", PinSetupStart.takeNewVault())
     }
 
     @Test
@@ -362,7 +417,8 @@ class PinSetupViewModelTest {
      * lock.md F11 step 19 (5.5's interface request 2): after "Finish now" the lock's "Choose a PIN"
      * (NONE_HERE) opens the steps over `Route.NewMasterPassword`. The PIN and the fingerprint offer
      * come as in setup, then the steps close onto that screen, whose own backup step follows; setup's
-     * "Make backups" (F1 step 8) is left out. Over any other screen NONE_HERE stays setup's flow.
+     * "Make backups" (F1 step 8) is left out. Over any other screen NONE_HERE is setup's flow only
+     * right after setup or a restore (decision 24), and an unlock's otherwise.
      */
     @Test
     fun afterANewMasterPasswordTheStepsCloseOntoItsScreen_withoutMakeBackups() = runTest {
@@ -404,10 +460,20 @@ class PinSetupViewModelTest {
         val elsewhere = model(unlockedWithProof(), canAuthenticate = 11)
         elsewhere.start(under = Route.Entry("acc-1"))
         runCurrent()
-        assertEquals("over any other screen: setup's steps", PinFlow.SETUP, elsewhere.ui.value.flow)
+        assertEquals("over any other screen after an unlock: the unlock's steps", PinFlow.AFTER_UNLOCK, elsewhere.ui.value.flow)
         elsewhere.notNow()
         advanceUntilIdle()
-        assertEquals(PinSetupStage.BACKUPS, elsewhere.ui.value.stage)
+        assertEquals(PinSetupStage.DONE, elsewhere.ui.value.stage)
+
+        PinSetupStart.offer(ChoosePinReason.NONE_HERE)
+        PinSetupStart.newVault()
+        val afterSetup = model(unlockedWithProof(), canAuthenticate = 11)
+        afterSetup.start(under = Route.Passwords)
+        runCurrent()
+        assertEquals("right after setup or a restore: setup's steps", PinFlow.SETUP, afterSetup.ui.value.flow)
+        afterSetup.notNow()
+        advanceUntilIdle()
+        assertEquals(PinSetupStage.BACKUPS, afterSetup.ui.value.stage)
     }
 
     @Test
@@ -508,6 +574,7 @@ class PinSetupViewModelTest {
     fun aPinThatMayNotBeSavedPromisesNothingAndGoesOn() = runTest {
         val lock = unlockedWithProof()
         val vm = model(lock, canAuthenticate = 11)
+        PinSetupStart.newVault() // after setup
         vm.start()
         runCurrent()
         vm.type(Pins.ALLOWED, Route.CreatePin)

@@ -190,7 +190,7 @@ Back rules. Predictive back is on at target 36: `onBackPressed` is not called an
 | Guided change | Back to the group list; progress is kept (`changePending`) | |
 | Lock screen | Leaves the app | The lock screen never reveals anything behind it; after unlock it is removed from the stack |
 | Setup, before the vault exists | Previous setup step; on Welcome, leaves the app | The generated passphrase stays in memory only (§5.5 covers a kill) |
-| Setup, after the vault exists: the PIN steps | What the step's own way on does: "Not now" on "Choose a PIN" and on the fingerprint offer, "Finish" on "Make backups"; on "Enter the PIN again", back to the first entry. The app is not left (build-plan §12, decision 7). The same steps opened after a master-password unlock without a PIN do the same, and close onto the screen that unlock brought back | There is no way back to "create master password". If the process ends during the steps, the next start asks for the master password, and "Choose a PIN" follows while no PIN is set |
+| Setup, after the vault exists: the PIN steps | What the step's own way on does: "Not now" on "Choose a PIN" and on the fingerprint offer, "Finish" on "Make backups"; on "Enter the PIN again", back to the first entry. The app is not left (build-plan §12, decision 7). The same steps opened after a master-password unlock without a PIN do the same, without "Make backups" (decision 24), and close onto the screen that unlock brought back | There is no way back to "create master password". If the process ends during the steps, the next start asks for the master password, and "Choose a PIN" follows while no PIN is set |
 | While "Opening…" or "Saving…" runs | Ignored for those 1–2 seconds | |
 
 **Auto-lock as the user experiences it.** The numbers and mechanics belong to lock.md §10.
@@ -395,6 +395,7 @@ States and messages:
   - "Keep a backup outside this phone — in your Google Drive, on a computer, or send it to yourself."
 - `Switch` "Remind me to make a backup" (on). `Button` "Finish".
 - No backup is made now, because the vault is empty. The first reminder appears one day after the first account is added (§5.11).
+- It follows only the first setup and a restore. The PIN steps that a master-password unlock without a PIN opens (a PIN never set, "Welcome back") end after the PIN or the fingerprint offer and close onto the screen the unlock brought back; the backup reminder after such an unlock is the lock's "Make a backup now?" (lock.md F12 step 2; build-plan §12, decisions 15 and 24).
 
 ### 5.9 Lock screen — PIN (look and wording; behaviour from the lock design)
 

@@ -91,8 +91,10 @@ class SettingsScreenshotsTest {
             gallery.shown = SettingsGallery.Screen.APP_LOCK
         }
 
-        // The PIN steps as setup opens them: no PIN on this phone yet (lock.md F1 step 6).
+        // The PIN steps as setup opens them: no PIN on this phone yet (lock.md F1 step 6), a vault just
+        // made, so "Make backups" ends them (decision 24).
         PinSetupStart.offer(ChoosePinReason.NONE_HERE)
+        PinSetupStart.newVault()
         step("10-create-pin") { gallery.shown = SettingsGallery.Screen.PIN_STEPS }
         step("11-create-pin-refused") { gallery.typeSteps("111111", Route.CreatePin) }
         compose.runOnUiThread { gallery.typeSteps("582913", Route.CreatePin) }

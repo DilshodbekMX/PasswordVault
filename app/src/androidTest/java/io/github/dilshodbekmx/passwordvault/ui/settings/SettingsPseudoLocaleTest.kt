@@ -20,6 +20,7 @@ import io.github.dilshodbekmx.passwordvault.lock.PinChange
 import io.github.dilshodbekmx.passwordvault.lock.PinSetResult
 import io.github.dilshodbekmx.passwordvault.nav.Route
 import io.github.dilshodbekmx.passwordvault.ui.setup.FingerprintOfferTags
+import io.github.dilshodbekmx.passwordvault.ui.setup.PinSetupStart
 import java.util.Locale
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -123,7 +124,9 @@ class SettingsPseudoLocaleTest {
         }
         step("the App lock page") { gallery.shown = SettingsGallery.Screen.APP_LOCK }
 
-        // The PIN steps.
+        // The PIN steps, as setup opens them: "Make backups" ends them (decision 24).
+        PinSetupStart.takeNewVault()
+        PinSetupStart.newVault()
         step("Choose a 6-digit PIN") { gallery.shown = SettingsGallery.Screen.PIN_STEPS }
         step("a refused PIN") { gallery.typeSteps("111111", Route.CreatePin) }
         step("Enter the PIN again") { gallery.typeSteps("582913", Route.CreatePin) }

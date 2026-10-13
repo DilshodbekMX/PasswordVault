@@ -14,8 +14,9 @@
 # The unlocks. At the first unlock the lock's "Choose a PIN" is answered with a PIN, as the user has
 # one (a banking-style PIN, with the master password as the root of recovery), and every later unlock
 # is with that PIN. Unlocked with the master password and no PIN, every unlock would run "Choose a
-# PIN" again, with the fingerprint offer and "Make backups" (4.3's PinSetupNav: ChoosePinReason
-# .NONE_HERE is its setup flow), before the route the app was on shows again.
+# PIN" again, with the fingerprint offer (4.3's PinSetupNav: ChoosePinReason.NONE_HERE; "Make
+# backups" only after setup and a restore since decision 24), before the route the app was on shows
+# again.
 #
 # The steps, each checked after a lock (the screen off: the app locks at once, and the PIN brings the
 # same route back) and after `am force-stop` (the app starts again on the list; the change is opened

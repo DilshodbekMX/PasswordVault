@@ -54,8 +54,11 @@ class PinStepsScreenTest {
 
     private fun dots(count: Int) = compose.activity.resources.getQuantityString(R.plurals.common_pin_dots, count, count, 6)
 
-    private fun showSteps(canAuthenticate: Int = 0) {
+    /** The PIN steps; with [newVault], as setup or a restore opens them, which end with "Make backups" (decision 24). */
+    private fun showSteps(canAuthenticate: Int = 0, newVault: Boolean = false) {
         PinSetupStart.take() // nothing left by another test of the process (the steps would say "Choose a new PIN")
+        PinSetupStart.takeNewVault()
+        if (newVault) PinSetupStart.newVault()
         val vm = rig.pinSetupViewModel(canAuthenticate)
         compose.setContent { SettingsTestTheme { PinStepsHost(vm, rig.nav) } }
         compose.waitForIdle()
@@ -87,7 +90,7 @@ class PinStepsScreenTest {
 
     @Test
     fun anAllowedPinTypedTwiceIsSavedAndTheOfferFollows() {
-        showSteps(canAuthenticate = 0)
+        showSteps(canAuthenticate = 0, newVault = true)
         type("582913")
         compose.waitUntil(5_000) { "go ConfirmPin" in rig.nav.steps }
         compose.onNodeWithText(string(R.string.pin_confirm_title)).assertIsDisplayed()
@@ -124,6 +127,8 @@ class PinStepsScreenTest {
      */
     @Test
     fun aPinThatMayNotBeSavedSaysWhatToTryNextTimeAndOkGoesOn() {
+        PinSetupStart.takeNewVault()
+        PinSetupStart.newVault() // after setup: "Make backups" follows
         val gated = GatedLock(rig.lock)
         val vm = rig.pinSetupViewModel(canAuthenticate = 11, lock = gated)
         compose.setContent { SettingsTestTheme { PinStepsHost(vm, rig.nav) } }

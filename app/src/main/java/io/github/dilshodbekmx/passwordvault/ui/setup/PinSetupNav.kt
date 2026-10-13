@@ -75,11 +75,14 @@ fun EntryProviderScope<Route>.pinSetupNav(graph: AppGraph, nav: Navigator) {
  * ([PinFlow]) and the words of the first step. The route key holds no argument, so the opener leaves
  * this one-time mark ([offer]) just before it opens the route, and the first step takes it ([take])
  * when it starts. Without a mark the steps read the reason from a "Choose a PIN" notice still in the
- * lock's state, and otherwise from the lock's status (no PIN on this phone: the steps of setup). In
- * memory only, nothing secret; a new process has none. Main thread only.
+ * lock's state, and otherwise from the lock's status (no PIN on this phone: the steps of an unlock
+ * without a PIN). A second mark, [newVault], is left by setup and the restore just before they ask
+ * the lock to make the vault: only then do the steps end with "Make backups" (build-plan.md §12,
+ * decision 24). In memory only, nothing secret; a new process has none. Main thread only.
  */
 object PinSetupStart {
     private var reason: ChoosePinReason? = null
+    private var vaultMade = false
 
     /** The PIN steps are about to be opened for [reason]. */
     fun offer(reason: ChoosePinReason) {
@@ -88,16 +91,36 @@ object PinSetupStart {
 
     /** The reason left by [offer], once; null when there is none. */
     fun take(): ChoosePinReason? = reason.also { reason = null }
+
+    /**
+     * Setup or a restore is about to make the vault (`LockManager.createVault`; lock.md F1, F13): the
+     * PIN steps that "Choose a PIN" opens next are setup's, with "Make backups" at their end. The
+     * maker takes the mark back ([takeNewVault]) when no vault was made.
+     */
+    fun newVault() {
+        vaultMade = true
+    }
+
+    /** Whether [newVault] was left, once. */
+    fun takeNewVault(): Boolean = vaultMade.also { vaultMade = false }
 }
 
 /** Which steps follow the PIN (lock.md §12). */
 enum class PinFlow {
     /**
-     * A new vault, a restored one or one without a PIN on this phone (F1 steps 6 to 9, F13, F14):
-     * fingerprint offer, "Make backups", then what lies under the steps: the list after setup, the
-     * screen an unlock brought back after a master-password unlock without a PIN.
+     * A new vault or a restored one (F1 steps 6 to 9, F13; [PinSetupStart.newVault]): fingerprint
+     * offer, "Make backups", then what lies under the steps, the list.
      */
     SETUP,
+
+    /**
+     * A master-password unlock without a PIN on this phone (a PIN never set, F14, F17's vault opened
+     * again), or "Set a PIN" in Settings: the PIN and the fingerprint offer as in setup, then back to
+     * the screen under the steps, which an unlock brought back. Setup's "Make backups" (F1 step 8)
+     * follows only the first setup and a restore (build-plan.md §12, decision 24); the backup reminder
+     * after an unlock is the lock's "Make a backup now?" (decision 15).
+     */
+    AFTER_UNLOCK,
 
     /**
      * A new master password finished in the open app (F11 step 19, "Finish now"): the lock's "Choose
@@ -276,8 +299,13 @@ class PinSetupViewModel(
      */
     fun start(under: Route? = null) {
         if (state.value.stage != PinSetupStage.START) return
+        val newVault = PinSetupStart.takeNewVault()
         val reason = PinSetupStart.take() ?: choosePinNotice()?.reason
-        val setup = if (under == Route.NewMasterPassword) PinFlow.AFTER_NEW_MASTER_PASSWORD else PinFlow.SETUP
+        val setup = when {
+            under == Route.NewMasterPassword -> PinFlow.AFTER_NEW_MASTER_PASSWORD
+            newVault -> PinFlow.SETUP
+            else -> PinFlow.AFTER_UNLOCK
+        }
         val flow = when (reason) {
             null -> if (lock.status.value.pin == PinStatus.NotSet) setup else PinFlow.NEW_PIN
             ChoosePinReason.NONE_HERE -> setup
@@ -298,7 +326,7 @@ class PinSetupViewModel(
         state.value = PinSetupUi(
             stage = if (proof() != null) PinSetupStage.CHOOSE else PinSetupStage.MASTER,
             flow = flow,
-            newPin = flow != PinFlow.SETUP && flow != PinFlow.AFTER_NEW_MASTER_PASSWORD,
+            newPin = flow == PinFlow.NEW_PIN || flow == PinFlow.NEW_PIN_WITH_OFFER,
             someoneMayKnow = reason == ChoosePinReason.SOMEONE_MAY_KNOW,
         )
     }
@@ -506,12 +534,12 @@ class PinSetupViewModel(
     }
 
     /**
-     * "Finish" (or Back): the PIN steps close, and what lies under them is shown again. After setup
-     * or a restore that is the list alone. After a master-password unlock without a PIN, where "Choose
-     * a PIN" opens the steps over the screen the unlock brought back, it is that screen (an account, a
-     * form with its kept draft): ux.md §4, "What survives a lock", after an unlock the same screen.
-     * The steps are never the root of the unlocked stack (they open over a tab's root), so Back
-     * always has somewhere to go.
+     * "Finish" (or Back) on "Make backups", which only the first setup and a restore show (decision
+     * 24): the PIN steps close, and what lies under them is shown again, the list alone. (After a
+     * master-password unlock without a PIN the steps end at the fingerprint offer or the PIN and close
+     * onto the screen the unlock brought back, an account or a form with its kept draft: ux.md §4,
+     * "What survives a lock".) The steps are never the root of the unlocked stack (they open over a
+     * tab's root), so Back always has somewhere to go.
      */
     fun finish() {
         if (state.value.move?.from == Route.BackupsExplained) return

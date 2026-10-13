@@ -212,11 +212,14 @@ class SetupViewModel(
         mutableState.update { it.copy(settingUp = true, againMessage = null, keyboardHint = null, canRetry = false) }
         viewModelScope.launch {
             val copy = first.copyOf()
+            PinSetupStart.newVault() // the PIN steps after it end with "Make backups" (decision 24)
+            var made = false
             val result = try {
-                lock.createVault(copy, typed, restoreFrom = null)
+                lock.createVault(copy, typed, restoreFrom = null).also { made = it is CreateResult.Created }
             } finally {
                 copy.fill(ZERO)
                 typed.fill(ZERO)
+                if (!made) PinSetupStart.takeNewVault() // no vault: the mark goes again
             }
             when (result) {
                 is CreateResult.Created -> created()

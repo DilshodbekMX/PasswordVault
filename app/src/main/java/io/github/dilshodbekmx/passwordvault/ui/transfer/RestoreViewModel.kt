@@ -19,6 +19,7 @@ import io.github.dilshodbekmx.passwordvault.lock.LockManager
 import io.github.dilshodbekmx.passwordvault.lock.LockUiState
 import io.github.dilshodbekmx.passwordvault.ui.common.clearSecret
 import io.github.dilshodbekmx.passwordvault.ui.common.readSecret
+import io.github.dilshodbekmx.passwordvault.ui.setup.PinSetupStart
 import java.io.IOException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -170,11 +171,14 @@ class RestoreViewModel(
         work = viewModelScope.launch {
             val first = chars.copyOf()
             val again = chars.copyOf()
+            PinSetupStart.newVault() // the PIN steps after it end with "Make backups" (decision 24)
+            var made = false
             val result = try {
-                lock.createVault(first, again, vault)
+                lock.createVault(first, again, vault).also { made = it is CreateResult.Created }
             } finally {
                 first.fill(ZERO)
                 again.fill(ZERO)
+                if (!made) PinSetupStart.takeNewVault() // no vault: the mark goes again
             }
             when (result) {
                 // The lock has unlocked the restored vault: setup goes on at the PIN, and this screen leaves.

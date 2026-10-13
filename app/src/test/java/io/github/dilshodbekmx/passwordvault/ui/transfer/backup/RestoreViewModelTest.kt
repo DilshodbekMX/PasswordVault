@@ -11,6 +11,7 @@ import io.github.dilshodbekmx.passwordvault.files.FileTaskStore
 import io.github.dilshodbekmx.passwordvault.i18n.UiText
 import io.github.dilshodbekmx.passwordvault.lock.CreateResult
 import io.github.dilshodbekmx.passwordvault.lock.LockUiState
+import io.github.dilshodbekmx.passwordvault.ui.setup.PinSetupStart
 import io.github.dilshodbekmx.passwordvault.ui.transfer.BackupDate
 import io.github.dilshodbekmx.passwordvault.ui.transfer.BackupTexts
 import io.github.dilshodbekmx.passwordvault.ui.transfer.RestoreProblem
@@ -110,9 +111,11 @@ class RestoreViewModelTest {
         assertTrue("and its permission is given up", FILE in rig.fakeDocuments.released)
         assertTrue("nothing on the phone changed yet", rig.fakeLock.state.value is LockUiState.NoVault)
 
+        PinSetupStart.takeNewVault()
         vm.restore()
         runCurrent()
         assertTrue("the lock made the vault and unlocked", rig.fakeLock.state.value is LockUiState.Unlocked)
+        assertTrue("the PIN steps after a restore end with \"Make backups\" (decision 24)", PinSetupStart.takeNewVault())
         assertSame("the backup's own vault", backup, rig.vault.stored)
         assertEquals("", vm.password.text.toString())
     }

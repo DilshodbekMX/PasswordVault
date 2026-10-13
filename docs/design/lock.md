@@ -1024,7 +1024,7 @@ Every step that touches a lock record runs under the lock mutex and uses the rou
 5. **Can this phone hold a key?** Generate `pv_canary` if it is missing and check it (4.5). If generation fails or the key is not in secure hardware: F18, then step 9.
 6. **PIN.** "Choose a 6-digit PIN" (7.3), then "Enter the PIN again". "Not now" is allowed. Then F6 steps 4 to 7, using the `MasterProof` from step 3.
 7. **Fingerprint** offer when 9.4 says so (ux.md §5.7): F9 steps 3 to 9 with the same proof.
-8. "Make backups" (ux.md §5.8).
+8. "Make backups" (ux.md §5.8). Only here and after a restore (F13): the PIN steps that follow a master-password unlock without a PIN (F14, a PIN never set) end at step 7 and close onto the screen the unlock brought back (build-plan §12, decision 24).
 9. The list, unlocked.
 
 If the app is killed after step 3, the next start finds a vault without `pin.rec`: the master-password screen, then step 5 (ux.md §4).
@@ -1234,7 +1234,7 @@ Without this route every backup becomes unopenable, and the next PIN lockout or 
 
 This happens when a vault is on the phone without its lock directory: the app died between writing a vault and creating its directory (F1 steps 3 and 4, F11 steps 16 and 17); a manufacturer's phone-copy tool brought the vault files but not `noBackupFilesDir` (not checked, D6); or the directory was lost. A reinstall that keeps the app's data keeps the lock directory as well. What can be missing then is the keys, and that is F15b.
 1. 13.1 opens the master-password screen titled "Welcome back" (ux.md §5.9).
-2. After a correct master password: create the directory and `state.rec`, then F1 step 5 with the proof just made.
+2. After a correct master password: create the directory and `state.rec`, then F1 steps 5 to 7 with the proof just made; F1 step 8, "Make backups", is setup's and a restore's only (build-plan §12, decision 24).
 
 ### F15. Keystore failures
 
