@@ -31,9 +31,8 @@ object AppSourceRules {
     /** R-11: files outside `nav` that may use rememberSaveable or SavedStateHandle. */
     val savedStateAllowList: Set<String> = emptySet()
 
-    /** R-15: the file that declares `MasterProof.forFakes`, and the fakes that may call it. */
+    /** R-15: the file that declares `MasterProof.forFakes`; the fakes that may call it are in the `debug` set. */
     private const val MASTER_PROOF = "core/src/main/java/io/github/dilshodbekmx/passwordvault/core/lock/flow/MasterProof.kt"
-    private const val APP_FAKE = "$APP_DIR/fake/"
 
     /** R-4: only the classic BiometricPrompt API, whose dialog stays inside our activity (lock.md §9.1). */
     val r4: List<Rule> = listOf(
@@ -149,15 +148,14 @@ object AppSourceRules {
 
     /**
      * R-15: `MasterProof.forFakes`, a proof that no master password stands behind (architecture.md
-     * §3.4), is named only in the file that declares it, by the fakes under `APP/fake/`, in the
-     * `debug` source set (previews) and in `:testing`; the test source sets are not scanned. So
-     * release code only ever holds the proofs that `LockEngine` makes after a correct master
-     * password.
+     * §3.4), is named only in the file that declares it, in the `debug` source set (the fakes of
+     * `app/src/debug/.../fake/` since the merge of round R4, and the previews) and in `:testing`;
+     * the test source sets are not scanned. So release code only ever holds the proofs that
+     * `LockEngine` makes after a correct master password.
      */
     val r15: List<Rule> = listOf(
         PatternRule("R-15", "MasterProof.forFakes outside the fakes, previews and tests", Regex("""\bforFakes\b""")) { file, _ ->
-            file.path == MASTER_PROOF || file.path.startsWith(APP_FAKE) ||
-                file.path.startsWith("app/src/debug/") || file.path.startsWith("testing/src/main/")
+            file.path == MASTER_PROOF || file.path.startsWith("app/src/debug/") || file.path.startsWith("testing/src/main/")
         },
     )
 

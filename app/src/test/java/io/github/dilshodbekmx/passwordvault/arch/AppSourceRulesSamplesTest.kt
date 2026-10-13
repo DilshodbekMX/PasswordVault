@@ -89,6 +89,7 @@ class AppSourceRulesSamplesTest {
         for (path in listOf(
             "$app/lock/DefaultLockManager.kt",
             "$app/fakes/Fakes.kt",
+            "$app/fake/FakeLockManager.kt", // the fakes left src/main at the merge of round R4
             "app/src/release/java/io/github/dilshodbekmx/passwordvault/Release.kt",
             "app/src/staging/java/io/github/dilshodbekmx/passwordvault/Staging.kt",
             "$core/lock/flow/LockEngine.kt",
@@ -98,7 +99,7 @@ class AppSourceRulesSamplesTest {
         val importLine = "import io.github.dilshodbekmx.passwordvault.core.lock.flow.MasterProof.Companion.forFakes"
         assertEquals(listOf(1), lines(AppSourceRules.r15, importLine, "$app/lock/DefaultLockManager.kt"))
         for (path in listOf(
-            "$app/fake/FakeLockManager.kt",
+            "app/src/debug/java/io/github/dilshodbekmx/passwordvault/fake/FakeLockManager.kt",
             "app/src/debug/java/io/github/dilshodbekmx/passwordvault/ui/lock/LockPreviews.kt",
             "testing/src/main/java/io/github/dilshodbekmx/passwordvault/testing/lock/FakeKeys.kt",
         )) {
