@@ -23,8 +23,10 @@ import androidx.compose.ui.test.performTextInput
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import io.github.dilshodbekmx.passwordvault.fake.FakeLockManager
 import io.github.dilshodbekmx.passwordvault.lock.LockUiState
+import io.github.dilshodbekmx.passwordvault.ui.common.FieldKeyboard
 import io.github.dilshodbekmx.passwordvault.window.WindowPolicy
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
@@ -63,6 +65,10 @@ class MasterPasswordRotationTest {
 
     @Test
     fun afterARotationNothingOfTheFieldIsInTheSavedBundleAndTheKeyboardIsBack() {
+        // In touch mode, as with a phone in the hand, where on API 37 the keyboard did not come back after a
+        // rotation to landscape until the screen asked again for a while (FieldKeyboard; job 4.2b).
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        instrumentation.setInTouchMode(true)
         val lock = FakeLockManager(initial = LockUiState.Locked(PLAIN_SCREEN))
         val application = ApplicationProvider.getApplicationContext<Application>()
         val saved = CopyOnWriteArrayList<Saved>()
@@ -115,6 +121,7 @@ class MasterPasswordRotationTest {
                 assertEquals(SECRET, before.password.text.toString())
                 assertEquals(1, created.size)
 
+                instrumentation.setInTouchMode(true) // typing ended it on some versions
                 scenario.onActivity { it.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE }
                 eventually("the rotated activity is resumed", syncCompose = false) { created.size == 2 && resumed.get() == created.last() }
                 collectOldRoots()
@@ -140,6 +147,9 @@ class MasterPasswordRotationTest {
 
                 // The keyboard is back on the field, which still holds what was typed: nothing was lost.
                 eventually("the field has the keyboard after the rotation") { focused(LockTags.FIELD) && keyboardShown() }
+                // And it stays once nothing asks for it any more: Gboard closed itself a moment after showing.
+                SystemClock.sleep(FieldKeyboard.AGAIN_MS + 500L)
+                eventually("the keyboard is still shown after the rotation", timeoutMs = 0) { focused(LockTags.FIELD) && keyboardShown() }
                 assertSame("the rotation kept the ViewModel", before, viewModel.get())
                 assertEquals(SECRET, before.password.text.toString())
 

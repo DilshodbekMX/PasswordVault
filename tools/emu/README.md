@@ -327,12 +327,13 @@ says `Found systemPath /home/asus/pvlab/sysimg/...`).
 
 - A device is in keyboard mode after `boot.sh` and during a standard connected run (`dumpsys window`
   prints `mInTouchMode=false`). A tap, or a run with `-e pvShots` (`LockShots.touchMode`), puts it in
-  touch mode until the next navigation or typing key. On API 37 in touch mode the keyboard does not
-  come back after a rotation to landscape on the master-password screen, so
-  `MasterPasswordRotationTest` fails about every second time there (2026-10-08: 9 of 18 runs alone
-  in touch mode, 0 of 6 in keyboard mode; Gboard hides itself in its landscape full-screen mode, job
-  4.2b). Make screenshots with a run of their own, or send `input keyevent 61` before the other
-  tests. The sentence can go once the keyboard is fixed.
+  touch mode until the next navigation or typing key. On API 37 in touch mode Gboard hides itself in
+  its landscape full-screen mode after a rotation (2026-10-08, job 4.2b: the master-password screen's
+  keyboard stayed hidden after 17 of 17 rotations, and `MasterPasswordRotationTest` failed 9 of 18
+  runs alone). Since w5-carry step 3 the screens ask again for about a second (`FieldKeyboard` in
+  `ui/common`; architecture.md §5.4): on 2026-10-13 4.2b's `rotate-in-app.sh` saw the keyboard back
+  after 8 of 8 rotations in touch mode (0 of 6 before), and `FieldKeyboardTest` rotates four times in
+  touch mode.
 - DocumentsUI on the API 24 image (measured with 5.2's screens on 2026-10-08): its open picker
   ignores `input tap` and `input swipe` on a file, in the grid and in the list view;
   `KEYCODE_DPAD_DOWN` twice and then `KEYCODE_ENTER` opens it. Its "Save as" opens in Recent with
