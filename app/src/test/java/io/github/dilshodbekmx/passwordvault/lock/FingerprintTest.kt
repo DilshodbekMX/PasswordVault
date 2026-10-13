@@ -234,13 +234,13 @@ class FingerprintTest {
         assertEquals(PromptUse.UNLOCK, rig.prompt.use)
         assertFalse("no pad behind it: the negative button is \"Use master password\"", rig.prompt.pinUsable)
 
-        rig.promptError(13)
+        rig.promptError(10) // Back or the X: the fingerprint-only screen stays
         assertTrue(rig.screen is LockScreen.FingerprintOnly)
         rig.send(LockIntent.UseFingerprint) // "Use fingerprint"
         assertEquals(2, unlockPrompts(rig))
-        rig.promptError(10)
+        rig.promptError(13) // the prompt's "Use master password": that screen at once (build-plan.md §12, decision 19)
 
-        rig.send(LockIntent.UseMasterPassword)
+        assertTrue(rig.screen is LockScreen.MasterPassword)
         assertFalse(rig.field.canUsePin)
         assertTrue(rig.unlockWith(LockRig.PASSWORD) is MpResult.Right)
     }
