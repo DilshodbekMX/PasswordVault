@@ -18,6 +18,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.style.Hyphens
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
@@ -31,6 +32,9 @@ import androidx.compose.ui.unit.LayoutDirection
  *    told apart (ux.md §5.12, architecture.md D-22). Colour is not the only signal: monospace
  *    gives each character its own cell.
  *  - Always laid out left to right (ux.md §3).
+ *  - Never hyphenated: a secret too long for its line wraps between two of its own characters, with
+ *    no hyphen drawn that is not in it, although the theme hyphenates the app's texts in every
+ *    language (i18n.md §4.5 rule 4; `SecretTextLinesTest`).
  *  - `isSensitiveData`: hidden from accessibility services that are not accessibility tools, on
  *    API 34+; TalkBack, an accessibility tool, still reads it (ux.md §3, §8; [V-P5]).
  *
@@ -51,7 +55,7 @@ fun SecretText(
         Text(
             text = text,
             modifier = modifier.semantics { isSensitiveData = true },
-            style = style.copy(fontFamily = FontFamily.Monospace, textDirection = TextDirection.Ltr),
+            style = style.copy(fontFamily = FontFamily.Monospace, textDirection = TextDirection.Ltr, hyphens = Hyphens.None),
             maxLines = maxLines,
             overflow = if (maxLines == Int.MAX_VALUE) TextOverflow.Clip else TextOverflow.Ellipsis,
         )

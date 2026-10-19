@@ -9,6 +9,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.autofill.ContentDataType
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsNode
@@ -23,12 +24,14 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToKey
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.unit.Density
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import io.github.dilshodbekmx.passwordvault.R
+import io.github.dilshodbekmx.passwordvault.core.model.CustomField
 import io.github.dilshodbekmx.passwordvault.core.model.Vault
 import io.github.dilshodbekmx.passwordvault.nav.Route
 import io.github.dilshodbekmx.passwordvault.settings.ThemeChoice
@@ -45,6 +48,8 @@ import io.github.dilshodbekmx.passwordvault.ui.entry.EntryRig.Companion.SECRETS
 import io.github.dilshodbekmx.passwordvault.ui.entry.EntryRig.Companion.USERNAME
 import io.github.dilshodbekmx.passwordvault.ui.entry.EntryRig.Companion.bare
 import io.github.dilshodbekmx.passwordvault.ui.entry.EntryRig.Companion.gmail
+import io.github.dilshodbekmx.passwordvault.ui.common.linesWithAGlyphNotInTheText
+import io.github.dilshodbekmx.passwordvault.ui.common.textLayoutOf
 import io.github.dilshodbekmx.passwordvault.ui.list.GoneNotice
 import io.github.dilshodbekmx.passwordvault.ui.theme.PasswordVaultTheme
 import org.junit.Assert.assertEquals
@@ -547,6 +552,41 @@ class EntryScreenTest {
         compose.onNodeWithTag(EntryTags.TITLE).assertExists()
     }
 
+    /**
+     * Build plan 8.1's review: the theme hyphenates every language since 8.1, so a user name or a
+     * field's value too long for its line, which the owner reads to type it elsewhere, wrapped with a
+     * hyphen it does not have ("aleksandrpetro- / vichivanov" in English). At a font of 200 % each
+     * wraps between two of its own letters, as the shown password does (`SecretTextLinesTest`).
+     */
+    @Test
+    fun aLongUserNameOrFieldWrapsWithoutAHyphenItDoesNotHave() {
+        val fields = listOf(CustomField("PIN code", PIN, secret = true), CustomField("Answer", LONG_USERNAME, secret = false))
+        rig = EntryRig(Vault(entries = listOf(gmail().copy(username = LONG_USERNAME, fields = fields))))
+        clips = RecordingClipboard(compose.activity)
+        compose.setContent {
+            val density = LocalDensity.current
+            CompositionLocalProvider(
+                LocalClipboard provides clips,
+                LocalTextContextMenuToolbarProvider provides toolbar,
+                LocalDensity provides Density(density.density, fontScale = 2f),
+            ) {
+                PasswordVaultTheme(ThemeChoice.LIGHT) {
+                    vm = viewModel { rig.entryViewModel(GMAIL, false) }
+                    EntryScreen(vm, rig.nav)
+                }
+            }
+        }
+        compose.waitUntil(TIMEOUT_MS) { vm.state.value !is EntryUiState.Loading }
+        compose.waitForIdle()
+        for ((key, value) in listOf("username" to EntryValue.Username, "field.1" to EntryValue.Field(1))) {
+            scrollTo(key)
+            val laidOut = textLayoutOf(compose.onNodeWithTag(EntryTags.value(value), useUnmergedTree = true).fetchSemanticsNode())
+            assertEquals("$value", LONG_USERNAME, laidOut.layoutInput.text.text)
+            assertTrue("$value takes more than one line", laidOut.lineCount > 1)
+            assertEquals("$value", emptyList<String>(), linesWithAGlyphNotInTheText(laidOut))
+        }
+    }
+
     // ---- When the screen stops ---------------------------------------------------------------
 
     @Test
@@ -595,5 +635,8 @@ class EntryScreenTest {
 
         /** The "Gmail deleted" message stays about 10 s. */
         const val MESSAGE_TIMEOUT_MS = 40_000L
+
+        /** A user name (and a field's value) of letters only, which English hyphenation patterns can break. */
+        const val LONG_USERNAME = "aleksandrpetrovichivanov"
     }
 }
