@@ -1,0 +1,316 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Oʻzbekcha (lotin): the import (build plan 6.3b; values/strings_import.xml has the notes for each
+     string). Glossary of i18n.md §3: Import (101), Fayl (105), Faylni tanlash (106), Zaxira nusxa
+     (97), Yozuv (5, an entry of a file in the import's reports), Qaydlar (11), Berkitish (33).
+     Chrome's export path is written with Chrome's own Uzbek names (Sozlamalar, Avtomatik kiritish
+     va parollar, Google Parollar menejeri, Parollarni eksport qilish, Faylni yuklab olish: Chromium's
+     uz translations); the menu paths of Excel, KeePassXC and Bitwarden stay in English, as the
+     English text gives them. "Passkeys" is Google's Uzbek "kirish kalitlari". Names of apps,
+     formats and files stay as they are; a noun after them takes the suffix (i18n.md §4.4). oʻ and gʻ
+     with U+02BB, the tutuq belgisi with U+02BC. -->
+<resources>
+
+    <!-- ===== Sarlavhalar ===== -->
+
+    <string name="import_title">Import</string>
+    <string name="import_help_title">Google parollari</string>
+    <string name="import_columns_title">Ustunlarni tanlang</string>
+    <string name="import_back">Orqaga</string>
+
+    <!-- ===== Manbalar ===== -->
+
+    <string name="import_sources_intro">Parollaringiz hozir qayerda? Ular saqlangan faylni tanlang. Roʻyxatni tekshirib, import tugmasini bosmaguningizcha hech narsa qoʻshilmaydi.</string>
+    <string name="import_source_backup">Bu ilovaning zaxira nusxa fayli</string>
+    <string name="import_source_backup_body">“Zaxira nusxa yaratish” orqali yaratilgan qulflangan fayl. Uni yaratgan paytingizdagi asosiy parol kerak boʻladi.</string>
+    <string name="import_source_google">Google Password Manager yoki Chrome (CSV)</string>
+    <string name="import_source_google_body">Avval parollarni Chrome brauzeridan eksport qiling. Qanday qilishni koʻrsatamiz.</string>
+    <string name="import_source_csv">Boshqa parol ilovasi yoki CSV sifatida saqlangan jadval</string>
+    <string name="import_source_csv_body">Bitwarden, KeePassXC, Firefox, Excel va boshqalar.</string>
+    <string name="import_source_json">JSON (bu ilova yoki Bitwarden)</string>
+    <string name="import_source_json_body">Bu ilova yoki Bitwarden eksport qilgan fayl. U shifrlanmagan boʻlishi kerak.</string>
+    <string name="import_no_picker">Bu telefonda fayllarni ocha oladigan ilova yoʻq. Fayl menejerini yoqing yoki oʻrnating va qayta urining.</string>
+    <string name="import_opening_picker">Fayl tanlash oynasi ochilmoqda…</string>
+
+    <!-- ===== Google yoʻriqnomasi ===== -->
+
+    <string name="import_google_steps">Bu telefondagi Chrome brauzerida: ⋮ › Sozlamalar › (Avtomatik kiritish va parollar ›) Google Parollar menejeri › Sozlamalar › Parollarni eksport qilish › Faylni yuklab olish. Nomlar biroz farq qilishi mumkin. Soʻng shu yerga qayting va faylni tanlang.</string>
+    <string name="import_google_cant_find">Topa olmayapman</string>
+    <string name="import_google_settings">Telefondagi Sozlamalar ilovasini oching va “Parollar menejeri” deb qidiring. Keyin oching: Google Parollar menejeri › Sozlamalar › Parollarni eksport qilish.</string>
+    <string name="import_choose_file">Faylni tanlash</string>
+
+    <!-- ===== Oʻqish ===== -->
+
+    <string name="import_reading">Fayl oʻqilmoqda…</string>
+    <string name="import_paused">Bu jarayon ilova qulflanganda toʻxtatib turilgan edi.</string>
+    <string name="import_file_name">Fayl: %1$s</string>
+
+    <!-- ===== Import qilib boʻlmaydigan fayllar ===== -->
+
+    <string name="import_problem_cannot_open">Faylni ochib boʻlmadi. U koʻchirilgan yoki oʻchirilgan boʻlishi mumkin. Uni qayta tanlang.</string>
+    <string name="import_problem_excel">Bu Excel fayli. Excel dasturida shu yoʻlni tanlang: File › Save As › CSV UTF-8. Soʻng hosil boʻlgan faylni import qiling.</string>
+    <string name="import_problem_keepass">Bu KeePass maʼlumotlar bazasi. KeePassXC dasturida: Database › Export › CSV.</string>
+    <string name="import_problem_empty">Bu fayl boʻsh.</string>
+    <string name="import_problem_too_big">Bu fayl juda katta: ilova bir martada koʻpi bilan %1$s&#160;MB hajmli faylni import qila oladi.</string>
+    <string name="import_problem_too_many">Bu faylda %1$s&#160;tadan ortiq hisob bor, ilova esa bir martada bundan koʻp import qila olmaydi. Hisoblarni qismlarga boʻlib eksport qiling.</string>
+    <string name="import_problem_unreadable">Bu faylni oʻqib boʻlmaydi. Parol ilovangiz eksport qilgan CSV yoki JSON faylni tanlang.</string>
+    <string name="import_problem_bad_json">Bu JSON faylni oʻqib boʻlmaydi. U shikastlangan yoki chala boʻlishi mumkin.</string>
+    <string name="import_problem_no_memory">Bu fayl shu telefonda oʻqish uchun juda katta.</string>
+    <string name="import_problem_encrypted">Bu Bitwarden fayli shifrlangan. Bitwarden ilovasida qayta eksport qiling va “.json (Encrypted)” emas, “.json” formatini tanlang.</string>
+    <string name="import_problem_not_export">Bu JSON fayl shu ilova oʻqiy oladigan parol eksporti emas.</string>
+    <string name="import_problem_backup_damaged">Bu zaxira nusxa fayli shikastlangan va uni ochib boʻlmaydi. Boshqa zaxira nusxa faylini sinab koʻring.</string>
+    <string name="import_problem_backup_newer">Bu zaxira nusxa ilovaning yangiroq versiyasida yaratilgan. PasswordVault ilovasining eng yangi versiyasini oʻrnating va qayta urining.</string>
+    <string name="import_problem_backup_not_ours">Bu PasswordVault zaxira nusxasi emas.</string>
+    <string name="import_choose_another">Boshqa faylni tanlash</string>
+
+    <!-- ===== Ustunlar ===== -->
+
+    <string name="import_columns_no_password">Sayt, foydalanuvchi nomi va parol ustunlarini topa olmadik. Ularni oʻzingiz tanlang.</string>
+    <string name="import_columns_ambiguous">Baʼzi ustunlar bir xil maʼnoni bildirayotganga oʻxshaydi. Har bir ustunda nima borligini tekshiring.</string>
+    <string name="import_columns_check">Har bir ustunda nima borligini tekshiring.</string>
+    <string name="import_columns_first_value">Birinchi qiymat</string>
+    <string name="import_columns_no_value">Qiymatlar yoʻq</string>
+    <string name="import_columns_hidden_value">Birinchi qiymat, berkitilgan</string>
+    <string name="import_columns_holds">Mazmuni</string>
+    <string name="import_columns_none_is_password">Hech bir ustun “Parol” deb belgilanmagan. Hisoblar parolsiz import qilinadi.</string>
+    <string name="import_columns_continue">Davom etish</string>
+
+    <string name="import_meaning_title">Nomi</string>
+    <string name="import_meaning_website">Sayt</string>
+    <string name="import_meaning_username">Foydalanuvchi nomi</string>
+    <string name="import_meaning_password">Parol</string>
+    <string name="import_meaning_notes">Qaydlar</string>
+    <string name="import_meaning_field">Qoʻshimcha maydon</string>
+    <string name="import_meaning_skip">Oʻtkazib yuborish</string>
+    <string name="import_meaning_folder">Jild</string>
+    <string name="import_meaning_totp">Bir martalik kod kaliti</string>
+    <string name="import_meaning_favourite">Saralangan</string>
+    <string name="import_meaning_created">Qoʻshilgan sana</string>
+    <string name="import_meaning_modified">Oʻzgartirilgan sana</string>
+    <string name="import_meaning_password_changed">Parol oʻzgartirilgan sana</string>
+    <string name="import_meaning_second_website">Ikkinchi sayt</string>
+    <string name="import_meaning_bitwarden_fields">Qoʻshimcha maydonlar (Bitwarden)</string>
+    <string name="import_meaning_bitwarden_type">Yozuv turi (Bitwarden)</string>
+
+    <!-- ===== Oldindan koʻrish ===== -->
+
+    <string name="import_sample_heading">Fayldan</string>
+    <string name="import_read_as">Matn notoʻgʻri koʻrinyaptimi? %1$s sifatida oʻqish</string>
+    <string name="import_encoding_mark">Fayl boshidagi belgiga koʻra %1$s sifatida oʻqildi.</string>
+    <string name="import_encoding_nul">%1$s sifatida oʻqildi.</string>
+    <string name="import_encoding_valid">%1$s sifatida oʻqildi.</string>
+    <string name="import_encoding_mostly">%1$s sifatida oʻqildi, garchi bir nechta bayt yaroqsiz boʻlsa ham. Ular � boʻlib koʻrinadi.</string>
+    <string name="import_encoding_other">Fayl UTF-8 boʻlmagani uchun %1$s sifatida oʻqildi.</string>
+    <string name="import_encoding_chosen">Siz tanlagandek, %1$s sifatida oʻqildi.</string>
+    <plurals name="import_damaged_lines">
+        <item quantity="one">%1$d&#160;ta qatorda oʻqib boʻlmagan belgilar bor: %2$s-qator. Ular � boʻlib koʻrinadi.</item>
+        <item quantity="other">%1$d&#160;ta qatorda oʻqib boʻlmagan belgilar bor, birinchisi %2$s-qatorda. Ular � boʻlib koʻrinadi.</item>
+    </plurals>
+
+    <plurals name="import_found">
+        <item quantity="one">%1$d&#160;ta hisob topildi.</item>
+        <item quantity="other">%1$d&#160;ta hisob topildi.</item>
+    </plurals>
+    <plurals name="import_already_here">
+        <item quantity="one">%1$d&#160;tasi bu yerda allaqachon bor (sayt, foydalanuvchi nomi va parol bir xil) va oʻtkazib yuboriladi.</item>
+        <item quantity="other">%1$d&#160;tasi bu yerda allaqachon bor (sayt, foydalanuvchi nomi va parol bir xil) va oʻtkazib yuboriladi.</item>
+    </plurals>
+    <plurals name="import_repeated">
+        <item quantity="one">%1$d&#160;ta qator fayldagi boshqa qatorning aynan takrori, u bir marta import qilinadi.</item>
+        <item quantity="other">%1$d&#160;ta qator fayldagi boshqa qatorlarning aynan takrori, ular bir marta import qilinadi.</item>
+    </plurals>
+    <plurals name="import_conflicts">
+        <item quantity="one">%1$d&#160;tasining sayti va foydalanuvchi nomi bu yerdagi hisob bilan bir xil, lekin paroli boshqa. Solishtira olishingiz uchun u qoʻshiladi.</item>
+        <item quantity="other">%1$d&#160;tasining sayti va foydalanuvchi nomi bir xil, lekin paroli boshqa. Solishtira olishingiz uchun ular qoʻshiladi.</item>
+    </plurals>
+    <plurals name="import_without_password">
+        <item quantity="one">%1$d&#160;ta qatorda parol yoʻq.</item>
+        <item quantity="other">%1$d&#160;ta qatorda parol yoʻq.</item>
+    </plurals>
+    <plurals name="import_notes_cut">
+        <item quantity="one">%1$d&#160;ta qayd %2$s&#160;ta belgidan uzun edi va qisqartirildi.</item>
+        <item quantity="other">%1$d&#160;ta qayd %2$s&#160;ta belgidan uzun edi va qisqartirildi.</item>
+    </plurals>
+    <plurals name="import_removed_controls">
+        <item quantity="one">%1$d&#160;ta koʻrinmas belgi olib tashlandi.</item>
+        <item quantity="other">%1$d&#160;ta koʻrinmas belgi olib tashlandi.</item>
+    </plurals>
+    <plurals name="import_replaced_characters">
+        <item quantity="one">%1$d&#160;ta buzuq belgi � bilan almashtirildi.</item>
+        <item quantity="other">%1$d&#160;ta buzuq belgi � bilan almashtirildi.</item>
+    </plurals>
+    <plurals name="import_empty_rows">
+        <item quantity="one">%1$d&#160;ta boʻsh qator oʻtkazib yuborildi.</item>
+        <item quantity="other">%1$d&#160;ta boʻsh qator oʻtkazib yuborildi.</item>
+    </plurals>
+    <string name="import_unclosed_quote">%1$d-qatordagi qoʻshtirnoq yopilmagan, shuning uchun faylning qolgan qismi bitta qiymat sifatida oʻqilishi mumkin.</string>
+    <string name="import_newer_data">Ilovaning yangiroq versiyasidan kelgan baʼzi maʼlumotlar import qilinmaydi.</string>
+
+    <plurals name="import_wrong_rows">
+        <item quantity="one">%1$d&#160;ta qatorda qiymatlar soni sarlavha qatoridagidan farq qiladi. U import qilinmaydi.</item>
+        <item quantity="other">%1$d&#160;ta qatorda qiymatlar soni sarlavha qatoridagidan farq qiladi. Ular import qilinmaydi.</item>
+    </plurals>
+    <plurals name="import_wrong_rows_included">
+        <item quantity="one">%1$d&#160;ta qatorda qiymatlar soni sarlavha qatoridagidan farq qiladi. U boricha import qilinadi.</item>
+        <item quantity="other">%1$d&#160;ta qatorda qiymatlar soni sarlavha qatoridagidan farq qiladi. Ular boricha import qilinadi.</item>
+    </plurals>
+    <plurals name="import_wrong_row">
+        <item quantity="one">%1$d-qatorda %2$d&#160;ta qiymat bor; sarlavha qatorida %3$d&#160;ta.</item>
+        <item quantity="other">%1$d-qatorda %2$d&#160;ta qiymat bor; sarlavha qatorida %3$d&#160;ta.</item>
+    </plurals>
+    <string name="import_wrong_rows_hint">Parol ichida vergul bormi? Bunday qiymatni qoʻshtirnoq ichiga oling.</string>
+    <string name="import_wrong_rows_include">Bu qatorlarni boricha import qilish</string>
+    <plurals name="import_and_more">
+        <item quantity="one">va yana %1$d&#160;ta</item>
+        <item quantity="other">va yana %1$d&#160;ta</item>
+    </plurals>
+
+    <plurals name="import_left_out_long">
+        <item quantity="one">%1$d&#160;ta qator oʻtkazib yuborildi: uning paroli %2$s&#160;ta belgidan uzun.</item>
+        <item quantity="other">%1$d&#160;ta qator oʻtkazib yuborildi: ularning paroli %2$s&#160;ta belgidan uzun.</item>
+    </plurals>
+    <plurals name="import_left_out_not_item">
+        <item quantity="one">Fayldagi %1$d&#160;ta yozuv hisob emas va oʻtkazib yuborildi.</item>
+        <item quantity="other">Fayldagi %1$d&#160;ta yozuv hisob emas va oʻtkazib yuborildi.</item>
+    </plurals>
+    <plurals name="import_left_out_empty">
+        <item quantity="one">%1$d&#160;ta yozuv boʻsh va oʻtkazib yuborildi.</item>
+        <item quantity="other">%1$d&#160;ta yozuv boʻsh va oʻtkazib yuborildi.</item>
+    </plurals>
+    <plurals name="import_left_out_trash">
+        <item quantity="one">%1$d&#160;ta yozuv Bitwarden chiqitdonida turibdi va oʻtkazib yuborildi.</item>
+        <item quantity="other">%1$d&#160;ta yozuv Bitwarden chiqitdonida turibdi va oʻtkazib yuborildi.</item>
+    </plurals>
+
+    <string name="import_name_line">%1$d-qator</string>
+    <string name="import_name_item">%1$d-yozuv</string>
+    <string name="import_change">%1$s: %2$s</string>
+    <string name="import_change_tab">parolda tabulyatsiya belgisi bor</string>
+    <string name="import_change_line_break">parolda yangi qator belgisi bor</string>
+    <string name="import_change_control">parolda koʻrinmas belgi bor</string>
+    <string name="import_change_replaced">paroldagi buzuq belgi � bilan almashtirildi</string>
+    <string name="import_change_title_cut">nomi qisqartirildi; toʻliq nomi qaydlarda</string>
+    <string name="import_change_username_cut">foydalanuvchi nomi qisqartirildi; toʻliq foydalanuvchi nomi qaydlarda</string>
+    <plurals name="import_change_websites">
+        <item quantity="one">%1$d&#160;ta sayt qaydlarga koʻchirildi</item>
+        <item quantity="other">%1$d&#160;ta sayt qaydlarga koʻchirildi</item>
+    </plurals>
+    <plurals name="import_change_long_websites">
+        <item quantity="one">%1$d&#160;ta juda uzun sayt qaydlarga koʻchirildi</item>
+        <item quantity="other">%1$d&#160;ta juda uzun sayt qaydlarga koʻchirildi</item>
+    </plurals>
+    <plurals name="import_change_fields">
+        <item quantity="one">%1$d&#160;ta qoʻshimcha maydon qaydlarga koʻchirildi</item>
+        <item quantity="other">%1$d&#160;ta qoʻshimcha maydon qaydlarga koʻchirildi</item>
+    </plurals>
+    <plurals name="import_change_long_fields">
+        <item quantity="one">%1$d&#160;ta juda uzun qoʻshimcha maydon qaydlarga koʻchirildi</item>
+        <item quantity="other">%1$d&#160;ta juda uzun qoʻshimcha maydon qaydlarga koʻchirildi</item>
+    </plurals>
+    <plurals name="import_change_hidden_not_imported">
+        <item quantity="one">%1$d&#160;ta berkitilgan qiymat berkitilgan holda qola olmadi va import qilinmadi</item>
+        <item quantity="other">%1$d&#160;ta berkitilgan qiymat berkitilgan holda qola olmadi va import qilinmadi</item>
+    </plurals>
+    <plurals name="import_change_nameless">
+        <item quantity="one">%1$d&#160;ta nomsiz qiymat qaydlarga koʻchirildi</item>
+        <item quantity="other">%1$d&#160;ta nomsiz qiymat qaydlarga koʻchirildi</item>
+    </plurals>
+    <plurals name="import_change_field_names">
+        <item quantity="one">%1$d&#160;ta uzun maydon nomi qisqartirildi</item>
+        <item quantity="other">%1$d&#160;ta uzun maydon nomi qisqartirildi</item>
+    </plurals>
+    <string name="import_change_password_not_text">fayldagi parol matn emas va import qilinmadi</string>
+    <string name="import_change_notes_cut">qaydlar qisqartirildi</string>
+    <plurals name="import_change_history_cut">
+        <item quantity="one">faqat eng yangi %1$d&#160;ta avvalgi parol saqlandi</item>
+        <item quantity="other">faqat eng yangi %1$d&#160;ta avvalgi parol saqlandi</item>
+    </plurals>
+    <string name="import_change_passkeys">kirish kalitlari import qilinmaydi</string>
+    <string name="import_change_linked">bogʻlangan maydonlar import qilinmaydi</string>
+    <string name="import_change_unknown">ilovaning yangiroq versiyasidan kelgan baʼzi maʼlumotlar saqlanmadi</string>
+
+    <plurals name="import_related">
+        <item quantity="one">%1$d&#160;ta qator bogʻliq saytlardagi bir xil kirish maʼlumotlari boʻlgani uchun %2$d&#160;ta hisob sifatida birga saqlandi.</item>
+        <item quantity="other">%1$d&#160;ta qator bogʻliq saytlardagi bir xil kirish maʼlumotlari boʻlgani uchun %2$d&#160;ta hisob sifatida birga saqlandi.</item>
+    </plurals>
+    <string name="import_keep_separate">Alohida saqlash</string>
+    <string name="import_kept_separate">Bogʻliq saytlardagi kirish maʼlumotlari alohida hisoblar sifatida saqlanadi.</string>
+    <string name="import_keep_together">Birga saqlash</string>
+
+    <string name="import_tidy_names">Nomlarni tartiblash</string>
+    <string name="import_tidy_names_body">accounts.google.com kabi nomlarni Google koʻrinishiga keltiradi.</string>
+    <string name="import_tidy_example">%1$s → %2$s</string>
+
+    <string name="import_check_columns">Ustunlarni tekshirish</string>
+    <string name="import_change_columns">Ustunlarni oʻzgartirish</string>
+    <string name="import_columns_needed">Import qilishdan oldin qaysi ustunda nima borligini tanlang.</string>
+    <string name="import_open_columns">Ustunlarni tanlash</string>
+
+    <string name="import_too_large">Parollaringiz endi bitta faylga sigʻmayapti. Keraksiz hisoblarni oʻchiring yoki juda uzun qaydlarni qisqartiring.</string>
+    <plurals name="import_button">
+        <item quantity="one">%1$d&#160;ta hisobni import qilish</item>
+        <item quantity="other">%1$d&#160;ta hisobni import qilish</item>
+    </plurals>
+    <string name="import_nothing_to_add">Bu fayldan import qilinadigan yangi narsa yoʻq.</string>
+    <string name="import_importing">Import qilinmoqda…</string>
+    <string name="import_save_failed">Saqlab boʻlmadi. Telefoningiz xotirasi toʻlgan boʻlishi mumkin.</string>
+
+    <!-- ===== Natija ===== -->
+
+    <plurals name="import_done">
+        <item quantity="one">%1$d&#160;ta hisob import qilindi.</item>
+        <item quantity="other">%1$d&#160;ta hisob import qilindi.</item>
+    </plurals>
+    <plurals name="import_all_here">
+        <item quantity="one">Bu fayldagi barcha hisoblar bu yerda allaqachon bor (%1$d&#160;ta).</item>
+        <item quantity="other">Bu fayldagi barcha hisoblar bu yerda allaqachon bor (%1$d&#160;ta).</item>
+    </plurals>
+    <string name="import_undo">Bu importni ortga qaytarish</string>
+    <string name="import_undone">Import ortga qaytarildi. Parollaringiz importdan oldingi holatiga qaytdi.</string>
+    <string name="import_undo_failed">Importni ortga qaytarib boʻlmadi. Qayta urining.</string>
+    <string name="import_file_question">%1$s nomli faylda bu parollarning barchasi hali ham himoyalanmagan holda turibdi. U hozir oʻchirilsinmi?</string>
+    <string name="import_file_question_unnamed">Siz import qilgan faylda bu parollarning barchasi hali ham himoyalanmagan holda turibdi. U hozir oʻchirilsinmi?</string>
+    <string name="import_delete_file">Faylni oʻchirish</string>
+    <string name="import_keep_file">Saqlab qolish</string>
+    <string name="import_file_deleted">Fayl oʻchirib tashlandi.</string>
+    <string name="import_file_not_deleted">Bu joy ilovaga fayllarni oʻchirishga ruxsat bermaydi. %1$s nomli faylni oʻzingiz oʻchiring.</string>
+    <string name="import_file_not_deleted_unnamed">Bu joy ilovaga fayllarni oʻchirishga ruxsat bermaydi. Faylni oʻzingiz oʻchiring.</string>
+    <string name="import_file_kept">Fayl saqlab qolindi. U himoyalanmagan, shuning uchun keragi boʻlmay qolganda uni oʻchiring.</string>
+    <string name="import_shared">Bu hisoblarning koʻpchiligida parol bir xil. Ularni birma-bir tuzatish uchun Xavfsizlik boʻlimini oching.</string>
+    <string name="import_open_security">Xavfsizlik boʻlimini ochish</string>
+
+    <!-- ===== Zaxira nusxa fayli ===== -->
+
+    <string name="import_backup_prompt">Bu zaxira nusxa yaratilgan paytdagi asosiy parolingizni kiriting.</string>
+    <string name="import_backup_password">Zaxira nusxaning asosiy paroli</string>
+    <string name="import_backup_open">Zaxira nusxani ochish</string>
+    <string name="import_backup_opening">Ochilmoqda…</string>
+    <string name="import_backup_wrong">Bu parol ushbu zaxira nusxani ochmaydi. Zaxira nusxani yaratgan paytingizdagi asosiy parolni sinab koʻring.</string>
+    <string name="import_backup_wrong_or_damaged">Bu fayl shikastlangan boʻlishi yoki parol notoʻgʻri boʻlishi mumkin.</string>
+    <string name="import_backup_no_memory">Faylni ochish uchun telefoningizda boʻsh operativ xotira yetarli emas. Boshqa ilovalarni yoping va qayta urining.</string>
+    <plurals name="import_backup_summary">
+        <item quantity="one">%1$d&#160;ta hisob, zaxira nusxa %2$s kuni yaratilgan.</item>
+        <item quantity="other">%1$d&#160;ta hisob, zaxira nusxa %2$s kuni yaratilgan.</item>
+    </plurals>
+    <string name="import_backup_rules">Bu yerda allaqachon bor hisoblar oʻtkazib yuboriladi. Bu yerdagi hech narsa oʻzgartirilmaydi yoki almashtirilmaydi.</string>
+    <string name="import_backup_add">Parollarimga qoʻshish</string>
+    <string name="import_backup_adding">Qoʻshilmoqda…</string>
+    <plurals name="import_backup_added">
+        <item quantity="one">%1$d&#160;ta hisob qoʻshildi.</item>
+        <item quantity="other">%1$d&#160;ta hisob qoʻshildi.</item>
+    </plurals>
+    <plurals name="import_backup_skipped">
+        <item quantity="one">%1$d&#160;tasi bu yerda allaqachon bor edi va oʻtkazib yuborildi.</item>
+        <item quantity="other">%1$d&#160;tasi bu yerda allaqachon bor edi va oʻtkazib yuborildi.</item>
+    </plurals>
+    <plurals name="import_backup_renamed">
+        <item quantity="one">%1$d&#160;tasi nomiga “(zaxira nusxadan)” qoʻshilib saqlandi, chunki bu yerdagi bir hisobning identifikatori xuddi shunday, lekin mazmuni boshqa.</item>
+        <item quantity="other">%1$d&#160;tasi nomlariga “(zaxira nusxadan)” qoʻshilib saqlandi, chunki bu yerdagi hisoblarning identifikatorlari xuddi shunday, lekin mazmuni boshqa.</item>
+    </plurals>
+
+    <!-- ===== Import qilingan hisoblar bilan saqlanadigan matnlar ===== -->
+
+    <string name="import_untitled">Nomsiz %1$s</string>
+    <string name="import_from_file">%1$s (fayldan)</string>
+    <string name="import_hidden_value">Berkitilgan qiymat %1$d</string>
+    <string name="import_from_backup">%1$s (zaxira nusxadan)</string>
+</resources>

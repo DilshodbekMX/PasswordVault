@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ўзбекча (кирилл): the guided change of one password
+     (build plan 6.3b; values/strings_change.xml has the notes for each string). Drafted
+     from values-uz/strings_change.xml with UzbekCyrillicStrings (i18n.md §2.5),
+     then read string by string against the Latin file and the Cyrillic column of the glossary of
+     i18n.md §3. Names of apps, formats, files, libraries and menus that the Latin file writes in
+     Latin letters stay in Latin letters here (ResourceCheck.LATIN_IN_CYRILLIC); the words of
+     Android's and Chrome's own Uzbek menus are written in Cyrillic letters. -->
+<resources>
+
+    <string name="change_title">Паролни ўзгартириш</string>
+    <string name="change_back">Орқага</string>
+
+    <string name="change_last_one">Охиргиси! Шундан сўнг эски паролингиз ҳеч қаерда ишлатилмайди.</string>
+    <string name="change_step_number">%1$d-қадам, жами %2$d&#160;та</string>
+
+    <!-- ===== 1-қадам ===== -->
+
+    <string name="change_step1">“%1$s” сайтини ёки иловасини очинг ва ҳисобингизга киринг.</string>
+    <string name="change_open_website">Сайтни очиш</string>
+    <string name="change_copy_old">Эски паролдан нусха олиш</string>
+
+    <!-- ===== 2-қадам ===== -->
+
+    <string name="change_step2">“Паролни ўзгартириш” деган жойни топинг.</string>
+    <string name="change_step2_where">Одатда у Созламалар › Хавфсизлик ёки Ҳисоб › Парол бўлимида бўлади.</string>
+
+    <!-- ===== 3-қадам ===== -->
+
+    <string name="change_step3">Янги парол яратинг.</string>
+    <string name="change_create">Янги парол яратиш</string>
+    <string name="change_create_another">Бошқа парол яратиш</string>
+    <string name="change_saved">Сақланди. Ўзгартиришни якунлагунингизча эски паролингиз ҳам сақланиб туради.</string>
+    <string name="change_rules">Парол талаблари</string>
+
+    <!-- ===== 4-қадам ===== -->
+
+    <string name="change_step4">Паролларни сайтга жойланг.</string>
+    <string name="change_copy_new">Янги паролдан нусха олиш</string>
+    <string name="change_hint_ask">Сайтлар одатда эски паролни бир марта, янгисини эса икки марта сўрайди.</string>
+    <string name="change_hint_chrome">Агар Chrome сиз учун парол яратишни таклиф қилса, ундан фойдаланманг. Бу илова яратган паролни жойланг.</string>
+    <string name="change_first_step3">Аввал 3-қадамда янги парол яратинг.</string>
+
+    <!-- ===== 5-қадам ===== -->
+
+    <string name="change_step5">Сайт янги паролни қабул қилдими?</string>
+    <string name="change_yes">Ҳа, ўзгартирилди</string>
+    <string name="change_no">Йўқ, эски паролни қайтариш</string>
+    <string name="change_later">Кейин тугатаман</string>
+
+    <!-- ===== Ўзгартириш якуни ===== -->
+
+    <string name="change_done">“%1$s” ҳисобининг энди ўз пароли бор.</string>
+    <string name="change_next">Кейингиси: %1$s</string>
+    <string name="change_done_for_now">Ҳозирча етарли</string>
+    <string name="change_backup_only_here">“%1$s” ҳисобининг янги пароли захира нусха яратмагунингизча фақат бу телефонда бўлади.</string>
+    <string name="change_back_up_now">Ҳозир захиралаш</string>
+
+    <!-- ===== Экран пастидаги хабарлар ===== -->
+
+    <string name="change_created">Янги парол сақланди.</string>
+    <string name="change_reverted">Эски парол қайтарилди.</string>
+    <string name="change_save_failed">Сақлаб бўлмади. Телефонингиз хотираси тўлган бўлиши мумкин.</string>
+    <string name="change_too_large">Паролларингиз энди битта файлга сиғмаяпти. Кераксиз ҳисобларни ўчиринг ёки жуда узун қайдларни қисқартиринг.</string>
+    <string name="change_no_browser">Бу телефонда браузер топилмади.</string>
+    <string name="change_copy_blocked">Бу телефон нусха олишга рухсат бермади. Ҳисобни очинг ва паролни қўлда киритиш учун “Катта ҳарфларда кўрсатиш” тугмасидан фойдаланинг.</string>
+
+    <!-- ===== Ҳисоб йўқ ===== -->
+
+    <string name="change_gone">Бу ҳисоб энди мавжуд эмас.</string>
+    <string name="change_gone_deleted">Бу ҳисоб ўчирилган. Уни 30&#160;кун давомида “Яқинда ўчирилганлар” бўлимидан тиклашингиз мумкин.</string>
+
+    <!-- ===== Нусха олинган нарса (илова пастидаги вақтинчалик хотира қатори) ===== -->
+
+    <string name="change_copied_old">%1$s эски пароли</string>
+    <string name="change_copied_new">%1$s янги пароли</string>
+    <string name="change_copied">Нусха олинди</string>
+</resources>

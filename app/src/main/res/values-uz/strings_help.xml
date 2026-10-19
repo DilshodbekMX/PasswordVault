@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Oʻzbekcha (lotin): help, the open-source licences and the first-copy tip (build plan 6.3b;
+     values/strings_help.xml has the notes for each string). Glossary of i18n.md §3, and the names
+     the app's screens show (part a's files): “Zaxira nusxa faylidan tiklash”, “Yana xush
+     kelibsiz”, “Yangi parolni bekor qilish” (141), “Asosiy parolni unutdingizmi?” (132),
+     “… holatidagi parollarimni ochish” (145), “PIN kodni unutdingizmi? Asosiy paroldan
+     foydalaning”, “Esimda yoʻq”. The phone's own settings are named as Android's Uzbek names them:
+     “Majburan toʻxtatish”, “Cheklangan”, “Xotirani tozalash”, “Qulayliklar” (Accessibility),
+     “Joylash” (Paste), “Qadash” (Pin). %1$s is the app's name, followed by the noun "ilovasi". oʻ and
+     gʻ with U+02BB, the tutuq belgisi with U+02BC. -->
+<resources>
+
+    <!-- ===== Yordam sahifalari ===== -->
+
+    <string name="help_title">Yordam</string>
+    <string name="help_protection_title">Parollaringiz qanday himoyalanadi</string>
+    <string name="help_lost_title">Telefoningizni yoʻqotsangiz yoki yangisiga oʻtsangiz</string>
+    <string name="help_forgot_mp_title">Asosiy parolingizni unutsangiz</string>
+    <string name="help_forgot_pin_title">PIN kodingizni unutsangiz</string>
+    <string name="help_version_title">Versiya</string>
+    <string name="help_licences_title">Ochiq manba litsenziyalari</string>
+
+    <!-- ===== Parollaringiz qanday himoyalanadi ===== -->
+
+    <string name="help_protection_file">Parollaringiz bu telefondagi qulflangan faylda saqlanadi. Uni faqat asosiy parolingiz ocha oladi.</string>
+    <string name="help_protection_offline">Ilova hech qachon internetga ulanmaydi: bunga uning ruxsati yoʻq. Shuning uchun biror sayt parolingizni oshkor qilib qoʻyganini u sizga ayta olmaydi.</string>
+    <string name="help_protection_screenshots">Ilova ekranidan skrinshot olib boʻlmaydi.</string>
+
+    <string name="help_protection_heading_copy">Nusxa olingan parollar</string>
+    <plurals name="help_protection_copy_seconds">
+        <item quantity="one">Nusxa olgan parollaringiz %d&#160;soniyadan keyin vaqtinchalik xotiradan olib tashlanadi. Shu vaqt ichida nusxa olgan boshqa narsalaringiz ham olib tashlanishi mumkin.</item>
+        <item quantity="other">Nusxa olgan parollaringiz %d&#160;soniyadan keyin vaqtinchalik xotiradan olib tashlanadi. Shu vaqt ichida nusxa olgan boshqa narsalaringiz ham olib tashlanishi mumkin.</item>
+    </plurals>
+    <plurals name="help_protection_copy_minutes">
+        <item quantity="one">Nusxa olgan parollaringiz %d&#160;daqiqadan keyin vaqtinchalik xotiradan olib tashlanadi. Shu bir daqiqa ichida nusxa olgan boshqa narsalaringiz ham olib tashlanishi mumkin.</item>
+        <item quantity="other">Nusxa olgan parollaringiz %d&#160;daqiqadan keyin vaqtinchalik xotiradan olib tashlanadi. Shu vaqt ichida nusxa olgan boshqa narsalaringiz ham olib tashlanishi mumkin.</item>
+    </plurals>
+    <string name="help_force_stop">Agar bu ilovani “Majburan toʻxtatish” orqali toʻxtatsangiz yoki uning batareya sarfini “Cheklangan” qilib qoʻysangiz, nusxa olingan parol ilovani qayta ochmaguningizcha vaqtinchalik xotirada qoladi.</string>
+    <string name="help_never_pin">Parolni hech qachon klaviatura ilovasining vaqtinchalik xotirasiga qadab qoʻymang: qadalgan elementlar hech qachon olib tashlanmaydi.</string>
+
+    <string name="help_protection_heading_pin">PIN kodingiz va barmoq izingiz</string>
+    <string name="help_protection_fingerprint">Bu telefonga barmoq izi qoʻshilgan har kim ilovani ocha oladi.</string>
+    <string name="help_protection_pin_reuse">Telefoningiz qulfini ochadigan PIN kodni yoki bank kartangizning PIN kodini ilova PIN kodi sifatida ishlatmang. Uni biladigan odam ilovani ochishi mumkin.</string>
+    <string name="help_protection_rooted">Himoyasi olib tashlangan (“root” qilingan) telefonda kimdir bir necha soat ichida barcha PIN kodlarni sinab chiqishi mumkin. Asosiy parolingiz baribir parollaringizni himoya qiladi, shuning uchun u kuchli boʻlsin va uni hech qachon boshqa joyda ishlatmang.</string>
+    <string name="help_protection_new_mp">PIN kodingizni biladigan odam ilova uchun yangi asosiy parol tanlashi mumkin. U faqat telefon yoniq holda 24&#160;soat oʻtgach ishlay boshlaydi va ungacha ilova har safar ochilganda bu haqda sizga aytadi. Agar buni siz qilmagan boʻlsangiz, “Yangi parolni bekor qilish” tugmasini bosing va PIN kodingizni oʻzgartiring.</string>
+
+    <string name="help_protection_heading_limits">Ilova sizni nimadan himoya qila olmaydi</string>
+    <string name="help_protection_limits">Buzib kirilgan yoki “root” qilingan telefon, zararli klaviatura ilovasi yoki telefoningizni boshqarishga ruxsat bergan ilovangiz (“Qulayliklar”).</string>
+    <string name="help_protection_accessibility">Nuqtalar bilan koʻrsatilgan parollar boshqa ilovalardan, hatto telefoningizni boshqara oladigan ilovadan ham berkitilgan holda qoladi. Android 13 va undan eski versiyalarda bunday ilova parolni ekranda koʻrsatganingizda uni oʻqiy oladi.</string>
+    <string name="help_protection_apk">Telegram orqali sizga yuborilgan yoki biror sayt taklif qilgan ilova faylini (APK) hech qachon oʻrnatmang, hatto u tanishingizdan kelganga oʻxshasa ham. Agar sogʻligʻingiz sababli kerak boʻlmasa, hech bir ilovaga telefoningizni boshqarishga (“Qulayliklar”) ruxsat bermang.</string>
+    <string name="help_clear_storage">PIN kod bilan bogʻliq muammoni hal qilish uchun hech qachon “Xotirani tozalash” tugmasini bosmang: u parollaringizni, shuningdek, asosiy parol almashtirilishidan oldingi parollaringizni ham oʻchirib yuboradi.</string>
+    <string name="help_protection_delete">Qulfi ochiq telefoningiz qoʻliga tushgan har kim ilovani, u bilan birga parollaringizni ham oʻchirib yuborishi mumkin. Bunda faqat telefondan tashqarida saqlangan zaxira nusxa saqlanib qoladi.</string>
+
+    <!-- ===== Telefoningizni yoʻqotsangiz yoki yangisiga oʻtsangiz ===== -->
+
+    <string name="help_lost_locked">Telefoningiz yoʻqolsa yoki oʻgʻirlansa, parollaringiz qulflangan holda qoladi. PIN kod ketma-ket 5&#160;marta xato kiritilgandan keyin u faolsizlantiriladi va shundan soʻng ilovani faqat barmoq izingiz yoki asosiy parolingiz ocha oladi.</string>
+    <string name="help_lost_restore">Parollaringizni yangi telefonga oʻtkazish uchun unga %1$s ilovasini oʻrnating, “Zaxira nusxa faylidan tiklash” tugmasini bosing, eng yangi zaxira nusxangizni tanlang va asosiy parolni kiriting. Zaxira nusxasiz parollaringizni qaytarib boʻlmaydi.</string>
+    <string name="help_lost_transfer">Ilovalaringizni yangi telefonga koʻchirish, masalan, “Ilovalar va maʼlumotlarni nusxalash” orqali, parollaringizni olib oʻtmaydi. Eski telefonda zaxira nusxa yarating va uni yangi telefonda tiklang.</string>
+    <string name="help_lost_welcome_back">Agar yangi telefondagi %1$s ilovasi “Yana xush kelibsiz” desa, asosiy parolni bir marta kiriting. Soʻng yangi telefon uchun PIN kod tanlang.</string>
+    <string name="help_lost_backup">Har safar parol qoʻshilganda yoki oʻzgartirilganda yangi zaxira nusxa yarating. Uni bu telefondan tashqarida saqlang: Google Drive xizmatida, kompyuterda yoki oʻzingizga yuborib qoʻying.</string>
+
+    <!-- ===== Asosiy parolingizni unutsangiz ===== -->
+
+    <string name="help_forgot_mp_nobody">Asosiy parolingizni hech kim tiklay olmaydi: u hech qayerda saqlanmaydi.</string>
+    <string name="help_forgot_mp_new">Agar PIN kodingiz yoki barmoq izingiz ilovani hali ham ochayotgan boʻlsa, ilovani oching va yangi asosiy parol tanlang: Sozlamalar › Ilova qulfi › Asosiy parolni oʻzgartirish › Esimda yoʻq.</string>
+    <string name="help_forgot_mp_wait">Yangi asosiy parol telefon yoniq holda 24&#160;soat oʻtgach ishlay boshlaydi. Telefon oʻchiq paytda sanoq toʻxtaydi, shuning uchun ilovani ertalab va yana kechqurun oching. Ungacha ilovani odatdagidek PIN kod yoki barmoq izingiz bilan oching.</string>
+    <string name="help_forgot_mp_backup">Soʻng yangi zaxira nusxa yarating. Eski zaxira nusxalaringiz hamon faqat eski asosiy parolingiz bilan ochiladi.</string>
+    <string name="help_forgot_mp_replaced">Agar asosiy parolingizni boshqa birov almashtirgan boʻlsa, oʻz parolingiz parollaringizni oldingi holatida ochadi: “Asosiy parolni unutdingizmi?”, soʻng “… holatidagi parollarimni ochish”.</string>
+    <string name="help_forgot_mp_cant_open">Agar ilovani umuman ocha olmasangiz: qogʻozingizdagi soʻzlarni sinab koʻring yoki asosiy paroli esingizda boʻlgan zaxira nusxani tiklang. Boʻsh ilova bilan boshlashingiz ham mumkin. Parolni keyinroq eslashingiz mumkinligi uchun eski parollaringiz telefonda qulflangan holda qoladi.</string>
+
+    <!-- ===== PIN kodingizni unutsangiz ===== -->
+
+    <string name="help_forgot_pin_how">“PIN kodni unutdingizmi? Asosiy paroldan foydalaning” tugmasini bosing, asosiy parolni kiriting va yangi PIN kod tanlang.</string>
+    <string name="help_forgot_pin_limit">PIN kod ketma-ket 5&#160;marta xato kiritilgandan keyin u faolsizlantiriladi. Hech narsa oʻchirilmaydi: asosiy parolni kiriting, soʻng yangi PIN kod tanlang.</string>
+
+    <!-- ===== Versiya ===== -->
+
+    <string name="help_version_number">Versiya %1$s (%2$d)</string>
+    <string name="help_version_about">%1$s ilovasi parollaringizni faqat bu telefonda saqlaydi. U hech qachon internetga ulanmaydi.</string>
+    <string name="help_version_android">Bu telefon: Android %1$s</string>
+    <string name="help_version_test_build">Test yigʻmasi: ilovani tekshirish uchun yaratilgan. Unda haqiqiy parollaringizni saqlamang.</string>
+
+    <!-- ===== Ochiq manba litsenziyalari =====
+         Qismlarning nomlari, mualliflik huquqi qatorlari, litsenziyalarning nomlari, veb-manzillar va
+         litsenziya matnlari tarjima qilinmaydi. -->
+
+    <string name="help_licences_intro">%1$s ilovasi quyidagi ochiq manbali qismlardan foydalanib yaratilgan. Ularning har biri oʻz litsenziyasi shartlariga koʻra ishlatiladi.</string>
+    <string name="help_licences_group_passphrase">Parol iboralari uchun soʻzlar</string>
+    <string name="help_licences_group_strength">Parol kuchini baholash uchun soʻzlar</string>
+    <string name="help_licences_strength_intro">Parol kuchini baholashda ilova bu oʻzbekcha va ruscha soʻzlar, ismlar va joy nomlarini biladi, shuning uchun ulardan tuzilgan parollar haqida sizni ogohlantira oladi. Bu ilova uchun ular tanlab olingan, sanab chiqilgan va oʻzbek tilining ikkala yozuvida, rus tilida hamda lotin harflarida yozilgan. Roʻyxat CC BY-SA 4.0 litsenziyasi asosida tarqatiladi.</string>
+    <string name="help_licences_group_libraries">Kutubxonalar</string>
+    <string name="help_licences_group_icons">Nishonchalar</string>
+    <string name="help_licences_licence">Litsenziya: %1$s</string>
+    <string name="help_licences_show_licence">Litsenziyani koʻrsatish</string>
+    <string name="help_licences_hide_licence">Litsenziyani berkitish</string>
+    <string name="help_licences_show_details">Soʻzlar qayerdan olinganini koʻrsatish</string>
+    <string name="help_licences_hide_details">Soʻzlar qayerdan olinganini berkitish</string>
+    <string name="help_licences_loading">Yuklanmoqda…</string>
+    <string name="help_licences_unreadable">Bu matnni koʻrsatib boʻlmaydi.</string>
+    <string name="help_licences_no_browser">Bu telefonda veb-manzillarni ocha oladigan ilova yoʻq.</string>
+
+    <string name="help_licences_eff_use">Tavsiya etiladigan asosiy parol va generator yaratadigan parol iboralarining soʻzlari.</string>
+    <string name="help_licences_eff_change">Oʻzgartirilgan: “yo-yo” soʻzi chiqarib tashlandi, chunki undagi chiziqcha ikki soʻz orasidagi belgiga oʻxshab qoladi.</string>
+    <string name="help_licences_geonames_use">Oʻzbekiston viloyatlari, tumanlari va shaharlarining nomlari.</string>
+    <string name="help_licences_uzwiki_use">Keng tarqalgan oʻzbekcha soʻzlar, ismlar va tumanlar.</string>
+    <string name="help_licences_wiktionary_use">Ruscha va oʻzbekcha ismlar.</string>
+    <string name="help_licences_frequencywords_use">Keng tarqalgan ruscha soʻzlar.</string>
+    <string name="help_licences_zxcvbn4j_use">Parolni topish qanchalik oson ekanini aniqlaydi.</string>
+    <string name="help_licences_zxcvbn_use">zxcvbn4j — uning Java tilidagi versiyasi, inglizcha soʻzlar roʻyxatlari bilan.</string>
+    <string name="help_licences_argon2kt_use">Asosiy parolingizni parollaringizni qulflaydigan kalitga aylantiradi.</string>
+    <string name="help_licences_argon2_use">Argon2kt ichidagi Argon2 kodi. Bu yerda Apache License 2.0 asosida ishlatiladi.</string>
+    <string name="help_licences_bouncycastle_use">Argon2kt ishlay olmaydigan telefonlarda xuddi shu ishni bajaradi.</string>
+    <string name="help_licences_androidx_use">Ilovaning asosiy qurilish bloklari: Material 3 bilan Jetpack Compose, Navigation 3, Lifecycle, Activity, AppCompat va Core.</string>
+    <string name="help_licences_biometric_use">Barmoq izi bilan ochish. Kutubxonaning bu dastlabki versiyasi ataylab tanlangan: eski, barqaror versiyasida barmoq izi bilan ochish Android 7 va 8&#160;versiyalarida ishlamaydi.</string>
+    <string name="help_licences_kotlin_use">Ilova yozilgan dasturlash tili, uning standart kutubxonasi, kotlinx.coroutines va kotlinx.serialization bilan.</string>
+    <string name="help_licences_others_use">Yuqoridagi kutubxonalar uchun zarur boʻlgan kichik qismlar.</string>
+    <string name="help_licences_material_icons_use">Tugmalar va sozlamalar qatorlaridagi nishonchalar, Android Studio dasturidagi Vector Asset Studio vositasidan olingan.</string>
+    <string name="help_licences_own_icons">Ilovaning oʻz nishonchalari</string>
+    <string name="help_licences_own_icons_use">Ilova nishonchasi, logotipi va pastki paneldagi nishonchalar bu ilova uchun chizilgan. Eski telefonlar uchun nishoncha rasmlari uning chizmasidan librsvg yordamida tayyorlangan.</string>
+
+    <!-- ===== Birinchi nusxa olishdagi maslahat ===== -->
+
+    <string name="help_tip_title">Qanday joylash kerak</string>
+    <string name="help_tip_paste">Endi ilova yoki saytni oching, parol maydonini bosib turing va “Joylash” tugmasini bosing.</string>
+    <plurals name="help_tip_cleared_seconds">
+        <item quantity="one">Parol %d&#160;soniyadan keyin vaqtinchalik xotiradan olib tashlanadi. Shu vaqt ichida nusxa olgan boshqa narsalaringiz ham olib tashlanishi mumkin.</item>
+        <item quantity="other">Parol %d&#160;soniyadan keyin vaqtinchalik xotiradan olib tashlanadi. Shu vaqt ichida nusxa olgan boshqa narsalaringiz ham olib tashlanishi mumkin.</item>
+    </plurals>
+    <plurals name="help_tip_cleared_minutes">
+        <item quantity="one">Parol %d&#160;daqiqadan keyin vaqtinchalik xotiradan olib tashlanadi. Shu bir daqiqa ichida nusxa olgan boshqa narsalaringiz ham olib tashlanishi mumkin.</item>
+        <item quantity="other">Parol %d&#160;daqiqadan keyin vaqtinchalik xotiradan olib tashlanadi. Shu vaqt ichida nusxa olgan boshqa narsalaringiz ham olib tashlanishi mumkin.</item>
+    </plurals>
+    <string name="help_tip_samsung">Samsung telefonlari nusxa olingan matnlar roʻyxatini saqlaydi. Parollar unga tushmasligi uchun Samsung Keyboard sozlamalarida vaqtinchalik xotira tarixini faolsizlantiring yoki tozalang.</string>
+    <string name="help_tip_keyboards">Baʼzi klaviaturalar nusxa olingan matnlarning oʻz roʻyxatini saqlaydi; uni klaviatura sozlamalarida faolsizlantirish mumkin.</string>
+
+</resources>
