@@ -229,11 +229,11 @@
     <string name="import_change_unknown">ilovaning yangiroq versiyasidan kelgan baʼzi maʼlumotlar saqlanmadi</string>
 
     <plurals name="import_related">
-        <item quantity="one">%1$d&#160;ta qator bogʻliq saytlardagi bir xil login boʻlgani uchun %2$d&#160;ta hisob sifatida birga saqlandi.</item>
-        <item quantity="other">%1$d&#160;ta qator bogʻliq saytlardagi bir xil login boʻlgani uchun %2$d&#160;ta hisob sifatida birga saqlandi.</item>
+        <item quantity="one">%1$d&#160;ta qator bogʻliq saytlardagi bir xil kirish maʼlumotlari boʻlgani uchun %2$d&#160;ta hisob sifatida birga saqlandi.</item>
+        <item quantity="other">%1$d&#160;ta qator bogʻliq saytlardagi bir xil kirish maʼlumotlari boʻlgani uchun %2$d&#160;ta hisob sifatida birga saqlandi.</item>
     </plurals>
     <string name="import_keep_separate">Alohida saqlash</string>
-    <string name="import_kept_separate">Bogʻliq saytlardagi loginlar alohida hisoblar sifatida saqlanadi.</string>
+    <string name="import_kept_separate">Bogʻliq saytlardagi kirish maʼlumotlari alohida hisoblar sifatida saqlanadi.</string>
     <string name="import_keep_together">Birga saqlash</string>
 
     <string name="import_tidy_names">Nomlarni tartiblash</string>
@@ -245,14 +245,14 @@
     <string name="import_columns_needed">Import qilishdan oldin qaysi ustunda nima borligini tanlang.</string>
     <string name="import_open_columns">Ustunlarni tanlash</string>
 
-    <string name="import_too_large">Parollaringiz endi bitta faylga sigʻmaydi. Keraksiz hisoblarni oʻchiring yoki juda uzun qaydlarni qisqartiring.</string>
+    <string name="import_too_large">Parollaringiz endi bitta faylga sigʻmayapti. Keraksiz hisoblarni oʻchiring yoki juda uzun qaydlarni qisqartiring.</string>
     <plurals name="import_button">
         <item quantity="one">%1$d&#160;ta hisobni import qilish</item>
         <item quantity="other">%1$d&#160;ta hisobni import qilish</item>
     </plurals>
     <string name="import_nothing_to_add">Bu fayldan import qilinadigan yangi narsa yoʻq.</string>
     <string name="import_importing">Import qilinmoqda…</string>
-    <string name="import_save_failed">Saqlab boʻlmadi. Telefoningiz xotirasi toʻla boʻlishi mumkin.</string>
+    <string name="import_save_failed">Saqlab boʻlmadi. Telefon xotirasi toʻlgan boʻlishi mumkin.</string>
 
     <!-- ===== Natija ===== -->
 
@@ -284,7 +284,7 @@
     <string name="import_backup_password">Zaxira nusxaning asosiy paroli</string>
     <string name="import_backup_open">Zaxira nusxani ochish</string>
     <string name="import_backup_opening">Ochilmoqda…</string>
-    <string name="import_backup_wrong">Bu parol bu zaxira nusxani ochmaydi. Zaxira nusxani yaratgan paytingizdagi asosiy parolni sinab koʻring.</string>
+    <string name="import_backup_wrong">Bu parol ushbu zaxira nusxani ochmaydi. Zaxira nusxani yaratgan paytingizdagi asosiy parolni sinab koʻring.</string>
     <string name="import_backup_wrong_or_damaged">Bu fayl shikastlangan boʻlishi yoki parol notoʻgʻri boʻlishi mumkin.</string>
     <string name="import_backup_no_memory">Faylni ochish uchun telefoningizda boʻsh operativ xotira yetarli emas. Boshqa ilovalarni yoping va qayta urining.</string>
     <plurals name="import_backup_summary">

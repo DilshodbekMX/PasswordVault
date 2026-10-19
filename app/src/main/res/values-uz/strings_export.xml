@@ -84,10 +84,10 @@
     <string name="export_password_field">Asosiy parol</string>
     <string name="export_password_wrong">Asosiy parol notoʻgʻri. Klaviatura tilini (lotin yoki kirill) va bosh harflarni tekshiring.</string>
     <plurals name="export_password_wait">
-        <item quantity="one">%1$d&#160;soniya kuting, soʻng qayta urining. Shoshilmang, yozib qoʻygan qogʻozingizga qarang.</item>
-        <item quantity="other">%1$d&#160;soniya kuting, soʻng qayta urining. Shoshilmang, yozib qoʻygan qogʻozingizga qarang.</item>
+        <item quantity="one">%1$d&#160;soniya kuting, keyin qayta urining. Shoshilmang, yozib qoʻygan qogʻozingizga qarang.</item>
+        <item quantity="other">%1$d&#160;soniya kuting, keyin qayta urining. Shoshilmang, yozib qoʻygan qogʻozingizga qarang.</item>
     </plurals>
-    <string name="export_password_no_memory">Asosiy parolingizni tekshirish uchun telefoningizda boʻsh operativ xotira yetarli emas. Boshqa ilovalarni yoping yoki telefonni qayta yoqing, soʻng qayta urining.</string>
+    <string name="export_password_no_memory">Asosiy parolni tekshirish uchun telefoningizda boʻsh operativ xotira yetarli emas. Boshqa ilovalarni yoping yoki telefonni qayta ishga tushiring, keyin qayta urining.</string>
     <!-- %1$s is a date ("6-okt, 2026"); "sanasidan oldingi" ("from before the date") keeps it free of a suffix. -->
     <string name="export_password_older">Bu — %1$s sanasidan oldingi asosiy parolingiz. Hozir ishlatayotganingizni kiriting.</string>
     <string name="export_paused">Bu jarayon ilova qulflanganda toʻxtatib turilgan edi.</string>
@@ -124,8 +124,8 @@
     <string name="export_write_left_phone">%1$s nomli faylda parollaringizning bir qismi boʻlishi mumkin. Uni Fayllar ilovasida oʻzingiz oʻchiring.</string>
     <string name="export_write_left_drive">%1$s nomli faylda parollaringizning bir qismi boʻlishi mumkin. Uni Google Drive xizmatida oʻzingiz oʻchiring.</string>
     <string name="export_write_left_other">%1$s nomli faylda parollaringizning bir qismi boʻlishi mumkin. Uni oʻzingiz oʻchiring (joyi: %2$s).</string>
-    <string name="export_note_failed">Saqlab boʻlmadi. Telefoningiz xotirasi toʻla boʻlishi mumkin.</string>
-    <string name="export_too_large">Parollaringiz endi bitta faylga sigʻmaydi. Keraksiz hisoblarni oʻchiring yoki juda uzun qaydlarni qisqartiring.</string>
+    <string name="export_note_failed">Saqlab boʻlmadi. Telefon xotirasi toʻlgan boʻlishi mumkin.</string>
+    <string name="export_too_large">Parollaringiz endi bitta faylga sigʻmayapti. Keraksiz hisoblarni oʻchiring yoki juda uzun qaydlarni qisqartiring.</string>
     <string name="export_cleanup_removed">Fayl saqlanmadi. Boʻsh fayl oʻchirib tashlandi.</string>
     <string name="export_cleanup_left_phone">Fayl saqlanmadi. %1$s nomli boʻsh faylni Fayllar ilovasida oʻzingiz oʻchiring.</string>
     <string name="export_cleanup_left_drive">Fayl saqlanmadi. Google Drive xizmatidagi %1$s nomli boʻsh faylni oʻzingiz oʻchiring.</string>

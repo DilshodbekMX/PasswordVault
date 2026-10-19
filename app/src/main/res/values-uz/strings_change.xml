@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Oʻzbekcha (lotin): the guided change of one password (build plan 6.3b; values/strings_change.xml
+     has the notes for each string). Glossary of i18n.md §3: Parolni oʻzgartirish (95), Saytni
+     ochish (36), Paroldan nusxa olish (28), Keyingisi (39), Nusxa olindi (30); "Paste" is Android's
+     "Joylash". An account's name, which the user typed, stands in quotes before a noun ("hisobi",
+     "saytini") or the postposition "uchun", so that no suffix is glued to it (i18n.md §4.4). oʻ and
+     gʻ with U+02BB, the tutuq belgisi with U+02BC. -->
+<resources>
+
+    <string name="change_title">Parolni oʻzgartirish</string>
+    <string name="change_back">Orqaga</string>
+
+    <string name="change_last_one">Oxirgisi! Shundan soʻng eski parolingiz hech qayerda ishlatilmaydi.</string>
+    <string name="change_step_number">%1$d-qadam, jami %2$d&#160;ta</string>
+
+    <!-- ===== 1-qadam ===== -->
+
+    <string name="change_step1">“%1$s” saytini yoki ilovasini oching va hisobingizga kiring.</string>
+    <string name="change_open_website">Saytni ochish</string>
+    <string name="change_copy_old">Eski paroldan nusxa olish</string>
+
+    <!-- ===== 2-qadam ===== -->
+
+    <string name="change_step2">“Parolni oʻzgartirish” degan joyni toping.</string>
+    <string name="change_step2_where">Odatda u Sozlamalar › Xavfsizlik yoki Hisob › Parol boʻlimida boʻladi.</string>
+
+    <!-- ===== 3-qadam ===== -->
+
+    <string name="change_step3">Yangi parol yarating.</string>
+    <string name="change_create">Yangi parol yaratish</string>
+    <string name="change_create_another">Boshqa parol yaratish</string>
+    <string name="change_saved">Saqlandi. Oʻzgartirishni yakunlaguningizcha eski parolingiz ham saqlanib turadi.</string>
+    <string name="change_rules">Parol talablari</string>
+
+    <!-- ===== 4-qadam ===== -->
+
+    <string name="change_step4">Parollarni saytga joylang.</string>
+    <string name="change_copy_new">Yangi paroldan nusxa olish</string>
+    <string name="change_hint_ask">Saytlar odatda eski parolni bir marta, yangisini esa ikki marta soʻraydi.</string>
+    <string name="change_hint_chrome">Agar Chrome siz uchun parol yaratishni taklif qilsa, undan foydalanmang. Shu ilova yaratgan parolni joylang.</string>
+    <string name="change_first_step3">Avval 3-qadamda yangi parol yarating.</string>
+
+    <!-- ===== 5-qadam ===== -->
+
+    <string name="change_step5">Sayt yangi parolni qabul qildimi?</string>
+    <string name="change_yes">Ha, oʻzgartirildi</string>
+    <string name="change_no">Yoʻq, eski parolni qaytarish</string>
+    <string name="change_later">Keyinroq yakunlayman</string>
+
+    <!-- ===== Oʻzgartirish yakuni ===== -->
+
+    <string name="change_done">“%1$s” hisobining endi oʻz paroli bor.</string>
+    <string name="change_next">Keyingisi: %1$s</string>
+    <string name="change_done_for_now">Hozircha yakunlash</string>
+    <string name="change_backup_only_here">“%1$s” hisobining yangi paroli zaxira nusxa yaratmaguningizcha faqat shu telefonda boʻladi.</string>
+    <string name="change_back_up_now">Hozir zaxiralash</string>
+
+    <!-- ===== Ekran pastidagi xabarlar ===== -->
+
+    <string name="change_created">Yangi parol saqlandi.</string>
+    <string name="change_reverted">Eski parol qaytarildi.</string>
+    <string name="change_save_failed">Saqlab boʻlmadi. Telefon xotirasi toʻlgan boʻlishi mumkin.</string>
+    <string name="change_too_large">Parollaringiz endi bitta faylga sigʻmayapti. Keraksiz hisoblarni oʻchiring yoki juda uzun qaydlarni qisqartiring.</string>
+    <string name="change_no_browser">Bu telefonda brauzer topilmadi.</string>
+    <string name="change_copy_blocked">Bu telefon nusxa olishga ruxsat bermadi. Hisobni oching va parolni qoʻlda kiritish uchun “Katta harflarda koʻrsatish” tugmasidan foydalaning.</string>
+
+    <!-- ===== Hisob yoʻq ===== -->
+
+    <string name="change_gone">Bu hisob endi mavjud emas.</string>
+    <string name="change_gone_deleted">Bu hisob oʻchirilgan. Uni 30&#160;kun davomida “Yaqinda oʻchirilganlar” boʻlimidan tiklashingiz mumkin.</string>
+
+    <!-- ===== Nusxa olingan narsa (ilova pastidagi vaqtinchalik xotira qatori) ===== -->
+
+    <string name="change_copied_old">%1$s eski paroli</string>
+    <string name="change_copied_new">%1$s yangi paroli</string>
+    <string name="change_copied">Nusxa olindi</string>
+</resources>

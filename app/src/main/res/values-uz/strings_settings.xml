@@ -15,10 +15,10 @@
     <string name="settings_group_app_lock">Ilova qulfi</string>
     <string name="settings_change_pin">PIN kodni oʻzgartirish</string>
     <string name="settings_set_pin">PIN kodni sozlang</string>
-    <string name="settings_pin_off_limit">Juda koʻp notoʻgʻri urinishlardan soʻng PIN kod bilan ochish faolsizlantirildi.</string>
-    <string name="settings_pin_stopped_working">PIN kodingiz bu telefonda ishlamay qoldi.</string>
+    <string name="settings_pin_off_limit">Juda koʻp xato urinishlardan keyin PIN kod bilan ochish faolsizlantirildi.</string>
+    <string name="settings_pin_stopped_working">PIN kod bu telefonda ishlamay qoldi.</string>
     <string name="settings_pin_newer_app">PIN kodingiz bu ilovaning yangiroq versiyasida sozlangan.</string>
-    <string name="settings_pin_storage_full">Telefoningiz xotirasi toʻlgan, shuning uchun PIN kodni hozir tekshirib boʻlmaydi.</string>
+    <string name="settings_pin_storage_full">Telefon xotirasi toʻlgan, shuning uchun PIN kodni hozir tekshirib boʻlmaydi.</string>
     <string name="settings_pin_cannot_check">PIN kodingizni hozircha tekshirib boʻlmayapti. Bu takrorlanaversa, asosiy parolingiz bilan yangi PIN kod tanlang.</string>
     <string name="settings_no_secure_hardware">Bu telefon PIN kod yoki barmoq izi kalitini himoyalangan apparat qismida saqlay olmaydi.</string>
 
