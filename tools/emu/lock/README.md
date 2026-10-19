@@ -142,8 +142,10 @@ failed and none skipped a step.
 | E17 | 5/0/0 (the pad) | | 18/0/0 |
 
 `pm uninstall -k` and a new install (E10): the PIN and fingerprint keys survived on API 24 and 28, as
-on 2026-10-13. The staging repeat (`checks/5.sh lockstaging`: E1 and E6 on API 24 and 37, E16 on API 24)
-is below. Since the device check of R4, `newmp.sh`'s `pvn_request` scrolls to "Next" on "Write it down
+on 2026-10-13. The staging repeat (`checks/5.sh lockstaging`, the staging build of the same day with the
+check's fix 5): E1 14/0/0 and E6 9/0/0 on API 24 and on API 37 (on API 24 the library's own dialog in the
+activity), E16 11/0/0 on API 24 (decision 22: setup and two derivations in a row through the Java
+fallback at 128m/256m; "not enough memory" at 64m/128m, nothing counted). Since the device check of R4, `newmp.sh`'s `pvn_request` scrolls to "Next" on "Write it down
 on paper" (it was below the fold of the 1920-pixel screens, where `checks/5.sh` line 6 runs it).
 
 ## Runs on 2026-10-13
