@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Русский: the bottom bar of the unlocked screens (build plan 6.4a; glossary 1, 47, 108). -->
+<resources>
+    <string name="shell_tab_passwords">Пароли</string>
+    <string name="shell_tab_security">Безопасность</string>
+    <string name="shell_tab_settings">Настройки</string>
+</resources>
