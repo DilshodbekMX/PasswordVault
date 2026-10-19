@@ -438,4 +438,8 @@ says `Found systemPath /home/asus/pvlab/sysimg/...`).
   with an empty app" only while no PIN, fingerprint or practice can be used, and "I can't remember it" on
   a practice screen asks for the PIN first (lock.md F11 step 3). After `cmd alarm set-time` back to the
   present, a clock more than an hour before the last master password makes practice due at once (lock.md
-  §8.3).
+  §8.3). `cmd locale set-app-locales` before the first start of a fresh install is lost: at that start
+  AppCompat moves its own stored language (none yet) into Android's (`autoStoreLocales`), so the app
+  comes up in the phone's language; once the app has run, or for a device test whose activity is no
+  AppCompat one after `pm clear`, the command holds. Scripts set the language on Welcome in the app (the
+  debug command `locale`, whose answer says which language the screens show).
