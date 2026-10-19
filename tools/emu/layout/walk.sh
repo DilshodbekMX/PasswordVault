@@ -18,7 +18,7 @@
 #
 # The script sets the screen's density so that the phone is DP wide (`wm density`, the setting
 # "Display size") and the font scale (`settings put system font_scale`), and puts both back as they were
-# when it ends, however it ends. For each locale it installs both APKs afresh, clears the app's data
+# when it ends, however it ends, with the app's language (the phone's again) and its data (cleared). For each locale it installs both APKs afresh, clears the app's data
 # and runs the walk with `am instrument` (`-e pvLayout <run> -e pvLayoutLocale <tag>`): the walk sets
 # the app's language itself and looks at each screen in the app's own process with LayoutProbe, which
 # reads what Compose laid out: a text cut with an ellipsis or overflowing its box (except one marked
@@ -89,6 +89,10 @@ RESTORED=0
 restore() {
     [ "$RESTORED" = 1 ] && return
     RESTORED=1
+    # The walk set the app's language to a pseudo-locale, which Android 13 and later keep outside the
+    # app's data: back to the phone's language, and the app's data (the walk's vault) cleared.
+    [ "$API" -lt 33 ] || pv_shell cmd locale set-app-locales "$PV_PACKAGE" >/dev/null 2>&1
+    pv_shell pm clear "$PV_PACKAGE" >/dev/null 2>&1
     if [ -n "$OLD_DENSITY" ]; then pv_shell wm density "$OLD_DENSITY" >/dev/null 2>&1; else pv_shell wm density reset >/dev/null 2>&1; fi
     case "$OLD_FONT" in
         '' | null) pv_shell settings delete system font_scale >/dev/null 2>&1 ;;

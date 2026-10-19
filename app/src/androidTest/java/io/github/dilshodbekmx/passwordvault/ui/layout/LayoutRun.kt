@@ -31,6 +31,9 @@ class LayoutRun private constructor(val name: String, val localeTag: String, val
         writeText("")
     }
     private val shots = "$SHOTS_ROOT/$name"
+
+    /** Whether the run is in a pseudo-locale (`en-XA`, `ar-XB`), where the English check means something. */
+    val pseudoLocale: Boolean get() = localeTag.endsWith("-XA") || localeTag.endsWith("-XB")
     private var failed = 0
     private var screens = 0
 

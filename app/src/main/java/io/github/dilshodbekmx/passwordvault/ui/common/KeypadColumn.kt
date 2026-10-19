@@ -18,17 +18,25 @@ import androidx.compose.ui.unit.dp
  * (the height the page shows): [head] (the texts), under it [dots] (the dots and the line under
  * them), the [keys], and [foot] (the buttons), from the top.
  *
- * The keypad is typed into while the dots are watched, so the two stay on the screen together, whole.
- * While the page has room every part has the height it asks for, and the page is as high as the
- * viewport. On a short page, or with the phone's font at 200 %, the keys shrink, to 64 dp
- * ([PinKeys], [MIN_KEYPAD_HEIGHT]), and [head] gets the height that is left, at least [minHead], and
- * scrolls there on its own: so [head] must be a column that scrolls. Where even that leaves no room
- * for [foot], the head, the dots and the keys still fill the first screen and the foot follows below
- * it, reached by scrolling the page; and a page too short for the keys themselves (a small window)
- * is laid out at its full height with the smallest keys, and scrolls as a whole.
+ * The keypad is typed into while the dots are watched, so the two stay on the screen together, whole,
+ * and the head's texts say what to type. The page takes the first of these that its height allows:
+ *
+ * 1. everything on the first screen, the head whole, the keys at their size or smaller, to 64 dp;
+ * 2. the head whole and the keys as large as the rest allows (to 64 dp), the [foot] below the first
+ *    screen, reached by scrolling the page;
+ * 3. the smallest keys, the foot below, and the head given the height that is left, at least
+ *    [minHead], scrolling there on its own: so [head] must be a column that scrolls;
+ * 4. on a page too short for that (a small window), everything at its least, the page scrolling as a
+ *    whole.
+ *
+ * What the head needs to show whole is its intrinsic height; a head whose parts cannot say (a layout
+ * without intrinsic sizes) counts as needing [minHead]. The keys shrink in [PinKeys]
+ * ([MIN_KEYPAD_HEIGHT]): the gaps first, to 8 dp, then the keys.
  *
  * Found by build plan 6.2: in `en-XA` on a 1080 × 1920 screen, and at 320 dp and 200 %, the keys 7,
- * 8, 9 and 0 of the PIN steps were below the screen's edge, and scrolling to them took the dots away.
+ * 8, 9 and 0 of the PIN steps were below the screen's edge, and scrolling to them took the dots away;
+ * then, with the foot kept on the first screen first, the lock pad's "Enter your app PIN" was squeezed
+ * out of a 1920-pixel screen at the phone's own font size.
  */
 @Composable
 fun KeypadColumn(
@@ -49,17 +57,17 @@ fun KeypadColumn(
         val footHeight = footPlaced.sumOf { it.height }
         val dotsHeight = dotsPlaced.sumOf { it.height }
         val keypad = MIN_KEYPAD_HEIGHT.roundToPx()
-        val head = minHead.roundToPx()
-        // The height the head, the dots and the keys share on the first screen: all of it but the
-        // foot's while that leaves the keys and the head their least; else all of it, the foot below.
-        val first = when {
-            page - footHeight - dotsHeight - keypad >= head -> page - footHeight
-            page - dotsHeight - keypad >= head -> page
-            else -> null
+        val least = minHead.roundToPx()
+        val wanted = heads.sumOf { runCatching { it.maxIntrinsicHeight(width) }.getOrDefault(least) }.coerceAtLeast(least)
+        // The height the head, the dots and the keys share on the first screen (null: no limit), and the
+        // most the keys may take of it.
+        val (first, keysLimit) = when {
+            page - footHeight - dotsHeight - wanted >= keypad -> (page - footHeight) to (page - footHeight - dotsHeight - wanted)
+            page - dotsHeight - wanted >= keypad -> page to (page - dotsHeight - wanted)
+            page - dotsHeight - least >= keypad -> page to keypad
+            else -> null to keypad
         }
-        val keysPlaced = keyPart.map {
-            it.measure(loose.copy(maxHeight = if (first != null) (first - dotsHeight - head).coerceAtLeast(0) else keypad))
-        }
+        val keysPlaced = keyPart.map { it.measure(loose.copy(maxHeight = keysLimit)) }
         val keysHeight = keysPlaced.sumOf { it.height }
         val headConstraints = if (first != null) loose.copy(maxHeight = (first - dotsHeight - keysHeight).coerceAtLeast(0)) else loose
         val headPlaced = heads.map { it.measure(headConstraints) }

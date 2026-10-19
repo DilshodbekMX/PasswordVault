@@ -177,7 +177,8 @@ class Walker(private val compose: ComposeTestRule, val run: LayoutRun) {
         Thread.sleep(SETTLE_MS)
         compose.waitForIdle()
         run.shot(screen)
-        probe.checkEnglish = english
+        // Plain English is looked for only in a pseudo-locale: a walk in English (pictures) checks the layout.
+        probe.checkEnglish = english && run.pseudoLocale
         var findings = probe.look()
         // A menu over a list is looked at as it is: scrolling the list behind it would take away the
         // row it belongs to, and the menu with it.

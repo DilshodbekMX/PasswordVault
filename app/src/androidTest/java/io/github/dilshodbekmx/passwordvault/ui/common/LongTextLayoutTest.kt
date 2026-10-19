@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
@@ -54,11 +55,11 @@ class LongTextLayoutTest {
     @get:Rule
     val compose = createAndroidComposeRule<ComponentActivity>()
 
-    /** [content] 320 dp wide and [height] high, at a font scale of 2, in the app's theme. */
-    private fun show(height: Int = 700, content: @Composable () -> Unit) {
+    /** [content] 320 dp wide and [height] high, at a font scale of [fontScale] (2), in the app's theme. */
+    private fun show(height: Int = 700, fontScale: Float = 2f, content: @Composable () -> Unit) {
         compose.setContent {
             val density = LocalDensity.current
-            CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale = 2f)) {
+            CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale = fontScale)) {
                 PasswordVaultTheme(ThemeChoice.LIGHT) {
                     Box(Modifier.width(320.dp).height(height.dp)) { content() }
                 }
@@ -195,7 +196,40 @@ class LongTextLayoutTest {
         assertTrue("one keypad", compose.onAllNodesWithTag(PinPadTags.key(0), useUnmergedTree = true).fetchSemanticsNodes().size == 1)
     }
 
+    @Test
+    fun aKeypadPageShowsItsTextsWholeAndPutsItsButtonsBelowTheFirstScreenRatherThanCutThem() {
+        // The phone's own font size on a short page: the buttons do not fit on the first screen with
+        // the whole texts and keys of 72 dp, so they go below it (the lock pad on a 1920-pixel screen).
+        show(height = 640, fontScale = 1f) {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
+                KeypadColumn(
+                    viewport = 640.dp,
+                    head = {
+                        Column(Modifier.verticalScroll(rememberScrollState()).testTag(HEAD).padding(horizontal = 24.dp)) {
+                            Text("PasswordVault", style = MaterialTheme.typography.headlineSmall)
+                            repeat(3) { Text("Enter your app PIN") }
+                        }
+                    },
+                    dots = { PinDots(entered = 0, modifier = Modifier.padding(16.dp)) },
+                    keys = { PinKeys(onDigit = {}, onDelete = {}) },
+                    foot = { Box(Modifier.fillMaxWidth().height(260.dp).testTag(FOOT)) },
+                )
+            }
+        }
+        assertClean("the keypad page")
+        val density = compose.activity.resources.displayMetrics.density
+        val head = compose.onNodeWithTag(HEAD, useUnmergedTree = true).fetchSemanticsNode()
+        val range = head.config[SemanticsProperties.VerticalScrollAxisRange]
+        assertTrue("the texts show whole: their column does not scroll (${range.maxValue()} px more)", range.maxValue() < 1f)
+        val key = compose.onNodeWithTag(PinPadTags.key(0), useUnmergedTree = true).fetchSemanticsNode()
+        assertTrue("the keys keep their 72 dp", key.size.height >= 72 * density - 1)
+        assertTrue("key 0 is on the first screen", key.boundsInRoot.bottom <= 640 * density + 1)
+        assertTrue("the buttons come after the keys", topOf(FOOT) >= key.boundsInRoot.bottom - 1)
+    }
+
     private companion object {
+        const val HEAD = "test.head"
+        const val FOOT = "test.foot"
         const val TITLE = "test.title"
         const val BACK = "test.back"
         const val TEXT = "test.text"

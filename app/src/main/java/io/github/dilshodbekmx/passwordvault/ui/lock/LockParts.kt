@@ -154,11 +154,12 @@ internal fun LockPage(
 /**
  * The PIN pad's upright page (ux.md §5.9): [LockPage]'s head, on the look's lock panel where it has
  * one, with the [dots] at its foot; under it the [status] line, the [keys] and the [foot] (the
- * buttons). A [KeypadColumn] keeps the dots and the whole keypad on the screen together: on a short
- * screen, or with the phone's font at 200 %, the keys shrink (never under 64 dp) and the head's
- * texts get the height that is left and scroll there, above the dots (build plan 6.2: at 320 dp and
- * 200 % the keys 7, 8, 9 and 0 lay below the screen's edge). The panel still reaches up behind the
- * status bar, whose icons are light while it shows.
+ * buttons). A [KeypadColumn] keeps the dots and the whole keypad on the screen together, with the
+ * head whole above them where the screen allows: on a short screen, or with the phone's font at
+ * 200 %, the buttons go below the first screen, then the keys shrink (never under 64 dp), and only
+ * then do the head's texts get the height that is left and scroll there, above the dots (build plan
+ * 6.2: at 320 dp and 200 % the keys 7, 8, 9 and 0 lay below the screen's edge). The panel still
+ * reaches up behind the status bar, whose icons are light while it shows.
  */
 @Composable
 internal fun LockPadPage(

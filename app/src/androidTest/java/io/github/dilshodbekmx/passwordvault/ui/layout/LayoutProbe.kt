@@ -154,8 +154,14 @@ class LayoutProbe(private val compose: SemanticsNodeInteractionsProvider, privat
             val scrolled = scrollers.any { !inside(full, it.boundsInRoot) || scrollsIn(it, cut, shown) }
             if (!scrolled && cut.isNotEmpty() && !(mayCut && cut.all { it.top >= shown.top - 1 && it.bottom <= shown.bottom + 1 })) {
                 val line = cut.first()
+                // Which ancestor cuts it: the nearest whose box ends before the letters do.
+                val cutter = generateSequence(node.parent) { it.parent }.firstOrNull { parent ->
+                    val box = Rect(parent.positionInRoot, parent.size.toSize())
+                    !inside(line, box, density)
+                }
                 return "clipped by its parent (letters at ${dp(line.left)}..${dp(line.right)} × ${dp(line.top)}..${dp(line.bottom)} dp, " +
-                    "the parent shows ${dp(shown.left)}..${dp(shown.right)} × ${dp(shown.top)}..${dp(shown.bottom)} dp)"
+                    "the parent shows ${dp(shown.left)}..${dp(shown.right)} × ${dp(shown.top)}..${dp(shown.bottom)} dp" +
+                    (cutter?.let { "; cut by ${describe(it)} at ${dp(it.positionInRoot.y)}..${dp(it.positionInRoot.y + it.size.height)} dp" } ?: "") + ")"
             }
         }
         if (layout != null && !secret(node)) splitWord(layout)?.let { return "a word split across two lines (\"$it\"; lines ${lines(layout)})" }
@@ -188,9 +194,10 @@ class LayoutProbe(private val compose: SemanticsNodeInteractionsProvider, privat
      * narrow for it. A word here is a token between ordinary spaces ("Settings", "[Šéţţîñĝš") whose
      * run, as ICU's line-breaking rules keep it whole (which Android's line breaker follows), is also
      * at most [LONGEST_WORD] characters. A longer token or run that cannot break may break anywhere: a
-     * file name ("PasswordVault-backup"), an address, a password of words, a date whose parts no-break
-     * spaces hold together, a word after `en-XA`'s "¿", after which no line may break. Once one has,
-     * the text's other breaks follow from it and are not looked at.
+     * file name ("PasswordVault-backup"), a password of words, a date whose parts no-break spaces hold
+     * together, a word after `en-XA`'s "¿", after which no line may break; and so may an address of
+     * any length ("mail.google.com"), which is not a word. Once one has, the text's other breaks follow
+     * from it and are not looked at.
      */
     private fun splitWord(layout: TextLayoutResult): String? {
         val text = layout.layoutInput.text.text
@@ -206,6 +213,9 @@ class LayoutProbe(private val compose: SemanticsNodeInteractionsProvider, privat
             var to = end
             while (to < text.length && !space(text[to])) to++
             if (to - from > LONGEST_WORD || text.substring(runStart, runEnd).trim().length > LONGEST_WORD) return null
+            // An address (a website, an email address) is not a word: one too wide for its line breaks
+            // where it must, however short.
+            if (ADDRESS.containsMatchIn(text.substring(from, to))) return null
             if (text[end - 1].isLetterOrDigit() && text[end].isLetterOrDigit()) return text.substring(from, to)
         }
         return null

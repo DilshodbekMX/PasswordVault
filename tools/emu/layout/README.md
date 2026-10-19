@@ -16,7 +16,7 @@ tools/emu/stop.sh "$S37"
 [--width DP] [--font SCALE] [--style NAME]` needs the debug build (pseudo-locales, screenshots,
 `run-as`). It sets the screen's density so that the phone is 320 dp wide (`wm density`, as "Display
 size" does) and the font scale to 2.0 (`settings put system font_scale`), and puts both back however it
-ends. `--width 411 --font 1.0` walks a 1080-pixel phone at its own size (build plan §12's open problem:
+ends, with the app's language (which Android 13 and later keep outside the app's data) and its data. `--width 411 --font 1.0` walks a 1080-pixel phone at its own size (build plan §12's open problem:
 the PIN steps in `en-XA` on a 1080 × 1920 screen). `--style EMERALD` or `NIGHT_VAULT` walks the part
 app in that colour style (run `app-<locale>-<style>`); `--locales en` walks it in plain English, for
 pictures (the English check is made only in a pseudo-locale).

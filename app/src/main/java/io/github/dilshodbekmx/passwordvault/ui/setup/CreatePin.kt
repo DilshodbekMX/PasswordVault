@@ -482,9 +482,10 @@ fun CreatePinScreen(
  * A page with a PIN pad (ux.md §5.6, §5.9): the title, the [body] lines, the dots, the [line] under
  * them, the keypad (or [cover] in its place: "Saving…" with a spinner, [BusyCover], or "Your PIN is
  * set." with a check mark, [DoneCover]), the [footer] and the [buttons]. Upright, at most 640 dp
- * wide, a [KeypadColumn]: the dots and the whole keypad stay on the screen together, the keys
- * shrinking to 64 dp when the page is short or the font large, and the title, the body and the
- * footer take the height left above them and scroll there (build plan 6.2: in `en-XA` on a 1080 ×
+ * wide, a [KeypadColumn]: the dots and the whole keypad stay on the screen together, with the title,
+ * the body and the footer whole above them where the page allows; on a short page or with a large
+ * font the buttons go below the first screen, then the keys shrink to 64 dp, and only then do the
+ * texts take the height left above the dots and scroll there (build plan 6.2: in `en-XA` on a 1080 ×
  * 1920 screen the keys 7, 8, 9 and 0 were below the screen's edge). In a wide and low window (a
  * phone in landscape) the texts and the dots on the left and the keypad on the right (ux.md §5.9
  * "Landscape"). With large fonts the keys grow as far as the width allows; nothing is cut off.
