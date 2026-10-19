@@ -46,13 +46,13 @@
     <string name="change_step5">Сайт янги паролни қабул қилдими?</string>
     <string name="change_yes">Ҳа, ўзгартирилди</string>
     <string name="change_no">Йўқ, эски паролни қайтариш</string>
-    <string name="change_later">Кейинроқ якунлайман</string>
+    <string name="change_later">Кейин тугатаман</string>
 
     <!-- ===== Ўзгартириш якуни ===== -->
 
     <string name="change_done">“%1$s” ҳисобининг энди ўз пароли бор.</string>
     <string name="change_next">Кейингиси: %1$s</string>
-    <string name="change_done_for_now">Ҳозирча якунлаш</string>
+    <string name="change_done_for_now">Ҳозирча етарли</string>
     <string name="change_backup_only_here">“%1$s” ҳисобининг янги пароли захира нусха яратмагунингизча фақат бу телефонда бўлади.</string>
     <string name="change_back_up_now">Ҳозир захиралаш</string>
 

@@ -45,13 +45,13 @@
     <string name="change_step5">Sayt yangi parolni qabul qildimi?</string>
     <string name="change_yes">Ha, oʻzgartirildi</string>
     <string name="change_no">Yoʻq, eski parolni qaytarish</string>
-    <string name="change_later">Keyinroq yakunlayman</string>
+    <string name="change_later">Keyin tugataman</string>
 
     <!-- ===== Oʻzgartirish yakuni ===== -->
 
     <string name="change_done">“%1$s” hisobining endi oʻz paroli bor.</string>
     <string name="change_next">Keyingisi: %1$s</string>
-    <string name="change_done_for_now">Hozircha yakunlash</string>
+    <string name="change_done_for_now">Hozircha yetarli</string>
     <string name="change_backup_only_here">“%1$s” hisobining yangi paroli zaxira nusxa yaratmaguningizcha faqat bu telefonda boʻladi.</string>
     <string name="change_back_up_now">Hozir zaxiralash</string>
 
