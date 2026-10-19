@@ -89,10 +89,10 @@
     <string name="import_encoding_chosen">Файл прочитан в кодировке %1$s, как вы выбрали.</string>
     <!-- %1$d lines, the first of them %2$s: true for 1 and for 21 alike. -->
     <plurals name="import_damaged_lines">
-        <item quantity="one">Символы, которые не удалось прочитать, впервые встречаются в строке %2$s, всего — в %1$d&#160;строке. Они показаны как �.</item>
-        <item quantity="few">Символы, которые не удалось прочитать, впервые встречаются в строке %2$s, всего — в %1$d&#160;строках. Они показаны как �.</item>
-        <item quantity="many">Символы, которые не удалось прочитать, впервые встречаются в строке %2$s, всего — в %1$d&#160;строках. Они показаны как �.</item>
-        <item quantity="other">Символы, которые не удалось прочитать, впервые встречаются в строке %2$s, всего — в %1$d&#160;строки. Они показаны как �.</item>
+        <item quantity="one">Символы, которые не удалось прочитать, впервые встречаются в строке %2$s, всего&#160;— в %1$d&#160;строке. Они показаны как �.</item>
+        <item quantity="few">Символы, которые не удалось прочитать, впервые встречаются в строке %2$s, всего&#160;— в %1$d&#160;строках. Они показаны как �.</item>
+        <item quantity="many">Символы, которые не удалось прочитать, впервые встречаются в строке %2$s, всего&#160;— в %1$d&#160;строках. Они показаны как �.</item>
+        <item quantity="other">Символы, которые не удалось прочитать, впервые встречаются в строке %2$s, всего&#160;— в %1$d&#160;строки. Они показаны как �.</item>
     </plurals>
 
     <plurals name="import_found">
@@ -165,10 +165,10 @@
         <item quantity="other">%1$d&#160;строки содержат другое число значений, чем заголовок, и будут импортированы как есть.</item>
     </plurals>
     <plurals name="import_wrong_row">
-        <item quantity="one">В строке %1$d — %2$d&#160;значение, в заголовке — %3$d.</item>
-        <item quantity="few">В строке %1$d — %2$d&#160;значения, в заголовке — %3$d.</item>
-        <item quantity="many">В строке %1$d — %2$d&#160;значений, в заголовке — %3$d.</item>
-        <item quantity="other">В строке %1$d — %2$d&#160;значения, в заголовке — %3$d.</item>
+        <item quantity="one">В строке %1$d&#160;— %2$d&#160;значение, в заголовке&#160;— %3$d.</item>
+        <item quantity="few">В строке %1$d&#160;— %2$d&#160;значения, в заголовке&#160;— %3$d.</item>
+        <item quantity="many">В строке %1$d&#160;— %2$d&#160;значений, в заголовке&#160;— %3$d.</item>
+        <item quantity="other">В строке %1$d&#160;— %2$d&#160;значения, в заголовке&#160;— %3$d.</item>
     </plurals>
     <string name="import_wrong_rows_hint">Нет ли запятой внутри пароля? Возьмите такое значение в кавычки.</string>
     <string name="import_wrong_rows_include">Импортировать эти строки как есть</string>
@@ -211,8 +211,8 @@
     <string name="import_change_line_break">пароль содержит перенос строки</string>
     <string name="import_change_control">пароль содержит невидимый символ</string>
     <string name="import_change_replaced">повреждённый символ в пароле заменён на �</string>
-    <string name="import_change_title_cut">название сокращено; полное название — в заметках</string>
-    <string name="import_change_username_cut">имя пользователя сокращено; полное имя пользователя — в заметках</string>
+    <string name="import_change_title_cut">название сокращено; полное название&#160;— в заметках</string>
+    <string name="import_change_username_cut">имя пользователя сокращено; полное имя пользователя&#160;— в заметках</string>
     <plurals name="import_change_websites">
         <item quantity="one">%1$d&#160;сайт перенесён в заметки</item>
         <item quantity="few">%1$d&#160;сайта перенесены в заметки</item>

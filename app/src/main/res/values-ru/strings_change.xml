@@ -26,7 +26,7 @@
 
     <string name="change_step4">Вставьте пароли на сайте.</string>
     <string name="change_copy_new">Копировать новый пароль</string>
-    <string name="change_hint_ask">Обычно сайты просят ввести старый пароль один раз, а новый — дважды.</string>
+    <string name="change_hint_ask">Обычно сайты просят ввести старый пароль один раз, а новый&#160;— дважды.</string>
     <string name="change_hint_chrome">Если Chrome предложит создать для вас пароль, не соглашайтесь. Вставьте наш.</string>
     <string name="change_first_step3">Сначала создайте новый пароль на шаге 3.</string>
 
