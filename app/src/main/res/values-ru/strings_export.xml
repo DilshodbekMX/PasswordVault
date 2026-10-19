@@ -32,7 +32,7 @@
     <string name="export_warning_old_android">На этом телефоне другие приложения с доступом к хранилищу могут читать файлы в папке «Загрузки».</string>
     <string name="export_understand">Я понимаю</string>
 
-    <string name="export_csv_card_title">В Менеджер паролей Google</string>
+    <string name="export_csv_card_title">В Менеджере паролей Google</string>
     <string name="export_csv_skip_intro">Менеджер паролей Google пропустит:</string>
     <plurals name="export_csv_skip_no_website">
         <item quantity="one">%1$d&#160;аккаунт без сайта</item>
