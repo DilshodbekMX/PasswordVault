@@ -141,6 +141,7 @@
     <string name="lock_sheet_title">Asosiy parolni unutdingizmi?</string>
     <string name="lock_sheet_body">Uni hech kim tiklay olmaydi: u hech qayerda saqlanmaydi.</string>
     <string name="lock_sheet_pin_text">PIN kodingiz bu telefonda ilovani hali ham ochadi. Ilovani u bilan oching, soʻng yangi asosiy parol tanlang.</string>
+    <string name="lock_sheet_pin_cannot_check_text">PIN kodingizni hozircha tekshirib boʻlmayapti. U yana ishlay boshlaganda, ilovani u bilan oching, soʻng yangi asosiy parol tanlang.</string>
     <string name="lock_sheet_use_pin">PIN kodimdan foydalanish</string>
     <string name="lock_sheet_fingerprint_text">Barmoq izingiz bu telefonda ilovani hali ham ochadi. Ilovani u bilan oching, soʻng yangi asosiy parol tanlang.</string>
     <string name="lock_sheet_use_fingerprint">Barmoq izimdan foydalanish</string>

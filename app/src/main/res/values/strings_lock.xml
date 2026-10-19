@@ -298,6 +298,8 @@
     <string name="lock_sheet_body">Nobody can recover it: it is not stored anywhere.</string>
     <!-- While the app PIN still works. Followed by "Use my PIN". -->
     <string name="lock_sheet_pin_text">Your PIN still opens the app on this phone. Open the app with it, then choose a new master password.</string>
+    <!-- In place of lock_sheet_pin_text, without a button, while the app PIN exists but cannot be checked now (its record cannot be read, or the phone's storage is full): lock.md F11 step 3 then stops, and never takes the fingerprint instead (build plan 8.1). -->
+    <string name="lock_sheet_pin_cannot_check_text">Your PIN can’t be checked right now. When it works again, open the app with it, then choose a new master password.</string>
     <!-- Button: unlock with the PIN, then choose a new master password (lock.md F11). -->
     <string name="lock_sheet_use_pin">Use my PIN</string>
     <!-- While no PIN exists and fingerprint still works. Followed by "Use my fingerprint". -->

@@ -58,7 +58,7 @@ fun ForgotSheet(ui: ForgotSheetUi, onAction: (LockAction) -> Unit) {
                         modifier = Modifier.padding(top = 8.dp),
                     )
                 }
-                LockButtonView(option.button, formatters, onAction)
+                option.button?.let { LockButtonView(it, formatters, onAction) }
             }
         }
     }

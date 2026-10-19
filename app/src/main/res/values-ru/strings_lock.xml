@@ -179,6 +179,7 @@
     <string name="lock_sheet_title">Забыли свой мастер-пароль?</string>
     <string name="lock_sheet_body">Его никто не сможет восстановить: он нигде не хранится.</string>
     <string name="lock_sheet_pin_text">PIN-код всё ещё открывает приложение на этом телефоне. Откройте приложение с его помощью, затем задайте новый мастер-пароль.</string>
+    <string name="lock_sheet_pin_cannot_check_text">Сейчас не удаётся проверить PIN-код. Когда он снова заработает, откройте приложение с его помощью, затем задайте новый мастер-пароль.</string>
     <string name="lock_sheet_use_pin">Использовать мой PIN-код</string>
     <string name="lock_sheet_fingerprint_text">Отпечаток пальца всё ещё открывает приложение на этом телефоне. Откройте приложение с его помощью, затем задайте новый мастер-пароль.</string>
     <string name="lock_sheet_use_fingerprint">Использовать мой отпечаток пальца</string>

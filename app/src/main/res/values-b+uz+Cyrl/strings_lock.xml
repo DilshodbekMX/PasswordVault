@@ -139,6 +139,7 @@
     <string name="lock_sheet_title">Асосий паролни унутдингизми?</string>
     <string name="lock_sheet_body">Уни ҳеч ким тиклай олмайди: у ҳеч қаерда сақланмайди.</string>
     <string name="lock_sheet_pin_text">PIN кодингиз бу телефонда иловани ҳали ҳам очади. Иловани у билан очинг, сўнг янги асосий парол танланг.</string>
+    <string name="lock_sheet_pin_cannot_check_text">PIN кодингизни ҳозирча текшириб бўлмаяпти. У яна ишлай бошлаганда, иловани у билан очинг, сўнг янги асосий парол танланг.</string>
     <string name="lock_sheet_use_pin">PIN кодимдан фойдаланиш</string>
     <string name="lock_sheet_fingerprint_text">Бармоқ изингиз бу телефонда иловани ҳали ҳам очади. Иловани у билан очинг, сўнг янги асосий парол танланг.</string>
     <string name="lock_sheet_use_fingerprint">Бармоқ изимдан фойдаланиш</string>

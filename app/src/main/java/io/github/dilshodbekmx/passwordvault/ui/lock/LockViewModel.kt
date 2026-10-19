@@ -464,8 +464,15 @@ class LockViewModel(
         val fingerprintWorks = status.fingerprint == FingerprintStatus.On && mp?.fingerprintLine == null
         val options = buildList {
             // 1. F11 with the proof F11 step 3 accepts: the PIN whenever there is one, else a fingerprint.
+            // A PIN that cannot be checked now gives no proof (F11 step 3 stops there, and never takes the
+            // fingerprint instead): the sheet says so, without a button, rather than that the PIN still
+            // opens the app (build plan 8.1; the open problem of §12 from the device check of R4).
             if (current && pinExists(status, mp)) {
-                add(SheetOption(UiText.of(R.string.lock_sheet_pin_text), LockButton(UiText.of(R.string.lock_sheet_use_pin), LockAction.Send(LockIntent.CantRemember), LockTags.SHEET_USE_PIN, ButtonStyle.FILLED)))
+                if (pinUsableNow(status, mp)) {
+                    add(SheetOption(UiText.of(R.string.lock_sheet_pin_text), LockButton(UiText.of(R.string.lock_sheet_use_pin), LockAction.Send(LockIntent.CantRemember), LockTags.SHEET_USE_PIN, ButtonStyle.FILLED)))
+                } else {
+                    add(SheetOption(UiText.of(R.string.lock_sheet_pin_cannot_check_text), null))
+                }
             } else if (current && fingerprintWorks) {
                 add(SheetOption(UiText.of(R.string.lock_sheet_fingerprint_text), LockButton(UiText.of(R.string.lock_sheet_use_fingerprint), LockAction.Send(LockIntent.CantRemember), LockTags.SHEET_USE_FINGERPRINT, ButtonStyle.FILLED)))
             }
@@ -509,6 +516,9 @@ class LockViewModel(
                 is PinStatus.Off -> pin.reason == PinReason.STORAGE_FULL
                 PinStatus.NotSet, PinStatus.NoSecureHardware -> false
             }
+
+        /** The PIN can be checked now: it is on, or the master-password screen offers it (practice). */
+        fun pinUsableNow(status: LockStatus, mp: LockScreen.MasterPassword?): Boolean = mp?.canUsePin == true || status.pin == PinStatus.On
 
         fun newestFirst(aside: List<AsideVault>): List<AsideVault> = aside.distinctBy { it.vaultId }.sortedByDescending { it.putAsideAtMs }
 
