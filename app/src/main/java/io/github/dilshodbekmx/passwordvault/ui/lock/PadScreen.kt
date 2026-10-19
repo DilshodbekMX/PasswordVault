@@ -39,8 +39,10 @@ import io.github.dilshodbekmx.passwordvault.ui.common.PinKeys
  *   [PadUi.wrongTries] shakes the dots with the reject haptic (lock.md F4 step 2).
  * - While the PIN is checked ([PadUi.opening]) a spinner and "Opening…" replace the keypad, and Back
  *   is ignored for that second (ux.md §4).
- * - **Portrait:** one column that scrolls with large fonts. **Landscape:** the texts and the dots on
- *   the left, the keypad on the right (ux.md §5.9); each side scrolls on its own.
+ * - **Portrait:** [LockPadPage]: the dots and the whole keypad stay on the screen together, the keys
+ *   shrinking to 64 dp on a short screen or with large fonts, and the head's texts scroll above the
+ *   dots in the height left (build plan 6.2). **Landscape:** the texts and the dots on the left, the
+ *   keypad on the right (ux.md §5.9); each side scrolls on its own.
  * - **Bank blue** (docs/design/looks/README.md "Lock screen"): the head (the line of a vault put
  *   aside, the logo, the title, the subtitle and the dots) lies on the look's lock panel, across the
  *   top in portrait and as a block on the left in landscape ([LockPage], [LockHead]).

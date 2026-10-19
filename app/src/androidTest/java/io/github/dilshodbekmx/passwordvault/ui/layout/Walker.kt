@@ -100,12 +100,25 @@ class Walker(private val compose: ComposeTestRule, val run: LayoutRun) {
         }
     }
 
-    /** Closes the keyboard, if it is open, without a Back that a screen could take. */
+    /**
+     * Closes the keyboard, if it is open, without a Back that a screen could take, and waits until it
+     * is gone: a Back while it is still closing would only close it (KeyboardFirstOnBack, ux.md §4).
+     */
     fun hideKeyboard() {
         val activity = activity() ?: return
         instrumentation.runOnMainSync {
             androidx.core.view.WindowCompat.getInsetsController(activity.window, activity.window.decorView)
                 .hide(androidx.core.view.WindowInsetsCompat.Type.ime())
+        }
+        val end = System.currentTimeMillis() + KEYBOARD_GONE_MS
+        while (System.currentTimeMillis() < end) {
+            var shown = false
+            instrumentation.runOnMainSync {
+                shown = androidx.core.view.ViewCompat.getRootWindowInsets(activity.window.decorView)
+                    ?.isVisible(androidx.core.view.WindowInsetsCompat.Type.ime()) == true
+            }
+            if (!shown) break
+            Thread.sleep(100)
         }
         compose.waitForIdle()
         Thread.sleep(SETTLE_MS)
@@ -221,6 +234,7 @@ class Walker(private val compose: ComposeTestRule, val run: LayoutRun) {
     companion object {
         const val WAIT_MS = 30_000L
         const val SETTLE_MS = 400L
+        private const val KEYBOARD_GONE_MS = 3_000L
         private const val STEP_OF_VIEWPORT = 0.7f
         private const val MAX_STRETCHES = 40
 

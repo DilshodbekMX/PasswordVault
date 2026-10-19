@@ -481,10 +481,13 @@ fun CreatePinScreen(
 /**
  * A page with a PIN pad (ux.md §5.6, §5.9): the title, the [body] lines, the dots, the [line] under
  * them, the keypad (or [cover] in its place: "Saving…" with a spinner, [BusyCover], or "Your PIN is
- * set." with a check mark, [DoneCover]), the [footer] and the [buttons]. In portrait one column that scrolls, at most 640 dp wide; in a wide
- * and low window (a phone in landscape) the texts and the dots on the left and the keypad on the
- * right (ux.md §5.9 "Landscape"). With large fonts the keys grow as far as the width allows and the
- * column scrolls, so nothing is cut off.
+ * set." with a check mark, [DoneCover]), the [footer] and the [buttons]. Upright, at most 640 dp
+ * wide, a [KeypadColumn]: the dots and the whole keypad stay on the screen together, the keys
+ * shrinking to 64 dp when the page is short or the font large, and the title, the body and the
+ * footer take the height left above them and scroll there (build plan 6.2: in `en-XA` on a 1080 ×
+ * 1920 screen the keys 7, 8, 9 and 0 were below the screen's edge). In a wide and low window (a
+ * phone in landscape) the texts and the dots on the left and the keypad on the right (ux.md §5.9
+ * "Landscape"). With large fonts the keys grow as far as the width allows; nothing is cut off.
  *
  * The dots shake (unless animations are off) with a reject haptic each time [shakes] grows: a
  * refused PIN, a mismatch, a wrong current PIN. A hardware keyboard's digits and Backspace work on

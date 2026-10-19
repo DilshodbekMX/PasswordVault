@@ -48,7 +48,7 @@
          it is typed now. Title above the PIN pad. -->
     <string name="master_keep_pin_title">Enter your app PIN to keep using it</string>
     <!-- Under that title. "Not now" is the button that skips this step. -->
-    <string name="master_keep_pin_text">Your master password is changing, so your PIN must be confirmed to keep working. With “Not now”, you choose a PIN again afterwards.</string>
+    <string name="master_keep_pin_text">Your master password is changing. Enter your PIN to keep using it. If you tap “Not now”, you choose a new PIN later.</string>
     <!-- A wrong PIN on that step or on the step that proves a new master password; it is counted. -->
     <plurals name="master_pin_wrong">
         <item quantity="one">Wrong PIN. %d&#160;try left.</item>
@@ -83,9 +83,9 @@
     <string name="master_back_up_now">Back up now</string>
     <!-- Above the list of the backups this app saved, when the old master password is also the
          password of some account (ux.md §5.16 card 1): others may know it. -->
-    <string name="master_places_heading">Your old master password may be known to others. Delete the backups made with it:</string>
+    <string name="master_places_heading">Someone may know your old master password. Delete the backups you made with it:</string>
     <!-- The same when this app noted no saved backup: some may have been sent with another app. -->
-    <string name="master_places_none">Your old master password may be known to others. Delete the backups you made with it.</string>
+    <string name="master_places_none">Someone may know your old master password. Delete the backups you made with it.</string>
     <!-- One backup in that list: %1$s is its file name, %2$s the day it was saved, for example
          "Oct 6, 2026". -->
     <string name="master_place">%1$s, saved %2$s</string>
@@ -96,7 +96,7 @@
     <!-- The place where that backup is saved does not let the app delete it. -->
     <string name="master_place_not_deletable">The app can’t delete this file. Delete it yourself in the place where it is saved.</string>
     <!-- The file was deleted, but the app could not note it. -->
-    <string name="master_place_not_noted">The file was deleted, but the app couldn’t note it. It may still be listed later.</string>
+    <string name="master_place_not_noted">The file was deleted, but the app couldn’t record that. It may still be in this list later.</string>
 
     <!-- ===== A new master password, the old one forgotten (ux.md §5.24; lock.md F11) ===== -->
 

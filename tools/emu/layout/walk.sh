@@ -19,11 +19,17 @@
 # when it ends, however it ends. For each locale it installs both APKs afresh, clears the app's data
 # and runs the walk with `am instrument` (`-e pvLayout <run> -e pvLayoutLocale <tag>`): the walk sets
 # the app's language itself and looks at each screen in the app's own process with LayoutProbe, which
-# reads what Compose laid out (a text cut with an ellipsis or overflowing its box, a text clipped by a
-# parent that does not scroll, a text past the edge of its window, a control whose touch area is under
-# 48 dp, a text or label without a pseudo-localized character). It prints PASS or FAIL per screen and
-# check, and FAIL for a step of the walk that could not be done; the pictures of the screens go to DIR
-# (default build/emu-layout/SERIAL/<run>/), the reports and logs to build/emu-layout/SERIAL/.
+# reads what Compose laid out: a text cut with an ellipsis or overflowing its box (except one marked
+# mayTruncate, whose full text is reachable elsewhere), clipped by a parent that does not scroll,
+# spilling out of its parent, past the edge of a window, a whole word of up to 16 characters split
+# across two lines, a text covered by the floating Add button where no scroll moves it out; a control
+# whose touch area is under 48 dp; a text or label without a pseudo-localized character (except the
+# user's own texts, marked userText, and the app's untranslatable strings). Each screen is looked at as
+# it opens and after each stretch of every list or column that scrolls. It prints PASS or FAIL per
+# screen and check, FAIL for a step of the walk that could not be done and for a device test of the part
+# states that failed; the pictures of the screens go to DIR (default build/emu-layout/SERIAL/<run>/),
+# the reports and logs to build/emu-layout/SERIAL/; tools/emu/layout/screens.py makes docs/screens/
+# from them. About 15 minutes on API 37.
 #
 # Exit 0 when every check of every screen passed, 1 otherwise, 2 for a usage error, 3 for a refused
 # serial.

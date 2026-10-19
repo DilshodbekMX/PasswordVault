@@ -296,6 +296,8 @@ class LayoutWalkTest {
         walk.type(EditTags.NOTES, " and at home")
         walk.hideKeyboard()
         walk.back()
+        // A Back that a closing keyboard still took asks nothing: once more.
+        if (runCatching { walk.await(EditTags.DIALOG_DISCARD, 3_000) }.isFailure && walk.isOn(Route.Edit(""))) walk.back()
         if (walk.exists(EditTags.DIALOG_DISCARD)) {
             walk.look("Edit-saveChanges")
             walk.tap(EditTags.DIALOG_DISCARD)

@@ -178,7 +178,8 @@ fun PinDots(
 
 /**
  * The 3 × 4 keypad `1 2 3 / 4 5 6 / 7 8 9 / [fingerprint] 0 [⌫]` (ux.md §5.9): round keys of 72 dp
- * (never under 64 dp), larger with large fonts as far as the width allows, digits in
+ * (never under 64 dp), larger with large fonts as far as the width allows, and smaller where the
+ * page gives the keypad a height ([KeypadColumn]: the gaps first, to 8 dp, then the keys), digits in
  * `headlineMedium`, a ripple and `HapticFeedbackType.VirtualKey` on each press; no letters under the
  * digits, never shuffled; always left to right. How a key is drawn is the style's
  * (docs/design/looks/README.md "PIN keys", read from `LocalLook`): a digit on a filled circle, alone,
