@@ -81,6 +81,9 @@
 #               app.sh sourced a second time (the screen size and the watched message kept) and boot.sh's
 #               airplane mode on API 37 (on, no default network; API 24 and 28 untouched). change/guided.sh
 #               runs in the part wave7, lock/newmp.sh in the parts lock (E4, E5) and wave5 (check 15).
+#   window      tools/emu/window/all.sh (architecture.md 8.4: at every integration check from 3B on, not
+#               in section 12's list for this check): keyboard, autofill, overlay, state and a11y with the
+#               debug and the staging APK on API 28 and 37, a11y-old on API 24.
 #   skeleton    checks/3A.sh skeleton: the debug build on API 24, 28 and 37, the staging build on 24
 #               and 37, each from a fresh install.
 #
@@ -624,6 +627,21 @@ airplane_all() {
 }
 
 extras_clip() { clip_3b "$1"; }
+
+# window/all.sh on the devices of --levels: on API 28 and 37 keyboard, autofill, overlay, state and a11y
+# with the debug and the staging APK, on API 24 a11y-old (architecture.md 8.4: the window checks at every
+# integration check from 3B on).
+window_checks() {
+    local began rc
+    began=$(date +%s)
+    # shellcheck disable=SC2046 # the serials are words
+    "$EMU/window/all.sh" $(serials_of 24 28 37) > "$LOGS/all.log" 2>&1
+    rc=$?
+    grep -E '^(PASS|FAIL) .* \(exit|^SUMMARY window' "$LOGS/all.log" | sed 's/^/   /'
+    grep -E '^KNOWN ' "$LOGS/all.log" | sort | uniq -c | sed 's/^/     /'
+    studio_runs "$began" | sed 's/^/   /'
+    return $rc
+}
 
 # ---- one device: the checks of waves 5 and 7 ------------------------------------------------------------
 # The checks below run on one device (dev_run), each as numbered steps that print PASS or FAIL, with the
@@ -1699,8 +1717,8 @@ if [ "${1:-}" = one ]; then
     exit $?
 fi
 
-ALL_PARTS=(merged connected lock lockstaging wave5 wave7 i18n extras skeleton)
-DEVICE_PARTS=(connected lock lockstaging wave5 wave7 i18n extras skeleton)
+ALL_PARTS=(merged connected lock lockstaging wave5 wave7 i18n extras window skeleton)
+DEVICE_PARTS=(connected lock lockstaging wave5 wave7 i18n extras window skeleton)
 parts=()
 gradle_args=()
 keep=0
@@ -1787,6 +1805,8 @@ for part in "${DEVICE_PARTS[@]}"; do
             pv_step "smoke.sh debug (its copy stage closes the first-copy tip)" -- in_parallel smoke-debug smoke_debug -- 24 28 37
             pv_step "checks/3B.sh clip, debug build (its copy closes the first-copy tip)" -- in_parallel clip-3B extras_clip -- 24 28 37
             pv_step "clipboard/clear.sh, debug build (its first copy closes the first-copy tip)" -- in_parallel clear clear_debug -- 24 28 37 ;;
+        window)
+            pv_step "tools/emu/window/all.sh: debug and staging on API 28 and 37, a11y-old on API 24" -- window_checks ;;
         skeleton)
             pv_step "the test APK is not on the devices" -- no_test_apk
             pv_step "the skeleton steps 1 to 9 of checks/3A.sh, debug build" -- in_parallel skeleton-debug skeleton_debug -- 24 28 37
