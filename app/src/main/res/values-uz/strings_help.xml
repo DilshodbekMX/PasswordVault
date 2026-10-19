@@ -39,7 +39,7 @@
     <string name="help_never_pin">Parolni hech qachon klaviaturangizning vaqtinchalik xotirasiga qadab qoʻymang: qadalgan elementlar hech qachon olib tashlanmaydi.</string>
 
     <string name="help_protection_heading_pin">PIN kodingiz va barmoq izingiz</string>
-    <string name="help_protection_fingerprint">Barmoq izi bu telefon sozlamalarida saqlangan har kim ilovani ocha oladi.</string>
+    <string name="help_protection_fingerprint">Bu telefonga barmoq izi qoʻshilgan har kim ilovani ocha oladi.</string>
     <string name="help_protection_pin_reuse">Telefoningiz qulfini ochadigan PIN kodni yoki bank kartangizning PIN kodini ilova PIN kodi sifatida ishlatmang. Uni biladigan odam ilovani ochishi mumkin.</string>
     <string name="help_protection_rooted">Himoyasi olib tashlangan (“root” qilingan) telefonda kimdir bir necha soat ichida barcha PIN kodlarni sinab chiqishi mumkin. Asosiy parolingiz baribir parollaringizni himoya qiladi, shuning uchun u kuchli boʻlsin va uni hech qachon boshqa joyda ishlatmang.</string>
     <string name="help_protection_new_mp">PIN kodingizni biladigan odam ilova uchun yangi asosiy parol tanlashi mumkin. U faqat telefon yoniq holda 24&#160;soat oʻtgach ishlay boshlaydi va ungacha ilova har safar ochilganda bu haqda sizga aytadi. Agar buni siz qilmagan boʻlsangiz, “Yangi parolni bekor qilish” tugmasini bosing va PIN kodingizni oʻzgartiring.</string>
