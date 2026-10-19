@@ -83,7 +83,7 @@
     <!-- %1$s is the file's name; %2$s says when it was saved ("2 soat oldin", "hozirgina"). -->
     <string name="list_banner_export">Sizda parollaringiz yozilgan himoyalanmagan fayl bor: %1$s (%2$s saqlangan).</string>
     <string name="list_banner_deleted_it_myself">Uni oʻzim oʻchirdim</string>
-    <string name="list_banner_cannot_delete">Bu joy ilovalarga fayllarni oʻchirishga ruxsat bermaydi. Uni “Fayllar” ilovasida oʻzingiz oʻchiring.</string>
+    <string name="list_banner_cannot_delete">Bu joy ilovalarga fayllarni oʻchirishga ruxsat bermaydi. Uni Fayllar ilovasida oʻzingiz oʻchiring.</string>
 
     <string name="list_banner_backup">Eng soʻnggi parollaringiz hali zaxira nusxada yoʻq.</string>
     <string name="list_banner_back_up_now">Hozir zaxiralash</string>

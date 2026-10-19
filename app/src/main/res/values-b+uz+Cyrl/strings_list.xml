@@ -84,7 +84,7 @@
     <!-- %1$s is the file's name; %2$s says when it was saved ("2 соат олдин", "ҳозиргина"). -->
     <string name="list_banner_export">Сизда паролларингиз ёзилган ҳимояланмаган файл бор: %1$s (%2$s сақланган).</string>
     <string name="list_banner_deleted_it_myself">Уни ўзим ўчирдим</string>
-    <string name="list_banner_cannot_delete">Бу жой иловаларга файлларни ўчиришга рухсат бермайди. Уни “Файллар” иловасида ўзингиз ўчиринг.</string>
+    <string name="list_banner_cannot_delete">Бу жой иловаларга файлларни ўчиришга рухсат бермайди. Уни Файллар иловасида ўзингиз ўчиринг.</string>
 
     <string name="list_banner_backup">Энг сўнгги паролларингиз ҳали захира нусхада йўқ.</string>
     <string name="list_banner_back_up_now">Ҳозир захиралаш</string>
