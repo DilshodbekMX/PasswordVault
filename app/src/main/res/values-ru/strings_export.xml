@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Русский: the export (build plan 6.4b; ux.md §5.20; formats.md §2, §6). Glossary (i18n.md §3):
      100 «Экспорт», 104 «незащищённый» («Файл не защищён»), 21 «предыдущие пароли», 12 «Избранное»,
-     6 «Название», 7 «Имя пользователя». File names, CSV, JSON, Excel, Google Password Manager,
-     Google Drive, Telegram, Bitwarden, Proton Pass and KeePassXC are not translated; Google Sheets is
-     «Google Таблицы», its Russian name. A place's name follows «хранилище» in quotes (i18n.md §4.4).
+     6 «Название», 7 «Имя пользователя». File names, CSV, JSON, Excel, Telegram, Bitwarden, Proton
+     Pass and KeePassXC are not translated; Google Password Manager is «Менеджер паролей Google» and
+     Google Drive «Google Диск», as Chrome and Google write them in Russian (build plan §12, R6
+     questions 5 and 6), and Google Sheets is «Google Таблицы», its Russian name. A place's name follows «хранилище» in quotes (i18n.md §4.4).
      Four-digit numbers are written without a space (3000), five-digit ones with a no-break space. -->
 <resources>
 
@@ -17,7 +18,7 @@
     <string name="export_xlsx">Excel (.xlsx)</string>
     <string name="export_xlsx_line">Чтобы смотреть пароли в таблице на компьютере. Файл не защищён.</string>
     <string name="export_csv">CSV</string>
-    <string name="export_csv_line">Чтобы перенести пароли в другое приложение для паролей, например в Google Password Manager. Файл не защищён.</string>
+    <string name="export_csv_line">Чтобы перенести пароли в другое приложение для паролей, например в Менеджер паролей Google. Файл не защищён.</string>
     <string name="export_json">JSON</string>
     <string name="export_json_line">Все данные, включая предыдущие пароли. Его могут импортировать Bitwarden, Proton Pass и KeePassXC. Файл не защищён.</string>
 
@@ -31,8 +32,8 @@
     <string name="export_warning_old_android">На этом телефоне другие приложения с доступом к хранилищу могут читать файлы в папке «Загрузки».</string>
     <string name="export_understand">Я понимаю</string>
 
-    <string name="export_csv_card_title">В Google Password Manager</string>
-    <string name="export_csv_skip_intro">Google Password Manager пропустит:</string>
+    <string name="export_csv_card_title">В Менеджер паролей Google</string>
+    <string name="export_csv_skip_intro">Менеджер паролей Google пропустит:</string>
     <plurals name="export_csv_skip_no_website">
         <item quantity="one">%1$d&#160;аккаунт без сайта</item>
         <item quantity="few">%1$d&#160;аккаунта без сайта</item>

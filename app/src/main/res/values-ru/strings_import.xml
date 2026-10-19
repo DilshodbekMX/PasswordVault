@@ -18,7 +18,7 @@
     <string name="import_sources_intro">Где сейчас хранятся ваши пароли? Выберите файл, в котором они находятся. Ничего не будет добавлено, пока вы не проверите список и не нажмёте «Импортировать».</string>
     <string name="import_source_backup">Файл резервной копии из этого приложения</string>
     <string name="import_source_backup_body">Защищённый файл, созданный кнопкой «Создать резервную копию». Понадобится мастер-пароль, который был у вас, когда вы её создавали.</string>
-    <string name="import_source_google">Google Password Manager или Chrome (CSV)</string>
+    <string name="import_source_google">Менеджер паролей Google или Chrome (CSV)</string>
     <string name="import_source_google_body">Сначала экспортируйте пароли из Chrome. Мы покажем, как это сделать.</string>
     <string name="import_source_csv">Другое приложение для паролей или таблица, сохранённая в формате CSV</string>
     <string name="import_source_csv_body">Bitwarden, KeePassXC, Firefox, Excel и другие.</string>

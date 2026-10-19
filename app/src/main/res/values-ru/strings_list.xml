@@ -42,7 +42,7 @@
     <string name="list_empty_title">Аккаунтов пока нет</string>
     <string name="list_empty_body">Добавьте первый аккаунт и его пароль или перенесите пароли из Chrome.</string>
     <string name="list_empty_add">Добавить аккаунт</string>
-    <string name="list_empty_import">Импорт из Google Password Manager</string>
+    <string name="list_empty_import">Импорт из Менеджера паролей Google</string>
 
     <string name="list_search_retried">Показаны результаты для «%1$s»</string>
     <string name="list_no_results">Нет аккаунтов по запросу «%1$s».</string>
