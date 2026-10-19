@@ -35,7 +35,7 @@
     <!-- After a wrong master password (lock.md §13.3). -->
     <string name="master_wrong">That’s not the right master password. Check the keyboard language (Latin or Cyrillic) and capital letters.</string>
     <!-- After several wrong master passwords the field waits 30 seconds (lock.md §6.8). -->
-    <string name="master_wait">Wait 30 seconds, then try again. Take your time and look at your paper.</string>
+    <string name="master_wait">Wait 30&#160;seconds, then try again. Take your time and look at your paper.</string>
     <!-- The countdown of that wait, once a second. -->
     <plurals name="master_wait_seconds">
         <item quantity="one">Try again in %d&#160;second.</item>
@@ -105,12 +105,12 @@
     <!-- The heading of the explanation (lock.md F11 step 2), as on the lock screen's sheet. -->
     <string name="master_explain_heading">Forgot your master password?</string>
     <!-- Step 1, the explanation, when the app PIN still opens the app (lock.md F11 step 2). -->
-    <string name="master_explain_pin">You can choose a new master password because your PIN still opens the app on this phone. For your safety it starts working after 24 hours with the phone switched on. Until then nothing changes. Backups you made before will still need your old master password.</string>
+    <string name="master_explain_pin">You can choose a new master password because your PIN still opens the app on this phone. For your safety it starts working after 24&#160;hours with the phone switched on. Until then nothing changes. Backups you made before will still need your old master password.</string>
     <!-- The same when there is no PIN and fingerprint opens the app. -->
-    <string name="master_explain_fingerprint">You can choose a new master password because your fingerprint still opens the app on this phone. For your safety it starts working after 24 hours with the phone switched on. Until then nothing changes. Backups you made before will still need your old master password.</string>
+    <string name="master_explain_fingerprint">You can choose a new master password because your fingerprint still opens the app on this phone. For your safety it starts working after 24&#160;hours with the phone switched on. Until then nothing changes. Backups you made before will still need your old master password.</string>
     <!-- Added to the explanation while another new master password is still waiting (lock.md F11
          step 5: a new request replaces it, and its wait starts again). -->
-    <string name="master_explain_replaces">A new master password is already waiting to start working. If you choose another one, its 24 hours start again.</string>
+    <string name="master_explain_replaces">A new master password is already waiting to start working. If you choose another one, its 24&#160;hours start again.</string>
     <!-- The button under the explanation. -->
     <string name="master_continue">Continue</string>
     <!-- Step 2 (lock.md F11 step 3): title above the PIN pad. The PIN typed now proves that the
@@ -160,7 +160,7 @@
     <string name="master_wait_heading">Your new master password is chosen</string>
     <!-- Step 4, the wait (lock.md F11 step 6). No date or time is promised: only hours with the phone
          switched on count. -->
-    <string name="master_wait_text">Your new master password starts working after about 24 hours with the phone switched on. Keep the paper. Until then, open the app with your PIN or fingerprint as usual. The countdown stops while the phone is switched off. To keep it moving, open this app in the morning and again in the evening.</string>
+    <string name="master_wait_text">Your new master password starts working after about 24&#160;hours with the phone switched on. Keep the paper. Until then, open the app with your PIN or fingerprint as usual. The countdown stops while the phone is switched off. To keep it moving, open this app in the morning and again in the evening.</string>
 
     <!-- ===== Finish now (lock.md F11 steps 13 to 19; build-plan.md §12, decision 14) ===== -->
 

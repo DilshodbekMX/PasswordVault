@@ -44,7 +44,7 @@
     <!-- Title of the step that types the chosen PIN once more. Short: one line. -->
     <string name="pin_confirm_title">Enter the PIN again</string>
     <!-- Under the title of the same step. -->
-    <string name="pin_confirm_body">Type the same 6 digits once more.</string>
+    <string name="pin_confirm_body">Type the same 6&#160;digits once more.</string>
     <!-- Shown under the dots when the PIN typed again is not the one chosen. After the third time
          the user starts again with a new first entry. -->
     <string name="pin_mismatch">The PINs don’t match. Try again.</string>
@@ -76,8 +76,8 @@
     <!-- The current PIN was wrong; the try was counted. %d is the number of tries left before the
          PIN turns off (1 to 4). -->
     <plurals name="pin_wrong_left">
-        <item quantity="one">Wrong PIN. %d try left.</item>
-        <item quantity="other">Wrong PIN. %d tries left.</item>
+        <item quantity="one">Wrong PIN. %d&#160;try left.</item>
+        <item quantity="other">Wrong PIN. %d&#160;tries left.</item>
     </plurals>
     <!-- The same wrong PIN was typed twice in a row: the second time is not counted (lock.md §6.6). -->
     <string name="pin_same_wrong_again">You already tried that PIN. It was not counted again.</string>
@@ -106,11 +106,11 @@
     <!-- The master password typed was wrong (lock.md §13.3). -->
     <string name="pin_mp_wrong">That’s not the right master password. Check the keyboard language (Latin or Cyrillic) and capital letters.</string>
     <!-- After several wrong master passwords the field waits (lock.md §6.8). -->
-    <string name="pin_mp_wait">Wait 30 seconds, then try again. Take your time and look at your paper.</string>
+    <string name="pin_mp_wait">Wait 30&#160;seconds, then try again. Take your time and look at your paper.</string>
     <!-- The countdown of that wait. %d is whole seconds left. -->
     <plurals name="pin_mp_countdown">
-        <item quantity="one">Try again in %d second</item>
-        <item quantity="other">Try again in %d seconds</item>
+        <item quantity="one">Try again in %d&#160;second</item>
+        <item quantity="other">Try again in %d&#160;seconds</item>
     </plurals>
     <!-- The phone had too little free memory to check the master password; nothing was counted. -->
     <string name="pin_mp_no_memory">Your phone doesn’t have enough free memory to check your master password. Close other apps or restart the phone, then try again.</string>

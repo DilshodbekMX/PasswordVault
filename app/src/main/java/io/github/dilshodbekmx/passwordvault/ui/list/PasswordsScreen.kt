@@ -42,6 +42,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -57,7 +58,9 @@ import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.platform.LocalResources
@@ -227,6 +230,8 @@ fun PasswordsScreen(viewModel: PasswordsViewModel, nav: Navigator) {
     }
 
     val title = stringResource(R.string.list_title)
+    // The "Add" button's height as drawn (it grows with the font): the list keeps room for it.
+    var addHeight by remember { mutableIntStateOf(0) }
     Scaffold(
         modifier = Modifier.semantics { paneTitle = title },
         topBar = {
@@ -255,7 +260,7 @@ fun PasswordsScreen(viewModel: PasswordsViewModel, nav: Navigator) {
                     nav.go(Route.Edit())
                 },
                 expanded = addExpanded,
-                modifier = Modifier.testTag(ListTags.ADD),
+                modifier = Modifier.testTag(ListTags.ADD).onSizeChanged { addHeight = it.height },
                 shape = if (add.fullyRounded) CircleShape else FloatingActionButtonDefaults.extendedFabShape,
                 containerColor = add.container(MaterialTheme.colorScheme),
                 contentColor = add.content(MaterialTheme.colorScheme),
@@ -285,6 +290,7 @@ fun PasswordsScreen(viewModel: PasswordsViewModel, nav: Navigator) {
                 },
             )
             ListContent(
+                addHeight = addHeight,
                 state = state,
                 listState = listState,
                 copiedKey = copiedKey,
@@ -321,6 +327,7 @@ fun PasswordsScreen(viewModel: PasswordsViewModel, nav: Navigator) {
 /** The list, the search results, or the empty and loading states, with the banners above. */
 @Composable
 private fun ListContent(
+    addHeight: Int,
     state: PasswordsUiState,
     listState: LazyListState,
     copiedKey: String?,
@@ -348,8 +355,9 @@ private fun ListContent(
     LazyColumn(
         state = listState,
         modifier = modifier.fillMaxSize().testTag(ListTags.LIST),
-        // Room for the "Add" button, so it never covers the last row's copy button (ux.md §5.11, §8).
-        contentPadding = PaddingValues(bottom = LIST_BOTTOM_PADDING),
+        // Room for the "Add" button, so it never covers the last row's copy button (ux.md §5.11, §8):
+        // its height as drawn, which grows with the font, its margin and a little more.
+        contentPadding = PaddingValues(bottom = maxOf(LIST_BOTTOM_PADDING, with(LocalDensity.current) { addHeight.toDp() } + ADD_MARGIN + ADD_CLEARANCE)),
     ) {
         // While searching only the results show; the banners wait (ux.md §5.11). The banners are one
         // item with a key of its own that is always first, even with no banner: so a banner that
@@ -585,6 +593,10 @@ private val CARD_GAP = 12.dp
 
 /** The "Add" button's height (56 dp) and its margin (16 dp), and 24 dp more: the list's bottom padding (ux.md §5.11). */
 private val LIST_BOTTOM_PADDING = 96.dp
+
+/** The "Add" button's margin above the bottom of the screen's content, and the room kept above it. */
+private val ADD_MARGIN = 16.dp
+private val ADD_CLEARANCE = 24.dp
 
 /** The keys of the list's rows (`LazyColumn` keys): an account is listed among the favourites and A to Z, so the key says where. */
 internal const val BANNERS_KEY = "banners"

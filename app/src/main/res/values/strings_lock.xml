@@ -127,7 +127,7 @@
          example "Oct 7". -->
     <string name="lock_mp_older_set_not_opened">Couldn’t open your passwords from %1$s. Nothing was changed.</string>
     <!-- After several wrong master passwords the field waits 30 seconds (lock.md §6.8). -->
-    <string name="lock_mp_wait">Wait 30 seconds, then try again. Take your time and look at your paper.</string>
+    <string name="lock_mp_wait">Wait 30&#160;seconds, then try again. Take your time and look at your paper.</string>
     <!-- The countdown of that wait, once a second (i18n.md glossary 59, used only here). -->
     <plurals name="lock_mp_wait_seconds">
         <item quantity="one">Try again in %d&#160;second</item>

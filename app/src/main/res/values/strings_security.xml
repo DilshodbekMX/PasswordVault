@@ -42,8 +42,8 @@
     <!-- Card 1 when several accounts have the master password (always 2 or more); %1$s is how many,
          %2$s the names of the first ones, for example “Gmail, Facebook…”. The plural follows %1$s. -->
     <plurals name="security_master_many">
-        <item quantity="one">Your master password is also the password for %1$s account (%2$s). Anyone who learns it from one website can open your backups. Choose a new master password now, make a new backup, and delete your old backup files.</item>
-        <item quantity="other">Your master password is also the password for %1$s accounts (%2$s). Anyone who learns it from one website can open your backups. Choose a new master password now, make a new backup, and delete your old backup files.</item>
+        <item quantity="one">Your master password is also the password for %1$s&#160;account (%2$s). Anyone who learns it from one website can open your backups. Choose a new master password now, make a new backup, and delete your old backup files.</item>
+        <item quantity="other">Your master password is also the password for %1$s&#160;accounts (%2$s). Anyone who learns it from one website can open your backups. Choose a new master password now, make a new backup, and delete your old backup files.</item>
     </plurals>
     <!-- Card 1's button: opens Settings › Change master password. -->
     <string name="security_master_choose">Choose a new master password</string>
@@ -59,21 +59,21 @@
     <!-- Card 2: how many accounts share the password of the biggest group (always 2 or more), for
          example “17 accounts use the same password.” -->
     <plurals name="security_reused_count">
-        <item quantity="one">%1$s account uses the same password.</item>
-        <item quantity="other">%1$s accounts use the same password.</item>
+        <item quantity="one">%1$s&#160;account uses the same password.</item>
+        <item quantity="other">%1$s&#160;accounts use the same password.</item>
     </plurals>
     <!-- Card 2 and the list behind it: how far the user is with that group; %1$s is how many
          accounts got their own password, %2$s how many still share it, for example “3 changed,
          14 to go”. The plural follows %2$s. -->
     <plurals name="security_reused_progress">
-        <item quantity="one">%1$s changed, %2$s to go</item>
-        <item quantity="other">%1$s changed, %2$s to go</item>
+        <item quantity="one">%1$s&#160;changed, %2$s&#160;to go</item>
+        <item quantity="other">%1$s&#160;changed, %2$s&#160;to go</item>
     </plurals>
     <!-- Card 2, one line for each other group of accounts that share a password between them
          (always 2 or more); a tap opens that group. -->
     <plurals name="security_reused_other">
-        <item quantity="one">%1$s account shares another password</item>
-        <item quantity="other">%1$s accounts share another password</item>
+        <item quantity="one">%1$s&#160;account shares another password</item>
+        <item quantity="other">%1$s&#160;accounts share another password</item>
     </plurals>
     <!-- The button of cards 2, 3 and 5: opens the list of the accounts the card counts. -->
     <string name="security_show_accounts">Show accounts</string>
@@ -82,8 +82,8 @@
     <string name="security_weak_title">Easy to guess</string>
     <!-- Card 3: how many, for example “4 passwords are easy to guess.” -->
     <plurals name="security_weak_count">
-        <item quantity="one">%1$s password is easy to guess.</item>
-        <item quantity="other">%1$s passwords are easy to guess.</item>
+        <item quantity="one">%1$s&#160;password is easy to guess.</item>
+        <item quantity="other">%1$s&#160;passwords are easy to guess.</item>
     </plurals>
 
     <!-- Card 4: password changes the user started and did not finish (ux.md §5.16, §5.17). Its
@@ -92,8 +92,8 @@
     <!-- Card 4: how many, and the names of the first accounts in brackets, for example “1 password
          change is waiting for your answer (Gmail).” The plural follows %1$s. -->
     <plurals name="security_pending_count">
-        <item quantity="one">%1$s password change is waiting for your answer (%2$s).</item>
-        <item quantity="other">%1$s password changes are waiting for your answer (%2$s).</item>
+        <item quantity="one">%1$s&#160;password change is waiting for your answer (%2$s).</item>
+        <item quantity="other">%1$s&#160;password changes are waiting for your answer (%2$s).</item>
     </plurals>
     <!-- Card 4's button when one change waits: opens that account. -->
     <string name="security_show_account">Show account</string>
@@ -102,8 +102,8 @@
     <string name="security_left_out_title">Left out</string>
     <!-- Card 5: how many, for example “2 accounts are left out of the check.” -->
     <plurals name="security_left_out_count">
-        <item quantity="one">%1$s account is left out of the check.</item>
-        <item quantity="other">%1$s accounts are left out of the check.</item>
+        <item quantity="one">%1$s&#160;account is left out of the check.</item>
+        <item quantity="other">%1$s&#160;accounts are left out of the check.</item>
     </plurals>
 
     <!-- The state of the Security tab of the bottom bar while its dot shows, read by TalkBack after
@@ -120,23 +120,23 @@
     <!-- The heading of a group of accounts that share one password (always 2 or more). The password
          itself is never shown. -->
     <plurals name="security_group_reused">
-        <item quantity="one">%1$s account shares one password</item>
-        <item quantity="other">These %1$s accounts share one password</item>
+        <item quantity="one">%1$s&#160;account shares one password</item>
+        <item quantity="other">These %1$s&#160;accounts share one password</item>
     </plurals>
     <!-- The heading of the accounts whose password is easy to guess. -->
     <plurals name="security_group_weak">
-        <item quantity="one">%1$s password is easy to guess</item>
-        <item quantity="other">These %1$s passwords are easy to guess</item>
+        <item quantity="one">%1$s&#160;password is easy to guess</item>
+        <item quantity="other">These %1$s&#160;passwords are easy to guess</item>
     </plurals>
     <!-- The heading of the accounts whose password change is not finished. -->
     <plurals name="security_group_pending">
-        <item quantity="one">%1$s password change is waiting for your answer</item>
-        <item quantity="other">These %1$s password changes are waiting for your answer</item>
+        <item quantity="one">%1$s&#160;password change is waiting for your answer</item>
+        <item quantity="other">These %1$s&#160;password changes are waiting for your answer</item>
     </plurals>
     <!-- The heading of the accounts left out of the check. -->
     <plurals name="security_group_left_out">
-        <item quantity="one">%1$s account is left out of the check</item>
-        <item quantity="other">These %1$s accounts are left out of the check</item>
+        <item quantity="one">%1$s&#160;account is left out of the check</item>
+        <item quantity="other">These %1$s&#160;accounts are left out of the check</item>
     </plurals>
 
     <!-- Shown instead of the accounts when a group no longer exists: every account of it has its own

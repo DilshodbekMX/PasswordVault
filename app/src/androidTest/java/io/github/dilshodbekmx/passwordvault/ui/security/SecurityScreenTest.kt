@@ -107,26 +107,26 @@ class SecurityScreenTest {
 
         scrollTo(SecurityTags.card(SecurityTags.MASTER))
         compose.onNodeWithText("Master password used elsewhere").assertIsDisplayed()
-        compose.onNodeWithText("Your master password is also the password for 2 accounts (Gmail, Facebook).", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("Your master password is also the password for 2\u00A0accounts (Gmail, Facebook).", substring = true).assertIsDisplayed()
         compose.onNodeWithTag(SecurityTags.cardButton(SecurityTags.MASTER)).performClick()
 
         scrollTo(SecurityTags.card(SecurityTags.REUSED))
-        compose.onNodeWithText("7 accounts use the same password.").assertIsDisplayed()
-        compose.onNodeWithText("3 changed, 7 to go").assertIsDisplayed()
+        compose.onNodeWithText("7\u00A0accounts use the same password.").assertIsDisplayed()
+        compose.onNodeWithText("3\u00A0changed, 7\u00A0to go").assertIsDisplayed()
         compose.onNodeWithTag(SecurityTags.cardButton(SecurityTags.REUSED)).performClick()
         scrollTo(SecurityTags.otherGroup(report.reused[1].id))
-        compose.onNodeWithText("3 accounts share another password").assertIsDisplayed().performClick()
+        compose.onNodeWithText("3\u00A0accounts share another password").assertIsDisplayed().performClick()
 
         scrollTo(SecurityTags.card(SecurityTags.WEAK))
         compose.onNodeWithText("Easy to guess").assertIsDisplayed()
         compose.onNodeWithTag(SecurityTags.cardButton(SecurityTags.WEAK)).performClick()
 
         scrollTo(SecurityTags.card(SecurityTags.PENDING))
-        compose.onNodeWithText("1 password change is waiting for your answer (Kapitalbank).").assertIsDisplayed()
+        compose.onNodeWithText("1\u00A0password change is waiting for your answer (Kapitalbank).").assertIsDisplayed()
         compose.onNodeWithTag(SecurityTags.cardButton(SecurityTags.PENDING)).performClick()
 
         scrollTo(SecurityTags.card(SecurityTags.LEFT_OUT))
-        compose.onNodeWithText("2 accounts are left out of the check.").assertIsDisplayed()
+        compose.onNodeWithText("2\u00A0accounts are left out of the check.").assertIsDisplayed()
         compose.onNodeWithTag(SecurityTags.cardButton(SecurityTags.LEFT_OUT)).performClick()
 
         compose.waitForIdle()
@@ -249,7 +249,7 @@ class SecurityScreenTest {
         clear.awaitReport()
         showTab(clear)
         compose.onNodeWithText("All your passwords are different and hard to guess. Well done.").assertIsDisplayed()
-        compose.onNodeWithText("1 account is left out of the check.").assertIsDisplayed()
+        compose.onNodeWithText("1\u00A0account is left out of the check.").assertIsDisplayed()
     }
 
     @Test
@@ -267,8 +267,8 @@ class SecurityScreenTest {
         val rig = rigFor(SecurityAccounts.everything())
         val report = rig.awaitReport()
         showList(rig, report.reused[0].id)
-        compose.onNodeWithText("These 7 accounts share one password").assertIsDisplayed()
-        compose.onNodeWithText("3 changed, 7 to go").assertIsDisplayed()
+        compose.onNodeWithText("These 7\u00A0accounts share one password").assertIsDisplayed()
+        compose.onNodeWithText("3\u00A0changed, 7\u00A0to go").assertIsDisplayed()
         // Gmail (email and a favourite), the other two email accounts A to Z, then the rest A to Z.
         val tops = listOf(1, 6, 3, 2, 4, 5, 7).map { n ->
             compose.onNodeWithTag(SecurityTags.GROUP_LIST).performScrollToNode(hasTestTag(SecurityTags.row(id(n))))
@@ -305,7 +305,7 @@ class SecurityScreenTest {
         val rig = rigFor(SecurityAccounts.everything())
         rig.awaitReport()
         showList(rig, GroupKind.LEFT_OUT_ID)
-        compose.onNodeWithText("These 2 accounts are left out of the check").assertIsDisplayed()
+        compose.onNodeWithText("These 2\u00A0accounts are left out of the check").assertIsDisplayed()
         compose.onNodeWithContentDescription("Check Card PIN again").performClick()
         waitUntil("Card PIN checked again") { !rig.repository.stored.entries.first { it.id == id(17) }.checkIgnored }
         compose.onNodeWithText("Card PIN is checked again.").assertIsDisplayed()

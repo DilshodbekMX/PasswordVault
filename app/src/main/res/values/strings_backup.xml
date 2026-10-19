@@ -35,7 +35,7 @@
     <!-- After a wrong master password (lock.md §13.3). -->
     <string name="backup_wrong">That\'s not the right master password. Check the keyboard language (Latin or Cyrillic) and capital letters.</string>
     <!-- After several wrong master passwords the field waits 30 seconds (lock.md §6.8). -->
-    <string name="backup_wait">Wait 30 seconds, then try again. Take your time and look at your paper.</string>
+    <string name="backup_wait">Wait 30&#160;seconds, then try again. Take your time and look at your paper.</string>
     <!-- The countdown of that wait, once a second. -->
     <plurals name="backup_wait_seconds">
         <item quantity="one">Try again in %d&#160;second</item>
@@ -68,8 +68,8 @@
     <!-- Step 5: the result. %1$d is the number of accounts in the backup; %2$s is the file's name as
          the place shows it, for example "PasswordVault-backup-2026-10-06.pvault". -->
     <plurals name="backup_saved">
-        <item quantity="one">Backup saved: %2$s (%1$d account).</item>
-        <item quantity="other">Backup saved: %2$s (%1$d accounts).</item>
+        <item quantity="one">Backup saved: %2$s (%1$d&#160;account).</item>
+        <item quantity="other">Backup saved: %2$s (%1$d&#160;accounts).</item>
     </plurals>
     <!-- Under the result when the place is the phone's own storage (Downloads and the like). -->
     <string name="backup_place_phone">This copy is on this phone. If the phone is lost, this copy is lost too. Keep a copy somewhere else.</string>
@@ -155,8 +155,8 @@
     <!-- Step 4: what the backup holds. %1$d is the number of accounts, %2$s the date the backup was
          made, for example "Oct 3, 2026". -->
     <plurals name="backup_restore_summary">
-        <item quantity="one">%1$d account, backup made on %2$s.</item>
-        <item quantity="other">%1$d accounts, backup made on %2$s.</item>
+        <item quantity="one">%1$d&#160;account, backup made on %2$s.</item>
+        <item quantity="other">%1$d&#160;accounts, backup made on %2$s.</item>
     </plurals>
     <!-- Step 4's button on a phone without passwords: the backup becomes the app's passwords. -->
     <string name="backup_restore_restore">Restore</string>

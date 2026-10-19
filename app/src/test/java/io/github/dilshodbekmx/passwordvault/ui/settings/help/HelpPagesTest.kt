@@ -101,7 +101,7 @@ class HelpPagesTest {
         // lock.md §2.3: a PIN known from elsewhere; a rooted phone; a replacement nobody notices; Clear storage.
         assertTrue(text.contains("Don’t use your phone’s unlock PIN or your bank card PIN as the app PIN."))
         assertTrue(text.contains("On a rooted phone, someone can try every PIN in a few hours. Your master password still protects your passwords, so make it strong and never use it anywhere else."))
-        assertTrue(text.contains("It starts working only after 24 hours with the phone switched on"))
+        assertTrue(text.contains("It starts working only after 24\u00A0hours with the phone switched on"))
         assertTrue(text.contains("Never use “Clear storage” to fix a problem with your PIN: it deletes your passwords, and the ones from before a replaced master password with them."))
         assertTrue(text.contains("Only a backup kept outside the phone survives that."))
         // What the app cannot protect from (ux.md §7.6), as build plan 3.12 measured it (lock.md §13.5):
@@ -146,7 +146,7 @@ class HelpPagesTest {
     fun forgotMasterPassword_saysThe24HoursAndThePasswordsFromBefore() {
         val text = page(HelpPage.FORGOT_MASTER_PASSWORD)
         // lock.md §16.2 item 12: the 24 hours and how the countdown moves.
-        assertTrue(text.contains("The new master password starts working after 24 hours with the phone switched on. The countdown stops while the phone is switched off, so open the app in the morning and again in the evening."))
+        assertTrue(text.contains("The new master password starts working after 24\u00A0hours with the phone switched on. The countdown stops while the phone is switched off, so open the app in the morning and again in the evening."))
         // lock.md F16b.
         assertTrue(text.contains("If someone else replaced your master password, your own still opens your passwords as they were: “Forgot master password?”, then “Open my passwords from before …”."))
         assertTrue(text.contains("You can also start with an empty app. Your old passwords stay on the phone, locked"))

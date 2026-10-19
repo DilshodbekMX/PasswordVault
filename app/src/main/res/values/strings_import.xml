@@ -76,7 +76,7 @@
     <!-- The file is too large. %1$s is the limit in megabytes, formatted for the language (10). -->
     <string name="import_problem_too_big">This file is larger than %1$s MB, the most the app can import at once.</string>
     <!-- The file has too many rows. %1$s is the limit, formatted for the language (10,000). -->
-    <string name="import_problem_too_many">This file has more than %1$s accounts, the most the app can import at once. Export fewer at a time.</string>
+    <string name="import_problem_too_many">This file has more than %1$s&#160;accounts, the most the app can import at once. Export fewer at a time.</string>
     <!-- The file is not a CSV or JSON file the app can read. -->
     <string name="import_problem_unreadable">This file can\'t be read. Choose a CSV or JSON file that your password app exported.</string>
     <!-- A JSON file that is damaged or not JSON. -->
@@ -177,8 +177,8 @@
 
     <!-- "Found 48 accounts." -->
     <plurals name="import_found">
-        <item quantity="one">Found %1$d account.</item>
-        <item quantity="other">Found %1$d accounts.</item>
+        <item quantity="one">Found %1$d&#160;account.</item>
+        <item quantity="other">Found %1$d&#160;accounts.</item>
     </plurals>
     <!-- Accounts of the file that are here already and will not be imported again. -->
     <plurals name="import_already_here">
@@ -202,8 +202,8 @@
     </plurals>
     <!-- Notes shortened to the limit. %1$d is how many notes, %2$s the limit, formatted (10,000). -->
     <plurals name="import_notes_cut">
-        <item quantity="one">%1$d note was longer than %2$s characters and was shortened.</item>
-        <item quantity="other">%1$d notes were longer than %2$s characters and were shortened.</item>
+        <item quantity="one">%1$d note was longer than %2$s&#160;characters and was shortened.</item>
+        <item quantity="other">%1$d notes were longer than %2$s&#160;characters and were shortened.</item>
     </plurals>
     <!-- Invisible characters removed from names, usernames, websites and notes. -->
     <plurals name="import_removed_controls">
@@ -237,8 +237,8 @@
     </plurals>
     <!-- One such row. %1$d is its line, %2$d its number of values, %3$d the header's. The plural follows %2$d. -->
     <plurals name="import_wrong_row">
-        <item quantity="one">Line %1$d has %2$d value; the header has %3$d.</item>
-        <item quantity="other">Line %1$d has %2$d values; the header has %3$d.</item>
+        <item quantity="one">Line %1$d has %2$d&#160;value; the header has %3$d.</item>
+        <item quantity="other">Line %1$d has %2$d&#160;values; the header has %3$d.</item>
     </plurals>
     <!-- The likely reason, under those rows. -->
     <string name="import_wrong_rows_hint">Is there a comma inside a password? Put that value in quotes.</string>
@@ -252,8 +252,8 @@
 
     <!-- Rows or items not imported. -->
     <plurals name="import_left_out_long">
-        <item quantity="one">%1$d row was skipped: its password is longer than %2$s characters.</item>
-        <item quantity="other">%1$d rows were skipped: their passwords are longer than %2$s characters.</item>
+        <item quantity="one">%1$d row was skipped: its password is longer than %2$s&#160;characters.</item>
+        <item quantity="other">%1$d rows were skipped: their passwords are longer than %2$s&#160;characters.</item>
     </plurals>
     <!-- JSON: elements of the file's list that are not accounts. -->
     <plurals name="import_left_out_not_item">
@@ -321,8 +321,8 @@
     </plurals>
     <!-- Values without a name. -->
     <plurals name="import_change_nameless">
-        <item quantity="one">%1$d value without a name moved to notes</item>
-        <item quantity="other">%1$d values without a name moved to notes</item>
+        <item quantity="one">%1$d&#160;value without a name moved to notes</item>
+        <item quantity="other">%1$d&#160;values without a name moved to notes</item>
     </plurals>
     <!-- Field names that were too long. -->
     <plurals name="import_change_field_names">
@@ -347,8 +347,8 @@
 
     <!-- Rows kept together as one account (ux.md §5.21, "Same login on related websites"). %1$d rows, %2$d accounts. The plural follows %2$d. -->
     <plurals name="import_related">
-        <item quantity="one">%1$d rows were the same login on related websites and were kept together as %2$d account.</item>
-        <item quantity="other">%1$d rows were the same login on related websites and were kept together as %2$d accounts.</item>
+        <item quantity="one">%1$d rows were the same login on related websites and were kept together as %2$d&#160;account.</item>
+        <item quantity="other">%1$d rows were the same login on related websites and were kept together as %2$d&#160;accounts.</item>
     </plurals>
     <!-- Text button: imports those rows as separate accounts. -->
     <string name="import_keep_separate">Keep them separate</string>
@@ -377,8 +377,8 @@
     <string name="import_too_large">Your passwords no longer fit in one file. Delete accounts you don\'t need, or shorten very long notes.</string>
     <!-- The main button of the preview: "Import 45 accounts". -->
     <plurals name="import_button">
-        <item quantity="one">Import %1$d account</item>
-        <item quantity="other">Import %1$d accounts</item>
+        <item quantity="one">Import %1$d&#160;account</item>
+        <item quantity="other">Import %1$d&#160;accounts</item>
     </plurals>
     <!-- Shown instead of the button when the file has nothing to import. -->
     <string name="import_nothing_to_add">There is nothing new to import from this file.</string>
@@ -391,8 +391,8 @@
 
     <!-- "45 accounts imported." -->
     <plurals name="import_done">
-        <item quantity="one">%1$d account imported.</item>
-        <item quantity="other">%1$d accounts imported.</item>
+        <item quantity="one">%1$d&#160;account imported.</item>
+        <item quantity="other">%1$d&#160;accounts imported.</item>
     </plurals>
     <!-- When every account of the file was here already. %1$d is how many accounts the file has. -->
     <plurals name="import_all_here">
@@ -444,8 +444,8 @@
     <string name="import_backup_no_memory">Your phone does not have enough free memory to open the file. Close other apps and try again.</string>
     <!-- The opened backup. %1$d is how many accounts it has, %2$s the date it was made, formatted. -->
     <plurals name="import_backup_summary">
-        <item quantity="one">%1$d account, backup made on %2$s.</item>
-        <item quantity="other">%1$d accounts, backup made on %2$s.</item>
+        <item quantity="one">%1$d&#160;account, backup made on %2$s.</item>
+        <item quantity="other">%1$d&#160;accounts, backup made on %2$s.</item>
     </plurals>
     <!-- Under the summary: what adding does. -->
     <string name="import_backup_rules">Accounts that are already here are skipped. Nothing here is changed or replaced.</string>
@@ -455,8 +455,8 @@
     <string name="import_backup_adding">Adding…</string>
     <!-- After adding. -->
     <plurals name="import_backup_added">
-        <item quantity="one">%1$d account added.</item>
-        <item quantity="other">%1$d accounts added.</item>
+        <item quantity="one">%1$d&#160;account added.</item>
+        <item quantity="other">%1$d&#160;accounts added.</item>
     </plurals>
     <!-- After adding: accounts of the backup that were already here. -->
     <plurals name="import_backup_skipped">
