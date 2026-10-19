@@ -10,7 +10,9 @@ import java.io.FileInputStream
 /**
  * One run of the layout walk (build plan 6.2, `tools/emu/layout/walk.sh`), started by the script with
  * the instrumentation arguments `-e pvLayout <run name>` and `-e pvLayoutLocale <tag>`, and
- * `-e pvLayoutStyle <style>` (a `StyleChoice` name) for a style other than the default. Without
+ * `-e pvLayoutStyle <style>` (a `StyleChoice` name) for a style other than the default, and
+ * `-e pvLayoutStretchShots true` for a picture of every further stretch of a screen that scrolls (the
+ * pictures for people of the device check of waves 6 and 8A: every text of a long screen). Without
  * `pvLayout` the walk's tests return at once, so that a plain connected run (`tools/emu/adb.sh
  * --connected`) does not walk the app at the size of the phone it runs on.
  *
@@ -24,7 +26,13 @@ import java.io.FileInputStream
  * A picture of each screen goes to `/data/local/tmp/pv-layout/<run>/<name>.png` (the shell's
  * `screencap`, which the debug build allows), from where the script takes it.
  */
-class LayoutRun private constructor(val name: String, val localeTag: String, val style: String?) {
+class LayoutRun private constructor(
+    val name: String,
+    val localeTag: String,
+    val style: String?,
+    /** Whether [Walker.look] keeps a picture after each stretch it scrolls, as `<screen>--2.png` and on. */
+    val stretchShots: Boolean = false,
+) {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val report = File(instrumentation.targetContext.cacheDir, "pv-layout/$name.txt").apply {
         parentFile?.mkdirs()
@@ -100,8 +108,9 @@ class LayoutRun private constructor(val name: String, val localeTag: String, val
             val name = args.getString("pvLayout") ?: return null
             val tag = args.getString("pvLayoutLocale") ?: "en-XA"
             val style = args.getString("pvLayoutStyle")
+            val stretchShots = args.getString("pvLayoutStretchShots") == "true"
             require(Regex("[A-Za-z0-9._-]+").matches(name)) { "pvLayout: a run name of letters, digits, . _ -" }
-            return LayoutRun(name, tag, style)
+            return LayoutRun(name, tag, style, stretchShots)
         }
     }
 }

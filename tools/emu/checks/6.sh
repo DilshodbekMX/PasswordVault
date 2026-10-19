@@ -287,15 +287,28 @@ EOF
 }
 
 # touch_mode SERIAL...: Home and a tap on an empty part of the launcher (the middle of the screen): out
-# of keyboard mode, as a phone in the hand is; prints each device's mode as dumpsys reads it.
+# of keyboard mode, as a phone in the hand is; prints each device's mode as dumpsys reads it. Android 14
+# and later leave the display in keyboard mode after the shell's tap (a tap changes it only for the owner
+# of the focused window; the device checks of R4 and 6A saw a freshly booted API 37 so): there an
+# instrumentation puts it in touch mode, FieldKeyboardTest's one test, which calls
+# Instrumentation.setInTouchMode(true) first (adb.sh --connected removes both APKs again before its run).
 touch_mode() {
-    local s h
+    local s h mode
     for s in "$@"; do
         h=$(PV_SERIAL=$s pv_shell wm size 2> /dev/null | tr -d '\r' | sed -n 's/^Physical size: *[0-9]*x\([0-9]*\)$/\1/p' | head -n 1)
         PV_SERIAL=$s pv_shell input keyevent KEYCODE_HOME > /dev/null 2>&1
         sleep 1
         PV_SERIAL=$s pv_shell input tap 540 $((${h:-1920} * 45 / 100)) > /dev/null 2>&1
         sleep 1
+        mode=$(PV_SERIAL=$s pv_shell dumpsys window 2> /dev/null | tr -d '\r' | grep -m 1 -o 'mInTouchMode=[a-z]*')
+        if [ "$mode" = mInTouchMode=false ] && [ -f "$DEBUG_APK" ] && [ -f "$TEST_APK" ]; then
+            (
+                pv_use "$s"
+                pva_install "$DEBUG_APK" > /dev/null 2>&1 && pv_adb install -r -t "$TEST_APK" > /dev/null 2>&1 \
+                    && pv_adb shell am instrument -w -e class "$PV_PACKAGE.ui.common.FieldKeyboardTest" "$PV_PACKAGE.test/androidx.test.runner.AndroidJUnitRunner" > /dev/null 2>&1
+            )
+            echo "   $s: keyboard mode after the shell's tap; FieldKeyboardTest run to set touch mode"
+        fi
         echo "   $s: $(PV_SERIAL=$s pv_shell dumpsys window 2> /dev/null | tr -d '\r' | grep -m 1 -o 'mInTouchMode=[a-z]*')$(PV_SERIAL=$s pv_shell dumpsys input 2> /dev/null | tr -d '\r' | grep -m 1 -o 'Display: 0 TouchMode: [0-9]*' | sed 's/^/, input: /')"
     done
 }

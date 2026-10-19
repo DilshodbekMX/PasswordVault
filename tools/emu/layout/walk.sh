@@ -5,7 +5,7 @@
 # English, no control under 48 dp.
 #
 #   tools/emu/layout/walk.sh SERIAL [--apk FILE] [--test-apk FILE] [--locales TAG,TAG] [--parts PART,PART]
-#                            [--shots DIR] [--width DP] [--font SCALE] [--style NAME]
+#                            [--shots DIR] [--width DP] [--font SCALE] [--style NAME] [--stretch-shots]
 #
 # SERIAL comes from tools/emu/boot.sh; the APKs default to this worktree's debug build and its test APK
 # (tools/gradle.sh :app:assembleDebug :app:assembleDebugAndroidTest); a debug build is needed (the
@@ -14,7 +14,9 @@
 # reaches only with time or a damaged file: each area's pseudo-locale device test draws them with fakes
 # in en-XA and ar-XB and calls LayoutHook at each; run once); default both. --style walks the part app in
 # another colour style (EMERALD, NIGHT_VAULT; the default is the app's own, BANK_BLUE), as run
-# app-<locale>-<style>; the part states draws its screens in the tests' own style.
+# app-<locale>-<style>; the part states draws its screens in the tests' own style. --stretch-shots keeps,
+# in the part app, a picture of every further stretch of a screen that scrolls as well (<screen>--2.png,
+# --3, ...: the device check of waves 6 and 8A takes every text of a long screen to the owner so).
 #
 # The script sets the screen's density so that the phone is DP wide (`wm density`, the setting
 # "Display size") and the font scale (`settings put system font_scale`), and puts both back as they were
@@ -53,6 +55,7 @@ SHOTS=""
 WIDTH_DP=320
 FONT=2.0
 STYLE=""
+STRETCH_SHOTS=""
 while [ $# -gt 0 ]; do
     case "$1" in
         --apk) [ $# -ge 2 ] || pv_usage "${BASH_SOURCE[0]}"; APK=$2; shift ;;
@@ -63,6 +66,7 @@ while [ $# -gt 0 ]; do
         --width) [ $# -ge 2 ] || pv_usage "${BASH_SOURCE[0]}"; WIDTH_DP=$2; shift ;;
         --font) [ $# -ge 2 ] || pv_usage "${BASH_SOURCE[0]}"; FONT=$2; shift ;;
         --style) [ $# -ge 2 ] || pv_usage "${BASH_SOURCE[0]}"; STYLE=$2; shift ;;
+        --stretch-shots) STRETCH_SHOTS=true ;;
         *) pv_usage "${BASH_SOURCE[0]}" ;;
     esac
     shift
@@ -189,9 +193,10 @@ run_part() {
     pv_unlock >/dev/null 2>&1
     pv_shell logcat -c >/dev/null 2>&1
     pv_log "run $name: $class${locale:+ in $locale}"
-    local style=""
-    [ "$kind" = app ] && style=$STYLE
-    pv_adb shell am instrument -w -r -e class "$class" -e pvLayout "$name" ${locale:+-e pvLayoutLocale "$locale"} ${style:+-e pvLayoutStyle "$style"} "$RUNNER" > "$log" 2>&1
+    local style="" stretch=""
+    [ "$kind" = app ] && style=$STYLE && stretch=$STRETCH_SHOTS
+    pv_adb shell am instrument -w -r -e class "$class" -e pvLayout "$name" ${locale:+-e pvLayoutLocale "$locale"} ${style:+-e pvLayoutStyle "$style"} \
+        ${stretch:+-e pvLayoutStretchShots "$stretch"} "$RUNNER" > "$log" 2>&1
     pv_adb exec-out run-as "$PV_PACKAGE" cat "cache/pv-layout/$name.txt" > "$report" 2>/dev/null
     if ! grep -q '^RUN ' "$report"; then
         pv_report FAIL "${locale:-states} $name: the walk ran" "no report; $(grep -m 3 -E 'INSTRUMENTATION_RESULT|shortMsg|Error' "$log" | tr '\n' ' ')"

@@ -170,7 +170,8 @@ class Walker(private val compose: ComposeTestRule, val run: LayoutRun) {
     /**
      * Looks at the screen now as [screen]: a picture of it as it opens, then the checks on what is laid
      * out, then (unless not [scrollLists]) the checks again after each stretch of every list or column
-     * that scrolls, from its top to its end; it is left scrolled back to the top.
+     * that scrolls, from its top to its end, with a picture of each stretch as `<screen>--2`, `--3`, ...
+     * when the run asks for them ([LayoutRun.stretchShots]); it is left scrolled back to the top.
      */
     fun look(screen: String, scrollLists: Boolean = true, english: Boolean = true) {
         compose.waitForIdle()
@@ -183,6 +184,7 @@ class Walker(private val compose: ComposeTestRule, val run: LayoutRun) {
         // A menu over a list is looked at as it is: scrolling the list behind it would take away the
         // row it belongs to, and the menu with it.
         val scrollers = if (!scrollLists) emptyList() else compose.onAllNodes(hasScrollAction() and scrollsVertically, useUnmergedTree = true).fetchSemanticsNodes(atLeastOneRootRequired = false)
+        var pictures = 1
         for (index in scrollers.indices) {
             val scroller = compose.onAllNodes(hasScrollAction() and scrollsVertically, useUnmergedTree = true)[index]
             val node = runCatching { scroller.fetchSemanticsNode() }.getOrNull() ?: continue
@@ -195,6 +197,10 @@ class Walker(private val compose: ComposeTestRule, val run: LayoutRun) {
                 // A lazy list says only whether it can move on (its end is one more than where it is).
                 if (!scrollBy(scroller) { range -> if (range.maxValue() - range.value() in 0.5f..1.5f) step else minOf(step, range.maxValue() - range.value()) }) break
                 findings += probe.look()
+                if (run.stretchShots) {
+                    Thread.sleep(SETTLE_MS)
+                    run.shot("$screen--${++pictures}")
+                }
             }
             toTop(scroller)
         }
