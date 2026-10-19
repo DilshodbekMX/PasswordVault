@@ -32,7 +32,7 @@ import java.io.File
  * far the tree shows what TalkBack would read. The run's report goes to the app's cache
  * (`cache/pv-a11y/<run>.txt`), to the instrumentation status (`pva11y`) and to logcat ([TAG]).
  */
-class A11yWalker(private val compose: ComposeTestRule, private val run: String) {
+class A11yWalker(private val compose: ComposeTestRule, private val run: String, private val layout: Boolean = false) {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val automation: UiAutomation = instrumentation.uiAutomation.also { ua ->
         ua.serviceInfo = ua.serviceInfo.apply {
@@ -164,6 +164,14 @@ class A11yWalker(private val compose: ComposeTestRule, private val run: String) 
                 everyNode().firstOrNull { (it.viewIdResourceName ?: boundsKey(it)) == key && has(it, AccessibilityAction.ACTION_SCROLL_BACKWARD) }
                     ?.performAction(AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD)
                 settle()
+            }
+        }
+        // With -e pvA11yLayout true (a run on a phone set to 320 dp and 200 % by the script), the layout
+        // walk's probe looks at the screen too: no text cut or split, no control under 48 dp.
+        if (layout) {
+            val found = io.github.dilshodbekmx.passwordvault.ui.layout.LayoutProbe(compose, instrumentation.targetContext).apply { checkEnglish = false }.look()
+            for (check in io.github.dilshodbekmx.passwordvault.ui.layout.LayoutCheck.entries) {
+                for (finding in found.of(check)) problems += "layout, ${check.title}: $finding"
             }
         }
         for (node in seen.values) line(node)

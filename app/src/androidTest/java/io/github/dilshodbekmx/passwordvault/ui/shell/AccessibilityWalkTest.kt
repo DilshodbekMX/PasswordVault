@@ -63,8 +63,10 @@ import org.junit.runner.RunWith
  * the PIN.
  *
  * It runs only with `-e pvA11y <run>` (a run name: letters, digits, `.`, `_`, `-`), from a fresh install
- * (`pm clear` first), at the phone's own size; in a plain connected run it returns at once. Its report is
- * in the app's cache (`cache/pv-a11y/<run>.txt`) and in the instrumentation's status lines (`pva11y`).
+ * (`pm clear` first); in a plain connected run it returns at once. With `-e pvA11yLayout true`, on a phone
+ * set to 320 dp and 200 % as `tools/emu/layout/walk.sh` sets it, the layout walk's probe looks at each
+ * screen too, among them the ones that walk does not reach (WriteDown's big letters). Its report is in the
+ * app's cache (`cache/pv-a11y/<run>.txt`) and in the instrumentation's status lines (`pva11y`).
  */
 @RunWith(AndroidJUnit4::class)
 class AccessibilityWalkTest {
@@ -81,7 +83,7 @@ class AccessibilityWalkTest {
     fun walkTheAppThroughTheAccessibilityTree() {
         val run = InstrumentationRegistry.getArguments().getString("pvA11y") ?: return
         require(Regex("[A-Za-z0-9._-]+").matches(run)) { "pvA11y: a run name of letters, digits, . _ -" }
-        val walk = A11yWalker(compose, run)
+        val walk = A11yWalker(compose, run, layout = InstrumentationRegistry.getArguments().getString("pvA11yLayout") == "true")
         val intent = Intent(instrumentation.targetContext, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         ActivityScenario.launch<MainActivity>(intent).use {
             compose.waitUntil(A11yWalker.WAIT_MS) { app.graph.lock.state.value !is LockUiState.Starting }
