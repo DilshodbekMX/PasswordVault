@@ -21,7 +21,7 @@
     <string name="import_source_backup">Бу илованинг захира нусха файли</string>
     <string name="import_source_backup_body">“Захира нусха яратиш” орқали яратилган қулфланган файл. Уни яратган пайтингиздаги асосий парол керак бўлади.</string>
     <string name="import_source_google">Google Password Manager ёки Chrome (CSV)</string>
-    <string name="import_source_google_body">Аввал паролларингизни Chrome браузеридан экспорт қилинг. Қандай қилишни кўрсатамиз.</string>
+    <string name="import_source_google_body">Аввал паролларни Chrome браузеридан экспорт қилинг. Қандай қилишни кўрсатамиз.</string>
     <string name="import_source_csv">Бошқа парол иловаси ёки CSV сифатида сақланган жадвал</string>
     <string name="import_source_csv_body">Bitwarden, KeePassXC, Firefox, Excel ва бошқалар.</string>
     <string name="import_source_json">JSON (бу илова ёки Bitwarden)</string>
@@ -33,7 +33,7 @@
 
     <string name="import_google_steps">Бу телефондаги Chrome браузерида: ⋮ › Созламалар › (Автоматик киритиш ва пароллар ›) Google Пароллар менежери › Созламалар › Паролларни экспорт қилиш › Файлни юклаб олиш. Номлар бироз фарқ қилиши мумкин. Сўнг шу ерга қайтинг ва файлни танланг.</string>
     <string name="import_google_cant_find">Топа олмаяпман</string>
-    <string name="import_google_settings">Телефонингиздаги Созламалар иловасини очинг ва “Пароллар менежери” деб қидиринг. Кейин очинг: Google Пароллар менежери › Созламалар › Паролларни экспорт қилиш.</string>
+    <string name="import_google_settings">Телефондаги Созламалар иловасини очинг ва “Пароллар менежери” деб қидиринг. Кейин очинг: Google Пароллар менежери › Созламалар › Паролларни экспорт қилиш.</string>
     <string name="import_choose_file">Файлни танлаш</string>
 
     <!-- ===== Ўқиш ===== -->
@@ -98,7 +98,7 @@
     <string name="import_encoding_valid">%1$s сифатида ўқилди.</string>
     <string name="import_encoding_mostly">%1$s сифатида ўқилди, гарчи бир нечта байт яроқсиз бўлса ҳам. Улар � бўлиб кўринади.</string>
     <string name="import_encoding_other">Файл UTF-8 бўлмагани учун %1$s сифатида ўқилди.</string>
-    <string name="import_encoding_chosen">Сиз танлаганингиздек, %1$s сифатида ўқилди.</string>
+    <string name="import_encoding_chosen">Сиз танлагандек, %1$s сифатида ўқилди.</string>
     <plurals name="import_damaged_lines">
         <item quantity="one">%1$d&#160;та қаторда ўқиб бўлмаган белгилар бор: %2$s-қатор. Улар � бўлиб кўринади.</item>
         <item quantity="other">%1$d&#160;та қаторда ўқиб бўлмаган белгилар бор, биринчиси %2$s-қаторда. Улар � бўлиб кўринади.</item>

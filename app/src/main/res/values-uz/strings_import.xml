@@ -23,7 +23,7 @@
     <string name="import_source_backup">Bu ilovaning zaxira nusxa fayli</string>
     <string name="import_source_backup_body">“Zaxira nusxa yaratish” orqali yaratilgan qulflangan fayl. Uni yaratgan paytingizdagi asosiy parol kerak boʻladi.</string>
     <string name="import_source_google">Google Password Manager yoki Chrome (CSV)</string>
-    <string name="import_source_google_body">Avval parollaringizni Chrome brauzeridan eksport qiling. Qanday qilishni koʻrsatamiz.</string>
+    <string name="import_source_google_body">Avval parollarni Chrome brauzeridan eksport qiling. Qanday qilishni koʻrsatamiz.</string>
     <string name="import_source_csv">Boshqa parol ilovasi yoki CSV sifatida saqlangan jadval</string>
     <string name="import_source_csv_body">Bitwarden, KeePassXC, Firefox, Excel va boshqalar.</string>
     <string name="import_source_json">JSON (bu ilova yoki Bitwarden)</string>
@@ -35,7 +35,7 @@
 
     <string name="import_google_steps">Bu telefondagi Chrome brauzerida: ⋮ › Sozlamalar › (Avtomatik kiritish va parollar ›) Google Parollar menejeri › Sozlamalar › Parollarni eksport qilish › Faylni yuklab olish. Nomlar biroz farq qilishi mumkin. Soʻng shu yerga qayting va faylni tanlang.</string>
     <string name="import_google_cant_find">Topa olmayapman</string>
-    <string name="import_google_settings">Telefoningizdagi Sozlamalar ilovasini oching va “Parollar menejeri” deb qidiring. Keyin oching: Google Parollar menejeri › Sozlamalar › Parollarni eksport qilish.</string>
+    <string name="import_google_settings">Telefondagi Sozlamalar ilovasini oching va “Parollar menejeri” deb qidiring. Keyin oching: Google Parollar menejeri › Sozlamalar › Parollarni eksport qilish.</string>
     <string name="import_choose_file">Faylni tanlash</string>
 
     <!-- ===== Oʻqish ===== -->
@@ -100,7 +100,7 @@
     <string name="import_encoding_valid">%1$s sifatida oʻqildi.</string>
     <string name="import_encoding_mostly">%1$s sifatida oʻqildi, garchi bir nechta bayt yaroqsiz boʻlsa ham. Ular � boʻlib koʻrinadi.</string>
     <string name="import_encoding_other">Fayl UTF-8 boʻlmagani uchun %1$s sifatida oʻqildi.</string>
-    <string name="import_encoding_chosen">Siz tanlaganingizdek, %1$s sifatida oʻqildi.</string>
+    <string name="import_encoding_chosen">Siz tanlagandek, %1$s sifatida oʻqildi.</string>
     <plurals name="import_damaged_lines">
         <item quantity="one">%1$d&#160;ta qatorda oʻqib boʻlmagan belgilar bor: %2$s-qator. Ular � boʻlib koʻrinadi.</item>
         <item quantity="other">%1$d&#160;ta qatorda oʻqib boʻlmagan belgilar bor, birinchisi %2$s-qatorda. Ular � boʻlib koʻrinadi.</item>
