@@ -216,9 +216,10 @@ This needs the same user name (`asus`) on the new computer. If it is different, 
 ## 1.9 If the key is lost for ever
 
 Your passwords are not lost if you have a backup file and know your master password. The
-app on the phone can no longer be updated, though. To move to a new key: make a fresh backup
-in the app, copy it off the phone, uninstall the app, make a new key (this page), install
-the new app (step 2), and choose "Restore from a backup file" on its first screen. Ask
-Claude to go through it with you; do not start it alone.
+app on the phone can no longer be updated, though. To move to a new key: make a new key
+(this page), build the app with it (step 2, parts 2.1 to 2.6), and then follow
+[step 4, part 4.8](step-4-update-the-app.md#48-if-the-app-on-the-phone-is-signed-with-another-key):
+a backup, the uninstall, the new app, and "Restore from a backup file". Ask Claude to go
+through it with you; do not start it alone.
 
 Next: [step 2, build the app file and install it](step-2-build-and-install.md).
