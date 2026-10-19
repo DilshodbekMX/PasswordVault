@@ -116,7 +116,7 @@
     <string name="backup_old_deleted">Eski parollar oʻchirib tashlandi.</string>
     <string name="backup_old_wrong">Kiritilgan parol bu parollarning asosiy paroli emas. Klaviatura tilini (lotin yoki kirill) va bosh harflarni tekshiring.</string>
     <string name="backup_old_no_memory">Bu parollarni ochish uchun telefoningizda boʻsh operativ xotira yetarli emas. Boshqa ilovalarni yoping yoki telefonni qayta ishga tushiring, keyin qayta urining.</string>
-    <string name="backup_old_not_added">Hisoblarni qoʻshib boʻlmadi. Hech narsa oʻzgartirilmadi. Qayta urining.</string>
+    <string name="backup_old_not_added">Hisoblarni qoʻshib boʻlmadi. Hech narsa oʻzgarmadi. Qayta urining.</string>
     <string name="backup_old_not_deleted">Bu parollarni oʻchirib boʻlmadi. Hech narsa oʻchirilmadi. Qayta urining.</string>
 
 </resources>

@@ -29,7 +29,7 @@
     <string name="export_warning_title">Бу файл ҳимоясиз бўлади</string>
     <string name="export_warning_body">Бу файлни очган ҳар қандай одам барча паролларингизни ўқий олади. Файлнинг пароли йўқ.</string>
     <string name="export_warning_control">Уни фақат ўзингиз назорат қиладиган жойда сақланг: шахсий компьютер ёки флешкада.</string>
-    <string name="export_warning_messengers">Уни Telegram, электрон почта ёки бошқа мессенжерлар орқали юборманг.</string>
+    <string name="export_warning_messengers">Уни Telegram, эл. почта ёки бошқа мессенжерлар орқали юборманг.</string>
     <string name="export_warning_delete">Ишингиз тугаши билан уни ўчиринг.</string>
     <string name="export_warning_csv">Бу файлни Excel дастурида очманг: Excel телефон рақамлари ва кодларни ўзгартириб юборади ва формулаларни бажариши мумкин. Бунинг ўрнига Excel экспортини танланг.</string>
     <string name="export_warning_xlsx">Google Sheets ва бошқа иловалар файлнинг нусхасини ўз булутида сақлаб қолиши мумкин.</string>

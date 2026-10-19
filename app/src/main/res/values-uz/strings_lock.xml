@@ -206,7 +206,7 @@
     <string name="lock_notice_storage_unreadable">Ilova xotirasining bir qismini oʻqib boʻlmadi. Hozir zaxira nusxa yarating.</string>
     <string name="lock_notice_set_up_again">Qaytadan sozlash</string>
     <string name="lock_notice_backup_title">Hozir zaxira nusxa yaratilsinmi?</string>
-    <string name="lock_notice_backup_body">Zaxira nusxa — barcha parollaringizning qulflangan nusxasi. U istalgan telefonda faqat asosiy parolingiz bilan ochiladi.</string>
+    <string name="lock_notice_backup_body">Zaxira nusxa — barcha parollarning qulflangan nusxasi. U istalgan telefonda faqat asosiy parolingiz bilan ochiladi.</string>
     <string name="lock_notice_back_up">Hozir zaxiralash</string>
 
     <!-- ===== The system's fingerprint prompt ===== -->

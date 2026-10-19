@@ -30,7 +30,7 @@
     <string name="export_warning_title">Bu fayl himoyasiz boʻladi</string>
     <string name="export_warning_body">Bu faylni ochgan har qanday odam barcha parollaringizni oʻqiy oladi. Faylning paroli yoʻq.</string>
     <string name="export_warning_control">Uni faqat oʻzingiz nazorat qiladigan joyda saqlang: shaxsiy kompyuter yoki fleshkada.</string>
-    <string name="export_warning_messengers">Uni Telegram, elektron pochta yoki boshqa messenjerlar orqali yubormang.</string>
+    <string name="export_warning_messengers">Uni Telegram, email yoki boshqa messenjerlar orqali yubormang.</string>
     <string name="export_warning_delete">Ishingiz tugashi bilan uni oʻchiring.</string>
     <string name="export_warning_csv">Bu faylni Excel dasturida ochmang: Excel telefon raqamlari va kodlarni oʻzgartirib yuboradi va formulalarni bajarishi mumkin. Buning oʻrniga Excel eksportini tanlang.</string>
     <string name="export_warning_xlsx">Google Sheets va boshqa ilovalar faylning nusxasini oʻz bulutida saqlab qolishi mumkin.</string>

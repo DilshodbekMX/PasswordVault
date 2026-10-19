@@ -204,7 +204,7 @@
     <string name="lock_notice_storage_unreadable">Илова хотирасининг бир қисмини ўқиб бўлмади. Ҳозир захира нусха яратинг.</string>
     <string name="lock_notice_set_up_again">Қайтадан созлаш</string>
     <string name="lock_notice_backup_title">Ҳозир захира нусха яратилсинми?</string>
-    <string name="lock_notice_backup_body">Захира нусха — барча паролларингизнинг қулфланган нусхаси. У исталган телефонда фақат асосий паролингиз билан очилади.</string>
+    <string name="lock_notice_backup_body">Захира нусха — барча паролларнинг қулфланган нусхаси. У исталган телефонда фақат асосий паролингиз билан очилади.</string>
     <string name="lock_notice_back_up">Ҳозир захиралаш</string>
 
     <!-- ===== The system's fingerprint prompt ===== -->
