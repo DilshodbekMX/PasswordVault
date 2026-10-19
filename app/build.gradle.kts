@@ -420,12 +420,13 @@ abstract class CheckMergedManifest : DefaultTask() {
  * R-17: no class of [forbiddenPackages] is in the APK: in release, none of the app's `debug` and
  * `fake` packages (src/debug, which release does not compile), and in no variant any of `:testing`.
  * The classes are those the APK's dex files define, under their original names: where R8 ran, its
- * mapping gives them, since R8 renames and moves almost every class (in release `a00` is a class of
- * androidx). Where R8 ran, its mapping also names no code of those packages, so nothing of them was
- * inlined into or merged with another class; no dex file names one of their types; and the APK
- * holds no JVM class file, which ART would never load (kotlinx-coroutines' DebugProbesKt.bin is left
- * out of these builds), and no dex, jar or APK file other than its own classes*.dex, whose classes
- * this check could not see. The report counts the classes of [countedPackages].
+ * mapping gives them, since R8 renames and moves almost every class (release's are a00, b01, ...,
+ * whatever their packages were). Where R8 ran, its mapping also names no code of those packages,
+ * so nothing of them was inlined into or merged with another class; no dex file names one of their
+ * types; and the APK holds no JVM class file, which ART would never load (kotlinx-coroutines'
+ * DebugProbesKt.bin is left out of these builds), and no dex, jar or APK file other than its own
+ * classes*.dex, whose classes this check could not see. The report counts the classes of
+ * [countedPackages].
  */
 abstract class CheckApk : DefaultTask() {
     @get:InputFiles
