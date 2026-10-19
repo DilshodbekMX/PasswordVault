@@ -279,7 +279,18 @@ master_after_pin_off() {
     for i in $(seq 1 20); do pv_shell input keyevent KEYCODE_DEL >/dev/null; done
     pva_type pv.lock.password "$PVA_PASSWORD" && pva_hide_keyboard && pva_tap pv.lock.unlock || return 1
     pva_unlocked Passwords 90 || return 1
-    settle Passwords "$PIN2" 120 && PIN_NOW=$PIN2
+    # "Choose a new PIN" answered "Not now" first, so that Settings' PIN row says why the PIN is off (R6's
+    # open problem: not seen on a device in Uzbek); then Lock now, the master password from the
+    # fingerprint-only screen, and the new PIN when "Choose a PIN" comes again.
+    settle Passwords - 120 || return 1
+    settings && shots 121 settings-pin-off 3
+    to_list && pva_tap pv.list.lockNow || return 1
+    pvl_wait_screen 'pad|prompt|fingerprint-only|master-password' 30 || return 1
+    if [ "$(pvl_screen)" = prompt ]; then pvl_prompt_negative; pv_sleep 1; fi
+    if pva_present pv.lock.useMasterPassword 3; then pva_tap pv.lock.useMasterPassword; fi
+    pva_need pv.lock.password 20 && pva_type pv.lock.password "$PVA_PASSWORD" && pva_hide_keyboard && pva_tap pv.lock.unlock || return 1
+    pva_unlocked Passwords 90 || return 1
+    settle Passwords "$PIN2" 122 && PIN_NOW=$PIN2
 }
 
 part_pad() {
@@ -290,7 +301,7 @@ part_pad() {
     pv_step "two more wrong PINs" -- pvl_wrong_pins 2 1 && shot 114 pad-wrong-3
     pv_step "a fourth wrong PIN: the last try" -- pvl_wrong_pins 1 3 && shot 115 pad-last-try
     pv_step "the fifth wrong PIN turns the PIN off: the fingerprint-only screen" -- fifth_pin
-    pv_step "Use master password; a wrong one; the right one: the notices, \"Choose a new PIN\"" -- master_after_pin_off
+    pv_step "Use master password; a wrong one; the right one: the notices, \"Choose a new PIN\" Not now, Settings' PIN row; the new PIN at the next unlock" -- master_after_pin_off
 }
 
 # ---- newmp: a new master password (lock.md F11) ------------------------------------------------------------
@@ -724,7 +735,8 @@ start_empty() {
     pva_hide_keyboard
     shot 269 master-password-no-pin
     pva_tap pv.lock.forgot && pva_need pv.lock.sheet 10 || return 1
-    shots 270 forgot-sheet-no-shortcut 3
+    # One picture: a swipe would drag the sheet down and close it.
+    shot 270 forgot-sheet-no-shortcut
     pva_need pv.lock.sheet.empty 10 || return 1
     pva_tap pv.lock.sheet.empty && pva_need pv.lock.confirmYes 10 || return 1
     shots 271 start-empty-question 3

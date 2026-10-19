@@ -426,3 +426,16 @@ says `Found systemPath /home/asus/pvlab/sysimg/...`).
 - `layout/walk.sh` on the API 24 image (first run by the device check of 6A): 1718 checks, as on API 28
   and 37, about 18 minutes for both parts while the machine had a load of about 35; the walk sets the
   app's language through AppCompat there (no `cmd locale`) and `pm clear` resets it.
+- Found by the device check of waves 6 and 8A (2026-10-19): the system's fingerprint prompt (API 28 and
+  later) is a secure window, so `screencap` gives a black picture of it even with the debug build; the
+  emulator's own screenshot (`adb emu screenrecord screenshot DIR`) shows it (`checks/6-pictures-session.sh`
+  takes a picture again so when the first is black throughout). A Compose dialog's buttons show no
+  resource id (the dialog's window is a root of its own, without `testTagsAsResourceId`): a script finds
+  the dialog by its window, or by its texts. The debug command `status` lists the records of every lock
+  directory: after a restore the vault put aside keeps its own `pin.rec: OK, slot set`, so a script that
+  asks whether the current vault has a PIN reads the block after `lock <id>` of the id in `vaults: <id>
+  generation N` (`smoke.sh`'s `smoke_has_pin`). The lock's "Forgot master password?" sheet offers "Start
+  with an empty app" only while no PIN, fingerprint or practice can be used, and "I can't remember it" on
+  a practice screen asks for the PIN first (lock.md F11 step 3). After `cmd alarm set-time` back to the
+  present, a clock more than an hour before the last master password makes practice due at once (lock.md
+  §8.3).
