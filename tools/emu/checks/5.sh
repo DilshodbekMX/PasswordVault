@@ -56,7 +56,9 @@
 #               "Start with an empty app" (offered with a PIN only while its record cannot be read: pin.rec
 #               made unreadable with run-as, lock.md F15c), the old passwords opened from Welcome with
 #               their PIN and from Settings > Old passwords with their master password, no vault file
-#               deleted (U 12 check 16); U 12 check 15 (check15: the lock-screen route to a new master
+#               deleted (U 12 check 16); U 12 check 12 with Downloads (check12: 90 s in the picker of a
+#               backup with "Immediately", then SAVE: "Backup saved", still open, a whole backup); U 12
+#               check 15 (check15: the lock-screen route to a new master
 #               password, Cancel asks for the PIN again, the wait, the 24 credited hours set in state.rec,
 #               "Finish now" and the password typed once more, the new vault's PIN steps, the new backup
 #               offered and made without the master password asked again); the owner's decision 21 (d21:
@@ -1015,6 +1017,35 @@ picker_screen_off() {
     pva_on Settings 10
 }
 
+# check12: U 12 check 12 with Downloads for Google Drive (5.2's acceptance line): with the lock delay
+# "Immediately", Settings > Backup, its master password, 90 s in the picker that "Save as" opened, SAVE:
+# "Backup saved", the app not locked, and the file a whole backup.
+backup_after_90s() {
+    local before name
+    before=$(download_names)
+    settings && pva_reveal pv.open.Backup && pva_tap pv.open.Backup && pva_on Backup 20 || return 1
+    if pva_present pv.backup.continue 3; then pva_tap pv.backup.continue || return 1; fi
+    pva_need pv.backup.password 20 && pva_type pv.backup.password "$PVA_PASSWORD" || return 1
+    pva_hide_keyboard
+    pva_tap pv.backup.submit && pva_picker_wait 30 || return 1
+    pv_sleep 90
+    pva_picker_in_front || { pv_log "the picker left the front within 90 s: $(pv_focus)"; return 1; }
+    pva_picker_save && pva_need pv.backup.done 60 || return 1
+    pva_status_has '^state: unlocked' || return 1
+    name=$(new_in_download "$before" '^PasswordVault-backup-.*\.pvault$')
+    [ -n "$name" ] || { pv_log "no new backup in Download"; return 1; }
+    pvault_ok "$(pull "$name")" || return 1
+    pva_tap pv.backup.done && pva_on Settings 20
+}
+
+check12() {
+    T="check 12"
+    clean_download
+    pv_step "$T: a fresh install, setup with a PIN, two accounts; the lock delay Immediately" -- eval 'fresh pin && add_two && set_lock_delay IMMEDIATELY' || return 1
+    pv_step "$T: a backup with 90 s in the picker succeeds, the app still open" -- backup_after_90s
+    pv_step "$T: no crash" -- pva_no_crash
+}
+
 # check13: U 12 check 13 alone (line 2 has it too): a fresh install with a PIN, then both ways out.
 check13() {
     T="check 13"
@@ -1622,7 +1653,7 @@ dev_run() {
     echo "5 checks $*, $DEV_VARIANT on $PV_SERIAL (API $API): $DEV_APK"
     for check in "$@"; do
         case "$check" in
-            line1 | line2 | line3 | line4 | line5 | line6 | line7 | check13 | check15 | d21 | fifty | walk73) "$check" ;;
+            line1 | line2 | line3 | line4 | line5 | line6 | line7 | check12 | check13 | check15 | d21 | fifty | walk73) "$check" ;;
             *) pv_die "unknown check $check" 2 ;;
         esac
     done
@@ -1630,7 +1661,7 @@ dev_run() {
     pv_summary
 }
 
-w5_debug() { dev_run "$1" debug "$DEBUG_APK" line1 line2 line3 line4 line5 line6 line7 check15 d21; }
+w5_debug() { dev_run "$1" debug "$DEBUG_APK" line1 line2 line3 line4 line5 line6 line7 check12 check15 d21; }
 w7_debug() { dev_run "$1" debug "$DEBUG_APK" fifty walk73; }
 guided() { "$EMU/change/guided.sh" "$1" --apk "$DEBUG_APK" --test-apk "$TEST_APK" --shots "$SHOTS"; }
 
@@ -1734,7 +1765,7 @@ for part in "${DEVICE_PARTS[@]}"; do
             pv_step "E16 with the staging build on API 24 (decision 22: the Java Argon2 fallback on a 256 MiB heap)" -- in_parallel e16-staging e16_staging -- 24 ;;
         wave5)
             pv_step "the test APK is not on the devices" -- no_test_apk
-            pv_step "build-plan 7 lines 1 to 7, U 12 checks 13, 15 and 16, decision 21: debug build on API 37 and 24" -- in_parallel wave5 w5_debug -- 37 24
+            pv_step "build-plan 7 lines 1 to 7, U 12 checks 12 to 16, decision 21: debug build on API 37 and 24" -- in_parallel wave5 w5_debug -- 37 24
             pv_step "line 8: smoke.sh staging with backup, export, import and a restore, on API 24 and 37" -- in_parallel smoke-staging smoke_staging -- 24 37 ;;
         wave7)
             pv_step "the fifty accounts (U 5.16, a guided change, decision 23) and 7.3's walk, debug build, API 37" -- in_parallel wave7 w7_debug -- 37

@@ -112,6 +112,40 @@ API 24 device (`emulator-5584`), with main's APKs:
 image's own heap did not run. The 64 MiB of Argon2id fit on a 256 MiB heap once the first derivation's
 garbage (about 134 MiB on Android 7) is collected; nothing about the derivation's parameters changed.
 
+## Runs on 2026-10-19: the device check of waves 4, 5 and 7 on the merged app
+
+`tools/emu/checks/5.sh lock` (that is `all.sh` with the debug build on each check's levels) against the
+app of `wave-5-merged` (the check's commits before its fix 5 changed scripts and one device test, not
+the app; fix 5 changes only F8's screen, which no E check opens), on the integrator's devices (5584 API
+24, 5582 API 28, 5580 API 37): API 24 and 28 at once, then API 37. Every step that waited for 5.5 or 6.1 on 4.5's branch ran: E4 has its pending wait and its
+"replaced" notice, E5 all of its steps, E11 its language step through Settings › Language. No check
+failed and none skipped a step.
+
+| Check | API 24 | API 28 | API 37 |
+|---|---|---|---|
+| E1 | 14/0/0 | 14/0/0 | 14/0/0 |
+| E2 | 13/0/0 | 13/0/0 | 13/0/0 |
+| E3 | 13/0/0 | 13/0/0 | 13/0/0 |
+| E4 | | | 11/0/0 |
+| E5 | | | 6/0/0 |
+| E6 | 9/0/0 | 9/0/0 | 9/0/0 |
+| E7 | 12/0/0 ((a) a NOTE) | 12/0/0 ((a) a NOTE) | 22/0/0 |
+| E8 | | | 8/0/0 |
+| E9 | | | 8/0/0 |
+| E10 | 57/0/0 | 57/0/0 | 57/0/0 |
+| E11 | 15/0/0 | 15/0/0 | 15/0/0 |
+| E12 | | 11/0/0 and 1 KNOWN | 12/0/0 |
+| E13 | | 8/0/0 | 8/0/0 |
+| E14 | | | 11/0/0 |
+| E15 | | 11/0/0 | 11/0/0 |
+| E16 | 11/0/0 | | |
+| E17 | 5/0/0 (the pad) | | 18/0/0 |
+
+`pm uninstall -k` and a new install (E10): the PIN and fingerprint keys survived on API 24 and 28, as
+on 2026-10-13. The staging repeat (`checks/5.sh lockstaging`: E1 and E6 on API 24 and 37, E16 on API 24)
+is below. Since the device check of R4, `newmp.sh`'s `pvn_request` scrolls to "Next" on "Write it down
+on paper" (it was below the fold of the 1920-pixel screens, where `checks/5.sh` line 6 runs it).
+
 ## Runs on 2026-10-13
 
 Against the same app (`wave-4A-merged`; the APKs built on 2026-10-09 from it, as this branch changes
