@@ -51,7 +51,7 @@
     <string name="list_add_as_new">“%1$s” nomli yangi hisob qoʻshish</string>
 
     <!-- Messages. -->
-    <string name="list_deleted_message">%1$s oʻchirildi</string>
+    <string name="list_deleted_message">%1$s oʻchirib tashlandi</string>
     <string name="list_save_failed">Saqlab boʻlmadi. Telefoningiz xotirasi toʻlgan boʻlishi mumkin.</string>
     <string name="list_too_large">Parollaringiz endi bitta faylga sigʻmayapti. Keraksiz hisoblarni oʻchiring yoki juda uzun qaydlarni qisqartiring.</string>
     <string name="list_no_browser">Bu telefonda brauzer topilmadi.</string>

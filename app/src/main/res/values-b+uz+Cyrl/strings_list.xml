@@ -52,7 +52,7 @@
     <string name="list_add_as_new">“%1$s” номли янги ҳисоб қўшиш</string>
 
     <!-- Messages. -->
-    <string name="list_deleted_message">%1$s ўчирилди</string>
+    <string name="list_deleted_message">%1$s ўчириб ташланди</string>
     <string name="list_save_failed">Сақлаб бўлмади. Телефонингиз хотираси тўлган бўлиши мумкин.</string>
     <string name="list_too_large">Паролларингиз энди битта файлга сиғмаяпти. Кераксиз ҳисобларни ўчиринг ёки жуда узун қайдларни қисқартиринг.</string>
     <string name="list_no_browser">Бу телефонда браузер топилмади.</string>

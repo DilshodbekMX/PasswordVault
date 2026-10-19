@@ -72,7 +72,7 @@
     <string name="entry_gone">Bu hisob endi mavjud emas.</string>
     <string name="entry_gone_deleted">Bu hisob oʻchirilgan. Uni 30&#160;kun davomida “Yaqinda oʻchirilganlar” boʻlimidan tiklashingiz mumkin.</string>
     <string name="entry_open_deleted">“Yaqinda oʻchirilganlar” boʻlimini ochish</string>
-    <string name="entry_deleted_message">%1$s oʻchirildi</string>
+    <string name="entry_deleted_message">%1$s oʻchirib tashlandi</string>
     <string name="entry_deleted_body">Bu hisob endi “Yaqinda oʻchirilganlar” boʻlimida. U yerda 30&#160;kun turadi.</string>
 
     <!-- ===== Short messages ===== -->

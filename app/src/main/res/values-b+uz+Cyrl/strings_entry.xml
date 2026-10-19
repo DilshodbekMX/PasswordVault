@@ -72,7 +72,7 @@
     <string name="entry_gone">Бу ҳисоб энди мавжуд эмас.</string>
     <string name="entry_gone_deleted">Бу ҳисоб ўчирилган. Уни 30&#160;кун давомида “Яқинда ўчирилганлар” бўлимидан тиклашингиз мумкин.</string>
     <string name="entry_open_deleted">“Яқинда ўчирилганлар” бўлимини очиш</string>
-    <string name="entry_deleted_message">%1$s ўчирилди</string>
+    <string name="entry_deleted_message">%1$s ўчириб ташланди</string>
     <string name="entry_deleted_body">Бу ҳисоб энди “Яқинда ўчирилганлар” бўлимида. У ерда 30&#160;кун туради.</string>
 
     <!-- ===== Short messages ===== -->
