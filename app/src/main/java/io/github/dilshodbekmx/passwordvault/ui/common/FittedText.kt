@@ -27,6 +27,9 @@ import androidx.compose.ui.unit.isSpecified
  * With [cut], a hint that a field shows inside its own fixed height (the list's search field): a
  * label that does not fit in [maxLines] lines even at its smallest is cut there with an ellipsis,
  * and marked [MayTruncate] (what it says is a hint; TalkBack reads it whole).
+ *
+ * [alongside]: the labels this one stands in a row with, each as wide as it (the bar's other tabs):
+ * all of them take the size the one that needs the smallest gets, so that the row's labels match.
  */
 @Composable
 fun FittedText(
@@ -36,22 +39,25 @@ fun FittedText(
     textAlign: TextAlign? = null,
     maxLines: Int = 2,
     cut: Boolean = false,
+    alongside: List<String> = emptyList(),
 ) {
     val measurer = rememberTextMeasurer()
     val density = LocalDensity.current
     val direction = LocalLayoutDirection.current
     BoxWithConstraints(modifier) {
         val width = constraints.maxWidth
-        val size = remember(text, style, width, density, direction, cut) {
-            fittingSize(text, style, width, maxLines, density.fontScale, cut) { candidate, lines ->
-                val shown = style.copy(fontSize = candidate)
-                val words = text.split(' ', ' ').filter { it.isNotEmpty() }
-                val wordsFit = words.all { word ->
-                    measurer.measure(word, shown, maxLines = 1, softWrap = false, density = density, layoutDirection = direction).size.width <= width
+        val size = remember(text, alongside, style, width, density, direction, cut) {
+            (listOf(text) + alongside).map { label ->
+                fittingSize(label, style, width, maxLines, density.fontScale, cut) { candidate, lines ->
+                    val shown = style.copy(fontSize = candidate)
+                    val words = label.split(' ', ' ').filter { it.isNotEmpty() }
+                    val wordsFit = words.all { word ->
+                        measurer.measure(word, shown, maxLines = 1, softWrap = false, density = density, layoutDirection = direction).size.width <= width
+                    }
+                    val all = measurer.measure(label, shown, constraints = Constraints(maxWidth = width), density = density, layoutDirection = direction)
+                    wordsFit to (all.lineCount <= lines)
                 }
-                val all = measurer.measure(text, shown, constraints = Constraints(maxWidth = width), density = density, layoutDirection = direction)
-                wordsFit to (all.lineCount <= lines)
-            }
+            }.minBy { it.value }
         }
         Text(
             text = text,
