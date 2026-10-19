@@ -88,7 +88,7 @@
     </plurals>
     <string name="export_password_no_memory">Асосий паролни текшириш учун телефонингизда бўш оператив хотира етарли эмас. Бошқа иловаларни ёпинг ёки телефонни қайта ишга туширинг, кейин қайта урининг.</string>
     <!-- %1$s is a date ("6 окт, 2026"); "санасидан олдинги" ("from before the date") keeps it free of a suffix. -->
-    <string name="export_password_older">Бу — %1$s санасидан олдинги асосий паролингиз. Ҳозир ишлатаётганингизни киритинг.</string>
+    <string name="export_password_older">Бу %1$s санасидан олдинги асосий паролингиз. Ҳозиргисини киритинг.</string>
     <string name="export_paused">Бу жараён илова қулфланганда тўхтатиб турилган эди.</string>
     <string name="export_paused_body">%1$s номли файлни сақлаш учун асосий паролни қайта киритинг.</string>
     <string name="export_paused_body_file">Файлни сақлаш учун асосий паролни қайта киритинг.</string>

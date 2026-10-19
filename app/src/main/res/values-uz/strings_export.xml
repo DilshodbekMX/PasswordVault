@@ -89,7 +89,7 @@
     </plurals>
     <string name="export_password_no_memory">Asosiy parolni tekshirish uchun telefoningizda boʻsh operativ xotira yetarli emas. Boshqa ilovalarni yoping yoki telefonni qayta ishga tushiring, keyin qayta urining.</string>
     <!-- %1$s is a date ("6-okt, 2026"); "sanasidan oldingi" ("from before the date") keeps it free of a suffix. -->
-    <string name="export_password_older">Bu — %1$s sanasidan oldingi asosiy parolingiz. Hozir ishlatayotganingizni kiriting.</string>
+    <string name="export_password_older">Bu %1$s sanasidan oldingi asosiy parolingiz. Hozirgisini kiriting.</string>
     <string name="export_paused">Bu jarayon ilova qulflanganda toʻxtatib turilgan edi.</string>
     <string name="export_paused_body">%1$s nomli faylni saqlash uchun asosiy parolni qayta kiriting.</string>
     <string name="export_paused_body_file">Faylni saqlash uchun asosiy parolni qayta kiriting.</string>

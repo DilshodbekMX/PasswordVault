@@ -57,7 +57,7 @@
     <string name="help_lost_restore">Parollaringizni yangi telefonga oʻtkazish uchun unga %1$s ilovasini oʻrnating, “Zaxira nusxa faylidan tiklash” tugmasini bosing, eng yangi zaxira nusxangizni tanlang va asosiy parolni kiriting. Zaxira nusxasiz parollaringizni qaytarib boʻlmaydi.</string>
     <string name="help_lost_transfer">Ilovalaringizni yangi telefonga koʻchirish, masalan, “Ilovalar va maʼlumotlarni nusxalash” orqali, parollaringizni olib oʻtmaydi. Eski telefonda zaxira nusxa yarating va uni yangi telefonda tiklang.</string>
     <string name="help_lost_welcome_back">Agar yangi telefondagi %1$s ilovasi “Yana xush kelibsiz” desa, asosiy parolni bir marta kiriting. Soʻng yangi telefon uchun PIN kod tanlang.</string>
-    <string name="help_lost_backup">Parollar qoʻshganingiz yoki oʻzgartirganingizdan keyin har safar yangi zaxira nusxa yarating. Uni bu telefondan tashqarida saqlang: Google Drive xizmatida, kompyuterda yoki oʻzingizga yuborib qoʻying.</string>
+    <string name="help_lost_backup">Har safar parol qoʻshilganda yoki oʻzgartirilganda yangi zaxira nusxa yarating. Uni bu telefondan tashqarida saqlang: Google Drive xizmatida, kompyuterda yoki oʻzingizga yuborib qoʻying.</string>
 
     <!-- ===== Asosiy parolingizni unutsangiz ===== -->
 
@@ -131,6 +131,6 @@
         <item quantity="other">Parol %d&#160;daqiqadan keyin vaqtinchalik xotiradan olib tashlanadi. Shu vaqt ichida nusxa olgan boshqa narsalaringiz ham olib tashlanishi mumkin.</item>
     </plurals>
     <string name="help_tip_samsung">Samsung telefonlari nusxa olingan matnlar roʻyxatini saqlaydi. Parollar unga tushmasligi uchun Samsung Keyboard sozlamalarida vaqtinchalik xotira tarixini faolsizlantiring yoki tozalang.</string>
-    <string name="help_tip_keyboards">Baʼzi klaviaturalar nusxa olingan matnlarning oʻz roʻyxatini saqlaydi; uni klaviatura sozlamalarida faolsizlantirishingiz mumkin.</string>
+    <string name="help_tip_keyboards">Baʼzi klaviaturalar nusxa olingan matnlarning oʻz roʻyxatini saqlaydi; uni klaviatura sozlamalarida faolsizlantirish mumkin.</string>
 
 </resources>
