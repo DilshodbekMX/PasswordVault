@@ -30,13 +30,17 @@ xdg-open /home/asus/AndroidStudioProjects/PasswordVault/docs/release/step-3-phon
 | **The release key's password** | The key file is useless without it. | On paper, in envelope 1 | On paper, in envelope 2 |
 | **Your master password** | It opens your passwords on a new phone, from a backup file, and when you forget your PIN. Nobody can reset it: there is no "Forgot password" email. | On the paper from the app's setup ("Write it down on paper"), at home, not with the phone | On a second paper, in a sealed envelope, in another building |
 
-Two more rules:
+Three more rules:
 
 - Keep the master password apart from the key envelopes, and apart from the phone.
 - Make backup files of your passwords in the app (Settings › Make a backup) and keep them
   in two places, for example Google Drive and this computer. A backup file is locked with
   your master password. It is how your passwords survive a lost or broken phone, and it is
   the way out if the release key is ever lost.
+- Keep a copy of `tools/pvault_decrypt.py` and `docs/format.md` from the project next to
+  your backups, for example on the same USB stick. If the phone and the app are ever gone,
+  that script opens a backup on any computer with your master password; `docs/format.md`
+  says how, in its first section.
 
 ## Words used in these pages
 
