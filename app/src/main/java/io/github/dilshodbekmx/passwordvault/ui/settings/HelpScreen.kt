@@ -19,7 +19,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,6 +38,7 @@ import io.github.dilshodbekmx.passwordvault.i18n.resolve
 import io.github.dilshodbekmx.passwordvault.nav.HelpPage
 import io.github.dilshodbekmx.passwordvault.nav.Navigator
 import io.github.dilshodbekmx.passwordvault.nav.Route
+import io.github.dilshodbekmx.passwordvault.ui.common.VaultTopBar
 
 /**
  * A help page (ux.md §5.22; [HelpPages] says what it holds): "Help" in the bar with the back arrow,
@@ -60,15 +60,8 @@ fun HelpScreen(page: HelpPage, blocks: List<HelpBlock>, nav: Navigator, modifier
             testTagsAsResourceId = true
         },
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        stringResource(HelpPages.barTitle(page)),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.semantics { heading() },
-                    )
-                },
+            VaultTopBar(
+                title = stringResource(HelpPages.barTitle(page)),
                 navigationIcon = { BackArrow(nav) },
             )
         },

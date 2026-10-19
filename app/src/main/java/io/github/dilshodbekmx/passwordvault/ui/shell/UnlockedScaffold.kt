@@ -22,13 +22,15 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.testTagsAsResourceId
+import androidx.compose.ui.text.style.TextAlign
 import io.github.dilshodbekmx.passwordvault.AppGraph
 import io.github.dilshodbekmx.passwordvault.R
 import io.github.dilshodbekmx.passwordvault.clipboard.ClipboardRowSlot
 import io.github.dilshodbekmx.passwordvault.nav.NavState
 import io.github.dilshodbekmx.passwordvault.nav.Route
-import io.github.dilshodbekmx.passwordvault.ui.lock.LockNotices
+import io.github.dilshodbekmx.passwordvault.ui.common.FittedText
 import io.github.dilshodbekmx.passwordvault.ui.common.topHairline
+import io.github.dilshodbekmx.passwordvault.ui.lock.LockNotices
 import io.github.dilshodbekmx.passwordvault.ui.security.SecurityBadge
 import io.github.dilshodbekmx.passwordvault.ui.security.securityTabState
 import io.github.dilshodbekmx.passwordvault.ui.settings.NewMasterPasswordAfterUnlock
@@ -89,7 +91,8 @@ private fun TabBar(graph: AppGraph, nav: NavState) {
 const val TAB_BAR_TAG = "pv.tabBar"
 
 /**
- * One tab of the bar. [state] is what TalkBack says after the tab's name ("Security, new results",
+ * One tab of the bar; its label is a [FittedText], as large as the phone's font makes it while each
+ * of its words fits on a line. [state] is what TalkBack says after the tab's name ("Security, new results",
  * ux.md §8): material3's `NavigationBarItem` clears the semantics of its icon slot, where [badge]
  * sits, whenever the item has a label, so the badge itself is never read.
  */
@@ -112,7 +115,8 @@ private fun RowScope.Tab(
                 BadgedBox(badge = { badge() }) { Icon(painterResource(icon), contentDescription = null) }
             }
         },
-        label = { Text(stringResource(label)) },
+        // Never a word broken across lines, at 320 dp and 200 % in every language (i18n.md §4.5 rule 5).
+        label = { FittedText(stringResource(label), textAlign = TextAlign.Center) },
         modifier = Modifier.testTag("pv.tab.${root.name}").semantics { if (state != null) stateDescription = state },
     )
 }

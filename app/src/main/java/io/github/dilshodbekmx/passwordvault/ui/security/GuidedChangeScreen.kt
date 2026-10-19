@@ -34,7 +34,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -67,6 +66,7 @@ import io.github.dilshodbekmx.passwordvault.R
 import io.github.dilshodbekmx.passwordvault.data.SaveProblem
 import io.github.dilshodbekmx.passwordvault.nav.Navigator
 import io.github.dilshodbekmx.passwordvault.nav.Route
+import io.github.dilshodbekmx.passwordvault.ui.common.VaultTopBar
 import io.github.dilshodbekmx.passwordvault.ui.edit.GeneratorSheet
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -187,8 +187,8 @@ fun GuidedChangeScreen(vm: GuidedChangeViewModel, nav: Navigator) {
             testTagsAsResourceId = true
         },
         topBar = {
-            TopAppBar(
-                title = { Text(text = title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+            VaultTopBar(
+                title = title,
                 navigationIcon = {
                     IconButton(onClick = { nav.back() }, modifier = Modifier.testTag(GuidedChangeTags.BACK)) {
                         Icon(painterResource(R.drawable.ic_entry_back), contentDescription = stringResource(R.string.change_back))

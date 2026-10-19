@@ -97,6 +97,9 @@ class LayoutProbe(private val compose: SemanticsNodeInteractionsProvider, privat
     // ---- cut, clipped, split, covered and past the edge ------------------------------------------------
 
     private fun texts(node: SemanticsNode, window: Rect, controls: List<SemanticsNode>, found: Map<LayoutCheck, MutableList<String>>) {
+        // A lazy list composes and measures the items about to come into view before it places them:
+        // their nodes are not on the screen, and their positions mean nothing.
+        if (!node.layoutInfo.isPlaced) return
         if (node.config.contains(SemanticsActions.GetTextLayoutResult) && !node.config.contains(SemanticsProperties.EditableText)) {
             val problem = textProblem(node, window) ?: coveredBy(node, controls)
             if (problem != null) {
@@ -114,8 +117,14 @@ class LayoutProbe(private val compose: SemanticsNodeInteractionsProvider, privat
         if (horizontal == null && (full.left < window.left - 1 || full.right > window.right + 1)) {
             return "past the edge of its window (${dp(full.left)}..${dp(full.right)} of ${dp(window.width)} dp)"
         }
+        val vertical = scroller(node, SemanticsProperties.VerticalScrollAxisRange)
+        if (vertical == null && (full.bottom > window.bottom + 1 || full.top < window.top - 1)) {
+            return "past the ${if (full.bottom > window.bottom + 1) "bottom" else "top"} of a window that does not scroll " +
+                "(${dp(full.top)}..${dp(full.bottom)} of ${dp(window.height)} dp)"
+        }
         val layout = layoutOf(node)
         val mayCut = markedMayTruncate(node)
+        if (layout != null) spillsOutOf(node, layout)?.let { return it }
         if (layout != null && !mayCut) {
             val ellipsis = (0 until layout.lineCount).any { layout.isLineEllipsized(it) }
             if (ellipsis) return "cut with an ellipsis"
@@ -130,7 +139,6 @@ class LayoutProbe(private val compose: SemanticsNodeInteractionsProvider, privat
         }
         val shown = node.boundsInRoot
         if (!same(shown, full) && layout != null) {
-            val vertical = scroller(node, SemanticsProperties.VerticalScrollAxisRange)
             val scrollers = listOfNotNull(vertical, horizontal)
             // Partly scrolled away: seen whole once the walk scrolls it in.
             val scrolled = scrollers.any { !inside(full, it.boundsInRoot) }
@@ -219,6 +227,29 @@ class LayoutProbe(private val compose: SemanticsNodeInteractionsProvider, privat
         }
     }
 
+    /**
+     * A text whose letters reach out of a parent node that does not scroll (a bar or a field too
+     * small for it, which does not clip it): they are then drawn over what lies next to that parent,
+     * as a top bar's title of three lines in a bar of one line's height was drawn over the screen's
+     * first lines. The parents up to the first list or column that scrolls are looked at.
+     */
+    private fun spillsOutOf(node: SemanticsNode, layout: TextLayoutResult): String? {
+        val ink = inkOf(node, layout)
+        var parent = node.parent
+        while (parent != null && !parent.isRoot) {
+            if (parent.config.contains(SemanticsProperties.VerticalScrollAxisRange) || parent.config.contains(SemanticsProperties.HorizontalScrollAxisRange)) return null
+            if (parent.size.width > 0 && parent.size.height > 0) {
+                val box = Rect(parent.positionInRoot, parent.size.toSize())
+                val out = ink.firstOrNull { !inside(it, box.inflate(SPILL_ALLOWED * density)) }
+                if (out != null) {
+                    return "spills out of ${describe(parent)} (letters at ${dp(out.top)}..${dp(out.bottom)} dp, the parent at ${dp(box.top)}..${dp(box.bottom)} dp)"
+                }
+            }
+            parent = parent.parent
+        }
+        return null
+    }
+
     /** The controls that float over the content ([FLOATING]): only these can cover a text that is not theirs. */
     private fun collectControls(node: SemanticsNode, into: MutableList<SemanticsNode>) {
         if (node.config.getOrNull(SemanticsProperties.TestTag) in FLOATING) into += node
@@ -271,13 +302,20 @@ class LayoutProbe(private val compose: SemanticsNodeInteractionsProvider, privat
     // ---- touch targets --------------------------------------------------------------------------------
 
     private fun targets(node: SemanticsNode, found: Map<LayoutCheck, MutableList<String>>) {
+        if (!node.layoutInfo.isPlaced) return
         val control = node.config.contains(SemanticsActions.OnClick) || node.config.contains(SemanticsActions.OnLongClick)
         if (control && node.size.width > 0 && node.size.height > 0) {
             val full = Rect(node.positionInRoot, node.size.toSize())
+            val window = root(node).boundsInRoot
+            if (scroller(node, SemanticsProperties.VerticalScrollAxisRange) == null && full.bottom > window.bottom + 1) {
+                found.getValue(LayoutCheck.BUTTONS) += "past the bottom of a window that does not scroll " +
+                    "(${dp(full.top)}..${dp(full.bottom)} of ${dp(window.height)} dp): ${describe(node)}"
+            }
             if (same(node.boundsInRoot, full)) {
                 val touch = node.touchBoundsInRoot
                 if (touch.width < minTarget || touch.height < minTarget) {
-                    found.getValue(LayoutCheck.TARGETS) += "${dp(touch.width)} × ${dp(touch.height)} dp: ${describe(node)}"
+                    found.getValue(LayoutCheck.TARGETS) += "${dp(touch.width)} × ${dp(touch.height)} dp (touch ${dp(touch.left)},${dp(touch.top)}; " +
+                        "node ${dp(full.left)},${dp(full.top)} ${dp(full.width)} × ${dp(full.height)} dp): ${describe(node)}"
                 }
             }
         }
@@ -287,6 +325,7 @@ class LayoutProbe(private val compose: SemanticsNodeInteractionsProvider, privat
     // ---- plain English ---------------------------------------------------------------------------------
 
     private fun english(node: SemanticsNode, found: Map<LayoutCheck, MutableList<String>>) {
+        if (!node.layoutInfo.isPlaced) return
         val config = node.config
         if (config.getOrNull(SemanticsProperties.IsSensitiveData) != true) {
             val shown = mutableListOf<String>()
@@ -307,7 +346,8 @@ class LayoutProbe(private val compose: SemanticsNodeInteractionsProvider, privat
         val trimmed = text.trim()
         if (trimmed.isEmpty() || trimmed.any { it.code > 0x7F }) return false
         if (trimmed in sameEverywhere || trimmed in data) return false
-        var rest = trimmed
+        // Addresses are data, whatever language the screen is in: web addresses, email addresses, domains.
+        var rest = trimmed.replace(ADDRESS, " ")
         for (datum in data.sortedByDescending { it.length }) if (datum.length >= 2) rest = rest.replace(datum, " ")
         for (same in sameEverywhere.filter { it.length >= 3 }.sortedByDescending { it.length }) rest = rest.replace(same, " ")
         // What is left once the data, the dates, times and numbers are taken out.
@@ -316,6 +356,8 @@ class LayoutProbe(private val compose: SemanticsNodeInteractionsProvider, privat
     }
 
     // ---- helpers -----------------------------------------------------------------------------------------
+
+    private fun root(node: SemanticsNode): SemanticsNode = generateSequence(node) { it.parent }.last()
 
     private fun same(a: Rect, b: Rect): Boolean =
         kotlin.math.abs(a.left - b.left) <= 1f && kotlin.math.abs(a.top - b.top) <= 1f &&
@@ -362,8 +404,14 @@ class LayoutProbe(private val compose: SemanticsNodeInteractionsProvider, privat
          */
         val FLOATING = setOf("pv.list.add")
 
+        /** How far (dp) a text's letters may reach out of a parent, as a letter's accent may. */
+        private const val SPILL_ALLOWED = 2
+
         /** How much of a text (dp, each way) a control must cover to count. */
         private const val MIN_COVER = 4
+
+        /** A web address, an email address or a domain name. */
+        private val ADDRESS = Regex("""(?i)\b(?:[a-z][a-z0-9+.-]*://\S+|[\w.+-]+@[\w-]+(?:\.[\w-]+)+|(?:[a-z0-9-]+\.)+[a-z]{2,})\b""")
 
         /** Words that the phone's ICU writes into dates and times in English (months, AM and PM). */
         private val ICU_WORDS = setOf(

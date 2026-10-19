@@ -59,22 +59,28 @@ fun ClipboardRow(
                 painter = painterResource(if (cleared) R.drawable.ic_common_check else R.drawable.ic_common_key),
                 contentDescription = null,
             )
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .clearAndSetSemantics {
-                        contentDescription = announcement
-                        liveRegion = LiveRegionMode.Polite
-                    },
-            ) {
-                if (headline != null) Text(text = headline, style = MaterialTheme.typography.titleSmall)
-                Text(text = text, style = MaterialTheme.typography.bodyMedium)
-            }
-            if (actionLabel != null) {
-                TextButton(onClick = onAction) {
-                    Text(text = actionLabel)
-                }
-            }
+            // "Clear now" goes under the text when the two do not fit side by side (TextBeside).
+            TextBeside(
+                modifier = Modifier.weight(1f),
+                text = {
+                    Column(
+                        modifier = Modifier.clearAndSetSemantics {
+                            contentDescription = announcement
+                            liveRegion = LiveRegionMode.Polite
+                        },
+                    ) {
+                        if (headline != null) Text(text = headline, style = MaterialTheme.typography.titleSmall)
+                        Text(text = text, style = MaterialTheme.typography.bodyMedium)
+                    }
+                },
+                action = actionLabel?.let { label ->
+                    {
+                        TextButton(onClick = onAction) {
+                            Text(text = label)
+                        }
+                    }
+                },
+            )
         }
     }
 }

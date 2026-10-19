@@ -29,7 +29,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -39,8 +38,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -60,6 +59,8 @@ import io.github.dilshodbekmx.passwordvault.data.SaveProblem
 import io.github.dilshodbekmx.passwordvault.i18n.rememberFormatters
 import io.github.dilshodbekmx.passwordvault.nav.Navigator
 import io.github.dilshodbekmx.passwordvault.nav.Route
+import io.github.dilshodbekmx.passwordvault.ui.common.VaultTopBar
+import io.github.dilshodbekmx.passwordvault.ui.common.mayTruncate
 import io.github.dilshodbekmx.passwordvault.ui.theme.CardsLook
 import io.github.dilshodbekmx.passwordvault.ui.theme.LocalLook
 import kotlinx.coroutines.launch
@@ -129,8 +130,8 @@ fun GroupListScreen(viewModel: GroupListViewModel, nav: Navigator) {
     Scaffold(
         modifier = Modifier.semantics { paneTitle = title },
         topBar = {
-            TopAppBar(
-                title = { Text(title, modifier = Modifier.semantics { heading() }) },
+            VaultTopBar(
+                title = title,
                 navigationIcon = {
                     IconButton(onClick = { nav.back() }) {
                         Icon(painterResource(R.drawable.ic_list_back), contentDescription = stringResource(R.string.security_back))
@@ -233,8 +234,9 @@ private fun GroupRowItem(
     }
     val spoken = stringResource(description, row.title)
     ListItem(
-        headlineContent = { Text(row.title, maxLines = 2, overflow = TextOverflow.Ellipsis) },
-        supportingContent = if (row.username.isEmpty()) null else ({ Text(row.username, maxLines = 1, overflow = TextOverflow.Ellipsis) }),
+        // The row may cut the name and the login: the account's screen shows them whole (i18n.md §4.5 rule 3).
+        headlineContent = { Text(row.title, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.mayTruncate()) },
+        supportingContent = if (row.username.isEmpty()) null else ({ Text(row.username, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.mayTruncate()) }),
         trailingContent = {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 TextButton(onClick = action, modifier = Modifier.semantics { contentDescription = spoken }.testTag(SecurityTags.rowAction(row.id))) {

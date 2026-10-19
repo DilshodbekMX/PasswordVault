@@ -37,7 +37,8 @@ import io.github.dilshodbekmx.passwordvault.window.vaultTextField
  * `vaultTextField()` and an explicit obfuscation mode, `RevealLastTyped`, plus a show/hide button
  * (ux.md §3, lock.md §13.5). The text is always laid out left to right. While it is masked,
  * accessibility services read one mask character per character, never the text, on every version
- * of Android ([maskedForAccessibility]).
+ * of Android ([maskedForAccessibility]). A label that needs a second line moves above the box
+ * ([FieldLabel]).
  *
  * [state] is held by the screen's ViewModel (architecture.md §5.6, lock.md §5.8): this field adds
  * nothing to the saved-instance state, not even whether the password is shown, which starts hidden
@@ -77,12 +78,14 @@ fun VaultSecureField(
         else -> trailingIcon
     }
     val masked = !(revealable && revealed)
+    val fieldLabel = rememberFieldLabel(label)
     OutlinedSecureTextField(
         state = state,
         modifier = modifier.vaultTextField().maskedForAccessibility(state, masked),
         enabled = enabled,
         textStyle = textStyle.copy(textDirection = TextDirection.Ltr),
-        label = label?.let { slot -> { slot() } },
+        labelPosition = fieldLabel.position,
+        label = fieldLabel.label,
         placeholder = placeholder,
         leadingIcon = leadingIcon,
         trailingIcon = trailing,

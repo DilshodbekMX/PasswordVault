@@ -79,6 +79,18 @@ class Walker(private val compose: ComposeTestRule, val run: LayoutRun) {
         compose.waitForIdle()
     }
 
+    /** Long-presses the first control tagged [tag] (by its long-click action), scrolled to first. */
+    fun longPress(tag: String) {
+        last = "long-press $tag"
+        if (!exists(tag)) scrollToTag(tag)
+        await(tag)
+        last = "long-press $tag"
+        val node = compose.onAllNodesWithTag(tag)[0]
+        runCatching { node.performScrollTo() }
+        node.performSemanticsAction(SemanticsActions.OnLongClick)
+        compose.waitForIdle()
+    }
+
     /** Scrolls every lazy list or column that can scroll to a node to the one tagged [tag], if one has it. */
     private fun scrollToTag(tag: String) {
         val lists = compose.onAllNodes(hasScrollToNodeAction(), useUnmergedTree = true)
@@ -97,6 +109,14 @@ class Walker(private val compose: ComposeTestRule, val run: LayoutRun) {
         }
         compose.waitForIdle()
         Thread.sleep(SETTLE_MS)
+    }
+
+    /** Waits for [tag], scrolling the screen's lists to it meanwhile (a lazy list composes only what is shown). */
+    fun awaitScrolledTo(tag: String, timeoutMs: Long = WAIT_MS) {
+        last = "wait for $tag (scrolling)"
+        compose.waitUntil(timeoutMs) {
+            runCatching { exists(tag) || run { scrollToTag(tag); exists(tag) } }.getOrDefault(false)
+        }
     }
 
     /** Taps [tag] if it is shown; whether it was. */
@@ -149,21 +169,40 @@ class Walker(private val compose: ComposeTestRule, val run: LayoutRun) {
         for (index in scrollers.indices) {
             val scroller = compose.onAllNodes(hasScrollAction() and scrollsVertically, useUnmergedTree = true)[index]
             val node = runCatching { scroller.fetchSemanticsNode() }.getOrNull() ?: continue
-            val range = node.config.getOrNull(SemanticsProperties.VerticalScrollAxisRange) ?: continue
-            if (range.maxValue() <= 0f) continue
+            if ((node.config.getOrNull(SemanticsProperties.VerticalScrollAxisRange)?.maxValue() ?: 0f) <= 0f) continue
             val step = node.size.height * STEP_OF_VIEWPORT
-            runCatching { scroller.performSemanticsAction(SemanticsActions.ScrollBy) { it(0f, -1_000_000f) } }
+            // Each scroll is by no more than the list can move, so that nothing is left over for what
+            // holds it (a bottom sheet would be dragged down by the rest).
+            toTop(scroller)
             for (stretch in 0 until MAX_STRETCHES) {
-                val now = runCatching { scroller.fetchSemanticsNode().config.getOrNull(SemanticsProperties.VerticalScrollAxisRange) }.getOrNull() ?: break
-                if (now.value() >= now.maxValue() - 1f) break
-                runCatching { scroller.performSemanticsAction(SemanticsActions.ScrollBy) { it(0f, step) } }
-                compose.waitForIdle()
+                // A lazy list says only whether it can move on (its end is one more than where it is).
+                if (!scrollBy(scroller) { range -> if (range.maxValue() - range.value() in 0.5f..1.5f) step else minOf(step, range.maxValue() - range.value()) }) break
                 findings += probe.look()
             }
-            runCatching { scroller.performSemanticsAction(SemanticsActions.ScrollBy) { it(0f, -1_000_000f) } }
-            compose.waitForIdle()
+            toTop(scroller)
         }
         run.record(screen, findings)
+    }
+
+    /** Back to the top: a lazy list to its first item, a column by exactly its offset. */
+    private fun toTop(scroller: androidx.compose.ui.test.SemanticsNodeInteraction) {
+        val lazy = runCatching { scroller.fetchSemanticsNode().config.contains(SemanticsActions.ScrollToIndex) }.getOrDefault(false)
+        if (lazy) {
+            runCatching { scroller.performSemanticsAction(SemanticsActions.ScrollToIndex) { it(0) } }
+            compose.waitForIdle()
+        } else {
+            scrollBy(scroller) { range -> -range.value() }
+        }
+    }
+
+    /** Scrolls [scroller] by [by] of its range now; false when that is less than a pixel (nothing to scroll). */
+    private fun scrollBy(scroller: androidx.compose.ui.test.SemanticsNodeInteraction, by: (androidx.compose.ui.semantics.ScrollAxisRange) -> Float): Boolean {
+        val range = runCatching { scroller.fetchSemanticsNode().config.getOrNull(SemanticsProperties.VerticalScrollAxisRange) }.getOrNull() ?: return false
+        val delta = by(range)
+        if (kotlin.math.abs(delta) < 1f) return false
+        runCatching { scroller.performSemanticsAction(SemanticsActions.ScrollBy) { it(0f, delta) } }
+        compose.waitForIdle()
+        return true
     }
 
     /** Runs [action] as the step [name]; a step that fails is recorded and the walk goes on. */

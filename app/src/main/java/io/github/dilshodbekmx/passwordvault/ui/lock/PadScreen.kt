@@ -95,9 +95,16 @@ fun PadScreen(
                 }
             }
         } else {
-            LockPage(head = { PadHead(ui, formatters, logo = true) }) {
-                PadFoot(ui, formatters, onAction, keys = keys)
-            }
+            LockPadPage(
+                head = { PadTexts(ui, formatters, logo = true) },
+                dots = { PadDotsOf(ui) },
+                status = { ui.status?.let { LockLineText(it, formatters, LockTags.STATUS, centred = true) } },
+                keys = keys,
+                foot = {
+                    for (button in ui.buttons) LockButtonView(button, formatters, onAction, enabled = !ui.opening)
+                    if (ui.testBuild) TestBuildLine()
+                },
+            )
         }
     }
 }
@@ -108,6 +115,13 @@ fun PadScreen(
  */
 @Composable
 private fun PadHead(ui: PadUi, formatters: Formatters, logo: Boolean) {
+    PadTexts(ui, formatters, logo)
+    PadDotsOf(ui)
+}
+
+/** The head's texts: the line of a vault put aside, the logo, the title and "Enter your app PIN". */
+@Composable
+private fun PadTexts(ui: PadUi, formatters: Formatters, logo: Boolean) {
     val panel = LocalLockPanel.current
     ui.asideLine?.let { AsideLineText(it, formatters) }
     if (logo) LockMark()
@@ -119,6 +133,12 @@ private fun PadHead(ui: PadUi, formatters: Formatters, logo: Boolean) {
         textAlign = TextAlign.Center,
         modifier = Modifier.testTag(LockTags.SUBTITLE),
     )
+}
+
+/** The six dots, in the panel's colours where they lie on it. */
+@Composable
+private fun PadDotsOf(ui: PadUi) {
+    val panel = LocalLockPanel.current
     PinDots(
         entered = ui.digits,
         wrongTries = ui.wrongTries,

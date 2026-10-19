@@ -16,13 +16,12 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -50,6 +49,8 @@ import io.github.dilshodbekmx.passwordvault.data.SaveProblem
 import io.github.dilshodbekmx.passwordvault.i18n.rememberFormatters
 import io.github.dilshodbekmx.passwordvault.nav.Navigator
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultDialog
+import io.github.dilshodbekmx.passwordvault.ui.common.VaultTopBar
+import io.github.dilshodbekmx.passwordvault.ui.common.mayTruncate
 import kotlinx.coroutines.launch
 
 /** The Recently deleted route (ux.md §5.23): its ViewModel over the app's vault, and the screen. */
@@ -96,8 +97,8 @@ fun RecentlyDeletedScreen(viewModel: RecentlyDeletedViewModel, nav: Navigator) {
     Scaffold(
         modifier = Modifier.semantics { paneTitle = title },
         topBar = {
-            TopAppBar(
-                title = { Text(title, modifier = Modifier.semantics { heading() }) },
+            VaultTopBar(
+                title = title,
                 navigationIcon = {
                     IconButton(onClick = { nav.back() }) {
                         Icon(painterResource(R.drawable.ic_list_back), contentDescription = stringResource(R.string.list_back))
@@ -163,7 +164,8 @@ private fun DeletedRowItem(row: DeletedRow, deletedOn: String, onRestore: () -> 
     var menu by remember { mutableStateOf(false) }
     val restore = stringResource(R.string.list_deleted_restore_description, row.title)
     ListItem(
-        headlineContent = { Text(row.title, maxLines = 2, overflow = TextOverflow.Ellipsis) },
+        // The row may cut the name: the account's screen, opened from it, shows it whole (i18n.md §4.5 rule 3).
+        headlineContent = { Text(row.title, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.mayTruncate()) },
         supportingContent = { Text(deletedOn) },
         trailingContent = {
             Row(verticalAlignment = Alignment.CenterVertically) {

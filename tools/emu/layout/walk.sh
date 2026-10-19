@@ -150,6 +150,7 @@ run_part() {
     fi
     grep -q '^END ' "$report" || pv_report FAIL "$locale $name: the walk ended" "it stopped after: $(tail -n 1 "$report")"
     print_report "$locale" "$report"
+    rm -rf "${SHOTS:?}/$name"
     mkdir -p "$SHOTS/$name"
     pv_adb pull "/data/local/tmp/pv-layout/$name/." "$SHOTS/$name/" > /dev/null 2>&1 \
         && pv_log "pictures in $SHOTS/$name/ ($(ls "$SHOTS/$name" | wc -l))"

@@ -1,9 +1,9 @@
 package io.github.dilshodbekmx.passwordvault.ui.layout
 
 import android.content.Intent
-import androidx.compose.ui.test.longClick
-import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.lifecycle.ViewModelProvider
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.test.core.app.ActivityScenario
@@ -11,6 +11,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import io.github.dilshodbekmx.passwordvault.MainActivity
 import io.github.dilshodbekmx.passwordvault.PasswordVaultApp
+import io.github.dilshodbekmx.passwordvault.R
 import io.github.dilshodbekmx.passwordvault.core.model.DraftEntry
 import io.github.dilshodbekmx.passwordvault.core.model.EditTexts
 import io.github.dilshodbekmx.passwordvault.core.model.VaultEdits
@@ -46,6 +47,8 @@ import io.github.dilshodbekmx.passwordvault.ui.setup.FingerprintOfferTags
 import io.github.dilshodbekmx.passwordvault.ui.setup.PinTags
 import io.github.dilshodbekmx.passwordvault.ui.setup.SetupTags
 import io.github.dilshodbekmx.passwordvault.ui.settings.LanguageTags
+import io.github.dilshodbekmx.passwordvault.ui.settings.LicencesCatalog
+import io.github.dilshodbekmx.passwordvault.ui.settings.PartName
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -202,6 +205,12 @@ class LayoutWalkTest {
 
     /** The tab [root] at its root, with nothing over it. */
     private fun tab(walk: Walker, root: Route) {
+        if (walk.activity() == null) {
+            // A step left the app (a Back too many): it comes back to the front, still unlocked.
+            walk.run.note("the app was not in front before the tab ${root.name}; started again")
+            instrumentation.targetContext.startActivity(Intent(instrumentation.targetContext, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            compose.waitUntil(Walker.WAIT_MS) { walk.activity() != null }
+        }
         repeat(3) { if (walk.exists(NoticeTags.NOTICE)) answerNotice(walk) }
         val activity = walk.activity() as MainActivity
         instrumentation.runOnMainSync { nav(activity).tab(root) }
@@ -210,8 +219,10 @@ class LayoutWalkTest {
     }
 
     /** A notice of the lock over the app: looked at, then answered "Later" or "OK". */
+    private var notices = 0
+
     private fun answerNotice(walk: Walker) {
-        walk.look("Notice-" + (walk.textOf(NoticeTags.TITLE)?.let { "shown" } ?: "untitled"))
+        walk.look("Notice-${++notices}")
         if (!walk.tapIfShown("pv.answer.LATER")) walk.tapIfShown("pv.answer.OK")
     }
 
@@ -245,6 +256,11 @@ class LayoutWalkTest {
         walk.tap(GenTags.WORDS)
         walk.look("Generator-words")
         walk.tap(GenTags.USE)
+        // The field had a password: "Replace the password?" first.
+        if (runCatching { walk.await(EditTags.DIALOG_REPLACE, 5_000) }.isSuccess) {
+            walk.look("Edit-replacePassword")
+            walk.tap(EditTags.DIALOG_REPLACE)
+        }
         walk.awaitGone(GenTags.USE)
         walk.tap(EditTags.ADD_FIELD)
         walk.await(EditTags.FIELD_ADD)
@@ -282,6 +298,7 @@ class LayoutWalkTest {
         walk.onRoute(Route.Edit(""))
         walk.look("Edit")
         walk.type(EditTags.NOTES, " and at home")
+        walk.hideKeyboard()
         walk.back()
         if (walk.exists(EditTags.DIALOG_DISCARD)) {
             walk.look("Edit-saveChanges")
@@ -306,9 +323,13 @@ class LayoutWalkTest {
         walk.clear(ListTags.SEARCH)
         walk.hideKeyboard()
         val bank = accounts().getValue("Bank")
-        compose.onNodeWithTag(ListTags.row(bank), useUnmergedTree = true).performTouchInput { longClick() }
-        compose.waitForIdle()
+        walk.longPress(ListTags.row(bank))
         walk.look("Passwords-rowMenu")
+        // The menu's "Show in big letters", found by its text in the walk's language.
+        val bigLetters = walk.activity()!!.getString(R.string.list_menu_big_letters)
+        compose.onNodeWithText(bigLetters).performSemanticsAction(SemanticsActions.OnClick)
+        walk.onRoute(Route.BigLetters("", ""))
+        walk.look("BigLetters-fromList")
         walk.back()
     }
 
@@ -328,7 +349,7 @@ class LayoutWalkTest {
 
     private fun security(walk: Walker) {
         tab(walk, Route.Security)
-        walk.await(SecurityTags.cardButton(SecurityTags.REUSED), 60_000)
+        walk.awaitScrolledTo(SecurityTags.cardButton(SecurityTags.REUSED), 60_000)
         walk.look("Security")
         walk.tap(SecurityTags.cardButton(SecurityTags.REUSED))
         walk.onRoute(Route.Group(""))
@@ -375,6 +396,7 @@ class LayoutWalkTest {
         walk.tap(SettingsTags.open(Route.Backup))
         walk.onRoute(Route.Backup)
         walk.look("Backup")
+        if (walk.tapIfShown(BackupTags.CONTINUE)) walk.look("Backup-password")
         walk.type(BackupTags.FIELD, "not the password")
         walk.tap(BackupTags.SUBMIT)
         walk.await(BackupTags.ERROR, 60_000)
@@ -423,6 +445,19 @@ class LayoutWalkTest {
             walk.tap(SettingsTags.help(page))
             walk.onRoute(Route.Help(page))
             walk.look("Help-${page.name}")
+        }
+        // The names, versions, holders, licences and links of the parts the app is built from: data, the
+        // same in every language (a licence's name and text are not translated).
+        for (part in LicencesCatalog.parts) {
+            (part.name as? PartName.Fixed)?.let { walk.probe.data += it.text }
+            part.version?.let { walk.probe.data += it }
+            walk.probe.data += part.holders
+            part.licence?.let { licence ->
+                walk.probe.data += licence.title
+                walk.probe.data += licence.urls
+            }
+            part.source?.let { walk.probe.data += it }
+            walk.probe.data += part.groups
         }
         tab(walk, Route.Settings)
         walk.tap(SettingsTags.open(Route.Licences))

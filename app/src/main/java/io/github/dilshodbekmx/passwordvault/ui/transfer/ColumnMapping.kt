@@ -48,6 +48,7 @@ import io.github.dilshodbekmx.passwordvault.nav.Navigator
 import io.github.dilshodbekmx.passwordvault.ui.common.Banner
 import io.github.dilshodbekmx.passwordvault.ui.common.BannerKind
 import io.github.dilshodbekmx.passwordvault.ui.common.MaskedValue
+import io.github.dilshodbekmx.passwordvault.ui.common.mayTruncate
 
 /**
  * The column-mapping screen (`Route.ColumnMapping`; ux.md §5.21, formats.md §8.3): each column of the
@@ -209,7 +210,8 @@ private fun FirstValue(index: Int, column: MappingColumn) {
                     style = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Ltr),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = modifier.semantics { isSensitiveData = true },
+                    // A sample of the file's column, which may be cut: it only shows what the column holds.
+                    modifier = modifier.semantics { isSensitiveData = true }.mayTruncate(),
                 )
             }
         }

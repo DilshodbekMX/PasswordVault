@@ -63,12 +63,14 @@ import io.github.dilshodbekmx.passwordvault.i18n.resolve
 import io.github.dilshodbekmx.passwordvault.lock.LockManager
 import io.github.dilshodbekmx.passwordvault.lock.MpPurpose
 import io.github.dilshodbekmx.passwordvault.lock.MpResult
+import io.github.dilshodbekmx.passwordvault.ui.common.KeypadColumn
 import io.github.dilshodbekmx.passwordvault.ui.common.PIN_LENGTH
 import io.github.dilshodbekmx.passwordvault.ui.common.PinDots
 import io.github.dilshodbekmx.passwordvault.ui.common.PinKeys
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultFieldDefaults
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultSecureField
 import io.github.dilshodbekmx.passwordvault.ui.common.clearSecret
+import io.github.dilshodbekmx.passwordvault.ui.common.fadeWhereMore
 import io.github.dilshodbekmx.passwordvault.ui.common.readSecret
 import java.security.MessageDigest
 import kotlin.coroutines.cancellation.CancellationException
@@ -518,7 +520,7 @@ fun PinStepPage(
     val keys: @Composable () -> Unit = {
         if (cover == null) PinKeys(onDigit = onDigit, onDelete = onDelete, onClear = onClear) else cover()
     }
-    val end: @Composable ColumnScope.() -> Unit = {
+    val footerText: @Composable ColumnScope.() -> Unit = {
         if (footer != null) {
             Text(
                 text = footer,
@@ -527,6 +529,9 @@ fun PinStepPage(
                 modifier = Modifier.testTag(PinTags.FOOTER),
             )
         }
+    }
+    val end: @Composable ColumnScope.() -> Unit = {
+        footerText()
         buttons()
     }
     // The page has no text field: a keyboard left open by the step before (the master password)
@@ -560,19 +565,41 @@ fun PinStepPage(
                 }
             }
         } else {
-            Column(
-                modifier = Modifier
-                    .safeDrawingPadding()
-                    .widthIn(max = 640.dp)
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 24.dp, vertical = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                texts()
-                dots()
-                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { keys() }
-                end()
+            // Upright: the keypad and the dots stay whole on the screen together; the texts above them
+            // (with the footer) take the height that is left and scroll there (KeypadColumn).
+            BoxWithConstraints(Modifier.safeDrawingPadding().widthIn(max = 640.dp).fillMaxWidth()) {
+                val viewport = maxHeight
+                Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+                    KeypadColumn(
+                        viewport = viewport,
+                        head = {
+                            val scroll = rememberScrollState()
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .fadeWhereMore(scroll, MaterialTheme.colorScheme.surface)
+                                    .verticalScroll(scroll)
+                                    .padding(start = 24.dp, end = 24.dp, top = 16.dp),
+                                verticalArrangement = Arrangement.spacedBy(16.dp),
+                            ) {
+                                texts()
+                                footerText()
+                            }
+                        },
+                        dots = {
+                            Column(
+                                modifier = Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 8.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                dots()
+                            }
+                        },
+                        keys = { Box(Modifier.fillMaxWidth().padding(horizontal = 24.dp), contentAlignment = Alignment.Center) { keys() } },
+                        foot = {
+                            Column(Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 16.dp)) { buttons() }
+                        },
+                    )
+                }
             }
         }
     }

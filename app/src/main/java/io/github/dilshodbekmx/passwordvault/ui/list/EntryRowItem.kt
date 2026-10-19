@@ -44,6 +44,7 @@ import io.github.dilshodbekmx.passwordvault.R
 import io.github.dilshodbekmx.passwordvault.core.search.matchedRanges
 import io.github.dilshodbekmx.passwordvault.ui.common.CardPart
 import io.github.dilshodbekmx.passwordvault.ui.common.cardPart
+import io.github.dilshodbekmx.passwordvault.ui.common.mayTruncate
 import io.github.dilshodbekmx.passwordvault.ui.theme.CardsLook
 import io.github.dilshodbekmx.passwordvault.ui.theme.LocalLook
 import io.github.dilshodbekmx.passwordvault.ui.theme.Look
@@ -112,7 +113,8 @@ internal fun EntryRowItem(
     val part = rowGroup(look, card)
     Box(Modifier.cardPart(part, look)) {
         ListItem(
-            headlineContent = { Text(title, maxLines = 2, overflow = TextOverflow.Ellipsis) },
+            // The row may cut the name and the login: the account's screen shows them whole (i18n.md §4.5 rule 3).
+            headlineContent = { Text(title, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.mayTruncate()) },
             supportingContent = if (row.detail.isEmpty()) {
                 null
             } else {
@@ -122,6 +124,7 @@ internal fun EntryRowItem(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         style = LocalTextStyle.current.copy(textDirection = TextDirection.Ltr),
+                        modifier = Modifier.mayTruncate(),
                     )
                 }
             },

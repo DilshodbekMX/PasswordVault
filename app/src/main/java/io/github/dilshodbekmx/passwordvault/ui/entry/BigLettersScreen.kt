@@ -26,7 +26,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -57,6 +56,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.dilshodbekmx.passwordvault.R
 import io.github.dilshodbekmx.passwordvault.nav.Navigator
+import io.github.dilshodbekmx.passwordvault.ui.common.VaultTopBar
 
 /**
  * "Show in big letters" (ux.md §5.13): a full screen for one password, username or hidden value of
@@ -114,8 +114,8 @@ fun BigLettersScreen(vm: BigLettersViewModel, nav: Navigator) {
             }
             .onAnyTouch(vm::touched),
         topBar = {
-            TopAppBar(
-                title = { Text(text = title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+            VaultTopBar(
+                title = title,
                 navigationIcon = {
                     IconButton(onClick = ::close, modifier = Modifier.testTag(EntryTags.BIG_CLOSE)) {
                         Icon(painterResource(R.drawable.ic_entry_close), contentDescription = stringResource(R.string.common_close))
