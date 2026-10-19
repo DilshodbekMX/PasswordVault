@@ -210,10 +210,12 @@ tasks.withType<Test>().configureEach {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Build checks (architecture.md §8.5, lock.md §15.5). Each variant's `assemble` runs its checks;
-// `buildCheck<Variant>Manifest` also runs on its own (tools/check.sh offline). The source scans R-4,
-// R-6, R-10, R-11 and R-13 are unit tests (arch/ in the tests of :core and :app); R-3 is a device
-// test.
+// Build checks (architecture.md §8.5, lock.md §15.5). Each variant's `assemble` runs its checks:
+// buildCheck<Variant>Manifest (R-1, R-5, R-7, R-9, R-14, allowBackup and debuggable), ...Apk (R-2,
+// R-8, R-17), ...BuildConfig (R-2), ...R8 (R-16, where R8 runs) and buildCheckNoTrackedBuildOutput
+// (R-12); `buildCheck<Variant>Manifest` also runs on its own (tools/check.sh offline). The source
+// scans R-4, R-6, R-10, R-11, R-13 and R-15 are unit tests (arch/ in the tests of :core and :app);
+// R-3 is a device test.
 // ---------------------------------------------------------------------------------------------
 
 /**
