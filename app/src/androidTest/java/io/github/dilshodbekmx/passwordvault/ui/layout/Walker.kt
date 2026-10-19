@@ -1,13 +1,17 @@
 package io.github.dilshodbekmx.passwordvault.ui.layout
 
 import android.app.Activity
+import androidx.compose.ui.semantics.ScrollAxisRange
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasScrollToNodeAction
 import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.isDialog
+import androidx.compose.ui.test.isPopup
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
@@ -170,8 +174,13 @@ class Walker(private val compose: ComposeTestRule, val run: LayoutRun) {
     /**
      * Looks at the screen now as [screen]: a picture of it as it opens, then the checks on what is laid
      * out, then (unless not [scrollLists]) the checks again after each stretch of every list or column
-     * that scrolls, from its top to its end, with a picture of each stretch as `<screen>--2`, `--3`, ...
-     * when the run asks for them ([LayoutRun.stretchShots]); it is left scrolled back to the top.
+     * that scrolls, from its top to its end; it is left scrolled back to the top.
+     *
+     * When the run asks for them ([LayoutRun.stretchShots]: the owner's picture set), a list or column
+     * also gets a picture each time it has moved by about the part it shows (a lazy list moves by a few
+     * rows per stretch), and one at its end, as `<screen>--2`, `--3`, ...; with a dialog or a menu open,
+     * only the lists inside it do (a list behind it would move under the same dialog). Such a run follows
+     * a list to its end ([MAX_STRETCHES_FOR_PICTURES]).
      */
     fun look(screen: String, scrollLists: Boolean = true, english: Boolean = true) {
         compose.waitForIdle()
@@ -184,27 +193,49 @@ class Walker(private val compose: ComposeTestRule, val run: LayoutRun) {
         // A menu over a list is looked at as it is: scrolling the list behind it would take away the
         // row it belongs to, and the menu with it.
         val scrollers = if (!scrollLists) emptyList() else compose.onAllNodes(hasScrollAction() and scrollsVertically, useUnmergedTree = true).fetchSemanticsNodes(atLeastOneRootRequired = false)
+        val overlays = run.stretchShots &&
+            compose.onAllNodes(isDialog() or isPopup(), useUnmergedTree = true).fetchSemanticsNodes(atLeastOneRootRequired = false).isNotEmpty()
         var pictures = 1
         for (index in scrollers.indices) {
             val scroller = compose.onAllNodes(hasScrollAction() and scrollsVertically, useUnmergedTree = true)[index]
             val node = runCatching { scroller.fetchSemanticsNode() }.getOrNull() ?: continue
             if ((node.config.getOrNull(SemanticsProperties.VerticalScrollAxisRange)?.maxValue() ?: 0f) <= 0f) continue
             val step = node.size.height * STEP_OF_VIEWPORT
+            val pictured = run.stretchShots && (!overlays || node.insideOverlay())
             // Each scroll is by no more than the list can move, so that nothing is left over for what
             // holds it (a bottom sheet would be dragged down by the rest).
+            // A lazy list says only whether it can move on (its end is one more than where it is).
+            val by = { range: ScrollAxisRange -> if (range.maxValue() - range.value() in 0.5f..1.5f) step else minOf(step, range.maxValue() - range.value()) }
             toTop(scroller)
-            for (stretch in 0 until MAX_STRETCHES) {
-                // A lazy list says only whether it can move on (its end is one more than where it is).
-                if (!scrollBy(scroller) { range -> if (range.maxValue() - range.value() in 0.5f..1.5f) step else minOf(step, range.maxValue() - range.value()) }) break
+            var moved = 0f
+            for (stretch in 0 until if (run.stretchShots) MAX_STRETCHES_FOR_PICTURES else MAX_STRETCHES) {
+                val range = runCatching { scroller.fetchSemanticsNode().config.getOrNull(SemanticsProperties.VerticalScrollAxisRange) }.getOrNull()
+                if (!scrollBy(scroller, by)) break
                 findings += probe.look()
-                if (run.stretchShots) {
+                moved += range?.let(by) ?: step
+                if (pictured && moved >= step) {
                     Thread.sleep(SETTLE_MS)
                     run.shot("$screen--${++pictures}")
+                    moved = 0f
                 }
+            }
+            if (pictured && moved > 0f) {
+                Thread.sleep(SETTLE_MS)
+                run.shot("$screen--${++pictures}")
             }
             toTop(scroller)
         }
         run.record(screen, findings)
+    }
+
+    /** Whether this node is inside a dialog or a popup (a menu), whose root says so. */
+    private fun SemanticsNode.insideOverlay(): Boolean {
+        var node: SemanticsNode? = this
+        while (node != null) {
+            if (node.config.contains(SemanticsProperties.IsDialog) || node.config.contains(SemanticsProperties.IsPopup)) return true
+            node = node.parent
+        }
+        return false
     }
 
     /** Back to the top: a lazy list to its first item, a column by exactly its offset. */
@@ -244,6 +275,9 @@ class Walker(private val compose: ComposeTestRule, val run: LayoutRun) {
         private const val KEYBOARD_GONE_MS = 3_000L
         private const val STEP_OF_VIEWPORT = 0.7f
         private const val MAX_STRETCHES = 40
+
+        /** A run that keeps pictures of the stretches follows a long list (the licences) to its end. */
+        private const val MAX_STRETCHES_FOR_PICTURES = 400
 
         private val scrollsVertically = SemanticsMatcher("scrolls vertically") {
             val range = it.config.getOrNull(SemanticsProperties.VerticalScrollAxisRange)

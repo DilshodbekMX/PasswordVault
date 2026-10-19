@@ -540,17 +540,28 @@ smoke_prompt_negative() {
     return 1
 }
 
+# smoke_has_pin: the current vault has a PIN slot. The status lists every lock directory: after the
+# wave-5 stage's restore the vault put aside keeps its own PIN record, so only the current vault's
+# ("vaults: <id> generation N", then "lock <id>" and its pin.rec) counts.
+smoke_has_pin() {
+    pva_status | awk '
+        /^vaults: / { current = $2 }
+        /^lock / { here = ($2 == current) }
+        here && /^pin[.]rec: OK, slot set/ { found = 1 }
+        END { exit found ? 0 : 1 }'
+}
+
 # smoke_pin_set: a PIN slot. The wave-5 stage's restore leaves none ("Choose a PIN" was answered "Not
 # now" there): Lock now, the master password, and "Choose a PIN" with SMOKE_PIN typed twice; the
 # fingerprint offer "Not now".
 smoke_pin_set() {
-    pva_status | grep -qE '^pin.rec: OK, slot set' && return 0
+    smoke_has_pin && return 0
     pva_lock_now || return 1
     if pva_prompt_open UNLOCK 5; then smoke_prompt_negative || return 1; fi
     pva_need pv.lock.password 20 && pva_type pv.lock.password "$PVA_PASSWORD" || return 1
     pva_hide_keyboard
     pva_tap pv.lock.unlock && pva_opened 90 && pva_to_create_pin && pva_choose_pin "$SMOKE_PIN" && pva_after_pin notNow Passwords || return 1
-    pva_status_has '^pin.rec: OK, slot set'
+    smoke_has_pin || { pv_log "the current vault has no PIN slot: $(pva_status | tr '\n' ';' | cut -c1-600)"; return 1; }
 }
 
 # smoke_lock_pin: Lock now; the pad (under the prompt, when fingerprint unlock is on); the PIN opens the

@@ -20,6 +20,7 @@
 # to it, and a part that fails is reported and the next one starts):
 #   setup      a fresh install; setup with a PIN refused, then chosen; fingerprint unlock turned on
 #              through the system's prompt; an account through the form.
+#   deleted    an account deleted from its screen; Recently deleted, a row's menu, "Delete forever?".
 #   pad        Lock now: the prompt opens by itself; "Use PIN"; wrong PINs: the pad's lines (tries left,
 #              the same PIN again, the last try), the fifth: the PIN off, the fingerprint-only screen;
 #              "Use master password", a wrong one, the right one: the notices and "Choose a new PIN".
@@ -36,9 +37,9 @@
 #              its grace and past it, "I can't remember it" and the list's overdue banner, the backup
 #              banner and "Make a backup now?".
 #   keys       fingerprint and PIN keys gone (the debug command drop-keys): the lock screen's lines, the
-#              master password, "Turn fingerprint unlock on again?".
-#   empty      "Forgot master password?" > "Start with an empty app": the question, a new vault, Settings'
-#              "Old passwords" and its dialogs.
+#              master password, the notices ("Turn fingerprint unlock on again?"); "Choose a PIN" "Not now".
+#   empty      with no PIN and no fingerprint: "Forgot master password?" with "Start with an empty app", the
+#              question, a new vault, Settings' "Old passwords" and its dialogs.
 #   restore    a restore from Welcome with the backup of the part files: the intro, the master password,
 #              the summary.
 # Exit 0 when no step failed.
@@ -73,10 +74,25 @@ CLOCK_MOVED=0
 
 want() { [ -z "$ONLY" ] || [[ ",$ONLY," == *",$1,"* ]]; }
 
-# shot N NAME [WAIT]: the screen as OUT/N-NAME.png after WAIT seconds (default 1).
+# shot N NAME [WAIT]: the screen as OUT/N-NAME.png after WAIT seconds (default 1). The system's
+# fingerprint prompt (API 28 and later) is a secure window, which screencap gives black: a picture that
+# is black throughout is taken again with the emulator's own screenshot (adb emu screenrecord
+# screenshot DIR, which writes on this computer; tools/emu/README.md, "Device facts").
 shot() {
+    local f=$OUT/$1-$2.png dir newest
     pv_sleep "${3:-1}"
-    pva_screenshot "$OUT/$1-$2.png" >/dev/null 2>&1 && echo "SHOT $1-$2"
+    pva_screenshot "$f" >/dev/null 2>&1 || return 0
+    if python3 -c 'import sys
+from PIL import Image
+sys.exit(0 if Image.open(sys.argv[1]).convert("L").getextrema()[1] < 8 else 1)' "$f" 2>/dev/null; then
+        dir=$(mktemp -d "${TMPDIR:-/tmp}/pv-emushot.XXXXXX") || return 0
+        pv_adb emu screenrecord screenshot "$dir" >/dev/null 2>&1
+        newest=$(ls -t "$dir"/*.png 2>/dev/null | head -n 1)
+        if [ -n "$newest" ]; then mv -f "$newest" "$f"; echo "SHOT $1-$2 (the emulator's screenshot: a secure window)"; fi
+        rm -rf "$dir"
+        return 0
+    fi
+    echo "SHOT $1-$2"
     return 0
 }
 
@@ -113,8 +129,9 @@ notice_answer() {
 }
 
 # settle ROUTE PIN [N]: after an unlock, until ROUTE is shown alone: a picture of each notice (N-notice-K,
-# answered "OK" or "Later"), of "Choose a PIN" (N-create-pin, then PIN twice), the fingerprint offer
-# "Not now", "Make backups" "Finish", a prompt closed with its negative button.
+# answered "OK" or "Later"), of "Choose a PIN" (N-create-pin, then PIN twice; "Not now" when PIN is "-"
+# or "none"), the fingerprint offer "Not now", "Make backups" "Finish", a prompt closed with its negative
+# button.
 NOTICES=0
 settle() {
     local route=$1 pin=$2 n=${3:-0} deadline=$((SECONDS + 180)) nodes
@@ -128,10 +145,16 @@ settle() {
             notice_answer || return 1
         elif pva_in_nodes '[|]pv\.route\.CreatePin$' "$nodes"; then
             [ "$n" = 0 ] || shot "$n" create-pin
-            pva_pin "$pin" || return 1
+            case "$pin" in
+                - | none) pva_tap pv.pin.notNow || return 1 ;;
+                *) pva_pin "$pin" || return 1 ;;
+            esac
             pv_sleep 1
         elif pva_in_nodes '[|]pv\.route\.ConfirmPin$' "$nodes"; then
-            pva_pin "$pin" || return 1
+            case "$pin" in
+                - | none) back ;;
+                *) pva_pin "$pin" || return 1 ;;
+            esac
             pv_sleep 2
         elif pva_in_nodes '[|]pv\.route\.FingerprintOffer$' "$nodes"; then
             pva_tap pv.fingerprintOffer.notNow || return 1
@@ -221,8 +244,9 @@ part_setup() {
     pv_step "setup: a refused PIN, a PIN, fingerprint unlock through the system's prompt" -- set_up || return 1
     pv_step "an account through the form" -- pva_add_account Gmail aziz.karimov@gmail.com Toshkent2024 mail.google.com 'Recovery codes in the safe'
     pv_step "the list" -- to_list
-    want deleted && pv_step "an account deleted; Recently deleted, Delete forever" -- delete_forever
 }
+
+part_deleted() { pv_step "an account deleted; Recently deleted, Delete forever, Empty" -- delete_forever; }
 
 # ---- pad: the lock screen's PIN pad and its lines ----------------------------------------------------------
 lock_with_prompt() {
@@ -533,7 +557,9 @@ settings_dialogs() {
 }
 
 # Recently deleted: an account deleted from its screen's menu (its message), the list of deleted
-# accounts, a row's menu and "Delete forever?".
+# accounts, a row's menu, "Delete forever?" and "Empty" with its question. A dialog's buttons show no
+# resource id (its window is a root of its own without testTagsAsResourceId), so its picture is taken
+# once a dialog's window is in front.
 delete_forever() {
     local more item
     to_list && pva_add_account Olx aziz olx-Samarqand1999 olx.uz 'Old account' || return 1
@@ -545,8 +571,11 @@ delete_forever() {
     [ -n "$more" ] || { pv_log "no row menu; ids: $(pva_ids)"; return 1; }
     pva_tap "$more" && pv_sleep 1 && shot 107 recently-deleted-menu
     item=$(pv_ui_nodes | awk -F'|' '$1 != "" { print $6, $7; exit }')
-    [ -n "$item" ] && pv_shell input tap $item >/dev/null && pva_need pv.list.dialogConfirm 10 || return 1
-    shot 108 recently-deleted-forever-question
+    [ -n "$item" ] && pv_shell input tap $item >/dev/null || return 1
+    shot 108 recently-deleted-forever-question 1.5
+    back
+    pva_on RecentlyDeleted 10 && pva_tap pv.deleted.empty || return 1
+    shot 109 recently-deleted-empty-question 1.5
     back
     to_list
 }
@@ -657,7 +686,10 @@ keys_gone() {
     if pva_present pv.lock.forgotPin 2; then pva_tap pv.lock.forgotPin; fi
     pva_need pv.lock.password 20 && pva_type pv.lock.password "$PVA_PASSWORD" && pva_hide_keyboard && pva_tap pv.lock.unlock || return 1
     pva_unlocked Passwords 90 || return 1
-    settle Passwords "$PIN_NOW" 263
+    # "Choose a PIN" answered "Not now": with no PIN and no fingerprint the "Forgot master password?"
+    # sheet offers "Start with an empty app" (the part empty).
+    PIN_NOW=none
+    settle Passwords - 263
 }
 
 part_keys() { pv_step "the Keystore keys dropped (debug command): the lock screen, the master password, the notices" -- keys_gone; }
@@ -670,12 +702,13 @@ start_empty() {
     [ "$(pvl_screen)" = prompt ] && pvl_prompt_negative
     if pvl_wait_screen pad 5; then pva_tap pv.lock.forgotPin; fi
     pva_need pv.lock.password 20 && pva_hide_keyboard && pva_tap pv.lock.forgot && pva_need pv.lock.sheet 10 || return 1
-    shot 270 forgot-sheet
+    shots 270 forgot-sheet-no-shortcut 3
     pva_need pv.lock.sheet.empty 10 || return 1
     pva_tap pv.lock.sheet.empty && pva_need pv.lock.confirmYes 10 || return 1
     shots 271 start-empty-question 3
     pva_tap pv.lock.confirmYes || return 1
     pva_set_up && pva_settle Passwords 120 || return 1
+    PIN_NOW=none
     settings && pva_reveal pv.open.OldPasswords && shot 272 settings-old-passwords-row || return 1
     pva_tap pv.open.OldPasswords && pva_on OldPasswords 20 || return 1
     shots 273 old-passwords 3
@@ -690,7 +723,6 @@ start_empty() {
         pva_tap "$del" && pv_sleep 2 && shot 275 old-passwords-delete
         if pva_present pv.backup.cancel 2; then pva_tap pv.backup.cancel; else back; fi
     fi
-    PIN_NOW=none
 }
 
 part_empty() { pv_step "Forgot master password? > Start with an empty app; Old passwords" -- start_empty; }
@@ -724,6 +756,7 @@ part_restore() { pv_step "a restore from Welcome: the intro, the master password
 
 echo "pictures of the real app in $LANG_TAG on $SERIAL, into $OUT"
 part_setup || pvl_end
+want deleted && part_deleted
 want pad && part_pad
 want newmp && part_newmp
 want files && part_files

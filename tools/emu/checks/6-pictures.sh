@@ -128,7 +128,8 @@ tests_lang() {
         pv_adb install -r -t "$TEST_APK" > "$LOGS/tests-$l/install-test.log" 2>&1 || exit 1
         pv_unlock > /dev/null 2>&1
     ) || { echo "   tests $l: the APKs did not install"; return 1; }
-    while IFS='|' read -r name class args where; do
+    # The specs come on descriptor 3: adb reads its standard input, which would eat the list.
+    while IFS='|' read -r name class args where <&3; do
         [ -n "$name" ] || continue
         PV_SERIAL=$S37 pv_shell pm clear "$P" > /dev/null 2>&1
         PV_SERIAL=$S37 pv_shell cmd locale set-app-locales "$P" --locales "$t" > /dev/null 2>&1
@@ -160,7 +161,7 @@ tests_lang() {
         grep -A1 'INSTRUMENTATION_STATUS: stack=' "$LOGS/tests-$l/$name.log" | grep -v '^--' | grep -v 'INSTRUMENTATION_STATUS: stack=$' \
             | sed -n 's/^INSTRUMENTATION_STATUS: stack=//p' | cut -c1-200 | sed 's/^/     failed: /'
         [ "$n" -gt 0 ] || rc=1
-    done <<< "$TEST_SPECS"
+    done 3<<< "$TEST_SPECS"
     PV_SERIAL=$S37 pv_shell cmd locale set-app-locales "$P" > /dev/null 2>&1
     PV_SERIAL=$S37 pv_adb uninstall "$P.test" > /dev/null 2>&1
     return $rc
