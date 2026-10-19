@@ -43,15 +43,15 @@
 
     <string name="change_created">Новый пароль сохранён.</string>
     <string name="change_reverted">Старый пароль возвращён.</string>
-    <string name="change_save_failed">Не удалось сохранить. Возможно, память телефона заполнена.</string>
+    <string name="change_save_failed">Не удалось сохранить. Возможно, хранилище телефона заполнено.</string>
     <string name="change_too_large">Ваши пароли больше не помещаются в один файл. Удалите ненужные аккаунты или сократите очень длинные заметки.</string>
     <string name="change_no_browser">На этом телефоне нет браузера.</string>
-    <string name="change_copy_blocked">Телефон заблокировал копирование. Откройте аккаунт, нажмите «Показать крупными буквами» и введите пароль вручную.</string>
+    <string name="change_copy_blocked">Этот телефон заблокировал копирование. Откройте аккаунт, нажмите «Показать крупно» и введите пароль вручную.</string>
 
-    <string name="change_gone">Этого аккаунта больше нет.</string>
+    <string name="change_gone">Этот аккаунт больше не существует.</string>
     <string name="change_gone_deleted">Этот аккаунт удалён. В течение 30&#160;дней его можно восстановить в разделе «Недавно удалённые».</string>
 
-    <string name="change_copied_old">Старый пароль для «%1$s»</string>
-    <string name="change_copied_new">Новый пароль для «%1$s»</string>
+    <string name="change_copied_old">Старый пароль аккаунта «%1$s»</string>
+    <string name="change_copied_new">Новый пароль аккаунта «%1$s»</string>
     <string name="change_copied">Скопировано</string>
 </resources>

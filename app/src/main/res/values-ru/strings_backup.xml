@@ -9,7 +9,7 @@
 
     <string name="backup_title">Создать резервную копию</string>
     <string name="backup_back">Назад</string>
-    <string name="backup_explain">Резервная копия — это защищённая копия всех ваших паролей. Она открывается только вашим мастер-паролем, на любом телефоне.</string>
+    <string name="backup_explain">Резервная копия — это защищённая копия всех ваших паролей. Она открывается только мастер-паролем, на любом телефоне.</string>
     <string name="backup_explain_continue">Продолжить</string>
     <string name="backup_pending">Резервную копию можно будет создать, когда ваш новый мастер-пароль заработает.</string>
     <string name="backup_password_text">Введите мастер-пароль. Так приложение проверит, что вы помните пароль, который понадобится для этой резервной копии.</string>
@@ -17,15 +17,15 @@
     <string name="backup_paused">Это было приостановлено, когда приложение заблокировалось.</string>
     <string name="backup_make">Создать копию</string>
     <string name="backup_checking">Проверка…</string>
-    <string name="backup_wrong">Это неверный мастер-пароль. Проверьте раскладку клавиатуры (латиница или кириллица) и заглавные буквы.</string>
-    <string name="backup_wait">Подождите 30&#160;секунд и повторите попытку. Не спешите и сверьтесь со своей записью на бумаге.</string>
+    <string name="backup_wrong">Неверный мастер-пароль. Проверьте язык клавиатуры (латиница или кириллица) и заглавные буквы.</string>
+    <string name="backup_wait">Подождите 30&#160;секунд, затем повторите попытку. Не спешите и сверьтесь с записью на бумаге.</string>
     <plurals name="backup_wait_seconds">
         <item quantity="one">Повторите попытку через %d&#160;секунду</item>
         <item quantity="few">Повторите попытку через %d&#160;секунды</item>
         <item quantity="many">Повторите попытку через %d&#160;секунд</item>
         <item quantity="other">Повторите попытку через %d&#160;секунды</item>
     </plurals>
-    <string name="backup_no_memory">На телефоне недостаточно свободной памяти, чтобы проверить мастер-пароль. Закройте другие приложения или перезапустите телефон и повторите попытку.</string>
+    <string name="backup_no_memory">На телефоне недостаточно свободной оперативной памяти, чтобы проверить мастер-пароль. Закройте другие приложения или перезапустите телефон, затем повторите попытку.</string>
     <string name="backup_older">Вы изменили мастер-пароль %1$s. Введите новый.</string>
     <string name="backup_older_unfinished">Возможно, изменение мастер-пароля %1$s не завершилось. Введите новый мастер-пароль.</string>
     <string name="backup_making">Создание резервной копии…</string>
@@ -53,18 +53,18 @@
     <string name="backup_write_failed">Не удалось сохранить в это место. Попробуйте другую папку.</string>
     <string name="backup_check_failed">Не удалось проверить сохранённый файл. Повторите попытку или выберите другое место.</string>
     <string name="backup_not_made">Не удалось создать резервную копию. Повторите попытку.</string>
-    <string name="backup_no_memory_make">На телефоне недостаточно свободной памяти, чтобы создать резервную копию. Закройте другие приложения или перезапустите телефон и повторите попытку.</string>
+    <string name="backup_no_memory_make">На телефоне недостаточно свободной оперативной памяти, чтобы создать резервную копию. Закройте другие приложения или перезапустите телефон, затем повторите попытку.</string>
     <string name="backup_choose_other">Выбрать другое место</string>
 
     <string name="backup_file_removed">Файл удалён.</string>
-    <string name="backup_file_left_phone">Удалите файл %1$s из памяти этого телефона вручную.</string>
-    <string name="backup_file_left_drive">Удалите файл %1$s из Google Drive вручную.</string>
-    <string name="backup_file_left_other">Удалите файл %1$s из хранилища «%2$s» вручную.</string>
+    <string name="backup_file_left_phone">Удалите сами файл %1$s из хранилища этого телефона.</string>
+    <string name="backup_file_left_drive">Удалите сами файл %1$s из Google Drive.</string>
+    <string name="backup_file_left_other">Удалите сами файл %1$s из хранилища «%2$s».</string>
 
     <string name="backup_stopped_removed">Резервная копия не создана. Пустой файл удалён.</string>
-    <string name="backup_stopped_left_phone">Резервная копия не создана. Удалите пустой файл %1$s из памяти этого телефона вручную.</string>
-    <string name="backup_stopped_left_drive">Резервная копия не создана. Удалите пустой файл %1$s из Google Drive вручную.</string>
-    <string name="backup_stopped_left_other">Резервная копия не создана. Удалите пустой файл %1$s из хранилища «%2$s» вручную.</string>
+    <string name="backup_stopped_left_phone">Резервная копия не создана. Удалите сами пустой файл %1$s из хранилища этого телефона.</string>
+    <string name="backup_stopped_left_drive">Резервная копия не создана. Удалите сами пустой файл %1$s из Google Drive.</string>
+    <string name="backup_stopped_left_other">Резервная копия не создана. Удалите сами пустой файл %1$s из хранилища «%2$s».</string>
 
     <string name="backup_restore_title">Восстановить из резервной копии</string>
     <string name="backup_restore_intro">Выберите файл резервной копии, который сохранило это приложение. Его имя начинается с PasswordVault-backup.</string>
@@ -84,7 +84,7 @@
         <item quantity="other">%1$d&#160;аккаунта, резервная копия создана %2$s.</item>
     </plurals>
     <string name="backup_restore_restore">Восстановить</string>
-    <string name="backup_restore_stays">Ваши текущие пароли останутся на этом телефоне заблокированными.</string>
+    <string name="backup_restore_stays">Текущие пароли останутся на этом телефоне в заблокированном виде.</string>
     <string name="backup_restore_use">Использовать эту копию</string>
     <string name="backup_restore_restoring">Восстановление…</string>
 
@@ -94,8 +94,8 @@
     <string name="backup_restore_wrong_or_damaged">Возможно, файл повреждён или пароль неверный.</string>
     <string name="backup_restore_damaged">Файл резервной копии повреждён, и его нельзя открыть. Попробуйте другой файл резервной копии.</string>
     <string name="backup_restore_newer">Эта резервная копия создана в более новой версии приложения. Установите последнюю версию PasswordVault и повторите попытку.</string>
-    <string name="backup_restore_no_memory">На телефоне недостаточно свободной памяти, чтобы открыть файл. Закройте другие приложения и повторите попытку.</string>
-    <string name="backup_restore_not_saved">Не удалось сохранить. Возможно, память телефона заполнена.</string>
+    <string name="backup_restore_no_memory">На телефоне недостаточно свободной оперативной памяти, чтобы открыть файл. Закройте другие приложения и повторите попытку.</string>
+    <string name="backup_restore_not_saved">Не удалось сохранить. Возможно, хранилище телефона заполнено.</string>
 
     <string name="backup_old_title">Старые пароли</string>
     <string name="backup_old_intro">Эти пароли были отложены на этом телефоне. Они по-прежнему защищены мастер-паролем, который вы для них использовали. Кнопка «Открыть» добавляет их аккаунты к вашим текущим паролям.</string>
@@ -114,8 +114,8 @@
     <string name="backup_old_deleting">Удаление…</string>
     <string name="backup_old_added">Их аккаунты добавлены к вашим паролям.</string>
     <string name="backup_old_deleted">Старые пароли удалены.</string>
-    <string name="backup_old_wrong">Это не мастер-пароль этих паролей. Проверьте раскладку клавиатуры (латиница или кириллица) и заглавные буквы.</string>
-    <string name="backup_old_no_memory">На телефоне недостаточно свободной памяти, чтобы открыть эти пароли. Закройте другие приложения или перезапустите телефон и повторите попытку.</string>
+    <string name="backup_old_wrong">Это не мастер-пароль этих паролей. Проверьте язык клавиатуры (латиница или кириллица) и заглавные буквы.</string>
+    <string name="backup_old_no_memory">На телефоне недостаточно свободной оперативной памяти, чтобы открыть эти пароли. Закройте другие приложения или перезапустите телефон, затем повторите попытку.</string>
     <string name="backup_old_not_added">Не удалось добавить аккаунты. Ничего не изменилось. Повторите попытку.</string>
     <string name="backup_old_not_deleted">Не удалось удалить эти пароли. Ничего не удалено. Повторите попытку.</string>
 

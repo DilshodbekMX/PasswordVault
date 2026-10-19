@@ -28,7 +28,7 @@
     <string name="export_warning_delete">Удалите его, как только закончите.</string>
     <string name="export_warning_csv">Не открывайте этот файл в Excel: Excel меняет номера телефонов и коды и может выполнять формулы. Вместо этого выберите экспорт в Excel.</string>
     <string name="export_warning_xlsx">Google Таблицы и другие приложения могут хранить копию файла в своём облаке.</string>
-    <string name="export_warning_old_android">На этом телефоне другие приложения с доступом к памяти могут читать файлы в папке «Загрузки».</string>
+    <string name="export_warning_old_android">На этом телефоне другие приложения с доступом к хранилищу могут читать файлы в папке «Загрузки».</string>
     <string name="export_understand">Я понимаю</string>
 
     <string name="export_csv_card_title">В Google Password Manager</string>
@@ -90,14 +90,14 @@
     <string name="export_password_title">Введите мастер-пароль</string>
     <string name="export_password_body">Приложение запрашивает его перед каждым экспортом, потому что файл не будет защищён.</string>
     <string name="export_password_field">Мастер-пароль</string>
-    <string name="export_password_wrong">Это неверный мастер-пароль. Проверьте раскладку клавиатуры (латиница или кириллица) и заглавные буквы.</string>
+    <string name="export_password_wrong">Неверный мастер-пароль. Проверьте язык клавиатуры (латиница или кириллица) и заглавные буквы.</string>
     <plurals name="export_password_wait">
-        <item quantity="one">Подождите %1$d&#160;секунду и повторите попытку. Не спешите и сверьтесь со своей записью на бумаге.</item>
-        <item quantity="few">Подождите %1$d&#160;секунды и повторите попытку. Не спешите и сверьтесь со своей записью на бумаге.</item>
-        <item quantity="many">Подождите %1$d&#160;секунд и повторите попытку. Не спешите и сверьтесь со своей записью на бумаге.</item>
-        <item quantity="other">Подождите %1$d&#160;секунды и повторите попытку. Не спешите и сверьтесь со своей записью на бумаге.</item>
+        <item quantity="one">Подождите %1$d&#160;секунду, затем повторите попытку. Не спешите и сверьтесь с записью на бумаге.</item>
+        <item quantity="few">Подождите %1$d&#160;секунды, затем повторите попытку. Не спешите и сверьтесь с записью на бумаге.</item>
+        <item quantity="many">Подождите %1$d&#160;секунд, затем повторите попытку. Не спешите и сверьтесь с записью на бумаге.</item>
+        <item quantity="other">Подождите %1$d&#160;секунды, затем повторите попытку. Не спешите и сверьтесь с записью на бумаге.</item>
     </plurals>
-    <string name="export_password_no_memory">На телефоне недостаточно свободной памяти, чтобы проверить мастер-пароль. Закройте другие приложения или перезапустите телефон и повторите попытку.</string>
+    <string name="export_password_no_memory">На телефоне недостаточно свободной оперативной памяти, чтобы проверить мастер-пароль. Закройте другие приложения или перезапустите телефон, затем повторите попытку.</string>
     <string name="export_password_older">Это ваш мастер-пароль, который действовал до %1$s. Введите тот, которым пользуетесь сейчас.</string>
     <string name="export_paused">Это было приостановлено, когда приложение заблокировалось.</string>
     <string name="export_paused_body">Введите мастер-пароль ещё раз, чтобы сохранить файл %1$s.</string>
@@ -124,19 +124,19 @@
     </plurals>
     <string name="export_delete_now">Удалить сейчас</string>
     <string name="export_deleted">Файл %1$s удалён.</string>
-    <string name="export_cannot_delete">Это хранилище не позволяет приложениям удалять файлы. Удалите файл вручную в файловом менеджере телефона.</string>
+    <string name="export_cannot_delete">Это место не позволяет приложениям удалять файлы. Удалите файл сами в приложении «Файлы».</string>
 
     <string name="export_picker_failed">Не удалось открыть экран сохранения файлов. Повторите попытку.</string>
     <string name="export_write_failed">Не удалось сохранить в это место. Попробуйте другую папку.</string>
-    <string name="export_write_left_phone">В файле %1$s могут быть некоторые ваши пароли. Удалите его вручную в файловом менеджере телефона.</string>
-    <string name="export_write_left_drive">В файле %1$s могут быть некоторые ваши пароли. Удалите его вручную в Google Drive.</string>
-    <string name="export_write_left_other">В файле %1$s могут быть некоторые ваши пароли. Удалите его вручную в хранилище «%2$s».</string>
-    <string name="export_note_failed">Не удалось сохранить. Возможно, память телефона заполнена.</string>
+    <string name="export_write_left_phone">В файле %1$s могут быть некоторые ваши пароли. Удалите его сами в приложении «Файлы».</string>
+    <string name="export_write_left_drive">В файле %1$s могут быть некоторые ваши пароли. Удалите его сами в Google Drive.</string>
+    <string name="export_write_left_other">В файле %1$s могут быть некоторые ваши пароли. Удалите его сами в хранилище «%2$s».</string>
+    <string name="export_note_failed">Не удалось сохранить. Возможно, хранилище телефона заполнено.</string>
     <string name="export_too_large">Ваши пароли больше не помещаются в один файл. Удалите ненужные аккаунты или сократите очень длинные заметки.</string>
     <string name="export_cleanup_removed">Файл не сохранён. Пустой файл удалён.</string>
-    <string name="export_cleanup_left_phone">Файл не сохранён. Удалите пустой файл %1$s вручную в файловом менеджере телефона.</string>
-    <string name="export_cleanup_left_drive">Файл не сохранён. Удалите пустой файл %1$s из Google Drive вручную.</string>
-    <string name="export_cleanup_left_other">Файл не сохранён. Удалите пустой файл %1$s из хранилища «%2$s» вручную.</string>
+    <string name="export_cleanup_left_phone">Файл не сохранён. Удалите сами пустой файл %1$s в приложении «Файлы».</string>
+    <string name="export_cleanup_left_drive">Файл не сохранён. Удалите сами пустой файл %1$s из Google Drive.</string>
+    <string name="export_cleanup_left_other">Файл не сохранён. Удалите сами пустой файл %1$s из хранилища «%2$s».</string>
     <string name="export_cleanup_nothing">Файл не сохранён.</string>
 
     <string name="export_pending">Экспортировать пароли можно будет, когда ваш новый мастер-пароль заработает.</string>

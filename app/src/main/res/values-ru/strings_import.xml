@@ -296,7 +296,7 @@
     </plurals>
     <string name="import_nothing_to_add">В этом файле нет ничего нового для импорта.</string>
     <string name="import_importing">Импорт…</string>
-    <string name="import_save_failed">Не удалось сохранить. Возможно, память телефона заполнена.</string>
+    <string name="import_save_failed">Не удалось сохранить. Возможно, хранилище телефона заполнено.</string>
 
     <plurals name="import_done">
         <item quantity="one">Импортирован %1$d&#160;аккаунт.</item>
@@ -318,8 +318,8 @@
     <string name="import_delete_file">Удалить файл</string>
     <string name="import_keep_file">Оставить</string>
     <string name="import_file_deleted">Файл удалён.</string>
-    <string name="import_file_not_deleted">Это хранилище не позволяет приложению удалять файлы. Удалите файл %1$s вручную.</string>
-    <string name="import_file_not_deleted_unnamed">Это хранилище не позволяет приложению удалять файлы. Удалите файл вручную.</string>
+    <string name="import_file_not_deleted">Это место не позволяет приложению удалять файлы. Удалите сами файл %1$s.</string>
+    <string name="import_file_not_deleted_unnamed">Это место не позволяет приложению удалять файлы. Удалите файл сами.</string>
     <string name="import_file_kept">Файл оставлен. Он не защищён, поэтому удалите его, когда он станет не нужен.</string>
     <string name="import_shared">У многих из этих аккаунтов один и тот же пароль. Откройте вкладку «Безопасность», чтобы исправить их по одному.</string>
     <string name="import_open_security">Открыть «Безопасность»</string>
@@ -330,7 +330,7 @@
     <string name="import_backup_opening">Открытие…</string>
     <string name="import_backup_wrong">Этот пароль не открывает эту резервную копию. Попробуйте мастер-пароль, который вы использовали при её создании.</string>
     <string name="import_backup_wrong_or_damaged">Возможно, файл повреждён или пароль неверный.</string>
-    <string name="import_backup_no_memory">На телефоне недостаточно свободной памяти, чтобы открыть файл. Закройте другие приложения и повторите попытку.</string>
+    <string name="import_backup_no_memory">На телефоне недостаточно свободной оперативной памяти, чтобы открыть файл. Закройте другие приложения и повторите попытку.</string>
     <plurals name="import_backup_summary">
         <item quantity="one">%1$d&#160;аккаунт, резервная копия создана %2$s.</item>
         <item quantity="few">%1$d&#160;аккаунта, резервная копия создана %2$s.</item>

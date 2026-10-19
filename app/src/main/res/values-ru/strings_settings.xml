@@ -11,11 +11,11 @@
     <string name="settings_group_app_lock">Блокировка приложения</string>
     <string name="settings_change_pin">Изменить PIN-код</string>
     <string name="settings_set_pin">Задать PIN-код</string>
-    <string name="settings_pin_off_limit">Разблокировка PIN-кодом отключена после слишком большого числа неверных попыток.</string>
-    <string name="settings_pin_stopped_working">Ваш PIN-код перестал работать на этом телефоне.</string>
-    <string name="settings_pin_newer_app">Ваш PIN-код был задан в более новой версии этого приложения.</string>
-    <string name="settings_pin_storage_full">Память телефона заполнена, поэтому PIN-код сейчас не удаётся проверить.</string>
-    <string name="settings_pin_cannot_check">Ваш PIN-код сейчас не удаётся проверить. Если это повторяется, задайте новый PIN-код с помощью мастер-пароля.</string>
+    <string name="settings_pin_off_limit">Разблокировка по PIN-коду отключена после слишком большого числа неверных попыток.</string>
+    <string name="settings_pin_stopped_working">PIN-код перестал работать на этом телефоне.</string>
+    <string name="settings_pin_newer_app">PIN-код был задан в более новой версии этого приложения.</string>
+    <string name="settings_pin_storage_full">Хранилище телефона заполнено, поэтому сейчас не удаётся проверить PIN-код.</string>
+    <string name="settings_pin_cannot_check">Сейчас не удаётся проверить PIN-код. Если это повторяется, задайте новый PIN-код с помощью мастер-пароля.</string>
     <string name="settings_no_secure_hardware">Этот телефон не может хранить ключ PIN-кода или отпечатка пальца в защищённом аппаратном хранилище.</string>
 
     <string name="settings_fingerprint">Разблокировка по отпечатку пальца</string>
@@ -63,7 +63,7 @@
     <string name="settings_change_master_password">Изменить мастер-пароль</string>
     <string name="settings_lock_now">Заблокировать сейчас</string>
 
-    <string name="settings_group_backup">Резервные копии и перенос</string>
+    <string name="settings_group_backup">Резервное копирование и перенос</string>
     <string name="settings_backup">Создать резервную копию</string>
     <string name="settings_backup_last">Последняя резервная копия: %1$s, %2$s</string>
     <string name="settings_backup_none">Резервных копий пока нет</string>

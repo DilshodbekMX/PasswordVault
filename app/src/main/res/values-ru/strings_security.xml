@@ -62,12 +62,12 @@
         <item quantity="other">%1$s&#160;пароля легко угадать.</item>
     </plurals>
 
-    <string name="security_pending_title">Незавершённые изменения</string>
+    <string name="security_pending_title">Незавершённые смены паролей</string>
     <plurals name="security_pending_count">
-        <item quantity="one">%1$s&#160;изменение пароля ждёт вашего ответа (%2$s).</item>
-        <item quantity="few">%1$s&#160;изменения паролей ждут вашего ответа (%2$s).</item>
-        <item quantity="many">%1$s&#160;изменений паролей ждут вашего ответа (%2$s).</item>
-        <item quantity="other">%1$s&#160;изменения паролей ждут вашего ответа (%2$s).</item>
+        <item quantity="one">%1$s&#160;смена пароля ждёт вашего ответа (%2$s).</item>
+        <item quantity="few">%1$s&#160;смены паролей ждут вашего ответа (%2$s).</item>
+        <item quantity="many">%1$s&#160;смен паролей ждут вашего ответа (%2$s).</item>
+        <item quantity="other">%1$s&#160;смены паролей ждут вашего ответа (%2$s).</item>
     </plurals>
     <string name="security_show_account">Показать аккаунт</string>
 
@@ -96,10 +96,10 @@
         <item quantity="other">Эти %1$s&#160;пароля легко угадать</item>
     </plurals>
     <plurals name="security_group_pending">
-        <item quantity="one">%1$s&#160;изменение пароля ждёт вашего ответа</item>
-        <item quantity="few">Эти %1$s&#160;изменения паролей ждут вашего ответа</item>
-        <item quantity="many">Эти %1$s&#160;изменений паролей ждут вашего ответа</item>
-        <item quantity="other">Эти %1$s&#160;изменения паролей ждут вашего ответа</item>
+        <item quantity="one">%1$s&#160;смена пароля ждёт вашего ответа</item>
+        <item quantity="few">Эти %1$s&#160;смены паролей ждут вашего ответа</item>
+        <item quantity="many">Эти %1$s&#160;смен паролей ждут вашего ответа</item>
+        <item quantity="other">Эти %1$s&#160;смены паролей ждут вашего ответа</item>
     </plurals>
     <plurals name="security_group_left_out">
         <item quantity="one">%1$s&#160;аккаунт исключён из проверки</item>
@@ -110,22 +110,22 @@
 
     <string name="security_group_reused_done">У этих аккаунтов больше нет общего пароля.</string>
     <string name="security_group_weak_done">Больше нет паролей, которые легко угадать.</string>
-    <string name="security_group_pending_done">Нет изменений паролей, которые ждут вашего ответа.</string>
+    <string name="security_group_pending_done">Ни одна смена пароля не ждёт вашего ответа.</string>
     <string name="security_group_left_out_done">Нет аккаунтов, исключённых из проверки.</string>
 
     <string name="security_change">Изменить</string>
     <string name="security_change_description">Изменить пароль аккаунта «%1$s»</string>
     <string name="security_continue">Продолжить</string>
-    <string name="security_continue_description">Продолжить изменение пароля аккаунта «%1$s»</string>
-    <string name="security_check_again">Проверять снова</string>
-    <string name="security_check_again_description">Снова проверять аккаунт «%1$s»</string>
+    <string name="security_continue_description">Продолжить смену пароля аккаунта «%1$s»</string>
+    <string name="security_check_again">Снова включить в проверку</string>
+    <string name="security_check_again_description">Снова включить аккаунт «%1$s» в проверку</string>
     <string name="security_more">Другие действия для аккаунта «%1$s»</string>
     <string name="security_leave_out">Исключить из проверки безопасности</string>
     <string name="security_back">Назад</string>
 
     <string name="security_left_out_message">Аккаунт «%1$s» исключён из проверки безопасности.</string>
-    <string name="security_checked_again_message">Аккаунт «%1$s» снова проверяется.</string>
-    <string name="security_save_failed">Не удалось сохранить. Возможно, память телефона заполнена.</string>
+    <string name="security_checked_again_message">Аккаунт «%1$s» снова включён в проверку.</string>
+    <string name="security_save_failed">Не удалось сохранить. Возможно, хранилище телефона заполнено.</string>
     <string name="security_too_large">Ваши пароли больше не помещаются в один файл. Удалите ненужные аккаунты или сократите очень длинные заметки.</string>
 
 </resources>
