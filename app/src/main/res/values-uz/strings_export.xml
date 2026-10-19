@@ -115,7 +115,7 @@
     </plurals>
     <string name="export_delete_now">Hozir oʻchirish</string>
     <string name="export_deleted">%1$s nomli fayl oʻchirib tashlandi.</string>
-    <string name="export_cannot_delete">Bu joy ilovalarga fayllarni oʻchirishga ruxsat bermaydi. Faylni Fayllar ilovasida oʻzingiz oʻchiring.</string>
+    <string name="export_cannot_delete">Bu joy ilovalarga fayllarni oʻchirishga ruxsat bermaydi. Uni Fayllar ilovasida oʻzingiz oʻchiring.</string>
 
     <!-- ===== Fayl saqlanmaganda ===== -->
 

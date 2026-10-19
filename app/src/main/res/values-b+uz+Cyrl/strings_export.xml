@@ -114,7 +114,7 @@
     </plurals>
     <string name="export_delete_now">Ҳозир ўчириш</string>
     <string name="export_deleted">%1$s номли файл ўчириб ташланди.</string>
-    <string name="export_cannot_delete">Бу жой иловаларга файлларни ўчиришга рухсат бермайди. Файлни Файллар иловасида ўзингиз ўчиринг.</string>
+    <string name="export_cannot_delete">Бу жой иловаларга файлларни ўчиришга рухсат бермайди. Уни Файллар иловасида ўзингиз ўчиринг.</string>
 
     <!-- ===== Файл сақланмаганда ===== -->
 
