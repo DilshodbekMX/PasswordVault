@@ -10,6 +10,7 @@ import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.github.dilshodbekmx.passwordvault.R
+import io.github.dilshodbekmx.passwordvault.ui.layout.LayoutHook
 import io.github.dilshodbekmx.passwordvault.ui.settings.SettingsTestTheme
 import io.github.dilshodbekmx.passwordvault.ui.settings.shownTexts
 import java.util.Locale
@@ -88,6 +89,7 @@ class MasterPseudoLocaleTest {
 
     /** Every text shown now has a letter that the pseudo-locale made: nothing stayed plain English. */
     private fun check(step: String) {
+        LayoutHook.look(compose, "master", "$step-en-XA")
         val texts = compose.shownTexts().filterNot { it.matches(DIGIT) || it.matches(WORDS) }
         assertTrue("$step: the screen shows texts", texts.size >= 2)
         for (text in texts) {

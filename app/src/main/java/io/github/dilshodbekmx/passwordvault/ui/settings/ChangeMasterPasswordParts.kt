@@ -55,6 +55,7 @@ import io.github.dilshodbekmx.passwordvault.i18n.rememberFormatters
 import io.github.dilshodbekmx.passwordvault.i18n.resolve
 import io.github.dilshodbekmx.passwordvault.ui.common.FieldKeyboard
 import io.github.dilshodbekmx.passwordvault.ui.common.KeyboardFirstOnBack
+import io.github.dilshodbekmx.passwordvault.ui.common.TextBeside
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultFieldDefaults
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultSecureField
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultTopBar
@@ -303,25 +304,31 @@ private fun Places(places: List<BackupPlace>, onDelete: (FileRef) -> Unit) {
         )
         places.forEachIndexed { index, place ->
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        text = stringResource(R.string.master_place, place.ref.name, formatters.date(place.ref.savedAt)),
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.weight(1f).testTag(MasterTags.place(index)),
-                    )
-                    when (place.state) {
-                        PlaceState.DELETED -> Text(
-                            text = stringResource(R.string.master_place_deleted),
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                // "Delete" goes under the file's line when the two do not fit side by side (TextBeside).
+                TextBeside(
+                    modifier = Modifier.fillMaxWidth(),
+                    text = {
+                        Text(
+                            text = stringResource(R.string.master_place, place.ref.name, formatters.date(place.ref.savedAt)),
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.testTag(MasterTags.place(index)),
                         )
-                        PlaceState.DELETING -> CircularProgressIndicator(Modifier.size(24.dp))
-                        else -> OutlinedButton(onClick = { onDelete(place.ref) }, modifier = Modifier.testTag(MasterTags.deletePlace(index))) {
-                            Text(stringResource(R.string.common_delete))
+                    },
+                    action = {
+                        when (place.state) {
+                            PlaceState.DELETED -> Text(
+                                text = stringResource(R.string.master_place_deleted),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                            )
+                            PlaceState.DELETING -> CircularProgressIndicator(Modifier.size(24.dp))
+                            else -> OutlinedButton(onClick = { onDelete(place.ref) }, modifier = Modifier.testTag(MasterTags.deletePlace(index))) {
+                                Text(stringResource(R.string.common_delete))
+                            }
                         }
-                    }
-                }
+                    },
+                )
                 when (place.state) {
                     PlaceState.NOT_DELETABLE -> MasterLine(UiText.of(R.string.master_place_not_deletable), tag = "${MasterTags.place(index)}.line")
                     PlaceState.NOT_NOTED -> MasterLine(UiText.of(R.string.master_place_not_noted), tag = "${MasterTags.place(index)}.line")

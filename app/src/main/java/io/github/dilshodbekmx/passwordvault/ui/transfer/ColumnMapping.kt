@@ -49,6 +49,7 @@ import io.github.dilshodbekmx.passwordvault.ui.common.Banner
 import io.github.dilshodbekmx.passwordvault.ui.common.BannerKind
 import io.github.dilshodbekmx.passwordvault.ui.common.MaskedValue
 import io.github.dilshodbekmx.passwordvault.ui.common.mayTruncate
+import io.github.dilshodbekmx.passwordvault.ui.common.userText
 
 /**
  * The column-mapping screen (`Route.ColumnMapping`; ux.md §5.21, formats.md §8.3): each column of the
@@ -133,7 +134,8 @@ private fun ColumnCard(index: Int, column: MappingColumn, onChoose: (ColumnMeani
             Text(
                 text = column.header.ifEmpty { stringResource(R.string.import_name_item, index + 1) },
                 style = MaterialTheme.typography.titleSmall,
-                modifier = Modifier.semantics { heading() },
+                // The file's own name for its column (a resource only when the file has none).
+                modifier = Modifier.semantics { heading() }.then(if (column.header.isNotEmpty()) Modifier.userText() else Modifier),
             )
             FirstValue(index, column)
             var open by remember { mutableStateOf(false) }

@@ -47,7 +47,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -209,6 +208,7 @@ fun EntryScreen(vm: EntryViewModel, nav: Navigator) {
                     }
                 },
                 titleMayBeCut = true,
+                titleIsUserText = details != null || deletedTitle != null,
             )
         },
         snackbarHost = { SnackbarHost(snackbar) { data -> Snackbar(data, modifier = Modifier.testTag(EntryTags.MESSAGE)) } },

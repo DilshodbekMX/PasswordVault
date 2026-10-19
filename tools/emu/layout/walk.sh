@@ -10,8 +10,9 @@
 # SERIAL comes from tools/emu/boot.sh; the APKs default to this worktree's debug build and its test APK
 # (tools/gradle.sh :app:assembleDebug :app:assembleDebugAndroidTest); a debug build is needed (the
 # pseudo-locales, screenshots, run-as). --locales defaults to en-XA,ar-XB; --width to 320 and --font to
-# 2.0. --parts: app (the real app, LayoutWalkTest) and states (the states the real app reaches only
-# with time or a damaged file, drawn with the device tests' fakes, LayoutStatesTest); default both.
+# 2.0. --parts: app (the real app, LayoutWalkTest, once per locale) and states (the states the real app
+# reaches only with time or a damaged file: each area's pseudo-locale device test draws them with fakes
+# in en-XA and ar-XB and calls LayoutHook at each; run once); default both.
 #
 # The script sets the screen's density so that the phone is DP wide (`wm density`, the setting
 # "Display size") and the font scale (`settings put system font_scale`), and puts both back as they were
@@ -130,10 +131,40 @@ print_report() { # LOCALE REPORT-FILE
     done < "$2"
 }
 
-# run_part LOCALE CLASS NAME: installs, clears the app's data, runs CLASS's walk as the run NAME; prints
-# its report and takes its pictures.
+# The device tests whose states the part `states` looks at: each area's pseudo-locale test, which draws
+# its screens with fakes in en-XA and ar-XB and calls LayoutHook at each state it keeps a picture of.
+STATE_TESTS="ui.lock.LockPseudoLocaleTest ui.settings.master.MasterPseudoLocaleTest ui.entry.EntryPseudoLocaleTest \
+ui.list.ListPseudoLocaleTest ui.security.SecurityPseudoLocaleTest ui.security.change.GuidedChangePseudoLocaleTest \
+ui.transfer.backup.BackupPseudoLocaleTest ui.transfer.export.ExportPseudoLocaleTest ui.transfer.import.ImportPseudoLocaleTest"
+
+# failed_tests LOG: "class#method: first line" for each test that failed in an `am instrument -r` output.
+failed_tests() {
+    python3 - "$1" <<'PY'
+import sys
+block, out, key = {}, [], None
+for raw in open(sys.argv[1], encoding="utf-8", errors="replace"):
+    line = raw.rstrip("\n")
+    if line.startswith("INSTRUMENTATION_STATUS: "):
+        key, _, value = line[len("INSTRUMENTATION_STATUS: "):].partition("=")
+        block[key] = value
+    elif line.startswith("INSTRUMENTATION_STATUS_CODE: "):
+        code = line.split(": ", 1)[1].strip()
+        if code in ("-1", "-2") and "test" in block:
+            stack = [l for l in block.get("stack", "").splitlines() if l.strip()]
+            out.append(f"{block.get('class', '?').rsplit('.', 1)[-1]}#{block['test']}: {(stack[0] if stack else '').strip()[:300]}")
+        block, key = {}, None
+    elif key == "stack":
+        block["stack"] += "\n" + line
+for o in out:
+    print(o)
+PY
+}
+
+# run_part LOCALE CLASSES NAME KIND: installs, clears the app's data, runs CLASSES (comma-separated) as
+# the run NAME, prints its report and takes its pictures. KIND app: the walk must have ended; KIND
+# states: each test that failed is a failure too.
 run_part() {
-    local locale=$1 class=$2 name=$3 log=$LOGS/$3.log report=$LOGS/$3.txt
+    local locale=$1 class=$2 name=$3 kind=$4 log=$LOGS/$3.log report=$LOGS/$3.txt
     pva_install "$APK" || { pv_report FAIL "$locale $name: install the app"; return 1; }
     pv_adb install -r -t "$TEST_APK" > "$LOGS/$name.install-test.log" 2>&1 \
         || { pv_report FAIL "$locale $name: install the test APK" "$(tail -n 1 "$LOGS/$name.install-test.log")"; return 1; }
@@ -141,33 +172,49 @@ run_part() {
     pv_shell rm -rf "/data/local/tmp/pv-layout/$name" >/dev/null 2>&1
     pv_unlock >/dev/null 2>&1
     pv_shell logcat -c >/dev/null 2>&1
-    pv_log "run $name: $class in $locale"
-    pv_adb shell am instrument -w -r -e class "$class" -e pvLayout "$name" -e pvLayoutLocale "$locale" "$RUNNER" > "$log" 2>&1
+    pv_log "run $name: $class${locale:+ in $locale}"
+    pv_adb shell am instrument -w -r -e class "$class" -e pvLayout "$name" ${locale:+-e pvLayoutLocale "$locale"} "$RUNNER" > "$log" 2>&1
     pv_adb exec-out run-as "$PV_PACKAGE" cat "cache/pv-layout/$name.txt" > "$report" 2>/dev/null
     if ! grep -q '^RUN ' "$report"; then
-        pv_report FAIL "$locale $name: the walk ran" "no report; $(grep -m 3 -E 'INSTRUMENTATION_RESULT|shortMsg|Error' "$log" | tr '\n' ' ')"
+        pv_report FAIL "${locale:-states} $name: the walk ran" "no report; $(grep -m 3 -E 'INSTRUMENTATION_RESULT|shortMsg|Error' "$log" | tr '\n' ' ')"
         return 1
     fi
-    grep -q '^END ' "$report" || pv_report FAIL "$locale $name: the walk ended" "it stopped after: $(tail -n 1 "$report")"
-    print_report "$locale" "$report"
+    if [ "$kind" = app ]; then
+        grep -q '^END ' "$report" || pv_report FAIL "$locale $name: the walk ended" "it stopped after: $(tail -n 1 "$report")"
+    fi
+    print_report "${locale:-$name}" "$report"
+    if [ "$kind" = states ]; then
+        local failed
+        failed=$(failed_tests "$log")
+        if [ -n "$failed" ]; then
+            while IFS= read -r test; do pv_report FAIL "$name: the device test $test"; done <<< "$failed"
+        else
+            grep -q '^OK (' "$log" && pv_report PASS "$name: the device tests that draw the states ($(grep -m 1 '^OK (' "$log"))" \
+                || pv_report FAIL "$name: the device tests ended" "$(grep -m 2 -E 'INSTRUMENTATION_RESULT|Tests run' "$log" | tr '\n' ' ')"
+        fi
+    fi
     rm -rf "${SHOTS:?}/$name"
     mkdir -p "$SHOTS/$name"
     pv_adb pull "/data/local/tmp/pv-layout/$name/." "$SHOTS/$name/" > /dev/null 2>&1 \
         && pv_log "pictures in $SHOTS/$name/ ($(ls "$SHOTS/$name" | wc -l))"
-    pva_no_crash || pv_report FAIL "$locale $name: no crash"
+    pva_no_crash || pv_report FAIL "${locale:-states} $name: no crash"
 }
 
 [ -f "$APK" ] || { pv_log "no APK at $APK (tools/gradle.sh :app:assembleDebug)"; exit 1; }
 [ -f "$TEST_APK" ] || { pv_log "no test APK at $TEST_APK (tools/gradle.sh :app:assembleDebugAndroidTest)"; exit 1; }
 pv_step "the phone is ${WIDTH_DP} dp wide with font scale $FONT" -- set_size || { pv_summary; exit 1; }
-for locale in ${LOCALES//,/ }; do
-    for part in ${PARTS//,/ }; do
-        case "$part" in
-            app) run_part "$locale" io.github.dilshodbekmx.passwordvault.ui.layout.LayoutWalkTest "app-$locale" ;;
-            states) run_part "$locale" io.github.dilshodbekmx.passwordvault.ui.layout.LayoutStatesTest "states-$locale" ;;
-            *) pv_log "unknown part $part"; exit 2 ;;
-        esac
-    done
+for part in ${PARTS//,/ }; do
+    case "$part" in
+        app)
+            for locale in ${LOCALES//,/ }; do
+                run_part "$locale" io.github.dilshodbekmx.passwordvault.ui.layout.LayoutWalkTest "app-$locale" app
+            done ;;
+        states)
+            classes=""
+            for test in $STATE_TESTS; do classes="$classes${classes:+,}io.github.dilshodbekmx.passwordvault.$test"; done
+            run_part "" "$classes" states states ;;
+        *) pv_log "unknown part $part"; exit 2 ;;
+    esac
 done
 pv_shell pm uninstall "$TEST_PACKAGE" >/dev/null 2>&1
 restore

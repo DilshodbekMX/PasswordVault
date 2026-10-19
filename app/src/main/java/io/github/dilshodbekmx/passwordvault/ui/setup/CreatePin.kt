@@ -33,14 +33,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
@@ -72,6 +71,7 @@ import io.github.dilshodbekmx.passwordvault.ui.common.VaultSecureField
 import io.github.dilshodbekmx.passwordvault.ui.common.clearSecret
 import io.github.dilshodbekmx.passwordvault.ui.common.fadeWhereMore
 import io.github.dilshodbekmx.passwordvault.ui.common.readSecret
+import io.github.dilshodbekmx.passwordvault.ui.common.rememberFieldKeyboard
 import java.security.MessageDigest
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -691,20 +691,25 @@ fun MasterPasswordPage(
 fun MasterPasswordInput(ask: MasterPasswordAsk, onNext: () -> Unit, focusFirst: Boolean, modifier: Modifier = Modifier) {
     val ui by ask.ui.collectAsStateWithLifecycle()
     val focus = remember { FocusRequester() }
-    val window = LocalWindowInfo.current
+    // The keyboard asked for as the other master-password fields ask for it (FieldKeyboard): Android 17
+    // no longer brings it back after a rotation, and Gboard may close it again by itself.
+    val fieldKeyboard = rememberFieldKeyboard()
+    var focused by remember { mutableStateOf(false) }
     if (focusFirst) {
-        LaunchedEffect(focus, window) {
-            snapshotFlow { window.isWindowFocused }.first { it }
+        LaunchedEffect(focus, fieldKeyboard) {
+            fieldKeyboard.awaitWindowFocus()
             try {
                 focus.requestFocus()
             } catch (_: IllegalStateException) {
+                return@LaunchedEffect
             }
+            fieldKeyboard.show { focused }
         }
     }
     Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         VaultSecureField(
             state = ask.field,
-            modifier = Modifier.fillMaxWidth().focusRequester(focus).testTag(PinTags.MP_FIELD),
+            modifier = Modifier.fillMaxWidth().focusRequester(focus).onFocusChanged { focused = it.isFocused }.testTag(PinTags.MP_FIELD),
             label = { Text(stringResource(R.string.pin_mp_label)) },
             enabled = ui.enabled,
             isError = ui.line?.alert == true,

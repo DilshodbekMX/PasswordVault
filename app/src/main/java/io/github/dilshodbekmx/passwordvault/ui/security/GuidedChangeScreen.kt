@@ -58,7 +58,6 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -67,6 +66,7 @@ import io.github.dilshodbekmx.passwordvault.data.SaveProblem
 import io.github.dilshodbekmx.passwordvault.nav.Navigator
 import io.github.dilshodbekmx.passwordvault.nav.Route
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultTopBar
+import io.github.dilshodbekmx.passwordvault.ui.common.userText
 import io.github.dilshodbekmx.passwordvault.ui.edit.GeneratorSheet
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -261,10 +261,10 @@ private fun Steps(steps: GuidedChangeUiState.Steps, copied: String?, retried: Bo
             Text(
                 text = steps.title,
                 style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.testTag(GuidedChangeTags.ACCOUNT).semantics { heading() },
+                modifier = Modifier.testTag(GuidedChangeTags.ACCOUNT).semantics { heading() }.userText(),
             )
             if (steps.username.isNotEmpty()) {
-                Text(text = steps.username, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(text = steps.username, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.userText())
             }
         }
         if (steps.lastOne) {

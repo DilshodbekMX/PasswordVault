@@ -17,7 +17,6 @@ import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -35,6 +34,10 @@ import io.github.dilshodbekmx.passwordvault.lock.MpResult
 import io.github.dilshodbekmx.passwordvault.platform.AndroidClock
 import io.github.dilshodbekmx.passwordvault.platform.AppDispatchers
 import io.github.dilshodbekmx.passwordvault.settings.ThemeChoice
+import io.github.dilshodbekmx.passwordvault.ui.layout.LayoutHook
+import io.github.dilshodbekmx.passwordvault.ui.layout.press
+import io.github.dilshodbekmx.passwordvault.ui.layout.revealTag
+import io.github.dilshodbekmx.passwordvault.ui.layout.revealText
 import io.github.dilshodbekmx.passwordvault.ui.theme.PasswordVaultTheme
 import io.github.dilshodbekmx.passwordvault.ui.transfer.BackupScreen
 import io.github.dilshodbekmx.passwordvault.ui.transfer.BackupStep
@@ -97,6 +100,7 @@ class BackupPseudoLocaleTest {
 
     /** Keeps a picture of the whole screen as `5.2-[name].png`. */
     private fun save(name: String) {
+        LayoutHook.look(compose, "backup", name)
         compose.waitForIdle()
         val dir = File(compose.activity.cacheDir, "pv-screens").apply { mkdirs() }
         val bitmap = InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot() ?: return
@@ -151,7 +155,7 @@ class BackupPseudoLocaleTest {
     private fun walk(suffix: String, english: Boolean) {
         val res = (context ?: compose.activity).resources
         fun check(id: Int) {
-            compose.onNodeWithText(res.getString(id)).assertExists()
+            compose.revealText(res.getString(id)).assertExists()
             if (!english) compose.onNodeWithText(compose.activity.getString(id)).assertDoesNotExist()
         }
 
@@ -163,10 +167,10 @@ class BackupPseudoLocaleTest {
             show { BackupScreen(vm, rig.nav) }
             check(R.string.backup_explain)
             save("backup-explain-$suffix")
-            compose.onNodeWithTag(BackupTags.CONTINUE).performClick()
+            compose.revealTag(BackupTags.CONTINUE).press()
             rig.lock.mpResults.add(MpResult.Wrong)
             compose.onNodeWithTag(BackupTags.FIELD).performTextInput("Toshkent2020")
-            compose.onNodeWithTag(BackupTags.SUBMIT).performClick()
+            compose.revealTag(BackupTags.SUBMIT).press()
             compose.waitUntil(TIMEOUT_MS) { (vm.ui.value.step as? BackupStep.Password)?.error != null }
             check(R.string.backup_wrong)
             save("backup-password-wrong-$suffix")
@@ -179,7 +183,7 @@ class BackupPseudoLocaleTest {
             val vm = rig.backupOver(slow)
             show { BackupScreen(vm, rig.nav) }
             compose.onNodeWithTag(BackupTags.FIELD).performTextInput(PASSWORD)
-            compose.onNodeWithTag(BackupTags.SUBMIT).performClick()
+            compose.revealTag(BackupTags.SUBMIT).press()
             compose.waitUntil(TIMEOUT_MS) { vm.ui.value.step is BackupStep.Working }
             check(R.string.backup_making)
             save("backup-making-$suffix")
@@ -198,7 +202,7 @@ class BackupPseudoLocaleTest {
                 val vm = rig.backup()
                 show { BackupScreen(vm, rig.nav) }
                 compose.onNodeWithTag(BackupTags.FIELD).performTextInput(PASSWORD)
-                compose.onNodeWithTag(BackupTags.SUBMIT).performClick()
+                compose.revealTag(BackupTags.SUBMIT).press()
                 compose.waitUntil(TIMEOUT_MS) { rig.launcher.calls.isNotEmpty() }
                 rig.answerSaveAs()
                 compose.waitUntil(TIMEOUT_MS) { vm.ui.value.step is BackupStep.Saved }
@@ -212,7 +216,7 @@ class BackupPseudoLocaleTest {
             val vm = rig.backup()
             show { BackupScreen(vm, rig.nav) }
             compose.onNodeWithTag(BackupTags.FIELD).performTextInput(PASSWORD)
-            compose.onNodeWithTag(BackupTags.SUBMIT).performClick()
+            compose.revealTag(BackupTags.SUBMIT).press()
             compose.waitUntil(TIMEOUT_MS) { rig.launcher.calls.isNotEmpty() }
             rig.answerSaveAs()
             compose.waitUntil(TIMEOUT_MS) { vm.ui.value.step is BackupStep.Failed }
@@ -226,19 +230,19 @@ class BackupPseudoLocaleTest {
             show { RestoreScreen(vm, rig.nav) }
             check(R.string.backup_restore_intro)
             save("restore-start-$suffix")
-            compose.onNodeWithTag(BackupTags.CHOOSE).performClick()
+            compose.revealTag(BackupTags.CHOOSE).press()
             compose.waitUntil(TIMEOUT_MS) { rig.launcher.calls.isNotEmpty() }
             rig.answerOpen()
             compose.waitUntil(TIMEOUT_MS) { vm.step.value is RestoreStep.Password }
             rig.vault.backupResults.add(BackupResult.Wrong)
             compose.onNodeWithTag(BackupTags.FIELD).performTextInput("not it")
-            compose.onNodeWithTag(BackupTags.SUBMIT).performClick()
+            compose.revealTag(BackupTags.SUBMIT).press()
             compose.waitUntil(TIMEOUT_MS) { (vm.step.value as? RestoreStep.Password)?.problem != null }
             check(R.string.backup_restore_wrong)
             save("restore-wrong-$suffix")
             rig.opens()
             compose.onNodeWithTag(BackupTags.FIELD).performTextInput(PASSWORD)
-            compose.onNodeWithTag(BackupTags.SUBMIT).performClick()
+            compose.revealTag(BackupTags.SUBMIT).press()
             compose.waitUntil(TIMEOUT_MS) { vm.step.value is RestoreStep.Summary }
             check(R.string.backup_restore_stays)
             save("restore-summary-$suffix")
@@ -251,10 +255,10 @@ class BackupPseudoLocaleTest {
             show { OldPasswordsScreen(vm, rig.nav) }
             check(R.string.backup_old_intro)
             save("old-list-$suffix")
-            compose.onNodeWithTag(BackupTags.oldDelete(ASIDE_OLDER.vaultId)).performClick()
+            compose.revealTag(BackupTags.oldDelete(ASIDE_OLDER.vaultId)).press()
             rig.lock.asideResults.add(AsideResult.Wrong)
             compose.onNodeWithTag(BackupTags.FIELD).performTextInput("current one")
-            compose.onNodeWithTag(BackupTags.SUBMIT).performClick()
+            compose.revealTag(BackupTags.SUBMIT).press()
             compose.waitUntil(TIMEOUT_MS) { (vm.step.value as? OldStep.Asking)?.problem != null }
             check(R.string.backup_old_wrong)
             save("old-delete-wrong-$suffix")

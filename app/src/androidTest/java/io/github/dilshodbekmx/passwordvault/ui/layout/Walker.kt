@@ -8,12 +8,12 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasScrollToNodeAction
 import androidx.compose.ui.test.hasTestTag
-import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.text.AnnotatedString
@@ -156,16 +156,19 @@ class Walker(private val compose: ComposeTestRule, val run: LayoutRun) {
 
     /**
      * Looks at the screen now as [screen]: a picture of it as it opens, then the checks on what is laid
-     * out, then the checks again after each stretch of every list or column that scrolls, from its top
-     * to its end; it is left scrolled back to the top.
+     * out, then (unless not [scrollLists]) the checks again after each stretch of every list or column
+     * that scrolls, from its top to its end; it is left scrolled back to the top.
      */
-    fun look(screen: String) {
+    fun look(screen: String, scrollLists: Boolean = true, english: Boolean = true) {
         compose.waitForIdle()
         Thread.sleep(SETTLE_MS)
         compose.waitForIdle()
         run.shot(screen)
+        probe.checkEnglish = english
         var findings = probe.look()
-        val scrollers = compose.onAllNodes(hasScrollAction() and scrollsVertically, useUnmergedTree = true).fetchSemanticsNodes(atLeastOneRootRequired = false)
+        // A menu over a list is looked at as it is: scrolling the list behind it would take away the
+        // row it belongs to, and the menu with it.
+        val scrollers = if (!scrollLists) emptyList() else compose.onAllNodes(hasScrollAction() and scrollsVertically, useUnmergedTree = true).fetchSemanticsNodes(atLeastOneRootRequired = false)
         for (index in scrollers.indices) {
             val scroller = compose.onAllNodes(hasScrollAction() and scrollsVertically, useUnmergedTree = true)[index]
             val node = runCatching { scroller.fetchSemanticsNode() }.getOrNull() ?: continue

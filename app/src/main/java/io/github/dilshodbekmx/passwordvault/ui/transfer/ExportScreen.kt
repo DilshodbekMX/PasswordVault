@@ -63,7 +63,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.isSpecified
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -79,6 +78,7 @@ import io.github.dilshodbekmx.passwordvault.ui.common.KeyboardFirstOnBack
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultFieldDefaults
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultSecureField
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultTopBar
+import io.github.dilshodbekmx.passwordvault.ui.common.userText
 
 /**
  * The export screen (ux.md §5.20): one route, `Export(step)`, whose steps [vm] moves through, under a
@@ -330,7 +330,7 @@ private fun CsvCard(summary: ExportCsvSummary?, showWhich: Boolean, toggleWhich:
                                 modifier = Modifier.semantics { heading() },
                             )
                             for (title in skipped.titles) {
-                                Text(title, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(start = 12.dp))
+                                Text(title, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(start = 12.dp).userText())
                             }
                         }
                     }

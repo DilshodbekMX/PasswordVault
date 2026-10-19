@@ -66,6 +66,7 @@ import io.github.dilshodbekmx.passwordvault.ui.common.MaskedValue
 import io.github.dilshodbekmx.passwordvault.ui.common.RevealToggle
 import io.github.dilshodbekmx.passwordvault.ui.common.cardPart
 import io.github.dilshodbekmx.passwordvault.ui.common.mayTruncate
+import io.github.dilshodbekmx.passwordvault.ui.common.userText
 import io.github.dilshodbekmx.passwordvault.ui.theme.LocalLook
 
 /** What the buttons, the banners and the rows' menus of an account's screen do. Made once per screen. */
@@ -125,7 +126,8 @@ internal fun EntryRows(details: EntryDetails, copied: EntryValue?, actions: Entr
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 8.dp)
                         .semantics { heading() }
-                        .testTag(EntryTags.TITLE),
+                        .testTag(EntryTags.TITLE)
+                        .userText(),
                 )
             }
             banners(details, formatters, actions)
@@ -225,7 +227,7 @@ private fun UsernameRow(username: String, copied: Boolean, actions: EntryActions
         menu = listOf(RowMenuItem(copy) { actions.copy(value) }, RowMenuItem(big) { actions.bigLetters(value) }),
         trailing = { CopyButton(value, copied, copy, primary = false, actions.copy) },
     ) {
-        Text(text = username, style = leftToRight(), modifier = Modifier.testTag(EntryTags.value(value)))
+        Text(text = username, style = leftToRight(), modifier = Modifier.testTag(EntryTags.value(value)).userText())
     }
 }
 
@@ -321,7 +323,7 @@ private fun FieldRowItem(row: FieldRow, copied: Boolean, actions: EntryActions, 
             menu = if (row.empty) emptyList() else listOf(RowMenuItem(stringResource(R.string.entry_copy)) { actions.copy(value) }),
             trailing = { if (!row.empty) CopyButton(value, copied, copy, primary = false, actions.copy) },
         ) {
-            Text(text = row.shown.orEmpty(), modifier = Modifier.testTag(EntryTags.value(value)))
+            Text(text = row.shown.orEmpty(), modifier = Modifier.testTag(EntryTags.value(value)).userText())
         }
     }
 }
@@ -366,7 +368,7 @@ private fun WebsiteRowItem(row: WebsiteRow, copied: Boolean, actions: EntryActio
         if (app) {
             Text(text = stringResource(R.string.entry_app, row.host), fontWeight = FontWeight.Bold, modifier = Modifier.testTag(EntryTags.value(value)))
         } else {
-            Text(text = row.host, fontWeight = FontWeight.Bold, style = leftToRight(), modifier = Modifier.testTag(EntryTags.value(value)))
+            Text(text = row.host, fontWeight = FontWeight.Bold, style = leftToRight(), modifier = Modifier.testTag(EntryTags.value(value)).userText())
         }
     }
 }
@@ -398,7 +400,7 @@ private fun NotesRow(notes: String, expanded: Boolean, copied: Boolean, actions:
                             long = if (expanded) layout.lineCount > EntryViewModel.NOTES_LINES else layout.hasVisualOverflow
                         },
                         // Cut to its first lines, with "Show more" under it, which shows the rest.
-                        modifier = Modifier.testTag(EntryTags.value(EntryValue.Notes)).mayTruncate(),
+                        modifier = Modifier.testTag(EntryTags.value(EntryValue.Notes)).mayTruncate().userText(),
                     )
                 }
                 if (long) {
@@ -563,7 +565,13 @@ private fun ValueRow(
     val look = LocalLook.current
     Box(Modifier.cardPart(card, look)) {
         ListItem(
-            overlineContent = { Text(text = label, modifier = if (labelSpoken) Modifier else Modifier.clearAndSetSemantics { }) },
+            // An extra field's label is the user's own; the other rows' labels come from the resources.
+            overlineContent = {
+                Text(
+                    text = label,
+                    modifier = (if (labelSpoken) Modifier else Modifier.clearAndSetSemantics { }).then(if (value is EntryValue.Field) Modifier.userText() else Modifier),
+                )
+            },
             headlineContent = content,
             supportingContent = supporting,
             trailingContent = {

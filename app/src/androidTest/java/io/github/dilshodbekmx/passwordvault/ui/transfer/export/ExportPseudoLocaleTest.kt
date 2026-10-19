@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.github.dilshodbekmx.passwordvault.R
 import io.github.dilshodbekmx.passwordvault.settings.ThemeChoice
+import io.github.dilshodbekmx.passwordvault.ui.layout.LayoutHook
 import io.github.dilshodbekmx.passwordvault.ui.theme.PasswordVaultTheme
 import io.github.dilshodbekmx.passwordvault.ui.transfer.ExportActions
 import io.github.dilshodbekmx.passwordvault.ui.transfer.ExportFrame
@@ -111,6 +112,7 @@ class ExportPseudoLocaleTest {
             val texts = compose.everyText()
             val plain = texts.filter { it in english }
             assertTrue("$tag, step $name shows English texts: $plain", plain.isEmpty())
+            LayoutHook.look(compose, "export", "$name-$tag")
             shots.take(compose, name)
         }
     }

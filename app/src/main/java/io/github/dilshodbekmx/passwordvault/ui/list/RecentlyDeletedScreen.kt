@@ -36,7 +36,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
@@ -51,6 +50,7 @@ import io.github.dilshodbekmx.passwordvault.nav.Navigator
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultDialog
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultTopBar
 import io.github.dilshodbekmx.passwordvault.ui.common.mayTruncate
+import io.github.dilshodbekmx.passwordvault.ui.common.userText
 import kotlinx.coroutines.launch
 
 /** The Recently deleted route (ux.md §5.23): its ViewModel over the app's vault, and the screen. */
@@ -165,7 +165,7 @@ private fun DeletedRowItem(row: DeletedRow, deletedOn: String, onRestore: () -> 
     val restore = stringResource(R.string.list_deleted_restore_description, row.title)
     ListItem(
         // The row may cut the name: the account's screen, opened from it, shows it whole (i18n.md §4.5 rule 3).
-        headlineContent = { Text(row.title, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.mayTruncate()) },
+        headlineContent = { Text(row.title, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.mayTruncate().userText()) },
         supportingContent = { Text(deletedOn) },
         trailingContent = {
             Row(verticalAlignment = Alignment.CenterVertically) {

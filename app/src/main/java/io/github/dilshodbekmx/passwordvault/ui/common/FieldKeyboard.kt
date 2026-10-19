@@ -32,8 +32,9 @@ import kotlinx.coroutines.withContext
  * closes itself again (`HIDE_SOFT_INPUT_EXTRACT_INPUT_CHANGED`) after the screen's request; nothing
  * asked again, and the keyboard stayed hidden (job 4.2b, 2026-10-08: 17 of 17 rotations on the lock
  * screen). So [show] asks again for about a second, whenever the field still has the focus and the
- * keyboard is not shown. A keyboard closed by hand within that second comes back; after it,
- * nothing is asked.
+ * keyboard is not shown, unless the keyboard had been shown for half a second or more before it
+ * closed: then the user closed it, and it stays closed (build plan 6.2; before, a keyboard closed by
+ * hand within that second came back).
  */
 @Stable
 class FieldKeyboard internal constructor(
@@ -68,10 +69,22 @@ class FieldKeyboard internal constructor(
         // The keyboard closes itself in real time, so the second is the phone's, also under a test's clock, which
         // holds back the delays of a composition: the waits run on Dispatchers.Default and the end is uptime.
         val end = SystemClock.uptimeMillis() + AGAIN_MS
+        var shownSince: Long? = if (shown()) SystemClock.uptimeMillis() else null
         while (true) {
             withContext(Dispatchers.Default) { delay(STEP_MS) }
-            if (SystemClock.uptimeMillis() > end) return
-            if (focused() && !shown()) keyboard?.show()
+            val now = SystemClock.uptimeMillis()
+            if (now > end) return
+            if (shown()) {
+                if (shownSince == null) shownSince = now
+                continue
+            }
+            // Shown for a while and then closed: the user closed it (Back, the keyboard's own key), and it
+            // stays closed (build plan §12: it came back within the second before). Closed again at once
+            // after it was shown: the keyboard closed itself (above), and it is asked for again.
+            val since = shownSince
+            if (since != null && now - since >= CLOSED_BY_HAND_AFTER_MS) return
+            shownSince = null
+            if (focused()) keyboard?.show()
         }
     }
 
@@ -81,6 +94,12 @@ class FieldKeyboard internal constructor(
 
         /** How often it is looked at meanwhile. */
         const val STEP_MS = 100L
+
+        /**
+         * A keyboard shown at least this long before it closed was closed by the user, who then sees no
+         * keyboard come back; one that closes sooner closed itself (Gboard after a rotation).
+         */
+        const val CLOSED_BY_HAND_AFTER_MS = 500L
     }
 }
 

@@ -47,6 +47,7 @@ import io.github.dilshodbekmx.passwordvault.ui.common.StrengthBar
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultDialog
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultFieldDefaults
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultSecureField
+import io.github.dilshodbekmx.passwordvault.ui.common.userText
 
 /**
  * "Choose your master password" (ux.md §5.3, §7.1, §7.2; lock.md F1 step 2): what the master
@@ -153,7 +154,7 @@ internal fun NumberedWords(words: List<String>, modifier: Modifier = Modifier) {
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.widthIn(min = 32.dp),
                     )
-                    Text(text = word, style = MaterialTheme.typography.headlineSmall)
+                    Text(text = word, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.userText())
                 }
             }
         }

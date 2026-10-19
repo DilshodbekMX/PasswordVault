@@ -14,8 +14,6 @@ import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performScrollTo
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.github.dilshodbekmx.passwordvault.R
@@ -42,6 +40,9 @@ import io.github.dilshodbekmx.passwordvault.nav.Navigator
 import io.github.dilshodbekmx.passwordvault.nav.Route
 import io.github.dilshodbekmx.passwordvault.platform.AndroidClock
 import io.github.dilshodbekmx.passwordvault.settings.ThemeChoice
+import io.github.dilshodbekmx.passwordvault.ui.layout.LayoutHook
+import io.github.dilshodbekmx.passwordvault.ui.layout.press
+import io.github.dilshodbekmx.passwordvault.ui.layout.revealTag
 import io.github.dilshodbekmx.passwordvault.ui.theme.PasswordVaultTheme
 import io.github.dilshodbekmx.passwordvault.window.WindowPolicy
 import java.util.Locale
@@ -131,10 +132,11 @@ class LockPseudoLocaleTest {
                 MasterPasswordHost(lock)
             }
         }
-        for (state in states) {
+        for ((index, state) in states.withIndex()) {
             compose.runOnUiThread { lock.state.value = LockUiState.Locked(state) }
             compose.waitForIdle()
-            compose.onNodeWithTag(LockTags.TITLE).assertExists()
+            LayoutHook.look(compose, "lock", "master-password-$index-en-XA")
+            compose.revealTag(LockTags.TITLE).assertExists()
             val texts = shownTexts()
             assertTrue("the screen shows texts", texts.size >= 4)
             for (text in texts) {
@@ -161,9 +163,11 @@ class LockPseudoLocaleTest {
         )
         val lock = FakeLockManager(initial = states.first())
         inPseudo { LockRouteHost(lock) }
-        for (state in states) {
+        for ((index, state) in states.withIndex()) {
             compose.runOnUiThread { lock.state.value = state }
             compose.waitForIdle()
+            val screen = (state as? LockUiState.Locked)?.screen?.let { it::class.simpleName } ?: state::class.simpleName
+            LayoutHook.look(compose, "lock", "$screen-$index-en-XA")
             assertAllPseudo("$state", shownTexts(), atLeast = 3)
         }
     }
@@ -173,21 +177,24 @@ class LockPseudoLocaleTest {
         val lock = FakeLockManager(initial = LockUiState.Locked(screen()))
         lock.status.value = LockStatus.NONE.copy(pin = PinStatus.CannotCheck, aside = listOf(AsideVault("00000000-0000-4000-8000-0000000000aa", AT, null)))
         inPseudo { LockRouteHost(lock) }
-        compose.onNodeWithTag(LockTags.FORGOT).performScrollTo().performClick()
+        compose.revealTag(LockTags.FORGOT).press()
         compose.waitForIdle()
-        compose.onNodeWithTag(LockTags.SHEET).assertExists()
+        compose.revealTag(LockTags.SHEET).assertExists()
+        LayoutHook.look(compose, "lock", "forgot-sheet-en-XA")
         assertAllPseudo("the sheet", shownTexts(), atLeast = 12)
-        compose.onNodeWithTag(LockTags.SHEET_EMPTY).performScrollTo().performClick()
+        compose.revealTag(LockTags.SHEET_EMPTY).press()
         compose.waitForIdle()
-        compose.onNodeWithTag(LockTags.CONFIRM).assertExists()
+        compose.revealTag(LockTags.CONFIRM).assertExists()
+        LayoutHook.look(compose, "lock", "start-empty-question-en-XA")
         assertAllPseudo("Start with an empty app?", shownTexts(), atLeast = 4)
-        compose.onNodeWithTag(LockTags.CONFIRM_CANCEL).performClick()
-        compose.onNodeWithTag(LockTags.SHEET_TRY_AGAIN).performScrollTo().performClick()
+        compose.revealTag(LockTags.CONFIRM_CANCEL).press()
+        compose.revealTag(LockTags.SHEET_TRY_AGAIN).press()
         compose.runOnUiThread { lock.state.value = LockUiState.Locked(LockScreen.OlderPassword(AT, unfinishedChange = true)) }
         compose.waitForIdle()
-        compose.onNodeWithTag(LockTags.OLDER_FROM_BEFORE).performScrollTo().performClick()
+        compose.revealTag(LockTags.OLDER_FROM_BEFORE).press()
         compose.waitForIdle()
-        compose.onNodeWithTag(LockTags.CONFIRM).assertExists()
+        compose.revealTag(LockTags.CONFIRM).assertExists()
+        LayoutHook.look(compose, "lock", "from-before-question-en-XA")
         assertAllPseudo("Open your passwords as they were before …?", shownTexts(), atLeast = 4)
     }
 
@@ -220,15 +227,17 @@ class LockPseudoLocaleTest {
         inPseudo { NoticesInTheme(lock, nav) }
         for (notice in notices) {
             compose.waitForIdle()
-            compose.onNodeWithTag(NoticeTags.NOTICE).assertExists()
+            compose.revealTag(NoticeTags.NOTICE).assertExists()
+            LayoutHook.look(compose, "lock", "notice-${notice::class.simpleName}-${notice.id}-en-XA")
             assertAllPseudo("$notice", shownTexts(), atLeast = 2)
             if (notice is Notice.WrongTries && notice.pinsBeforeOff != null) {
                 // "Type master password": the prompt, then back to the notices.
-                compose.onNodeWithTag(NoticeTags.answer(NoticeAnswer.TYPE_MASTER_PASSWORD)).performClick()
+                compose.revealTag(NoticeTags.answer(NoticeAnswer.TYPE_MASTER_PASSWORD)).press()
                 compose.waitForIdle()
-                compose.onNodeWithTag(NoticeTags.PROMPT).assertExists()
+                compose.revealTag(NoticeTags.PROMPT).assertExists()
+                LayoutHook.look(compose, "lock", "prompt-en-XA")
                 assertAllPseudo("the prompt", shownTexts(), atLeast = 4)
-                compose.onNodeWithTag(NoticeTags.PROMPT_CANCEL).performClick()
+                compose.revealTag(NoticeTags.PROMPT_CANCEL).press()
             } else {
                 compose.runOnUiThread { lock.send(io.github.dilshodbekmx.passwordvault.lock.LockIntent.NoticeAnswered(notice.id, NoticeAnswer.OK)) }
             }

@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.toSize
 import androidx.test.platform.app.InstrumentationRegistry
 import io.github.dilshodbekmx.passwordvault.R
 import io.github.dilshodbekmx.passwordvault.ui.common.MayTruncate
+import io.github.dilshodbekmx.passwordvault.ui.common.UserText
 import java.util.Locale
 
 /** The four checks of build plan 6.2's [script] line, made on each screen. */
@@ -58,6 +59,9 @@ class LayoutProbe(private val compose: SemanticsNodeInteractionsProvider, privat
     /** The walk's own texts: names, logins, websites and notes it typed, words the screen chose. */
     val data = mutableSetOf<String>()
 
+    /** Whether the screen is drawn in a pseudo-locale, where the English check means something. */
+    var checkEnglish = true
+
     private val density = context.resources.displayMetrics.density
     private val minTarget = 48 * density - 1f
 
@@ -80,11 +84,9 @@ class LayoutProbe(private val compose: SemanticsNodeInteractionsProvider, privat
         val merged = compose.onAllNodes(isRoot(), useUnmergedTree = false).fetchSemanticsNodes(atLeastOneRootRequired = false)
         val found = LayoutCheck.entries.associateWith { mutableListOf<String>() }
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
-            for (root in merged) {
-                targets(root, found)
-                english(root, found)
-            }
+            for (root in merged) targets(root, found)
             for (root in unmerged) {
+                if (checkEnglish) english(root, found)
                 // The controls of the same window, which may lie over a text that is not theirs.
                 val controls = mutableListOf<SemanticsNode>()
                 merged.firstOrNull { it.id == root.id }?.let { collectControls(it, controls) }
@@ -139,11 +141,14 @@ class LayoutProbe(private val compose: SemanticsNodeInteractionsProvider, privat
         }
         val shown = node.boundsInRoot
         if (!same(shown, full) && layout != null) {
-            val scrollers = listOfNotNull(vertical, horizontal)
+            // Every list or column that scrolls around the text: one inside another is clipped by both.
+            val scrollers = generateSequence(node.parent) { it.parent }.filter {
+                it.config.contains(SemanticsProperties.VerticalScrollAxisRange) || it.config.contains(SemanticsProperties.HorizontalScrollAxisRange)
+            }.toList()
             // Partly scrolled away: seen whole once the walk scrolls it in.
             val scrolled = scrollers.any { !inside(full, it.boundsInRoot) }
             // What counts is where the letters are, not the text's box, which can be wider.
-            val cut = inkOf(node, layout).filterNot { inside(it, shown) }
+            val cut = inkOf(node, layout).filterNot { inside(it, shown, density) }
             if (!scrolled && cut.isNotEmpty() && !(mayCut && cut.all { it.top >= shown.top - 1 && it.bottom <= shown.bottom + 1 })) {
                 val line = cut.first()
                 return "clipped by its parent (letters at ${dp(line.left)}..${dp(line.right)} × ${dp(line.top)}..${dp(line.bottom)} dp, " +
@@ -155,23 +160,25 @@ class LayoutProbe(private val compose: SemanticsNodeInteractionsProvider, privat
     }
 
     /**
-     * A whole word of an ordinary length (at most [LONGEST_WORD] letters) that a line break cut in two:
-     * its box is too narrow for it. A word joined to others by a hyphen, a dot, a slash, an underscore
-     * or an at sign (a file name, an address, a password of words) may break, as a long one may.
+     * A word of an ordinary length that a line break cut in two: its box is too narrow for it. A word
+     * here is a whole token between ordinary spaces of at most [LONGEST_WORD] characters ("Settings",
+     * "[Šéţţîñĝš"). A longer token that cannot break (a file name, an address, a password of words, a
+     * date whose parts no-break spaces hold together) may break anywhere, and once one has, the text's
+     * other breaks follow from it and are not looked at.
      */
     private fun splitWord(layout: TextLayoutResult): String? {
         val text = layout.layoutInput.text.text
-        fun joiner(at: Int): Boolean = at in text.indices && (text[at] in "-_/@\\" || (text[at] == '.' && at + 1 < text.length && text[at + 1].isLetterOrDigit()))
+        fun space(c: Char) = c == ' ' || c == '\n' || c == '\t'
         for (line in 0 until layout.lineCount - 1) {
             val end = layout.getLineEnd(line)
             if (end <= 0 || end >= text.length) continue
-            if (!text[end - 1].isLetterOrDigit() || !text[end].isLetterOrDigit()) continue
+            if (space(text[end - 1]) || space(text[end])) continue
             var from = end - 1
-            while (from > 0 && text[from - 1].isLetterOrDigit()) from--
+            while (from > 0 && !space(text[from - 1])) from--
             var to = end
-            while (to < text.length && text[to].isLetterOrDigit()) to++
-            if (joiner(from - 1) || joiner(to)) continue
-            if (to - from <= LONGEST_WORD) return text.substring(from, to)
+            while (to < text.length && !space(text[to])) to++
+            if (to - from > LONGEST_WORD) return null
+            if (text[end - 1].isLetterOrDigit() && text[end].isLetterOrDigit()) return text.substring(from, to)
         }
         return null
     }
@@ -196,10 +203,12 @@ class LayoutProbe(private val compose: SemanticsNodeInteractionsProvider, privat
             val area = control.boundsInRoot
             val over = inked.map { it.intersect(area) }.filter { it.width >= MIN_COVER * density && it.height >= MIN_COVER * density }
             if (over.isEmpty()) continue
+            // At its end or at its start: a lazy list's range is where it is and one more while it can
+            // move on (not pixels), so only "no further" counts.
             val stuck = when {
                 range == null -> true
-                range.value() >= range.maxValue() - 1f && area.center.y > shown.center.y -> true
-                range.value() <= 1f && area.center.y < shown.center.y -> true
+                range.maxValue() - range.value() < 0.5f && area.center.y > shown.center.y -> true
+                range.value() < 0.5f && area.center.y < shown.center.y -> true
                 else -> false
             }
             if (stuck) return "covered by ${describe(control)} (${dp(over.maxOf { it.width })} × ${dp(over.maxOf { it.height })} dp)"
@@ -280,6 +289,8 @@ class LayoutProbe(private val compose: SemanticsNodeInteractionsProvider, privat
     /** Whether [node] shows a secret (`isSensitiveData` on it or above it): laid out as it comes, it may break anywhere. */
     private fun secret(node: SemanticsNode): Boolean = generateSequence(node) { it.parent }.any { it.config.getOrNull(SemanticsProperties.IsSensitiveData) == true }
 
+    private fun markedUserText(node: SemanticsNode): Boolean = generateSequence(node) { it.parent }.any { it.config.getOrNull(UserText) == true }
+
     private fun markedMayTruncate(node: SemanticsNode): Boolean {
         var at: SemanticsNode? = node
         while (at != null) {
@@ -324,16 +335,21 @@ class LayoutProbe(private val compose: SemanticsNodeInteractionsProvider, privat
 
     // ---- plain English ---------------------------------------------------------------------------------
 
+    /**
+     * On the unmerged tree, so that a row's own texts are looked at one by one: the user's own texts in
+     * it ([UserText]) are passed over, and its other texts are not.
+     */
     private fun english(node: SemanticsNode, found: Map<LayoutCheck, MutableList<String>>) {
         if (!node.layoutInfo.isPlaced) return
         val config = node.config
-        if (config.getOrNull(SemanticsProperties.IsSensitiveData) != true) {
+        if (config.getOrNull(SemanticsProperties.IsSensitiveData) != true && !markedUserText(node)) {
             val shown = mutableListOf<String>()
             config.getOrNull(SemanticsProperties.Text)?.forEach { shown += it.text }
             config.getOrNull(SemanticsProperties.ContentDescription)?.let { shown += it }
             config.getOrNull(SemanticsProperties.StateDescription)?.let { shown += it }
             config.getOrNull(SemanticsProperties.Error)?.let { shown += it }
-            config.getOrNull(SemanticsProperties.PaneTitle)?.let { shown += it }
+            // Not the pane title: it repeats the screen's title, which is looked at, and which may be the
+            // user's own (an account's name).
             for (text in shown) {
                 if (plainEnglish(text)) found.getValue(LayoutCheck.ENGLISH) += "\"${text.take(80)}\" (${tagOf(node) ?: roleOf(node)})"
             }
@@ -363,8 +379,8 @@ class LayoutProbe(private val compose: SemanticsNodeInteractionsProvider, privat
         kotlin.math.abs(a.left - b.left) <= 1f && kotlin.math.abs(a.top - b.top) <= 1f &&
             kotlin.math.abs(a.right - b.right) <= 1f && kotlin.math.abs(a.bottom - b.bottom) <= 1f
 
-    private fun inside(inner: Rect, outer: Rect): Boolean =
-        inner.left >= outer.left - 1 && inner.top >= outer.top - 1 && inner.right <= outer.right + 1 && inner.bottom <= outer.bottom + 1
+    private fun inside(inner: Rect, outer: Rect, slack: Float = 1f): Boolean =
+        inner.left >= outer.left - slack && inner.top >= outer.top - slack && inner.right <= outer.right + slack && inner.bottom <= outer.bottom + slack
 
     private fun dp(px: Float): Int = kotlin.math.round(px / density).toInt()
 

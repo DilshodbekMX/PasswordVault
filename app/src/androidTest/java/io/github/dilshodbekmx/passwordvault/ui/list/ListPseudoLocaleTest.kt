@@ -14,7 +14,6 @@ import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -27,6 +26,10 @@ import io.github.dilshodbekmx.passwordvault.core.model.Vault
 import io.github.dilshodbekmx.passwordvault.i18n.Formatters
 import io.github.dilshodbekmx.passwordvault.lock.LockStatus
 import io.github.dilshodbekmx.passwordvault.settings.ThemeChoice
+import io.github.dilshodbekmx.passwordvault.ui.layout.LayoutHook
+import io.github.dilshodbekmx.passwordvault.ui.layout.press
+import io.github.dilshodbekmx.passwordvault.ui.layout.revealTag
+import io.github.dilshodbekmx.passwordvault.ui.layout.revealText
 import io.github.dilshodbekmx.passwordvault.ui.theme.PasswordVaultTheme
 import java.io.File
 import java.util.Locale
@@ -111,6 +114,7 @@ class ListPseudoLocaleTest {
      * does not set FLAG_SECURE, so the screen can be read.
      */
     private fun save(name: String) {
+        LayoutHook.look(compose, "list", name)
         compose.waitForIdle()
         val dir = File(compose.activity.cacheDir, "pv-screens").apply { mkdirs() }
         val bitmap = InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot() ?: return
@@ -175,20 +179,20 @@ class ListPseudoLocaleTest {
             res.getString(R.string.list_banner_type_it_now),
             res.getString(R.string.list_banner_deleted_it_myself),
         )) {
-            compose.onNodeWithText(text, substring = true).assertExists()
+            compose.revealText(text, substring = true).assertExists()
         }
         compose.onNodeWithText(compose.activity.getString(R.string.list_title)).assertDoesNotExist()
         save("passwords-$tag")
 
         compose.onNodeWithTag(ListTags.SEARCH).performTextInput("gmal")
         compose.waitUntil(TIMEOUT_MS) { vm.state.value.body is ListBody.NoResults }
-        compose.onNodeWithText(res.getString(R.string.list_no_results, "gmal")).assertExists()
+        compose.revealText(res.getString(R.string.list_no_results, "gmal")).assertExists()
         save("no-results-$tag")
 
         compose.runOnUiThread { vm.clearQuery() }
         compose.waitUntil(TIMEOUT_MS) { vm.state.value.body is ListBody.Browse }
-        compose.onNodeWithTag(ListTags.bannerButton(vm.state.value.banners.first(), "typeItNow")).performClick()
-        compose.onNodeWithText(res.getString(R.string.list_practice_title)).assertExists()
+        compose.onNodeWithTag(ListTags.bannerButton(vm.state.value.banners.first(), "typeItNow")).press()
+        compose.revealText(res.getString(R.string.list_practice_title)).assertExists()
         save("practice-$tag")
     }
 
@@ -205,14 +209,14 @@ class ListPseudoLocaleTest {
         }
         compose.waitUntil(TIMEOUT_MS) { vm.rows.value?.size == 1 }
         val res = context.resources
-        compose.onNodeWithText(res.getString(R.string.list_deleted_title)).assertExists()
-        compose.onNodeWithText(res.getString(R.string.list_deleted_info)).assertExists()
-        compose.onNodeWithText(res.getString(R.string.list_deleted_restore)).assertExists()
+        compose.revealText(res.getString(R.string.list_deleted_title)).assertExists()
+        compose.revealText(res.getString(R.string.list_deleted_info)).assertExists()
+        compose.revealText(res.getString(R.string.list_deleted_restore)).assertExists()
         save("recently-deleted-$tag")
-        compose.onNodeWithTag(ListTags.DELETED_EMPTY).performClick()
+        compose.revealTag(ListTags.DELETED_EMPTY).press()
         // The count as the screen writes it in this language (ar-XB has Arabic-Indic digits on API 24).
         val one = Formatters(res.configuration.locales[0], hour24 = true).number(1)
-        compose.onNodeWithText(res.getQuantityString(R.plurals.list_deleted_empty_question, 1, one)).assertExists()
+        compose.revealText(res.getQuantityString(R.plurals.list_deleted_empty_question, 1, one)).assertExists()
         save("recently-deleted-question-$tag")
     }
 

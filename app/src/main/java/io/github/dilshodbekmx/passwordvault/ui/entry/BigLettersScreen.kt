@@ -48,7 +48,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -116,6 +115,7 @@ fun BigLettersScreen(vm: BigLettersViewModel, nav: Navigator) {
         topBar = {
             VaultTopBar(
                 title = title,
+                titleIsUserText = ui.value is EntryValue.Field,
                 navigationIcon = {
                     IconButton(onClick = ::close, modifier = Modifier.testTag(EntryTags.BIG_CLOSE)) {
                         Icon(painterResource(R.drawable.ic_entry_close), contentDescription = stringResource(R.string.common_close))

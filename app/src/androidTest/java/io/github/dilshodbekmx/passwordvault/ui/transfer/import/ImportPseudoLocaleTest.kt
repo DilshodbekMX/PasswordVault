@@ -16,12 +16,14 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToKey
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.github.dilshodbekmx.passwordvault.R
+import io.github.dilshodbekmx.passwordvault.ui.layout.LayoutHook
+import io.github.dilshodbekmx.passwordvault.ui.layout.press
+import io.github.dilshodbekmx.passwordvault.ui.layout.revealTag
+import io.github.dilshodbekmx.passwordvault.ui.layout.revealText
 import io.github.dilshodbekmx.passwordvault.ui.transfer.ColumnMappingScreen
 import io.github.dilshodbekmx.passwordvault.ui.transfer.ColumnsScreen
 import io.github.dilshodbekmx.passwordvault.ui.transfer.ImportColumnsViewModel
@@ -125,26 +127,26 @@ class ImportPseudoLocaleTest {
                 }
             }
         }
-        compose.onNodeWithText(res.getString(R.string.import_source_google)).assertExists()
-        compose.onNodeWithText(res.getString(R.string.import_sources_intro)).assertExists()
+        compose.revealText(res.getString(R.string.import_source_google)).assertExists()
+        compose.revealText(res.getString(R.string.import_sources_intro)).assertExists()
         save("sources-$tag")
         compose.runOnUiThread { sources.choose(io.github.dilshodbekmx.passwordvault.ui.transfer.ImportSource.GOOGLE) }
-        compose.onNodeWithText(res.getString(R.string.import_google_steps)).assertExists()
+        compose.revealText(res.getString(R.string.import_google_steps)).assertExists()
         save("help-$tag")
 
         compose.runOnUiThread { which = FILE }
         compose.waitUntil(TIMEOUT_MS) { file.ui.value.screen is ImportScreen.Preview }
-        compose.onNodeWithText(res.getQuantityString(R.plurals.import_found, 5, 5)).assertExists()
-        compose.onNodeWithText(res.getQuantityString(R.plurals.import_button, 5, 5)).assertExists()
+        compose.revealText(res.getQuantityString(R.plurals.import_found, 5, 5)).assertExists()
+        compose.revealText(res.getQuantityString(R.plurals.import_button, 5, 5)).assertExists()
         save("preview-$tag")
         compose.onNodeWithTag(ImportTags.PREVIEW).performScrollToKey("tidy")
-        compose.onNodeWithText(res.getString(R.string.import_tidy_names)).assertExists()
+        compose.revealText(res.getString(R.string.import_tidy_names)).assertExists()
         save("preview-end-$tag")
 
-        compose.onNodeWithTag(ImportTags.IMPORT).performClick()
+        compose.revealTag(ImportTags.IMPORT).press()
         compose.waitUntil(TIMEOUT_MS) { file.ui.value.screen is ImportScreen.Done }
-        compose.onNodeWithText(res.getQuantityString(R.plurals.import_done, 5, 5)).assertExists()
-        compose.onNodeWithText(res.getString(R.string.import_undo)).assertExists()
+        compose.revealText(res.getQuantityString(R.plurals.import_done, 5, 5)).assertExists()
+        compose.revealText(res.getString(R.string.import_undo)).assertExists()
         save("done-$tag")
 
         // The mapping of another file, with no password column.
@@ -154,11 +156,14 @@ class ImportPseudoLocaleTest {
             which = MAPPING
         }
         compose.waitUntil(TIMEOUT_MS) { columns.ui.value.screen is ColumnsScreen.Shown }
-        compose.onNodeWithText(res.getString(R.string.import_columns_no_password)).assertExists()
+        compose.revealText(res.getString(R.string.import_columns_no_password)).assertExists()
         save("mapping-$tag")
     }
 
-    private fun save(name: String) = ImportShots.take(compose, "pseudo-$name-api${Build.VERSION.SDK_INT}", everyApi = true)
+    private fun save(name: String) {
+        LayoutHook.look(compose, "import", name)
+        ImportShots.take(compose, "pseudo-$name-api${Build.VERSION.SDK_INT}", everyApi = true)
+    }
 
     private companion object {
         const val TIMEOUT_MS = 10_000L

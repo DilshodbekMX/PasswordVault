@@ -59,8 +59,10 @@ import io.github.dilshodbekmx.passwordvault.data.SaveProblem
 import io.github.dilshodbekmx.passwordvault.i18n.rememberFormatters
 import io.github.dilshodbekmx.passwordvault.nav.Navigator
 import io.github.dilshodbekmx.passwordvault.nav.Route
+import io.github.dilshodbekmx.passwordvault.ui.common.TextBeside
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultTopBar
 import io.github.dilshodbekmx.passwordvault.ui.common.mayTruncate
+import io.github.dilshodbekmx.passwordvault.ui.common.userText
 import io.github.dilshodbekmx.passwordvault.ui.theme.CardsLook
 import io.github.dilshodbekmx.passwordvault.ui.theme.LocalLook
 import kotlinx.coroutines.launch
@@ -234,32 +236,51 @@ private fun GroupRowItem(
     }
     val spoken = stringResource(description, row.title)
     ListItem(
-        // The row may cut the name and the login: the account's screen shows them whole (i18n.md §4.5 rule 3).
-        headlineContent = { Text(row.title, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.mayTruncate()) },
-        supportingContent = if (row.username.isEmpty()) null else ({ Text(row.username, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.mayTruncate()) }),
-        trailingContent = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onClick = action, modifier = Modifier.semantics { contentDescription = spoken }.testTag(SecurityTags.rowAction(row.id))) {
-                    Text(stringResource(label))
-                }
-                if (kind == GroupKind.REUSED || kind == GroupKind.WEAK) {
-                    Box {
-                        IconButton(onClick = { menu = true }, modifier = Modifier.testTag(SecurityTags.rowMore(row.id))) {
-                            Icon(painterResource(R.drawable.ic_list_more), contentDescription = stringResource(R.string.security_more, row.title))
-                        }
-                        DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.security_leave_out)) },
-                                onClick = {
-                                    menu = false
-                                    onLeaveOut()
-                                },
-                                modifier = Modifier.testTag(SecurityTags.LEAVE_OUT),
+        // The name and the login, with "Change" and the row's menu beside them, or under them where a
+        // long label would leave the name too little width (TextBeside; i18n.md §4.5 rule 1). The row may
+        // cut the name and the login: the account's screen shows them whole (i18n.md §4.5 rule 3).
+        headlineContent = {
+            TextBeside(
+                text = {
+                    Column {
+                        Text(row.title, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.mayTruncate().userText())
+                        if (row.username.isNotEmpty()) {
+                            Text(
+                                text = row.username,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.mayTruncate().userText(),
                             )
                         }
                     }
-                }
-            }
+                },
+                action = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        TextButton(onClick = action, modifier = Modifier.semantics { contentDescription = spoken }.testTag(SecurityTags.rowAction(row.id))) {
+                            Text(stringResource(label))
+                        }
+                        if (kind == GroupKind.REUSED || kind == GroupKind.WEAK) {
+                            Box {
+                                IconButton(onClick = { menu = true }, modifier = Modifier.testTag(SecurityTags.rowMore(row.id))) {
+                                    Icon(painterResource(R.drawable.ic_list_more), contentDescription = stringResource(R.string.security_more, row.title))
+                                }
+                                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.security_leave_out)) },
+                                        onClick = {
+                                            menu = false
+                                            onLeaveOut()
+                                        },
+                                        modifier = Modifier.testTag(SecurityTags.LEAVE_OUT),
+                                    )
+                                }
+                            }
+                        }
+                    }
+                },
+            )
         },
         colors = if (grouped) ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest) else ListItemDefaults.colors(),
         modifier = Modifier.clickable(onClick = onOpen).testTag(SecurityTags.row(row.id)),

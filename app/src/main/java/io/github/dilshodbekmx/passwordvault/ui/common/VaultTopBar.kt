@@ -42,8 +42,9 @@ import androidx.compose.ui.unit.dp
  *   it needs, so that a long word never breaks and nothing is cut off.
  *
  * With [titleMayBeCut] (an account's name, which the screen shows whole as the first line of its
- * content, ux.md §5.12), the title stays on one line with an ellipsis and is marked [MayTruncate].
- * The title is the screen's heading for TalkBack.
+ * content, ux.md §5.12), the title stays on one line with an ellipsis and is marked [MayTruncate];
+ * [titleIsUserText] marks a title that is the user's own, such as that name ([UserText]). The title
+ * is the screen's heading for TalkBack.
  */
 @OptIn(ExperimentalMaterial3Api::class) // TopAppBarDefaults.windowInsets is experimental in material3 1.4.0 (ux.md §10)
 @Composable
@@ -53,6 +54,7 @@ fun VaultTopBar(
     navigationIcon: (@Composable () -> Unit)? = null,
     actions: (@Composable RowScope.() -> Unit)? = null,
     titleMayBeCut: Boolean = false,
+    titleIsUserText: Boolean = false,
     titleModifier: Modifier = Modifier,
 ) {
     val style = MaterialTheme.typography.titleLarge
@@ -70,7 +72,8 @@ fun VaultTopBar(
                         overflow = if (titleMayBeCut) TextOverflow.Ellipsis else TextOverflow.Clip,
                         modifier = titleModifier
                             .semantics { heading() }
-                            .then(if (titleMayBeCut) Modifier.mayTruncate() else Modifier),
+                            .then(if (titleMayBeCut) Modifier.mayTruncate() else Modifier)
+                            .then(if (titleIsUserText) Modifier.userText() else Modifier),
                     )
                 },
                 {

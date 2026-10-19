@@ -55,7 +55,8 @@ class LayoutRun private constructor(val name: String, val localeTag: String) {
     /** Records a step of the walk that could not be done (the screen after it was not reached). */
     fun broken(step: String, problem: Throwable) {
         failed++
-        line("BROKEN $step|${problem.javaClass.simpleName}: ${problem.message.orEmpty().lineSequence().firstOrNull().orEmpty().take(300).replace('|', '/')}")
+        val message = problem.message.orEmpty().lineSequence().filter { it.isNotBlank() }.take(3).joinToString(" / ")
+        line("BROKEN $step|${problem.javaClass.simpleName}: ${message.take(400).replace('|', '/')}")
         Log.w(TAG, "step $step", problem)
     }
 

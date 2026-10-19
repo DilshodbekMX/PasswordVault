@@ -1,17 +1,13 @@
 package io.github.dilshodbekmx.passwordvault.ui.layout
 
 import android.content.Intent
-import androidx.compose.ui.semantics.SemanticsActions
-import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performSemanticsAction
-import androidx.lifecycle.ViewModelProvider
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
+import androidx.lifecycle.ViewModelProvider
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import io.github.dilshodbekmx.passwordvault.MainActivity
 import io.github.dilshodbekmx.passwordvault.PasswordVaultApp
-import io.github.dilshodbekmx.passwordvault.R
 import io.github.dilshodbekmx.passwordvault.core.model.DraftEntry
 import io.github.dilshodbekmx.passwordvault.core.model.EditTexts
 import io.github.dilshodbekmx.passwordvault.core.model.VaultEdits
@@ -34,21 +30,21 @@ import io.github.dilshodbekmx.passwordvault.ui.lock.LockTags
 import io.github.dilshodbekmx.passwordvault.ui.lock.NoticeTags
 import io.github.dilshodbekmx.passwordvault.ui.security.GuidedChangeTags
 import io.github.dilshodbekmx.passwordvault.ui.security.SecurityTags
+import io.github.dilshodbekmx.passwordvault.ui.settings.LanguageTags
+import io.github.dilshodbekmx.passwordvault.ui.settings.LicencesCatalog
 import io.github.dilshodbekmx.passwordvault.ui.settings.MasterTags
+import io.github.dilshodbekmx.passwordvault.ui.settings.PartName
 import io.github.dilshodbekmx.passwordvault.ui.settings.SettingsTags
+import io.github.dilshodbekmx.passwordvault.ui.setup.BackupsExplainedTags
+import io.github.dilshodbekmx.passwordvault.ui.setup.FingerprintOfferTags
+import io.github.dilshodbekmx.passwordvault.ui.setup.PinTags
+import io.github.dilshodbekmx.passwordvault.ui.setup.SetupTags
 import io.github.dilshodbekmx.passwordvault.ui.shell.FirstCopyTipTags
 import io.github.dilshodbekmx.passwordvault.ui.transfer.BackupTags
 import io.github.dilshodbekmx.passwordvault.ui.transfer.ExportChoice
 import io.github.dilshodbekmx.passwordvault.ui.transfer.ExportTags
 import io.github.dilshodbekmx.passwordvault.ui.transfer.ImportSource
 import io.github.dilshodbekmx.passwordvault.ui.transfer.ImportTags
-import io.github.dilshodbekmx.passwordvault.ui.setup.BackupsExplainedTags
-import io.github.dilshodbekmx.passwordvault.ui.setup.FingerprintOfferTags
-import io.github.dilshodbekmx.passwordvault.ui.setup.PinTags
-import io.github.dilshodbekmx.passwordvault.ui.setup.SetupTags
-import io.github.dilshodbekmx.passwordvault.ui.settings.LanguageTags
-import io.github.dilshodbekmx.passwordvault.ui.settings.LicencesCatalog
-import io.github.dilshodbekmx.passwordvault.ui.settings.PartName
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -286,7 +282,7 @@ class LayoutWalkTest {
         walk.onRoute(Route.Entry(""))
         walk.tap(EntryTags.MORE)
         walk.await(EntryTags.MENU_DELETE)
-        walk.look("Entry-menu")
+        walk.look("Entry-menu", scrollLists = false)
         walk.back()
         walk.tap(EntryTags.copy(EntryValue.Password))
         if (runCatching { walk.await(FirstCopyTipTags.OK, 5_000) }.isSuccess) {
@@ -324,10 +320,8 @@ class LayoutWalkTest {
         walk.hideKeyboard()
         val bank = accounts().getValue("Bank")
         walk.longPress(ListTags.row(bank))
-        walk.look("Passwords-rowMenu")
-        // The menu's "Show in big letters", found by its text in the walk's language.
-        val bigLetters = walk.activity()!!.getString(R.string.list_menu_big_letters)
-        compose.onNodeWithText(bigLetters).performSemanticsAction(SemanticsActions.OnClick)
+        walk.look("Passwords-rowMenu", scrollLists = false)
+        walk.tap(ListTags.menuItem("bigLetters"))
         walk.onRoute(Route.BigLetters("", ""))
         walk.look("BigLetters-fromList")
         walk.back()
