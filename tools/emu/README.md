@@ -408,3 +408,7 @@ says `Found systemPath /home/asus/pvlab/sysimg/...`).
   unreadable with `run-as … chmod 000` for one process, and readable again after.
 - On API 24 `cmd alarm set-time` does not exist; with root, `su 0 date -u MMDDhhmmYYYY.ss` sets the
   clock (`-u`: the string is UTC; without it the device reads it in its own zone, 5 hours off here).
+- Android 17's App language page (Settings › Apps › the app › Language) lists the app's languages first
+  and adds the app's current one, checked, under "Suggested" a moment later; on a busy machine a dump
+  taken as soon as "All languages" shows has nothing checked (`i18n/matrix.sh` reads it again for up to
+  about 12 s since the device check of R4).
