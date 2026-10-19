@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Русский: the export (build plan 6.4b; ux.md §5.20; formats.md §2, §6). Glossary (i18n.md §3):
+     100 «Экспорт», 104 «незащищённый» («Файл не защищён»), 21 «предыдущие пароли», 12 «Избранное»,
+     6 «Название», 7 «Имя пользователя». File names, CSV, JSON, Excel, Google Password Manager,
+     Google Drive, Telegram, Bitwarden, Proton Pass and KeePassXC are not translated; Google Sheets is
+     «Google Таблицы», its Russian name. A place's name follows «хранилище» in quotes (i18n.md §4.4).
+     Four-digit numbers are written without a space (3000), five-digit ones with a no-break space. -->
+<resources>
+
+    <string name="export_title">Экспорт</string>
+    <string name="export_back">Назад</string>
+    <string name="export_continue">Продолжить</string>
+
+    <string name="export_choose_heading">Выберите формат</string>
+    <string name="export_backup">Файл резервной копии (рекомендуется)</string>
+    <string name="export_backup_line">Защищён вашим мастер-паролем. Чтобы хранить надёжную копию или перейти на новый телефон.</string>
+    <string name="export_xlsx">Excel (.xlsx)</string>
+    <string name="export_xlsx_line">Чтобы смотреть пароли в таблице на компьютере. Файл не защищён.</string>
+    <string name="export_csv">CSV</string>
+    <string name="export_csv_line">Чтобы перенести пароли в другое приложение для паролей, например в Google Password Manager. Файл не защищён.</string>
+    <string name="export_json">JSON</string>
+    <string name="export_json_line">Все данные, включая предыдущие пароли. Его могут импортировать Bitwarden, Proton Pass и KeePassXC. Файл не защищён.</string>
+
+    <string name="export_warning_title">Этот файл не будет защищён</string>
+    <string name="export_warning_body">Любой, кто откроет этот файл, сможет прочитать все ваши пароли. У файла нет пароля.</string>
+    <string name="export_warning_control">Сохраняйте его только там, где он под вашим контролем: на своём компьютере или USB-флешке.</string>
+    <string name="export_warning_messengers">Не отправляйте его через Telegram, по электронной почте или в других мессенджерах.</string>
+    <string name="export_warning_delete">Удалите его, как только закончите.</string>
+    <string name="export_warning_csv">Не открывайте этот файл в Excel: Excel меняет номера телефонов и коды и может выполнять формулы. Вместо этого выберите экспорт в Excel.</string>
+    <string name="export_warning_xlsx">Google Таблицы и другие приложения могут хранить копию файла в своём облаке.</string>
+    <string name="export_warning_old_android">На этом телефоне другие приложения с доступом к памяти могут читать файлы в папке «Загрузки».</string>
+    <string name="export_understand">Я понимаю</string>
+
+    <string name="export_csv_card_title">В Google Password Manager</string>
+    <string name="export_csv_skip_intro">Google Password Manager пропустит:</string>
+    <plurals name="export_csv_skip_no_website">
+        <item quantity="one">%1$d&#160;аккаунт без сайта</item>
+        <item quantity="few">%1$d&#160;аккаунта без сайта</item>
+        <item quantity="many">%1$d&#160;аккаунтов без сайта</item>
+        <item quantity="other">%1$d&#160;аккаунта без сайта</item>
+    </plurals>
+    <plurals name="export_csv_skip_no_password">
+        <item quantity="one">%1$d&#160;аккаунт без пароля</item>
+        <item quantity="few">%1$d&#160;аккаунта без пароля</item>
+        <item quantity="many">%1$d&#160;аккаунтов без пароля</item>
+        <item quantity="other">%1$d&#160;аккаунта без пароля</item>
+    </plurals>
+    <plurals name="export_csv_skip_long_note">
+        <item quantity="one">%1$d&#160;аккаунт с заметками, слишком длинными для Google</item>
+        <item quantity="few">%1$d&#160;аккаунта с заметками, слишком длинными для Google</item>
+        <item quantity="many">%1$d&#160;аккаунтов с заметками, слишком длинными для Google</item>
+        <item quantity="other">%1$d&#160;аккаунта с заметками, слишком длинными для Google</item>
+    </plurals>
+    <plurals name="export_csv_skip_long_password">
+        <item quantity="one">%1$d&#160;аккаунт с паролем, слишком длинным для Google</item>
+        <item quantity="few">%1$d&#160;аккаунта с паролем, слишком длинным для Google</item>
+        <item quantity="many">%1$d&#160;аккаунтов с паролем, слишком длинным для Google</item>
+        <item quantity="other">%1$d&#160;аккаунта с паролем, слишком длинным для Google</item>
+    </plurals>
+    <plurals name="export_csv_skip_long_username">
+        <item quantity="one">%1$d&#160;аккаунт с именем пользователя, слишком длинным для Google</item>
+        <item quantity="few">%1$d&#160;аккаунта с именем пользователя, слишком длинным для Google</item>
+        <item quantity="many">%1$d&#160;аккаунтов с именем пользователя, слишком длинным для Google</item>
+        <item quantity="other">%1$d&#160;аккаунта с именем пользователя, слишком длинным для Google</item>
+    </plurals>
+    <plurals name="export_csv_skip_bad_website">
+        <item quantity="one">%1$d&#160;аккаунт с сайтом, который Google не принимает</item>
+        <item quantity="few">%1$d&#160;аккаунта с сайтом, который Google не принимает</item>
+        <item quantity="many">%1$d&#160;аккаунтов с сайтом, который Google не принимает</item>
+        <item quantity="other">%1$d&#160;аккаунта с сайтом, который Google не принимает</item>
+    </plurals>
+    <plurals name="export_csv_skip_long_website">
+        <item quantity="one">%1$d&#160;аккаунт с адресом сайта, слишком длинным для Google</item>
+        <item quantity="few">%1$d&#160;аккаунта с адресом сайта, слишком длинным для Google</item>
+        <item quantity="many">%1$d&#160;аккаунтов с адресом сайта, слишком длинным для Google</item>
+        <item quantity="other">%1$d&#160;аккаунта с адресом сайта, слишком длинным для Google</item>
+    </plurals>
+    <string name="export_csv_skip_outro">В файле они всё равно есть. Другие приложения могут их принять.</string>
+    <string name="export_csv_see_which">Показать список</string>
+    <string name="export_csv_hide_which">Скрыть список</string>
+    <plurals name="export_csv_parts">
+        <item quantity="one">Google принимает не больше 3000&#160;строк или 1000&#160;КБ в одном файле, поэтому экспорт будет сохранён в %1$d&#160;файл. Место для каждого вы выберете сами.</item>
+        <item quantity="few">Google принимает не больше 3000&#160;строк или 1000&#160;КБ в одном файле, поэтому экспорт будет сохранён в %1$d&#160;файла. Место для каждого вы выберете сами.</item>
+        <item quantity="many">Google принимает не больше 3000&#160;строк или 1000&#160;КБ в одном файле, поэтому экспорт будет сохранён в %1$d&#160;файлов. Место для каждого вы выберете сами.</item>
+        <item quantity="other">Google принимает не больше 3000&#160;строк или 1000&#160;КБ в одном файле, поэтому экспорт будет сохранён в %1$d&#160;файла. Место для каждого вы выберете сами.</item>
+    </plurals>
+    <string name="export_csv_part_too_large">Файл %1$d всё равно слишком большой для Google, и Google отклонит его целиком.</string>
+    <string name="export_csv_not_kept">Предыдущие пароли и избранное в CSV не попадают. В JSON сохраняется всё.</string>
+
+    <string name="export_password_title">Введите мастер-пароль</string>
+    <string name="export_password_body">Приложение запрашивает его перед каждым экспортом, потому что файл не будет защищён.</string>
+    <string name="export_password_field">Мастер-пароль</string>
+    <string name="export_password_wrong">Это неверный мастер-пароль. Проверьте раскладку клавиатуры (латиница или кириллица) и заглавные буквы.</string>
+    <plurals name="export_password_wait">
+        <item quantity="one">Подождите %1$d&#160;секунду и повторите попытку. Не спешите и сверьтесь со своей записью на бумаге.</item>
+        <item quantity="few">Подождите %1$d&#160;секунды и повторите попытку. Не спешите и сверьтесь со своей записью на бумаге.</item>
+        <item quantity="many">Подождите %1$d&#160;секунд и повторите попытку. Не спешите и сверьтесь со своей записью на бумаге.</item>
+        <item quantity="other">Подождите %1$d&#160;секунды и повторите попытку. Не спешите и сверьтесь со своей записью на бумаге.</item>
+    </plurals>
+    <string name="export_password_no_memory">На телефоне недостаточно свободной памяти, чтобы проверить мастер-пароль. Закройте другие приложения или перезапустите телефон и повторите попытку.</string>
+    <string name="export_password_older">Это ваш мастер-пароль, который действовал до %1$s. Введите тот, которым пользуетесь сейчас.</string>
+    <string name="export_paused">Это было приостановлено, когда приложение заблокировалось.</string>
+    <string name="export_paused_body">Введите мастер-пароль ещё раз, чтобы сохранить файл %1$s.</string>
+    <string name="export_paused_body_file">Введите мастер-пароль ещё раз, чтобы сохранить файл.</string>
+
+    <string name="export_picking">Выберите, куда сохранить файл.</string>
+    <string name="export_saving">Сохранение и проверка файла…</string>
+
+    <string name="export_saved">Сохранено: %1$s. Когда закончите с ним работать, удалите его.</string>
+    <string name="export_saved_part">Сохранён файл %1$d из %2$d: %3$s. Когда закончите с ним работать, удалите его.</string>
+    <string name="export_next_part">Сохранить файл %1$d</string>
+    <string name="export_saved_upload">Это хранилище может загрузить файл позже. Откройте файл там один раз, чтобы проверить, что он загрузился.</string>
+    <plurals name="export_saved_replaced">
+        <item quantity="one">%1$d&#160;повреждённый символ сохранён как �.</item>
+        <item quantity="few">%1$d&#160;повреждённых символа сохранены как �.</item>
+        <item quantity="many">%1$d&#160;повреждённых символов сохранены как �.</item>
+        <item quantity="other">%1$d&#160;повреждённого символа сохранены как �.</item>
+    </plurals>
+    <plurals name="export_saved_truncated">
+        <item quantity="one">%1$d&#160;очень длинный текст обрезан, чтобы поместиться в Excel.</item>
+        <item quantity="few">%1$d&#160;очень длинных текста обрезаны, чтобы поместиться в Excel.</item>
+        <item quantity="many">%1$d&#160;очень длинных текстов обрезаны, чтобы поместиться в Excel.</item>
+        <item quantity="other">%1$d&#160;очень длинного текста обрезаны, чтобы поместиться в Excel.</item>
+    </plurals>
+    <string name="export_delete_now">Удалить сейчас</string>
+    <string name="export_deleted">Файл %1$s удалён.</string>
+    <string name="export_cannot_delete">Это хранилище не позволяет приложениям удалять файлы. Удалите файл вручную в файловом менеджере телефона.</string>
+
+    <string name="export_picker_failed">Не удалось открыть экран сохранения файлов. Повторите попытку.</string>
+    <string name="export_write_failed">Не удалось сохранить в это место. Попробуйте другую папку.</string>
+    <string name="export_write_left_phone">В файле %1$s могут быть некоторые ваши пароли. Удалите его вручную в файловом менеджере телефона.</string>
+    <string name="export_write_left_drive">В файле %1$s могут быть некоторые ваши пароли. Удалите его вручную в Google Drive.</string>
+    <string name="export_write_left_other">В файле %1$s могут быть некоторые ваши пароли. Удалите его вручную в хранилище «%2$s».</string>
+    <string name="export_note_failed">Не удалось сохранить. Возможно, память телефона заполнена.</string>
+    <string name="export_too_large">Ваши пароли больше не помещаются в один файл. Удалите ненужные аккаунты или сократите очень длинные заметки.</string>
+    <string name="export_cleanup_removed">Файл не сохранён. Пустой файл удалён.</string>
+    <string name="export_cleanup_left_phone">Файл не сохранён. Удалите пустой файл %1$s вручную в файловом менеджере телефона.</string>
+    <string name="export_cleanup_left_drive">Файл не сохранён. Удалите пустой файл %1$s из Google Drive вручную.</string>
+    <string name="export_cleanup_left_other">Файл не сохранён. Удалите пустой файл %1$s из хранилища «%2$s» вручную.</string>
+    <string name="export_cleanup_nothing">Файл не сохранён.</string>
+
+    <string name="export_pending">Экспортировать пароли можно будет, когда ваш новый мастер-пароль заработает.</string>
+
+    <!-- The Excel file's own texts: the sheet's name has at most 31 characters and none of [ ] : * ? / \ -->
+    <string name="export_xlsx_sheet">Пароли</string>
+    <string name="export_xlsx_name">Название</string>
+    <string name="export_xlsx_username">Имя пользователя</string>
+    <string name="export_xlsx_password">Пароль</string>
+    <string name="export_xlsx_website">Сайт</string>
+    <string name="export_xlsx_other_websites">Другие сайты</string>
+    <string name="export_xlsx_notes">Заметки</string>
+    <string name="export_xlsx_fields">Дополнительные поля</string>
+    <string name="export_xlsx_favourite">Избранное</string>
+    <string name="export_xlsx_added">Дата добавления</string>
+    <string name="export_xlsx_last_changed">Дата изменения</string>
+    <string name="export_xlsx_password_changed">Дата изменения пароля</string>
+    <string name="export_xlsx_yes">Да</string>
+    <string name="export_xlsx_hidden">скрыто</string>
+    <string name="export_xlsx_old_password">Старый пароль</string>
+    <string name="export_xlsx_app">приложение</string>
+    <plurals name="export_xlsx_truncated">
+        <item quantity="one">[… ещё %1$d&#160;символ: Excel показывает не больше 32&#160;767 в одной ячейке]</item>
+        <item quantity="few">[… ещё %1$d&#160;символа: Excel показывает не больше 32&#160;767 в одной ячейке]</item>
+        <item quantity="many">[… ещё %1$d&#160;символов: Excel показывает не больше 32&#160;767 в одной ячейке]</item>
+        <item quantity="other">[… ещё %1$d&#160;символа: Excel показывает не больше 32&#160;767 в одной ячейке]</item>
+    </plurals>
+
+</resources>
