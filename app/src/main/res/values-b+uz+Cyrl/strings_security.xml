@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Oʻzbekcha (lotin): the Security tab (build plan 6.3b; values/strings_security.xml has the notes
-     for each string). Glossary of i18n.md §3: Xavfsizlik tekshiruvi (91), Asosiy parol (48),
-     Hisob (2), "%d ta" (3), Parolni oʻzgartirish (95). An account's name, which the user typed,
-     stands in quotes before the noun "hisobi" or the postposition "uchun", so that no suffix is glued
-     to it (i18n.md §4.4). oʻ and gʻ with U+02BB, the tutuq belgisi with U+02BC. -->
+<!-- Ўзбекча (кирилл): the Security tab
+     (build plan 6.3b; values/strings_security.xml has the notes for each string). Drafted
+     from values-uz/strings_security.xml with UzbekCyrillicStrings (i18n.md §2.5),
+     then read string by string against the Latin file and the Cyrillic column of the glossary of
+     i18n.md §3. Names of apps, formats, files, libraries and menus that the Latin file writes in
+     Latin letters stay in Latin letters here (ResourceCheck.LATIN_IN_CYRILLIC); the words of
+     Android's and Chrome's own Uzbek menus are written in Cyrillic letters. -->
 <resources>
 
     <string name="security_title">Хавфсизлик текшируви</string>
@@ -66,7 +68,7 @@
 
     <string name="security_new_results">Янги натижалар</string>
 
-    <!-- ===== Kartochka ortidagi roʻyxat ===== -->
+    <!-- ===== Карточка ортидаги рўйхат ===== -->
 
     <string name="security_list_reused">Бир хил парол</string>
     <plurals name="security_group_reused">

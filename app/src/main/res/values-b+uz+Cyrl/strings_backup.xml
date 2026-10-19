@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Oʻzbekcha (lotin): backup, restore and old passwords (build plan 6.3b; values/strings_backup.xml
-     has the notes for each string). Glossary of i18n.md §3: Zaxira nusxa (97), Zaxira nusxa
-     yaratish (98), Tiklash (99), Asosiy parol (48), Faylni tanlash (106), Qulflangan (68). A date
-     placeholder is followed by "kuni" ("on the day") and a file's or a place's name by a noun
-     ("nomli", "xizmatidagi", "joyi:"), so that no Uzbek suffix is glued to a name the app does not
-     choose (i18n.md §4.4). oʻ and gʻ with U+02BB, the tutuq belgisi with U+02BC. -->
+<!-- Ўзбекча (кирилл): backup, restore and old passwords
+     (build plan 6.3b; values/strings_backup.xml has the notes for each string). Drafted
+     from values-uz/strings_backup.xml with UzbekCyrillicStrings (i18n.md §2.5),
+     then read string by string against the Latin file and the Cyrillic column of the glossary of
+     i18n.md §3. Names of apps, formats, files, libraries and menus that the Latin file writes in
+     Latin letters stay in Latin letters here (ResourceCheck.LATIN_IN_CYRILLIC); the words of
+     Android's and Chrome's own Uzbek menus are written in Cyrillic letters. -->
 <resources>
 
-    <!-- ===== Zaxira nusxa yaratish ===== -->
+    <!-- ===== Захира нусха яратиш ===== -->
 
     <string name="backup_title">Захира нусха яратиш</string>
     <string name="backup_back">Орқага</string>
@@ -29,7 +30,7 @@
     <string name="backup_older">Сиз асосий паролингизни %1$s куни ўзгартиргансиз. Янгисини киритинг.</string>
     <string name="backup_older_unfinished">%1$s куни асосий паролингизни ўзгартириш якунланмаган бўлиши мумкин. Янги асосий паролингизни киритинг.</string>
     <string name="backup_making">Захира нусха яратилмоқда…</string>
-    <string name="backup_choose_text">Захира нусха файлини қаерга сақлашни танланг. Google Дриве иловаси шу телефонда бўлса, у ҳам рўйхатда чиқади.</string>
+    <string name="backup_choose_text">Захира нусха файлини қаерга сақлашни танланг. Google Drive иловаси шу телефонда бўлса, у ҳам рўйхатда чиқади.</string>
     <string name="backup_choose">Жойни танлаш</string>
     <string name="backup_picker_failed">Жойлар рўйхатини очиб бўлмади. Қайта урининг.</string>
     <string name="backup_saving">Сақланмоқда…</string>
@@ -40,7 +41,7 @@
         <item quantity="other">Захира нусха сақланди: %2$s (%1$d&#160;та ҳисоб).</item>
     </plurals>
     <string name="backup_place_phone">Бу нусха шу телефонда. Телефон йўқолса, бу нусха ҳам йўқолади. Нусхани бошқа жойда ҳам сақланг.</string>
-    <string name="backup_place_drive">Google Дриве хизматига сақланди.</string>
+    <string name="backup_place_drive">Google Drive хизматига сақланди.</string>
     <string name="backup_place_other">Сақланган жой: %1$s.</string>
     <string name="backup_upload_later">Бу жой файлни кейинроқ юклаши мумкин. Файл етиб борганини текшириш учун уни ўша ерда бир марта очинг.</string>
     <string name="backup_send">Бошқа иловага юбориш…</string>
@@ -56,18 +57,18 @@
 
     <string name="backup_file_removed">Файл ўчириб ташланди.</string>
     <string name="backup_file_left_phone">%1$s номли файлни шу телефон хотирасидан ўзингиз ўчиринг.</string>
-    <string name="backup_file_left_drive">Google Дриве хизматидаги %1$s номли файлни ўзингиз ўчиринг.</string>
+    <string name="backup_file_left_drive">Google Drive хизматидаги %1$s номли файлни ўзингиз ўчиринг.</string>
     <string name="backup_file_left_other">%1$s номли файлни ўзингиз ўчиринг (жойи: %2$s).</string>
 
     <string name="backup_stopped_removed">Захира нусха яратилмади. Бўш файл ўчириб ташланди.</string>
     <string name="backup_stopped_left_phone">Захира нусха яратилмади. %1$s номли бўш файлни шу телефон хотирасидан ўзингиз ўчиринг.</string>
-    <string name="backup_stopped_left_drive">Захира нусха яратилмади. Google Дриве хизматидаги %1$s номли бўш файлни ўзингиз ўчиринг.</string>
+    <string name="backup_stopped_left_drive">Захира нусха яратилмади. Google Drive хизматидаги %1$s номли бўш файлни ўзингиз ўчиринг.</string>
     <string name="backup_stopped_left_other">Захира нусха яратилмади. %1$s номли бўш файлни ўзингиз ўчиринг (жойи: %2$s).</string>
 
-    <!-- ===== Zaxira nusxa faylidan tiklash ===== -->
+    <!-- ===== Захира нусха файлидан тиклаш ===== -->
 
     <string name="backup_restore_title">Захира нусха файлидан тиклаш</string>
-    <string name="backup_restore_intro">Шу илова сақлаган захира нусха файлини танланг. Унинг номи PasswordVault-баcкуп билан бошланади.</string>
+    <string name="backup_restore_intro">Шу илова сақлаган захира нусха файлини танланг. Унинг номи PasswordVault-backup билан бошланади.</string>
     <string name="backup_restore_choose">Файлни танлаш</string>
     <string name="backup_restore_choose_other">Бошқа файлни танлаш</string>
     <string name="backup_restore_picker_failed">Файллар рўйхатини очиб бўлмади. Қайта урининг.</string>
@@ -95,7 +96,7 @@
     <string name="backup_restore_no_memory">Файлни очиш учун телефонингизда бўш оператив хотира етарли эмас. Бошқа иловаларни ёпинг ва қайта урининг.</string>
     <string name="backup_restore_not_saved">Сақлаб бўлмади. Телефон хотираси тўлган бўлиши мумкин.</string>
 
-    <!-- ===== Sozlamalar › Eski parollar ===== -->
+    <!-- ===== Созламалар › Эски пароллар ===== -->
 
     <string name="backup_old_title">Эски пароллар</string>
     <string name="backup_old_intro">Бу пароллар шу телефонда четга олиб қўйилган. Улар ўзининг асосий пароли билан қулфланган ҳолда қолади. “Очиш” тугмаси уларнинг ҳисобларини ҳозирги паролларингизга қўшади.</string>

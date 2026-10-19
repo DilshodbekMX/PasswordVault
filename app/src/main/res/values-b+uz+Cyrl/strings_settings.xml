@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Oʻzbekcha (lotin): the Settings tab (build plan 6.3b; values/strings_settings.xml has the notes
-     for each string). Glossary of i18n.md §3: Ilova qulfi (69), Barmoq izi bilan ochish (62),
-     Darhol (71), soniyadan/daqiqadan keyin (72, 73), Vaqtinchalik xotirani tozalash (113),
-     Zaxira nusxa (97, 98), Yorqin, Tungi (116, 117), Qurilma mavzusi (115). Section J (150 to 157),
-     chosen here: Mavzu (Appearance, Android's own Uzbek for the Display settings' "Appearance"),
-     Ranglar, Yorqin yoki tungi, Bank koʻki, Zumrad, Tungi seyf, Telefon ranglari. oʻ and gʻ with
-     U+02BB, the tutuq belgisi with U+02BC (i18n.md §2.4). -->
+<!-- Ўзбекча (кирилл): the Settings tab
+     (build plan 6.3b; values/strings_settings.xml has the notes for each string). Drafted
+     from values-uz/strings_settings.xml with UzbekCyrillicStrings (i18n.md §2.5),
+     then read string by string against the Latin file and the Cyrillic column of the glossary of
+     i18n.md §3. Names of apps, formats, files, libraries and menus that the Latin file writes in
+     Latin letters stay in Latin letters here (ResourceCheck.LATIN_IN_CYRILLIC); the words of
+     Android's and Chrome's own Uzbek menus are written in Cyrillic letters. -->
 <resources>
 
     <string name="settings_title">Созламалар</string>
 
-    <!-- ===== Ilova qulfi ===== -->
+    <!-- ===== Илова қулфи ===== -->
 
     <string name="settings_group_app_lock">Илова қулфи</string>
     <string name="settings_change_pin">PIN кодни ўзгартириш</string>
@@ -59,7 +59,7 @@
     <string name="settings_change_master_password">Асосий паролни ўзгартириш</string>
     <string name="settings_lock_now">Ҳозир қулфлаш</string>
 
-    <!-- ===== Zaxiralash va koʻchirish ===== -->
+    <!-- ===== Захиралаш ва кўчириш ===== -->
 
     <string name="settings_group_backup">Захиралаш ва кўчириш</string>
     <string name="settings_backup">Захира нусха яратиш</string>
@@ -68,13 +68,13 @@
     <string name="settings_place_phone">шу телефон</string>
     <string name="settings_backup_reminders">Захиралаш эслатмалари</string>
     <string name="settings_export">Экспорт</string>
-    <string name="settings_export_body">Эхcел, CSV ёки JSON файл</string>
+    <string name="settings_export_body">Excel, CSV ёки JSON файл</string>
     <string name="settings_import">Импорт</string>
     <string name="settings_import_body">Chrome, бошқа парол иловаси ёки файлдан</string>
-    <!-- %1$s is a date ("6-okt, 2026"): "kuni" ("on the day") keeps the date free of a suffix. -->
+    <!-- %1$s is a date ("6 окт, 2026"): "куни" ("on the day") keeps the date free of a suffix. -->
     <string name="settings_old_passwords">Эски пароллар (%1$s куни қулфланган)</string>
 
-    <!-- ===== Mavzu va til ===== -->
+    <!-- ===== Мавзу ва тил ===== -->
 
     <string name="settings_group_appearance">Мавзу ва тил</string>
     <string name="settings_appearance">Мавзу</string>
@@ -90,7 +90,7 @@
     <string name="settings_theme_light">Ёрқин</string>
     <string name="settings_theme_dark">Тунги</string>
 
-    <!-- ===== Yordam ===== -->
+    <!-- ===== Ёрдам ===== -->
 
     <string name="settings_group_help">Ёрдам</string>
     <string name="settings_help_protection">Паролларингиз қандай ҳимояланади</string>
@@ -100,7 +100,7 @@
     <string name="settings_licences">Очиқ кодли дастурлар лицензиялари</string>
     <string name="settings_version">Версия</string>
 
-    <!-- ===== Xabarlar ===== -->
+    <!-- ===== Хабарлар ===== -->
 
     <string name="settings_not_saved">Созламани сақлаб бўлмади. Қайта урининг.</string>
     <string name="settings_back">Орқага</string>
