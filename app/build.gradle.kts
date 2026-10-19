@@ -398,7 +398,9 @@ abstract class CheckMergedManifest : DefaultTask() {
         // debuggable: only debug and backupCheck (architecture.md §7.2). A debuggable build lets
         // `run-as` read the vault and the lock records, and a debugger attach.
         val isDebuggable = application.android("debuggable") == "true"
-        if (isDebuggable != debuggable.get()) problems += "android:debuggable is $isDebuggable, expected ${debuggable.get()}"
+        if (isDebuggable != debuggable.get()) {
+            problems += "android:debuggable is $isDebuggable, expected ${debuggable.get()}"
+        }
 
         val v = variantName.get()
         if (problems.isNotEmpty()) {
@@ -515,7 +517,8 @@ abstract class CheckApk : DefaultTask() {
                 val otherCodeFile = Regex("(?i).*\\.(dex|jar|apk|odex|vdex|oat)")
                 val otherCode = if (r8) names.filter { it.matches(otherCodeFile) && it !in dexNames } else emptyList()
                 if (otherCode.isNotEmpty()) {
-                    problems += "R-17: ${apk.name} holds code besides its classes*.dex, which this check cannot read: $otherCode"
+                    problems += "R-17: ${apk.name} holds code besides its classes*.dex, which this check cannot " +
+                        "read: $otherCode"
                 }
 
                 lines += "${apk.name}: lib/ $found, debug receiver ${if (inDex) "present" else "absent"}"
@@ -530,8 +533,10 @@ abstract class CheckApk : DefaultTask() {
                     lines += "  $p: ${hits.size} classes" + if (p in forbidden) " (must be 0)" else ""
                 }
                 if (map != null) {
-                    lines += "  R8's mapping names code of " + forbidden.joinToString(", ") { p -> "$p on ${map.mentions.getValue(p).count} lines" }
-                    lines += "  JVM class files in the APK: ${classFiles.size}; other dex, jar or APK files: ${otherCode.size}"
+                    lines += "  R8's mapping names code of " +
+                        forbidden.joinToString(", ") { p -> "$p on ${map.mentions.getValue(p).count} lines" }
+                    lines += "  JVM class files in the APK: ${classFiles.size}; " +
+                        "other dex, jar or APK files: ${otherCode.size}"
                 }
             }
         }
