@@ -13,6 +13,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
+import io.github.dilshodbekmx.passwordvault.R
 import io.github.dilshodbekmx.passwordvault.core.model.Vault
 import io.github.dilshodbekmx.passwordvault.data.CheckProgress
 import io.github.dilshodbekmx.passwordvault.fake.FakeSecurityReports
@@ -107,7 +108,7 @@ class SecurityScreenshotsTest {
         show(gallery) { GroupListScreen(weak, main.nav) }
         compose.onNodeWithTag(SecurityTags.rowMore(id(14))).performClick()
         SecurityShots.take(compose, "7.1-08-weak-leave-out-menu")
-        compose.onNodeWithText("Leave out of the security check").performClick()
+        compose.onNodeWithText(compose.activity.getString(R.string.security_leave_out)).performClick()
         compose.waitUntil(15_000) { main.repository.stored.entries.first { it.id == id(14) }.checkIgnored }
         SecurityShots.take(compose, "7.1-09-weak-left-out-undo")
         show(gallery) { GroupListScreen(leftOut, main.nav) }
