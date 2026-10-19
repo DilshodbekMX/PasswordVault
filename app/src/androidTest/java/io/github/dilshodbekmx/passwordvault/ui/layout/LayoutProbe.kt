@@ -141,7 +141,10 @@ class LayoutProbe(private val compose: SemanticsNodeInteractionsProvider, privat
             if (widest > layout.size.width + 1f) return "cut (overflows its width by ${dp(widest - layout.size.width)} dp)"
         }
         val shown = node.boundsInRoot
-        if (!same(shown, full) && layout != null) {
+        // Shown as large as it is, only elsewhere: a layer moved the node (a list item's placement), which
+        // its bounds in the root follow and its position does not. Nothing of it is cut.
+        val moved = kotlin.math.abs(shown.width - full.width) <= density && kotlin.math.abs(shown.height - full.height) <= density
+        if (!same(shown, full) && !moved && layout != null) {
             // Every list or column that scrolls around the text: one inside another is clipped by both.
             val scrollers = generateSequence(node.parent) { it.parent }.filter {
                 it.config.contains(SemanticsProperties.VerticalScrollAxisRange) || it.config.contains(SemanticsProperties.HorizontalScrollAxisRange)
