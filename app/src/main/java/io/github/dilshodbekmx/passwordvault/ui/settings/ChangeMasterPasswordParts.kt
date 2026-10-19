@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -151,11 +152,14 @@ internal fun MasterFrame(title: String, onBack: () -> Unit, backEnabled: Boolean
 
 /**
  * A step without a pad: [heading] and the [content] in one column that scrolls, at most 640 dp wide
- * (ux.md §3 "Layout"), above the keyboard.
+ * (ux.md §3 "Layout"), above the keyboard (`imePadding`, as the form's column has it): the column ends
+ * where the keyboard begins, so a field that has the focus is scrolled into view above it. Without it
+ * the column ran on under the keyboard, and with a long text above the field (the phone's font at
+ * 200 % on a small phone) the master-password field and its line lay under the keyboard.
  */
 @Composable
 internal fun MasterPage(heading: String, content: @Composable ColumnScope.() -> Unit) {
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+    Box(Modifier.fillMaxSize().imePadding(), contentAlignment = Alignment.TopCenter) {
         Column(
             modifier = Modifier
                 .widthIn(max = 640.dp)
