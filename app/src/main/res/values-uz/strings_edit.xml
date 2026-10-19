@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Oʻzbekcha (lotin): add and edit an account and the password generator (build plan 6.3a; English
+     in values/strings_edit.xml). Glossary (i18n.md §3): 6 "Nomi", 9 "Parol", 10 "Sayt", 11
+     "Qaydlar", 24 "Saqlash", 76 and 77 "yaratish", 78 "Uzunlik", 82 "Maxsus belgilar", 84 "Soʻzlar
+     soni", 85 "Ajratgich". "A–Z", "a–z", "0–9" and "I l 1 O 0" stay as they are. -->
+<resources>
+
+    <!-- ===== The top bar ===== -->
+    <string name="edit_title_new">Yangi hisob</string>
+    <string name="edit_title_edit">Hisobni tahrirlash</string>
+    <string name="edit_save">Saqlash</string>
+    <string name="edit_saving">Saqlanmoqda…</string>
+
+    <!-- ===== The form ===== -->
+    <string name="edit_name">Nomi</string>
+    <string name="edit_name_example">Masalan, Gmail</string>
+    <string name="edit_username">Email, telefon yoki login</string>
+    <string name="edit_password">Parol</string>
+    <string name="edit_generate">Kuchli parol yaratish</string>
+    <plurals name="edit_reuse">
+        <item quantity="one">Bu parolni yana %1$d&#160;ta hisobda ishlatyapsiz. Uni keyinroq Xavfsizlik boʻlimida oʻzgartirishingiz mumkin.</item>
+        <item quantity="other">Bu parolni yana %1$d&#160;ta hisobda ishlatyapsiz. Uni keyinroq Xavfsizlik boʻlimida oʻzgartirishingiz mumkin.</item>
+    </plurals>
+    <string name="edit_website">Sayt</string>
+    <string name="edit_add_website">Yana sayt qoʻshish</string>
+    <string name="edit_remove_website">Saytni olib tashlash</string>
+    <string name="edit_notes">Qaydlar</string>
+    <string name="edit_add_field">Maydon qoʻshish</string>
+    <!-- %1$s is the field's label as the person typed it: no suffix on it. -->
+    <string name="edit_remove_field">“%1$s” maydonini olib tashlash</string>
+    <string name="edit_counter">%1$s / %2$s</string>
+
+    <!-- ===== What Save found wrong ===== -->
+    <string name="edit_error_too_long">Juda uzun. Koʻpi bilan %1$s&#160;ta belgi boʻlishi mumkin.</string>
+    <string name="edit_error_control">Bu yerda saqlab boʻlmaydigan yashirin belgi bor (masalan, tabulyatsiya). Matnni shu belgisiz qayta kiriting.</string>
+    <string name="edit_error_broken">Bu yerda buzilgan belgi bor. Matnni qayta kiriting.</string>
+    <plurals name="edit_error_too_many_websites">
+        <item quantity="one">Bitta hisobda koʻpi bilan %1$d&#160;ta sayt boʻlishi mumkin.</item>
+        <item quantity="other">Bitta hisobda koʻpi bilan %1$d&#160;ta sayt boʻlishi mumkin.</item>
+    </plurals>
+    <plurals name="edit_error_too_many_fields">
+        <item quantity="one">Bitta hisobda koʻpi bilan %1$d&#160;ta qoʻshimcha maydon boʻlishi mumkin.</item>
+        <item quantity="other">Bitta hisobda koʻpi bilan %1$d&#160;ta qoʻshimcha maydon boʻlishi mumkin.</item>
+    </plurals>
+    <string name="edit_error_label">Bu maydonga nom bering.</string>
+
+    <!-- ===== Leaving with changes ===== -->
+    <string name="edit_unsaved_title">Oʻzgarishlar saqlansinmi?</string>
+    <string name="edit_unsaved_save">Saqlash</string>
+    <string name="edit_unsaved_discard">Saqlamasdan chiqish</string>
+    <string name="edit_unsaved_keep">Tahrirlashni davom ettirish</string>
+
+    <!-- ===== Same name and login ===== -->
+    <string name="edit_duplicate">Sizda shu login bilan %1$s hisobi allaqachon bor. Baribir saqlansinmi?</string>
+    <string name="edit_duplicate_save">Baribir saqlash</string>
+
+    <!-- ===== Unsaved changes kept from an earlier visit ===== -->
+    <string name="edit_kept">Saqlanmagan oʻzgarishlaringiz yoʻqolmadi.</string>
+    <!-- %1$s is the account's name, %2$s a short date ("5-sen"). -->
+    <string name="edit_old_draft">Sizda %1$s hisobi uchun %2$s kuni kiritilgan saqlanmagan oʻzgarishlar bor. Ular ochilsinmi?</string>
+    <string name="edit_old_draft_new">Sizda yangi hisob uchun %1$s kuni kiritilgan saqlanmagan oʻzgarishlar bor. Ular ochilsinmi?</string>
+    <string name="edit_old_draft_open">Ochish</string>
+    <string name="edit_old_draft_discard">Oʻchirib tashlash</string>
+
+    <!-- ===== Messages ===== -->
+    <string name="edit_save_failed">Saqlab boʻlmadi. Telefon xotirasi toʻlgan boʻlishi mumkin.</string>
+    <string name="edit_too_large">Parollaringiz endi bitta faylga sigʻmayapti. Keraksiz hisoblarni oʻchiring yoki juda uzun qaydlarni qisqartiring.</string>
+    <string name="edit_gone">Bu hisob endi mavjud emas.</string>
+    <!-- Stored with the account: "Nomsiz 7-okt, 2026, 17:50". -->
+    <string name="edit_untitled">Nomsiz %1$s</string>
+
+    <!-- ===== The "Add field" dialog ===== -->
+    <string name="edit_field_title">Maydon qoʻshish</string>
+    <string name="edit_field_pin">PIN kod</string>
+    <string name="edit_field_phone">Telefon raqami</string>
+    <string name="edit_field_recovery_email">Tiklash uchun email</string>
+    <string name="edit_field_question">Xavfsizlik savoli</string>
+    <string name="edit_field_answer">Javob</string>
+    <string name="edit_field_code_word">Kodli soʻz</string>
+    <string name="edit_field_other">Boshqa…</string>
+    <string name="edit_field_label">Maydon nomi</string>
+    <string name="edit_field_value">Qiymat</string>
+    <string name="edit_field_hide">Bu qiymatni berkitish</string>
+    <string name="edit_field_add">Qoʻshish</string>
+
+    <!-- ===== The password generator sheet (ux.md §5.15) ===== -->
+    <string name="edit_gen_title">Kuchli parol yaratish</string>
+    <string name="edit_gen_new">Yangi parol</string>
+    <string name="edit_gen_random">Tasodifiy</string>
+    <string name="edit_gen_words">Soʻzlar</string>
+    <string name="edit_gen_length">Uzunlik</string>
+    <string name="edit_gen_shorter">Qisqaroq</string>
+    <string name="edit_gen_longer">Uzunroq</string>
+    <string name="edit_gen_upper">A–Z</string>
+    <string name="edit_gen_lower">a–z</string>
+    <string name="edit_gen_digits">0–9</string>
+    <string name="edit_gen_symbols">Maxsus belgilar ! # $ % &amp; * + - = ? @ _</string>
+    <string name="edit_gen_look_alike">Bir-biriga oʻxshash belgilarsiz (I l 1 O 0)</string>
+    <string name="edit_gen_one_kind">Kamida bitta belgi turi kerak.</string>
+    <string name="edit_gen_word_count">Soʻzlar soni</string>
+    <string name="edit_gen_fewer_words">Kamroq soʻz</string>
+    <string name="edit_gen_more_words">Koʻproq soʻz</string>
+    <string name="edit_gen_separator">Ajratgich</string>
+    <string name="edit_gen_separator_hyphen">Chiziqcha</string>
+    <string name="edit_gen_separator_dot">Nuqta</string>
+    <string name="edit_gen_separator_underscore">Pastki chiziq</string>
+    <string name="edit_gen_separator_space">Boʻsh joy</string>
+    <string name="edit_gen_capitalize">Bosh harflar</string>
+    <string name="edit_gen_add_number">Raqam qoʻshish</string>
+    <string name="edit_gen_hint">Agar sayt bu parolni qabul qilmasa, kamroq belgi tanlang yoki maxsus belgilarni oʻchiring.</string>
+    <string name="edit_gen_use">Shu paroldan foydalanish</string>
+    <string name="edit_replace">Hozirgi parol almashtirilsinmi?</string>
+    <string name="edit_replace_yes">Almashtirish</string>
+
+</resources>

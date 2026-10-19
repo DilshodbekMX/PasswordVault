@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Oʻzbekcha (lotin): the PIN and fingerprint steps and "Make backups" (build plan 6.3a; English in
+     values/strings_pin.xml). Glossary (i18n.md §3): 52 to 57 the PIN, 130 "ilova PIN kodi", 135
+     "faolsizlantiriladi", 61 to 63 the fingerprint, 97 "zaxira nusxa". The app's PIN is never the
+     phone's ("telefoningizning PIN kodi"). -->
+<resources>
+
+    <!-- "Choose a 6-digit PIN" (ux.md §5.6). -->
+    <string name="pin_create_title">6&#160;xonali PIN kod tanlang</string>
+    <string name="pin_create_new_title">Yangi PIN kod tanlang</string>
+    <string name="pin_create_body_use">Bu PIN kod bilan ilovani shu telefonda bank ilovangiz kabi ochasiz. Bu telefoningizning PIN kodi emas.</string>
+    <string name="pin_create_body_avoid">Sana yoki yildan, shuningdek 123456 yoki 112233 kabi oddiy kombinatsiyalardan foydalanmang.</string>
+    <string name="pin_create_body_others">Telefoningizni ochadigan PIN kod yoki bank kartangiz PIN kodidan foydalanmang. Ularni boshqalar bilishi mumkin.</string>
+    <!-- Only while a screen reader (TalkBack or another) is on. -->
+    <string name="pin_create_talkback">Ekrandan oʻqish vositasi har bir tugmani ovoz chiqarib aytadi. Yoningizda boshqalar boʻlsa, quloqchindan foydalaning.</string>
+    <string name="pin_create_someone_may_know">Eskisini boshqa birov bilishi mumkin.</string>
+    <string name="pin_create_footer">Ketma-ket 5&#160;marta xato kiritilsa, PIN kod faolsizlantiriladi. Shunda ilovani barmoq izingiz yoki asosiy parolingiz bilan ochib, yangi PIN kod tanlaysiz.</string>
+    <string name="pin_refused_date">Bu PIN kod sana yoki yilga oʻxshaydi. Boshqasini tanlang.</string>
+    <string name="pin_refused_pattern">Bu PIN kodda raqamlar takrorlanadi yoki u oddiy kombinatsiyaga oʻxshaydi. Boshqasini tanlang.</string>
+    <string name="pin_refused_sequence">Bu PIN kod ketma-ket raqamlar yoki tugmalar panelidagi shaklga oʻxshaydi. Boshqasini tanlang.</string>
+    <string name="pin_same_as_current">Hozirgisidan farq qiladigan PIN kod tanlang.</string>
+
+    <!-- "Enter the PIN again" (ux.md §5.6; glossary 54). -->
+    <string name="pin_confirm_title">PIN kodni qayta kiriting</string>
+    <string name="pin_confirm_body">Oʻsha 6&#160;ta raqamni yana bir marta kiriting.</string>
+    <string name="pin_mismatch">PIN kodlar mos kelmadi. Qayta urining.</string>
+    <string name="pin_saving">Saqlanmoqda…</string>
+    <string name="pin_set">PIN kod sozlandi.</string>
+    <string name="pin_changed">PIN kod oʻzgartirildi.</string>
+    <string name="pin_not_saved_new">PIN kodni hozir sozlab boʻlmaydi. Keyinroq qayta urining.</string>
+    <string name="pin_not_saved_change">Yangi PIN kodni saqlab boʻlmadi. Eski PIN kodingiz hali ham ishlaydi.</string>
+    <string name="pin_may_not_be_saved">Yangi PIN kod saqlanmagan boʻlishi mumkin. Keyingi safar avval yangi PIN kodni sinab koʻring. U qabul qilinmasa, eski PIN kod yoki asosiy parolingizdan foydalaning.</string>
+    <string name="pin_may_not_be_saved_first">PIN kod saqlanmagan boʻlishi mumkin. Keyingi safar avval uni sinab koʻring. U qabul qilinmasa, asosiy parolingizdan foydalaning.</string>
+
+    <!-- Settings › Ilova qulfi › "PIN kodni oʻzgartirish". -->
+    <string name="pin_current_title">Hozirgi PIN kodni kiriting</string>
+    <string name="pin_use_master_password">Buning oʻrniga asosiy paroldan foydalanish</string>
+    <plurals name="pin_wrong_left">
+        <item quantity="one">PIN kod xato. Yana %d&#160;marta urinish mumkin.</item>
+        <item quantity="other">PIN kod xato. Yana %d&#160;marta urinish mumkin.</item>
+    </plurals>
+    <string name="pin_same_wrong_again">Bu PIN kodni allaqachon kiritgansiz. U qayta hisoblanmadi.</string>
+    <string name="pin_limit">Juda koʻp xato urinishlardan keyin PIN kod bilan ochish faolsizlantirildi. Hech narsa oʻchirilmadi. Yangi PIN kod tanlash uchun asosiy parolni kiriting.</string>
+    <string name="pin_type_master_password">Asosiy parolni kiritish</string>
+    <string name="pin_cannot_check">PIN kodni hozircha tekshirib boʻlmayapti. Uning oʻrniga asosiy parolingizdan foydalaning yoki keyinroq qayta urining.</string>
+
+    <!-- The master-password step before a PIN is set. -->
+    <string name="pin_mp_title">Asosiy parolni kiriting</string>
+    <string name="pin_mp_body">Yangi PIN kod tanlash uchun asosiy parolingiz kerak.</string>
+    <string name="pin_mp_label">Asosiy parol</string>
+    <string name="pin_mp_next">Keyingisi</string>
+    <string name="pin_mp_checking">Tekshirilmoqda…</string>
+    <string name="pin_mp_wrong">Asosiy parol notoʻgʻri. Klaviatura tilini (lotin yoki kirill) va bosh harflarni tekshiring.</string>
+    <string name="pin_mp_wait">30&#160;soniya kuting, keyin qayta urining. Shoshilmang, yozib qoʻygan qogʻozingizga qarang.</string>
+    <plurals name="pin_mp_countdown">
+        <item quantity="one">%d&#160;soniyadan keyin qayta urining</item>
+        <item quantity="other">%d&#160;soniyadan keyin qayta urining</item>
+    </plurals>
+    <string name="pin_mp_no_memory">Asosiy parolni tekshirish uchun telefoningizda boʻsh operativ xotira yetarli emas. Boshqa ilovalarni yoping yoki telefonni qayta ishga tushiring, keyin qayta urining.</string>
+
+    <!-- The fingerprint offer (ux.md §5.7). -->
+    <string name="pin_fingerprint_title">Barmoq izingizdan foydalanasizmi?</string>
+    <string name="pin_fingerprint_body">Ilovani PIN kod oʻrniga barmoq izingiz bilan oching. PIN kod va asosiy parolingiz ham ishlayveradi.</string>
+    <string name="pin_fingerprint_anyone">Barmoq izi bu telefon sozlamalarida saqlangan har kim ilovani ocha oladi.</string>
+    <string name="pin_fingerprint_note">Agar bu telefondagi barmoq izlari yoki ekran qulfi oʻzgarsa, xavfsizlik uchun barmoq izi bilan ochish faolsizlantiriladi. Uni Sozlamalarda qayta yoqishingiz mumkin.</string>
+    <string name="pin_fingerprint_use">Barmoq izidan foydalanish</string>
+    <string name="pin_fingerprint_turn_on">Barmoq izi bilan ochishni yoqish</string>
+    <string name="pin_fingerprint_failed">Barmoq izi bilan ochishni yoqib boʻlmadi. Keyinroq Sozlamalarda qayta urinib koʻrishingiz mumkin.</string>
+    <string name="pin_fingerprint_may_not_be_on">Barmoq izi bilan ochish yoqilmagan boʻlishi mumkin. Agar barmoq izingiz qabul qilinmasa, uni Sozlamalarda qayta yoqing.</string>
+    <string name="pin_fingerprint_add_first">Avval telefon sozlamalarida barmoq izi qoʻshing.</string>
+    <string name="pin_fingerprint_no_secure_hardware">Bu telefon barmoq izi kalitini himoyalangan apparat qismida saqlay olmaydi.</string>
+
+    <!-- "Make backups" (ux.md §5.8). -->
+    <string name="pin_backups_title">Zaxira nusxa yarating</string>
+    <string name="pin_backups_only_here">Parollaringiz faqat shu telefonda saqlanadi. Telefon yoʻqolsa, buzilsa yoki asl holatiga qaytarilsa, ular ham yoʻqoladi. Ilovani oʻchirib tashlash yoki uning xotirasini tozalash ham ularni oʻchirib yuboradi.</string>
+    <string name="pin_backups_locked">Zaxira nusxa — barcha parollaringiz saqlangan qulflangan fayl. U faqat asosiy parolingiz bilan ochiladi.</string>
+    <string name="pin_backups_outside">Zaxira nusxani shu telefondan tashqarida saqlang — Google Drive xizmatida, kompyuterda yoki uni oʻzingizga yuboring.</string>
+    <string name="pin_backups_remind">Zaxira nusxa yaratishni eslatib turish</string>
+    <string name="pin_backups_finish">Yakunlash</string>
+
+</resources>

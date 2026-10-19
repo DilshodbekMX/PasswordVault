@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Oʻzbekcha (lotin): the Passwords list, its search and banners, and Recently deleted (build plan
+     6.3a; English in values/strings_list.xml). Glossary (i18n.md §3): 1 "Parollar", 2 "Hisob", 12 to
+     14 "Saralanganlar", 17 search, 27 to 29 copy, 141 "Yangi parolni bekor qilish", 143
+     "almashtirildi". An account's name takes no suffix: "%1$s paroli", "%1$s uchun". -->
+<resources>
+
+    <!-- ===== The Passwords screen (ux.md §5.11) ===== -->
+    <string name="list_title">Parollar</string>
+    <string name="list_lock_now">Hozir qulflash</string>
+    <string name="list_search_placeholder">Hisoblarni qidirish</string>
+    <string name="list_search_clear">Qidiruvni tozalash</string>
+    <string name="list_add">Qoʻshish</string>
+    <string name="list_add_account_description">Hisob qoʻshish</string>
+
+    <string name="list_favourites">Saralanganlar</string>
+    <string name="list_show_all_favourites">Barcha saralanganlarni koʻrsatish</string>
+    <string name="list_all_accounts">Barcha hisoblar · %1$s</string>
+    <string name="list_recently_deleted_row">Yaqinda oʻchirilganlar (%1$s)</string>
+
+    <string name="list_copy_password_for">%1$s parolidan nusxa olish</string>
+    <string name="list_copy_password_choose">%1$s parolidan nusxa olish, eskisini yoki yangisini tanlang</string>
+    <string name="list_change_pending">Parolni oʻzgartirish tugallanmagan</string>
+
+    <!-- The menu of a row. -->
+    <string name="list_menu_copy_username">Foydalanuvchi nomidan nusxa olish</string>
+    <string name="list_menu_copy_password">Paroldan nusxa olish</string>
+    <string name="list_menu_copy_old_password">Eski paroldan nusxa olish</string>
+    <string name="list_menu_copy_new_password">Yangi paroldan nusxa olish (tasdiqlanmagan)</string>
+    <string name="list_menu_open_website">Saytni ochish</string>
+    <string name="list_menu_big_letters">Katta harflarda koʻrsatish</string>
+    <string name="list_menu_add_favourite">Saralanganlarga kiritish</string>
+    <string name="list_menu_remove_favourite">Saralanganlardan olib tashlash</string>
+    <string name="list_menu_edit">Tahrirlash</string>
+
+    <!-- What was copied, in the clipboard row: "Gmail paroli · 0:52 dan keyin tozalanadi". -->
+    <string name="list_copied_password">%1$s paroli</string>
+    <string name="list_copied_username">%1$s foydalanuvchi nomi</string>
+    <string name="list_copied_old_password">%1$s eski paroli</string>
+    <string name="list_copied_new_password">%1$s yangi paroli</string>
+
+    <!-- An empty vault. -->
+    <string name="list_empty_title">Hali hisoblar yoʻq</string>
+    <string name="list_empty_body">Birinchi hisobingiz va uning parolini qoʻshing yoki parollaringizni Chrome brauzeridan olib keling.</string>
+    <string name="list_empty_add">Hisob qoʻshish</string>
+    <string name="list_empty_import">Google Password Manager xizmatidan import qilish</string>
+
+    <!-- Search. -->
+    <string name="list_search_retried">“%1$s” boʻyicha natijalar koʻrsatilmoqda</string>
+    <string name="list_no_results">“%1$s” boʻyicha hech qanday hisob topilmadi.</string>
+    <string name="list_add_as_new">“%1$s” nomli yangi hisob qoʻshish</string>
+
+    <!-- Messages. -->
+    <string name="list_deleted_message">%1$s oʻchirib tashlandi</string>
+    <string name="list_save_failed">Saqlab boʻlmadi. Telefon xotirasi toʻlgan boʻlishi mumkin.</string>
+    <string name="list_too_large">Parollaringiz endi bitta faylga sigʻmayapti. Keraksiz hisoblarni oʻchiring yoki juda uzun qaydlarni qisqartiring.</string>
+    <string name="list_no_browser">Bu telefonda brauzer topilmadi.</string>
+    <string name="list_copy_blocked">Bu telefon nusxa olishga ruxsat bermadi. Parolni “Katta harflarda koʻrsatish” orqali oching va uni qoʻlda kiriting.</string>
+    <string name="list_account_gone">Bu hisob endi mavjud emas.</string>
+
+    <!-- ===== Banners ===== -->
+    <!-- %1$s is a date and a time, %2$d the hours left. -->
+    <plurals name="list_banner_pending_pin">
+        <item quantity="one">%1$s da PIN kod yordamida yangi asosiy parol tanlandi. U taxminan %2$d&#160;soatdan keyin ishlay boshlaydi. Telefon oʻchiq paytda sanoq toʻxtaydi; u davom etishi uchun bu ilovani ertalab va yana kechqurun oching. Agar bu siz boʻlmasangiz, uni bekor qiling, soʻng PIN kodni oʻzgartiring.</item>
+        <item quantity="other">%1$s da PIN kod yordamida yangi asosiy parol tanlandi. U taxminan %2$d&#160;soatdan keyin ishlay boshlaydi. Telefon oʻchiq paytda sanoq toʻxtaydi; u davom etishi uchun bu ilovani ertalab va yana kechqurun oching. Agar bu siz boʻlmasangiz, uni bekor qiling, soʻng PIN kodni oʻzgartiring.</item>
+    </plurals>
+    <plurals name="list_banner_pending_fingerprint">
+        <item quantity="one">%1$s da barmoq izi yordamida yangi asosiy parol tanlandi. U taxminan %2$d&#160;soatdan keyin ishlay boshlaydi. Telefon oʻchiq paytda sanoq toʻxtaydi; u davom etishi uchun bu ilovani ertalab va yana kechqurun oching. Agar bu siz boʻlmasangiz, uni bekor qiling.</item>
+        <item quantity="other">%1$s da barmoq izi yordamida yangi asosiy parol tanlandi. U taxminan %2$d&#160;soatdan keyin ishlay boshlaydi. Telefon oʻchiq paytda sanoq toʻxtaydi; u davom etishi uchun bu ilovani ertalab va yana kechqurun oching. Agar bu siz boʻlmasangiz, uni bekor qiling.</item>
+    </plurals>
+    <string name="list_banner_pending_ready">Yangi asosiy parolingiz tayyor. Yakunlash uchun uni kiriting.</string>
+    <string name="list_banner_cancel_it">Yangi parolni bekor qilish</string>
+    <string name="list_banner_finish_now">Hozir yakunlash</string>
+
+    <string name="list_banner_replaced_pin">Asosiy parolingiz %1$s kuni PIN kod yordamida almashtirildi. Agar buni siz qilmagan boʻlsangiz, almashtirishdan oldingi parollaringiz bu telefonda hali ham bor.</string>
+    <string name="list_banner_replaced_fingerprint">Asosiy parolingiz %1$s kuni barmoq izi yordamida almashtirildi. Agar buni siz qilmagan boʻlsangiz, almashtirishdan oldingi parollaringiz bu telefonda hali ham bor.</string>
+    <string name="list_banner_it_wasnt_me">Buni men qilmadim</string>
+
+    <string name="list_banner_practice">Siz %1$s sanasidan beri asosiy parolingizni kiritmadingiz. Usiz zaxira nusxani ocha olmaysiz va yangi telefonga oʻta olmaysiz.</string>
+    <string name="list_banner_type_it_now">Hozir kiritish</string>
+    <string name="list_banner_i_forgot_it">Unutib qoʻydim</string>
+
+    <!-- %1$s is the file's name; %2$s says when it was saved ("2 soat oldin", "hozirgina"). -->
+    <string name="list_banner_export">Sizda parollaringiz yozilgan himoyalanmagan fayl bor: %1$s (%2$s saqlangan).</string>
+    <string name="list_banner_deleted_it_myself">Uni oʻzim oʻchirdim</string>
+    <string name="list_banner_cannot_delete">Bu joy ilovalarga fayllarni oʻchirishga ruxsat bermaydi. Uni “Fayllar” ilovasida oʻzingiz oʻchiring.</string>
+
+    <string name="list_banner_backup">Eng soʻnggi parollaringiz hali zaxira nusxada yoʻq.</string>
+    <string name="list_banner_back_up_now">Hozir zaxiralash</string>
+
+    <!-- %1$d is how many, %2$s the name of the first account. -->
+    <plurals name="list_banner_change">
+        <item quantity="one">%1$d&#160;ta parol oʻzgarishi javobingizni kutmoqda (%2$s).</item>
+        <item quantity="other">%1$d&#160;ta parol oʻzgarishi javobingizni kutmoqda (%2$s va boshqalar).</item>
+    </plurals>
+    <string name="list_banner_answer_now">Hozir javob berish</string>
+
+    <!-- ===== "Hozir kiritish": the master password in the open app ===== -->
+    <string name="list_practice_title">Asosiy parolni kiriting</string>
+    <string name="list_practice_body">Bu uni hali ham eslab qolganingizni tekshiradi. U zaxira nusxani ochish va yangi telefonga oʻtish uchun kerak.</string>
+    <string name="list_practice_field">Asosiy parol</string>
+    <string name="list_practice_check">Tekshirish</string>
+    <string name="list_practice_wrong">Asosiy parol notoʻgʻri. Klaviatura tilini (lotin yoki kirill) va bosh harflarni tekshiring.</string>
+    <plurals name="list_practice_wait">
+        <item quantity="one">%1$d&#160;soniya kuting, keyin qayta urining. Shoshilmang, yozib qoʻygan qogʻozingizga qarang.</item>
+        <item quantity="other">%1$d&#160;soniya kuting, keyin qayta urining. Shoshilmang, yozib qoʻygan qogʻozingizga qarang.</item>
+    </plurals>
+    <string name="list_practice_no_memory">Asosiy parolni tekshirish uchun telefoningizda boʻsh operativ xotira yetarli emas. Boshqa ilovalarni yoping yoki telefonni qayta ishga tushiring, keyin qayta urining.</string>
+    <string name="list_practice_older">Bu %1$s sanasidan oldingi asosiy parolingiz. Hozir foydalanayotganingizni kiriting.</string>
+    <string name="list_practice_right">Toʻgʻri. Asosiy parolingiz ishlayapti.</string>
+
+    <!-- ===== Recently deleted (ux.md §5.23) ===== -->
+    <string name="list_deleted_title">Yaqinda oʻchirilganlar</string>
+    <string name="list_back">Orqaga</string>
+    <string name="list_deleted_empty">Boʻshatish</string>
+    <string name="list_deleted_info">Oʻchirilgan hisoblar bu yerda 30&#160;kun turadi. Keyin ular butunlay oʻchiriladi.</string>
+    <string name="list_deleted_nothing">Bu yerda hech narsa yoʻq. Siz oʻchirgan hisoblar bu yerda 30&#160;kun turadi.</string>
+    <string name="list_deleted_on">Oʻchirilgan sana: %1$s</string>
+    <string name="list_deleted_restore">Tiklash</string>
+    <string name="list_deleted_restore_description">%1$s hisobini tiklash</string>
+    <string name="list_deleted_more">%1$s uchun boshqa amallar</string>
+    <string name="list_deleted_delete_forever">Butunlay oʻchirish</string>
+    <string name="list_deleted_forever_question">%1$s butunlay oʻchirilsinmi? Bu amalni ortga qaytarish imkonsiz.</string>
+    <!-- %1$s is a number already formatted for the language. -->
+    <plurals name="list_deleted_empty_question">
+        <item quantity="one">%1$s&#160;ta hisob butunlay oʻchirilsinmi? Bu amalni ortga qaytarish imkonsiz.</item>
+        <item quantity="other">Barcha %1$s&#160;ta hisob butunlay oʻchirilsinmi? Bu amalni ortga qaytarish imkonsiz.</item>
+    </plurals>
+    <string name="list_restored_message">%1$s tiklandi</string>
+
+</resources>
