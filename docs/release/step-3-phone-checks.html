@@ -1,0 +1,560 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PasswordVault phone checks</title>
+<!--
+  Build plan 8.4: the phone checks of architecture.md §8.6 (items 1 to 13) as a form the user
+  fills in, with the two questions of item 12 (lock.md §18.7 and §18.16). Self-contained: no
+  script, nothing loaded from outside. Printed from Firefox with Ctrl+P on A4.
+-->
+<style>
+  @page { size: A4; margin: 12mm 11mm 13mm 11mm; }
+  :root { color-scheme: light; }
+  html { background: #fff; }
+  body {
+    margin: 0 auto; padding: 10mm 8mm; max-width: 190mm;
+    font-family: "DejaVu Sans", "Noto Sans", "Liberation Sans", Arial, sans-serif;
+    font-size: 9.6pt; line-height: 1.38; color: #000; background: #fff;
+  }
+  h1 { font-size: 17pt; margin: 0 0 1.5mm; }
+  h2 { font-size: 12.5pt; margin: 6mm 0 2mm; break-after: avoid; page-break-after: avoid; }
+  h3 { font-size: 11pt; margin: 0 0 1.2mm; }
+  p { margin: 0 0 2mm; }
+  .ref { font-weight: normal; font-size: 8pt; color: #444; }
+  table { border-collapse: collapse; width: 100%; }
+  th, td { border: 0.6pt solid #000; padding: 1.5mm 1.8mm; vertical-align: top; text-align: left; }
+  th { font-weight: bold; }
+  ol, ul { margin: 0; padding-left: 4.5mm; }
+  li { margin: 0 0 0.9mm; }
+  .facts th { width: 46%; font-weight: normal; }
+  .facts td { height: 7.5mm; }
+  .accounts td, .accounts th { font-size: 9pt; }
+  .check { break-inside: avoid; page-break-inside: avoid; margin: 0 0 4.5mm; }
+  .check th { font-size: 8.6pt; background: none; }
+  .check td.do { width: 40%; }
+  .check td.see { width: 32%; }
+  .check td.saw { width: 28%; height: 42mm; }
+  .result { font-size: 8.4pt; line-height: 1.7; }
+  .box { display: inline-block; width: 3.1mm; height: 3.1mm; border: 0.7pt solid #000; vertical-align: -0.6mm; margin: 0 1mm 0 0; }
+  .question { break-inside: avoid; page-break-inside: avoid; margin: 0 0 5mm; }
+  .choice { margin: 1.6mm 0; }
+  .writeline { border-bottom: 0.6pt solid #000; height: 7.5mm; }
+  pre {
+    font-family: "DejaVu Sans Mono", "Liberation Mono", monospace; font-size: 7.4pt; line-height: 1.3;
+    white-space: pre-wrap; overflow-wrap: anywhere; border: 0.6pt solid #666; padding: 1.8mm; margin: 1mm 0 3mm;
+  }
+  code { font-family: "DejaVu Sans Mono", "Liberation Mono", monospace; font-size: 8.8pt; }
+  .newpage { break-before: page; page-break-before: always; }
+  .note { border: 0.8pt solid #000; padding: 2mm 3mm; margin: 2mm 0 3mm; }
+  @media print { body { padding: 0; max-width: none; } }
+</style>
+</head>
+<body>
+
+<h1>PasswordVault: phone checks</h1>
+<p>Step 3 of the release notes (<code>docs/release/README.md</code>). These are the checks that
+only a real phone can answer. Each check says what to do and what you should see. Write what you
+really saw in the box on the right, and tick one of the three small boxes.</p>
+
+<div class="note">
+<strong>How to use this form.</strong>
+<ol>
+  <li>Print it: in Firefox press <strong>Ctrl+P</strong>, choose your printer, paper A4. To get the
+    file into Firefox, paste this into the terminal:<br>
+    <code>xdg-open /home/asus/AndroidStudioProjects/PasswordVault/docs/release/step-3-phone-checks.html</code></li>
+  <li>Keep this page open on the computer too: the boxes of check 13 are pasted from it.</li>
+  <li>Do the checks in their order, on different days if you like. They take a few hours in all.</li>
+  <li>Use only the three test accounts below until all checks are done. Then put in your real passwords.</li>
+  <li>Nothing here can lose your master password or your PIN. Where a check deletes something,
+    it says so first.</li>
+</ol>
+</div>
+
+<h2>About the phone and the app</h2>
+<p>Fill this in from step 2, part 2.8 (the box that prints the phone's facts), and from the app's
+Settings › Version.</p>
+<table class="facts">
+  <tr><th>Date</th><td></td></tr>
+  <tr><th>Built from (step 2, part 2.1: the first seven characters)</th><td></td></tr>
+  <tr><th>PasswordVault version (Settings › Version)</th><td></td></tr>
+  <tr><th>Phone (maker and model)</th><td></td></tr>
+  <tr><th>Android version</th><td></td></tr>
+  <tr><th>RAM</th><td></td></tr>
+  <tr><th>Memory page size (4096 or 16384)</th><td></td></tr>
+  <tr><th>Keyboards on this phone</th><td><span class="box"></span>Gboard &nbsp; <span class="box"></span>Samsung Keyboard &nbsp; <span class="box"></span>other: ____________</td></tr>
+  <tr><th>Fingerprint sensor</th><td><span class="box"></span>yes &nbsp; <span class="box"></span>no</td></tr>
+</table>
+
+<h2>Before you start</h2>
+<ol>
+  <li>Install the app: step 2, parts 2.7 to 2.10.</li>
+  <li>Set it up: <strong>Start</strong>, choose your master password (the suggested words are
+    good), write it on paper, type it again, choose a PIN, and turn on fingerprint unlock if the
+    app offers it. Use the master password you will keep.</li>
+  <li>Check that it is not a test build: step 2, part 2.11.</li>
+  <li>Add these three test accounts (Passwords › <strong>Add</strong>). Type them exactly:</li>
+</ol>
+<table class="accounts">
+  <tr><th>Name</th><th>Username</th><th>Password</th><th>Website</th><th>Notes</th></tr>
+  <tr><td>Test Bank</td><td><code>+998901234567</code></td><td><code>0123</code></td><td><code>example.com</code></td><td><code>1234567890123456789</code></td></tr>
+  <tr><td>Test Codes</td><td><code>1e5</code></td><td><code>=1+2</code></td><td><code>example.org</code></td><td>(empty)</td></tr>
+  <tr><td>Test No Website</td><td><code>test-user</code></td><td><code>Test-password-3</code></td><td>(empty)</td><td>(empty)</td></tr>
+</table>
+
+<h2>The checks</h2>
+
+<div class="check">
+<h3>1. Speed, and the PIN key in protected hardware <span class="ref">(architecture.md §8.6 item 1; lock.md D1, A1)</span></h3>
+<table>
+  <tr><th>What to do</th><th>What you should see</th><th>What I saw</th></tr>
+  <tr>
+    <td class="do"><ol>
+      <li>If you did not choose a PIN at setup: Settings › <strong>Set a PIN</strong>.</li>
+      <li>Settings › <strong>Lock now</strong>. Type your PIN. Watch the time from the 6th digit until
+        the list of passwords shows. Do it 5 times.</li>
+      <li>Settings › <strong>Lock now</strong>. Tap <strong>Forgot PIN? Use master password</strong>, type
+        the master password and tap <strong>Unlock</strong>. Count the seconds of "Opening…" until the
+        list shows. Do it 3 times.</li>
+    </ol></td>
+    <td class="see"><ol>
+      <li>The app takes the PIN. If Settings says instead "This phone can’t keep a PIN or fingerprint
+        key in protected hardware.", this phone opens the app with the master password only: write it
+        down, and leave out the PIN and fingerprint parts of checks 1, 2 and 11.</li>
+      <li>The list shows at once, in less than half a second, each time.</li>
+      <li>"Opening…" lasts about one second or less.</li>
+    </ol></td>
+    <td class="saw"><div class="result"><div><span class="box"></span>as expected</div><div><span class="box"></span>different</div><div><span class="box"></span>not done</div></div>
+      PIN: ______ s<br>Master password: ______ s</td>
+  </tr>
+</table>
+</div>
+
+<div class="check">
+<h3>2. Fingerprint <span class="ref">(item 2; lock.md D2 to D5)</span></h3>
+<table>
+  <tr><th>What to do</th><th>What you should see</th><th>What I saw</th></tr>
+  <tr>
+    <td class="do"><ol>
+      <li>Settings › <strong>Fingerprint unlock</strong>: turn it on (it asks for the master password).
+        Settings › <strong>Lock now</strong>. Touch the sensor with a saved finger.</li>
+      <li>In the phone's own Settings, add one more fingerprint (any finger). Then open PasswordVault.</li>
+      <li>In the phone's Settings, delete the fingerprint you just added if you do not want it. In
+        PasswordVault: Settings › <strong>Fingerprint unlock: turn on again</strong>.</li>
+      <li>Settings › <strong>Lock now</strong>. Touch the sensor with a finger that is <em>not</em> saved,
+        again and again, until a message says that fingerprint is locked. Then try a saved finger every
+        10 seconds and count the seconds until it works again. If the phone shows its own lock screen,
+        unlock it as usual.</li>
+    </ol></td>
+    <td class="see"><ol>
+      <li>The app opens with one touch, with no other tap.</li>
+      <li>"Fingerprint unlock was turned off because this phone’s fingerprints or screen lock changed.
+        Use your PIN. You can turn it on again in Settings." The PIN still opens the app.</li>
+      <li>Fingerprint unlock works again.</li>
+      <li>"Fingerprint is locked for now. Use your PIN." The PIN still works. Nothing is deleted.</li>
+    </ol></td>
+    <td class="saw"><div class="result"><div><span class="box"></span>as expected</div><div><span class="box"></span>different</div><div><span class="box"></span>not done</div></div>
+      Locked for about ______ s</td>
+  </tr>
+</table>
+</div>
+
+<div class="check">
+<h3>3. Copied passwords are cleared <span class="ref">(item 3; architecture.md D-14)</span></h3>
+<table>
+  <tr><th>What to do</th><th>What you should see</th><th>What I saw</th></tr>
+  <tr>
+    <td class="do">Use only the account Test Bank (its password is <code>0123</code>). To see what was
+      copied, paste into the search field of the phone's Settings app (long press › Paste); nothing is sent anywhere.
+      <ol>
+      <li>Open Test Bank, tap the copy button of its password, and within 10 seconds go to another app.
+        Wait 1 minute and 10 seconds, then paste.</li>
+      <li>Turn on the phone's battery saver. Do 1 again. Turn battery saver off.</li>
+      <li>Copy the password again and open your keyboard's clipboard (Gboard: the clipboard icon above the
+        letters; Samsung Keyboard: ⋯ › Clipboard).</li>
+      <li>Copy again. Phone Settings › Apps › PasswordVault › <strong>Force stop</strong>. Wait 1 minute
+        10 seconds and paste. Then open PasswordVault, leave it, and paste again.</li>
+      <li>Phone Settings › Apps › PasswordVault › Battery › <strong>Restricted</strong>. Do 4 again, but
+        without the force stop. Then set the battery use back as it was.</li>
+    </ol></td>
+    <td class="see"><ol>
+      <li>Nothing of <code>0123</code> is pasted: the app cleared it after 1 minute (Settings › "Clear
+        copied text after").</li>
+      <li>The same with battery saver on.</li>
+      <li>Best: the password is not in the keyboard's list, or it shows as dots. Write what you see.</li>
+      <li>After the force stop <code>0123</code> is still there. After you opened PasswordVault it is gone.
+        Help says so: "If you force-stop this app, or set its battery use to “Restricted”, a copied
+        password stays on the clipboard until you open the app again."</li>
+      <li>The same as 4.</li>
+    </ol></td>
+    <td class="saw"><div class="result"><div><span class="box"></span>as expected</div><div><span class="box"></span>different</div><div><span class="box"></span>not done</div></div>
+      Keyboard's clipboard:</td>
+  </tr>
+</table>
+</div>
+
+<div class="check">
+<h3>4. Backups to Google Drive and to the phone, and a restore from each <span class="ref">(item 4; ux.md §12 check 12)</span></h3>
+<table>
+  <tr><th>What to do</th><th>What you should see</th><th>What I saw</th></tr>
+  <tr>
+    <td class="do"><ol>
+      <li>Settings › <strong>Make a backup</strong>, type the master password. In the file picker open
+        Google Drive (in the list on the left, or ☰). Wait 90 seconds in the picker, then tap
+        <strong>Save</strong>. Write down the name the picker shows for Google Drive.</li>
+      <li>Settings › <strong>Make a backup</strong> again, and save in <strong>Downloads</strong>.</li>
+      <li>Restore the Google Drive backup: Settings › <strong>Lock now</strong> › <strong>Forgot PIN? Use
+        master password</strong> › <strong>Forgot master password?</strong> › <strong>Restore from a
+        backup file</strong> › <strong>Choose file</strong> › the file on Google Drive › type the master
+        password › <strong>Open backup</strong> › <strong>Use this backup</strong>. Choose a PIN when
+        the app asks.</li>
+      <li>Do 3 again with the backup in Downloads.</li>
+      <li>Tidy up: Settings › <strong>Old passwords (locked on …)</strong>: delete each entry
+        (<strong>Delete for good</strong>, with the master password).</li>
+    </ol></td>
+    <td class="see"><ol>
+      <li>"Backup saved: PasswordVault-backup-….pvault (3 accounts)." "Saved to Google Drive." (or
+        "Saved to" and the place's name) and "This place may upload the file later. Open it there once to
+        check that it arrived." The Google Drive app shows the file.</li>
+      <li>"Backup saved: … (3 accounts)." and "This copy is on this phone. If the phone is lost, this
+        copy is lost too. Keep a copy somewhere else."</li>
+      <li>"3 accounts, backup made on …". After <strong>Use this backup</strong> the three test accounts
+        are there. Settings shows "Old passwords (locked on …)".</li>
+      <li>The same.</li>
+      <li>"The old passwords were deleted."</li>
+    </ol></td>
+    <td class="saw"><div class="result"><div><span class="box"></span>as expected</div><div><span class="box"></span>different</div><div><span class="box"></span>not done</div></div>
+      Name of Google Drive in the picker:<br><br>______________________</td>
+  </tr>
+</table>
+</div>
+
+<div class="check">
+<h3>5. Excel <span class="ref">(item 5; ux.md §12 check 6)</span></h3>
+<table>
+  <tr><th>What to do</th><th>What you should see</th><th>What I saw</th></tr>
+  <tr>
+    <td class="do"><ol>
+      <li>Settings › <strong>Export</strong> › <strong>Excel (.xlsx)</strong>. Read the warning, tick
+        <strong>I understand</strong>, tap <strong>Continue</strong>, type the master password, and save
+        in Downloads.</li>
+      <li>Open <code>passwords-….xlsx</code> with the spreadsheet app you have: Excel, Google Sheets or
+        WPS Office.</li>
+      <li>Back in PasswordVault, tap <strong>Delete it now</strong> (or delete the file in your Files app).</li>
+    </ol></td>
+    <td class="see"><ol>
+      <li>"Saved: passwords-….xlsx. When you’re done with it, delete it."</li>
+      <li>One sheet. Test Bank: <code>+998901234567</code> with its +, <code>0123</code> with its 0, and
+        <code>1234567890123456789</code> with all 19 digits (not 1.23E+18). Test Codes: <code>1e5</code>
+        (not 100000) and <code>=1+2</code> (not 3).</li>
+      <li>The file is gone, and the list no longer shows the warning about an unprotected file.</li>
+    </ol></td>
+    <td class="saw"><div class="result"><div><span class="box"></span>as expected</div><div><span class="box"></span>different</div><div><span class="box"></span>not done</div></div>
+      Spreadsheet app:</td>
+  </tr>
+</table>
+</div>
+
+<div class="check">
+<h3>6. Google Password Manager <span class="ref">(item 6; ux.md §12 check 7)</span></h3>
+<table>
+  <tr><th>What to do</th><th>What you should see</th><th>What I saw</th></tr>
+  <tr>
+    <td class="do"><ol>
+      <li>Settings › <strong>Export</strong> › <strong>CSV</strong>. Read the card "In Google Password
+        Manager" on the warning. Then <strong>I understand</strong>, <strong>Continue</strong>, the
+        master password, and save in Downloads.</li>
+      <li>Import the file into Google Password Manager, for example: phone Settings › Google › Autofill ›
+        Google Password Manager › ⚙ Settings › <strong>Import passwords</strong> › the file. Write
+        down the way you found.</li>
+      <li>In Google Password Manager open example.com and look at its note.</li>
+      <li>Find Google Password Manager's own <strong>Export passwords</strong> and write down the way
+        to it. Do not export.</li>
+      <li>Afterwards delete the two test entries in Google Password Manager, and delete
+        <code>passwords-….csv</code> (PasswordVault's warning on the list has <strong>Delete</strong>).</li>
+    </ol></td>
+    <td class="see"><ol>
+      <li>"Google Password Manager will skip:" "1 account without a website".</li>
+      <li>Google takes 2 passwords and skips 1 (Test No Website).</li>
+      <li>The note starts with the line <code>Title: Test Bank</code>.</li>
+    </ol></td>
+    <td class="saw"><div class="result"><div><span class="box"></span>as expected</div><div><span class="box"></span>different</div><div><span class="box"></span>not done</div></div>
+      Way to Import:<br><br><br>Way to Export:</td>
+  </tr>
+</table>
+</div>
+
+<div class="check">
+<h3>7. Typing the suggested words on the phone's keyboards <span class="ref">(item 7; architecture.md D-6b)</span></h3>
+<table>
+  <tr><th>What to do</th><th>What you should see</th><th>What I saw</th></tr>
+  <tr>
+    <td class="do">Passwords › <strong>Add</strong>. Type in the <strong>Password</strong> field only; nothing is saved.
+      <ol>
+      <li>With Gboard type <code>plaza-crush-fable-jolly-swirl-mango</code>. Tap the eye to show it. Time
+        yourself.</li>
+      <li>Clear the field. Type the same words with spaces: <code>plaza crush fable jolly swirl mango</code>.
+        Show it. Time yourself.</li>
+      <li>If the phone also has Samsung Keyboard, switch to it and do 1 and 2 again.</li>
+      <li>Leave with Back and choose <strong>Discard</strong>.</li>
+    </ol></td>
+    <td class="see">The words exactly as you typed them: no capital letters added, no full stops or extra
+      spaces, no word changed by the keyboard.<br><br>Which way was easier and had fewer mistakes:
+      hyphens or spaces? This decides how the app suggests its words.</td>
+    <td class="saw"><div class="result"><div><span class="box"></span>as expected</div><div><span class="box"></span>different</div><div><span class="box"></span>not done</div></div>
+      Gboard: hyphens ____ s, spaces ____ s<br>Samsung: hyphens ____ s, spaces ____ s<br>
+      Easier:<br><span class="box"></span>hyphens &nbsp; <span class="box"></span>spaces</td>
+  </tr>
+</table>
+</div>
+
+<div class="check">
+<h3>8. Languages, and TalkBack <span class="ref">(item 8; architecture.md D-4; lock.md E12, §13.5)</span></h3>
+<table>
+  <tr><th>What to do</th><th>What you should see</th><th>What I saw</th></tr>
+  <tr>
+    <td class="do"><ol>
+      <li>Claude gives you pictures of every screen in Oʻzbekcha, Ўзбекча and Русский. Read first the
+        warnings, the texts about wrong PINs and the PIN limit, and the banner about a new master password;
+        then every other screen. Mark every word that is wrong, unclear or cut off.</li>
+      <li>On the phone: Settings › <strong>Til · Тил · Язык · Language</strong>. Choose each language in turn and read the screens you use. Choose English again at the end if you like.</li>
+      <li>TalkBack on the PIN pad. First, in the phone's Settings › Accessibility › TalkBack, turn on the
+        <strong>TalkBack shortcut</strong>: holding both volume keys for 3 seconds then turns TalkBack on
+        and off. Turn TalkBack on. Lock PasswordVault. Type your PIN: touch a key, then double-tap.</li>
+      <li>TalkBack in the master-password field: <strong>Forgot PIN? Use master password</strong>. Type a few
+        letters, delete one, move the cursor letter by letter, then double-tap
+        <strong>Show password</strong> and listen again.</li>
+      <li>Turn TalkBack off: hold both volume keys for 3 seconds.</li>
+    </ol></td>
+    <td class="see"><ol>
+      <li>Every text reads naturally to you.</li>
+      <li>The same, on the phone.</li>
+      <li>Every key can be pressed. TalkBack says how many digits are entered, like "PIN, 3 of 6 digits
+        entered". The app opens after the 6th digit.</li>
+      <li>While the password is hidden, TalkBack says a dot (or "bullet") for each character, never a
+        letter. After <strong>Show password</strong> it reads the letters.</li>
+    </ol></td>
+    <td class="saw"><div class="result"><div><span class="box"></span>as expected</div><div><span class="box"></span>different</div><div><span class="box"></span>not done</div></div>
+      Words to change: on the back of this page.</td>
+  </tr>
+</table>
+</div>
+
+<div class="check">
+<h3>9. Uninstall, and install again <span class="ref">(item 9; architecture.md D-21)</span></h3>
+<table>
+  <tr><th>What to do</th><th>What you should see</th><th>What I saw</th></tr>
+  <tr>
+    <td class="do"><strong>Warning:</strong> do this only after check 4, while the app holds only the
+      test accounts. An uninstall can delete the passwords on the phone.
+      <ol>
+      <li>Press and hold the PasswordVault icon › <strong>Uninstall</strong> (or phone Settings › Apps ›
+        PasswordVault › Uninstall).</li>
+      <li>If the phone shows a box <strong>Keep app data</strong>, tick it. Then
+        <strong>Uninstall</strong>.</li>
+      <li>Install the app again: step 2, part 2.9 or 2.10.</li>
+      <li>Open it.</li>
+    </ol></td>
+    <td class="see"><ol>
+      <li>"Uninstall this app?"</li>
+      <li>Android 10 and newer show "Keep app data". Android 7, 8 and 9 do not: then the test accounts are
+        deleted, which is all right here.</li>
+      <li><code>Success</code>, or "App installed".</li>
+      <li>With "Keep app data": the app asks for the master password (it may say "Welcome back"), the
+        master password opens the three test accounts, and the app offers to choose a PIN: choose one.
+        Without it: "Your passwords, safe on this phone". Then restore the backup of check 4 with
+        <strong>Restore from a backup file</strong>.</li>
+    </ol></td>
+    <td class="saw"><div class="result"><div><span class="box"></span>as expected</div><div><span class="box"></span>different</div><div><span class="box"></span>not done</div></div>
+      "Keep app data" offered:<br><span class="box"></span>yes &nbsp; <span class="box"></span>no<br>
+      PIN set again:<br><span class="box"></span>yes &nbsp; <span class="box"></span>no</td>
+  </tr>
+</table>
+</div>
+
+<div class="check">
+<h3>10. A phone with 16 KB memory pages <span class="ref">(item 10; VERIFICATION.md V-S9)</span></h3>
+<table>
+  <tr><th>What to do</th><th>What you should see</th><th>What I saw</th></tr>
+  <tr>
+    <td class="do">Look at "Memory page size" on the first page of this form.</td>
+    <td class="see">16384: this phone has 16 KB pages, and checks 1 to 9 have shown that the app installs and
+      opens on it: write "works".<br>4096: nothing to check here.</td>
+    <td class="saw" style="height: 22mm;"><div class="result"><div><span class="box"></span>as expected</div><div><span class="box"></span>different</div><div><span class="box"></span>not done</div></div></td>
+  </tr>
+</table>
+</div>
+
+<div class="check">
+<h3>11. The phone maker's backup tool <span class="ref">(item 11; lock.md D6)</span></h3>
+<table>
+  <tr><th>What to do</th><th>What you should see</th><th>What I saw</th></tr>
+  <tr>
+    <td class="do">Only on a Xiaomi or a Samsung, and only if its tool lets you choose single apps (Xiaomi:
+      Settings › About phone › Back up and restore; Samsung: Smart Switch). <strong>Warning:</strong> if
+      the tool can only restore the whole phone, skip this check: a full restore replaces the data of all
+      your apps.
+      <ol>
+      <li>Lock PasswordVault. Type a wrong PIN 3 times.</li>
+      <li>Back up with the phone's tool, with only PasswordVault chosen.</li>
+      <li>Open PasswordVault with the right PIN.</li>
+      <li>Restore with the tool, again with only PasswordVault chosen.</li>
+      <li>Open PasswordVault: type one wrong PIN and read the line under the dots. Then open it with the
+        right PIN or the master password.</li>
+    </ol></td>
+    <td class="see"><ol>
+      <li>"Wrong PIN. 4 tries left.", then 3, then 2.</li>
+      <li value="5">Good: "Wrong PIN. 4 tries left.", or the app asks for the master password with
+        "Welcome back". Not good: "Wrong PIN. 1 try left. …": the tool brought back the old count.
+        Nothing is deleted either way.</li>
+    </ol></td>
+    <td class="saw"><div class="result"><div><span class="box"></span>as expected</div><div><span class="box"></span>different</div><div><span class="box"></span>not done</div></div>
+      Tool:<br><br>Line after one wrong PIN:</td>
+  </tr>
+</table>
+</div>
+
+<div class="check">
+<h3>12. Two questions only you can answer <span class="ref">(item 12; lock.md §18.7 and §18.16)</span></h3>
+<table>
+  <tr><th>What to do</th><th>What you should see</th><th>What I saw</th></tr>
+  <tr>
+    <td class="do">Read the last page and answer its two questions.</td>
+    <td class="see">Your answers decide how the app behaves when a master password is forgotten.</td>
+    <td class="saw" style="height: 16mm;"><div class="result"><div><span class="box"></span>answered</div><div><span class="box"></span>not done</div></div></td>
+  </tr>
+</table>
+</div>
+
+<div class="check">
+<h3>13. Android 17's memory limiter <span class="ref">(item 13; VERIFICATION.md V-P7)</span></h3>
+<table>
+  <tr><th>What to do</th><th>What you should see</th><th>What I saw</th></tr>
+  <tr>
+    <td class="do">Only if the phone has <strong>Android 17</strong> (first page). Connect it (step 2,
+      part 2.8). The boxes A, B and C are on the page after the questions.
+      <ol>
+      <li>Open and unlock PasswordVault. Then Settings › <strong>Lock now</strong> › <strong>Forgot PIN?
+        Use master password</strong>, and leave the phone on that screen.</li>
+      <li>Paste box A into the terminal.</li>
+      <li>On the phone, type the master password and tap <strong>Unlock</strong>.</li>
+      <li>Settings › <strong>Lock now</strong> › <strong>Forgot PIN? Use master password</strong>. Paste box B.</li>
+      <li>Type the master password and tap <strong>Unlock</strong>.</li>
+      <li>Paste box C.</li>
+    </ol></td>
+    <td class="see"><ol>
+      <li>The master-password screen.</li>
+      <li>"Memory limiter" and its state. If it says <code>disabled</code>, this phone limits nothing: write
+        "disabled" and stop here. Otherwise <code>DONE: limit ... set</code>.</li>
+      <li>The app opens.</li>
+      <li><code>DONE: limit ... set</code>.</li>
+      <li>Either "Your phone doesn’t have enough free memory to open your passwords. …" with "Try again",
+        or the app closes. Never "That’s not the right master password."</li>
+      <li>The limit is removed. If the app closed, box C shows Android's record of it: copy its lines for Claude. The line <code>description=</code> may name <code>MemoryLimiter</code>.</li>
+    </ol></td>
+    <td class="saw"><div class="result"><div><span class="box"></span>as expected</div><div><span class="box"></span>different</div><div><span class="box"></span>not done</div></div>
+      Above (box A):<br><span class="box"></span>opened<br>Below (box B):<br><span class="box"></span>"not enough memory"<br><span class="box"></span>app closed<br><span class="box"></span>opened</td>
+  </tr>
+</table>
+</div>
+
+<h2 class="newpage">Item 12: the two questions</h2>
+<p>If you forget your master password, the app lets you choose a new one with your PIN (or your
+fingerprint, when there is no PIN). The new one starts working only after <strong>24 hours, counted
+while the phone is switched on</strong>. The wait protects you: if someone saw your PIN and chose a new
+master password, the app shows a warning with <strong>Cancel it</strong>, and you have those hours to
+see it. During the wait no backup can be made.</p>
+
+<div class="question">
+<h3>Question 1. Is 24 hours with the phone switched on the right wait?</h3>
+<p>The hours count only while the phone is on. If you switch the phone off every night, the wait takes longer:</p>
+<ul>
+  <li>about a day and a half, if you open the app in the morning and in the evening;</li>
+  <li>about 3 days, if you open it once a day, in the evening;</li>
+  <li>about 3 weeks, if you open it only once, soon after switching the phone on.</li>
+</ul>
+<div class="choice"><span class="box"></span>Keep 24 hours.</div>
+<div class="choice"><span class="box"></span>Count fewer hours, for example 12.</div>
+<div class="choice"><span class="box"></span>Let the app look at the clock by itself while it waits: a silent alarm every hour
+  or two. It needs no permission, but the app would then wake up in the background now and then,
+  which it never does today, and after the phone restarts it would only start again once you open
+  the app.</div>
+<div class="choice"><span class="box"></span>Something else:</div>
+<div class="writeline"></div>
+<p>Why:</p>
+<div class="writeline"></div>
+<div class="writeline"></div>
+</div>
+
+<div class="question">
+<h3>Question 2. Should the app show a notification during that wait?</h3>
+<p>Today the warning is a banner inside the app. If you do not open the app during the wait, you do
+not see it. An Android notification would reach you even then. It needs no internet. On Android 13
+and newer the phone asks you once whether the app may show notifications. Its words would give
+nothing away to someone who looks at your phone.</p>
+<div class="choice"><span class="box"></span>Yes, show a notification during the wait.</div>
+<div class="choice"><span class="box"></span>No, the banner inside the app is enough.</div>
+<p>Why:</p>
+<div class="writeline"></div>
+<div class="writeline"></div>
+</div>
+
+<h2>When all checks are done</h2>
+<ol>
+  <li>Delete the test backups (<code>PasswordVault-backup-….pvault</code>) from Google Drive and from
+    Downloads, and any <code>passwords-….xlsx</code> or <code>.csv</code> that is left.</li>
+  <li>Delete the test entries in Google Password Manager (check 6).</li>
+  <li>In PasswordVault, delete the three test accounts, then put in your real passwords.</li>
+  <li>Make a real backup: Settings › <strong>Make a backup</strong>, to Google Drive, and copy it to this
+    computer too.</li>
+  <li>Give this form to Claude: type what you wrote, or attach photos of the pages.</li>
+</ol>
+
+<h2 class="newpage">Boxes for check 13</h2>
+<p>Copy each box from this page in Firefox and paste it into the terminal (<strong>Ctrl+Shift+V</strong>),
+then press Enter.</p>
+
+<h3>Box A: the limiter's state, and a limit just above what the app needs</h3>
+<pre>{
+ADB=/home/asus/Android/Sdk/platform-tools/adb
+PHONE=$($ADB devices -l | awk '/ usb:/ &amp;&amp; $2 == "device" {print $1; exit}')
+if [ -z "$PHONE" ]; then echo "STOP: no phone found. Do step 2, part 2.8 again."; else
+  STATE=$($ADB -s "$PHONE" shell am memory-limiter status | tr -d '\r'); echo "$STATE"
+  PID=$($ADB -s "$PHONE" shell pidof io.github.dilshodbekmx.passwordvault | tr -d '\r')
+  KB=$($ADB -s "$PHONE" shell cat /proc/meminfo | awk '/^MemTotal/ {print $2}')
+  ABOVE=$(( (225280 * 100 + KB - 1) / KB ))
+  if printf '%s' "$STATE" | grep -q disabled; then echo "This phone's limiter is disabled: write \"disabled\" for check 13. Nothing was set."
+  elif [ -z "$PID" ]; then echo "STOP: PasswordVault is not running. Open it (point 1), then paste this box again."
+  else $ADB -s "$PHONE" shell am memory-limiter manual "$PID" "$ABOVE" &amp;&amp; echo "DONE: limit $ABOVE % of the phone's memory set for PasswordVault."; fi
+fi
+}</pre>
+
+<h3>Box B: a limit just below what the app needs</h3>
+<pre>{
+ADB=/home/asus/Android/Sdk/platform-tools/adb
+PHONE=$($ADB devices -l | awk '/ usb:/ &amp;&amp; $2 == "device" {print $1; exit}')
+if [ -z "$PHONE" ]; then echo "STOP: no phone found. Do step 2, part 2.8 again."; else
+  PID=$($ADB -s "$PHONE" shell pidof io.github.dilshodbekmx.passwordvault | tr -d '\r')
+  KB=$($ADB -s "$PHONE" shell cat /proc/meminfo | awk '/^MemTotal/ {print $2}')
+  BELOW=$(( (225280 * 100 + KB - 1) / KB - 1 ))
+  if [ -z "$PID" ]; then echo "STOP: PasswordVault is not running. Open it, then paste this box again."
+  elif [ "$BELOW" -lt 1 ]; then echo "This phone has so much memory that no lower limit exists: write \"too much memory\" for check 13."
+  else $ADB -s "$PHONE" shell am memory-limiter manual "$PID" "$BELOW" &amp;&amp; echo "DONE: limit $BELOW % of the phone's memory set for PasswordVault."; fi
+fi
+}</pre>
+
+<h3>Box C: remove the limit, and show how the app ended</h3>
+<pre>{
+ADB=/home/asus/Android/Sdk/platform-tools/adb
+PHONE=$($ADB devices -l | awk '/ usb:/ &amp;&amp; $2 == "device" {print $1; exit}')
+if [ -z "$PHONE" ]; then echo "STOP: no phone found. Do step 2, part 2.8 again."; else
+  PID=$($ADB -s "$PHONE" shell pidof io.github.dilshodbekmx.passwordvault | tr -d '\r')
+  if [ -n "$PID" ]; then $ADB -s "$PHONE" shell am memory-limiter manual "$PID" none &amp;&amp; echo "DONE: the limit is removed."; else echo "PasswordVault is not running: it has no limit any more."; fi
+  echo "How PasswordVault ended last time:"
+  $ADB -s "$PHONE" shell dumpsys activity exit-info io.github.dilshodbekmx.passwordvault | tr -d '\r' | grep -m1 -A5 'ApplicationExitInfo #0'
+fi
+}</pre>
+
+</body>
+</html>
