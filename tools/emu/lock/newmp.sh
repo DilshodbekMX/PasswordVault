@@ -32,7 +32,8 @@ pvn_request() {
     pva_reveal pv.setup.passphrase 2>/dev/null || pva_need pv.setup.passphrase 30 || return 1
     PVN_NEW_PASSWORD=$(pva_text pv.setup.passphrase) || return 1
     printf '%s\n' "$PVN_NEW_PASSWORD" | grep -Eq '^[a-z]{3,9}(-[a-z]{3,9}){5}$' || { pv_log "not six words: '$PVN_NEW_PASSWORD'"; return 1; }
-    pva_tap pv.open.WriteDown && pva_need pv.open.TypeAgain 20 && pva_tap pv.open.TypeAgain || return 1
+    # "Next" may be below the fold of a 1920-pixel screen (API 24 and 28): pva_reveal scrolls to it.
+    pva_tap pv.open.WriteDown && pva_need pv.setup.wrote 20 && pva_reveal pv.open.TypeAgain && pva_tap pv.open.TypeAgain || return 1
     pva_type pv.setup.again "$PVN_NEW_PASSWORD" || return 1
     pva_hide_keyboard
     pva_tap pv.action.createVault || return 1
