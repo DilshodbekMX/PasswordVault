@@ -36,10 +36,40 @@
 #               since the owner's decision 22.
 #   lockstaging the staging repeat: lock/all.sh --staging --only E1,E6 --levels 24,37, and E16 on API 24
 #               with the staging build (decision 22 was shown with both builds).
-#   wave5       wave 5 (section 7, lines 1 to 8, with U 12 check 15), debug build on API 37 and 24, each
-#               line as numbered steps on one device (the one-device checks below, run by dev_run).
-#               Written in the next commit.
-#   wave7       wave 7 (section 9), written in the next commit.
+#   wave5       wave 5 (section 7's integration check), on API 37 and 24 at once, the debug build, each
+#               line as numbered steps from a fresh install (the one-device checks below, dev_run): line 1
+#               a backup into Download, adb uninstall, install, Welcome's "Restore from a backup file",
+#               the accounts back, a PIN set; line 2 with "Immediately" a backup, each export and an import
+#               finish, on API 24 E17's two picker items (lock/E17.sh has them on API 37), and U 12 check
+#               13 both ways (a kill with the picker open: after the unlock the backup's step is back,
+#               paused; Cancel removes the picker's empty file with "No backup was made", the master
+#               password completes the backup into it); line 3 CSV, JSON and Excel of four accounts with
+#               Uzbek, Cyrillic, +998 and values that start with = + -, multi-line notes,
+#               tools/validate/run.sh on the three files, the CSV and the JSON each imported into an empty
+#               vault and exported again: the same accounts; line 4 the Chrome fixture and FR P6's Uzbek
+#               Cyrillic header file imported, every row with a password an account with its login,
+#               password and notes; line 5 the master password changed with a PIN and a fingerprint set:
+#               the new master password, the PIN and the fingerprint open the vault, the old one does
+#               not; line 6 a new master password asked for (F11): the pending banner and no backup banner
+#               (F11 step 10), and on API 24 the wait's credit unchanged by the clock a year ahead and back
+#               (su date) and boot_count (lock/E4.sh and E5.sh have them on API 37, the part lock); line 7
+#               "Start with an empty app" (offered with a PIN only while its record cannot be read: pin.rec
+#               made unreadable with run-as, lock.md F15c), the old passwords opened from Welcome with
+#               their PIN and from Settings > Old passwords with their master password, no vault file
+#               deleted (U 12 check 16); U 12 check 15 (check15: the lock-screen route to a new master
+#               password, Cancel asks for the PIN again, the wait, the 24 credited hours set in state.rec,
+#               "Finish now" and the password typed once more, the new vault's PIN steps, the new backup
+#               offered and made without the master password asked again); the owner's decision 21 (d21:
+#               the change ended under the lock is shown after the unlock, "Later" snoozes the reminder 3
+#               days and the list shows no backup banner). Then line 8: smoke.sh staging (its stage of wave
+#               5: backup, export, import, a restore from the lock screen) on API 24 and 37.
+#   wave7       wave 7 (section 9), API 37, debug: the fifty accounts of the androidTest fixture imported
+#               (17 share one password): the Security tab's dot (read from a screenshot), "Why this
+#               matters" and the cards of U 5.16, the dot gone once seen, one guided change to "Gmail now
+#               has its own password."; a password made equal to the master password is flagged after the
+#               next master-password entry, with the dot back and "Why this matters" open again (decision
+#               23); 7.3's walk (the first-copy tip, every help page, the licences); change/guided.sh (it
+#               builds on :app:assembleDebugAndroidTest; about 35 minutes); smoke.sh staging on API 37.
 #   i18n        6.1's [script] line: tools/emu/i18n/all.sh on the devices (i18n.md 5's matrix and lock.md
 #               E11's language step through Settings; about 25 minutes a device; on API 37 the phone's
 #               language page never marks Ўзбекча, a KNOWN line).
@@ -65,7 +95,7 @@ REPO="$(cd "$EMU/../.." && pwd)"
 source "$EMU/adb.sh"
 source "$EMU/app.sh"
 
-SHOTS=/home/asus/pvwork/shots-5
+SHOTS=/home/asus/pvwork/shots-5/device-check-R4
 LOGS_ROOT=$REPO/build/emu-checks/5
 DEBUG_APK=$REPO/app/build/outputs/apk/debug/app-debug.apk
 STAGING_APK=$REPO/app/build/outputs/apk/staging/app-staging.apk
@@ -608,6 +638,10 @@ DEV_OUT=""
 API=0
 
 back_to_list() { pv_shell input keyevent KEYCODE_BACK >/dev/null; pva_on Passwords 20; }
+
+# shot NAME: a picture of the screen for the owner, SHOTS/5-NAME.png, on API 37 with the debug build only
+# (staging's secure window captures black); never a reason for a step to fail.
+shot() { [ "$API" = 37 ] && [ "$DEV_VARIANT" = debug ] || return 0; pv_sleep 1; pva_screenshot "$SHOTS/5-$1.png" >/dev/null 2>&1 || true; }
 
 # rows_seen TEXT...: each TEXT is a row of the list, scrolled to when it is below the fold; the list is
 # scrolled back to its top afterwards.
@@ -1332,6 +1366,7 @@ line7() {
     echo "    | the vault's files: $(printf '%s' "$before" | tr '\n' ';')"
     pv_step "$T: its PIN record unreadable for a new process: \"Forgot master password?\" > \"Start with an empty app\": Welcome; the record readable again" -- to_start_empty || return 1
     aside=$(pv_ui_nodes | grep -o 'pv\.setup\.aside\.[0-9a-f-]*' | head -n 1)
+    shot line7-welcome-previous-passwords
     pv_step "$T: Welcome offers \"Open my previous passwords\"" -- [ -n "$aside" ] || return 1
     pv_step "$T: their own lock screen (the pad); their PIN opens them" -- eval 'pva_tap "$aside" && pva_need pv.lock.pad 30 && pva_pin "$PIN" && pva_opened 60 && pva_settle Passwords 60'
     pv_step "$T: Gmail and Payme are back" -- eval 'pva_row_with Gmail 15 && pva_row_with Payme 10'
@@ -1389,6 +1424,7 @@ check15() {
     pv_step "$T: Cancel; the next request asks for the PIN again (the proof ended with its flow)" -- eval 'pva_tap pv.master.cancel && pva_unlocked Passwords 30 && pva_settle Passwords 30 && settings && pva_tap pv.open.ChangeMasterPassword && pva_on ChangeMasterPassword 20 && pv_sleep 2 && pva_hide_keyboard && pva_tap pv.open.NewMasterPassword && pva_need pv.master.continue 20 && pva_tap pv.master.continue && pva_need pv.pin.key.0 30' || return 1
     pv_step "$T: the PIN; a new master password chosen: the wait (\"starts working in about 24 hours\")" -- eval 'pva_pin "$PIN" && choose_words && pva_need pv.master.wait 60' || return 1
     pv_log "the wait: $(pva_text pv.master.wait 2>/dev/null)"
+    shot check15-wait
     PVN_NEW_PASSWORD=$NEW_MP
     pv_step "$T: Done; the list shows the pending banner and no backup banner" -- eval 'pva_tap pv.master.done; for i in 1 2 3 4; do pva_present pv.route.Passwords 2 && break; pva_present pv.tab.Passwords 1 && pva_tap pv.tab.Passwords || pv_shell input keyevent KEYCODE_BACK >/dev/null; pv_sleep 1; done; pva_settle Passwords 60 && pva_need pv.list.banner.pending 20 && pva_absent pv.list.banner.backup'
     pv_step "$T: the 24 credited hours made to pass (state.rec's credited_ms, debug builds: an emulator cannot wait them)" -- pvn_make_ready || return 1
@@ -1396,6 +1432,7 @@ check15() {
     pv_step "$T: finished by typing it once more: the replacement made (F11 steps 14 to 18)" -- eval 'pva_need pv.master.finish.field 30 && pva_type pv.master.finish.field "$NEW_MP" && pva_hide_keyboard && pva_tap pv.master.finish && finish_ended' || return 1
     pv_step "$T: \"Choose a PIN\" for the new vault (F11 step 19): a PIN chosen; the fingerprint offer Not now; back on the route" -- eval 'pvl_pin_steps "$PIN" - NewMasterPassword'
     pv_step "$T: then a new backup is offered" -- pva_need pv.master.backUpNow 60
+    shot check15-backup-offered
     pv_step "$T: \"Back up now\": the backup, with no master password asked again, into Download" -- eval 'pva_tap pv.master.backUpNow && pva_on Backup 30 && ! pva_present pv.backup.password 5 && w5_backup asked'
     PVA_PASSWORD=$NEW_MP
     pv_step "$T: the new master password opens the vault" -- eval 'pva_tap pv.tab.Passwords; pva_on Passwords 20; mp_opens "$NEW_MP"'
@@ -1413,6 +1450,7 @@ d21() {
     pv_step "$T: \"Touch the sensor to keep fingerprint unlock on.\" waits (the lock's prompt for KEEP_AFTER_CHANGE is open)" -- eval 'pva_prompt_open KEEP_AFTER_CHANGE 60 && pv_log "the windows: $(pv_ui_nodes_all 2>/dev/null | cut -d"|" -f1 | grep -v "^$" | tr "\n" ";" | cut -c1-300)"' || return 1
     pv_step "$T: the screen off for 3 s meanwhile: locked" -- eval 'pva_screen_off 3 && pva_status_soon "^state: locked" 20'
     pv_step "$T: the unlock (the PIN, kept): the route shows \"Your master password was changed.\" with \"Make a new backup now. …\"" -- eval 'pva_on Locked 30 && pva_need pv.lock.pad 20 && pva_pin "$PIN" && pva_on ChangeMasterPassword 60 && pva_need pv.master.later 30 && pv_ui_nodes | cut -d"|" -f1 | grep -qx "Your master password was changed." && pv_ui_nodes | cut -d"|" -f1 | grep -q "^Make a new backup now. "'
+    shot d21-changed-after-the-unlock
     now=$(($(pv_shell date +%s | tr -d '\r') * 1000))
     pv_step "$T: \"Later\": the backup reminder is snoozed for 3 days; the list shows no backup banner" -- eval 'pva_tap pv.master.later && pv_sleep 2 && until=$(prefs_value backup_reminder_snoozed_until_ms) && pv_log "snoozed until $until, now $now" && [ -n "$until" ] && [ $((until - now)) -gt $((3 * 86400000 - 120000)) ] && [ $((until - now)) -le $((3 * 86400000 + 120000)) ] && pva_tap pv.tab.Passwords && pva_on Passwords 20 && pv_sleep 3 && pva_absent pv.list.banner.backup'
     PVA_PASSWORD=$NEW_MP
@@ -1459,12 +1497,22 @@ guided_change() {
     pva_reveal pv.change.yes && pva_tap pv.change.yes || return 1
     pva_need pv.change.done 20 || pva_need pv.change.next 5 || return 1
     pv_ui_nodes | cut -d'|' -f1 | grep -qx 'Gmail now has its own password.' || { pv_log "texts: $(pv_ui_nodes | cut -d'|' -f1 | grep -v '^$' | tr '\n' ';' | cut -c1-400)"; return 1; }
+    pv_log "the end of the change: $(screen_texts)"
+    # "Done for now", then back to the tab bar.
+    pva_tap pv.change.done || return 1
+    local i
+    for i in 1 2 3 4; do pva_present pv.tab.Passwords 2 && return 0; pv_shell input keyevent KEYCODE_BACK >/dev/null; pv_sleep 1; done
+    pva_need pv.tab.Passwords 5
 }
 
-# master_password_on PAYME: Payme's password made equal to the master password through its edit form.
+# master_password_on: Payme's password made equal to the master password through its edit form (the
+# account found with the list's search).
 master_password_on() {
     pva_tap pv.tab.Passwords && pva_on Passwords 20 || return 1
     local row
+    pva_type pv.list.search Payme || return 1
+    pva_hide_keyboard
+    pv_sleep 1
     row=$(pv_ui_nodes | awk -F'|' '$3 ~ /^pv[.]list[.]row[.]/ { r = $3 } $1 == "Payme" && r != "" { print r; exit }')
     [ -n "$row" ] || { pv_log "no Payme row; rows: $(pva_row_titles | tr '\n' ';')"; return 1; }
     pva_tap "$row" && pva_on Entry 20 && pva_tap pv.entry.edit && pva_on Edit 20 || return 1
@@ -1473,7 +1521,10 @@ master_password_on() {
     for i in $(seq 1 40); do pv_shell input keyevent KEYCODE_DEL >/dev/null; done
     pv_shell input text "$PVA_PASSWORD" >/dev/null
     pva_hide_keyboard
-    pva_tap pv.edit.save && pva_on Entry 30 && back_to_list
+    pva_tap pv.edit.save && pva_on Entry 30 && back_to_list || return 1
+    if pva_present pv.list.searchClear 2; then pva_tap pv.list.searchClear; fi
+    pva_hide_keyboard
+    pva_on Passwords 10
 }
 
 fifty() {
@@ -1484,12 +1535,14 @@ fifty() {
     pv_step "$T: the Security tab's dot is shown (new results)" -- eval 'pva_tap pv.tab.Passwords && pva_on Passwords 20 && pv_sleep 5 && security_dot before'
     pv_step "$T: the Security tab: \"Why this matters\" open; the cards of U 5.16: 17 accounts use the same password, easy to guess" -- eval 'pva_tap pv.tab.Security && pva_on Security 30 && pva_need pv.security.why.text 30 && pva_need pv.security.card.reused 30 && pv_ui_nodes | cut -d"|" -f1 | grep -q "^17 accounts use the same password" && pva_reveal pv.security.card.weak'
     pv_log "the cards: $(pv_ui_nodes | cut -d'|' -f1 | grep -v '^$' | tr '\n' ';' | cut -c1-600)"
+    shot security-cards
     pv_step "$T: the dot is gone once the results were seen" -- eval 'pva_tap pv.tab.Passwords && pva_on Passwords 20 && ! security_dot seen'
     pv_step "$T: one guided change runs to \"Gmail now has its own password.\"" -- guided_change
     pv_step "$T: Payme's password made the master password (its form)" -- eval 'pva_tap pv.tab.Passwords; master_password_on'
     pv_step "$T: the next master-password entry (Lock now, the master password)" -- mp_opens "$PVA_PASSWORD"
     pv_step "$T: the dot is back (decision 23)" -- eval 'pv_sleep 5 && security_dot after'
     pv_step "$T: the Security tab flags it: \"Master password used elsewhere\" (Payme); \"Why this matters\" open again" -- eval 'pva_tap pv.tab.Security && pva_on Security 30 && pva_need pv.security.card.master 30 && pva_need pv.security.why.text 10 && pv_ui_nodes | cut -d"|" -f1 | grep -q "Payme"'
+    shot security-master-password-used-elsewhere
     pv_step "$T: no crash" -- pva_no_crash
 }
 
@@ -1507,7 +1560,7 @@ text_is() {
     return 1
 }
 
-shot73() { [ "$API" = 37 ] || return 0; pva_screenshot "$SHOTS/7.3-$1.png"; }
+shot73() { [ "$API" = 37 ] && [ "$DEV_VARIANT" = debug ] || return 0; pva_screenshot "$SHOTS/7.3-$1.png" >/dev/null 2>&1 || true; }
 
 help_page() {
     pva_reveal "pv.open.Help.$1" && pva_tap "pv.open.Help.$1" && pva_on Help && pv_ui_wait "[|]pv\\.help\\.$1\$" 10 || return 1
@@ -1610,8 +1663,8 @@ if [ "${1:-}" = one ]; then
     exit $?
 fi
 
-ALL_PARTS=(merged connected lock lockstaging i18n extras skeleton)
-DEVICE_PARTS=(connected lock lockstaging i18n extras skeleton)
+ALL_PARTS=(merged connected lock lockstaging wave5 wave7 i18n extras skeleton)
+DEVICE_PARTS=(connected lock lockstaging wave5 wave7 i18n extras skeleton)
 parts=()
 gradle_args=()
 keep=0
@@ -1676,6 +1729,17 @@ for part in "${DEVICE_PARTS[@]}"; do
         lockstaging)
             pv_step "the staging repeat: E1 and E6 with the staging build on API 24 and 37 (lock/all.sh --staging)" -- lock_all all-staging "24 37" --staging --only E1,E6
             pv_step "E16 with the staging build on API 24 (decision 22: the Java Argon2 fallback on a 256 MiB heap)" -- in_parallel e16-staging e16_staging -- 24 ;;
+        wave5)
+            pv_step "the test APK is not on the devices" -- no_test_apk
+            pv_step "build-plan 7 lines 1 to 7, U 12 checks 13, 15 and 16, decision 21: debug build on API 37 and 24" -- in_parallel wave5 w5_debug -- 37 24
+            pv_step "line 8: smoke.sh staging with backup, export, import and a restore, on API 24 and 37" -- in_parallel smoke-staging smoke_staging -- 24 37 ;;
+        wave7)
+            pv_step "the fifty accounts (U 5.16, a guided change, decision 23) and 7.3's walk, debug build, API 37" -- in_parallel wave7 w7_debug -- 37
+            if has_level 37; then
+                pv_step "the test APK that change/guided.sh needs (:app:assembleDebugAndroidTest)" -- build_test_apk
+                pv_step "7.2: change/guided.sh, debug build, API 37 (about 35 minutes)" -- in_parallel guided guided -- 37
+            fi
+            pv_step "smoke.sh staging on API 37" -- in_parallel smoke-staging smoke_staging -- 37 ;;
         i18n)
             pv_step "6.1: tools/emu/i18n/all.sh (the matrix of i18n.md 5 and E11's language step), debug build, API ${APIS[*]}" -- i18n_all ;;
         extras)
