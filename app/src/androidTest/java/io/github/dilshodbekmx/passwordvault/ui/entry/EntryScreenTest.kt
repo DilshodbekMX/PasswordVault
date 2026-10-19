@@ -531,6 +531,22 @@ class EntryScreenTest {
         compose.onNodeWithTag(EntryTags.NOTES_MORE).assertDoesNotExist()
     }
 
+    /**
+     * Build plan 8.1 (the open problem of section 12, R5): TalkBack's heading navigation meets the
+     * account's name once, the top bar's title, although the content shows the name whole again as its
+     * first line (ux.md §5.12, §8).
+     */
+    @Test
+    fun theAccountsNameIsOneHeading() {
+        show(Vault(entries = listOf(gmail())))
+        val headings = compose.everyNode(useUnmergedTree = true).filter { node ->
+            SemanticsProperties.Heading in node.config &&
+                node.config.getOrNull(SemanticsProperties.Text).orEmpty().any { it.text == details().title }
+        }
+        assertEquals("headings with the name", 1, headings.size)
+        compose.onNodeWithTag(EntryTags.TITLE).assertExists()
+    }
+
     // ---- When the screen stops ---------------------------------------------------------------
 
     @Test

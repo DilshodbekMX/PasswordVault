@@ -47,7 +47,6 @@ import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDataType
 import androidx.compose.ui.semantics.customActions
-import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.testTagsAsResourceId
@@ -120,13 +119,15 @@ internal fun EntryRows(details: EntryDetails, copied: EntryValue?, actions: Entr
             contentPadding = PaddingValues(bottom = 24.dp),
         ) {
             item(key = "title", contentType = "title") {
+                // The name whole, where the top bar may cut it (ux.md §5.12). Not a heading: the top bar's
+                // title is the screen's heading, and TalkBack's heading navigation would meet the name
+                // twice (build plan 8.1; the open problem of §12, R5).
                 Text(
                     text = details.title,
                     style = MaterialTheme.typography.headlineSmall,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 8.dp)
-                        .semantics { heading() }
                         .testTag(EntryTags.TITLE)
                         .userText(),
                 )
