@@ -43,7 +43,8 @@ import io.github.dilshodbekmx.passwordvault.settings.ThemeChoice
  *
  * Every text pair of the app's own schemes has a contrast of at least 4.5:1 and every outline that
  * carries meaning 3:1 (ux.md §8 "Contrast"; `SchemeContrastTest`). Russian text is hyphenated
- * (i18n.md §4.5 rule 4); Uzbek has no hyphenation patterns on Android.
+ * (i18n.md §4.5 rule 4); in the other languages a word too long for its line breaks only at a hyphen
+ * or a soft hyphen ([typographyFor]); Uzbek has no hyphenation patterns on Android.
  */
 @Composable
 fun PasswordVaultTheme(settings: AppSettings, content: @Composable () -> Unit) {
@@ -106,13 +107,20 @@ private fun PasswordVaultLook(style: StyleChoice, dark: Boolean, content: @Compo
 }
 
 /**
- * Material 3's type scale; for Russian with automatic hyphenation and paragraph line breaking, so
- * that long words break inside narrow labels instead of overflowing them (i18n.md §4.5).
+ * Material 3's type scale, with hyphenation on in every language (i18n.md §4.5 rule 4):
+ * - Russian: automatic hyphenation with paragraph line breaking, so that long words break inside
+ *   narrow labels instead of overflowing them.
+ * - The other languages keep Material's simple line breaking, in which only a word that does not fit
+ *   on a line of its own is broken: with hyphenation on, it breaks after a hyphen ("PasswordVault- /
+ *   backup") or at a soft hyphen (U+00AD) instead of between any two letters ("PasswordVault-backu /
+ *   p"). Android has no Uzbek hyphenation patterns, so an Uzbek word without a hyphen still cannot
+ *   break: the texts avoid such words (build plan §12, R6 question 2). Measured on API 37 (build plan
+ *   8.1): with hyphenation off Android breaks neither after a hyphen nor at a soft hyphen.
  */
-private fun typographyFor(language: String?): Typography {
+internal fun typographyFor(language: String?): Typography {
     val base = Typography()
-    if (language != "ru") return base
-    fun TextStyle.hyphenated() = copy(hyphens = Hyphens.Auto, lineBreak = LineBreak.Paragraph)
+    val russian = language == "ru"
+    fun TextStyle.hyphenated() = if (russian) copy(hyphens = Hyphens.Auto, lineBreak = LineBreak.Paragraph) else copy(hyphens = Hyphens.Auto)
     return base.copy(
         displayLarge = base.displayLarge.hyphenated(),
         displayMedium = base.displayMedium.hyphenated(),
