@@ -537,6 +537,11 @@ androidComponents {
             ?: throw GradleException("Variant '${variant.name}' has no entry in variantSpecs (app/build.gradle.kts)")
         val cap = variant.name.replaceFirstChar { it.uppercase() }
         val reports = layout.buildDirectory.dir("reports/build-checks/${variant.name}")
+        // kotlinx-coroutines-core ships DebugProbesKt.bin, a JVM class file of its debug agent
+        // (kotlinx.coroutines.debug.internal) that ART never loads; the library's documentation says
+        // to leave it out of Android apps, at no loss of function. The optimised builds, staging and
+        // release, leave it out, and their APK check (R-17) fails on any JVM class file in the APK.
+        if (spec.r8) variant.packaging.resources.excludes.add("DebugProbesKt.bin")
         // Local names: inside the task blocks below, appId, allowedPermissions and debugReceiver
         // mean the tasks' own properties.
         val expectedAppId = appId
