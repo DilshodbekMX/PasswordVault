@@ -118,7 +118,8 @@
     <string name="edit_gen_digits">0–9</string>
     <!-- Glossary 82; the symbols are kept exactly as they are. -->
     <string name="edit_gen_symbols">Специальные символы ! # $ % &amp; * + - = ? @ _</string>
-    <string name="edit_gen_look_alike">Исключить похожие символы (I l 1 O 0)</string>
+    <!-- The characters are kept as they are; no-break spaces keep the group on one line. -->
+    <string name="edit_gen_look_alike">Без похожих символов (I&#160;l&#160;1&#160;O&#160;0)</string>
     <string name="edit_gen_one_kind">Нужен хотя бы один вид символов.</string>
     <string name="edit_gen_word_count">Количество слов</string>
     <string name="edit_gen_fewer_words">Меньше слов</string>

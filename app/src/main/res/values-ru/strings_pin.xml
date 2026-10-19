@@ -21,7 +21,8 @@
 
     <!-- «Введите PIN-код ещё раз» (glossary 54). -->
     <string name="pin_confirm_title">Введите PIN-код ещё раз</string>
-    <string name="pin_confirm_body">Введите те же 6&#160;цифр ещё раз.</string>
+    <!-- The title already says «ещё раз». -->
+    <string name="pin_confirm_body">Наберите те же 6&#160;цифр.</string>
     <string name="pin_mismatch">PIN-коды не совпадают. Повторите попытку.</string>
     <string name="pin_saving">Сохранение…</string>
     <string name="pin_set">PIN-код задан.</string>
