@@ -68,8 +68,11 @@ import kotlinx.coroutines.launch
  * master password was changed." with "Make a new backup now. …", "Back up now" and "Later" after the
  * unlock instead ([ChangeMasterPasswordUi.afterLock];
  * build-plan.md §12, the owner's decision 21), and "Later" there puts the backup reminder off as the
- * list's "Later" does ([snoozeReminder], decision 15). A rotation or a language change keeps
- * everything (the route's ViewModel; lock.md §11).
+ * list's "Later" does ([snoozeReminder], decision 15). The lock clears this ViewModel (Navigation 3
+ * clears the unlocked screens' stores, architecture.md §5.5 step 5), so that step waits in
+ * [ChangedUnderLock] for the ViewModel the route gets after the unlock; the change's end is handled
+ * in [work], which outlives this one. A rotation or a language change keeps everything (the route's
+ * ViewModel; lock.md §11).
  *
  * @param offerBackup `BackupOffer.offer`: the backup screen opened next uses this proof.
  * @param deleteBackup `BackupNotes.delete`: deletes a backup this app saved and forgets it.
@@ -120,11 +123,16 @@ class ChangeMasterPasswordViewModel(
     /** A lock ended the flow while the change ran ("Saving…"): its result is shown after the unlock (decision 21). */
     private var lockedWhileSaving = false
 
+    /** The vault whose master password this flow changes (step 1's proof), or whose backup step it shows. */
+    private var vaultId: String? = null
+
     init {
-        // A lock (or the vault put aside) ends the flow: nothing typed or proved stays behind.
+        // A lock (or the vault put aside) ends the flow: nothing typed or proved stays behind. Open
+        // again, a backup step that waits from an earlier lock is shown (decision 21).
         viewModelScope.launch {
-            lock.state.collect { if (it !is LockUiState.Unlocked) lockedNow() }
+            lock.state.collect { if (it !is LockUiState.Unlocked) lockedNow() else showWaitingStep() }
         }
+        viewModelScope.launch { ChangedUnderLock.step.collect { showWaitingStep() } }
     }
 
     // ---- step 1 ------------------------------------------------------------------------------------
@@ -292,6 +300,8 @@ class ChangeMasterPasswordViewModel(
         }
         val (first, again) = typings
         val usedElsewhere = state.value.usedElsewhere
+        val changing = proved.vaultId
+        vaultId = changing
         lockedWhileSaving = false
         val change = work.async {
             try {
@@ -311,15 +321,26 @@ class ChangeMasterPasswordViewModel(
                 pinCopy?.fill(0)
             }
         }
-        viewModelScope.launch { afterSave(change.await(), usedElsewhere) }
+        // In [work], which outlives this ViewModel: a lock clears it (architecture.md §5.5 step 5) while
+        // the change runs to its end, and the end must still be handed on (decision 21).
+        work.launch { settle(change.await(), usedElsewhere, changing) }
     }
 
-    private fun afterSave(result: ChangeResult, usedElsewhere: Boolean) {
-        if (state.value.stage != ChangeStage.SAVING) {
-            if (lockedWhileSaving && result is ChangeResult.Changed) changedWhileLocked(usedElsewhere)
+    /**
+     * The change has ended. While this route still shows "Saving…" the next step follows here. When a
+     * lock has ended the flow meanwhile, or the route has gone, a change that ended changed leaves its
+     * backup step in [ChangedUnderLock] for the route's ViewModel after the unlock (decision 21).
+     */
+    private fun settle(result: ChangeResult, usedElsewhere: Boolean, changed: String) {
+        if (cleared || state.value.stage != ChangeStage.SAVING) {
+            if ((cleared || lockedWhileSaving) && result is ChangeResult.Changed) ChangedUnderLock.leave(changed, usedElsewhere)
             lockedWhileSaving = false
             return
         }
+        afterSave(result)
+    }
+
+    private fun afterSave(result: ChangeResult) {
         when (result) {
             is ChangeResult.Changed -> changed(pinKept = result.pinKept)
             ChangeResult.Mismatch -> {
@@ -361,16 +382,34 @@ class ChangeMasterPasswordViewModel(
 
     /**
      * The change ended changed after a lock had ended the flow (build-plan.md §12, decision 21): the
-     * route, under the lock screen now, shows "Your master password was changed." with "Make a new
-     * backup now. …" when the app is unlocked again, and nothing of the earlier steps. A PIN that was
-     * not kept is offered by the lock itself at that unlock (`ChoosePinReason.MASTER_CHANGED`), so
-     * "Choose a PIN" does not open from here. "Back up now" hands over the proof of that unlock when
-     * the master password made it; after a PIN or fingerprint unlock the backup screen asks for it.
+     * route shows "Your master password was changed." with "Make a new backup now. …" once the app is
+     * unlocked again, and nothing of the earlier steps. A PIN that was not kept is offered by the lock
+     * itself at that unlock (`ChoosePinReason.MASTER_CHANGED`), so "Choose a PIN" does not open from
+     * here. "Back up now" hands over the proof of that unlock when the master password made it; after
+     * a PIN or fingerprint unlock the backup screen asks for it.
      */
     private fun changedWhileLocked(usedElsewhere: Boolean) {
         dropAll()
         val places = if (usedElsewhere) savedBackups().map { BackupPlace(it, PlaceState.LISTED) } else emptyList()
         state.value = ChangeMasterPasswordUi(stage = ChangeStage.BACKUP, usedElsewhere = usedElsewhere, places = places, afterLock = true)
+    }
+
+    /**
+     * The backup step that waits in [ChangedUnderLock] is taken and shown, once: when the app is open,
+     * on the vault whose master password was changed (one that has been put aside since drops it), and
+     * this route has no flow of its own going (step 1, nothing proved).
+     */
+    private fun showWaitingStep() {
+        val step = ChangedUnderLock.step.value ?: return
+        if (lock.state.value !is LockUiState.Unlocked) return
+        if (lock.status.value.aside.any { it.vaultId == step.vaultId }) {
+            ChangedUnderLock.take(step) // another vault is open now: that step is not this one's
+            return
+        }
+        if (cleared || state.value.stage != ChangeStage.CURRENT || proof != null) return
+        if (!ChangedUnderLock.take(step)) return
+        vaultId = step.vaultId
+        changedWhileLocked(step.usedElsewhere)
     }
 
     /** The screen opened "Choose a PIN" (or could not): it is not opened again. */
@@ -460,6 +499,13 @@ class ChangeMasterPasswordViewModel(
 
     override fun onCleared() {
         cleared = true
+        // Cleared by a lock before this ViewModel saw it (the lock screen took the route off the
+        // display first): a backup step not answered yet waits for the unlock, as [lockedNow] leaves it.
+        val now = state.value
+        val changed = vaultId
+        if (lock.state.value !is LockUiState.Unlocked && now.stage == ChangeStage.BACKUP && now.leave == null && changed != null) {
+            ChangedUnderLock.leave(changed, now.usedElsewhere)
+        }
         dropAll()
     }
 
@@ -480,21 +526,19 @@ class ChangeMasterPasswordViewModel(
 
     /**
      * The app locked: the flow is over; after the unlock the route starts again at step 1, unless a
-     * change that was running then ends changed ([changedWhileLocked]), or the change has ended and
-     * its backup step was not answered yet: the change may have ended a moment before the lock
-     * reached this ViewModel, with the screen already off. That step is kept for the unlock as
-     * [changedWhileLocked] keeps it (decision 21); it holds nothing secret.
+     * change that was running then ends changed ([settle]), or the change has ended and its backup
+     * step was not answered yet: the change may have ended a moment before the lock reached this
+     * ViewModel, with the screen already off, or the step is the one shown after an earlier lock. That
+     * step waits in [ChangedUnderLock] for the route's ViewModel after the unlock (decision 21), which
+     * may be this one; it holds nothing secret.
      */
     private fun lockedNow() {
         val now = state.value
         if (now.stage == ChangeStage.SAVING) lockedWhileSaving = true
-        if (now.afterLock) return // shown after this lock's unlock: it stays until it is answered
         dropAll()
-        state.value = if (now.stage == ChangeStage.BACKUP && now.leave == null) {
-            now.copy(afterLock = true, choosePin = false)
-        } else {
-            ChangeMasterPasswordUi()
-        }
+        state.value = ChangeMasterPasswordUi()
+        val changed = vaultId
+        if (now.stage == ChangeStage.BACKUP && now.leave == null && changed != null) ChangedUnderLock.leave(changed, now.usedElsewhere)
     }
 
     private fun wipePin() {
@@ -546,6 +590,40 @@ class ChangeMasterPasswordViewModel(
                 }
             }
         }
+    }
+}
+
+/**
+ * The backup step of a master-password change that a lock interrupted (build-plan.md §12, the owner's
+ * decision 21; lock.md F8 step 9; ux.md §5.18 step 6): the change ended changed after a lock had ended
+ * the flow of `Route.ChangeMasterPassword`, or had ended with that step not answered when the app
+ * locked. A lock takes the unlocked screens off the display and clears their ViewModels
+ * (architecture.md §5.5 step 5; the device check of R4 saw the route start again at step 1 on a
+ * phone), so the step waits here for the route's ViewModel after the unlock, which shows it once the
+ * app is open on that vault again ([ChangeMasterPasswordViewModel]). The vault's id and whether the
+ * old master password was also an account's password, nothing secret; in memory only, so a new
+ * process has none. A one-time holder (architecture.md §3.6).
+ */
+object ChangedUnderLock {
+    /** The step that waits: the vault [vaultId] had its master password changed. */
+    data class Step(val vaultId: String, val usedElsewhere: Boolean)
+
+    private val waiting = MutableStateFlow<Step?>(null)
+
+    /** The step that waits, or null; the route's ViewModel watches it. */
+    val step: StateFlow<Step?> = waiting.asStateFlow()
+
+    /** The change of [vaultId] ended under the lock, or its backup step was left unanswered by one. */
+    fun leave(vaultId: String, usedElsewhere: Boolean) {
+        waiting.value = Step(vaultId, usedElsewhere)
+    }
+
+    /** Takes [step] if it still waits: true for the one caller that shows it. */
+    fun take(step: Step): Boolean = waiting.compareAndSet(step, null)
+
+    /** Nothing waits any more. */
+    fun clear() {
+        waiting.value = null
     }
 }
 

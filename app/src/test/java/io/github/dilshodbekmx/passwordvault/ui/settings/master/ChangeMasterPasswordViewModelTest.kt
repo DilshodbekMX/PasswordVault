@@ -6,6 +6,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import io.github.dilshodbekmx.passwordvault.R
 import io.github.dilshodbekmx.passwordvault.core.generator.Wordlist
+import io.github.dilshodbekmx.passwordvault.core.lock.flow.AsideVault
 import io.github.dilshodbekmx.passwordvault.core.lock.flow.MasterProof
 import io.github.dilshodbekmx.passwordvault.core.model.FileRef
 import io.github.dilshodbekmx.passwordvault.core.model.Vault
@@ -23,6 +24,7 @@ import io.github.dilshodbekmx.passwordvault.testing.FakeClock
 import io.github.dilshodbekmx.passwordvault.testing.FakeRandom
 import io.github.dilshodbekmx.passwordvault.ui.settings.ChangeMasterPasswordViewModel
 import io.github.dilshodbekmx.passwordvault.ui.settings.ChangeStage
+import io.github.dilshodbekmx.passwordvault.ui.settings.ChangedUnderLock
 import io.github.dilshodbekmx.passwordvault.ui.settings.Leave
 import io.github.dilshodbekmx.passwordvault.ui.settings.PlaceState
 import io.github.dilshodbekmx.passwordvault.ui.settings.SettingsNotice
@@ -87,6 +89,7 @@ class ChangeMasterPasswordViewModelTest {
     fun setUp() {
         Dispatchers.setMain(dispatcher)
         SettingsNotice.take()
+        ChangedUnderLock.clear()
     }
 
     @After
@@ -95,6 +98,7 @@ class ChangeMasterPasswordViewModelTest {
         work.cancel()
         Dispatchers.resetMain()
         SettingsNotice.take()
+        ChangedUnderLock.clear()
     }
 
     /** The open app with the PIN [pin], fingerprint [fingerprint], and a vault of [vault]. */
@@ -556,12 +560,45 @@ class ChangeMasterPasswordViewModelTest {
         assertFalse(vm.ui.value.afterLock)
         lock.fake.lock(LockReason.SCREEN_OFF)
         advanceUntilIdle()
-        assertEquals("kept for the unlock", ChangeStage.BACKUP, vm.ui.value.stage)
+        assertEquals("nothing is shown under the lock", ChangeStage.CURRENT, vm.ui.value.stage)
+        assertEquals("the step waits for the unlock", lock.fake.vaultId, ChangedUnderLock.step.value?.vaultId)
+        lock.fake.state.value = LockUiState.Unlocked(emptyList(), null)
+        advanceUntilIdle()
+        assertEquals("shown after the unlock", ChangeStage.BACKUP, vm.ui.value.stage)
         assertTrue(vm.ui.value.afterLock)
         assertFalse(vm.ui.value.choosePin)
         vm.close()
         assertEquals(1, snoozes)
         assertEquals(Leave.BACK, vm.ui.value.leave)
+    }
+
+    /**
+     * The same as a phone runs it: the lock clears the route's ViewModel (architecture.md §5.5 step 5),
+     * and the route gets a new one after the unlock, which shows the step (decision 21; the device check
+     * of R4). A vault put aside meanwhile drops it: the step was another vault's.
+     */
+    @Test
+    fun aBackupStepNotAnsweredWhenTheAppLocks_isShownByTheRoutesNextViewModel_onThatVaultOnly() = runTest(dispatcher) {
+        val lock = lockWith(pin = PinStatus.NotSet)
+        val vm = model(lock)
+        upToThePin(vm)
+        advanceUntilIdle()
+        assertEquals(ChangeStage.BACKUP, vm.ui.value.stage)
+        lock.fake.lock(LockReason.SCREEN_OFF)
+        store.clear() // the lock screen replaces the unlocked screens
+        advanceUntilIdle()
+        lock.fake.state.value = LockUiState.Unlocked(emptyList(), null)
+        val next = model(lock)
+        assertEquals(ChangeStage.BACKUP, next.ui.value.stage)
+        assertTrue(next.ui.value.afterLock)
+        assertNull("taken once", ChangedUnderLock.step.value)
+        assertEquals("a second ViewModel of the route starts at step 1", ChangeStage.CURRENT, model(lock).ui.value.stage)
+
+        // The step of a vault that has been put aside since is not shown on the vault that is open now.
+        ChangedUnderLock.leave("00000000-0000-4000-8000-0000000000aa", usedElsewhere = false)
+        lock.fake.status.value = lock.fake.status.value.copy(aside = listOf(AsideVault("00000000-0000-4000-8000-0000000000aa", 1_000L, null)))
+        assertEquals(ChangeStage.CURRENT, model(lock).ui.value.stage)
+        assertNull("dropped", ChangedUnderLock.step.value)
     }
 
     @Test

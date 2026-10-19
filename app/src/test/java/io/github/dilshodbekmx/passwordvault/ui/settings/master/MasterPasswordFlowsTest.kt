@@ -39,6 +39,7 @@ import io.github.dilshodbekmx.passwordvault.ui.list.ListBanner
 import io.github.dilshodbekmx.passwordvault.ui.list.ListBanners
 import io.github.dilshodbekmx.passwordvault.ui.settings.ChangeMasterPasswordViewModel
 import io.github.dilshodbekmx.passwordvault.ui.settings.ChangeStage
+import io.github.dilshodbekmx.passwordvault.ui.settings.ChangedUnderLock
 import io.github.dilshodbekmx.passwordvault.ui.settings.Leave
 import io.github.dilshodbekmx.passwordvault.ui.settings.NewMasterPasswordChoice
 import io.github.dilshodbekmx.passwordvault.ui.settings.NewMasterPasswordViewModel
@@ -94,6 +95,7 @@ class MasterPasswordFlowsTest {
     fun clearHolders() {
         NewMasterPasswordAsked.take()
         SettingsNotice.take()
+        ChangedUnderLock.clear()
     }
 
     @After
@@ -102,6 +104,7 @@ class MasterPasswordFlowsTest {
         Dispatchers.resetMain()
         NewMasterPasswordAsked.take()
         SettingsNotice.take()
+        ChangedUnderLock.clear()
     }
 
     /** The screens' main thread is the test's scheduler, as the rig's lock is. */
@@ -329,10 +332,10 @@ class MasterPasswordFlowsTest {
         assertEquals(PromptUse.KEEP_AFTER_CHANGE, rig.prompt.use)
 
         rig.lock(LockReason.SCREEN_OFF) // the change runs to its end under the lock screen
+        rig.settle()
         assertFalse(rig.isUnlocked)
-        assertEquals("kept for the unlock", ChangeStage.BACKUP, vm.ui.value.stage)
-        assertTrue(vm.ui.value.afterLock)
-        assertFalse("the lock offers a PIN that was not kept itself", vm.ui.value.choosePin)
+        assertEquals("nothing of the flow is shown under the lock", ChangeStage.CURRENT, vm.ui.value.stage)
+        assertEquals("the backup step waits for the unlock", rig.vaultId, ChangedUnderLock.step.value?.vaultId)
 
         rig.send(LockIntent.UseMasterPassword)
         assertTrue(rig.unlockWith(words) is MpResult.Right)
@@ -341,6 +344,7 @@ class MasterPasswordFlowsTest {
         val shown = vm.ui.value
         assertEquals("\"Your master password was changed.\" with \"Make a new backup now. …\"", ChangeStage.BACKUP, shown.stage)
         assertTrue(shown.afterLock)
+        assertFalse("the lock offers a PIN that was not kept itself", shown.choosePin)
         assertNull("nothing of the earlier steps", shown.line)
         assertEquals(0, snoozes)
 
@@ -349,6 +353,43 @@ class MasterPasswordFlowsTest {
         assertEquals(Leave.BACK, vm.ui.value.leave)
         vm.close()
         assertEquals("once", 1, snoozes)
+    }
+
+    /**
+     * Decision 21 as a phone runs it: a lock takes the unlocked screens off the display, and
+     * Navigation 3 clears their ViewModels (architecture.md §5.5 step 5); the unlock shows the route
+     * again with a new ViewModel. That one shows the backup step. The device check of R4 saw the route
+     * start again at step 1 on API 37 instead, the change made and nothing said.
+     */
+    @Test
+    fun f8_aChangeThatEndsAfterTheLockClearedTheRoute_showsItsBackupStepOnTheRoutesNextViewModel() = runTest {
+        val rig = rig()
+        phone(rig, fingerprint = true)
+        val vm = change(rig)
+        val words = upToThePin(rig, vm)
+        digits(rig, PIN, vm::digit)
+        rig.advance(LockRig.CHARGE_AGE_MS)
+        rig.advance(LockRig.CHARGE_AGE_MS)
+        assertEquals(PromptUse.KEEP_AFTER_CHANGE, rig.prompt.use)
+
+        rig.lock(LockReason.SCREEN_OFF) // the screen goes off while the prompt of step 7 waits
+        store.clear() // the lock screen replaces the unlocked screens: their ViewModels are cleared
+        rig.settle()
+        assertFalse(rig.isUnlocked)
+
+        rig.send(LockIntent.UseMasterPassword)
+        assertTrue("the new master password is the vault's", rig.unlockWith(words) is MpResult.Right)
+        rig.settle()
+        val next = change(rig) // the route, shown again after the unlock
+        val shown = next.ui.value
+        assertEquals("\"Your master password was changed.\" with \"Make a new backup now. …\"", ChangeStage.BACKUP, shown.stage)
+        assertTrue(shown.afterLock)
+        assertNull(shown.line)
+        next.close() // "Later"
+        assertEquals("decision 15's snooze", 1, snoozes)
+        assertEquals(Leave.BACK, next.ui.value.leave)
+        assertNull("taken once", ChangedUnderLock.step.value)
+        assertEquals("a later visit of the route starts at step 1", ChangeStage.CURRENT, change(rig).ui.value.stage)
     }
 
     // =================================================================================================
