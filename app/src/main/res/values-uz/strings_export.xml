@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Oʻzbekcha (lotin): the export (build plan 6.3b; values/strings_export.xml has the notes for each
+     string). Glossary of i18n.md §3: Eksport (100), Himoyalanmagan (104), Zaxira nusxa (97),
+     Asosiy parol (48), Avvalgi parollar (21), Saralanganlar (12), Qaydlar (11). Names of apps and
+     formats stay as they are (Excel, CSV, JSON, Google Password Manager, Google Sheets, Google Drive,
+     Telegram, Bitwarden, Proton Pass, KeePassXC); a noun after them takes the Uzbek suffix
+     ("Excel dasturida", "Google Drive xizmatida"), as after a file's name ("nomli") and a place's
+     name ("joyi:"), i18n.md §4.4. Numbers are grouped with a no-break space (3&#160;000). oʻ and gʻ
+     with U+02BB, the tutuq belgisi with U+02BC. -->
+<resources>
+
+    <string name="export_title">Eksport</string>
+    <string name="export_back">Orqaga</string>
+    <string name="export_continue">Davom etish</string>
+
+    <!-- ===== 1-qadam: format ===== -->
+
+    <string name="export_choose_heading">Formatni tanlang</string>
+    <string name="export_backup">Zaxira nusxa fayli (tavsiya etiladi)</string>
+    <string name="export_backup_line">Asosiy parolingiz bilan qulflangan. Xavfsiz nusxa saqlash yoki yangi telefonga oʻtish uchun.</string>
+    <string name="export_xlsx">Excel (.xlsx)</string>
+    <string name="export_xlsx_line">Parollaringizni kompyuterda jadval koʻrinishida koʻrish uchun. Himoyalanmagan.</string>
+    <string name="export_csv">CSV</string>
+    <string name="export_csv_line">Parollaringizni boshqa parol ilovasiga (masalan, Google Password Manager) koʻchirish uchun. Himoyalanmagan.</string>
+    <string name="export_json">JSON</string>
+    <string name="export_json_line">Toʻliq maʼlumotlar, jumladan avvalgi parollar. Bitwarden, Proton Pass va KeePassXC uni import qila oladi. Himoyalanmagan.</string>
+
+    <!-- ===== 2-qadam: ogohlantirish ===== -->
+
+    <string name="export_warning_title">Bu fayl himoyalanmaydi</string>
+    <string name="export_warning_body">Bu faylni ochgan har qanday odam barcha parollaringizni oʻqiy oladi. Faylning paroli yoʻq.</string>
+    <string name="export_warning_control">Uni faqat oʻzingiz nazorat qiladigan joyda saqlang: oʻz kompyuteringizda yoki fleshkangizda.</string>
+    <string name="export_warning_messengers">Uni Telegram, elektron pochta yoki boshqa messenjerlar orqali yubormang.</string>
+    <string name="export_warning_delete">Ishingiz tugashi bilan uni oʻchiring.</string>
+    <string name="export_warning_csv">Bu faylni Excel dasturida ochmang: Excel telefon raqamlari va kodlarni oʻzgartirib yuboradi va formulalarni bajarishi mumkin. Buning oʻrniga Excel eksportini tanlang.</string>
+    <string name="export_warning_xlsx">Google Sheets va boshqa ilovalar faylning nusxasini oʻz bulutida saqlab qolishi mumkin.</string>
+    <string name="export_warning_old_android">Bu telefonda xotiraga ruxsati bor boshqa ilovalar Yuklanmalar jildidagi fayllarni oʻqiy oladi.</string>
+    <string name="export_understand">Tushundim</string>
+
+    <string name="export_csv_card_title">Google Password Manager xizmatida</string>
+    <string name="export_csv_skip_intro">Google Password Manager quyidagilarni oʻtkazib yuboradi:</string>
+    <plurals name="export_csv_skip_no_website">
+        <item quantity="one">Sayti koʻrsatilmagan %1$d&#160;ta hisob</item>
+        <item quantity="other">Sayti koʻrsatilmagan %1$d&#160;ta hisob</item>
+    </plurals>
+    <plurals name="export_csv_skip_no_password">
+        <item quantity="one">Paroli koʻrsatilmagan %1$d&#160;ta hisob</item>
+        <item quantity="other">Paroli koʻrsatilmagan %1$d&#160;ta hisob</item>
+    </plurals>
+    <plurals name="export_csv_skip_long_note">
+        <item quantity="one">Qaydlari Google uchun juda uzun boʻlgan %1$d&#160;ta hisob</item>
+        <item quantity="other">Qaydlari Google uchun juda uzun boʻlgan %1$d&#160;ta hisob</item>
+    </plurals>
+    <plurals name="export_csv_skip_long_password">
+        <item quantity="one">Paroli Google uchun juda uzun boʻlgan %1$d&#160;ta hisob</item>
+        <item quantity="other">Paroli Google uchun juda uzun boʻlgan %1$d&#160;ta hisob</item>
+    </plurals>
+    <plurals name="export_csv_skip_long_username">
+        <item quantity="one">Foydalanuvchi nomi Google uchun juda uzun boʻlgan %1$d&#160;ta hisob</item>
+        <item quantity="other">Foydalanuvchi nomi Google uchun juda uzun boʻlgan %1$d&#160;ta hisob</item>
+    </plurals>
+    <plurals name="export_csv_skip_bad_website">
+        <item quantity="one">Sayti Google qabul qilmaydigan %1$d&#160;ta hisob</item>
+        <item quantity="other">Sayti Google qabul qilmaydigan %1$d&#160;ta hisob</item>
+    </plurals>
+    <plurals name="export_csv_skip_long_website">
+        <item quantity="one">Sayt manzili Google uchun juda uzun boʻlgan %1$d&#160;ta hisob</item>
+        <item quantity="other">Sayt manzili Google uchun juda uzun boʻlgan %1$d&#160;ta hisob</item>
+    </plurals>
+    <string name="export_csv_skip_outro">Ular baribir faylda bor. Boshqa ilovalar ularni qabul qilishi mumkin.</string>
+    <string name="export_csv_see_which">Qaysilarini koʻrish</string>
+    <string name="export_csv_hide_which">Roʻyxatni berkitish</string>
+    <plurals name="export_csv_parts">
+        <item quantity="one">Google bitta faylda koʻpi bilan 3&#160;000&#160;qator yoki 1&#160;000&#160;KB qabul qiladi, shuning uchun eksport %1$d&#160;ta faylga boʻlib saqlanadi. Har biri uchun joyni oʻzingiz tanlaysiz.</item>
+        <item quantity="other">Google bitta faylda koʻpi bilan 3&#160;000&#160;qator yoki 1&#160;000&#160;KB qabul qiladi, shuning uchun eksport %1$d&#160;ta faylga boʻlib saqlanadi. Har biri uchun joyni oʻzingiz tanlaysiz.</item>
+    </plurals>
+    <string name="export_csv_part_too_large">%1$d-fayl Google uchun hali ham juda katta, Google uni butunlay rad etadi.</string>
+    <string name="export_csv_not_kept">Avvalgi parollar va saralanganlar CSV faylga kirmaydi. JSON hammasini saqlaydi.</string>
+
+    <!-- ===== 3-qadam: asosiy parol ===== -->
+
+    <string name="export_password_title">Asosiy parolingizni kiriting</string>
+    <string name="export_password_body">Ilova uni har bir eksportdan oldin soʻraydi, chunki fayl himoyalanmaydi.</string>
+    <string name="export_password_field">Asosiy parol</string>
+    <string name="export_password_wrong">Asosiy parol notoʻgʻri. Klaviatura tilini (lotin yoki kirill) va bosh harflarni tekshiring.</string>
+    <plurals name="export_password_wait">
+        <item quantity="one">%1$d&#160;soniya kuting, soʻng qayta urining. Shoshilmang, yozib qoʻygan qogʻozingizga qarang.</item>
+        <item quantity="other">%1$d&#160;soniya kuting, soʻng qayta urining. Shoshilmang, yozib qoʻygan qogʻozingizga qarang.</item>
+    </plurals>
+    <string name="export_password_no_memory">Asosiy parolingizni tekshirish uchun telefoningizda boʻsh operativ xotira yetarli emas. Boshqa ilovalarni yoping yoki telefonni qayta yoqing, soʻng qayta urining.</string>
+    <!-- %1$s is a date ("6-okt, 2026"); "sanasidan oldingi" ("from before the date") keeps it free of a suffix. -->
+    <string name="export_password_older">Bu — %1$s sanasidan oldingi asosiy parolingiz. Hozir ishlatayotganingizni kiriting.</string>
+    <string name="export_paused">Bu jarayon ilova qulflanganda toʻxtatib turilgan edi.</string>
+    <string name="export_paused_body">%1$s nomli faylni saqlash uchun asosiy parolingizni qayta kiriting.</string>
+    <string name="export_paused_body_file">Faylni saqlash uchun asosiy parolingizni qayta kiriting.</string>
+
+    <!-- ===== 4- va 5-qadamlar: saqlash ===== -->
+
+    <string name="export_picking">Faylni qayerga saqlashni tanlang.</string>
+    <string name="export_saving">Fayl saqlanmoqda va tekshirilmoqda…</string>
+
+    <!-- ===== Natija ===== -->
+
+    <string name="export_saved">Saqlandi: %1$s. Ishingiz tugagach, uni oʻchiring.</string>
+    <string name="export_saved_part">%2$d&#160;ta fayldan %1$d-si saqlandi: %3$s. Ishingiz tugagach, uni oʻchiring.</string>
+    <string name="export_next_part">%1$d-faylni saqlash</string>
+    <string name="export_saved_upload">Bu joy faylni keyinroq yuklashi mumkin. Fayl yetib borganini tekshirish uchun uni oʻsha yerda bir marta oching.</string>
+    <plurals name="export_saved_replaced">
+        <item quantity="one">%1$d&#160;ta buzuq belgi � sifatida saqlandi.</item>
+        <item quantity="other">%1$d&#160;ta buzuq belgi � sifatida saqlandi.</item>
+    </plurals>
+    <plurals name="export_saved_truncated">
+        <item quantity="one">%1$d&#160;ta juda uzun matn Excel cheklovi tufayli qisqartirildi.</item>
+        <item quantity="other">%1$d&#160;ta juda uzun matn Excel cheklovi tufayli qisqartirildi.</item>
+    </plurals>
+    <string name="export_delete_now">Hozir oʻchirish</string>
+    <string name="export_deleted">%1$s nomli fayl oʻchirib tashlandi.</string>
+    <string name="export_cannot_delete">Bu joy ilovalarga fayllarni oʻchirishga ruxsat bermaydi. Faylni Fayllar ilovasida oʻzingiz oʻchiring.</string>
+
+    <!-- ===== Fayl saqlanmaganda ===== -->
+
+    <string name="export_picker_failed">Faylni saqlash oynasini ochib boʻlmadi. Qayta urining.</string>
+    <string name="export_write_failed">Bu joyga saqlab boʻlmadi. Boshqa jildni tanlang.</string>
+    <string name="export_write_left_phone">%1$s nomli faylda parollaringizning bir qismi boʻlishi mumkin. Uni Fayllar ilovasida oʻzingiz oʻchiring.</string>
+    <string name="export_write_left_drive">%1$s nomli faylda parollaringizning bir qismi boʻlishi mumkin. Uni Google Drive xizmatida oʻzingiz oʻchiring.</string>
+    <string name="export_write_left_other">%1$s nomli faylda parollaringizning bir qismi boʻlishi mumkin. Uni oʻzingiz oʻchiring (joyi: %2$s).</string>
+    <string name="export_note_failed">Saqlab boʻlmadi. Telefoningiz xotirasi toʻla boʻlishi mumkin.</string>
+    <string name="export_too_large">Parollaringiz endi bitta faylga sigʻmaydi. Keraksiz hisoblarni oʻchiring yoki juda uzun qaydlarni qisqartiring.</string>
+    <string name="export_cleanup_removed">Fayl saqlanmadi. Boʻsh fayl oʻchirib tashlandi.</string>
+    <string name="export_cleanup_left_phone">Fayl saqlanmadi. %1$s nomli boʻsh faylni Fayllar ilovasida oʻzingiz oʻchiring.</string>
+    <string name="export_cleanup_left_drive">Fayl saqlanmadi. Google Drive xizmatidagi %1$s nomli boʻsh faylni oʻzingiz oʻchiring.</string>
+    <string name="export_cleanup_left_other">Fayl saqlanmadi. %1$s nomli boʻsh faylni oʻzingiz oʻchiring (joyi: %2$s).</string>
+    <string name="export_cleanup_nothing">Fayl saqlanmadi.</string>
+
+    <string name="export_pending">Yangi asosiy parolingiz ishlay boshlagach, parollaringizni eksport qilishingiz mumkin.</string>
+
+    <!-- ===== Excel faylining matnlari (ekran tilida) ===== -->
+
+    <string name="export_xlsx_sheet">Parollar</string>
+    <string name="export_xlsx_name">Nomi</string>
+    <string name="export_xlsx_username">Foydalanuvchi nomi</string>
+    <string name="export_xlsx_password">Parol</string>
+    <string name="export_xlsx_website">Sayt</string>
+    <string name="export_xlsx_other_websites">Boshqa saytlar</string>
+    <string name="export_xlsx_notes">Qaydlar</string>
+    <string name="export_xlsx_fields">Qoʻshimcha maydonlar</string>
+    <string name="export_xlsx_favourite">Saralangan</string>
+    <string name="export_xlsx_added">Qoʻshilgan</string>
+    <string name="export_xlsx_last_changed">Oxirgi oʻzgarish</string>
+    <string name="export_xlsx_password_changed">Parol oʻzgartirilgan</string>
+    <string name="export_xlsx_yes">Ha</string>
+    <string name="export_xlsx_hidden">berkitilgan</string>
+    <string name="export_xlsx_old_password">Eski parol</string>
+    <string name="export_xlsx_app">ilova</string>
+    <plurals name="export_xlsx_truncated">
+        <item quantity="one">[… yana %1$d&#160;ta belgi: Excel bitta katakda koʻpi bilan 32&#160;767&#160;ta belgini koʻrsatadi]</item>
+        <item quantity="other">[… yana %1$d&#160;ta belgi: Excel bitta katakda koʻpi bilan 32&#160;767&#160;ta belgini koʻrsatadi]</item>
+    </plurals>
+
+</resources>
