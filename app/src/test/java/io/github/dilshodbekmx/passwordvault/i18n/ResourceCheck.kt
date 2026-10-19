@@ -39,14 +39,19 @@ object ResourceCheck {
     }
 
     /**
-     * Latin text allowed in Uzbek Cyrillic (i18n.md §5): PIN, OK, the ranges A–Z and a–z, and the
-     * names that are never translated (§3, end): the app's name, brands, file types. A text that needs
-     * another adds it here with the string.
+     * Latin text allowed in Uzbek Cyrillic (i18n.md §5): PIN, OK, the ranges A–Z and a–z, Latin
+     * characters shown as themselves (the generator's look-alike characters, the qwerty key row), and
+     * the names that are never translated (§3, end): the app's name, brands, file types. A text that
+     * needs another adds it here with the string.
      */
     val LATIN_IN_CYRILLIC: List<String> = listOf(
         "PasswordVault", "Google Password Manager", "Google Drive", "Google", "Chrome", "Excel", "CSV", "JSON",
         "Telegram", "Gmail", "Click", "Payme", "Android", ".pvault", ".xlsx", ".csv", ".json", "PIN", "OK",
         "A–Z", "a–z",
+        // Build plan 6.3a: edit_gen_look_alike names the Latin characters the generator leaves out, and
+        // setup_own_hint_keyboard the English text's own example of a key row; in Cyrillic letters they
+        // would name other characters.
+        "I l 1 O 0", "qwerty",
     ).sortedByDescending { it.length }
 
     /** The checks for [language] over the resource directory [res] (`app/src/main/res`). */
