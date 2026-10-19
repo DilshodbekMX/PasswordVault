@@ -66,6 +66,7 @@
     <string name="settings_backup_last">Oxirgi zaxira nusxa: %1$s, %2$s</string>
     <string name="settings_backup_none">Hali zaxira nusxa yoʻq</string>
     <string name="settings_place_phone">bu telefon</string>
+    <string name="settings_place_drive">Google Drive</string>
     <string name="settings_backup_reminders">Zaxiralash haqida eslatish</string>
     <string name="settings_export">Eksport</string>
     <string name="settings_export_body">Excel, CSV yoki JSON fayl</string>

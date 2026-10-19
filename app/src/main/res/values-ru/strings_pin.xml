@@ -82,7 +82,7 @@
     <string name="pin_backups_title">Создавайте резервные копии</string>
     <string name="pin_backups_only_here">Ваши пароли хранятся только на этом телефоне. Если телефон потеряется, сломается или будет сброшен, они пропадут. Удаление приложения или очистка его хранилища тоже их удалит.</string>
     <string name="pin_backups_locked">Резервная копия&#160;— это защищённый файл со всеми вашими паролями. Он открывается только мастер-паролем.</string>
-    <string name="pin_backups_outside">Храните резервную копию не на этом телефоне&#160;— в Google Drive, на компьютере или отправьте её себе.</string>
+    <string name="pin_backups_outside">Храните резервную копию не на этом телефоне&#160;— на Google Диске, на компьютере или отправьте её себе.</string>
     <string name="pin_backups_remind">Напоминать о резервном копировании</string>
     <string name="pin_backups_finish">Завершить</string>
 

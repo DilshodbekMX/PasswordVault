@@ -66,6 +66,7 @@
     <string name="settings_backup_last">Охирги захира нусха: %1$s, %2$s</string>
     <string name="settings_backup_none">Ҳали захира нусха йўқ</string>
     <string name="settings_place_phone">бу телефон</string>
+    <string name="settings_place_drive">Google Drive</string>
     <string name="settings_backup_reminders">Захиралаш ҳақида эслатиш</string>
     <string name="settings_export">Экспорт</string>
     <string name="settings_export_body">Excel, CSV ёки JSON файл</string>

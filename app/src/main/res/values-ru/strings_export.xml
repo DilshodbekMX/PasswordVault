@@ -130,13 +130,13 @@
     <string name="export_picker_failed">Не удалось открыть экран сохранения файлов. Повторите попытку.</string>
     <string name="export_write_failed">Не удалось сохранить в это место. Попробуйте другую папку.</string>
     <string name="export_write_left_phone">В файле %1$s могут быть некоторые ваши пароли. Удалите его сами в приложении «Файлы».</string>
-    <string name="export_write_left_drive">В файле %1$s могут быть некоторые ваши пароли. Удалите его сами в Google Drive.</string>
+    <string name="export_write_left_drive">В файле %1$s могут быть некоторые ваши пароли. Удалите его сами с Google Диска.</string>
     <string name="export_write_left_other">В файле %1$s могут быть некоторые ваши пароли. Удалите его сами в хранилище «%2$s».</string>
     <string name="export_note_failed">Не удалось сохранить. Возможно, хранилище телефона заполнено.</string>
     <string name="export_too_large">Ваши пароли больше не помещаются в один файл. Удалите ненужные аккаунты или сократите очень длинные заметки.</string>
     <string name="export_cleanup_removed">Файл не сохранён. Пустой файл удалён.</string>
     <string name="export_cleanup_left_phone">Файл не сохранён. Удалите сами пустой файл %1$s в приложении «Файлы».</string>
-    <string name="export_cleanup_left_drive">Файл не сохранён. Удалите сами пустой файл %1$s из Google Drive.</string>
+    <string name="export_cleanup_left_drive">Файл не сохранён. Удалите сами пустой файл %1$s с Google Диска.</string>
     <string name="export_cleanup_left_other">Файл не сохранён. Удалите сами пустой файл %1$s из хранилища «%2$s».</string>
     <string name="export_cleanup_nothing">Файл не сохранён.</string>
 
