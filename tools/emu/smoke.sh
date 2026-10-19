@@ -464,5 +464,115 @@ stage_files() {
     pv_step "no crash" -- pva_no_crash
 }
 
-stage_install_and_start && stage_skeleton && stage_clipboard && stage_pin_and_fingerprint && stage_files
+# ---- stage: the app's language (since the device check of waves 6 and 8A) -----------------------------
+# Build plan 12, "What the device check of waves 6 and 8A runs": Settings › Language › Русский, then
+# Ўзбекча (i18n/lib.sh's language dialog), each time the same process and Settings again, the bottom
+# bar's tabs in that language (the APK's own texts for the language, read with aapt2) and not in English;
+# in that language the steps the scripts drive by resource id: an account added and opened, Lock now and
+# the PIN (chosen once at a master-password unlock when the wave-5 stage's restore left none); then
+# "System language": the tabs in English again.
+source "$(dirname "${BASH_SOURCE[0]}")/i18n/lib.sh"
+
+# The aapt2 qualifier of a language dialog's choice; empty for the default (English) texts.
+smoke_qualifier() {
+    case "$1" in
+        RU) echo ru ;;
+        UZ_CYRL) echo b+uz+Cyrl ;;
+        UZ_LATN) echo uz ;;
+        *) echo "" ;;
+    esac
+}
+
+# smoke_tabs_in CHOICE: each tab's label is the APK's text for that language, and no English label is
+# shown (unless the language is English).
+smoke_tabs_in() {
+    local q name want nodes english
+    q=$(smoke_qualifier "$1")
+    nodes=$(pv_ui_nodes)
+    for name in passwords security settings; do
+        want=$(pvi_apk_string "$APK" "shell_tab_$name" "$q")
+        [ -n "$want" ] || { pv_log "the APK has no shell_tab_$name for '${q:-default}'"; return 1; }
+        printf '%s\n' "$nodes" | cut -d'|' -f1 | grep -qxF -- "$want" || { pv_log "no tab label '$want' ($1); texts: $(printf '%s\n' "$nodes" | cut -d'|' -f1 | grep -v '^$' | tr '\n' ';' | cut -c1-400)"; return 1; }
+    done
+    [ -z "$q" ] && return 0
+    english=$(printf '%s\n' "$nodes" | awk -F'|' '$1 == "Passwords" || $1 == "Security" || $1 == "Settings" { print $1 }')
+    [ -z "$english" ] || { pv_log "English labels in $1: $english"; return 1; }
+}
+
+# smoke_language CHOICE: from Settings, the language dialog and CHOICE's row; Settings again in the same
+# process, with the tabs in that language.
+smoke_language() {
+    local before after
+    smoke_settings || return 1
+    before=$(pva_pid)
+    pvi_open_language && pvi_choose "$1" Settings || return 1
+    after=$(pva_pid)
+    [ -n "$before" ] && [ "$before" = "$after" ] || { pv_log "the process changed: $before, then $after"; return 1; }
+    pva_on Settings 10 && smoke_tabs_in "$1"
+}
+
+# smoke_account_in NAME: an account added through the form, its screen after Save; Back, and the list's
+# row opens it again.
+smoke_account_in() {
+    local title row
+    pva_tap pv.tab.Passwords && pva_on Passwords 20 || return 1
+    pva_add_account "$1" "$1.user@example.uz" Pw7Lq2Mz9Xc4 "https://$1.example" "Note $1" || return 1
+    title=$(pva_text pv.entry.title) && [ "$title" = "$1" ] || { pv_log "the account's screen shows '${title:-nothing}'"; return 1; }
+    pv_shell input keyevent KEYCODE_BACK >/dev/null
+    pva_on Passwords 20 && pva_row_with "$1" 10 || return 1
+    row=$(pv_ui_nodes | awk -F'|' -v t="$1" '$3 ~ /^pv[.]list[.]row[.]/ { id = $3; next } id != "" && $1 == t { print id; exit } $3 ~ /^pv[.]/ { id = "" }')
+    [ -n "$row" ] || { pv_log "no row node for '$1'"; return 1; }
+    pva_tap "$row" && pva_on Entry 20 || return 1
+    title=$(pva_text pv.entry.title) && [ "$title" = "$1" ] || { pv_log "the row opened '${title:-nothing}'"; return 1; }
+    pv_shell input keyevent KEYCODE_BACK >/dev/null
+    pva_on Passwords 20
+}
+
+# The prompt's negative button, found by its resource id in every window (its text is the app's own,
+# in the app's language).
+smoke_prompt_negative() {
+    local i
+    for i in 1 2 3 4 5 6; do
+        pv_ui_tap '[|](button_negative|negative_button|button2)$' "$(pv_ui_nodes_all 2>/dev/null || pv_ui_nodes)" >/dev/null && return 0
+        pv_sleep 1
+    done
+    pv_log "no negative button on the prompt"
+    return 1
+}
+
+# smoke_pin_set: a PIN slot. The wave-5 stage's restore leaves none ("Choose a PIN" was answered "Not
+# now" there): Lock now, the master password, and "Choose a PIN" with SMOKE_PIN typed twice; the
+# fingerprint offer "Not now".
+smoke_pin_set() {
+    pva_status | grep -qE '^pin.rec: OK, slot set' && return 0
+    pva_lock_now || return 1
+    if pva_prompt_open UNLOCK 5; then smoke_prompt_negative || return 1; fi
+    pva_need pv.lock.password 20 && pva_type pv.lock.password "$PVA_PASSWORD" || return 1
+    pva_hide_keyboard
+    pva_tap pv.lock.unlock && pva_opened 90 && pva_to_create_pin && pva_choose_pin "$SMOKE_PIN" && pva_after_pin notNow Passwords || return 1
+    pva_status_has '^pin.rec: OK, slot set'
+}
+
+# smoke_lock_pin: Lock now; the pad (under the prompt, when fingerprint unlock is on); the PIN opens the
+# list.
+smoke_lock_pin() {
+    pva_lock_now || return 1
+    if pva_prompt_open UNLOCK 5; then smoke_prompt_negative || return 1; fi
+    pva_need pv.lock.pad 20 && pva_pin "$SMOKE_PIN" && pva_opened 30 && pva_settle Passwords 60
+}
+
+stage_language() {
+    local choice name
+    for choice in RU UZ_CYRL; do
+        name=$(pvi_own_name "$choice")
+        pv_step "Settings › Language › $name: the same process, Settings again, the tabs in $name" -- smoke_language "$choice" || return 1
+        pv_step "$name: an account added through the form and opened from the list" -- smoke_account_in "$([ "$choice" = RU ] && echo Russkiy || echo Ozbek)"
+        [ "$choice" = RU ] && pv_step "$name: the PIN is set (Lock now, the master password, \"Choose a PIN\")" -- smoke_pin_set
+        pv_step "$name: Lock now; the PIN opens the list" -- smoke_lock_pin
+    done
+    pv_step "Settings › Language › System language: the tabs in English again" -- smoke_language SYSTEM
+    pv_step "no crash" -- pva_no_crash
+}
+
+stage_install_and_start && stage_skeleton && stage_clipboard && stage_pin_and_fingerprint && stage_files && stage_language
 pv_summary
