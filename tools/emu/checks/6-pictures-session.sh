@@ -34,12 +34,12 @@
 #              exports (the warnings, "Delete it now", one CSV kept: the list's banners), Settings' dialogs,
 #              Recently deleted's "Delete forever".
 #   time       the clock moved on (cmd alarm set-time; put back at the end): the practice screen within
-#              its grace and past it, "I can't remember it" and the list's overdue banner, the backup
-#              banner and "Make a backup now?".
+#              its grace and past it, "I can't remember it" (the PIN, the explanation, Cancel), the list's
+#              overdue banner and its practice dialog, the backup banner and "Make a backup now?".
 #   keys       fingerprint and PIN keys gone (the debug command drop-keys): the lock screen's lines, the
-#              master password, the notices ("Turn fingerprint unlock on again?"); "Choose a PIN" "Not now".
-#   empty      with no PIN and no fingerprint: "Forgot master password?" with "Start with an empty app", the
-#              question, a new vault, Settings' "Old passwords" and its dialogs.
+#              master password, the notices ("Turn fingerprint unlock on again?", "Choose a new PIN").
+#   empty      a fresh install set up without a PIN: "Forgot master password?" with "Start with an empty
+#              app", the question, a new vault, Settings' "Old passwords" and its dialogs.
 #   restore    a restore from Welcome with the backup of the part files: the intro, the master password,
 #              the summary.
 # Exit 0 when no step failed.
@@ -637,10 +637,26 @@ practice_required() {
     shots 252 practice-required 3
     pva_tap pv.lock.cantRemember || return 1
     pv_sleep 3
-    shots 253 practice-cant-remember 4
-    # Leave the new master password's steps: Cancel or Back until the list.
+    # A new master password needs the PIN first (lock.md F11 step 3): the pad, then the explanation.
+    if pvl_wait_screen pad 10; then
+        shot 253 practice-cant-remember-pin
+        pva_pin "$PIN_NOW" && pvl_wait_answer 20
+    fi
+    local deadline=$((SECONDS + 60))
+    until pva_present pv.master.explain 2; do
+        [ $SECONDS -lt $deadline ] || { pv_log "no explanation of a new master password; ids: $(pva_ids)"; return 1; }
+        if pva_present pv.notice 1; then NOTICES=$((NOTICES + 1)); shot 253 "notice-$NOTICES"; notice_answer; fi
+    done
+    shots 253 practice-cant-remember-explain 4
+    # Leave the new master password's steps: Cancel, then the list with the overdue banner.
     if pva_present pv.master.cancel 3; then pva_tap pv.master.cancel; else back; fi
     pv_sleep 2
+    local i
+    for i in 1 2 3 4; do
+        pva_present pv.route.Passwords 2 && break
+        if pva_present pv.tab.Passwords 1; then pva_tap pv.tab.Passwords; else back; fi
+    done
+    pva_on Passwords 20 || return 1
     shots 254 list-practice-overdue 3
     if pva_present pv.list.banner.practice.typeItNow 3; then
         pva_tap pv.list.banner.practice.typeItNow && pva_need pv.list.practiceField 10 && pva_hide_keyboard && shot 257 practice-dialog
@@ -688,8 +704,7 @@ keys_gone() {
     pva_unlocked Passwords 90 || return 1
     # "Choose a PIN" answered "Not now": with no PIN and no fingerprint the "Forgot master password?"
     # sheet offers "Start with an empty app" (the part empty).
-    PIN_NOW=none
-    settle Passwords - 263
+    settle Passwords "$PIN_NOW" 263
 }
 
 part_keys() { pv_step "the Keystore keys dropped (debug command): the lock screen, the master password, the notices" -- keys_gone; }
@@ -697,11 +712,18 @@ part_keys() { pv_step "the Keystore keys dropped (debug command): the lock scree
 # ---- empty: Start with an empty app, Old passwords -----------------------------------------------------------
 start_empty() {
     local open del
-    to_list && pva_tap pv.list.lockNow || return 1
-    pvl_wait_screen 'pad|prompt|fingerprint-only|master-password' 30 || return 1
-    [ "$(pvl_screen)" = prompt ] && pvl_prompt_negative
-    if pvl_wait_screen pad 5; then pva_tap pv.lock.forgotPin; fi
-    pva_need pv.lock.password 20 && pva_hide_keyboard && pva_tap pv.lock.forgot && pva_need pv.lock.sheet 10 || return 1
+    # A vault without a PIN and without fingerprint unlock: only then does the sheet offer an empty app.
+    pv_shell pm clear "$PV_PACKAGE" >/dev/null 2>&1
+    if [ "$API" -ge 33 ]; then pv_shell cmd locale set-app-locales "$PV_PACKAGE" --locales "$LANG_TAG" >/dev/null 2>&1; fi
+    pva_start && pva_on Welcome 60 || return 1
+    if [ "$API" -lt 33 ]; then pva_debug "locale $LANG_TAG" >/dev/null && pv_sleep 3 && pva_on Welcome 30 || return 1; fi
+    pva_set_up && pva_settle Passwords 120 || return 1
+    PIN_NOW=none
+    pva_add_account Olx aziz olx-Samarqand1999 olx.uz 'Old account' && to_list || return 1
+    pva_tap pv.list.lockNow && pva_need pv.lock.password 30 || return 1
+    pva_hide_keyboard
+    shot 269 master-password-no-pin
+    pva_tap pv.lock.forgot && pva_need pv.lock.sheet 10 || return 1
     shots 270 forgot-sheet-no-shortcut 3
     pva_need pv.lock.sheet.empty 10 || return 1
     pva_tap pv.lock.sheet.empty && pva_need pv.lock.confirmYes 10 || return 1
@@ -760,8 +782,8 @@ want deleted && part_deleted
 want pad && part_pad
 want newmp && part_newmp
 want files && part_files
-want time && part_time
 want keys && part_keys
+want time && part_time
 want empty && part_empty
 want restore && part_restore
 clock_back

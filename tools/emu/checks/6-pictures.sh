@@ -30,9 +30,10 @@
 #             activity on Android 7 to 8.1 (the parts setup and pad of the session script).
 # Then the pictures are gathered into DIR/<en|uz-Latn|uz-Cyrl|ru>/ as NNN-SOURCE-NAME-LANGUAGE.png: the
 # number and the name are the same in the four folders, so that the four pictures of one screen sort
-# together; DIR/index.html shows them screen by screen, side by side, and DIR/README.md lists them. The
-# dark copies of states the tests also keep in light are left out (the same texts). The raw pictures and
-# the logs stay in LOGS (default build/emu-checks/6/pictures).
+# together; DIR/index.html shows them screen by screen, side by side, with what the owner should look at
+# first, and DIR/README.md lists them. The dark copies and the other colour styles' copies of states the
+# tests also keep in the default style are left out (the same texts). The raw pictures and the logs stay
+# in LOGS (default build/emu-checks/6/pictures).
 #
 # Exit 0 when every source ran in every language and the set was written; 1 otherwise.
 set -u
@@ -205,6 +206,40 @@ SOURCES = [
     ("prompt24", "Android 7's own fingerprint dialog", "On Android 7 to 8.1 the fingerprint dialog is drawn by the app's library, not by the phone (API 24 here): its texts come from the app."),
 ]
 LANG_NAMES = {"en": "English", "uz-Latn": "Oʻzbekcha (lotin)", "uz-Cyrl": "Ўзбекча (кирилл)", "ru": "Русский"}
+# What the owner should look at first (build plan 12: the owner's questions of R6 and their answers in
+# /home/asus/pvwork/kept/owner-answers-R5-R6.md). Plain text; each item one paragraph.
+LOOK_AT = [
+    ("Every text in your languages",
+     "Read every text in Oʻzbekcha, Ўзбекча and Русский and note a wrong or unnatural word, a sentence that says something "
+     "other than the English one beside it, English left on a screen, or a word cut off or split in a strange place. Write "
+     "down the picture's number (the three digits at the start of its name) with what is wrong."),
+    ("Two questions that wait for your answer",
+     "1. \"Random\" in the password generator (picture 'Generator'): the app now says \"Aralash\" / \"Аралаш\" (mixed). "
+     "The other choice is \"Tasodifiy\" / \"Тасодифий\" (the exact word; on a small phone with the largest text it then takes "
+     "two lines). 2. \"Turned off\" for the PIN after five wrong tries (the PIN pad pictures after wrong PINs, Help › If you "
+     "forget your PIN): the app now says \"faolsizlantirildi\" / \"фаолсизлантирилди\". The other choice is \"faolsiz "
+     "qilindi\" / \"фаолсиз қилинди\" (shorter, so it does not split on small phones). Until you answer, the next build "
+     "takes the second choice of each."),
+    ("Words chosen for you to confirm",
+     "Uzbek: \"Ekrandan oʻqish vositasi\" for TalkBack; \"Kodli soʻz\" (code word); \"Esimda yoʻq\" (I don't remember it); "
+     "\"Saqlamasdan chiqish\" (Discard); \"Yana tekshiruvga kiritish\" (Check it again); \"Topish qiyin\" / \"oson\" (hard or "
+     "easy to guess); the dates \"… kuni\", \"… sanasidan oldingi\" and \"… da\"; the style names \"Bank koʻki\", \"Zumrad\", "
+     "\"Tungi seyf\"; \"Mavzu\" for Appearance; \"operativ xotira\"; \"Test yigʻmasi\" for the test build. Russian: «Забыли свой "
+     "мастер-пароль?»; «Показать крупно»; «Недавно удалённые»; «Не помню»; «Файл уже удалён»; «Пароль записан»; «Задать "
+     "PIN-код»; «хранилище телефона» and «оперативная память»; «Лицензии открытого ПО»; «Блокировка после выхода из "
+     "приложения»; «Очистка буфера обмена»; «Google Таблицы»; Chrome's and Excel's menu names in the import help."),
+    ("Already decided, not in these pictures yet",
+     "These pictures show the app as the translations left it. The next build changes: in Russian «Это не я» (not «Это был "
+     "не я»), «Менеджер паролей Google» everywhere, «Google Диск», and one wording of \"Until then, open the app with your PIN "
+     "or fingerprint as usual\"; in Ўзбекча the search word \"Parollar menejeri\" in Latin letters, as an Uzbek phone shows "
+     "it; in all four languages \"in this app's Settings\" where the texts mean the app's own Settings, and \"Your keyboard "
+     "may be set to Cyrillic letters (Russian, for example).\""),
+    ("Made-up data",
+     "The accounts, logins, dates and file names are test data. The pictures under \"States drawn by the app's own tests\" "
+     "show made-up accounts and dates; their texts are the app's real texts. The red line \"TEST BUILD: PIN keys are not "
+     "protected\" on the lock screen shows only in these test builds, never in the app you install, but it is translated "
+     "too."),
+]
 PROMPT24 = re.compile(r"^(102-prompt-turn-on|110-prompt-unlock|116-fingerprint-only-prompt|117-fingerprint-only)\.png$")
 
 def natural(s):
@@ -227,7 +262,8 @@ def keys_of(lang, source):
                 found.append((name, rel))
             elif source == "tests":
                 name = f[:-4]
-                if "dark" in name.split("-") or name.endswith("-dark") or "-dark-" in name:
+                # The dark copies and the other colour styles' copies of a state show the same texts.
+                if "dark" in name.split("-") or "emerald" in name or "night-vault" in name or "bank-blue" in name:
                     continue
                 name = re.sub(r"-api\d+$", "", name)
                 name = re.sub(r"-light$", "", name)
@@ -321,7 +357,10 @@ h.append(f"<p>For the owner to read every text. Made on {html.escape(when)} from
          "Each row is one screen; its four pictures have the same number and name in the four folders. "
          "Click a picture to open it full size. The made-up accounts are test data.</p>")
 h.append("<p>" + " · ".join(f"{html.escape(LANG_NAMES.get(l, l))}: {counts[l]} pictures" for l in langs) + "</p>")
-h.append("<nav>" + "".join(f"<a href='#{s}'>{html.escape(t)}</a>" for s, t, _ in SOURCES if any(r[0] == s for r in rows)) + "</nav>")
+h.append("<nav><a href='#look'>What to look at</a>" + "".join(f"<a href='#{s}'>{html.escape(t)}</a>" for s, t, _ in SOURCES if any(r[0] == s for r in rows)) + "</nav>")
+h.append("<h2 id='look'>What to look at</h2>")
+for title, text in LOOK_AT:
+    h.append(f"<h3>{html.escape(title)}</h3><p>{html.escape(text)}</p>")
 for source, title, text in SOURCES:
     group = [r for r in rows if r[0] == source]
     if not group:
@@ -345,7 +384,9 @@ m = ["# PasswordVault: every screen in four languages", "",
      f"Made on {when} from commit {commit} (debug build, Android 17 emulator at the phone's own size; the last part on Android 7). "
      "Open `index.html` in a browser to see the four languages side by side. Each screen has one number; its pictures are "
      "`<language>/NNN-<source>-<name>-<language>.png` in the folders " + ", ".join(f"`{l}/`" for l in langs) + ".", "",
-     " · ".join(f"{LANG_NAMES.get(l, l)}: {counts[l]} pictures" for l in langs), ""]
+     " · ".join(f"{LANG_NAMES.get(l, l)}: {counts[l]} pictures" for l in langs), "", "## What to look at", ""]
+for title, text in LOOK_AT:
+    m += [f"**{title}.** {text}", ""]
 for source, title, text in SOURCES:
     group = [r for r in rows if r[0] == source]
     if not group:
