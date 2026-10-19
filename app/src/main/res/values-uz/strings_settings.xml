@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Oʻzbekcha (lotin): the Settings tab (build plan 6.3b; values/strings_settings.xml has the notes
+     for each string). Glossary of i18n.md §3: Ilova qulfi (69), Barmoq izi bilan ochish (62),
+     Darhol (71), soniyadan/daqiqadan keyin (72, 73), Vaqtinchalik xotirani tozalash (113),
+     Zaxira nusxa (97, 98), Yorqin, Tungi (116, 117), Qurilma mavzusi (115). Section J (150 to 157),
+     chosen here: Mavzu (Appearance, Android's own Uzbek for the Display settings' "Appearance"),
+     Ranglar, Yorqin yoki tungi, Bank koʻki, Zumrad, Tungi seyf, Telefon ranglari. oʻ and gʻ with
+     U+02BB, the tutuq belgisi with U+02BC (i18n.md §2.4). -->
+<resources>
+
+    <string name="settings_title">Sozlamalar</string>
+
+    <!-- ===== Ilova qulfi ===== -->
+
+    <string name="settings_group_app_lock">Ilova qulfi</string>
+    <string name="settings_change_pin">PIN kodni oʻzgartirish</string>
+    <string name="settings_set_pin">PIN kodni sozlang</string>
+    <string name="settings_pin_off_limit">Juda koʻp notoʻgʻri urinishlardan soʻng PIN kod bilan ochish faolsizlantirildi.</string>
+    <string name="settings_pin_stopped_working">PIN kodingiz bu telefonda ishlamay qoldi.</string>
+    <string name="settings_pin_newer_app">PIN kodingiz bu ilovaning yangiroq versiyasida sozlangan.</string>
+    <string name="settings_pin_storage_full">Telefoningiz xotirasi toʻlgan, shuning uchun PIN kodni hozir tekshirib boʻlmaydi.</string>
+    <string name="settings_pin_cannot_check">PIN kodingizni hozircha tekshirib boʻlmayapti. Bu takrorlanaversa, asosiy parolingiz bilan yangi PIN kod tanlang.</string>
+    <string name="settings_no_secure_hardware">Bu telefon PIN kod yoki barmoq izi kalitini himoyalangan apparat qismida saqlay olmaydi.</string>
+
+    <string name="settings_fingerprint">Barmoq izi bilan ochish</string>
+    <string name="settings_fingerprint_turn_on_again">Barmoq izi bilan ochish: qayta yoqing</string>
+    <string name="settings_fingerprint_none_enrolled">Avval telefoningiz sozlamalarida ekran qulfini oʻrnating va barmoq izini qoʻshing</string>
+    <string name="settings_fingerprint_no_sensor">Bu telefonda ilovalar foydalana oladigan barmoq izi skaneri yoʻq</string>
+    <string name="settings_fingerprint_not_for_apps">Hozir ilovalarda barmoq izidan foydalanib boʻlmaydi. Telefoningiz sozlamalarida ilovalarda shaxsingizni tasdiqlash uchun barmoq izidan foydalanishga ruxsat berilganini tekshiring.</string>
+    <string name="settings_fingerprint_update_needed">Barmoq izidan foydalanishdan oldin telefoningizga xavfsizlik yangilanishi oʻrnatilishi kerak</string>
+    <string name="settings_fingerprint_on_body">Barmoq izi bilan ochishni yoqish uchun asosiy parolingizni kiriting.</string>
+    <string name="settings_fingerprint_on_button">Yoqish</string>
+    <string name="settings_fingerprint_failed">Barmoq izi bilan ochishni yoqib boʻlmadi. Keyinroq qayta urining.</string>
+    <string name="settings_fingerprint_is_on">Barmoq izi bilan ochish yoqildi.</string>
+
+    <string name="settings_lock_delay">Ilovadan chiqqandan keyin qulflash</string>
+    <string name="settings_lock_delay_immediately">Darhol</string>
+    <plurals name="settings_lock_delay_seconds">
+        <item quantity="one">%d&#160;soniyadan keyin</item>
+        <item quantity="other">%d&#160;soniyadan keyin</item>
+    </plurals>
+    <plurals name="settings_lock_delay_minutes">
+        <item quantity="one">%d&#160;daqiqadan keyin</item>
+        <item quantity="other">%d&#160;daqiqadan keyin</item>
+    </plurals>
+    <string name="settings_lock_delay_note">Ilova ochgan fayl tanlash yoki ulashish oynasida oʻtgan vaqt ham ilovada oʻtgan vaqt hisoblanadi.</string>
+    <string name="settings_lock_always">Shuningdek, ilova ekran oʻchganda darhol, ekranga 5&#160;daqiqa tegilmaganda esa qulflanadi.</string>
+
+    <string name="settings_clip_delay">Vaqtinchalik xotirani tozalash muddati</string>
+    <plurals name="settings_clip_delay_seconds">
+        <item quantity="one">%d&#160;soniya</item>
+        <item quantity="other">%d&#160;soniya</item>
+    </plurals>
+    <plurals name="settings_clip_delay_minutes">
+        <item quantity="one">%d&#160;daqiqa</item>
+        <item quantity="other">%d&#160;daqiqa</item>
+    </plurals>
+
+    <string name="settings_change_master_password">Asosiy parolni oʻzgartirish</string>
+    <string name="settings_lock_now">Hozir qulflash</string>
+
+    <!-- ===== Zaxiralash va koʻchirish ===== -->
+
+    <string name="settings_group_backup">Zaxiralash va koʻchirish</string>
+    <string name="settings_backup">Zaxira nusxa yaratish</string>
+    <string name="settings_backup_last">Oxirgi zaxira nusxa: %1$s, %2$s</string>
+    <string name="settings_backup_none">Hali zaxira nusxa yoʻq</string>
+    <string name="settings_place_phone">shu telefon</string>
+    <string name="settings_backup_reminders">Zaxiralash eslatmalari</string>
+    <string name="settings_export">Eksport</string>
+    <string name="settings_export_body">Excel, CSV yoki JSON fayl</string>
+    <string name="settings_import">Import</string>
+    <string name="settings_import_body">Chrome, boshqa parol ilovasi yoki fayldan</string>
+    <!-- %1$s is a date ("6-okt, 2026"): "kuni" ("on the day") keeps the date free of a suffix. -->
+    <string name="settings_old_passwords">Eski parollar (%1$s kuni qulflangan)</string>
+
+    <!-- ===== Mavzu va til ===== -->
+
+    <string name="settings_group_appearance">Mavzu va til</string>
+    <string name="settings_appearance">Mavzu</string>
+    <string name="settings_appearance_value">%1$s · %2$s</string>
+    <string name="settings_colours">Ranglar</string>
+    <string name="settings_style_bank_blue">Bank koʻki</string>
+    <string name="settings_style_emerald">Zumrad</string>
+    <string name="settings_style_night_vault">Tungi seyf</string>
+    <string name="settings_style_phone">Telefon ranglari</string>
+    <string name="settings_style_phone_body">Fon rasmingiz asosida</string>
+    <string name="settings_light_or_dark">Yorqin yoki tungi</string>
+    <string name="settings_theme_system">Qurilma mavzusi</string>
+    <string name="settings_theme_light">Yorqin</string>
+    <string name="settings_theme_dark">Tungi</string>
+
+    <!-- ===== Yordam ===== -->
+
+    <string name="settings_group_help">Yordam</string>
+    <string name="settings_help_protection">Parollaringiz qanday himoyalanadi</string>
+    <string name="settings_help_lost_phone">Telefoningizni yoʻqotsangiz yoki yangisiga oʻtsangiz</string>
+    <string name="settings_help_forgot_master_password">Asosiy parolingizni unutsangiz</string>
+    <string name="settings_help_forgot_pin">PIN kodingizni unutsangiz</string>
+    <string name="settings_licences">Ochiq kodli dasturlar litsenziyalari</string>
+    <string name="settings_version">Versiya</string>
+
+    <!-- ===== Xabarlar ===== -->
+
+    <string name="settings_not_saved">Sozlamani saqlab boʻlmadi. Qayta urining.</string>
+    <string name="settings_back">Orqaga</string>
+
+</resources>
