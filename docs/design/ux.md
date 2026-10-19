@@ -516,7 +516,7 @@ If fingerprint unlock is on and cannot be used now, the matching fingerprint lin
 **"Forgot master password?"** opens a `ModalBottomSheet` (lock.md F17 step 1).
 - **Title**: "Forgot your master password?" Body: "Nobody can recover it: it is not stored anywhere."
 - **The options**, only those that apply, in this order:
-  1. **When a PIN exists**: "Your PIN still opens the app on this phone. Open the app with it, then choose a new master password." `Button` "Use my PIN" → §5.24. **When no PIN exists and fingerprint works**: the same with "fingerprint" and `Button` "Use my fingerprint". A fingerprint is not accepted where a PIN exists (lock.md F11 step 3).
+  1. **When a PIN exists**: "Your PIN still opens the app on this phone. Open the app with it, then choose a new master password." `Button` "Use my PIN" → §5.24. **When a PIN exists but cannot be checked now** (its record cannot be read, or the phone's storage is full; lock.md F11 step 3 stops there): "Your PIN can't be checked right now. When it works again, open the app with it, then choose a new master password.", without a button (build plan 8.1). **When no PIN exists and fingerprint works**: the same with "fingerprint" and `Button` "Use my fingerprint". A fingerprint is not accepted where a PIN exists (lock.md F11 step 3).
   2. "If you remember the master password of an older backup, you can open that backup instead. Your current passwords stay on this phone, locked." `OutlinedButton` "Restore from a backup file". This follows §5.2 steps 1–4: the backup is opened and checked with its password, and its summary card adds "Your current passwords stay on this phone, locked." with the button "Use this backup". Only then is the current vault archived and the backup installed. Setup continues at the PIN step.
   3. One entry for each vault that was put aside: "Open my previous passwords (locked on 6 Oct 2026)"; for a vault put aside by a replacement, "Open my passwords from before 7 Oct 2026". Each shows that vault's own lock screen (§5.1).
   4. **Whenever no PIN or fingerprint is usable now**: "Start with an empty app. Your current passwords stay on this phone, locked. If you remember the master password later, you can open them again." `TextButton` "Start with an empty app…" opens a dialog:
@@ -710,7 +710,7 @@ Fields in order:
 
 A `ModalBottomSheet` (predictive back closes it).
 - **Preview**: the generated password large, monospace, with coloured digits and symbols; `IconButton` "New password" (refresh) next to it; the strength word under it.
-- **Mode**: `SingleChoiceSegmentedButtonRow` — "Random" · "Words".
+- **Mode**: `SingleChoiceSegmentedButtonRow` — "Random" · "Words". Where a label does not fit beside the chosen one's check mark, the check mark goes above the labels; where one does not fit its segment at all (a long word at a large font), the two are radio rows, as the separator's choices are then (build plan 8.1; §12 of the build plan, R6 question 1).
 - **Random** (default):
   - "Length" `Slider` 4–64, default **16**, with − and + `IconButton`s and the number shown (sliders alone are hard for some users).
   - `Switch`es "A–Z", "a–z", "0–9" and "Symbols ! # $ % & * + - = ? @ _" (all on); `Switch` "Avoid look-alike characters (I l 1 O 0)" (on).
