@@ -13,7 +13,8 @@ import androidx.compose.ui.unit.dp
  * the button vertically centred; else the text takes the whole width and the button goes under it, at
  * the end. A long button label in Uzbek or Russian, or the phone's font at 200 %, would otherwise
  * squeeze the text to a column of single letters (build plan 6.2 found the clipboard row, whose
- * "Clear now" left its text no width at all, grown taller than the screen).
+ * "Clear now" left its text no width at all, grown taller than the screen). Start and end follow the
+ * language (ux.md §9): right to left, the text is at the right and the button at the left.
  */
 @Composable
 fun TextBeside(
@@ -31,17 +32,18 @@ fun TextBeside(
         val beside = button == null || besideWidth >= maxOf(width / 2, minText.roundToPx())
         val words = texts.map { it.measure(loose.copy(maxWidth = if (beside) besideWidth.coerceAtLeast(0) else width)) }
         val textHeight = words.maxOfOrNull { it.height } ?: 0
+        // Placed relative to the layout direction: right to left, the start is the right.
         if (beside) {
             val height = maxOf(textHeight, button?.height ?: 0)
             layout(width, height) {
-                words.forEach { it.place(0, (height - it.height) / 2) }
-                button?.place(width - button.width, (height - button.height) / 2)
+                words.forEach { it.placeRelative(0, (height - it.height) / 2) }
+                button?.placeRelative(width - button.width, (height - button.height) / 2)
             }
         } else {
             val height = textHeight + button!!.height
             layout(width, height) {
-                words.forEach { it.place(0, 0) }
-                button.place(width - button.width, textHeight)
+                words.forEach { it.placeRelative(0, 0) }
+                button.placeRelative(width - button.width, textHeight)
             }
         }
     }

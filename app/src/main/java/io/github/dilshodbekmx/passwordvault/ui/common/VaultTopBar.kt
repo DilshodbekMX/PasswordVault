@@ -44,7 +44,8 @@ import androidx.compose.ui.unit.dp
  * With [titleMayBeCut] (an account's name, which the screen shows whole as the first line of its
  * content, ux.md §5.12), the title stays on one line with an ellipsis and is marked [MayTruncate];
  * [titleIsUserText] marks a title that is the user's own, such as that name ([UserText]). The title
- * is the screen's heading for TalkBack.
+ * is the screen's heading for TalkBack. Start and end follow the language (ux.md §9): right to left,
+ * the navigation button is at the right, the title beside it, the actions at the left.
  */
 @OptIn(ExperimentalMaterial3Api::class) // TopAppBarDefaults.windowInsets is experimental in material3 1.4.0 (ux.md §10)
 @Composable
@@ -100,19 +101,20 @@ fun VaultTopBar(
             val below = !titleMayBeCut && (nav != null || acts != null) &&
                 !fitsBeside(measurer, title, style, beside, this, layoutDirection)
             val titlePlaceable = titles.first().measure(Constraints(maxWidth = if (below) (width - 2 * inset).coerceAtLeast(0) else beside))
+            // Placed relative to the layout direction: right to left, the start is the right.
             if (below) {
                 val height = row + titlePlaceable.height + BELOW_BOTTOM.roundToPx()
                 layout(width, height) {
-                    nav?.place(0, (row - nav.height) / 2)
-                    acts?.place(width - acts.width, (row - acts.height) / 2)
-                    titlePlaceable.place(inset, row)
+                    nav?.placeRelative(0, (row - nav.height) / 2)
+                    acts?.placeRelative(width - acts.width, (row - acts.height) / 2)
+                    titlePlaceable.placeRelative(inset, row)
                 }
             } else {
                 val height = maxOf(row, titlePlaceable.height + 2 * TITLE_PADDING.roundToPx())
                 layout(width, height) {
-                    nav?.place(0, (height - nav.height) / 2)
-                    acts?.place(width - acts.width, (height - acts.height) / 2)
-                    titlePlaceable.place(start, (height - titlePlaceable.height) / 2)
+                    nav?.placeRelative(0, (height - nav.height) / 2)
+                    acts?.placeRelative(width - acts.width, (height - acts.height) / 2)
+                    titlePlaceable.placeRelative(start, (height - titlePlaceable.height) / 2)
                 }
             }
         }

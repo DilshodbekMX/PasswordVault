@@ -22,6 +22,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -32,6 +33,7 @@ import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.github.dilshodbekmx.passwordvault.R
@@ -227,13 +229,72 @@ class LongTextLayoutTest {
         assertTrue("the buttons come after the keys", topOf(FOOT) >= key.boundsInRoot.bottom - 1)
     }
 
+    @Test
+    fun theTopBarMirrorsRightToLeft() {
+        // ux.md §9: start and end everywhere. In a right-to-left language the back button stands at the
+        // right, where a line starts, the title beside it, and the screen's actions at the left.
+        show {
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                VaultTopBar(
+                    title = "Sozlamalar",
+                    titleModifier = Modifier.testTag(TITLE),
+                    navigationIcon = {
+                        IconButton(onClick = {}, modifier = Modifier.testTag(BACK)) { Icon(painterResource(R.drawable.ic_entry_back), contentDescription = "Back") }
+                    },
+                    actions = {
+                        IconButton(onClick = {}, modifier = Modifier.testTag(ACTION)) { Icon(painterResource(R.drawable.ic_entry_more), contentDescription = "More") }
+                    },
+                )
+            }
+        }
+        val back = boundsOf(BACK)
+        val action = boundsOf(ACTION)
+        val title = boundsOf(TITLE)
+        assertTrue("the back button is at the right, the action at the left: back $back, action $action", back.left >= action.right)
+        assertTrue("the title lies between them: title $title", title.left >= action.right - 1 && title.right <= back.left + 1)
+        assertTrue("the title starts next to the back button: title $title, back $back", back.left - title.right <= 16 * compose.activity.resources.displayMetrics.density)
+    }
+
+    @Test
+    fun aTextAndItsButtonMirrorRightToLeft() {
+        show {
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    // Side by side: the text where a line starts (the right), its button at the end (the left).
+                    TextBeside(
+                        text = { Text("Olx", modifier = Modifier.testTag(TEXT)) },
+                        action = { TextButton(onClick = {}, modifier = Modifier.testTag(ACTION)) { Text("Tiklash") } },
+                    )
+                    // The button under the text, at the end of its line: the left.
+                    TextBeside(
+                        text = { Text("Gmail paroli · 0:52 dan keyin oʻchiriladi", modifier = Modifier.testTag(TEXT_2)) },
+                        action = { TextButton(onClick = {}, modifier = Modifier.testTag(ACTION_2)) { Text("Hozir oʻchirish") } },
+                    )
+                }
+            }
+        }
+        val text = boundsOf(TEXT)
+        val button = boundsOf(ACTION)
+        assertTrue("side by side, the button is at the left of the text: text $text, button $button", button.right <= text.left + 1)
+        val long = boundsOf(TEXT_2)
+        val under = boundsOf(ACTION_2)
+        assertTrue("the button is under the text: text $long, button $under", under.top >= long.bottom - 1)
+        // The column is 320 dp less 16 dp each side: the button's end, its left, is at the column's left.
+        val density = compose.activity.resources.displayMetrics.density
+        assertTrue("the button under the text is at the left: $under", under.left - 16 * density < 304 * density - under.right)
+    }
+
+    private fun boundsOf(tag: String) = compose.onNodeWithTag(tag, useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+
     private companion object {
         const val HEAD = "test.head"
         const val FOOT = "test.foot"
         const val TITLE = "test.title"
         const val BACK = "test.back"
         const val TEXT = "test.text"
+        const val TEXT_2 = "test.text2"
         const val ACTION = "test.action"
+        const val ACTION_2 = "test.action2"
         const val ANNOUNCEMENT = "Parol nusxalandi. U 1 daqiqadan keyin oʻchiriladi."
     }
 }
