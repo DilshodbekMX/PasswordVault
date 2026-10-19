@@ -144,6 +144,14 @@ android {
             enableSplit = false // only matters if an App Bundle is ever made (i18n.md §1.4.6)
         }
     }
+    // AGP otherwise puts a list of the app's libraries into the signing block of every signed APK,
+    // encrypted so that only Google Play can read it, and new at every packaging. The app never goes
+    // through Play: the user's APK carries no such block, and two builds of one commit signed with
+    // one key are the same file.
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
+    }
     lint {
         // i18n.md §1.1 makes these errors. MissingTranslation is a warning from round R3 until the
         // integration check of wave 6 (build-plan.md §8, "Before 6A starts"): 6.1 brings the first
