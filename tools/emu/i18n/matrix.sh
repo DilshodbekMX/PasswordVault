@@ -419,12 +419,14 @@ part_mixing() {
 
 # ---- formats: the phone's ICU in each language ---------------------------------------------------------
 # added_in TAG: on the account's screen in TAG, "Added …" ends with today's date as the phone's ICU
-# writes it for TAG.
+# writes it for TAG, each of its spaces a no-break space (Formatters.unbroken since w5-carry, 7b8d930:
+# a date never breaks across two lines; architecture.md 3.5, Formatters).
 added_in() {
-    local tag=$1 answer expected found deadline
+    local tag=$1 answer expected found deadline icu
     answer=$(pva_debug locale "$tag") || return 1
     pv_log "$answer"
-    expected=$(pvl_icu_date yMMMd "$tag") || return 1
+    icu=$(pvl_icu_date yMMMd "$tag") || return 1
+    expected=${icu// /$(printf '\302\240')}
     deadline=$((SECONDS + 20))
     while :; do
         found=$(pv_ui_nodes | awk -F'|' -v d="$expected" 'index($1, d) && length($1) >= length(d) && substr($1, length($1) - length(d) + 1) == d { print $1; exit }')
@@ -433,7 +435,7 @@ added_in() {
         pv_sleep 1
     done
     pva_on Entry 5 || return 1
-    pv_log "$tag: '$found' (ICU writes '$expected')"
+    pv_log "$tag: '$found' (ICU writes '$icu'; the app puts no-break spaces in it)"
     shot "formats-$tag"
 }
 
