@@ -37,7 +37,6 @@ import unicodedata
 
 SCRIPT_VERSION = "1.0"
 GENERATOR = "pvault_decrypt.py " + SCRIPT_VERSION
-CRYPTOGRAPHY_MINIMUM = "44.0.0"
 
 # ---------------------------------------------------------------------------------- plain words
 
@@ -102,6 +101,7 @@ Then run the script again. If pip says the environment is "externally managed"
   python3 -m venv pvenv
   pvenv/bin/python -m pip install --upgrade cryptography
   pvenv/bin/python pvault_decrypt.py --check
+(On Ubuntu and Debian, python3 -m venv may first need: sudo apt install python3-venv)
 """
 
 WARNING_LINES = [
@@ -1310,6 +1310,8 @@ def _interactive():
 def _clean_path(text):
     """A path typed or dragged into the window: without the quotes or the escapes a terminal puts around it."""
     text = text.strip()
+    if text.startswith("& "):  # PowerShell puts & 'C:\...' for a dragged file
+        text = text[2:].strip()
     if len(text) >= 2 and text[0] == text[-1] and text[0] in "\"'":
         text = text[1:-1]
     elif os.name != "nt" and "\\" in text:
@@ -1370,15 +1372,15 @@ def _ask_password(from_stdin):
 def _open_with_password(crypto, checked, from_stdin):
     tries = 0
     while True:
-        password = _ask_password(from_stdin)
-        if not master_password_bytes(password):
+        password_bytes = master_password_bytes(_ask_password(from_stdin))
+        if not password_bytes:
             if from_stdin:
                 raise Stop(MSG_WRONG, EXIT_FAILED)
             say("Nothing was typed. Type the master password, or press Ctrl+C to stop.")
             continue
         say("Opening... (this takes a second)")
         try:
-            vk = unwrap(crypto, checked, master_password_bytes(password))
+            vk = unwrap(crypto, checked, password_bytes)
         except MemoryError:
             raise Stop(MSG_NO_MEMORY, EXIT_FAILED)
         if vk is not None:
@@ -1399,6 +1401,7 @@ def _confirm(from_stdin, assume_yes):
             sys.stdout.write(prompt)
             sys.stdout.flush()
             answer = sys.stdin.readline()
+            say()  # the answer is not echoed
         else:
             answer = input(prompt)
     except EOFError:
@@ -1508,7 +1511,7 @@ def decrypt(backup, output, from_stdin, assume_yes):
             _remove_quietly(path)
         raise
     say()
-    say("Saved " + _accounts(len(kept)) + " to " + (paths[0] if len(paths) == 1 else str(len(paths)) + " files") + ".")
+    say("Saved " + _accounts(len(kept)) + " to " + (paths[0] if len(paths) == 1 else ", ".join(paths)) + ".")
     say("Delete " + ("it" if len(paths) == 1 else "them") + " as soon as you're done, and empty the Recycle Bin or Trash.")
     return EXIT_DONE
 
@@ -1529,7 +1532,7 @@ def _parser():
                         help="read the master password from the first line of standard input instead of "
                              "asking for it, and the answer to the question from the next line "
                              "(for use from other programs)")
-    parser.add_argument("--version", action="version", version=GENERATOR)
+    parser.add_argument("--version", action="version", version=GENERATOR, help="show the script's version and stop")
     return parser
 
 
