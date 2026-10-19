@@ -45,7 +45,7 @@
     <string name="change_reverted">Старый пароль возвращён.</string>
     <string name="change_save_failed">Не удалось сохранить. Возможно, хранилище телефона заполнено.</string>
     <string name="change_too_large">Ваши пароли больше не помещаются в один файл. Удалите ненужные аккаунты или сократите очень длинные заметки.</string>
-    <string name="change_no_browser">На этом телефоне нет браузера.</string>
+    <string name="change_no_browser">На этом телефоне не найден браузер.</string>
     <string name="change_copy_blocked">Этот телефон заблокировал копирование. Откройте аккаунт, нажмите «Показать крупно» и введите пароль вручную.</string>
 
     <string name="change_gone">Этот аккаунт больше не существует.</string>
