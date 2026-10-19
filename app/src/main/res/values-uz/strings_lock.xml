@@ -21,7 +21,7 @@
     <string name="lock_mp_reason_pin_limit">PIN kod juda koʻp marta xato kiritildi, shuning uchun u faolsiz qilindi. Hech narsa oʻchirilmadi. Asosiy parolni kiriting, soʻng yangi PIN kod tanlang.</string>
     <string name="lock_mp_reason_pin_stopped_working">PIN kodingiz bu telefonda ishlamay qoldi. Asosiy parolni kiriting, soʻng PIN kodni qaytadan tanlang.</string>
     <string name="lock_mp_reason_pin_newer_app">PIN kodingiz bu ilovaning yangiroq versiyasida sozlangan. Asosiy parolingizdan foydalaning va ilovani yangilang.</string>
-    <string name="lock_mp_reason_pin_cannot_check">PIN kodingizni hozircha tekshirib boʻlmayapti. Bu safar asosiy parolingizdan foydalaning. Odatda telefonni qayta ishga tushirish yordam beradi. Bu takrorlanaversa, Sozlamalarda PIN kodni qaytadan sozlang.</string>
+    <string name="lock_mp_reason_pin_cannot_check">PIN kodingizni hozircha tekshirib boʻlmayapti. Bu safar asosiy parolingizdan foydalaning. Odatda telefonni qayta ishga tushirish yordam beradi. Bu takrorlanaversa, ilova Sozlamalarida PIN kodni qaytadan sozlang.</string>
     <string name="lock_mp_reason_pin_storage_full">Telefoningiz xotirasi toʻlgan, shuning uchun PIN kodni hozir tekshirib boʻlmaydi. Biroz joy boʻshating yoki asosiy parolingizdan foydalaning.</string>
     <string name="lock_mp_reason_master_changed">Siz asosiy parolni oʻzgartirdingiz. Uni bir marta kiriting, soʻng PIN kodni qaytadan tanlang.</string>
     <!-- %1$s is a day and a month. -->
@@ -29,14 +29,14 @@
     <string name="lock_mp_reason_no_secure_hardware">Bu telefon PIN kod yoki barmoq izi kalitini himoyalangan apparat qismida saqlay olmaydi, shuning uchun ilova faqat asosiy parol bilan ochiladi.</string>
 
     <!-- ===== Fingerprint unlock is on but cannot be used now, with "Use your master password" ===== -->
-    <string name="lock_fingerprint_turned_off_master">Bu telefondagi barmoq izlari yoki ekran qulfi oʻzgargani uchun barmoq izi bilan ochish faolsiz qilindi. Asosiy parolingizdan foydalaning. Uni Sozlamalarda qayta yoqishingiz mumkin.</string>
-    <string name="lock_fingerprint_stopped_working_master">Barmoq izi bilan ochish bu telefonda ishlamay qoldi. Asosiy parolingizdan foydalaning. Uni Sozlamalarda qayta yoqishingiz mumkin.</string>
+    <string name="lock_fingerprint_turned_off_master">Bu telefondagi barmoq izlari yoki ekran qulfi oʻzgargani uchun barmoq izi bilan ochish faolsiz qilindi. Asosiy parolingizdan foydalaning. Uni ilova Sozlamalarida qayta yoqishingiz mumkin.</string>
+    <string name="lock_fingerprint_stopped_working_master">Barmoq izi bilan ochish bu telefonda ishlamay qoldi. Asosiy parolingizdan foydalaning. Uni ilova Sozlamalarida qayta yoqishingiz mumkin.</string>
     <string name="lock_fingerprint_locked_master">Barmoq izi vaqtincha qulflangan. Asosiy parolingizdan foydalaning.</string>
     <string name="lock_fingerprint_did_not_open_master">Bu safar barmoq izi ilovani ochmadi. Asosiy parolingizdan foydalaning.</string>
     <string name="lock_fingerprint_not_for_apps_master">Hozir ilovalarda barmoq izidan foydalanib boʻlmaydi. Asosiy parolingizdan foydalaning. Telefoningiz sozlamalarida ilovalarda shaxsingizni tasdiqlash uchun barmoq izidan foydalanishga ruxsat berilganini tekshiring.</string>
     <string name="lock_fingerprint_none_saved_master">Bu telefonda hozir saqlangan barmoq izi yoʻq. Asosiy parolingizdan foydalaning. Barmoq izi bilan ochishdan yana foydalanish uchun telefon sozlamalarida barmoq izi qoʻshing.</string>
     <string name="lock_fingerprint_update_needed_master">Barmoq izidan foydalanish uchun telefoningizga xavfsizlik yangilanishi kerak. Asosiy parolingizdan foydalaning.</string>
-    <string name="lock_fingerprint_cannot_check_master">Barmoq izini hozircha tekshirib boʻlmayapti. Asosiy parolingizdan foydalaning. Bu takrorlanaversa, Sozlamalarda barmoq izi bilan ochishni oʻchirib, qayta yoqing.</string>
+    <string name="lock_fingerprint_cannot_check_master">Barmoq izini hozircha tekshirib boʻlmayapti. Asosiy parolingizdan foydalaning. Bu takrorlanaversa, ilova Sozlamalarida barmoq izi bilan ochishni oʻchirib, qayta yoqing.</string>
 
     <!-- ===== The field and the buttons ===== -->
     <string name="lock_mp_field">Asosiy parol</string>
@@ -93,20 +93,20 @@
     <string name="lock_test_build">TEST YIGʻMASI: PIN kod kalitlari himoyalanmagan</string>
 
     <!-- ===== Fingerprint unlock is on but cannot be used now, with "Use your PIN" ===== -->
-    <string name="lock_fingerprint_turned_off_pin">Bu telefondagi barmoq izlari yoki ekran qulfi oʻzgargani uchun barmoq izi bilan ochish faolsiz qilindi. PIN kodingizdan foydalaning. Uni Sozlamalarda qayta yoqishingiz mumkin.</string>
-    <string name="lock_fingerprint_stopped_working_pin">Barmoq izi bilan ochish bu telefonda ishlamay qoldi. PIN kodingizdan foydalaning. Uni Sozlamalarda qayta yoqishingiz mumkin.</string>
+    <string name="lock_fingerprint_turned_off_pin">Bu telefondagi barmoq izlari yoki ekran qulfi oʻzgargani uchun barmoq izi bilan ochish faolsiz qilindi. PIN kodingizdan foydalaning. Uni ilova Sozlamalarida qayta yoqishingiz mumkin.</string>
+    <string name="lock_fingerprint_stopped_working_pin">Barmoq izi bilan ochish bu telefonda ishlamay qoldi. PIN kodingizdan foydalaning. Uni ilova Sozlamalarida qayta yoqishingiz mumkin.</string>
     <string name="lock_fingerprint_locked_pin">Barmoq izi vaqtincha qulflangan. PIN kodingizdan foydalaning.</string>
     <string name="lock_fingerprint_did_not_open_pin">Bu safar barmoq izi ilovani ochmadi. Ilova PIN kodini kiriting.</string>
     <string name="lock_fingerprint_not_for_apps_pin">Hozir ilovalarda barmoq izidan foydalanib boʻlmaydi. PIN kodingizdan foydalaning. Telefoningiz sozlamalarida ilovalarda shaxsingizni tasdiqlash uchun barmoq izidan foydalanishga ruxsat berilganini tekshiring.</string>
     <string name="lock_fingerprint_none_saved_pin">Bu telefonda hozir saqlangan barmoq izi yoʻq. PIN kodingizdan foydalaning. Barmoq izi bilan ochishdan yana foydalanish uchun telefon sozlamalarida barmoq izi qoʻshing.</string>
     <string name="lock_fingerprint_update_needed_pin">Barmoq izidan foydalanish uchun telefoningizga xavfsizlik yangilanishi kerak. PIN kodingizdan foydalaning.</string>
-    <string name="lock_fingerprint_cannot_check_pin">Barmoq izini hozircha tekshirib boʻlmayapti. PIN kodingizdan foydalaning. Bu takrorlanaversa, Sozlamalarda barmoq izi bilan ochishni oʻchirib, qayta yoqing.</string>
+    <string name="lock_fingerprint_cannot_check_pin">Barmoq izini hozircha tekshirib boʻlmayapti. PIN kodingizdan foydalaning. Bu takrorlanaversa, ilova Sozlamalarida barmoq izi bilan ochishni oʻchirib, qayta yoqing.</string>
 
     <!-- ===== The fingerprint-only screen ===== -->
     <string name="lock_use_fingerprint">Barmoq izidan foydalanish</string>
     <string name="lock_use_master_password">Asosiy paroldan foydalanish</string>
     <string name="lock_fingerprint_only_pin_limit">Juda koʻp xato urinishlardan keyin PIN kod bilan ochish faolsiz qilindi. Hech narsa oʻchirilmadi. Barmoq izingiz yoki asosiy parolingizdan foydalaning, soʻng yangi PIN kod tanlang.</string>
-    <string name="lock_fingerprint_only_pin_cannot_check">PIN kodingizni hozircha tekshirib boʻlmayapti. Barmoq izingiz yoki asosiy parolingizdan foydalaning. Odatda telefonni qayta ishga tushirish yordam beradi. Bu takrorlanaversa, Sozlamalarda PIN kodni qaytadan sozlang.</string>
+    <string name="lock_fingerprint_only_pin_cannot_check">PIN kodingizni hozircha tekshirib boʻlmayapti. Barmoq izingiz yoki asosiy parolingizdan foydalaning. Odatda telefonni qayta ishga tushirish yordam beradi. Bu takrorlanaversa, ilova Sozlamalarida PIN kodni qaytadan sozlang.</string>
     <string name="lock_fingerprint_only_pin_stopped_working">PIN kodingiz bu telefonda ishlamay qoldi. Barmoq izingiz yoki asosiy parolingizdan foydalaning, soʻng PIN kodni qaytadan tanlang.</string>
     <string name="lock_fingerprint_only_pin_storage_full">Telefoningiz xotirasi toʻlgan, shuning uchun PIN kodni hozir tekshirib boʻlmaydi. Biroz joy boʻshating yoki barmoq izingiz yoxud asosiy parolingizdan foydalaning.</string>
     <string name="lock_fingerprint_only_pin_newer_app">PIN kodingiz bu ilovaning yangiroq versiyasida sozlangan. Barmoq izingiz yoki asosiy parolingizdan foydalaning va ilovani yangilang.</string>

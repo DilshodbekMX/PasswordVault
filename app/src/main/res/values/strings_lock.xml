@@ -39,7 +39,7 @@
     <!-- The PIN was set up by a newer version of this app than the one installed. -->
     <string name="lock_mp_reason_pin_newer_app">Your PIN was set up by a newer version of this app. Use your master password, and update the app.</string>
     <!-- The phone's key store does not answer now; a restart usually helps. Nothing was removed. -->
-    <string name="lock_mp_reason_pin_cannot_check">Your PIN can’t be checked right now. Use your master password this time. Restarting the phone usually fixes this. If it keeps happening, set your PIN up again in Settings.</string>
+    <string name="lock_mp_reason_pin_cannot_check">Your PIN can’t be checked right now. Use your master password this time. Restarting the phone usually fixes this. If it keeps happening, set your PIN up again in this app’s Settings.</string>
     <!-- The try could not be written because the phone's storage is full. -->
     <string name="lock_mp_reason_pin_storage_full">Your phone’s storage is full, so the PIN can’t be checked now. Free some space, or use your master password.</string>
     <!-- The master password was changed and the PIN was not kept. -->
@@ -55,9 +55,9 @@
          PIN". ===== -->
 
     <!-- The phone's fingerprints or screen lock changed, so the app's fingerprint key no longer works. -->
-    <string name="lock_fingerprint_turned_off_master">Fingerprint unlock was turned off because this phone’s fingerprints or screen lock changed. Use your master password. You can turn it on again in Settings.</string>
+    <string name="lock_fingerprint_turned_off_master">Fingerprint unlock was turned off because this phone’s fingerprints or screen lock changed. Use your master password. You can turn it on again in this app’s Settings.</string>
     <!-- The app's record of fingerprint unlock on this phone is damaged; which key it named is unknown. -->
-    <string name="lock_fingerprint_stopped_working_master">Fingerprint unlock stopped working on this phone. Use your master password. You can turn it on again in Settings.</string>
+    <string name="lock_fingerprint_stopped_working_master">Fingerprint unlock stopped working on this phone. Use your master password. You can turn it on again in this app’s Settings.</string>
     <!-- The phone locked its fingerprint sensor after too many failed fingers. -->
     <string name="lock_fingerprint_locked_master">Fingerprint is locked for now. Use your master password.</string>
     <!-- The fingerprint prompt was accepted, but the app could not open with it this time. -->
@@ -69,7 +69,7 @@
     <!-- The phone needs a security update before its fingerprint sensor may be used. -->
     <string name="lock_fingerprint_update_needed_master">Your phone needs a security update before fingerprint can be used. Use your master password.</string>
     <!-- Any other fingerprint problem. -->
-    <string name="lock_fingerprint_cannot_check_master">Fingerprint can’t be checked right now. Use your master password. If this keeps happening, turn fingerprint unlock off and on again in Settings.</string>
+    <string name="lock_fingerprint_cannot_check_master">Fingerprint can’t be checked right now. Use your master password. If this keeps happening, turn fingerprint unlock off and on again in this app’s Settings.</string>
 
     <!-- ===== The field and the buttons ===== -->
 
@@ -187,9 +187,9 @@
          lines above with "Use your master password". ===== -->
 
     <!-- The phone's fingerprints or screen lock changed, so the app's fingerprint key no longer works. -->
-    <string name="lock_fingerprint_turned_off_pin">Fingerprint unlock was turned off because this phone’s fingerprints or screen lock changed. Use your PIN. You can turn it on again in Settings.</string>
+    <string name="lock_fingerprint_turned_off_pin">Fingerprint unlock was turned off because this phone’s fingerprints or screen lock changed. Use your PIN. You can turn it on again in this app’s Settings.</string>
     <!-- The app's record of fingerprint unlock on this phone is damaged; which key it named is unknown. -->
-    <string name="lock_fingerprint_stopped_working_pin">Fingerprint unlock stopped working on this phone. Use your PIN. You can turn it on again in Settings.</string>
+    <string name="lock_fingerprint_stopped_working_pin">Fingerprint unlock stopped working on this phone. Use your PIN. You can turn it on again in this app’s Settings.</string>
     <!-- The phone locked its fingerprint sensor after too many failed fingers. -->
     <string name="lock_fingerprint_locked_pin">Fingerprint is locked for now. Use your PIN.</string>
     <!-- The fingerprint prompt was accepted, but the app could not open with it this time (the phone's
@@ -202,7 +202,7 @@
     <!-- The phone needs a security update before its fingerprint sensor may be used. -->
     <string name="lock_fingerprint_update_needed_pin">Your phone needs a security update before fingerprint can be used. Use your PIN.</string>
     <!-- Any other fingerprint problem; the fingerprint key is hidden until the next visit. -->
-    <string name="lock_fingerprint_cannot_check_pin">Fingerprint can’t be checked right now. Use your PIN. If this keeps happening, turn fingerprint unlock off and on again in Settings.</string>
+    <string name="lock_fingerprint_cannot_check_pin">Fingerprint can’t be checked right now. Use your PIN. If this keeps happening, turn fingerprint unlock off and on again in this app’s Settings.</string>
 
     <!-- ===== The fingerprint-only screen (ux.md §5.9; lock.md §13.1 row 6, §13.3): fingerprint can be
          used, the PIN cannot ===== -->
@@ -215,7 +215,7 @@
          "turned off", not "deleted"). -->
     <string name="lock_fingerprint_only_pin_limit">PIN unlock was turned off after too many wrong tries. Nothing was deleted. Use your fingerprint or master password, then choose a new PIN.</string>
     <!-- Why there is no PIN pad: the phone's key store does not answer now (glossary 137). -->
-    <string name="lock_fingerprint_only_pin_cannot_check">Your PIN can’t be checked right now. Use your fingerprint or master password. Restarting the phone usually fixes this. If it keeps happening, set your PIN up again in Settings.</string>
+    <string name="lock_fingerprint_only_pin_cannot_check">Your PIN can’t be checked right now. Use your fingerprint or master password. Restarting the phone usually fixes this. If it keeps happening, set your PIN up again in this app’s Settings.</string>
     <!-- Why there is no PIN pad: the PIN's key is gone from the phone, or its record is damaged
          (glossary 136). -->
     <string name="lock_fingerprint_only_pin_stopped_working">Your PIN stopped working on this phone. Use your fingerprint or master password, then choose a PIN again.</string>
