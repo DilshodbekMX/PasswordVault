@@ -74,3 +74,18 @@ under its text when the two would squeeze it), `ClipboardRow` (its texts take at
 window and scroll), `VaultSheet`'s 48 dp drag handle; the list's Add button hides while the keyboard is
 up and where the list has no room for it. `LongTextLayoutTest` checks them at 320 dp and a font scale of
 2 in every connected run, whatever the phone.
+
+## Runs
+
+2026-10-19, branch `w6A-6.2` (the app as at 0af5b03, the probe as at 6b2502e), debug build, 320 dp
+wide at 200 %:
+
+| Device | Parts and locales | Result |
+|---|---|---|
+| API 37, 1080 × 2400 (320 × 711 dp) | app and states, en-XA and ar-XB | 1718 checks passed, 0 failed |
+| API 28, 1080 × 1920 (320 × 569 dp) | app and states, en-XA and ar-XB | 1718 checks passed, 0 failed |
+| API 37 | app, en-XA and ar-XB, `--style EMERALD` | 537 passed, 0 failed |
+| API 37 | app, en-XA and ar-XB, `--style NIGHT_VAULT` | 537 passed, 0 failed |
+| API 37 | app, `--locales en` (pictures) | 269 passed, 0 failed |
+
+Both parts take about 15 minutes on one device. The pictures of `docs/screens/` come from the API 37 run.
