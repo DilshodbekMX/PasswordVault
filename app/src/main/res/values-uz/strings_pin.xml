@@ -42,7 +42,7 @@
     <string name="pin_same_wrong_again">Bu PIN kodni allaqachon kiritgansiz. U qayta hisoblanmadi.</string>
     <string name="pin_limit">Juda koʻp xato urinishlardan keyin PIN kod bilan ochish faolsizlantirildi. Hech narsa oʻchirilmadi. Yangi PIN kod tanlash uchun asosiy parolni kiriting.</string>
     <string name="pin_type_master_password">Asosiy parolni kiritish</string>
-    <string name="pin_cannot_check">PIN kodni hozircha tekshirib boʻlmayapti. Uning oʻrniga asosiy parolingizdan foydalaning yoki keyinroq qayta urining.</string>
+    <string name="pin_cannot_check">PIN kodingizni hozircha tekshirib boʻlmayapti. Uning oʻrniga asosiy parolingizdan foydalaning yoki keyinroq qayta urining.</string>
 
     <!-- The master-password step before a PIN is set. -->
     <string name="pin_mp_title">Asosiy parolni kiriting</string>

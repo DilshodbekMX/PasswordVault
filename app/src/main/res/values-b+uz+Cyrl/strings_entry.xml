@@ -77,7 +77,7 @@
 
     <!-- ===== Short messages ===== -->
     <string name="entry_saved">Сақланди</string>
-    <string name="entry_save_failed">Сақлаб бўлмади. Телефон хотираси тўлган бўлиши мумкин.</string>
+    <string name="entry_save_failed">Сақлаб бўлмади. Телефонингиз хотираси тўлган бўлиши мумкин.</string>
     <string name="entry_too_large">Паролларингиз энди битта файлга сиғмаяпти. Кераксиз ҳисобларни ўчиринг ёки жуда узун қайдларни қисқартиринг.</string>
     <string name="entry_no_browser">Бу телефонда браузер топилмади.</string>
     <string name="entry_copy_blocked">Бу телефон нусха олишга рухсат бермади. Паролни “Катта ҳарфларда кўрсатиш” орқали очинг ва уни қўлда киритинг.</string>

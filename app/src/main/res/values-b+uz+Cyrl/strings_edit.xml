@@ -63,7 +63,7 @@
     <string name="edit_old_draft_discard">Ўчириб ташлаш</string>
 
     <!-- ===== Messages ===== -->
-    <string name="edit_save_failed">Сақлаб бўлмади. Телефон хотираси тўлган бўлиши мумкин.</string>
+    <string name="edit_save_failed">Сақлаб бўлмади. Телефонингиз хотираси тўлган бўлиши мумкин.</string>
     <string name="edit_too_large">Паролларингиз энди битта файлга сиғмаяпти. Кераксиз ҳисобларни ўчиринг ёки жуда узун қайдларни қисқартиринг.</string>
     <string name="edit_gone">Бу ҳисоб энди мавжуд эмас.</string>
     <!-- Stored with the account: "Номсиз 7 окт, 2026, 17:50". -->

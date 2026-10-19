@@ -42,7 +42,7 @@
     <string name="pin_same_wrong_again">Бу PIN кодни аллақачон киритгансиз. У қайта ҳисобланмади.</string>
     <string name="pin_limit">Жуда кўп хато уринишлардан кейин PIN код билан очиш фаолсизлантирилди. Ҳеч нарса ўчирилмади. Янги PIN код танлаш учун асосий паролни киритинг.</string>
     <string name="pin_type_master_password">Асосий паролни киритиш</string>
-    <string name="pin_cannot_check">PIN кодни ҳозирча текшириб бўлмаяпти. Унинг ўрнига асосий паролингиздан фойдаланинг ёки кейинроқ қайта урининг.</string>
+    <string name="pin_cannot_check">PIN кодингизни ҳозирча текшириб бўлмаяпти. Унинг ўрнига асосий паролингиздан фойдаланинг ёки кейинроқ қайта урининг.</string>
 
     <!-- The master-password step before a PIN is set. -->
     <string name="pin_mp_title">Асосий паролни киритинг</string>

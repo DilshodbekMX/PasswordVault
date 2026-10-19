@@ -77,7 +77,7 @@
 
     <!-- ===== Short messages ===== -->
     <string name="entry_saved">Saqlandi</string>
-    <string name="entry_save_failed">Saqlab boʻlmadi. Telefon xotirasi toʻlgan boʻlishi mumkin.</string>
+    <string name="entry_save_failed">Saqlab boʻlmadi. Telefoningiz xotirasi toʻlgan boʻlishi mumkin.</string>
     <string name="entry_too_large">Parollaringiz endi bitta faylga sigʻmayapti. Keraksiz hisoblarni oʻchiring yoki juda uzun qaydlarni qisqartiring.</string>
     <string name="entry_no_browser">Bu telefonda brauzer topilmadi.</string>
     <string name="entry_copy_blocked">Bu telefon nusxa olishga ruxsat bermadi. Parolni “Katta harflarda koʻrsatish” orqali oching va uni qoʻlda kiriting.</string>

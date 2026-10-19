@@ -53,7 +53,7 @@
 
     <!-- Messages. -->
     <string name="list_deleted_message">%1$s ўчириб ташланди</string>
-    <string name="list_save_failed">Сақлаб бўлмади. Телефон хотираси тўлган бўлиши мумкин.</string>
+    <string name="list_save_failed">Сақлаб бўлмади. Телефонингиз хотираси тўлган бўлиши мумкин.</string>
     <string name="list_too_large">Паролларингиз энди битта файлга сиғмаяпти. Кераксиз ҳисобларни ўчиринг ёки жуда узун қайдларни қисқартиринг.</string>
     <string name="list_no_browser">Бу телефонда браузер топилмади.</string>
     <string name="list_copy_blocked">Бу телефон нусха олишга рухсат бермади. Паролни “Катта ҳарфларда кўрсатиш” орқали очинг ва уни қўлда киритинг.</string>
@@ -119,7 +119,7 @@
     <string name="list_deleted_on">Ўчирилган сана: %1$s</string>
     <string name="list_deleted_restore">Тиклаш</string>
     <string name="list_deleted_restore_description">%1$s ҳисобини тиклаш</string>
-    <string name="list_deleted_more">%1$s учун бошқа амаллар</string>
+    <string name="list_deleted_more">“%1$s” учун бошқа амаллар</string>
     <string name="list_deleted_delete_forever">Бутунлай ўчириш</string>
     <string name="list_deleted_forever_question">%1$s бутунлай ўчирилсинми? Бу амални ортга қайтариш имконсиз.</string>
     <!-- %1$s is a number already formatted for the language. -->

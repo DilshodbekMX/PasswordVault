@@ -68,7 +68,7 @@
     <string name="setup_again_cyrillic">Клавиатурангиз кирилл ёзувига (масалан, рус тилига) созланган бўлиши мумкин. Лотин ҳарфларига ўтинг.</string>
     <string name="setup_again_show_again">Паролимни яна кўрсатиш</string>
     <string name="setup_again_setting_up">Созланмоқда…</string>
-    <string name="setup_again_not_saved">Сақлаб бўлмади. Телефон хотираси тўлган бўлиши мумкин.</string>
+    <string name="setup_again_not_saved">Сақлаб бўлмади. Телефонингиз хотираси тўлган бўлиши мумкин.</string>
     <string name="setup_again_no_memory">Созлашни якунлаш учун телефонингизда бўш оператив хотира етарли эмас. Бошқа иловаларни ёпинг ёки телефонни қайта ишга туширинг, кейин қайта урининг.</string>
 
 </resources>

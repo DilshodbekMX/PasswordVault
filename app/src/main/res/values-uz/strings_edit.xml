@@ -63,7 +63,7 @@
     <string name="edit_old_draft_discard">Oʻchirib tashlash</string>
 
     <!-- ===== Messages ===== -->
-    <string name="edit_save_failed">Saqlab boʻlmadi. Telefon xotirasi toʻlgan boʻlishi mumkin.</string>
+    <string name="edit_save_failed">Saqlab boʻlmadi. Telefoningiz xotirasi toʻlgan boʻlishi mumkin.</string>
     <string name="edit_too_large">Parollaringiz endi bitta faylga sigʻmayapti. Keraksiz hisoblarni oʻchiring yoki juda uzun qaydlarni qisqartiring.</string>
     <string name="edit_gone">Bu hisob endi mavjud emas.</string>
     <!-- Stored with the account: "Nomsiz 7-okt, 2026, 17:50". -->

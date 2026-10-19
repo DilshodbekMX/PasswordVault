@@ -52,7 +52,7 @@
 
     <!-- Messages. -->
     <string name="list_deleted_message">%1$s oʻchirib tashlandi</string>
-    <string name="list_save_failed">Saqlab boʻlmadi. Telefon xotirasi toʻlgan boʻlishi mumkin.</string>
+    <string name="list_save_failed">Saqlab boʻlmadi. Telefoningiz xotirasi toʻlgan boʻlishi mumkin.</string>
     <string name="list_too_large">Parollaringiz endi bitta faylga sigʻmayapti. Keraksiz hisoblarni oʻchiring yoki juda uzun qaydlarni qisqartiring.</string>
     <string name="list_no_browser">Bu telefonda brauzer topilmadi.</string>
     <string name="list_copy_blocked">Bu telefon nusxa olishga ruxsat bermadi. Parolni “Katta harflarda koʻrsatish” orqali oching va uni qoʻlda kiriting.</string>
@@ -118,7 +118,7 @@
     <string name="list_deleted_on">Oʻchirilgan sana: %1$s</string>
     <string name="list_deleted_restore">Tiklash</string>
     <string name="list_deleted_restore_description">%1$s hisobini tiklash</string>
-    <string name="list_deleted_more">%1$s uchun boshqa amallar</string>
+    <string name="list_deleted_more">“%1$s” uchun boshqa amallar</string>
     <string name="list_deleted_delete_forever">Butunlay oʻchirish</string>
     <string name="list_deleted_forever_question">%1$s butunlay oʻchirilsinmi? Bu amalni ortga qaytarish imkonsiz.</string>
     <!-- %1$s is a number already formatted for the language. -->

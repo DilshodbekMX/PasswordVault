@@ -66,7 +66,7 @@
     <string name="setup_again_cyrillic">Klaviaturangiz kirill yozuviga (masalan, rus tiliga) sozlangan boʻlishi mumkin. Lotin harflariga oʻting.</string>
     <string name="setup_again_show_again">Parolimni yana koʻrsatish</string>
     <string name="setup_again_setting_up">Sozlanmoqda…</string>
-    <string name="setup_again_not_saved">Saqlab boʻlmadi. Telefon xotirasi toʻlgan boʻlishi mumkin.</string>
+    <string name="setup_again_not_saved">Saqlab boʻlmadi. Telefoningiz xotirasi toʻlgan boʻlishi mumkin.</string>
     <string name="setup_again_no_memory">Sozlashni yakunlash uchun telefoningizda boʻsh operativ xotira yetarli emas. Boshqa ilovalarni yoping yoki telefonni qayta ishga tushiring, keyin qayta urining.</string>
 
 </resources>
