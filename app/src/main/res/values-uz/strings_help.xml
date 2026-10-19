@@ -66,7 +66,7 @@
     <string name="help_forgot_mp_wait">Yangi asosiy parol telefon yoniq holda 24&#160;soat oʻtgach ishlay boshlaydi. Telefon oʻchiq paytda sanoq toʻxtaydi, shuning uchun ilovani ertalab va yana kechqurun oching. Ungacha ilovani odatdagidek PIN kod yoki barmoq izingiz bilan oching.</string>
     <string name="help_forgot_mp_backup">Soʻng yangi zaxira nusxa yarating. Eski zaxira nusxalaringiz hamon faqat eski asosiy parolingiz bilan ochiladi.</string>
     <string name="help_forgot_mp_replaced">Agar asosiy parolingizni boshqa birov almashtirgan boʻlsa, oʻz parolingiz parollaringizni oldingi holatida ochadi: “Asosiy parolni unutdingizmi?”, soʻng “… holatidagi parollarimni ochish”.</string>
-    <string name="help_forgot_mp_cant_open">Agar ilovani umuman ocha olmasangiz: qogʻozingizdagi soʻzlarni sinab koʻring yoki asosiy paroli esingizda boʻlgan zaxira nusxani tiklang. Boʻsh ilova bilan boshlashingiz ham mumkin. Parolni keyinroq eslab qolishingiz mumkinligi uchun eski parollaringiz telefonda qulflangan holda qoladi.</string>
+    <string name="help_forgot_mp_cant_open">Agar ilovani umuman ocha olmasangiz: qogʻozingizdagi soʻzlarni sinab koʻring yoki asosiy paroli esingizda boʻlgan zaxira nusxani tiklang. Boʻsh ilova bilan boshlashingiz ham mumkin. Parolni keyinroq eslashingiz mumkinligi uchun eski parollaringiz telefonda qulflangan holda qoladi.</string>
 
     <!-- ===== PIN kodingizni unutsangiz ===== -->
 
