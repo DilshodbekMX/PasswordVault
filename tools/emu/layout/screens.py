@@ -48,8 +48,14 @@ EN_XA = {
     "Security": "app-en-XA/Security",
     "Group": "app-en-XA/Group",
     "GuidedChange": "app-en-XA/GuidedChange",
+    "FirstCopyTip": "app-en-XA/FirstCopyTip",
     # A few states of a screen that look unlike its first one.
     "Locked-master-password": "app-en-XA/Locked-masterPassword",
+    "Locked-fingerprint-only": "states/lock-FingerprintOnly-2-en-XA",
+    "Locked-older-password": "states/lock-OlderPassword-3-en-XA",
+    "Locked-older-set": "states/lock-OpenOlderSet-5-en-XA",
+    "Locked-cannot-open": "states/lock-CannotOpen-7-en-XA",
+    "Locked-unreadable": "states/lock-Unreadable-9-en-XA",
     "Edit-generator": "app-en-XA/Generator",
     "Passwords-empty": "app-en-XA/Passwords-empty",
 }
@@ -65,6 +71,7 @@ AR_XB = {
     "Settings": "app-ar-XB/Settings",
     "Security": "app-ar-XB/Security",
     "Group": "app-ar-XB/Group",
+    "Locked-cannot-open": "states/lock-CannotOpen-7-ar-XB",
 }
 
 SCALE = 3

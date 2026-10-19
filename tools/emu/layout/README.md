@@ -13,11 +13,13 @@ tools/emu/stop.sh "$S37"
 ```
 
 `walk.sh SERIAL [--apk FILE] [--test-apk FILE] [--locales TAG,TAG] [--parts app,states] [--shots DIR]
-[--width DP] [--font SCALE]` needs the debug build (pseudo-locales, screenshots, `run-as`). It sets the
-screen's density so that the phone is 320 dp wide (`wm density`, as "Display size" does) and the font
-scale to 2.0 (`settings put system font_scale`), and puts both back however it ends. `--width 411
---font 1.0` walks a 1080-pixel phone at its own size (build plan §12's open problem: the PIN steps in
-`en-XA` on a 1080 × 1920 screen).
+[--width DP] [--font SCALE] [--style NAME]` needs the debug build (pseudo-locales, screenshots,
+`run-as`). It sets the screen's density so that the phone is 320 dp wide (`wm density`, as "Display
+size" does) and the font scale to 2.0 (`settings put system font_scale`), and puts both back however it
+ends. `--width 411 --font 1.0` walks a 1080-pixel phone at its own size (build plan §12's open problem:
+the PIN steps in `en-XA` on a 1080 × 1920 screen). `--style EMERALD` or `NIGHT_VAULT` walks the part
+app in that colour style (run `app-<locale>-<style>`); `--locales en` walks it in plain English, for
+pictures (the English check is made only in a pseudo-locale).
 
 ## The two parts
 
@@ -52,7 +54,7 @@ a menu), at each screen as it opens and again after each stretch of every list o
 | Check | Fails when |
 |---|---|
 | no clipped button | a control's text (a button's, a row's, a tab's) is cut, clipped, split or covered as below, or a control lies past the bottom of a window that does not scroll |
-| no truncated or clipped text | any other text: cut with an ellipsis or overflowing its box (unless marked `mayTruncate`: its full text is reachable elsewhere, as a list row's name is on the account's screen), clipped by a parent that does not scroll, spilling out of its parent, past the edge of its window, a whole word of up to 16 characters split across two lines, or covered by the floating Add button where no scroll moves it out |
+| no truncated or clipped text | any other text: cut with an ellipsis or overflowing its box (unless marked `mayTruncate`: its full text is reachable elsewhere, as a list row's name is on the account's screen), clipped by a parent that does not scroll, spilling out of its parent, past the edge of its window, a whole word of up to 16 characters split across two lines (a word: what the line-breaking rules keep whole), or covered by the floating Add button where its list cannot scroll on (the list keeps room for the button below its last row) |
 | no text left in plain English | (pseudo-locales only) a text, label or error without a character the pseudo-locale made, unless it is the user's own (marked `userText`: an account's name, a login, a file's column names, the suggested words), a secret on show, an app string that is the same in every language, a library's own label, or a date, time or number written by the phone's ICU |
 | no control under 48 dp | a control a finger can press whose touch area is under 48 × 48 dp |
 
@@ -64,9 +66,11 @@ reports under `build/emu-layout/SERIAL/`, pictures of every screen and state und
 ## Shared parts that keep long texts whole (`ui/common`)
 
 `VaultTopBar` (the top bar of every screen; a title that does not fit beside the buttons moves under
-them and wraps), `FittedText` (the bottom bar's labels shrink before a word would break), `FieldLabel`
-(a field's label of two lines moves above its box), `KeypadColumn` and `LockPadPage` (the dots and the
-whole keypad stay on the screen, the texts above them scroll), `VaultDialog` (title and text scroll,
-the buttons stay reachable), `TextBeside` (a button goes under its text when the two would squeeze it),
-`VaultSheet`'s 48 dp drag handle. `LongTextLayoutTest` checks them at 320 dp and a font scale of 2 in
-every connected run, whatever the phone.
+them and wraps), `FittedText` (the bottom bar's labels shrink before a word would break; the search
+field's hint stays on one line), `FieldLabel` (a field's label of two lines moves above its box),
+`KeypadColumn` and `LockPadPage` (the dots and the whole keypad stay on the screen, the texts above them
+scroll), `VaultDialog` (title and text scroll, the buttons stay reachable), `TextBeside` (a button goes
+under its text when the two would squeeze it), `ClipboardRow` (its texts take at most a fifth of the
+window and scroll), `VaultSheet`'s 48 dp drag handle; the list's Add button hides while the keyboard is
+up and where the list has no room for it. `LongTextLayoutTest` checks them at 320 dp and a font scale of
+2 in every connected run, whatever the phone.

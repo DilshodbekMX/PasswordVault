@@ -185,24 +185,28 @@ class LayoutProbe(private val compose: SemanticsNodeInteractionsProvider, privat
 
     /**
      * A word of an ordinary length that a line break cut in two between two letters: its box is too
-     * narrow for it. A word here is what the line-breaking rules keep whole (ICU's, which Android's
-     * line breaker follows): the text between two places where a line may break, of at most
-     * [LONGEST_WORD] characters ("Settings", "[Šéţţîñĝš"). A longer run that cannot break (a file name,
-     * an address, a password of words, a date whose parts no-break spaces hold together, a word after
-     * `en-XA`'s "¿", after which no line may break) may break anywhere, and once one has, the text's
-     * other breaks follow from it and are not looked at.
+     * narrow for it. A word here is a token between ordinary spaces ("Settings", "[Šéţţîñĝš") whose
+     * run, as ICU's line-breaking rules keep it whole (which Android's line breaker follows), is also
+     * at most [LONGEST_WORD] characters. A longer token or run that cannot break may break anywhere: a
+     * file name ("PasswordVault-backup"), an address, a password of words, a date whose parts no-break
+     * spaces hold together, a word after `en-XA`'s "¿", after which no line may break. Once one has,
+     * the text's other breaks follow from it and are not looked at.
      */
     private fun splitWord(layout: TextLayoutResult): String? {
         val text = layout.layoutInput.text.text
         val breaks = BreakIterator.getLineInstance().apply { setText(text) }
+        fun space(c: Char) = c == ' ' || c == '\n' || c == '\t'
         for (line in 0 until layout.lineCount - 1) {
             val end = layout.getLineEnd(line)
             if (end <= 0 || end >= text.length || breaks.isBoundary(end)) continue
-            val from = breaks.preceding(end).takeIf { it != BreakIterator.DONE } ?: 0
-            val to = breaks.following(end).takeIf { it != BreakIterator.DONE } ?: text.length
-            val word = text.substring(from, to).trim()
-            if (word.length > LONGEST_WORD) return null
-            if (text[end - 1].isLetterOrDigit() && text[end].isLetterOrDigit()) return word
+            val runStart = breaks.preceding(end).takeIf { it != BreakIterator.DONE } ?: 0
+            val runEnd = breaks.following(end).takeIf { it != BreakIterator.DONE } ?: text.length
+            var from = end - 1
+            while (from > 0 && !space(text[from - 1])) from--
+            var to = end
+            while (to < text.length && !space(text[to])) to++
+            if (to - from > LONGEST_WORD || text.substring(runStart, runEnd).trim().length > LONGEST_WORD) return null
+            if (text[end - 1].isLetterOrDigit() && text[end].isLetterOrDigit()) return text.substring(from, to)
         }
         return null
     }

@@ -34,6 +34,11 @@ python3 tools/emu/layout/screens.py build/emu-layout/SERIAL docs/screens
 | BackupsExplained | [en-XA](en-XA/BackupsExplained.png) | | "Make backups", the last setup step |
 | Locked | [en-XA](en-XA/Locked.png) | [ar-XB](ar-XB/Locked.png) | The lock screen's pad (Bank blue's panel, the dots, the keypad) |
 | Locked (master password) | [en-XA](en-XA/Locked-master-password.png) | | The lock screen's master password, with the keyboard |
+| Locked (fingerprint only) | [en-XA](en-XA/Locked-fingerprint-only.png) | | The fingerprint when the PIN cannot be used (drawn with the device tests' fakes, as are the next four) |
+| Locked (older master password) | [en-XA](en-XA/Locked-older-password.png) | | The master password of an older set of passwords |
+| Locked (older set) | [en-XA](en-XA/Locked-older-set.png) | | "Open the older set instead?" |
+| Locked (can't be opened) | [en-XA](en-XA/Locked-cannot-open.png) | [ar-XB](ar-XB/Locked-cannot-open.png) | "These passwords can't be opened" |
+| Locked (unreadable) | [en-XA](en-XA/Locked-unreadable.png) | | The passwords on this phone cannot be read |
 | Passwords | [en-XA](en-XA/Passwords.png) | [ar-XB](ar-XB/Passwords.png) | The list with the search field, Add, the bottom bar and the clipboard row |
 | Passwords (empty) | [en-XA](en-XA/Passwords-empty.png) | | The list before the first account |
 | RecentlyDeleted | [en-XA](en-XA/RecentlyDeleted.png) | | Recently deleted, its title under the back arrow and Empty |
@@ -55,6 +60,7 @@ python3 tools/emu/layout/screens.py build/emu-layout/SERIAL docs/screens
 | Import | [en-XA](en-XA/Import.png) | | Import: where the passwords are now |
 | ColumnMapping | [en-XA](en-XA/ColumnMapping.png) | | What each column of a file holds (drawn with the device tests' fakes) |
 | Help | [en-XA](en-XA/Help.png) | | A help page ("How your passwords are protected") |
+| First-copy tip (a dialog, no route) | [en-XA](en-XA/FirstCopyTip.png) | | The tip after the first copy of a password, over the account's screen |
 | Licences | [en-XA](en-XA/Licences.png) | | Open-source licences |
 
 No picture: `Starting` (shown only while the lock reads its records at a start) and `AppLock` (no screen

@@ -110,6 +110,7 @@ private fun Sample(vm: ImportViewModel, p: ImportPreview) {
                                 text = row.username,
                                 style = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Ltr),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.userText(),
                             )
                         }
                     }
