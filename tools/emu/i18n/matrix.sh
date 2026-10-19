@@ -11,7 +11,7 @@
 #
 # What the parts check, the app found by its resource ids (tools/emu/app.sh, i18n/lib.sh) and its
 # language read from the dialog's own texts (strings_language.xml, which 6.1 brings in all four
-# languages; the other screens stay English until 6.3 and 6.4 translate them):
+# languages; the other screens are translated since the merge of R6, 6.3 and 6.4):
 #   phone     The phone's languages, set as Settings › Languages sets them (PvLocale), with the app on
 #             "System language": uz-Latn-UZ gives Oʻzbekcha; uz-Cyrl-UZ added and moved first (before
 #             en-US) gives Ўзбекча; uz-Arab-AF alone gives English; ru-RU, and de-DE then ru-RU then
@@ -34,8 +34,10 @@
 #   mixing    "With two phone languages the app never mixes languages": the APK's locale config for
 #             API 35 and later has no android:defaultLocale (aapt2 on this computer); with the phone
 #             set to uz-Cyrl-UZ then ru-RU and the app on "System language" the dialog is Ўзбекча, and
-#             a library text missing in Uzbek Cyrillic (the bottom sheet's drag handle, from
-#             material3, which has Russian and Latin Uzbek) is English, not Russian.
+#             a library text that the library has in Russian and Latin Uzbek but not in Uzbek Cyrillic
+#             (the bottom sheet's drag handle, from material3) is the app's own Ўзбекча override
+#             (values-b+uz+Cyrl/strings_overrides.xml, build plan 6.3b; English before the merge of
+#             R6), never Russian.
 #   formats   A vault with an account; on its screen the date "Added …" in each language (switched
 #             with the debug command `locale`, which keeps the screen) is what the phone's own ICU
 #             writes for that language (skeleton yMMMd, Formatters.date); API 24 has ICU 56.
@@ -392,15 +394,18 @@ no_default_locale() {
 }
 
 # The bottom sheet's drag handle: material3's m3c_bottom_sheet_drag_handle_description, which has
-# Russian and Latin Uzbek texts but none in Uzbek Cyrillic.
-drag_handle_english() {
-    local english russian handle
+# Russian and Latin Uzbek texts but none in Uzbek Cyrillic; the app has its own Ўзбекча text for it
+# (values-b+uz+Cyrl/strings_overrides.xml, tools:override, i18n.md §1.4.6) since the merge of R6.
+drag_handle_uzbek_cyrillic() {
+    local english russian cyrillic handle
     english=$(pvi_apk_string "$APK" m3c_bottom_sheet_drag_handle_description)
     russian=$(pvi_apk_string "$APK" m3c_bottom_sheet_drag_handle_description ru)
+    cyrillic=$(pvi_apk_string "$APK" m3c_bottom_sheet_drag_handle_description b+uz+Cyrl)
+    [ -n "$cyrillic" ] || { pv_log "the APK has no Uzbek Cyrillic drag handle (values-b+uz+Cyrl/strings_overrides.xml)"; return 1; }
     pva_tap pv.tab.Passwords && pva_on Passwords || return 1
     if pva_present pv.list.emptyAdd 2; then pva_tap pv.list.emptyAdd; else pva_tap pv.list.add; fi || return 1
     pva_on Edit && pva_tap pv.edit.generateButton && pva_need pv.gen.preview 15 || return 1
-    handle=$(pv_ui_nodes | awk -F'|' -v e="$english" -v r="$russian" '$2 == e || $2 == r { print $2; exit }')
+    handle=$(pv_ui_nodes | awk -F'|' -v e="$english" -v r="$russian" -v c="$cyrillic" '$2 == e || $2 == r || $2 == c { print $2; exit }')
     shot "mixing-sheet"
     pv_shell input keyevent KEYCODE_BACK >/dev/null
     pv_sleep 1
@@ -408,9 +413,10 @@ drag_handle_english() {
     pv_shell input keyevent KEYCODE_BACK >/dev/null
     if pva_present pv.edit.dialog.discard 5; then pva_tap pv.edit.dialog.discard; fi
     pva_on Passwords 20
-    [ -n "$handle" ] || { pv_log "no drag handle '$english' or '$russian' on the sheet"; return 1; }
+    [ -n "$handle" ] || { pv_log "no drag handle '$cyrillic', '$english' or '$russian' on the sheet"; return 1; }
     pv_log "the drag handle says '$handle'"
-    [ "$handle" = "$english" ] || { pv_log "a Russian library text on an Uzbek Cyrillic screen"; return 1; }
+    [ "$handle" != "$russian" ] || { pv_log "a Russian library text on an Uzbek Cyrillic screen"; return 1; }
+    [ "$handle" = "$cyrillic" ] || { pv_log "the drag handle is not the app's Uzbek Cyrillic '$cyrillic'"; return 1; }
 }
 
 two_languages_dialog() {
@@ -426,7 +432,7 @@ part_mixing() {
     pv_step "mixing: the phone set to uz-Cyrl-UZ, then ru-RU" -- pvi_phone_set uz-Cyrl-UZ,ru-RU
     pva_in_front || pva_relaunch
     pv_step "mixing: the app on System language is in Ўзбекча (its dialog)" -- two_languages_dialog
-    pv_step "mixing: a library text without Uzbek Cyrillic is English, not Russian" -- drag_handle_english
+    pv_step "mixing: a library text without Uzbek Cyrillic is the app's own Ўзбекча, not Russian" -- drag_handle_uzbek_cyrillic
     pv_step "mixing: the phone back to en-US" -- pvi_phone_set en-US
 }
 
