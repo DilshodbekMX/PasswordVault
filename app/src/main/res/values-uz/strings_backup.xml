@@ -11,7 +11,7 @@
 
     <string name="backup_title">Zaxira nusxa yaratish</string>
     <string name="backup_back">Orqaga</string>
-    <string name="backup_explain">Zaxira nusxa — barcha parollaringizning qulflangan nusxasi. U istalgan telefonda faqat asosiy parolingiz bilan ochiladi.</string>
+    <string name="backup_explain">Zaxira nusxa — barcha parollarning qulflangan nusxasi. U istalgan telefonda faqat asosiy parolingiz bilan ochiladi.</string>
     <string name="backup_explain_continue">Davom etish</string>
     <string name="backup_pending">Yangi asosiy parolingiz ishlay boshlagach, zaxira nusxa yaratishingiz mumkin.</string>
     <string name="backup_password_text">Asosiy parolni kiriting. Shu bilan bu zaxira nusxani ochish uchun kerak boʻladigan parolni hali ham bilishingiz tekshiriladi.</string>

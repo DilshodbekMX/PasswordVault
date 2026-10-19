@@ -12,7 +12,7 @@
 
     <string name="backup_title">Захира нусха яратиш</string>
     <string name="backup_back">Орқага</string>
-    <string name="backup_explain">Захира нусха — барча паролларингизнинг қулфланган нусхаси. У исталган телефонда фақат асосий паролингиз билан очилади.</string>
+    <string name="backup_explain">Захира нусха — барча паролларнинг қулфланган нусхаси. У исталган телефонда фақат асосий паролингиз билан очилади.</string>
     <string name="backup_explain_continue">Давом этиш</string>
     <string name="backup_pending">Янги асосий паролингиз ишлай бошлагач, захира нусха яратишингиз мумкин.</string>
     <string name="backup_password_text">Асосий паролни киритинг. Шу билан бу захира нусхани очиш учун керак бўладиган паролни ҳали ҳам билишингиз текширилади.</string>
