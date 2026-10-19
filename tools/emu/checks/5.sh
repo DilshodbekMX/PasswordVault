@@ -682,7 +682,18 @@ fresh() {
     esac
 }
 
-settings() { pva_tap pv.tab.Settings && pva_on Settings 20; }
+# settings: the Settings tab, from any screen of the open app (Back until the tab bar shows, so that a
+# step that failed half-way does not leave the next one on a screen without it).
+settings() {
+    local i
+    for i in 1 2 3 4 5; do
+        pva_present pv.tab.Settings 2 && break
+        pva_in_front || { pva_relaunch; continue; }
+        pv_shell input keyevent KEYCODE_BACK >/dev/null
+        pv_sleep 1
+    done
+    pva_tap pv.tab.Settings && pva_on Settings 20
+}
 
 # run_as COMMAND: a shell command in the app's own directory (debug builds).
 run_as() { pv_shell run-as "$PV_PACKAGE" sh -c "'$1'" 2>/dev/null | tr -d '\r'; }
@@ -969,6 +980,15 @@ picker_screen_off() {
     pva_on Settings 10
 }
 
+# check13: U 12 check 13 alone (line 2 has it too): a fresh install with a PIN, then both ways out.
+check13() {
+    T="check 13"
+    pv_step "$T: a fresh install, setup with a PIN, two accounts" -- eval 'fresh pin && add_two' || return 1
+    pv_step "$T: a kill while the picker is open; after the unlock its step comes back paused; Cancel: \"No backup was made. The empty file was removed.\"" -- kill_in_picker cancel
+    pv_step "$T: a kill while the picker is open again; after the unlock the master password: the backup completes into the picker's file" -- kill_in_picker complete
+    pv_step "$T: no crash" -- pva_no_crash
+}
+
 line2() {
     T="line 2"
     local before
@@ -980,7 +1000,7 @@ line2() {
     pv_step "$T: with Immediately the JSON export finishes" -- eval 'w5_export json && [ -n "$(pva_in_download "^passwords-.*\.json$")" ]'
     pv_step "$T: with Immediately the Excel export finishes" -- eval 'w5_export xlsx && [ -n "$(pva_in_download "^passwords-.*\.xlsx$")" ]'
     pv_step "$T: a small CSV pushed to Download" -- small_csv
-    pv_step "$T: with Immediately an import of it finishes: Tashkent Metro and Kapitalbank in the list" -- eval 'w5_import csv "$PICK_CSV" pushed && pva_tap pv.tab.Passwords && pva_on Passwords 20 && pva_row_with "Tashkent Metro" 15 && pva_row_with Kapitalbank 10'
+    pv_step "$T: with Immediately an import of it finishes: Tashkent Metro and Kapitalbank in the list" -- eval 'w5_import csv "$PICK_CSV" pushed && pva_tap pv.tab.Passwords && pva_on Passwords 20 && rows_seen "Tashkent Metro" Kapitalbank'
     if [ "$API" -lt 30 ]; then
         # lock/E17.sh runs these on API 37 (the part lock); lock.md lists E17 for Android 17 only, and
         # build-plan 7 line 2 asks for them on API 24 too.
@@ -1043,11 +1063,13 @@ line3() {
     ls -l "$dir" | sed 's/^/    | /'
     pv_step "$T: tools/validate/run.sh on the three files" -- eval '"$REPO/tools/validate/run.sh" "$dir" > "$DEV_OUT/validate.log" 2>&1; rc=$?; grep -E "^(FAIL|RESULT)" "$DEV_OUT/validate.log" | sed "s/^/    | /"; [ $rc = 0 ]'
     pv_step "$T: the exports hold the values" -- eval 'export_holds "$dir/$json" "Oʻzbekiston pochtasi" "Почта Ташкент" "+998901234567" "=SUM(1+1)" "Ikkinchi qator" && export_holds "$dir/$csv" "Парол-Ёз-2026" "=HYPERLINK" && export_holds "$dir/$xlsx" "азиз" "Gʻalaba-2024!"'
-    pv_shell "rm -f $PVA_DOWNLOAD/$xlsx" >/dev/null 2>&1
-    pv_step "$T: an empty vault (pm clear, setup); the CSV export imported" -- eval 'empty_vault && w5_import csv "$csv"' || return 1
+    # The exports leave Download (Android 7's picker saves over a file of the same name), and the two to
+    # import come back under names of their own.
+    clean_download
+    pv_step "$T: an empty vault (pm clear, setup); the CSV export imported" -- eval 'empty_vault && pva_push_download "$dir/$csv" pv-5-export.csv && w5_import csv pv-5-export.csv pushed' || return 1
     pv_step "$T: exported again as JSON: the same accounts as the first JSON (title, login, password, websites, notes, fields)" -- eval 'json2=$(export_new json) && pull "$json2" > /dev/null && cp "$DEV_OUT/$json2" "$dir/after-the-csv-import.json" && same_accounts "$dir/$json" "$dir/after-the-csv-import.json"'
-    pv_shell "rm -f '$PVA_DOWNLOAD/$json2'" >/dev/null 2>&1
-    pv_step "$T: an empty vault again; the JSON export imported" -- eval 'empty_vault && w5_import json "$json"' || return 1
+    clean_download
+    pv_step "$T: an empty vault again; the JSON export imported" -- eval 'empty_vault && pva_push_download "$dir/$json" pv-5-export.json && w5_import json pv-5-export.json pushed' || return 1
     pv_step "$T: exported again as JSON: the same accounts as the first JSON" -- eval 'json3=$(export_new json) && pull "$json3" > /dev/null && cp "$DEV_OUT/$json3" "$dir/after-the-json-import.json" && same_accounts "$dir/$json" "$dir/after-the-json-import.json"'
     pv_step "$T: no crash" -- pva_no_crash
 }
@@ -1103,7 +1125,7 @@ choose_words() {
     pva_need pv.setup.passphrase 30 && pva_reveal pv.setup.passphrase || return 1
     NEW_MP=$(pva_text pv.setup.passphrase) || return 1
     printf '%s\n' "$NEW_MP" | grep -Eq '^[a-z]{3,9}(-[a-z]{3,9}){5}$' || { pv_log "not six words: '$NEW_MP'"; return 1; }
-    pva_tap pv.open.WriteDown && pva_need pv.open.TypeAgain 20 && pva_tap pv.open.TypeAgain || return 1
+    pva_tap pv.open.WriteDown && pva_need pv.setup.wrote 20 && pva_reveal pv.open.TypeAgain && pva_tap pv.open.TypeAgain || return 1
     pva_type pv.setup.again "$NEW_MP" || return 1
     pva_hide_keyboard
     pva_tap pv.action.createVault
@@ -1207,7 +1229,7 @@ lock_lib() {
 # level below 28, which has no `cmd alarm set-time`, the clock is set with su's date.
 set_clock_24() {
     local target=$(( $(date +%s) + $1 )) now
-    pv_shell su 0 date "$(date -u -d "@$target" +%m%d%H%M%Y.%S)" >/dev/null 2>&1
+    pv_shell su 0 date -u "$(date -u -d "@$target" +%m%d%H%M%Y.%S)" >/dev/null 2>&1
     pv_sleep 2
     now=$(pv_shell date +%s 2>/dev/null | tr -d '\r')
     [ -n "$now" ] && [ $((now - target)) -lt 30 ] && [ $((target - now)) -lt 30 ] || { pv_log "the phone's clock is $now, wanted $target"; return 1; }
@@ -1220,19 +1242,23 @@ clock_and_boot_count() {
     local c0 seen0 i
     c0=$(pvn_credited_ms); seen0=$(pvn_seen_ms)
     [ -n "$c0" ] && [ -n "$seen0" ] || { pv_log "no pending_mp in state.rec"; return 1; }
+    # The credit is observed whenever the app comes to the front (process-level ON_START, lock.md 6.9),
+    # locked or not; the delay of 30 s is not reached by these visits.
     pvl_setting_set global auto_time 0 || return 1
     set_clock_24 $((366 * 86400)) || return 1
-    pva_away 3 && pva_on Locked 20 || return 1
+    pva_away 3 || { set_clock_24 0; return 1; }
     credit_bounded "$c0" "$seen0" || { set_clock_24 0; return 1; }
     set_clock_24 0 || return 1
-    pva_away 3 && pva_on Locked 20 || return 1
+    pva_away 3 || return 1
     credit_bounded "$c0" "$seen0" || return 1
     pvl_setting_set global boot_count 99999 || return 1
     for i in 1 2 3; do
         pv_shell settings put global boot_count 99999 >/dev/null || return 1
-        pva_away 20 && pva_on Locked 20 || return 1
+        pva_away 20 || return 1
         credit_bounded "$c0" "$seen0" || return 1
     done
+    pvl_status || return 1
+    case "$(pvl_lock_state)" in unlocked) pvl_lock_now || return 1 ;; esac
     pvl_to_master_password || return 1
     local line
     line=$(pva_text pv.lock.pending) || return 1
@@ -1250,7 +1276,7 @@ line6() {
     pv_step "$T: while it is pending the list shows the pending banner and no backup banner (lock.md F11 step 10)" -- eval 'pva_on Passwords 20 && pva_need pv.list.banner.pending 20 && pva_absent pv.list.banner.backup'
     if [ "$API" -lt 28 ]; then
         pv_step "$T: the wait's credit unchanged by the clock a year ahead and back (su date) and by boot_count 99999 three times; the lock screen still says about 24 hours" -- clock_and_boot_count
-        pv_shell su 0 date "$(date -u +%m%d%H%M%Y.%S)" >/dev/null 2>&1
+        pv_shell su 0 date -u "$(date -u +%m%d%H%M%Y.%S)" >/dev/null 2>&1
         pvl_cleanup
     else
         echo "NOTE $T: the clock (E4) and boot_count (E5) on API 37 are the part lock's"
@@ -1541,7 +1567,7 @@ dev_run() {
     echo "5 checks $*, $DEV_VARIANT on $PV_SERIAL (API $API): $DEV_APK"
     for check in "$@"; do
         case "$check" in
-            line1 | line2 | line3 | line4 | line5 | line6 | line7 | check15 | d21 | fifty | walk73) "$check" ;;
+            line1 | line2 | line3 | line4 | line5 | line6 | line7 | check13 | check15 | d21 | fifty | walk73) "$check" ;;
             *) pv_die "unknown check $check" 2 ;;
         esac
     done

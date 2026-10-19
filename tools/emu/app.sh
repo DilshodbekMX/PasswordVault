@@ -629,44 +629,81 @@ pva_picker_tap() {
     done
 }
 
-# pva_picker_drawer: the picker's list of roots (its navigation drawer) is open.
+# pva_picker_drawer_is_open: the picker's list of roots (its navigation drawer) is shown.
+pva_picker_drawer_is_open() { pv_ui_nodes 2>/dev/null | grep -qE '[|](roots_list|drawer_roots)[|]'; }
+
+# pva_picker_drawer: the picker's list of roots is open (its button "Show roots" tapped when it is not).
 pva_picker_drawer() {
-    local nodes
-    nodes=$(pv_ui_nodes 2>/dev/null)
-    # Open already when a root's name is there beside "Recent".
-    if pva_in_nodes '^Recent[|]' "$nodes" && pva_in_nodes '^(Downloads|Internal storage|Android SDK built for x86(_64)?)[|]' "$nodes"; then
-        return 0
-    fi
-    pv_ui_tap '[|](Show roots|Open navigation drawer|Navigate up)[|]' "$nodes" >/dev/null \
-        || { pv_log "no drawer button in the picker; texts: $(pva_picker_texts)"; return 1; }
-    pv_sleep 1.5
+    local i
+    for i in 1 2 3; do
+        pva_picker_drawer_is_open && return 0
+        pv_ui_tap '[|](Show roots|Open navigation drawer)[|]' >/dev/null
+        pv_sleep 1.5
+    done
+    pva_picker_drawer_is_open || { pv_log "the picker's roots did not open; texts: $(pva_picker_texts)"; return 1; }
 }
 
-# pva_picker_root NAME-REGEX: the root whose name matches NAME-REGEX (anchored by the caller), from the
-# drawer.
+# pva_picker_drawer_close: the list of roots closed with a tap beside it (Back could close the picker).
+pva_picker_drawer_close() {
+    pva_picker_drawer_is_open || return 0
+    pv_shell input tap $((PVA_SCREEN_W - 50)) $((PVA_SCREEN_H / 2)) >/dev/null
+    pv_sleep 1.5
+    ! pva_picker_drawer_is_open || { pv_log "the picker's roots stay open"; return 1; }
+}
+
+# pva_picker_list_view: API 24 to 29: the picker shows the folder as a list, so that the arrow keys go
+# through its items one by one (the grid moves them by column); nothing when it is a list already.
+pva_picker_list_view() {
+    if pv_ui_nodes 2>/dev/null | grep -q '[|]List view[|]'; then
+        pv_ui_tap '[|]List view[|]' >/dev/null
+        pv_sleep 1.5
+    fi
+}
+
+# pva_picker_title: the picker's title now (the first text after its "Show roots" button): the root or
+# folder it shows.
+pva_picker_title() { pv_ui_nodes 2>/dev/null | awk -F'|' '$2 == "Show roots" || $2 == "Open navigation drawer" { f = 1; next } f && $1 != "" { print $1; exit }'; }
+
+# pva_picker_root NAME-REGEX: the root whose name matches NAME-REGEX (anchored by the caller), tapped in
+# the drawer (only among the drawer's nodes: "Recent" also lists folders such as Downloads behind it),
+# until the picker's title is that root.
 pva_picker_root() {
-    pva_picker_drawer || return 1
-    pva_picker_tap "$1" 10 || return 1
-    pv_sleep 2
+    local try nodes line
+    for try in 1 2 3; do
+        pva_picker_drawer || return 1
+        nodes=$(pv_ui_nodes 2>/dev/null | awk -F'|' '$3 == "roots_list" || $3 == "drawer_roots" { f = 1 } f')
+        line=$(printf '%s\n' "$nodes" | pv_ui_match "$1")
+        if [ -n "$line" ]; then
+            pv_shell input tap "$(printf '%s\n' "$line" | cut -d'|' -f6)" "$(printf '%s\n' "$line" | cut -d'|' -f7)" >/dev/null
+            pv_sleep 2
+            if pva_picker_title | grep -qE -- "${1%%\[|\]*}"; then return 0; fi
+        fi
+        pv_log "the picker's root /$1/ not reached (try $try); title '$(pva_picker_title)'; texts: $(pva_picker_texts)"
+    done
+    return 1
 }
 
 # pva_picker_save: in the picker that "Save as" opened, Downloads (when the picker is elsewhere) and
 # SAVE. True once the picker has left the front.
 pva_picker_save() {
-    local deadline
+    local deadline try
     pva_picker_wait 30 || return 1
     pv_sleep 2
     if [ "$(pv_api)" -lt 30 ]; then
-        # Opens in Recent, SAVE off: the Downloads root, then the keyboard of the name field closed.
+        # Opens in Recent, SAVE off: the Downloads root (its name field then takes the focus, and its
+        # keyboard, which may come a moment later, covers SAVE while uidump still reports the button).
         pva_picker_root '^Downloads[|]' || return 1
-        pva_hide_keyboard
     fi
-    pva_picker_tap '^(SAVE|Save)[|]' 20 || return 1
-    deadline=$((SECONDS + 30))
-    while pva_picker_in_front; do
-        [ $SECONDS -lt $deadline ] || { pv_log "the picker is still in front after SAVE; texts: $(pva_picker_texts)"; return 1; }
-        pv_sleep 1
+    for try in 1 2 3; do
+        pv_sleep 1.5
+        pva_hide_keyboard
+        pva_picker_tap '^(SAVE|Save)[|]' 20 || return 1
+        deadline=$((SECONDS + 10))
+        while pva_picker_in_front && [ $SECONDS -lt $deadline ]; do pv_sleep 1; done
+        pva_picker_in_front || return 0
+        pv_log "the picker is still in front after SAVE (try $try); texts: $(pva_picker_texts)"
     done
+    return 1
 }
 
 # pva_push_download FILE [NAME]: FILE pushed to the phone's Download folder as NAME (default its own
@@ -700,8 +737,8 @@ pva_picker_open() {
             pva_picker_internal_download || return 1
         else
             pva_picker_root '^Downloads[|]' || return 1
+            pva_picker_list_view
         fi
-        pv_ui_wait "$re" 15 || { pv_log "no $name in the picker; texts: $(pva_picker_texts)"; return 1; }
         pva_picker_keys_open "$re" || return 1
     fi
     deadline=$((SECONDS + 30))
@@ -711,31 +748,37 @@ pva_picker_open() {
     done
 }
 
-# pva_picker_internal_download: API 24 to 29: the overflow menu's "Show internal storage" (once per
-# device: the picker remembers it), the device's own root, then its Download folder.
+# pva_picker_internal_download: API 24 to 29: the device's own root (the overflow menu's "Show internal
+# storage" first when the roots do not list it; the picker remembers it), the list view, then its
+# Download folder, opened with the arrow keys and Enter as a tap on it is ignored.
+PVA_DEVICE_ROOT='^(Android SDK built for x86(_64)?|Internal storage)[|]'
 pva_picker_internal_download() {
-    local nodes
     pva_picker_drawer || return 1
-    nodes=$(pv_ui_nodes 2>/dev/null)
-    if ! pva_in_nodes '^(Android SDK built for x86(_64)?|Internal storage)[|]' "$nodes"; then
-        pv_shell input keyevent KEYCODE_BACK >/dev/null # the drawer closes
+    if ! pv_ui_nodes 2>/dev/null | grep -qE "$PVA_DEVICE_ROOT"; then
+        pva_picker_drawer_close || return 1
+        pva_picker_tap '[|]More options[|]' 10 || return 1
         pv_sleep 1
-        pva_picker_tap '[|]More options[|]' 10 && pva_picker_tap '^Show internal storage[|]' 10 || return 1
-        pv_sleep 1
+        if pv_ui_wait '^Show internal storage[|]' 5; then
+            pv_ui_tap '^Show internal storage[|]' >/dev/null
+        else
+            pv_shell input keyevent KEYCODE_BACK >/dev/null # "Hide internal storage": it is shown already
+        fi
+        pv_sleep 1.5
         pva_picker_drawer || return 1
     fi
-    pva_picker_tap '^(Android SDK built for x86(_64)?|Internal storage)[|]' 10 || return 1
+    pva_picker_root "$PVA_DEVICE_ROOT" || return 1
+    pva_picker_list_view
+    pva_picker_keys_open '^Download[|]' || return 1
     pv_sleep 2
-    pva_picker_tap '^Download[|]' 15 || return 1
-    pv_sleep 2
+    pva_picker_list_view
 }
 
 # pva_picker_keys_open REGEX: API 24 to 29: the arrow keys move the focus down the list until the
-# row of the file REGEX has it, then Enter opens it. The row with the focus is the one whose name the
-# accessibility tree reports as focused: read with uiautomator's dump, which marks it.
+# row of the item REGEX (a file or a folder) has it, then Enter opens it. The row with the focus is the
+# one whose name the accessibility tree reports as focused: read with uiautomator's dump, which marks it.
 pva_picker_keys_open() {
     local i
-    for i in 1 2 3 4 5 6 7 8 9 10 11 12; do
+    for i in $(seq 1 30); do
         pv_shell input keyevent KEYCODE_DPAD_DOWN >/dev/null
         pv_sleep 0.7
         if pva_picker_focused "$1"; then
