@@ -97,7 +97,7 @@
     <string name="settings_help_lost_phone">Telefoningizni yoʻqotsangiz yoki yangisiga oʻtsangiz</string>
     <string name="settings_help_forgot_master_password">Asosiy parolingizni unutsangiz</string>
     <string name="settings_help_forgot_pin">PIN kodingizni unutsangiz</string>
-    <string name="settings_licences">Ochiq kodli dasturlar litsenziyalari</string>
+    <string name="settings_licences">Ochiq manba litsenziyalari</string>
     <string name="settings_version">Versiya</string>
 
     <!-- ===== Xabarlar ===== -->

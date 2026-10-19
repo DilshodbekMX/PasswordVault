@@ -18,7 +18,7 @@
     <string name="help_forgot_mp_title">Asosiy parolingizni unutsangiz</string>
     <string name="help_forgot_pin_title">PIN kodingizni unutsangiz</string>
     <string name="help_version_title">Versiya</string>
-    <string name="help_licences_title">Ochiq kodli dasturlar litsenziyalari</string>
+    <string name="help_licences_title">Ochiq manba litsenziyalari</string>
 
     <!-- ===== Parollaringiz qanday himoyalanadi ===== -->
 
@@ -80,11 +80,11 @@
     <string name="help_version_android">Bu telefon: Android %1$s</string>
     <string name="help_version_test_build">Sinov versiyasi: ilovani tekshirish uchun yaratilgan. Unda haqiqiy parollaringizni saqlamang.</string>
 
-    <!-- ===== Ochiq kodli dasturlar litsenziyalari =====
+    <!-- ===== Ochiq manba litsenziyalari =====
          Qismlarning nomlari, mualliflik huquqi qatorlari, litsenziyalarning nomlari, veb-manzillar va
          litsenziya matnlari tarjima qilinmaydi. -->
 
-    <string name="help_licences_intro">%1$s ilovasi quyidagi ochiq kodli qismlardan foydalanib yaratilgan. Ularning har biri oʻz litsenziyasi shartlariga koʻra ishlatiladi.</string>
+    <string name="help_licences_intro">%1$s ilovasi quyidagi ochiq manbali qismlardan foydalanib yaratilgan. Ularning har biri oʻz litsenziyasi shartlariga koʻra ishlatiladi.</string>
     <string name="help_licences_group_passphrase">Parol iboralari uchun soʻzlar</string>
     <string name="help_licences_group_strength">Parol kuchini baholash uchun soʻzlar</string>
     <string name="help_licences_strength_intro">Parol kuchini baholashda ilova bu oʻzbekcha va ruscha soʻzlar, ismlar va joy nomlarini biladi, shuning uchun ulardan tuzilgan parollar haqida sizni ogohlantira oladi. Bu ilova uchun ular tanlab olingan, sanab chiqilgan va oʻzbek tilining ikkala yozuvida, rus tilida hamda lotin harflarida yozilgan. Roʻyxat CC BY-SA 4.0 litsenziyasi asosida tarqatiladi.</string>
