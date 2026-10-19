@@ -589,7 +589,880 @@ airplane_all() {
 
 extras_clip() { clip_3b "$1"; }
 
+# ---- one device: the checks of waves 5 and 7 ------------------------------------------------------------
+# The checks below run on one device (dev_run), each as numbered steps that print PASS or FAIL, with the
+# debug build: the lines of build-plan.md section 7's integration check (line1 to line7; line 8 is
+# smoke.sh's stage of wave 5, which the part wave5 runs with the staging build), U 12 check 15 (check15),
+# the owner's decision 21 (d21), and wave 7's import of the fifty accounts (fifty) and 7.3's walk
+# (walk73). They drive the app's screens by resource id (app.sh), the system's picker by its texts
+# (app.sh, pva_picker_*), read the lock's state through the debug command status (pva_status, and
+# lock/lib.sh's pvl_* for the records), and the app's files with run-as. Each starts from a fresh install.
+PIN=582913
+T=""
+DEV_APK=""
+DEV_VARIANT=""
+DEV_OUT=""
+API=0
+
+back_to_list() { pv_shell input keyevent KEYCODE_BACK >/dev/null; pva_on Passwords 20; }
+
+# add_two: two accounts through the form (adb types ASCII only).
+add_two() {
+    pva_add_account Gmail aziz.karimov@gmail.com Tr0ub4dor3x https://mail.google.com "Shaxsiy pochta" && back_to_list \
+        && pva_add_account Payme +998901234567 Samarqand2024x https://payme.uz Karta && back_to_list
+}
+
+# set_up_to_pin: setup with the suggested words (PVA_PASSWORD), until "Choose a PIN" opens over the list.
+set_up_to_pin() {
+    pva_on Welcome 60 || return 1
+    pva_tap pv.open.CreateMasterPassword && pva_on CreateMasterPassword || return 1
+    pva_reveal pv.setup.passphrase || return 1
+    PVA_PASSWORD=$(pva_text pv.setup.passphrase) || return 1
+    printf '%s\n' "$PVA_PASSWORD" | grep -Eq '^[a-z]{3,9}(-[a-z]{3,9}){5}$' || { pv_log "not six words: '$PVA_PASSWORD'"; return 1; }
+    pva_tap pv.open.WriteDown && pva_on WriteDown || return 1
+    pva_tap pv.open.TypeAgain && pva_on TypeAgain || return 1
+    pva_type pv.setup.again "$PVA_PASSWORD" || return 1
+    pva_submit pv.action.createVault pv.route.CreatePin 120
+}
+
+# fresh mp|pin|pin+fp: a new install and setup: the PIN left off (mp), or a PIN with fingerprint unlock
+# not turned on (pin) or turned on with finger 1 (pin+fp); the list.
+fresh() {
+    pva_install "$DEV_APK" && pva_start || return 1
+    case "$1" in
+        mp) pva_set_up ;;
+        pin) set_up_to_pin && pva_choose_pin "$PIN" && pva_after_pin notNow ;;
+        pin+fp) set_up_to_pin && pva_choose_pin "$PIN" && pva_after_pin use ;;
+    esac
+}
+
+settings() { pva_tap pv.tab.Settings && pva_on Settings 20; }
+
+# run_as COMMAND: a shell command in the app's own directory (debug builds).
+run_as() { pv_shell run-as "$PV_PACKAGE" sh -c "'$1'" 2>/dev/null | tr -d '\r'; }
+
+prefs_value() { run_as 'cat shared_prefs/pv_settings.xml' | sed -n "s/.*name=\"$1\"[^>]*value=\"\\([^\"]*\\)\".*/\\1/p; s/.*<string name=\"$1\">\\([^<]*\\)<.*/\\1/p" | head -n 1; }
+
+clean_download() {
+    pv_shell "rm -f $PVA_DOWNLOAD/PasswordVault-backup-* $PVA_DOWNLOAD/passwords-* $PVA_DOWNLOAD/pv-5-*" >/dev/null 2>&1
+    [ "$API" -lt 30 ] || pv_shell content call --uri content://media --method scan_volume --arg external_primary >/dev/null 2>&1
+    return 0
+}
+
+# download_names: the names in Download now, one per line.
+download_names() { pv_shell ls "$PVA_DOWNLOAD" 2>/dev/null | tr -d '\r' | sort; }
+
+# new_in_download BEFORE REGEX: a name matching REGEX that was not in BEFORE (download_names' output).
+new_in_download() { comm -13 <(printf '%s\n' "$1") <(download_names) | grep -E -- "$2" | head -n 1; }
+
+# pull NAME: the file NAME from Download into DEV_OUT; prints the local path.
+pull() {
+    mkdir -p "$DEV_OUT"
+    pv_adb pull "$PVA_DOWNLOAD/$1" "$DEV_OUT/$1" >/dev/null 2>&1 && [ -s "$DEV_OUT/$1" ] || { pv_log "could not pull $1"; return 1; }
+    echo "$DEV_OUT/$1"
+}
+
+# set_lock_delay DELAY: Settings > "Lock the app after leaving it", the choice DELAY (LockDelay).
+set_lock_delay() {
+    settings && pva_reveal pv.settings.lockDelay && pva_tap pv.settings.lockDelay || return 1
+    pva_need "pv.settings.lockDelay.$1" 10 && pva_tap "pv.settings.lockDelay.$1" || return 1
+    pv_sleep 1
+    if pva_present pv.settings.dialog.done 2; then pva_tap pv.settings.dialog.done; fi
+    pva_on Settings 10
+}
+
+# w5_backup [asked]: Settings > Backup: its master password (unless a flow handed over its proof), the
+# picker's Save into Download, "Backup saved"; back on Settings. With "asked" the screen is open already.
+w5_backup() {
+    if [ "${1:-}" != asked ]; then
+        settings && pva_reveal pv.open.Backup && pva_tap pv.open.Backup && pva_on Backup 20 || return 1
+    fi
+    if pva_present pv.backup.continue 3; then pva_tap pv.backup.continue || return 1; fi
+    if pva_present pv.backup.password 5; then
+        pva_type pv.backup.password "$PVA_PASSWORD" || return 1
+        pva_hide_keyboard
+        pva_tap pv.backup.submit || return 1
+    fi
+    pva_picker_save || return 1
+    pva_need pv.backup.done 60 || return 1
+    pv_log "the backup's last screen: $(pva_text pv.backup.line.0 2>/dev/null) $(pva_text pv.backup.line.1 2>/dev/null)"
+    pva_tap pv.backup.done
+}
+
+# w5_export csv|json|xlsx: Settings > Export, the format, the warning's "I understand", the master
+# password, the picker's Save into Download: the saved screen, Done.
+w5_export() {
+    settings && pva_reveal pv.open.Export && pva_tap pv.open.Export && pva_on Export 20 || return 1
+    pva_need "pv.export.choice.$1" 15 && pva_tap "pv.export.choice.$1" && pva_tap pv.export.continue || return 1
+    if pva_present pv.export.understand 10; then pva_tap pv.export.understand || return 1; fi
+    if pva_present pv.export.warning.continue 5; then pva_tap pv.export.warning.continue || return 1; fi
+    pva_need pv.export.password 20 && pva_type pv.export.password "$PVA_PASSWORD" || return 1
+    pva_hide_keyboard
+    pva_tap pv.export.submit || return 1
+    pva_picker_save || return 1
+    pva_need pv.export.saved 60 || return 1
+    pv_log "the export's last screen: $(pva_text pv.export.saved 2>/dev/null)"
+    pva_tap pv.export.done && pva_on Settings 20
+}
+
+# w5_import SOURCE NAME [pushed]: Settings > Import, the source (backup, google, csv, json), the file NAME
+# in the picker (pushed with adb, or saved there by the picker); the preview: Import; done; the file
+# deleted when the screen offers it; Finish: Settings.
+w5_import() {
+    local deadline
+    settings && pva_reveal pv.open.Import && pva_tap pv.open.Import && pva_on Import 20 || return 1
+    pva_need "pv.import.source.$1" 20 && pva_tap "pv.import.source.$1" || return 1
+    deadline=$((SECONDS + 20))
+    until pva_picker_in_front; do
+        [ $SECONDS -lt $deadline ] || { pv_log "no picker after the source; ids: $(pva_ids)"; return 1; }
+        pva_present pv.import.chooseFile 1 && pva_tap pv.import.chooseFile
+        pv_sleep 1
+    done
+    pva_picker_open "$2" "${3:-}" || return 1
+    pva_need pv.import.import 60 || { pv_log "no Import button; ids: $(pva_ids)"; return 1; }
+    pv_log "the preview: $(pva_text pv.import.found 2>/dev/null) / $(pva_text pv.import.encoding 2>/dev/null) / $(pva_text pv.import.leftOut 2>/dev/null)"
+    pva_tap pv.import.import && pva_need pv.import.done 60 || return 1
+    pv_log "the import: $(pva_text pv.import.done 2>/dev/null)"
+    if pva_present pv.import.deleteFile 5; then pva_tap pv.import.deleteFile && pva_need pv.import.fileOutcome 20 || return 1; fi
+    pva_tap pv.import.finish && pva_on Settings 20
+}
+
+# export_holds FILE WORD...: the export FILE (CSV, JSON or an Excel workbook) opens as its format and
+# holds each WORD.
+export_holds() {
+    python3 - "$@" <<'PYEOF'
+import csv, io, json, sys, zipfile
+path, want = sys.argv[1], sys.argv[2:]
+if path.endswith(".csv"):
+    rows = list(csv.reader(io.open(path, encoding="utf-8", newline="")))
+    text, kind = "\n".join(",".join(r) for r in rows), f"CSV, header {rows[0][:5]}, {len(rows) - 1} rows"
+elif path.endswith(".json"):
+    text, kind = json.dumps(json.load(open(path, encoding="utf-8")), ensure_ascii=False), "JSON"
+else:
+    z = zipfile.ZipFile(path)
+    text = "".join(z.read(n).decode("utf-8", "replace") for n in z.namelist() if n.endswith(".xml"))
+    kind = f"Excel workbook ({len(z.namelist())} parts)"
+missing = [w for w in want if w not in text]
+print(f"    | {path.rsplit('/', 1)[1]}: {kind}; " + ("holds " + ", ".join(want) if not missing else f"lacks {missing}"))
+sys.exit(1 if missing else 0)
+PYEOF
+}
+
+# same_accounts A.json B.json: two JSON exports hold the same accounts: title, login, password, websites,
+# notes and extra fields (what a CSV keeps, formats.md 4.5), compared as sets; prints the differing titles.
+same_accounts() {
+    python3 - "$1" "$2" <<'PYEOF'
+import json, sys
+def accounts(path):
+    out = {}
+    for it in json.load(open(path, encoding="utf-8"))["items"]:
+        login = it.get("login") or {}
+        urls = (it.get("passwordVault") or {}).get("urls") or [u.get("uri") for u in (login.get("uris") or [])]
+        fields = tuple((f.get("name"), f.get("value"), f.get("type")) for f in (it.get("fields") or []))
+        out.setdefault(it.get("name"), []).append((login.get("username"), login.get("password"), tuple(urls), it.get("notes"), fields))
+    return out
+a, b = accounts(sys.argv[1]), accounts(sys.argv[2])
+bad = [t for t in sorted(set(a) | set(b), key=str) if sorted(a.get(t, []), key=repr) != sorted(b.get(t, []), key=repr)]
+print(f"    | {sys.argv[1].rsplit('/', 1)[1]}: {sum(map(len, a.values()))} accounts; {sys.argv[2].rsplit('/', 1)[1]}: {sum(map(len, b.values()))}; "
+      + ("the same" if not bad else f"they differ in: {bad}"))
+sys.exit(1 if bad else 0)
+PYEOF
+}
+
+# ---- line 1: a backup into Download; uninstall; install; restore from Welcome; a PIN ----
+restore_from_welcome() {
+    pva_on Welcome 60 && pva_tap pv.open.Restore && pva_on Restore 20 || return 1
+    pva_need pv.backup.choose 20 && pva_tap pv.backup.choose || return 1
+    pva_picker_open "$1" || return 1
+    pva_need pv.backup.password 30 && pva_type pv.backup.password "$PVA_PASSWORD" || return 1
+    pva_hide_keyboard
+    pva_tap pv.backup.submit && pva_need pv.backup.restore 60 || return 1
+    pv_log "the restore's summary: $(pva_text pv.backup.summary 2>/dev/null)"
+}
+
+line1() {
+    T="line 1"
+    local backup
+    clean_download
+    pv_step "$T: a fresh install, setup (the PIN left off), two accounts" -- eval 'fresh mp && add_two' || return 1
+    pv_step "$T: a backup into Download through the system's picker" -- w5_backup
+    backup=$(pva_in_download '^PasswordVault-backup-.*\.pvault$' | tail -n 1)
+    pv_step "$T: the backup is in Download: ${backup:-none}" -- [ -n "$backup" ] || return 1
+    pv_step "$T: adb uninstall; the backup stays in Download" -- eval 'pv_adb uninstall "$PV_PACKAGE" | grep -q "^Success" && [ -n "$(pva_in_download "^$(pva_re "$backup")\$")" ]'
+    pv_step "$T: installed again: Welcome" -- eval 'pva_install "$DEV_APK" && pva_start && pva_on Welcome 60' || return 1
+    pv_step "$T: Welcome's \"Restore from a backup file\": the file in the picker, its master password, the summary" -- restore_from_welcome "$backup" || return 1
+    pv_step "$T: Restore: the app opens and \"Choose a PIN\" follows" -- eval 'pva_tap pv.backup.restore && pva_unlocked Passwords 120 && pva_to_create_pin'
+    pv_step "$T: a PIN can be set: chosen and typed again; the fingerprint offer \"Not now\", \"Make backups\" Finish" -- eval 'pva_choose_pin "$PIN" && pva_after_pin notNow'
+    pv_step "$T: the accounts are back: Gmail and Payme" -- eval 'pva_row_with Gmail 15 && pva_row_with Payme 10'
+    pv_step "$T: Lock now shows the pad; the PIN opens the app" -- eval 'pva_lock_now && pva_need pv.lock.pad 20 && pva_pin "$PIN" && pva_opened 30 && pva_settle Passwords 60'
+    pv_step "$T: no crash" -- pva_no_crash
+}
+
+# ---- line 2: "Immediately": backup, each export and an import finish; the picker; a kill in it ----
+PICK_CSV=pv-5-small.csv
+
+small_csv() {
+    printf 'name,url,username,password,note\r\nTashkent Metro,https://metro.uz,dilshod.m,Qx7mVb2Lp9Ws,yo%sl kartasi\r\nKapitalbank,https://kapitalbank.uz,+998901112233,Hn4Rt8Ws2Kz6,\r\n' 'ʻ' > "$DEV_OUT/$PICK_CSV"
+    pva_push_download "$DEV_OUT/$PICK_CSV"
+}
+
+# kill_app: the app's process ends while it is not in front (the picker is): am kill, or kill -9 through
+# run-as (debug) or su (API 24 and 28) where am kill is refused.
+kill_app() {
+    local pid
+    pid=$(pva_pid)
+    [ -n "$pid" ] || { pv_log "no process"; return 1; }
+    pv_shell am kill "$PV_PACKAGE" >/dev/null 2>&1
+    pv_sleep 2
+    [ -z "$(pva_pid)" ] || pv_shell run-as "$PV_PACKAGE" kill -9 "$(pva_pid)" >/dev/null 2>&1
+    pv_sleep 1
+    [ -z "$(pva_pid)" ] || ! pv_has_root || pv_shell su 0 kill -9 "$(pva_pid)" >/dev/null 2>&1
+    pv_sleep 1
+    [ -z "$(pva_pid)" ] || { pv_log "process $(pva_pid) is still there"; return 1; }
+    pv_log "process $pid ended while the picker was in front"
+}
+
+# kill_in_picker: U 12 check 13. Settings > Backup, its master password; with the picker in front the
+# app's process is killed; SAVE: the picker hands its result to a new process, which is locked; the PIN:
+# the backup either completes ("Backup saved", the file in Download not empty) or says "No backup was
+# made" and its empty file is gone.
+kill_in_picker() {
+    local before name size
+    before=$(download_names)
+    settings && pva_reveal pv.open.Backup && pva_tap pv.open.Backup && pva_on Backup 20 || return 1
+    if pva_present pv.backup.continue 3; then pva_tap pv.backup.continue || return 1; fi
+    pva_need pv.backup.password 20 && pva_type pv.backup.password "$PVA_PASSWORD" || return 1
+    pva_hide_keyboard
+    pva_tap pv.backup.submit && pva_picker_wait 30 || return 1
+    pv_sleep 2
+    kill_app || return 1
+    pva_picker_save || return 1
+    pva_on Locked 60 && pva_need pv.lock.pad 30 && pva_pin "$PIN" || return 1
+    pv_ui_wait '[|]pv\.(backup\.(done|error|line\.0)|route\.Backup)$' 60 || { pv_log "neither the backup's end nor its screen after the unlock; ids: $(pva_ids)"; return 1; }
+    pv_sleep 3
+    name=$(new_in_download "$before" '^PasswordVault-backup-.*\.pvault$')
+    if pva_present pv.backup.done 5; then
+        size=$(pv_shell stat -c %s "$PVA_DOWNLOAD/$name" 2>/dev/null | tr -d '\r')
+        pv_log "the backup completed after the unlock: $(pva_text pv.backup.line.0 2>/dev/null); $name, ${size:-?} bytes"
+        [ -n "$name" ] && [ "${size:-0}" -gt 0 ] || return 1
+        pva_tap pv.backup.done
+    else
+        pv_log "after the unlock: $(pv_ui_nodes | cut -d'|' -f1 | grep -v '^$' | tr '\n' ';' | cut -c1-300)"
+        pv_ui_nodes | cut -d'|' -f1 | grep -q '^No backup was made' || { pv_log "no \"No backup was made\""; return 1; }
+        [ -z "$name" ] || { pv_log "the empty file $name is still in Download"; return 1; }
+    fi
+}
+
+# picker_stays SECONDS: Settings > Import, CSV: the picker; SECONDS in it; Back: the app is open, not
+# locked (E17's item, which lock/E17.sh runs on API 37 only).
+picker_stays() {
+    local deadline
+    settings && pva_reveal pv.open.Import && pva_tap pv.open.Import && pva_on Import 20 || return 1
+    pva_tap pv.import.source.csv && pva_picker_wait 20 || return 1
+    pv_sleep "$1"
+    pva_picker_in_front || { pv_log "the picker left the front: $(pv_focus)"; return 1; }
+    pv_shell input keyevent KEYCODE_BACK >/dev/null
+    deadline=$((SECONDS + 15))
+    until pva_in_front; do
+        [ $SECONDS -lt $deadline ] || { pv_log "the app is not in front after Back: $(pv_focus)"; return 1; }
+        pv_shell input keyevent KEYCODE_BACK >/dev/null
+        pv_sleep 1
+    done
+    pva_status_has '^state: unlocked' && pva_absent pv.route.Locked
+}
+
+# picker_screen_off: Settings > Import, CSV: the picker; the screen off for 3 s and on: the app locked
+# under the picker; the file picked; the PIN: the import goes on with that file (E17's item).
+picker_screen_off() {
+    settings && pva_reveal pv.open.Import && pva_tap pv.open.Import && pva_on Import 20 || return 1
+    pva_tap pv.import.source.csv && pva_picker_wait 20 || return 1
+    pv_shell input keyevent KEYCODE_SLEEP >/dev/null
+    pv_sleep 3
+    pv_shell input keyevent KEYCODE_WAKEUP >/dev/null
+    pv_sleep 1
+    pv_unlock || return 1
+    pva_status_soon '^state: locked' 10 || return 1
+    pva_picker_in_front || { pv_log "the picker is not in front after the screen came back: $(pv_focus)"; return 1; }
+    pva_picker_open "$PICK_CSV" pushed || return 1
+    pva_on Locked 30 && pva_need pv.lock.pad 20 && pva_pin "$PIN" || return 1
+    pv_ui_wait '[|]pv\.import\.(fileName|preview|found|reading|paused|import|columns)$' 30 \
+        || { pv_log "the import did not go on after the unlock; ids: $(pva_ids)"; return 1; }
+    # Leave the import without importing: Back to Settings, then the list.
+    local i
+    for i in 1 2 3 4; do pva_present pv.route.Settings 2 && break; pv_shell input keyevent KEYCODE_BACK >/dev/null; pv_sleep 1; done
+    pva_on Settings 10
+}
+
+line2() {
+    T="line 2"
+    local before
+    clean_download
+    pv_step "$T: a fresh install, setup with a PIN, two accounts" -- eval 'fresh pin && add_two' || return 1
+    pv_step "$T: Settings: lock the app after leaving it: Immediately" -- set_lock_delay IMMEDIATELY || return 1
+    pv_step "$T: with Immediately a backup finishes (U 12 check 14)" -- eval 'w5_backup && [ -n "$(pva_in_download "^PasswordVault-backup-.*\.pvault$")" ]'
+    pv_step "$T: with Immediately the CSV export finishes" -- eval 'w5_export csv && [ -n "$(pva_in_download "^passwords-.*\.csv$")" ]'
+    pv_step "$T: with Immediately the JSON export finishes" -- eval 'w5_export json && [ -n "$(pva_in_download "^passwords-.*\.json$")" ]'
+    pv_step "$T: with Immediately the Excel export finishes" -- eval 'w5_export xlsx && [ -n "$(pva_in_download "^passwords-.*\.xlsx$")" ]'
+    pv_step "$T: a small CSV pushed to Download" -- small_csv
+    pv_step "$T: with Immediately an import of it finishes: Tashkent Metro and Kapitalbank in the list" -- eval 'w5_import csv "$PICK_CSV" pushed && pva_tap pv.tab.Passwords && pva_on Passwords 20 && pva_row_with "Tashkent Metro" 15 && pva_row_with Kapitalbank 10'
+    if [ "$API" -lt 30 ]; then
+        # lock/E17.sh runs these on API 37 (the part lock); lock.md lists E17 for Android 17 only, and
+        # build-plan 7 line 2 asks for them on API 24 too.
+        pv_step "$T: a small CSV pushed again" -- small_csv
+        pv_step "$T: 90 s in the file picker with Immediately: still open (E17's item)" -- picker_stays 90
+        pv_step "$T: the picker and the screen off: locked; the file picked; after the PIN the import goes on (E17's item)" -- picker_screen_off
+    fi
+    pv_step "$T: a kill while the picker is open (U 12 check 13): after the unlock the backup completes, or \"No backup was made\" and no file" -- kill_in_picker
+    pv_step "$T: no crash" -- pva_no_crash
+}
+
+# ---- line 3: CSV, JSON and Excel of a vault with Uzbek, Cyrillic, +998, "=" and a multi-line note ----
+SPECIAL=pv-5-special.csv
+
+special_csv() {
+    python3 - "$DEV_OUT/$SPECIAL" <<'PYEOF'
+import sys
+rows = [
+    ["name", "url", "username", "password", "note"],
+    ["O\u02bbzbekiston pochtasi", "https://pochta.uz", "aziz.o\u02bbg\u02bbli", "G\u02bbalaba-2024!", "Birinchi qator\nIkkinchi qator: o\u02bb g\u02bb sh\u02bc"],
+    ["Почта Ташкент", "https://mail.uz", "азиз", "Парол-Ёз-2026", "Изоҳ ўзбекча: қўл"],
+    ["Payme", "https://payme.uz", "+998901234567", "=SUM(1+1)", "=HYPERLINK(\"http://x.uz\")"],
+    ["Click", "https://click.uz", "+998 90 111 22 33", "-Minus1+", "+plus note\nsecond line"],
+]
+def q(v):
+    return '"' + v.replace('"', '""') + '"' if any(c in v for c in ',"\r\n') or v[:1] in " \t" or v[-1:] in " \t" else v
+with open(sys.argv[1], "w", encoding="utf-8", newline="") as f:
+    for r in rows:
+        f.write(",".join(q(v) for v in r) + "\r\n")
+PYEOF
+    pva_push_download "$DEV_OUT/$SPECIAL"
+}
+
+# empty_vault: pm clear (the app's data gone, the install kept), started again: Welcome; setup with the
+# PIN left off.
+empty_vault() { pv_shell pm clear "$PV_PACKAGE" | grep -q Success && pva_start && pva_set_up; }
+
+# export_new FORMAT: an export in FORMAT whose file is new in Download; prints its name.
+export_new() {
+    local before name
+    before=$(download_names)
+    w5_export "$1" >&2 || return 1
+    name=$(new_in_download "$before" "^passwords-.*\\.$1\$")
+    [ -n "$name" ] || { pv_log "no new .$1 file in Download"; return 1; }
+    echo "$name"
+}
+
+line3() {
+    T="line 3"
+    local csv json xlsx dir json2 json3
+    dir=$DEV_OUT/line3-export
+    rm -rf "$dir" && mkdir -p "$dir"
+    clean_download
+    pv_step "$T: a fresh install, setup (the PIN left off)" -- fresh mp || return 1
+    pv_step "$T: four accounts with Uzbek (oʻ, gʻ), Cyrillic, a +998 number, values that start with = + -, multi-line notes: a CSV imported" -- eval 'special_csv && w5_import csv "$SPECIAL" pushed && pva_tap pv.tab.Passwords && pva_on Passwords 20 && pva_row_with Payme 15 && pva_row_with Click 10' || return 1
+    pv_step "$T: CSV exported" -- eval 'csv=$(export_new csv) && pull "$csv" > /dev/null && cp "$DEV_OUT/$csv" "$dir/"' || return 1
+    pv_step "$T: JSON exported" -- eval 'json=$(export_new json) && pull "$json" > /dev/null && cp "$DEV_OUT/$json" "$dir/"' || return 1
+    pv_step "$T: Excel exported" -- eval 'xlsx=$(export_new xlsx) && pull "$xlsx" > /dev/null && cp "$DEV_OUT/$xlsx" "$dir/"' || return 1
+    ls -l "$dir" | sed 's/^/    | /'
+    pv_step "$T: tools/validate/run.sh on the three files" -- eval '"$REPO/tools/validate/run.sh" "$dir" > "$DEV_OUT/validate.log" 2>&1; rc=$?; grep -E "^(FAIL|RESULT)" "$DEV_OUT/validate.log" | sed "s/^/    | /"; [ $rc = 0 ]'
+    pv_step "$T: the exports hold the values" -- eval 'export_holds "$dir/$json" "Oʻzbekiston pochtasi" "Почта Ташкент" "+998901234567" "=SUM(1+1)" "Ikkinchi qator" && export_holds "$dir/$csv" "Парол-Ёз-2026" "=HYPERLINK" && export_holds "$dir/$xlsx" "азиз" "Gʻalaba-2024!"'
+    pv_shell "rm -f $PVA_DOWNLOAD/$xlsx" >/dev/null 2>&1
+    pv_step "$T: an empty vault (pm clear, setup); the CSV export imported" -- eval 'empty_vault && w5_import csv "$csv"' || return 1
+    pv_step "$T: exported again as JSON: the same accounts as the first JSON (title, login, password, websites, notes, fields)" -- eval 'json2=$(export_new json) && pull "$json2" > /dev/null && same_accounts "$dir/$json" "$DEV_OUT/$json2"'
+    pv_shell "rm -f $PVA_DOWNLOAD/$json2" >/dev/null 2>&1
+    pv_step "$T: an empty vault again; the JSON export imported" -- eval 'empty_vault && w5_import json "$json"' || return 1
+    pv_step "$T: exported again as JSON: the same accounts as the first JSON" -- eval 'json3=$(export_new json) && pull "$json3" > /dev/null && same_accounts "$dir/$json" "$DEV_OUT/$json3"'
+    pv_step "$T: no crash" -- pva_no_crash
+}
+
+# ---- line 4: the Chrome fixture and the Uzbek Cyrillic header file of FR P6 ----
+CHROME=pv-5-chrome.csv
+UZCYRL=pv-5-uzcyrl.csv
+
+# imported_as_in FIXTURE JSON: every row of the CSV FIXTURE that has a password is an account of the JSON
+# export with that password, login and notes (the fixture's own header names, Uzbek Cyrillic or Chrome's).
+imported_as_in() {
+    python3 - "$1" "$2" <<'PYEOF'
+import csv, json, sys
+rows = list(csv.reader(open(sys.argv[1], encoding="utf-8", newline="")))
+head, rows = rows[0], rows[1:]
+items = json.load(open(sys.argv[2], encoding="utf-8"))["items"]
+have = {((it.get("login") or {}).get("username"), (it.get("login") or {}).get("password")): it for it in items}
+bad = []
+for r in rows:
+    user, password, note = r[2], r[3], r[4] if len(r) > 4 else ""
+    if not password:
+        continue
+    it = have.get((user or None, password))
+    if it is None:
+        bad.append(f"{r[0]}: no account with its login and password")
+    elif (it.get("notes") or "") .split("\n\n--- PasswordVault")[0] != note:
+        bad.append(f"{r[0]}: the notes differ")
+print(f"    | {sys.argv[1].rsplit('/', 1)[1]} (header {head}): {len(rows)} rows; " + ("each with a password is an account with it" if not bad else "; ".join(bad)))
+sys.exit(1 if bad else 0)
+PYEOF
+}
+
+line4() {
+    T="line 4"
+    local json
+    clean_download
+    pv_step "$T: a fresh install, setup (the PIN left off)" -- fresh mp || return 1
+    cp "$REPO/core/src/test/resources/formats/proton/chrome.csv" "$DEV_OUT/$CHROME"
+    cp "$REPO/core/src/test/resources/formats/uzbek-cyrillic-headers.csv" "$DEV_OUT/$UZCYRL"
+    pv_step "$T: the Chrome fixture (core/src/test/resources/formats/proton/chrome.csv) imported as \"Google Password Manager or Chrome\"" -- eval 'pva_push_download "$DEV_OUT/$CHROME" && w5_import google "$CHROME" pushed'
+    pv_step "$T: the Uzbek Cyrillic header file of FR P6 imported as CSV, with no column mapping asked" -- eval 'pva_push_download "$DEV_OUT/$UZCYRL" && w5_import csv "$UZCYRL" pushed'
+    pv_step "$T: the list has proton.me's and the Uzbek file's accounts" -- eval 'pva_tap pv.tab.Passwords && pva_on Passwords 20 && pva_row_with Почта 15 && pva_row_with Банк 10 && pva_row_with "Davlat xizmatlari" 10'
+    pv_step "$T: a JSON export: every row with a password came in with its login, password and notes" -- eval 'json=$(export_new json) && pull "$json" > /dev/null && imported_as_in "$DEV_OUT/$UZCYRL" "$DEV_OUT/$json" && imported_as_in "$DEV_OUT/$CHROME" "$DEV_OUT/$json"'
+    pv_step "$T: no crash" -- pva_no_crash
+}
+
+# ---- line 5: change the master password with a PIN and a fingerprint set ----
+NEW_MP=""
+
+# choose_words: on the choice of a new master password (setup's own screens), the suggested words, written
+# down, typed again, Next; NEW_MP holds them.
+choose_words() {
+    pva_need pv.setup.passphrase 30 && pva_reveal pv.setup.passphrase || return 1
+    NEW_MP=$(pva_text pv.setup.passphrase) || return 1
+    printf '%s\n' "$NEW_MP" | grep -Eq '^[a-z]{3,9}(-[a-z]{3,9}){5}$' || { pv_log "not six words: '$NEW_MP'"; return 1; }
+    pva_tap pv.open.WriteDown && pva_need pv.open.TypeAgain 20 && pva_tap pv.open.TypeAgain || return 1
+    pva_type pv.setup.again "$NEW_MP" || return 1
+    pva_hide_keyboard
+    pva_tap pv.action.createVault
+}
+
+# change_to_pin_step: Settings > Change master password: the current one, Next, the new one chosen; the
+# step that keeps the PIN.
+change_to_pin_step() {
+    settings && pva_reveal pv.open.ChangeMasterPassword && pva_tap pv.open.ChangeMasterPassword && pva_on ChangeMasterPassword 20 || return 1
+    pva_need pv.master.current 20 && pva_type pv.master.current "$PVA_PASSWORD" || return 1
+    pva_hide_keyboard
+    pva_tap pv.master.current.next || return 1
+    choose_words || return 1
+    pva_need pv.pin.key.0 60
+}
+
+# mp_opens PASSWORD: Lock now; to the master-password field (past the prompt and the pad); PASSWORD
+# opens the app.
+mp_opens() {
+    local i
+    pva_lock_now || return 1
+    for i in 1 2 3 4 5 6 7 8; do
+        pva_present pv.lock.password 2 && break
+        if pva_status | grep -q '^prompt: UNLOCK'; then pva_prompt_use_pin; fi
+        if pva_present pv.lock.forgotPin 1; then pva_tap pv.lock.forgotPin; fi
+        pv_sleep 1
+    done
+    pva_need pv.lock.password 10 && pva_type pv.lock.password "$1" || return 1
+    pva_hide_keyboard
+    pva_tap pv.lock.unlock && pva_opened 90 && pva_settle Passwords 60
+}
+
+finger_opens() { pva_lock_now && pva_prompt_open UNLOCK 20 && pva_finger 1 && pva_opened 20 && pva_settle Passwords 60; }
+
+pin_opens() { pva_lock_now && { ! pva_status | grep -q '^prompt: UNLOCK' || pva_prompt_use_pin; } && pva_need pv.lock.pad 20 && pva_pin "$PIN" && pva_opened 30 && pva_settle Passwords 60; }
+
+line5() {
+    T="line 5"
+    local old
+    pv_step "$T: a fresh install, setup with a PIN and fingerprint unlock (finger 1), an account" -- eval 'fresh pin+fp && pva_add_account Gmail aziz.karimov@gmail.com Tr0ub4dor3x https://mail.google.com note && back_to_list' || return 1
+    pv_step "$T: status: a PIN slot and a fingerprint slot" -- eval 'pva_status_has "^pin.rec: OK, slot set" && pva_status_has "^fingerprint.rec: OK, slot set"'
+    old=$PVA_PASSWORD
+    pv_step "$T: Settings > Change master password: the current one, the new one chosen; the PIN kept" -- eval 'change_to_pin_step && pva_pin "$PIN"' || return 1
+    pv_step "$T: \"Touch the sensor to keep fingerprint unlock on.\": finger 1" -- eval 'pva_prompt_open KEEP_AFTER_CHANGE 60 && pva_finger 1'
+    pv_step "$T: \"Your master password was changed.\" with the backup step; Later" -- eval 'pva_need pv.master.backUpNow 90 && pva_tap pv.master.later && pva_on Settings 30 && pva_tap pv.tab.Passwords && pva_on Passwords 20'
+    PVA_PASSWORD=$NEW_MP
+    pv_step "$T: status: the PIN and the fingerprint kept (both slots set)" -- eval 'pva_status_has "^pin.rec: OK, slot set" && pva_status_has "^fingerprint.rec: OK, slot set"'
+    pv_step "$T: the fingerprint opens the vault" -- finger_opens
+    pv_step "$T: the PIN opens the vault" -- pin_opens
+    pv_step "$T: the new master password opens the vault" -- mp_opens "$NEW_MP"
+    pv_step "$T: the account is still there" -- pva_row_with Gmail 10
+    pv_step "$T: no crash" -- pva_no_crash
+}
+
+# ---- lock/lib.sh in a one-device check: the records, the PIN steps, F11 (newmp.sh) ----
+# lock_lib: sources tools/emu/lock/lib.sh and newmp.sh (functions pvl_* and pvn_*, which keep this
+# script's variables) and gives them what pvl_begin would.
+lock_lib() {
+    [ -z "${LOCK_DIR:-}" ] || return 0
+    # shellcheck source=../lock/lib.sh
+    source "$EMU/lock/lib.sh"
+    # shellcheck source=../lock/newmp.sh
+    source "$EMU/lock/newmp.sh"
+    SERIAL=$PV_SERIAL
+    APK=$DEV_APK
+    VARIANT=$DEV_VARIANT
+    PVL_OUT=$DEV_OUT/lock
+    mkdir -p "$PVL_OUT"
+    PVL_RESOURCES=$PVL_OUT/resources.txt
+    PVL_RESTORE=()
+    PVL_UNDO=()
+    PVL_PIN=$PIN
+}
+
+# ---- line 6: a new master password asked for (F11); the wait; no backup banner meanwhile ----
+# On API 37 lock/E4.sh (a clock a year ahead and back) and E5.sh (boot_count) run in the part lock. On a
+# level below 28, which has no `cmd alarm set-time`, the clock is set with su's date.
+set_clock_24() {
+    local target=$(( $(date +%s) + $1 )) now
+    pv_shell su 0 date "$(date -u -d "@$target" +%m%d%H%M%Y.%S)" >/dev/null 2>&1
+    pv_sleep 2
+    now=$(pv_shell date +%s 2>/dev/null | tr -d '\r')
+    [ -n "$now" ] && [ $((now - target)) -lt 30 ] && [ $((target - now)) -lt 30 ] || { pv_log "the phone's clock is $now, wanted $target"; return 1; }
+}
+
+# credit_bounded C0 SEEN0: the wait's credit grew by no more than the real time since SEEN0 (newmp.sh).
+credit_bounded() { local out; out=$(pvn_credit_bound "$1" "$2"); local rc=$?; pv_log "$out"; return $rc; }
+
+clock_and_boot_count() {
+    local c0 seen0 i
+    c0=$(pvn_credited_ms); seen0=$(pvn_seen_ms)
+    [ -n "$c0" ] && [ -n "$seen0" ] || { pv_log "no pending_mp in state.rec"; return 1; }
+    pvl_setting_set global auto_time 0 || return 1
+    set_clock_24 $((366 * 86400)) || return 1
+    pva_away 3 && pva_on Locked 20 || return 1
+    credit_bounded "$c0" "$seen0" || { set_clock_24 0; return 1; }
+    set_clock_24 0 || return 1
+    pva_away 3 && pva_on Locked 20 || return 1
+    credit_bounded "$c0" "$seen0" || return 1
+    pvl_setting_set global boot_count 99999 || return 1
+    for i in 1 2 3; do
+        pv_shell settings put global boot_count 99999 >/dev/null || return 1
+        pva_away 20 && pva_on Locked 20 || return 1
+        credit_bounded "$c0" "$seen0" || return 1
+    done
+    pvl_to_master_password || return 1
+    local line
+    line=$(pva_text pv.lock.pending) || return 1
+    pv_log "the lock screen: $line"
+    pvl_expect "$line" plural lock_mp_pending_hours 24 2>/dev/null || pvl_expect "$line" plural lock_mp_pending_hours 23 || return 1
+    pvl_to_pad 15 && pva_pin "$PIN" && pva_opened 30 && pva_settle Passwords 60
+}
+
+line6() {
+    T="line 6"
+    lock_lib
+    pv_step "$T: a fresh install, setup with a PIN, two accounts" -- eval 'fresh pin && add_two' || return 1
+    pv_step "$T: the list shows its backup banner (accounts and no backup)" -- pva_need pv.list.banner.backup 20
+    pv_step "$T: a new master password asked for (F11: Settings > Change master password > \"I don't remember it\", the PIN, the words): pending" -- pvn_request || return 1
+    pv_step "$T: while it is pending the list shows the pending banner and no backup banner (lock.md F11 step 10)" -- eval 'pva_on Passwords 20 && pva_need pv.list.banner.pending 20 && pva_absent pv.list.banner.backup'
+    if [ "$API" -lt 28 ]; then
+        pv_step "$T: the wait's credit unchanged by the clock a year ahead and back (su date) and by boot_count 99999 three times; the lock screen still says about 24 hours" -- clock_and_boot_count
+        pv_shell su 0 date "$(date -u +%m%d%H%M%Y.%S)" >/dev/null 2>&1
+        pvl_cleanup
+    else
+        echo "NOTE $T: the clock (E4) and boot_count (E5) on API 37 are the part lock's"
+    fi
+    pv_step "$T: no crash" -- pva_no_crash
+}
+
+# ---- line 7: "Start with an empty app"; the old passwords from Welcome with their PIN, from Settings ----
+# "Start with an empty app" is offered only while no PIN or fingerprint can be used now (lock.md F17 step
+# 1 item 4): the Keystore that cannot be checked (ks-fault keystore-load, lock.md F15c) makes the PIN
+# CANNOT_CHECK for the visit without removing it, as on a phone whose Keystore stopped answering.
+vault_files() { run_as 'cd files && find . -type f -name "*.pvault" | while read f; do echo "$(basename "$f") $(wc -c < "$f")"; done' | sort; }
+
+# to_start_empty: Lock now; the Keystore made to fail once; the PIN: "can't be checked", the
+# master-password screen; "Forgot master password?" > "Start with an empty app" > confirmed: Welcome.
+to_start_empty() {
+    pva_lock_now && pva_need pv.lock.pad 20 || return 1
+    pva_debug ks-fault keystore-load >/dev/null || return 1
+    pva_pin "$PIN" || return 1
+    pva_need pv.lock.password 30 || return 1
+    pv_log "the lock screen: $(pva_text pv.lock.reason 2>/dev/null)"
+    pva_hide_keyboard
+    pva_tap pv.lock.forgot && pva_need pv.lock.sheet 10 || return 1
+    pva_reveal pv.lock.sheet.empty && pva_tap pv.lock.sheet.empty || return 1
+    pva_need pv.lock.confirmYes 10 && pva_tap pv.lock.confirmYes || return 1
+    pva_on Welcome 60
+}
+
+line7() {
+    T="line 7"
+    local before after aside
+    pv_step "$T: a fresh install, setup with a PIN, two accounts" -- eval 'fresh pin && add_two' || return 1
+    OLD_MP=$PVA_PASSWORD
+    before=$(vault_files)
+    echo "    | the vault's files: $(printf '%s' "$before" | tr '\n' ';')"
+    pv_step "$T: the Keystore cannot be checked; \"Forgot master password?\" > \"Start with an empty app\": Welcome" -- to_start_empty || return 1
+    aside=$(pv_ui_nodes | grep -o 'pv\.setup\.aside\.[0-9a-f-]*' | head -n 1)
+    pv_step "$T: Welcome offers \"Open my previous passwords\"" -- [ -n "$aside" ] || return 1
+    pv_step "$T: their own lock screen (the pad); their PIN opens them" -- eval 'pva_tap "$aside" && pva_need pv.lock.pad 30 && pva_pin "$PIN" && pva_opened 60 && pva_settle Passwords 60'
+    pv_step "$T: Gmail and Payme are back" -- eval 'pva_row_with Gmail 15 && pva_row_with Payme 10'
+    after=$(vault_files)
+    pv_step "$T: no vault file was deleted (U 12 check 16): the same generations, sizes alike" -- eval '[ "$before" = "$(printf "%s\n" "$after" | grep -F -x -f <(printf "%s\n" "$before"))" ]'
+    pv_step "$T: \"Start with an empty app\" again: Welcome; a new vault set up" -- eval 'to_start_empty && pva_set_up' || return 1
+    pv_step "$T: Settings > Old passwords: the vault put aside; Open with its master password adds its accounts" -- old_passwords_open "$OLD_MP"
+    pv_step "$T: no crash" -- pva_no_crash
+}
+OLD_MP=""
+
+# old_passwords_open PASSWORD: Settings > Old passwords; the first vault's Open; PASSWORD; its accounts
+# are added to the current vault (Gmail and Payme in the list).
+old_passwords_open() {
+    local open
+    settings && pva_reveal pv.open.OldPasswords && pva_tap pv.open.OldPasswords && pva_on OldPasswords 20 || return 1
+    pva_need pv.backup.old.list 15 || return 1
+    open=$(pv_ui_nodes | grep -o 'pv\.backup\.old\.open\.[0-9a-f-]*' | head -n 1)
+    [ -n "$open" ] || { pv_log "no vault in Old passwords; ids: $(pva_ids)"; return 1; }
+    pva_tap "$open" && pva_need pv.backup.password 20 && pva_type pv.backup.password "$1" || return 1
+    pva_hide_keyboard
+    pva_tap pv.backup.submit && pva_need pv.backup.old.done 90 || return 1
+    pv_log "$(pva_text pv.backup.old.done)"
+    pv_shell input keyevent KEYCODE_BACK >/dev/null
+    pva_on Settings 20 && pva_tap pv.tab.Passwords && pva_on Passwords 20 && pva_row_with Gmail 15 && pva_row_with Payme 10
+}
+
+# ---- U 12 check 15: a forgotten master password replaced with the PIN, finished, a backup offered ----
+# from_lock_screen: Lock now; "Forgot PIN? Use master password"; "Forgot master password?" > "Use my
+# PIN"; the PIN: the app opens on Route.NewMasterPassword, its explanation (iface-126).
+from_lock_screen() {
+    pva_lock_now && pva_need pv.lock.pad 20 && pva_tap pv.lock.forgotPin || return 1
+    pva_need pv.lock.password 20 && pva_hide_keyboard
+    pva_tap pv.lock.forgot && pva_need pv.lock.sheet.usePin 20 && pva_tap pv.lock.sheet.usePin || return 1
+    pva_need pv.pin.key.0 20 && pva_pin "$PIN" || return 1
+    pva_on NewMasterPassword 60 && pva_need pv.master.explain 20
+}
+
+# finish_ended: after "Finish" the replacement ends within 120 s: the PIN steps, a notice or 5.5's backup step.
+finish_ended() {
+    local deadline=$((SECONDS + 120))
+    until pva_present pv.route.CreatePin 2 || pva_present pv.notice 2 || pva_present pv.master.later 2; do
+        [ $SECONDS -lt $deadline ] || { pv_log "the finishing did not end; ids: $(pva_ids)"; return 1; }
+    done
+}
+
+check15() {
+    T="check 15"
+    lock_lib
+    local old
+    pv_step "$T: a fresh install, setup with a PIN, two accounts" -- eval 'fresh pin && add_two' || return 1
+    old=$PVA_PASSWORD
+    pv_step "$T: from the lock screen (\"Forgot master password?\" > \"Use my PIN\", the PIN): the explanation of a new master password" -- from_lock_screen || return 1
+    pv_step "$T: Cancel; the next request asks for the PIN again (the proof ended with its flow)" -- eval 'pva_tap pv.master.cancel && pva_unlocked Passwords 30 && pva_settle Passwords 30 && settings && pva_tap pv.open.ChangeMasterPassword && pva_on ChangeMasterPassword 20 && pva_hide_keyboard && pva_tap pv.open.NewMasterPassword && pva_need pv.master.continue 20 && pva_tap pv.master.continue && pva_need pv.pin.key.0 30' || return 1
+    pv_step "$T: the PIN; a new master password chosen: the wait (\"starts working in about 24 hours\")" -- eval 'pva_pin "$PIN" && choose_words && pva_need pv.master.wait 60' || return 1
+    pv_log "the wait: $(pva_text pv.master.wait 2>/dev/null)"
+    PVN_NEW_PASSWORD=$NEW_MP
+    pv_step "$T: Done; the list shows the pending banner and no backup banner" -- eval 'pva_tap pv.master.done; for i in 1 2 3 4; do pva_present pv.route.Passwords 2 && break; pva_present pv.tab.Passwords 1 && pva_tap pv.tab.Passwords || pv_shell input keyevent KEYCODE_BACK >/dev/null; pv_sleep 1; done; pva_settle Passwords 60 && pva_need pv.list.banner.pending 20 && pva_absent pv.list.banner.backup'
+    pv_step "$T: the 24 credited hours made to pass (state.rec's credited_ms, debug builds: an emulator cannot wait them)" -- pvn_make_ready || return 1
+    pv_step "$T: the app started again; the PIN; \"Finish now\" offered" -- eval 'pva_start && pva_on Locked 30 && pva_need pv.lock.pad 20 && pva_pin "$PIN" && pva_unlocked Passwords 30 && pva_need pv.answer.FINISH_NOW 30 && pva_tap pv.answer.FINISH_NOW' || return 1
+    pv_step "$T: finished by typing it once more: the replacement made (F11 steps 14 to 18)" -- eval 'pva_need pv.master.finish.field 30 && pva_type pv.master.finish.field "$NEW_MP" && pva_hide_keyboard && pva_tap pv.master.finish && finish_ended' || return 1
+    pv_step "$T: \"Choose a PIN\" for the new vault (F11 step 19): a PIN chosen; the fingerprint offer Not now; back on the route" -- eval 'pvl_pin_steps "$PIN" - NewMasterPassword'
+    pv_step "$T: then a new backup is offered" -- pva_need pv.master.backUpNow 60
+    pv_step "$T: \"Back up now\": the backup, with no master password asked again, into Download" -- eval 'pva_tap pv.master.backUpNow && pva_on Backup 30 && ! pva_present pv.backup.password 5 && w5_backup asked'
+    PVA_PASSWORD=$NEW_MP
+    pv_step "$T: the new master password opens the vault" -- eval 'pva_tap pv.tab.Passwords; pva_on Passwords 20; mp_opens "$NEW_MP"'
+    pv_step "$T: the accounts are there" -- eval 'pva_row_with Gmail 10 && pva_row_with Payme 10'
+    pv_step "$T: no crash" -- pva_no_crash
+}
+
+# ---- the owner's decision 21: a change that ended under the lock is shown after the unlock ----
+d21() {
+    T="decision 21"
+    local until now
+    pv_step "$T: a fresh install, setup with a PIN and fingerprint unlock, two accounts; the list's backup banner" -- eval 'fresh pin+fp && add_two && pva_need pv.list.banner.backup 20' || return 1
+    pv_step "$T: Change master password: the current one, a new one, the PIN kept" -- eval 'change_to_pin_step && pva_pin "$PIN"' || return 1
+    pv_step "$T: \"Touch the sensor to keep fingerprint unlock on.\" waits" -- eval 'pva_prompt_open KEEP_AFTER_CHANGE 60 && pva_need pv.master.touchSensor 10' || return 1
+    pv_step "$T: the screen off for 3 s meanwhile: locked" -- eval 'pva_screen_off 3 && pva_status_soon "^state: locked" 20'
+    pv_step "$T: the unlock (the PIN, kept): the route shows \"Your master password was changed.\" with \"Make a new backup now. …\"" -- eval 'pva_on Locked 30 && pva_need pv.lock.pad 20 && pva_pin "$PIN" && pva_on ChangeMasterPassword 60 && pva_need pv.master.later 30 && pv_ui_nodes | cut -d"|" -f1 | grep -qx "Your master password was changed." && pv_ui_nodes | cut -d"|" -f1 | grep -q "^Make a new backup now. "'
+    now=$(($(pv_shell date +%s | tr -d '\r') * 1000))
+    pv_step "$T: \"Later\": the backup reminder is snoozed for 3 days; the list shows no backup banner" -- eval 'pva_tap pv.master.later && pv_sleep 2 && until=$(prefs_value backup_reminder_snoozed_until_ms) && pv_log "snoozed until $until, now $now" && [ -n "$until" ] && [ $((until - now)) -gt $((3 * 86400000 - 120000)) ] && [ $((until - now)) -le $((3 * 86400000 + 120000)) ] && pva_tap pv.tab.Passwords && pva_on Passwords 20 && pv_sleep 3 && pva_absent pv.list.banner.backup'
+    PVA_PASSWORD=$NEW_MP
+    pv_step "$T: the new master password opens the vault" -- mp_opens "$NEW_MP"
+    pv_step "$T: no crash" -- pva_no_crash
+}
+
+# ---- wave 7 on one device: the fifty accounts (section 9), and 7.3's walk ----
+# is_flagged_dot FILE: the Security tab in the screenshot FILE has its dot (Material's small Badge in the
+# theme's error colour) at the top right of its icon; read beside the tab's bounds (pv.tab.Security).
+security_dot() {
+    local line file=$DEV_OUT/security-tab-$1.png
+    line=$(pv_ui_nodes_all 2>/dev/null | awk -F'|' '$3 == "pv.tab.Security" { print; exit }')
+    [ -n "$line" ] || { pv_log "no Security tab"; return 2; }
+    pva_screenshot "$file" || return 2
+    python3 - "$file" "$line" <<'PYEOF'
+import sys
+from PIL import Image
+im = Image.open(sys.argv[1]).convert("RGB")
+f = sys.argv[2].split("|")
+left, top, right, bottom = map(int, f[7:11])
+cx = (left + right) // 2
+# The icon is in the upper half of the item; its badge sits right of the icon's centre.
+box = (cx, top, min(right, cx + (right - left) // 3), top + (bottom - top) // 2)
+red = sum(1 for p in im.crop(box).getdata() if p[0] > 150 and p[1] < 90 and p[2] < 90)
+print(f"    | the Security tab's icon area: {red} red pixels")
+sys.exit(0 if red >= 20 else 1)
+PYEOF
+}
+
+FIFTY=pv-5-fifty.csv
+
+# guided_change: the reuse card's group list, Gmail's Change: create a new password, "Yes, it's changed":
+# "Gmail now has its own password."
+guided_change() {
+    pva_tap pv.tab.Security && pva_on Security 30 || return 1
+    pva_reveal pv.security.card.reused.open && pva_tap pv.security.card.reused.open && pva_on Group 20 || return 1
+    local action
+    action=$(pv_ui_nodes | grep -o 'pv\.group\.action\.[0-9a-f-]*' | head -n 1)
+    [ -n "$action" ] || { pv_log "no Change in the group; ids: $(pva_ids)"; return 1; }
+    pv_log "the group's first row: $(pv_ui_nodes | grep -B 3 "$action" | cut -d'|' -f1 | grep -v '^$' | tr '\n' ';')"
+    pva_tap "$action" && pva_on GuidedChange 20 || return 1
+    pva_reveal pv.change.create && pva_tap pv.change.create || return 1
+    pva_reveal pv.change.yes && pva_tap pv.change.yes || return 1
+    pva_need pv.change.done 20 || pva_need pv.change.next 5 || return 1
+    pv_ui_nodes | cut -d'|' -f1 | grep -qx 'Gmail now has its own password.' || { pv_log "texts: $(pv_ui_nodes | cut -d'|' -f1 | grep -v '^$' | tr '\n' ';' | cut -c1-400)"; return 1; }
+}
+
+# master_password_on PAYME: Payme's password made equal to the master password through its edit form.
+master_password_on() {
+    pva_tap pv.tab.Passwords && pva_on Passwords 20 || return 1
+    local row
+    row=$(pv_ui_nodes | awk -F'|' '$3 ~ /^pv[.]list[.]row[.]/ { r = $3 } $1 == "Payme" && r != "" { print r; exit }')
+    [ -n "$row" ] || { pv_log "no Payme row; rows: $(pva_row_titles | tr '\n' ';')"; return 1; }
+    pva_tap "$row" && pva_on Entry 20 && pva_tap pv.entry.edit && pva_on Edit 20 || return 1
+    pva_tap pv.edit.password && pv_shell input keyevent KEYCODE_MOVE_END >/dev/null || return 1
+    local i
+    for i in $(seq 1 40); do pv_shell input keyevent KEYCODE_DEL >/dev/null; done
+    pv_shell input text "$PVA_PASSWORD" >/dev/null
+    pva_hide_keyboard
+    pva_tap pv.edit.save && pva_on Entry 30 && back_to_list
+}
+
+fifty() {
+    T="wave 7"
+    pv_step "$T: a fresh install, setup (the PIN left off)" -- fresh mp || return 1
+    cp "$REPO/app/src/androidTest/assets/fixtures/fifty-accounts.csv" "$DEV_OUT/$FIFTY"
+    pv_step "$T: the fifty accounts of app/src/androidTest/assets/fixtures/fifty-accounts.csv imported (17 share one password)" -- eval 'clean_download && pva_push_download "$DEV_OUT/$FIFTY" && w5_import csv "$FIFTY" pushed'
+    pv_step "$T: the Security tab's dot is shown (new results)" -- eval 'pva_tap pv.tab.Passwords && pva_on Passwords 20 && pv_sleep 5 && security_dot before'
+    pv_step "$T: the Security tab: \"Why this matters\" open; the cards of U 5.16: 17 accounts use the same password, easy to guess" -- eval 'pva_tap pv.tab.Security && pva_on Security 30 && pva_need pv.security.why.text 30 && pva_need pv.security.card.reused 30 && pv_ui_nodes | cut -d"|" -f1 | grep -q "^17 accounts use the same password" && pva_reveal pv.security.card.weak'
+    pv_log "the cards: $(pv_ui_nodes | cut -d'|' -f1 | grep -v '^$' | tr '\n' ';' | cut -c1-600)"
+    pv_step "$T: the dot is gone once the results were seen" -- eval 'pva_tap pv.tab.Passwords && pva_on Passwords 20 && ! security_dot seen'
+    pv_step "$T: one guided change runs to \"Gmail now has its own password.\"" -- guided_change
+    pv_step "$T: Payme's password made the master password (its form)" -- eval 'pva_tap pv.tab.Passwords; master_password_on'
+    pv_step "$T: the next master-password entry (Lock now, the master password)" -- mp_opens "$PVA_PASSWORD"
+    pv_step "$T: the dot is back (decision 23)" -- eval 'pv_sleep 5 && security_dot after'
+    pv_step "$T: the Security tab flags it: \"Master password used elsewhere\" (Payme); \"Why this matters\" open again" -- eval 'pva_tap pv.tab.Security && pva_on Security 30 && pva_need pv.security.card.master 30 && pva_need pv.security.why.text 10 && pv_ui_nodes | cut -d"|" -f1 | grep -q "Payme"'
+    pv_step "$T: no crash" -- pva_no_crash
+}
+
+# walk73: package 7.3's walk of the real app (/home/asus/pvwork/kept/w7-7.3/walk73.sh, adapted to main):
+# the first-copy tip after the first copy, across a rotation, not after the second; every help page and
+# the licences page from Settings; screenshots for the user into SHOTS on API 37.
+text_is() {
+    local i t=""
+    for i in 1 2 3 4 5 6 7 8 9 10; do
+        t=$(pva_text "$1" 2>/dev/null)
+        [ "$t" = "$2" ] && return 0
+        pv_sleep 1
+    done
+    pv_log "$1 shows '$t', not '$2'"
+    return 1
+}
+
+shot73() { [ "$API" = 37 ] || return 0; pva_screenshot "$SHOTS/7.3-$1.png"; }
+
+help_page() {
+    pva_reveal "pv.open.Help.$1" && pva_tap "pv.open.Help.$1" && pva_on Help && pv_ui_wait "[|]pv\\.help\\.$1\$" 10 || return 1
+    shot73 "$2"
+    pv_shell input keyevent KEYCODE_BACK >/dev/null && pva_on Settings
+}
+
+open_licences() { pva_reveal pv.open.Licences && pva_tap pv.open.Licences && pva_on Licences && pva_need pv.licences.list; }
+
+licences() {
+    open_licences || return 1
+    shot73 licences
+    pva_tap pv.licences.zxcvbn4j.licence && pva_reveal pv.licences.zxcvbn4j.text && text_is pv.licences.zxcvbn4j.text "The MIT License (MIT)" || return 1
+    pv_shell input keyevent KEYCODE_BACK >/dev/null; pva_on Settings || return 1
+    open_licences && pva_tap pv.licences.details.strength && pva_reveal pv.licences.details.strength.text \
+        && text_is pv.licences.details.strength.text "Strength word list: sources, licences and counts" || return 1
+    pv_shell input keyevent KEYCODE_BACK >/dev/null; pva_on Settings || return 1
+    open_licences && { pva_reveal pv.licences.materialicons || pva_reveal pv.licences.materialicons; } || return 1
+    shot73 licences-icons
+    pv_shell input keyevent KEYCODE_BACK >/dev/null; pva_on Settings
+}
+
+walk73() {
+    T="7.3"
+    pv_step "$T: a fresh install, setup (the PIN left off), an account" -- eval 'fresh mp && pva_add_account Gmail me.example tR0ub4dor-3xyz mail.google.com note' || return 1
+    pv_step "$T: its password copied: the first-copy tip opens" -- eval 'pva_tap pv.entry.password.copy && pva_present pv.tip.ok 5'
+    shot73 first-copy-tip
+    pv_step "$T: the tip stays open across a rotation and back" -- eval 'pva_rotate 1 && pva_present pv.tip.ok 5 && pva_rotate 0 && pva_present pv.tip.ok 5'
+    pv_step "$T: OK closes it; the status row is there" -- eval 'pva_tap pv.tip.ok && pv_sleep 1 && pva_absent pv.tip.ok && pva_need pv.clip.row 5'
+    pv_step "$T: a second copy: no tip" -- eval 'pva_tap pv.entry.password.copy && pv_sleep 3 && pva_absent pv.tip.ok'
+    pv_step "$T: Settings" -- eval 'back_to_list && settings'
+    pv_step "$T: How your passwords are protected" -- help_page PROTECTION help-protection
+    pv_step "$T: If you lose your phone" -- help_page LOST_PHONE help-lost-phone
+    pv_step "$T: If you forget your master password" -- help_page FORGOT_MASTER_PASSWORD help-forgot-master-password
+    pv_step "$T: If you forget your PIN" -- help_page FORGOT_PIN help-forgot-pin
+    pv_step "$T: Open-source licences: a licence text, the strength list's sources, the icons" -- licences
+    pv_step "$T: Version, and from it the licences" -- eval 'help_page VERSION help-version && pva_reveal pv.open.Help.VERSION && pva_tap pv.open.Help.VERSION && pva_on Help && pva_tap pv.open.Licences && pva_on Licences && pv_shell input keyevent KEYCODE_BACK >/dev/null && pva_on Help && pv_shell input keyevent KEYCODE_BACK >/dev/null && pva_on Settings'
+    pv_step "$T: no crash" -- pva_no_crash
+}
+
+# dev_run SERIAL VARIANT APK CHECK...: the checks on one device, then its summary. The parts run it in a
+# subshell of this script, which would inherit this script's own counts: they start from 0.
+dev_run() {
+    local check
+    PV_PASSED=0
+    PV_FAILED=0
+    PV_SKIPPED=0
+    pv_use "$1"
+    pva_init
+    DEV_VARIANT=$2
+    DEV_APK=$3
+    shift 3
+    API=$(pv_api)
+    DEV_OUT=$LOGS_ROOT/files/$PV_SERIAL
+    mkdir -p "$DEV_OUT" "$SHOTS"
+    PV_ADB_TIMEOUT=${PV_ADB_TIMEOUT:-180}
+    echo "5 checks $*, $DEV_VARIANT on $PV_SERIAL (API $API): $DEV_APK"
+    for check in "$@"; do
+        case "$check" in
+            line1 | line2 | line3 | line4 | line5 | line6 | line7 | check15 | d21 | fifty | walk73) "$check" ;;
+            *) pv_die "unknown check $check" 2 ;;
+        esac
+    done
+    pva_rotate 0
+    pv_summary
+}
+
+w5_debug() { dev_run "$1" debug "$DEBUG_APK" line1 line2 line3 line4 line5 line6 line7 check15 d21; }
+w7_debug() { dev_run "$1" debug "$DEBUG_APK" fifty walk73; }
+guided() { "$EMU/change/guided.sh" "$1" --apk "$DEBUG_APK" --test-apk "$TEST_APK" --shots "$SHOTS"; }
+
+build_test_apk() {
+    "$REPO/tools/gradle.sh" :app:assembleDebugAndroidTest > "$LOGS/assemble-test.log" 2>&1
+    local rc=$?
+    grep -E '^BUILD' "$LOGS/assemble-test.log" | sed 's/^/   /'
+    [ $rc = 0 ] && [ -f "$TEST_APK" ]
+}
+
 # ---- arguments ------------------------------------------------------------------------------------------
+# "one SERIAL VARIANT [--apk FILE] CHECK...": checks on one device of this worktree.
+if [ "${1:-}" = one ]; then
+    [ $# -ge 4 ] || pv_usage "${BASH_SOURCE[0]}"
+    one_serial=$2
+    one_variant=$3
+    shift 3
+    case "$one_variant" in debug | staging) ;; *) pv_usage "${BASH_SOURCE[0]}" ;; esac
+    one_apk=$REPO/app/build/outputs/apk/$one_variant/app-$one_variant.apk
+    one_checks=()
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --apk) [ $# -ge 2 ] || pv_usage "${BASH_SOURCE[0]}"; one_apk=$2; shift ;;
+            --shots) [ $# -ge 2 ] || pv_usage "${BASH_SOURCE[0]}"; SHOTS=$2; shift ;;
+            *) one_checks+=("$1") ;;
+        esac
+        shift
+    done
+    [ ${#one_checks[@]} -gt 0 ] || pv_usage "${BASH_SOURCE[0]}"
+    mkdir -p "$LOGS_ROOT"
+    dev_run "$one_serial" "$one_variant" "$one_apk" "${one_checks[@]}"
+    exit $?
+fi
+
 ALL_PARTS=(merged connected lock lockstaging i18n extras skeleton)
 DEVICE_PARTS=(connected lock lockstaging i18n extras skeleton)
 parts=()

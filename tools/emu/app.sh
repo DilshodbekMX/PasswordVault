@@ -586,6 +586,189 @@ pva_tip_ok() {
     pva_tap pv.tip.ok && pv_sleep 1
 }
 
+# ---- the system's file picker (since the device check of R4) --------------------------------------------
+# Backup, export, import and restore open the system's picker (DocumentsUI; build plan 5.1 to 5.4); a
+# script drives it by its texts, which are English on these images (tools/emu/README.md, "Device facts"):
+#   API 30 and newer (com.google.android.documentsui): "Save as" opens in Downloads with the app's name
+#     and SAVE enabled; "Open" lists the files of Downloads, a file pushed with adb once the media store
+#     has scanned it (pva_push_download does), and a tap on its name opens it.
+#   API 24 to 29 (com.android.documentsui): "Save as" opens in Recent with SAVE disabled until a root is
+#     chosen in the drawer ("Show roots"); the keyboard of its name field covers SAVE until it is closed.
+#     "Open" ignores a tap on a file (in the grid and in the list): the file is reached with the arrow
+#     keys and opened with Enter. Its Downloads root lists only DownloadManager's files, which is what
+#     the picker itself saved there; a file pushed with adb is reached through the overflow menu's "Show
+#     internal storage", the device's own root and its Download folder.
+PVA_PICKER_RE='com\.(google\.)?android\.documentsui|DocumentsActivity|PickActivity'
+PVA_DOWNLOAD=/sdcard/Download
+
+pva_picker_in_front() { pv_focus | grep -q -E "$PVA_PICKER_RE"; }
+
+# pva_picker_wait [SECONDS]: the picker is in front within SECONDS (default 20).
+pva_picker_wait() {
+    local deadline=$((SECONDS + ${1:-20}))
+    until pva_picker_in_front; do
+        [ $SECONDS -lt $deadline ] || { pv_log "no picker in front: $(pv_focus)"; return 1; }
+        pv_sleep 1
+    done
+}
+
+# pva_picker_texts: the picker's texts and descriptions now, for messages.
+pva_picker_texts() { pv_ui_nodes 2>/dev/null | awk -F'|' '$1 != "" || $2 != "" { printf "%s/%s; ", $1, $2 }' | cut -c1-700; }
+
+# pva_picker_tap REGEX [SECONDS]: taps the first enabled node of the picker that matches REGEX (on
+# "text|description|resource id", as pv_ui_match), once it is there (default 20 s).
+pva_picker_tap() {
+    local deadline=$((SECONDS + ${2:-20})) nodes
+    while :; do
+        nodes=$(pv_ui_nodes 2>/dev/null)
+        if [ -n "$(printf '%s\n' "$nodes" | pv_ui_match "$1")" ]; then
+            pv_ui_tap "$1" "$nodes" >/dev/null && return 0
+        fi
+        [ $SECONDS -lt $deadline ] || { pv_log "no /$1/ in the picker; focus $(pv_focus); texts: $(pva_picker_texts)"; return 1; }
+        pv_sleep 1
+    done
+}
+
+# pva_picker_drawer: the picker's list of roots (its navigation drawer) is open.
+pva_picker_drawer() {
+    local nodes
+    nodes=$(pv_ui_nodes 2>/dev/null)
+    # Open already when a root's name is there beside "Recent".
+    if pva_in_nodes '^Recent[|]' "$nodes" && pva_in_nodes '^(Downloads|Internal storage|Android SDK built for x86(_64)?)[|]' "$nodes"; then
+        return 0
+    fi
+    pv_ui_tap '[|](Show roots|Open navigation drawer|Navigate up)[|]' "$nodes" >/dev/null \
+        || { pv_log "no drawer button in the picker; texts: $(pva_picker_texts)"; return 1; }
+    pv_sleep 1.5
+}
+
+# pva_picker_root NAME-REGEX: the root whose name matches NAME-REGEX (anchored by the caller), from the
+# drawer.
+pva_picker_root() {
+    pva_picker_drawer || return 1
+    pva_picker_tap "$1" 10 || return 1
+    pv_sleep 2
+}
+
+# pva_picker_save: in the picker that "Save as" opened, Downloads (when the picker is elsewhere) and
+# SAVE. True once the picker has left the front.
+pva_picker_save() {
+    local deadline
+    pva_picker_wait 30 || return 1
+    pv_sleep 2
+    if [ "$(pv_api)" -lt 30 ]; then
+        # Opens in Recent, SAVE off: the Downloads root, then the keyboard of the name field closed.
+        pva_picker_root '^Downloads[|]' || return 1
+        pva_hide_keyboard
+    fi
+    pva_picker_tap '^(SAVE|Save)[|]' 20 || return 1
+    deadline=$((SECONDS + 30))
+    while pva_picker_in_front; do
+        [ $SECONDS -lt $deadline ] || { pv_log "the picker is still in front after SAVE; texts: $(pva_picker_texts)"; return 1; }
+        pv_sleep 1
+    done
+}
+
+# pva_push_download FILE [NAME]: FILE pushed to the phone's Download folder as NAME (default its own
+# name), and made known to the picker: from API 30 the media store scans the volume.
+pva_push_download() {
+    local name=${2:-${1##*/}}
+    pv_adb push "$1" "$PVA_DOWNLOAD/$name" >/dev/null 2>&1 || { pv_log "adb push $1 failed"; return 1; }
+    [ "$(pv_api)" -lt 30 ] || pv_shell content call --uri content://media --method scan_volume --arg external_primary >/dev/null 2>&1
+    return 0
+}
+
+# pva_in_download REGEX: the names in the phone's Download folder that match REGEX (grep -E).
+pva_in_download() { pv_shell ls "$PVA_DOWNLOAD" 2>/dev/null | tr -d '\r' | grep -E -- "$1"; }
+
+# pva_picker_open NAME [pushed]: in the picker that "Open" opened, the file NAME. From API 30 by its
+# name (in Downloads, where the picker opens); below, in the Downloads root for a file the picker saved
+# there, or with "pushed" in the device's own Download folder, and opened with the arrow keys and Enter
+# on the file's row (a tap is ignored there). True once the picker has left the front.
+pva_picker_open() {
+    local name=$1 pushed=${2:-} deadline re
+    re="^$(printf '%s' "$name" | sed 's/[][\\.*^$+?(){}|]/\\&/g')[|]"
+    pva_picker_wait 30 || return 1
+    pv_sleep 2
+    if [ "$(pv_api)" -ge 30 ]; then
+        if ! pv_ui_wait "$re" 5; then
+            pva_picker_root '^Downloads[|]' || return 1
+        fi
+        pva_picker_tap "$re" 20 || return 1
+    else
+        if [ -n "$pushed" ]; then
+            pva_picker_internal_download || return 1
+        else
+            pva_picker_root '^Downloads[|]' || return 1
+        fi
+        pv_ui_wait "$re" 15 || { pv_log "no $name in the picker; texts: $(pva_picker_texts)"; return 1; }
+        pva_picker_keys_open "$re" || return 1
+    fi
+    deadline=$((SECONDS + 30))
+    while pva_picker_in_front; do
+        [ $SECONDS -lt $deadline ] || { pv_log "the picker is still in front after $name; texts: $(pva_picker_texts)"; return 1; }
+        pv_sleep 1
+    done
+}
+
+# pva_picker_internal_download: API 24 to 29: the overflow menu's "Show internal storage" (once per
+# device: the picker remembers it), the device's own root, then its Download folder.
+pva_picker_internal_download() {
+    local nodes
+    pva_picker_drawer || return 1
+    nodes=$(pv_ui_nodes 2>/dev/null)
+    if ! pva_in_nodes '^(Android SDK built for x86(_64)?|Internal storage)[|]' "$nodes"; then
+        pv_shell input keyevent KEYCODE_BACK >/dev/null # the drawer closes
+        pv_sleep 1
+        pva_picker_tap '[|]More options[|]' 10 && pva_picker_tap '^Show internal storage[|]' 10 || return 1
+        pv_sleep 1
+        pva_picker_drawer || return 1
+    fi
+    pva_picker_tap '^(Android SDK built for x86(_64)?|Internal storage)[|]' 10 || return 1
+    pv_sleep 2
+    pva_picker_tap '^Download[|]' 15 || return 1
+    pv_sleep 2
+}
+
+# pva_picker_keys_open REGEX: API 24 to 29: the arrow keys move the focus down the list until the
+# row of the file REGEX has it, then Enter opens it. The row with the focus is the one whose name the
+# accessibility tree reports as focused: read with uiautomator's dump, which marks it.
+pva_picker_keys_open() {
+    local i
+    for i in 1 2 3 4 5 6 7 8 9 10 11 12; do
+        pv_shell input keyevent KEYCODE_DPAD_DOWN >/dev/null
+        pv_sleep 0.7
+        if pva_picker_focused "$1"; then
+            pv_shell input keyevent KEYCODE_ENTER >/dev/null
+            return 0
+        fi
+    done
+    pv_log "the arrow keys never reached /$1/; texts: $(pva_picker_texts)"
+    return 1
+}
+
+# pva_picker_focused REGEX: the focused node of the picker's window, or the row around it, holds a text
+# that matches REGEX (uiautomator's dump marks focused="true").
+pva_picker_focused() {
+    local xml
+    xml=$(PV_SERIAL=$PV_SERIAL pv_shell "uiautomator dump /data/local/tmp/pv-picker.xml >/dev/null 2>&1; cat /data/local/tmp/pv-picker.xml" 2>/dev/null)
+    PV_RE=$1 python3 -c '
+import os, re, sys, xml.etree.ElementTree as ET
+data = sys.stdin.read()
+start = data.find("<?xml")
+if start < 0:
+    sys.exit(1)
+root = ET.fromstring(data[start:data.rfind(">") + 1])
+want = re.compile(os.environ["PV_RE"])
+def texts(n):
+    for d in n.iter():
+        yield (d.get("text") or "") + "|" + (d.get("content-desc") or "") + "|"
+for n in root.iter("node"):
+    if n.get("focused") == "true" and any(want.search(t) for t in texts(n)):
+        sys.exit(0)
+sys.exit(1)' <<< "$xml"
+}
+
 # pva_screenshot FILE: the screen as PNG (debug builds; the secure window of staging gives black).
 pva_screenshot() {
     mkdir -p "$(dirname "$1")"
