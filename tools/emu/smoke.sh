@@ -31,6 +31,11 @@
 #     Keystore keys; Lock now: the prompt opens by itself (on API 24 androidx.biometric's own dialog in
 #     the activity, the path R8 broke before build check R-16) and finger 1 opens the list; Lock now,
 #     "Use PIN" on the prompt: the pad, and the PIN opens the list with the account.
+#   wave 5 (since the device check of R4; build-plan 7, line 8): through the system's picker into and
+#     from the phone's Download folder (app.sh, pva_picker_*): a backup; the CSV export, which holds the
+#     account; an import of a small CSV pushed with adb, whose two accounts reach the list; then from the
+#     lock screen "Forgot master password?" > "Restore from a backup file" with that backup: the list is
+#     the backup's again, without the imported accounts.
 # Prints PASS, FAIL or SKIPPED per step and a summary line. Exit codes: 0 every step passed or
 # was skipped; 1 a step failed; 2 usage; 3 SERIAL refused.
 set -u
@@ -360,5 +365,104 @@ stage_pin_and_fingerprint() {
     pv_step "no crash" -- pva_no_crash
 }
 
-stage_install_and_start && stage_skeleton && stage_clipboard && stage_pin_and_fingerprint
+# ---- stage: backup, export, import and restore (wave 5) -------------------------------------------
+# Through the system's picker (DocumentsUI; app.sh, pva_picker_*), into and from the phone's Download
+# folder: a backup ("Backup saved", the file in Download), the CSV export (the warning's "I
+# understand", the master password; the file holds the account), an import of a small CSV pushed with
+# adb (the two accounts in the list; the file deleted), and a restore of the backup from the lock
+# screen ("Forgot master password?" > "Restore from a backup file"): the list is the backup's again,
+# without the two imported accounts, and the restore's PIN steps are walked past.
+SMOKE_CSV=pv-smoke-import.csv
+SMOKE_BACKUP="" # the backup's name in Download
+
+smoke_settings() {
+    local i
+    for i in 1 2 3 4; do pva_present pv.tab.Settings 2 && break; pv_shell input keyevent KEYCODE_BACK >/dev/null; pv_sleep 1; done
+    pva_tap pv.tab.Settings && pva_on Settings 20
+}
+
+smoke_backup() {
+    pv_shell "rm -f $PVA_DOWNLOAD/PasswordVault-backup-* $PVA_DOWNLOAD/passwords-* $PVA_DOWNLOAD/$SMOKE_CSV" >/dev/null 2>&1
+    smoke_settings && pva_reveal pv.open.Backup && pva_tap pv.open.Backup && pva_on Backup 20 || return 1
+    if pva_present pv.backup.continue 3; then pva_tap pv.backup.continue || return 1; fi
+    pva_need pv.backup.password 20 && pva_type pv.backup.password "$PVA_PASSWORD" || return 1
+    pva_hide_keyboard
+    pva_tap pv.backup.submit && pva_picker_save && pva_need pv.backup.done 60 || return 1
+    pv_log "$(pva_text pv.backup.line.0 2>/dev/null)"
+    SMOKE_BACKUP=$(pva_in_download '^PasswordVault-backup-.*\.pvault$' | tail -n 1)
+    [ -n "$SMOKE_BACKUP" ] || { pv_log "no backup in Download"; return 1; }
+    pva_tap pv.backup.done && pva_on Settings 20
+}
+
+smoke_export() {
+    local name dir
+    smoke_settings && pva_reveal pv.open.Export && pva_tap pv.open.Export && pva_on Export 20 || return 1
+    pva_need pv.export.choice.csv 15 && pva_tap pv.export.choice.csv && pva_tap pv.export.continue || return 1
+    if pva_present pv.export.understand 10; then pva_tap pv.export.understand || return 1; fi
+    if pva_present pv.export.warning.continue 5; then pva_tap pv.export.warning.continue || return 1; fi
+    pva_need pv.export.password 20 && pva_type pv.export.password "$PVA_PASSWORD" || return 1
+    pva_hide_keyboard
+    pva_tap pv.export.submit && pva_picker_save && pva_need pv.export.saved 60 || return 1
+    pv_log "$(pva_text pv.export.saved 2>/dev/null)"
+    name=$(pva_in_download '^passwords-.*\.csv$' | tail -n 1)
+    [ -n "$name" ] || { pv_log "no CSV in Download"; return 1; }
+    dir=$(mktemp -d "${TMPDIR:-/tmp}/pv-smoke.XXXXXX") || return 1
+    pv_adb pull "$PVA_DOWNLOAD/$name" "$dir/$name" >/dev/null 2>&1 && grep -q 'smoke.user@example.uz' "$dir/$name" \
+        || { pv_log "the export does not hold the account"; rm -rf "$dir"; return 1; }
+    rm -rf "$dir"
+    pv_shell "rm -f '$PVA_DOWNLOAD/$name'" >/dev/null 2>&1
+    pva_tap pv.export.done && pva_on Settings 20
+}
+
+smoke_import() {
+    local file deadline
+    file=$(mktemp "${TMPDIR:-/tmp}/pv-smoke-csv.XXXXXX") || return 1
+    printf 'name,url,username,password,note\r\nTashkent Metro,https://metro.uz,dilshod.m,Qx7mVb2Lp9Ws,\r\nKapitalbank,https://kapitalbank.uz,+998901112233,Hn4Rt8Ws2Kz6,\r\n' > "$file"
+    pva_push_download "$file" "$SMOKE_CSV" || { rm -f "$file"; return 1; }
+    rm -f "$file"
+    smoke_settings && pva_reveal pv.open.Import && pva_tap pv.open.Import && pva_on Import 20 || return 1
+    pva_need pv.import.source.csv 20 && pva_tap pv.import.source.csv || return 1
+    deadline=$((SECONDS + 20))
+    until pva_picker_in_front; do
+        [ $SECONDS -lt $deadline ] || { pv_log "no picker; ids: $(pva_ids)"; return 1; }
+        pva_present pv.import.chooseFile 1 && pva_tap pv.import.chooseFile
+        pv_sleep 1
+    done
+    pva_picker_open "$SMOKE_CSV" pushed && pva_need pv.import.import 60 || return 1
+    pva_tap pv.import.import && pva_need pv.import.done 60 || return 1
+    pv_log "$(pva_text pv.import.done 2>/dev/null)"
+    if pva_present pv.import.deleteFile 5; then pva_tap pv.import.deleteFile && pva_need pv.import.fileOutcome 20 || return 1; fi
+    pva_tap pv.import.finish && pva_on Settings 20 && pva_tap pv.tab.Passwords && pva_on Passwords 20 && pva_row_with Kapitalbank 15
+}
+
+# Lock now (fingerprint is on: its prompt opens by itself, "Use PIN"); "Forgot PIN? Use master
+# password"; "Forgot master password?" > "Restore from a backup file"; the backup, its master password,
+# Restore: the app opens on the backup's vault; its PIN steps walked past.
+smoke_restore() {
+    pva_lock_now || return 1
+    if pva_prompt_open UNLOCK 10; then pva_prompt_use_pin || return 1; fi
+    pva_need pv.lock.pad 20 && pva_tap pv.lock.forgotPin && pva_need pv.lock.password 20 || return 1
+    pva_hide_keyboard
+    pva_tap pv.lock.forgot && pva_need pv.lock.sheet.restore 10 && pva_tap pv.lock.sheet.restore || return 1
+    pva_on Restore 20 && pva_need pv.backup.choose 20 && pva_tap pv.backup.choose || return 1
+    pva_picker_open "$SMOKE_BACKUP" || return 1
+    pva_need pv.backup.password 30 && pva_type pv.backup.password "$PVA_PASSWORD" || return 1
+    pva_hide_keyboard
+    pva_tap pv.backup.submit && pva_need pv.backup.restore 60 || return 1
+    pv_log "$(pva_text pv.backup.summary 2>/dev/null)"
+    pva_tap pv.backup.restore && pva_unlocked Passwords 120 && pva_settle Passwords 90
+}
+
+smoke_restored() { pva_row_with Smoketest 15 && ! pva_row_titles | grep -qx Kapitalbank; }
+
+stage_files() {
+    pv_step "a backup into Download through the system's picker" -- smoke_backup || return 1
+    pv_step "the CSV export (\"I understand\", the master password): the file holds the account" -- smoke_export
+    pv_step "an import of a small CSV: its accounts in the list, the file deleted" -- smoke_import
+    pv_step "a restore of the backup from the lock screen (\"Forgot master password?\")" -- smoke_restore || return 1
+    pv_step "the list is the backup's: the account, not the imported ones" -- smoke_restored
+    pv_step "no crash" -- pva_no_crash
+}
+
+stage_install_and_start && stage_skeleton && stage_clipboard && stage_pin_and_fingerprint && stage_files
 pv_summary
