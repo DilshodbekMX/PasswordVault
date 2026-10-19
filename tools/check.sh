@@ -7,7 +7,7 @@
 #            The source scans of architecture.md §8.5 (R-4, R-6, R-10, R-11, R-13, R-15) are among them.
 #   lint     :core:lintDebug :app:lintDebug; the checks of i18n.md §1.1 are errors.
 #   build    :app:assembleDebug :app:assembleStaging :app:assembleRelease; each runs the build checks
-#            that are Gradle tasks (R-1, R-2, R-5, R-7, R-8, R-9, R-12, R-14).
+#            that are Gradle tasks (R-1, R-2, R-5, R-7, R-8, R-9, R-12, R-14, R-16, R-17).
 #   offline  the merged-manifest check of all four variants (no INTERNET, R-9); `aapt2 dump
 #            permissions` on the debug, staging and release APKs (no permission outside R-9's list);
 #            the offline class scan of the sources.
