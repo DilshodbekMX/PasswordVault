@@ -74,7 +74,7 @@
     <!-- The file has nothing in it. -->
     <string name="import_problem_empty">This file is empty.</string>
     <!-- The file is too large. %1$s is the limit in megabytes, formatted for the language (10). -->
-    <string name="import_problem_too_big">This file is larger than %1$s MB, the most the app can import at once.</string>
+    <string name="import_problem_too_big">This file is larger than %1$s&#160;MB, the most the app can import at once.</string>
     <!-- The file has too many rows. %1$s is the limit, formatted for the language (10,000). -->
     <string name="import_problem_too_many">This file has more than %1$s&#160;accounts, the most the app can import at once. Export fewer at a time.</string>
     <!-- The file is not a CSV or JSON file the app can read. -->
