@@ -104,3 +104,19 @@ three or four lines their round ends cut, on API 37 and 28 (commit e7cec27 lists
 | API 28, 1080 × 1920 at its own size (`--width 411 --font 1.0`) | app, en-XA | 269 passed, 0 failed; the PIN steps and the lock pad show every key on the first screen |
 
 The pictures of `docs/screens/` come from the review's API 37 run.
+
+2026-10-19, the device check of 6A on `main` (`tools/emu/checks/6A.sh`, parts `layout` and `layoutmore`;
+the app and the probe as at `wave-6A-merged`), the integrator's devices, debug build, while the machine had
+a load of about 35. API 24 was walked for the first time:
+
+| Device | Parts and locales | Result |
+|---|---|---|
+| API 24, 1080 × 1920 (320 × 569 dp) | app and states, en-XA and ar-XB | 1718 checks passed, 0 failed (states: 44 tests) |
+| API 28, 1080 × 1920 (320 × 569 dp) | app and states, en-XA and ar-XB | 1718 checks passed, 0 failed |
+| API 37, 1080 × 2400 (320 × 711 dp) | app and states, en-XA and ar-XB | 1718 checks passed, 0 failed |
+| API 37 | app, en-XA and ar-XB, `--style EMERALD` | 537 passed, 0 failed |
+| API 37 | app, en-XA and ar-XB, `--style NIGHT_VAULT` | 537 passed, 0 failed |
+| API 28, 1080 × 1920 at its own size (`--width 411 --font 1.0`) | app, en-XA | 269 passed, 0 failed |
+
+Each full walk took about 18 minutes there (the part app about 4 minutes per locale, the part states about
+10). The logs, reports and pictures are kept under `/home/asus/pvwork/kept/6A-device-check/`.
