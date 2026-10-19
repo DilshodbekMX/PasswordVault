@@ -16,7 +16,7 @@
     <string name="pin_create_footer">После 5&#160;неверных попыток подряд PIN-код отключается. Тогда нужно открыть приложение по отпечатку пальца или мастер-паролем и задать новый PIN-код.</string>
     <string name="pin_refused_date">Этот PIN-код похож на дату или год. Задайте другой.</string>
     <string name="pin_refused_pattern">В этом PIN-коде повторяются цифры или есть закономерность. Задайте другой.</string>
-    <string name="pin_refused_sequence">Этот PIN-код — последовательность или фигура на клавиатуре. Задайте другой.</string>
+    <string name="pin_refused_sequence">Этот PIN-код&#160;— последовательность или фигура на клавиатуре. Задайте другой.</string>
     <string name="pin_same_as_current">Задайте PIN-код, который отличается от текущего.</string>
 
     <!-- «Введите PIN-код ещё раз» (glossary 54). -->
@@ -81,8 +81,8 @@
     <!-- «Создавайте резервные копии», the last setup step (glossary 97). -->
     <string name="pin_backups_title">Создавайте резервные копии</string>
     <string name="pin_backups_only_here">Ваши пароли хранятся только на этом телефоне. Если телефон потеряется, сломается или будет сброшен, они пропадут. Удаление приложения или очистка его хранилища тоже их удалит.</string>
-    <string name="pin_backups_locked">Резервная копия — это защищённый файл со всеми вашими паролями. Он открывается только мастер-паролем.</string>
-    <string name="pin_backups_outside">Храните резервную копию не на этом телефоне — в Google Drive, на компьютере или отправьте её себе.</string>
+    <string name="pin_backups_locked">Резервная копия&#160;— это защищённый файл со всеми вашими паролями. Он открывается только мастер-паролем.</string>
+    <string name="pin_backups_outside">Храните резервную копию не на этом телефоне&#160;— в Google Drive, на компьютере или отправьте её себе.</string>
     <string name="pin_backups_remind">Напоминать о резервном копировании</string>
     <string name="pin_backups_finish">Завершить</string>
 

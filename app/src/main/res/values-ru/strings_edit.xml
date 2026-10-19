@@ -73,8 +73,8 @@
 
     <string name="edit_kept">Ваши несохранённые изменения не потеряны.</string>
     <!-- %1$s: the account's name; %2$s: a short date such as «5 сент.». -->
-    <string name="edit_old_draft">У вас есть несохранённые изменения аккаунта «%1$s» от %2$s. Открыть их?</string>
-    <string name="edit_old_draft_new">У вас есть несохранённые изменения нового аккаунта от %1$s. Открыть их?</string>
+    <string name="edit_old_draft">Открыть несохранённые изменения аккаунта «%1$s» от %2$s?</string>
+    <string name="edit_old_draft_new">Открыть несохранённые изменения нового аккаунта от %1$s?</string>
     <string name="edit_old_draft_open">Открыть</string>
     <string name="edit_old_draft_discard">Удалить изменения</string>
 

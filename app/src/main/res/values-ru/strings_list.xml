@@ -81,7 +81,7 @@
     <!-- Glossary 142. -->
     <string name="list_banner_it_wasnt_me">Это был не я</string>
 
-    <string name="list_banner_practice">Вы не вводили мастер-пароль с %1$s. Без него не получится открыть резервную копию или перейти на новый телефон.</string>
+    <string name="list_banner_practice">С %1$s вы не вводили мастер-пароль. Без него не получится открыть резервную копию или перейти на новый телефон.</string>
     <string name="list_banner_type_it_now">Ввести сейчас</string>
     <!-- The same words as the other buttons that lead to a new master password («Не помню»). -->
     <string name="list_banner_i_forgot_it">Не помню</string>
@@ -119,7 +119,7 @@
         <item quantity="other">Подождите %1$d&#160;секунды, затем повторите попытку. Не спешите и сверьтесь с записью на бумаге.</item>
     </plurals>
     <string name="list_practice_no_memory">На телефоне недостаточно свободной оперативной памяти, чтобы проверить мастер-пароль. Закройте другие приложения или перезапустите телефон, затем повторите попытку.</string>
-    <string name="list_practice_older">Это ваш мастер-пароль, который действовал до %1$s. Введите тот, которым пользуетесь сейчас.</string>
+    <string name="list_practice_older">До %1$s у вас был этот мастер-пароль. Введите тот, которым пользуетесь сейчас.</string>
     <string name="list_practice_right">Верно. Ваш мастер-пароль работает.</string>
 
     <!-- ===== «Недавно удалённые» ===== -->

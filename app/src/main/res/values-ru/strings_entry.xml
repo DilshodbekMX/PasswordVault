@@ -70,7 +70,7 @@
     <!-- ===== Banners at the top of the account ===== -->
 
     <!-- %1$s: the day the change started, for example «6 окт.». -->
-    <string name="entry_banner_change">Вы начали менять этот пароль %1$s. Сайт принял новый пароль?</string>
+    <string name="entry_banner_change">%1$s вы начали менять этот пароль. Сайт принял новый пароль?</string>
     <string name="entry_banner_change_yes">Да, пароль изменён</string>
     <string name="entry_banner_change_no">Нет, вернуть старый пароль</string>
     <string name="entry_banner_left_out">Этот аккаунт исключён из проверки безопасности.</string>
