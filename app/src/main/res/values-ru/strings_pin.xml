@@ -68,7 +68,7 @@
     <!-- The fingerprint offer (glossary 61, 62). -->
     <string name="pin_fingerprint_title">Использовать отпечаток пальца?</string>
     <string name="pin_fingerprint_body">Открывайте приложение по отпечатку пальца вместо PIN-кода. PIN-код и мастер-пароль продолжат работать.</string>
-    <string name="pin_fingerprint_anyone">Приложение сможет открыть любой, чей отпечаток пальца сохранён в настройках этого телефона.</string>
+    <string name="pin_fingerprint_anyone">Приложение может открыть любой, чей отпечаток пальца сохранён в настройках этого телефона.</string>
     <string name="pin_fingerprint_note">Если на этом телефоне изменятся отпечатки пальцев или блокировка экрана, разблокировка по отпечатку пальца отключится в целях безопасности. Её можно снова включить в настройках.</string>
     <string name="pin_fingerprint_use">Использовать отпечаток пальца</string>
     <string name="pin_fingerprint_turn_on">Включить разблокировку по отпечатку пальца</string>
@@ -76,7 +76,7 @@
     <!-- The owner's decision 4 (build-plan.md §12). -->
     <string name="pin_fingerprint_may_not_be_on">Возможно, разблокировка по отпечатку пальца не включилась. Если отпечаток пальца не будет принят, снова включите её в настройках.</string>
     <string name="pin_fingerprint_add_first">Сначала добавьте отпечаток пальца в настройках телефона.</string>
-    <string name="pin_fingerprint_no_secure_hardware">Этот телефон не может хранить ключ отпечатка пальца в защищённом аппаратном модуле.</string>
+    <string name="pin_fingerprint_no_secure_hardware">Этот телефон не может хранить ключ отпечатка пальца в защищённом аппаратном хранилище.</string>
 
     <!-- «Создавайте резервные копии», the last setup step (glossary 97). -->
     <string name="pin_backups_title">Создавайте резервные копии</string>

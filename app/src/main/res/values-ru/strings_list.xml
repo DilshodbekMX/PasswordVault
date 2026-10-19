@@ -99,9 +99,9 @@
          serves 21, 31…, so it names the first account without «и другие». -->
     <plurals name="list_banner_change">
         <item quantity="one">%1$d&#160;смена пароля ждёт вашего ответа (%2$s).</item>
-        <item quantity="few">%1$d&#160;смены пароля ждут вашего ответа (%2$s и другие).</item>
-        <item quantity="many">%1$d&#160;смен пароля ждут вашего ответа (%2$s и другие).</item>
-        <item quantity="other">%1$d&#160;смены пароля ждут вашего ответа (%2$s и другие).</item>
+        <item quantity="few">%1$d&#160;смены паролей ждут вашего ответа (%2$s и другие).</item>
+        <item quantity="many">%1$d&#160;смен паролей ждут вашего ответа (%2$s и другие).</item>
+        <item quantity="other">%1$d&#160;смены паролей ждут вашего ответа (%2$s и другие).</item>
     </plurals>
     <string name="list_banner_answer_now">Ответить сейчас</string>
 
