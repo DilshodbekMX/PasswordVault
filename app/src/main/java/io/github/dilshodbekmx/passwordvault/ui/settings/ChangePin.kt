@@ -48,6 +48,7 @@ import io.github.dilshodbekmx.passwordvault.lock.PinSetResult
 import io.github.dilshodbekmx.passwordvault.lock.PinStatus
 import io.github.dilshodbekmx.passwordvault.nav.Navigator
 import io.github.dilshodbekmx.passwordvault.ui.common.KeyboardFirstOnBack
+import io.github.dilshodbekmx.passwordvault.ui.common.LongLabelShape
 import io.github.dilshodbekmx.passwordvault.ui.common.PIN_LENGTH
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultTopBar
 import io.github.dilshodbekmx.passwordvault.ui.setup.BodyText
@@ -502,7 +503,7 @@ private fun ChangePinStep(vm: ChangePinViewModel, ui: ChangePinUi) {
             line = ui.line,
             shakes = ui.shakes,
             buttons = {
-                TextButton(onClick = vm::useMasterPassword, modifier = Modifier.fillMaxWidth().testTag(PinTags.USE_MASTER_PASSWORD)) {
+                TextButton(onClick = vm::useMasterPassword, modifier = Modifier.fillMaxWidth().testTag(PinTags.USE_MASTER_PASSWORD), shape = LongLabelShape) {
                     Text(stringResource(R.string.pin_use_master_password))
                 }
             },

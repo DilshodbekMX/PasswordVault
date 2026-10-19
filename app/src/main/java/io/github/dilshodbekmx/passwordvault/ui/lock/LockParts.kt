@@ -52,6 +52,7 @@ import io.github.dilshodbekmx.passwordvault.i18n.UiText
 import io.github.dilshodbekmx.passwordvault.i18n.resolve
 import io.github.dilshodbekmx.passwordvault.ui.common.AppLogo
 import io.github.dilshodbekmx.passwordvault.ui.common.KeypadColumn
+import io.github.dilshodbekmx.passwordvault.ui.common.LongLabelShape
 import io.github.dilshodbekmx.passwordvault.ui.common.fadeWhereMore
 import io.github.dilshodbekmx.passwordvault.ui.theme.LocalLook
 import io.github.dilshodbekmx.passwordvault.ui.theme.LockPanel
@@ -366,18 +367,21 @@ internal fun LockLineText(line: LockLine, formatters: Formatters, tag: String, m
     )
 }
 
-/** A button of a lock screen, drawn as its [LockButton.style] says; full width unless it is a text button. */
+/**
+ * A button of a lock screen, drawn as its [LockButton.style] says; full width unless it is a text button.
+ * Its label may take several lines ("Open my previous passwords (locked on 7 Oct 2026)"): [LongLabelShape].
+ */
 @Composable
 internal fun LockButtonView(button: LockButton, formatters: Formatters, onAction: (LockAction) -> Unit, enabled: Boolean = true) {
     val label = button.label.show(formatters)
     when (button.style) {
-        ButtonStyle.FILLED -> Button(onClick = { onAction(button.action) }, enabled = enabled, modifier = Modifier.fillMaxWidth().testTag(button.tag)) {
+        ButtonStyle.FILLED -> Button(onClick = { onAction(button.action) }, enabled = enabled, modifier = Modifier.fillMaxWidth().testTag(button.tag), shape = LongLabelShape) {
             Text(label, textAlign = TextAlign.Center)
         }
-        ButtonStyle.OUTLINED -> OutlinedButton(onClick = { onAction(button.action) }, enabled = enabled, modifier = Modifier.fillMaxWidth().testTag(button.tag)) {
+        ButtonStyle.OUTLINED -> OutlinedButton(onClick = { onAction(button.action) }, enabled = enabled, modifier = Modifier.fillMaxWidth().testTag(button.tag), shape = LongLabelShape) {
             Text(label, textAlign = TextAlign.Center)
         }
-        ButtonStyle.TEXT -> TextButton(onClick = { onAction(button.action) }, enabled = enabled, modifier = Modifier.testTag(button.tag)) {
+        ButtonStyle.TEXT -> TextButton(onClick = { onAction(button.action) }, enabled = enabled, modifier = Modifier.testTag(button.tag), shape = LongLabelShape) {
             Text(label, textAlign = TextAlign.Center)
         }
     }

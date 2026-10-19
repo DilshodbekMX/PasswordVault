@@ -4,6 +4,7 @@ import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -12,9 +13,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -319,6 +322,42 @@ class LongTextLayoutTest {
         // The column is 320 dp less 16 dp each side: the button's end, its left, is at the column's left.
         val density = compose.activity.resources.displayMetrics.density
         assertTrue("the button under the text is at the left: $under", under.left - 16 * density < 304 * density - under.right)
+    }
+
+    @Test
+    fun theProbeFindsALabelThatItsButtonsRoundEndsCut() {
+        // Material's text button is fully rounded: a label of several lines meets its round ends, which cut
+        // off the corners of its first and last lines. The layout walk must see that ("cut by its rounded shape").
+        show {
+            Box(Modifier.width(200.dp)) {
+                TextButton(onClick = {}) { Text("Katta harflarda koʻrsatish, bitta-bitta harf") }
+            }
+        }
+        val found = LayoutProbe(compose, compose.activity).apply { checkEnglish = false }.look().of(LayoutCheck.BUTTONS)
+        assertTrue("the probe sees the cut letters: $found", found.any { "rounded shape" in it })
+    }
+
+    @Test
+    fun buttonsInTheLongLabelShapeKeepEveryLetterOfALabelOfSeveralLines() {
+        // The app's buttons whose labels may wrap (LongLabelShape): a text button, one with the 4 dp of
+        // padding of "Show in big letters", and a filled and an outlined one with a label of four lines.
+        val label = "Katta harflarda koʻrsatish, bitta-bitta harf"
+        val longer = "Avvalgi parollarimni ochish (2026-yil 7-oktabrda qulflangan)"
+        show {
+            Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Box(Modifier.width(200.dp)) { TextButton(onClick = {}, shape = LongLabelShape) { Text(label) } }
+                Box(Modifier.width(200.dp)) {
+                    TextButton(onClick = {}, shape = LongLabelShape, contentPadding = PaddingValues(horizontal = 4.dp)) { Text(label) }
+                }
+                Button(onClick = {}, shape = LongLabelShape, modifier = Modifier.fillMaxWidth()) { Text(longer) }
+                OutlinedButton(onClick = {}, shape = LongLabelShape, modifier = Modifier.fillMaxWidth()) { Text(longer) }
+                // One line keeps Material's round ends.
+                TextButton(onClick = {}, shape = LongLabelShape, modifier = Modifier.testTag(ACTION)) { Text("Hozir") }
+            }
+        }
+        assertClean("buttons of several lines")
+        val one = compose.onNodeWithTag(ACTION, useUnmergedTree = true).fetchSemanticsNode()
+        assertTrue("a button of one line is at most 56 dp high: ${one.size.height}", one.size.height <= 56 * compose.activity.resources.displayMetrics.density)
     }
 
     private fun boundsOf(tag: String) = compose.onNodeWithTag(tag, useUnmergedTree = true).fetchSemanticsNode().boundsInRoot

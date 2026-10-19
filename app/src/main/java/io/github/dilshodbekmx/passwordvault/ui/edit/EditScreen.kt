@@ -74,6 +74,7 @@ import io.github.dilshodbekmx.passwordvault.i18n.rememberFormatters
 import io.github.dilshodbekmx.passwordvault.nav.Navigator
 import io.github.dilshodbekmx.passwordvault.nav.Route
 import io.github.dilshodbekmx.passwordvault.ui.common.KeyboardFirstOnBack
+import io.github.dilshodbekmx.passwordvault.ui.common.LongLabelShape
 import io.github.dilshodbekmx.passwordvault.ui.common.StrengthBar
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultDialog
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultFieldDefaults
@@ -345,7 +346,7 @@ private fun PasswordPart(vm: EditViewModel, ui: EditUiState, focus: FieldFocus, 
         keyboardOptions = VaultFieldDefaults.Secret.copy(imeAction = ImeAction.Next),
     )
     if (form.password.text.isEmpty()) {
-        TextButton(onClick = vm::openGenerator, modifier = Modifier.testTag(EditTags.GENERATE_BUTTON)) { Text(text = generate) }
+        TextButton(onClick = vm::openGenerator, modifier = Modifier.testTag(EditTags.GENERATE_BUTTON), shape = LongLabelShape) { Text(text = generate) }
     } else {
         ui.strength?.let { StrengthBar(score = it.score, modifier = Modifier.fillMaxWidth().testTag(EditTags.STRENGTH)) }
         if (ui.reuse > 0) {

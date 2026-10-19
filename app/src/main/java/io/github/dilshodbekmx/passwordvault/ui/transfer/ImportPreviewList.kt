@@ -43,6 +43,7 @@ import io.github.dilshodbekmx.passwordvault.core.model.EntryRules
 import io.github.dilshodbekmx.passwordvault.i18n.Formatters
 import io.github.dilshodbekmx.passwordvault.ui.common.Banner
 import io.github.dilshodbekmx.passwordvault.ui.common.BannerKind
+import io.github.dilshodbekmx.passwordvault.ui.common.LongLabelShape
 import io.github.dilshodbekmx.passwordvault.ui.common.userText
 
 /**
@@ -136,7 +137,7 @@ private fun Sample(vm: ImportViewModel, p: ImportPreview) {
                     )
                 }
                 decoding.alternative?.let { other ->
-                    TextButton(onClick = { vm.readAs(other) }, modifier = Modifier.testTag(ImportTags.READ_AS)) {
+                    TextButton(onClick = { vm.readAs(other) }, modifier = Modifier.testTag(ImportTags.READ_AS), shape = LongLabelShape) {
                         Text(text = stringResource(R.string.import_read_as, importEncodingName(other)))
                     }
                 }

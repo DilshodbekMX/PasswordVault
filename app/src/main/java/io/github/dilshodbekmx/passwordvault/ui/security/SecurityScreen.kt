@@ -55,6 +55,7 @@ import io.github.dilshodbekmx.passwordvault.i18n.Formatters
 import io.github.dilshodbekmx.passwordvault.i18n.rememberFormatters
 import io.github.dilshodbekmx.passwordvault.nav.Navigator
 import io.github.dilshodbekmx.passwordvault.nav.Route
+import io.github.dilshodbekmx.passwordvault.ui.common.LongLabelShape
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultTopBar
 
 /** The Security tab's route (ux.md §5.16): its ViewModel over the app's check, and the screen. */
@@ -200,7 +201,7 @@ private fun CardOf(card: SecurityCard, nav: Navigator, formatters: Formatters) {
                 },
             )
             CardButtons {
-                Button(onClick = { nav.go(Route.ChangeMasterPassword) }, modifier = Modifier.testTag(SecurityTags.cardButton(SecurityTags.MASTER))) {
+                Button(onClick = { nav.go(Route.ChangeMasterPassword) }, modifier = Modifier.testTag(SecurityTags.cardButton(SecurityTags.MASTER)), shape = LongLabelShape) {
                     Text(stringResource(R.string.security_master_choose))
                 }
             }

@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import io.github.dilshodbekmx.passwordvault.R
 import io.github.dilshodbekmx.passwordvault.i18n.rememberFormatters
+import io.github.dilshodbekmx.passwordvault.ui.common.LongLabelShape
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultDialog
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultFieldDefaults
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultSecureField
@@ -45,7 +46,7 @@ internal fun NoticeDialog(ui: NoticeUi, onAnswer: (NoticeButton) -> Unit, onDism
         confirmButton = {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End), modifier = Modifier.fillMaxWidth()) {
                 for (button in ui.buttons) {
-                    TextButton(onClick = { onAnswer(button) }, modifier = Modifier.testTag(button.tag)) {
+                    TextButton(onClick = { onAnswer(button) }, modifier = Modifier.testTag(button.tag), shape = LongLabelShape) {
                         Text(button.label.show(formatters))
                     }
                 }

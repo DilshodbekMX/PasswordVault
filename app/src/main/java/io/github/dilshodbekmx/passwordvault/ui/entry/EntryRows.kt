@@ -62,6 +62,7 @@ import io.github.dilshodbekmx.passwordvault.i18n.rememberFormatters
 import io.github.dilshodbekmx.passwordvault.ui.common.Banner
 import io.github.dilshodbekmx.passwordvault.ui.common.BannerKind
 import io.github.dilshodbekmx.passwordvault.ui.common.CardPart
+import io.github.dilshodbekmx.passwordvault.ui.common.LongLabelShape
 import io.github.dilshodbekmx.passwordvault.ui.common.MaskedValue
 import io.github.dilshodbekmx.passwordvault.ui.common.RevealToggle
 import io.github.dilshodbekmx.passwordvault.ui.common.cardPart
@@ -175,10 +176,10 @@ private fun LazyListScope.banners(details: EntryDetails, formatters: Formatters,
                 text = stringResource(R.string.entry_banner_change, formatters.dayMonth(started)),
                 modifier = BANNER.testTag(EntryTags.BANNER_CHANGE),
                 actions = {
-                    TextButton(onClick = actions.revertChange, modifier = Modifier.testTag(EntryTags.BANNER_CHANGE_NO)) {
+                    TextButton(onClick = actions.revertChange, modifier = Modifier.testTag(EntryTags.BANNER_CHANGE_NO), shape = LongLabelShape) {
                         Text(stringResource(R.string.entry_banner_change_no))
                     }
-                    TextButton(onClick = actions.confirmChange, modifier = Modifier.testTag(EntryTags.BANNER_CHANGE_YES)) {
+                    TextButton(onClick = actions.confirmChange, modifier = Modifier.testTag(EntryTags.BANNER_CHANGE_YES), shape = LongLabelShape) {
                         Text(stringResource(R.string.entry_banner_change_yes))
                     }
                 },
@@ -192,7 +193,7 @@ private fun LazyListScope.banners(details: EntryDetails, formatters: Formatters,
                 modifier = BANNER.testTag(EntryTags.BANNER_MASTER),
                 kind = BannerKind.WARNING,
                 actions = {
-                    Button(onClick = actions.newMasterPassword, modifier = Modifier.testTag(EntryTags.BANNER_MASTER_CHOOSE)) {
+                    Button(onClick = actions.newMasterPassword, modifier = Modifier.testTag(EntryTags.BANNER_MASTER_CHOOSE), shape = LongLabelShape) {
                         Text(stringResource(R.string.entry_banner_master_choose))
                     }
                 },
@@ -505,6 +506,7 @@ private fun SecretValueRow(
                 TextButton(
                     onClick = { actions.bigLetters(value) },
                     modifier = Modifier.testTag(EntryTags.big(value)),
+                    shape = LongLabelShape,
                     contentPadding = PaddingValues(horizontal = 4.dp),
                 ) {
                     Text(big)

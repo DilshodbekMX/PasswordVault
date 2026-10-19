@@ -53,7 +53,7 @@ a menu), at each screen as it opens and again after each stretch of every list o
 
 | Check | Fails when |
 |---|---|
-| no clipped button | a control's text (a button's, a row's, a tab's) is cut, clipped, split or covered as below, or a control lies past the bottom of a window that does not scroll |
+| no clipped button | a control's text (a button's, a row's, a tab's) is cut, clipped, split or covered as below, or a control lies past the bottom of a window that does not scroll, or letters of the text lie outside the control's own rounded shape (a Material button clips its label to its fully rounded ends, which cut the corners off a label of three lines: the shape is read from the control's `Modifier.clip`, the letters' outlines from the text's font) |
 | no truncated or clipped text | any other text: cut with an ellipsis or overflowing its box (unless marked `mayTruncate`: its full text is reachable elsewhere, as a list row's name is on the account's screen), clipped by a parent that does not scroll, spilling out of its parent, past the edge of its window, a whole word of up to 16 characters split across two lines (a word: what the line-breaking rules keep whole), or covered by the floating Add button where its list cannot scroll on (the list keeps room for the button below its last row) |
 | no text left in plain English | (pseudo-locales only) a text, label or error without a character the pseudo-locale made, unless it is the user's own (marked `userText`: an account's name, a login, a file's column names, the suggested words), a secret on show, an app string that is the same in every language, a library's own label, or a date, time or number written by the phone's ICU |
 | no control under 48 dp | a control a finger can press whose touch area is under 48 × 48 dp |
@@ -71,7 +71,7 @@ field's hint stays on one line), `FieldLabel` (a field's label of two lines move
 `KeypadColumn` and `LockPadPage` (the dots and the whole keypad stay on the screen, the texts above them
 scroll), `VaultDialog` (title and text scroll, the buttons stay reachable), `TextBeside` (a button goes
 under its text when the two would squeeze it), `ClipboardRow` (its texts take at most a fifth of the
-window and scroll), `VaultSheet`'s 48 dp drag handle; the list's Add button hides while the keyboard is
+window and scroll), `VaultSheet`'s 48 dp drag handle, `LongLabelShape` (a button whose label may take several lines keeps round ends for one line and 16 dp corners above, which stay clear of its letters); the list's Add button hides while the keyboard is
 up and where the list has no room for it. `LongTextLayoutTest` checks them at 320 dp and a font scale of
 2 in every connected run, whatever the phone.
 

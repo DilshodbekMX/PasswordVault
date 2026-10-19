@@ -38,6 +38,7 @@ import io.github.dilshodbekmx.passwordvault.i18n.resolve
 import io.github.dilshodbekmx.passwordvault.nav.HelpPage
 import io.github.dilshodbekmx.passwordvault.nav.Navigator
 import io.github.dilshodbekmx.passwordvault.nav.Route
+import io.github.dilshodbekmx.passwordvault.ui.common.LongLabelShape
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultTopBar
 
 /**
@@ -102,6 +103,7 @@ private fun HelpBlockItem(block: HelpBlock, nav: Navigator) {
         is HelpBlock.Open -> TextButton(
             onClick = { nav.go(block.route) },
             modifier = Modifier.padding(top = 12.dp).testTag(HelpTags.open(block.route)),
+            shape = LongLabelShape,
         ) {
             Text(block.text.resolve())
         }

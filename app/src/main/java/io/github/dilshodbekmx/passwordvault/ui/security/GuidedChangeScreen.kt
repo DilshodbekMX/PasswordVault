@@ -65,6 +65,7 @@ import io.github.dilshodbekmx.passwordvault.R
 import io.github.dilshodbekmx.passwordvault.data.SaveProblem
 import io.github.dilshodbekmx.passwordvault.nav.Navigator
 import io.github.dilshodbekmx.passwordvault.nav.Route
+import io.github.dilshodbekmx.passwordvault.ui.common.LongLabelShape
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultTopBar
 import io.github.dilshodbekmx.passwordvault.ui.common.userText
 import io.github.dilshodbekmx.passwordvault.ui.edit.GeneratorSheet
@@ -357,10 +358,10 @@ private fun Steps(steps: GuidedChangeUiState.Steps, copied: String?, retried: Bo
 
         StepCard(5, stringResource(R.string.change_step5)) {
             val answer = steps.started && !saving
-            Button(onClick = actions.yes, enabled = answer, modifier = Modifier.fillMaxWidth().testTag(GuidedChangeTags.YES)) {
+            Button(onClick = actions.yes, enabled = answer, modifier = Modifier.fillMaxWidth().testTag(GuidedChangeTags.YES), shape = LongLabelShape) {
                 Text(stringResource(R.string.change_yes))
             }
-            OutlinedButton(onClick = actions.no, enabled = answer, modifier = Modifier.fillMaxWidth().testTag(GuidedChangeTags.NO)) {
+            OutlinedButton(onClick = actions.no, enabled = answer, modifier = Modifier.fillMaxWidth().testTag(GuidedChangeTags.NO), shape = LongLabelShape) {
                 Text(stringResource(R.string.change_no))
             }
             TextButton(onClick = actions.later, enabled = steps.started, modifier = Modifier.testTag(GuidedChangeTags.LATER)) {

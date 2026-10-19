@@ -2,8 +2,17 @@ package io.github.dilshodbekmx.passwordvault.ui.layout
 
 import android.content.Context
 import android.content.res.Configuration
+import android.graphics.Paint
+import android.graphics.Path
+import android.graphics.PathMeasure
+import android.graphics.Typeface
 import android.icu.text.BreakIterator
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsNode
@@ -12,6 +21,10 @@ import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsNodeInteractionsProvider
 import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontSynthesis
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.unit.toSize
 import androidx.test.platform.app.InstrumentationRegistry
 import io.github.dilshodbekmx.passwordvault.R
@@ -46,6 +59,11 @@ enum class LayoutCheck(val title: String) {
  *   elsewhere) may be cut, and none may be clipped or past the edge. A text inside a control (a node
  *   with a click action that merges its children) counts for [LayoutCheck.BUTTONS], any other for
  *   [LayoutCheck.TEXTS]. What a field holds is not checked: it scrolls by design.
+ * - A control's text is also *cut by its shape* when the control clips its content to a rounded shape
+ *   (`Modifier.clip`, as every Material button does with its fully rounded ends) and letters of the text
+ *   lie outside that shape: a button's label of three lines meets the round ends at its corners, where
+ *   its first and last letters are cut off. The shape is read from the control's own modifiers, the
+ *   letters' outlines from the text's own font, so a rectangle, or a text clear of the corners, passes.
  * - A control is a node with a click or a long-click action. Its touch area (`touchBoundsInRoot`, which
  *   includes the minimum interactive size Material gives) must be 48 dp each way, checked while the
  *   control is wholly on the screen (one half scrolled away is seen again after the scroll).
@@ -104,7 +122,7 @@ class LayoutProbe(private val compose: SemanticsNodeInteractionsProvider, privat
         // their nodes are not on the screen, and their positions mean nothing.
         if (!node.layoutInfo.isPlaced) return
         if (node.config.contains(SemanticsActions.GetTextLayoutResult) && !node.config.contains(SemanticsProperties.EditableText)) {
-            val problem = textProblem(node, window) ?: coveredBy(node, controls)
+            val problem = textProblem(node, window) ?: coveredBy(node, controls) ?: cutByShape(node)
             if (problem != null) {
                 val check = if (insideControl(node)) LayoutCheck.BUTTONS else LayoutCheck.TEXTS
                 found.getValue(check) += "$problem: ${describe(node)}"
@@ -253,6 +271,101 @@ class LayoutProbe(private val compose: SemanticsNodeInteractionsProvider, privat
                 "${dp(letters.left)},${dp(letters.top)} dp; the button at ${dp(area.left)}..${dp(area.right)} × ${dp(area.top)}..${dp(area.bottom)} dp)"
         }
         return null
+    }
+
+    /**
+     * Letters of a control's text that the control's own clip cuts off (the class's KDoc): the nearest
+     * control around [node] whose own modifiers clip to a shape, that shape's outline at the clip's
+     * place and size, and the outline of each letter of [node] as its font draws it at its place on the
+     * screen. A letter counts as cut when a point of its outline lies more than a pixel outside the shape.
+     */
+    private fun cutByShape(node: SemanticsNode): String? {
+        val control = generateSequence(node) { it.parent }
+            .firstOrNull { it.config.contains(SemanticsActions.OnClick) && it.config.isMergingSemanticsOfDescendants } ?: return null
+        val clips = control.layoutInfo.getModifierInfo().mapNotNull { info -> clipShapeOf(info.modifier)?.let { it to info.coordinates } }
+        if (clips.isEmpty()) return null
+        val layout = layoutOf(node) ?: return null
+        val style = layout.layoutInput.style
+        if (!style.fontSize.isSpecified) return null
+        val typeface = runCatching {
+            layout.layoutInput.fontFamilyResolver.resolve(
+                style.fontFamily,
+                style.fontWeight ?: FontWeight.Normal,
+                style.fontStyle ?: FontStyle.Normal,
+                style.fontSynthesis ?: FontSynthesis.All,
+            ).value as? Typeface
+        }.getOrNull() ?: return null
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            this.typeface = typeface
+            textSize = with(layout.layoutInput.density) { style.fontSize.toPx() }
+        }
+        val text = layout.layoutInput.text.text
+        val origin = node.positionInRoot
+        val box = Rect(origin, node.size.toSize())
+        val lines = inkOf(node, layout)
+        for ((shape, coordinates) in clips) {
+            if (!coordinates.isAttached) continue
+            val clipOrigin = coordinates.positionInRoot()
+            val clipSize = coordinates.size.toSize()
+            // The control's own shape holds the text's box (a button holds its label): a clip that does not
+            // is not where the text is drawn now (a layout passing through, or a part elsewhere).
+            if (!inside(box, Rect(clipOrigin, clipSize), density)) continue
+            val outline = shape.createOutline(clipSize, control.layoutInfo.layoutDirection, control.layoutInfo.density)
+            for (line in 0 until layout.lineCount) {
+                // Where the line is drawn, against where the result that semantics gives has it (inkOf).
+                val shift = lines[line].left - (origin.x + layout.getLineLeft(line))
+                val baseline = origin.y + layout.getLineBaseline(line)
+                for (offset in layout.getLineStart(line) until layout.getLineEnd(line, visibleEnd = true)) {
+                    // Spaces and the marks that only steer the direction (ar-XB's) draw nothing.
+                    val letter = text[offset]
+                    if (letter.isWhitespace() || letter.isSurrogate() || Character.getType(letter) == Character.FORMAT.toInt()) continue
+                    val glyph = Path()
+                    paint.getTextPath(text, offset, offset + 1, origin.x + shift + layout.getBoundingBox(offset).left, baseline, glyph)
+                    val outside = firstPointOutside(glyph, outline, clipOrigin) ?: continue
+                    // Where in the shape, not on the screen: the same cut seen at every stretch of a scroll is one finding.
+                    return "cut by its rounded shape (the letter \"${text[offset]}\" reaches ${dp(outside.x - clipOrigin.x)},${dp(outside.y - clipOrigin.y)} dp " +
+                        "of a shape ${dp(clipSize.width)} × ${dp(clipSize.height)} dp, outside it)"
+                }
+            }
+        }
+        return null
+    }
+
+    /** The first point of [glyph]'s outline, looked at every pixel, that lies more than a pixel outside [outline] placed at [at]. */
+    private fun firstPointOutside(glyph: Path, outline: Outline, at: Offset): Offset? {
+        val measure = PathMeasure(glyph, false)
+        val position = FloatArray(2)
+        do {
+            var distance = 0f
+            while (measure.length > 0f && distance <= measure.length) {
+                if (!measure.getPosTan(distance, position, null)) break
+                val point = Offset(position[0] - at.x, position[1] - at.y)
+                if (!insideWithAPixel(outline, point)) return Offset(position[0], position[1])
+                distance += 1f
+            }
+        } while (measure.nextContour())
+        return null
+    }
+
+    /** Whether [point] lies in [outline], or within a pixel of it (an outline is not checked: a path). */
+    private fun insideWithAPixel(outline: Outline, point: Offset): Boolean = when (outline) {
+        is Outline.Rectangle -> outline.rect.inflate(1f).contains(point)
+        is Outline.Rounded -> {
+            val round = outline.roundRect
+            val towards = Offset((round.left + round.right) / 2f - point.x, (round.top + round.bottom) / 2f - point.y)
+            val length = towards.getDistance()
+            round.contains(point) || (length > 1f && round.contains(point + towards / length))
+        }
+        is Outline.Generic -> true
+    }
+
+    /** The shape [modifier] clips its content to when it is a graphics layer that clips (`Modifier.clip`), else null. */
+    private fun clipShapeOf(modifier: Modifier): Shape? {
+        if (modifier.javaClass.simpleName != "GraphicsLayerElement") return null
+        return runCatching {
+            val clips = modifier.javaClass.getDeclaredField("clip").apply { isAccessible = true }.getBoolean(modifier)
+            if (clips) modifier.javaClass.getDeclaredField("shape").apply { isAccessible = true }.get(modifier) as? Shape else null
+        }.getOrNull()
     }
 
     /**

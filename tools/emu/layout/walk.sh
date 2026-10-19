@@ -24,7 +24,8 @@
 # reads what Compose laid out: a text cut with an ellipsis or overflowing its box (except one marked
 # mayTruncate, whose full text is reachable elsewhere), clipped by a parent that does not scroll,
 # spilling out of its parent, past the edge of a window, a whole word of up to 16 characters split
-# across two lines, a text covered by the floating Add button where no scroll moves it out; a control
+# across two lines, a text covered by the floating Add button where no scroll moves it out, a control's
+# text whose letters its own rounded shape cuts off (a button's label of several lines); a control
 # whose touch area is under 48 dp; a text or label without a pseudo-localized character (except the
 # user's own texts, marked userText, and the app's untranslatable strings). Each screen is looked at as
 # it opens and after each stretch of every list or column that scrolls. It prints PASS or FAIL per
