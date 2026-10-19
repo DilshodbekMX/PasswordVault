@@ -36,7 +36,7 @@
         <item quantity="other">Nusxa olgan parollaringiz %d&#160;daqiqadan keyin vaqtinchalik xotiradan olib tashlanadi. Shu vaqt ichida nusxa olgan boshqa narsalaringiz ham olib tashlanishi mumkin.</item>
     </plurals>
     <string name="help_force_stop">Agar bu ilovani “Majburan toʻxtatish” orqali toʻxtatsangiz yoki uning batareya sarfini “Cheklangan” qilib qoʻysangiz, nusxa olingan parol ilovani qayta ochmaguningizcha vaqtinchalik xotirada qoladi.</string>
-    <string name="help_never_pin">Parolni hech qachon klaviaturangizning vaqtinchalik xotirasiga qadab qoʻymang: qadalgan elementlar hech qachon olib tashlanmaydi.</string>
+    <string name="help_never_pin">Parolni hech qachon klaviatura ilovasining vaqtinchalik xotirasiga qadab qoʻymang: qadalgan elementlar hech qachon olib tashlanmaydi.</string>
 
     <string name="help_protection_heading_pin">PIN kodingiz va barmoq izingiz</string>
     <string name="help_protection_fingerprint">Bu telefonga barmoq izi qoʻshilgan har kim ilovani ocha oladi.</string>
