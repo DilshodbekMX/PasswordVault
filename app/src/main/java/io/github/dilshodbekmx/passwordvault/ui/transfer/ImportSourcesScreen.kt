@@ -19,6 +19,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -64,8 +65,13 @@ internal fun ImportSourcesScreen(vm: ImportSourcesViewModel, nav: Navigator) {
         },
         topBar = { ImportTopBar(title, onBack = { if (!vm.closeHelp()) nav.back() }) },
     ) { padding ->
-        ImportPage(padding, Modifier.testTag(if (ui.help) ImportTags.HELP else ImportTags.SOURCES)) {
-            if (ui.help) GoogleHelp(ui, vm) else Sources(ui, vm)
+        // A page of its own for each step, scrolled from its top: with a large font the sources are longer
+        // than the screen, and the help shared their column, opening where the list had been scrolled to,
+        // its first steps above the screen (build plan 6.2, review).
+        key(ui.help) {
+            ImportPage(padding, Modifier.testTag(if (ui.help) ImportTags.HELP else ImportTags.SOURCES)) {
+                if (ui.help) GoogleHelp(ui, vm) else Sources(ui, vm)
+            }
         }
     }
 }

@@ -1,9 +1,18 @@
 package io.github.dilshodbekmx.passwordvault.ui.transfer.`import`
 
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -13,7 +22,10 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToKey
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.github.dilshodbekmx.passwordvault.R
 import io.github.dilshodbekmx.passwordvault.core.formats.ColumnMeaning
@@ -231,6 +243,30 @@ class ImportScreenTest {
         compose.runOnUiThread { rig.answer(DOC, CHROME_CSV.toByteArray()) }
         compose.waitUntil(TIMEOUT_MS) { rig.nav.moves.isNotEmpty() }
         assertEquals(listOf("replace Import(step=1)"), rig.nav.moves)
+    }
+
+    @Test
+    fun theGoogleHelpOpensAtItsFirstStep_whereverTheSourcesWereScrolled() {
+        // Build plan 6.2, review: with the phone's font at 200 % on a small phone the sources are longer than
+        // the screen, so "Google Password Manager" is reached by scrolling. The help it opens shared the
+        // sources' column and opened where the list had been scrolled to, its first steps above the screen.
+        val vm = rig.sources()
+        compose.setContent {
+            val density = LocalDensity.current
+            CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale = 2f)) {
+                ImportTestTheme { Box(Modifier.width(320.dp).height(560.dp)) { ImportSourcesScreen(vm, rig.nav) } }
+            }
+        }
+        val page = compose.onNodeWithTag(ImportTags.SOURCES)
+        page.performSemanticsAction(SemanticsActions.ScrollBy) { it(0f, 100_000f) }
+        compose.waitForIdle()
+        val scrolled = page.fetchSemanticsNode().config[SemanticsProperties.VerticalScrollAxisRange].value()
+        assertTrue("the sources are longer than the screen: scrolled $scrolled px", scrolled > 0f)
+        compose.runOnUiThread { vm.choose(ImportSource.GOOGLE) }
+        compose.waitForIdle()
+        val help = compose.onNodeWithTag(ImportTags.HELP).fetchSemanticsNode()
+        val at = help.config.getOrNull(SemanticsProperties.VerticalScrollAxisRange)?.value() ?: 0f
+        assertEquals("the help opens at its first step: scrolled $at px", 0f, at, 0.5f)
     }
 
     private companion object {
