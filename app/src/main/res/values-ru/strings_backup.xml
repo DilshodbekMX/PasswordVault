@@ -14,7 +14,7 @@
     <string name="backup_pending">Резервную копию можно будет создать, когда ваш новый мастер-пароль заработает.</string>
     <string name="backup_password_text">Введите мастер-пароль. Так приложение проверит, что вы помните пароль, который понадобится для этой резервной копии.</string>
     <string name="backup_password_field">Мастер-пароль</string>
-    <string name="backup_paused">Это было приостановлено, когда приложение заблокировалось.</string>
+    <string name="backup_paused">Это действие было приостановлено, когда приложение заблокировалось.</string>
     <string name="backup_make">Создать копию</string>
     <string name="backup_checking">Проверка…</string>
     <string name="backup_wrong">Неверный мастер-пароль. Проверьте язык клавиатуры (латиница или кириллица) и заглавные буквы.</string>
@@ -98,7 +98,7 @@
     <string name="backup_restore_not_saved">Не удалось сохранить. Возможно, хранилище телефона заполнено.</string>
 
     <string name="backup_old_title">Старые пароли</string>
-    <string name="backup_old_intro">Эти пароли были отложены на этом телефоне. Они по-прежнему защищены мастер-паролем, который вы для них использовали. Кнопка «Открыть» добавляет их аккаунты к вашим текущим паролям.</string>
+    <string name="backup_old_intro">Эти пароли хранятся на этом телефоне отдельно от текущих. Они по-прежнему защищены мастер-паролем, который вы для них использовали. Кнопка «Открыть» добавляет их аккаунты к вашим текущим паролям.</string>
     <string name="backup_old_item">Заблокированы %1$s</string>
     <string name="backup_old_unreadable">Сейчас не удаётся прочитать их файлы.</string>
     <string name="backup_old_open">Открыть</string>
@@ -116,7 +116,7 @@
     <string name="backup_old_deleted">Старые пароли удалены.</string>
     <string name="backup_old_wrong">Это не мастер-пароль этих паролей. Проверьте язык клавиатуры (латиница или кириллица) и заглавные буквы.</string>
     <string name="backup_old_no_memory">На телефоне недостаточно свободной оперативной памяти, чтобы открыть эти пароли. Закройте другие приложения или перезапустите телефон, затем повторите попытку.</string>
-    <string name="backup_old_not_added">Не удалось добавить аккаунты. Ничего не изменилось. Повторите попытку.</string>
+    <string name="backup_old_not_added">Не удалось добавить аккаунты. Ничего не изменено. Повторите попытку.</string>
     <string name="backup_old_not_deleted">Не удалось удалить эти пароли. Ничего не удалено. Повторите попытку.</string>
 
 </resources>

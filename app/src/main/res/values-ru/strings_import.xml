@@ -33,15 +33,15 @@
     <string name="import_choose_file">Выбрать файл</string>
 
     <string name="import_reading">Чтение файла…</string>
-    <string name="import_paused">Это было приостановлено, когда приложение заблокировалось.</string>
+    <string name="import_paused">Это действие было приостановлено, когда приложение заблокировалось.</string>
     <string name="import_file_name">Файл: %1$s</string>
 
     <string name="import_problem_cannot_open">Не удалось открыть файл. Возможно, он был перемещён или удалён. Выберите его ещё раз.</string>
     <string name="import_problem_excel">Это файл Excel. В Excel выберите «Файл › Сохранить как › CSV UTF-8», а затем импортируйте этот файл.</string>
     <string name="import_problem_keepass">Это база данных KeePass. В KeePassXC: «База данных › Экспорт › CSV».</string>
     <string name="import_problem_empty">Этот файл пуст.</string>
-    <string name="import_problem_too_big">Этот файл больше %1$s&#160;МБ — это максимум, который приложение может импортировать за один раз.</string>
-    <string name="import_problem_too_many">В этом файле больше %1$s&#160;аккаунтов — это максимум, который приложение может импортировать за один раз. Экспортируйте их частями.</string>
+    <string name="import_problem_too_big">Этот файл больше %1$s&#160;МБ. Это больше, чем приложение может импортировать за один раз.</string>
+    <string name="import_problem_too_many">В этом файле больше %1$s&#160;аккаунтов. Это больше, чем приложение может импортировать за один раз. Экспортируйте их частями.</string>
     <string name="import_problem_unreadable">Не удаётся прочитать этот файл. Выберите файл CSV или JSON, экспортированный из вашего приложения для паролей.</string>
     <string name="import_problem_bad_json">Не удаётся прочитать этот файл JSON. Возможно, он повреждён или обрезан.</string>
     <string name="import_problem_no_memory">Этот файл слишком большой, чтобы прочитать его на этом телефоне.</string>
