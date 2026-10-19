@@ -85,9 +85,10 @@ fi
 echo "i18n matrix on $SERIAL (API $API): ${PARTS[*]}; $APK"
 pvi_quiet_network
 KNOWN=0
-# The prompt part's PIN: allowed by lock.md §7.2, and made of 1 to 6 only, the pad's first two rows. In
-# en-XA the PIN steps' longer texts push the row 7 8 9 under the navigation bar of a 1920-pixel screen
-# (API 24 and 28), and 0 off the screen, where a tap reaches the bar, not the key (a layout for 6.2).
+# The prompt part's PIN: allowed by lock.md §7.2, and made of 1 to 6 only, the pad's first two rows. It
+# was chosen when en-XA's longer texts pushed the row 7 8 9 and the 0 off a 1920-pixel screen (API 24
+# and 28); since build plan 6.2 the keypad stays whole on the first screen (KeypadColumn, ux.md §5.9
+# "Keypad pages"), so any allowed PIN would do. It stays as it is.
 PIN=416253
 
 known() { # NAME DETAIL: a platform behaviour that is not a failure of the app
