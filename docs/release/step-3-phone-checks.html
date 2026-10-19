@@ -451,7 +451,7 @@ Settings › Version.</p>
       <li><code>DONE: limit ... set</code>.</li>
       <li>Either "Your phone doesn’t have enough free memory to open your passwords. …" with "Try again",
         or the app closes. Never "That’s not the right master password."</li>
-      <li>The limit is removed. If the app closed, box C shows Android's reason: copy it for Claude.</li>
+      <li>The limit is removed. If the app closed, box C shows Android's record of it: copy its lines for Claude. The line <code>description=</code> may name <code>MemoryLimiter</code>.</li>
     </ol></td>
     <td class="saw"><div class="result"><div><span class="box"></span>as expected</div><div><span class="box"></span>different</div><div><span class="box"></span>not done</div></div>
       Above (box A):<br><span class="box"></span>opened<br>Below (box B):<br><span class="box"></span>"not enough memory"<br><span class="box"></span>app closed<br><span class="box"></span>opened</td>
@@ -552,7 +552,7 @@ if [ -z "$PHONE" ]; then echo "STOP: no phone found. Do step 2, part 2.8 again."
   PID=$($ADB -s "$PHONE" shell pidof io.github.dilshodbekmx.passwordvault | tr -d '\r')
   if [ -n "$PID" ]; then $ADB -s "$PHONE" shell am memory-limiter manual "$PID" none &amp;&amp; echo "DONE: the limit is removed."; else echo "PasswordVault is not running: it has no limit any more."; fi
   echo "How PasswordVault ended last time:"
-  $ADB -s "$PHONE" shell dumpsys activity exit-info io.github.dilshodbekmx.passwordvault | tr -d '\r' | grep -m1 -A3 'ApplicationExitInfo #0'
+  $ADB -s "$PHONE" shell dumpsys activity exit-info io.github.dilshodbekmx.passwordvault | tr -d '\r' | grep -m1 -A5 'ApplicationExitInfo #0'
 fi
 }</pre>
 

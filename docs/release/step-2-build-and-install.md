@@ -240,7 +240,8 @@ Use this way if you do not want to turn on USB debugging.
 
 1. Connect the phone with the cable and choose **File transfer** on the phone.
 2. Open the **Files** app on the computer. The phone appears in the list on the left.
-   Open it, then **Internal storage** (or **Phone**), then **Download**.
+   Open it, then **Internal storage** (or **Internal shared storage**, or **Phone**), then
+   **Download**.
 3. Copy the file from `/home/asus/passwordvault-releases/` (part 2.6) into that folder.
 4. On the phone, open its Files app (Samsung: My Files; Xiaomi: File Manager), open
    **Downloads** and tap the file.
@@ -326,7 +327,7 @@ Do it before you set up the app on the phone:
 | `adb install` says | What it means and what to do |
 |---|---|
 | `Success` | All is well. |
-| `INSTALL_FAILED_UPDATE_INCOMPATIBLE: ... signatures do not match ...` | The phone already has a PasswordVault signed with another key, for example a test build that Android Studio installed. **Warning: do not uninstall it while it holds passwords you need.** First open that app and make a backup file (Settings › Make a backup) and copy it off the phone. Then ask Claude. |
+| `INSTALL_FAILED_UPDATE_INCOMPATIBLE: ... signatures do not match ...` | The phone already has a PasswordVault signed with another key, for example a test build that Android Studio installed. **Warning: do not uninstall it while it holds passwords you need.** First open that app and make a backup file (Settings › Make a backup) and copy it off the phone. Step 4, part 4.8 shows which key that app has and how to move to yours. |
 | `INSTALL_FAILED_VERSION_DOWNGRADE` | The phone has a newer version than this file. Install the newest file. |
 | `INSTALL_FAILED_NO_MATCHING_ABIS` | You are installing on an emulator, not on your phone. The phone's app file has code for phones only. Check part 2.8: your phone is the line with `usb:`. |
 | `INSTALL_FAILED_ALREADY_EXISTS` | `-r` was left out. Use the box of part 2.9 as it is. |

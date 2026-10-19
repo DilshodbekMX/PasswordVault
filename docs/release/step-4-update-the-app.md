@@ -103,7 +103,8 @@ PHONE=$($ADB devices -l | awk '/ usb:/ && $2 == "device" {print $1; exit}')
 if [ -z "$PHONE" ]; then echo "STOP: no phone found. Do step 2, part 2.8 again."; else
   P=$($ADB -s "$PHONE" shell pm path io.github.dilshodbekmx.passwordvault | tr -d '\r' | sed -n 's/^package://p' | grep 'base\.apk$' | head -n 1)
   if [ -z "$P" ]; then echo "PasswordVault is not installed on the phone."
-  elif $ADB -s "$PHONE" pull "$P" /home/asus/passwordvault-on-phone.apk > /dev/null; then
+  elif ! $ADB -s "$PHONE" pull "$P" /home/asus/passwordvault-on-phone.apk > /dev/null 2>&1; then echo "STOP: the app could not be copied from the phone. Paste the box again."
+  else
     want=$(/home/asus/.jdks/jdk-25/bin/keytool -printcert -file /home/asus/passwordvault-key/passwordvault-release-certificate.pem | grep -m1 'SHA256:' | sed 's/.*SHA256: //; s/://g' | tr 'A-F' 'a-f')
     CERTS=$(/home/asus/Android/Sdk/build-tools/36.0.0/apksigner -J-enable-native-access=ALL-UNNAMED verify --print-certs /home/asus/passwordvault-on-phone.apk 2>/dev/null)
     got=$(printf '%s\n' "$CERTS" | grep -m1 'certificate SHA-256 digest' | awk '{print $NF}')
@@ -117,8 +118,8 @@ fi
 
 - `OK: the app on the phone is signed with your release key.`: then the new file is the
   problem. Do part 2.5 again and tell Claude what it says.
-- `The app on the phone is signed with ANOTHER key: CN=Android Debug, ...`: a test build is
-  on the phone.
+- `The app on the phone is signed with ANOTHER key: C=US, O=Android, CN=Android Debug`: a test
+  build is on the phone.
 - `... ANOTHER key: CN=PasswordVault release key, C=UZ`: an older release key of yours,
   made before this one.
 
