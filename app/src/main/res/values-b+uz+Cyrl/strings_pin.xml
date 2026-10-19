@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Oʻzbekcha (lotin): the PIN and fingerprint steps and "Make backups" (build plan 6.3a; English in
-     values/strings_pin.xml). Glossary (i18n.md §3): 52 to 57 the PIN, 130 "ilova PIN kodi", 135
-     "faolsizlantiriladi", 61 to 63 the fingerprint, 97 "zaxira nusxa". The app's PIN is never the
-     phone's ("telefoningizning PIN kodi"). -->
+<!-- Ўзбекча (кирилл): the PIN and fingerprint steps and "Make backups" (build plan 6.3a; English in
+    values/strings_pin.xml). Drafted from values-uz/strings_pin.xml with UzbekCyrillicStrings
+    (i18n.md §2.5), then read string by string against the Latin and the Cyrillic column of the
+    glossary (i18n.md §3). Latin letters only in the names of ResourceCheck.LATIN_IN_CYRILLIC. -->
 <resources>
 
     <!-- "Choose a 6-digit PIN" (ux.md §5.6). -->
@@ -32,7 +32,7 @@
     <string name="pin_may_not_be_saved">Янги PIN код сақланмаган бўлиши мумкин. Кейинги сафар аввал янги PIN кодни синаб кўринг. У қабул қилинмаса, эски PIN код ёки асосий паролингиздан фойдаланинг.</string>
     <string name="pin_may_not_be_saved_first">PIN код сақланмаган бўлиши мумкин. Кейинги сафар аввал уни синаб кўринг. У қабул қилинмаса, асосий паролингиздан фойдаланинг.</string>
 
-    <!-- Settings › Ilova qulfi › "PIN kodni oʻzgartirish". -->
+    <!-- Settings › Илова қулфи › "PIN кодни ўзгартириш". -->
     <string name="pin_current_title">Ҳозирги PIN кодни киритинг</string>
     <string name="pin_use_master_password">Бунинг ўрнига асосий паролдан фойдаланиш</string>
     <plurals name="pin_wrong_left">
@@ -74,7 +74,7 @@
     <string name="pin_backups_title">Захира нусха яратинг</string>
     <string name="pin_backups_only_here">Паролларингиз фақат шу телефонда сақланади. Телефон йўқолса, бузилса ёки асл ҳолатига қайтарилса, улар ҳам йўқолади. Иловани ўчириб ташлаш ёки унинг хотирасини тозалаш ҳам уларни ўчириб юборади.</string>
     <string name="pin_backups_locked">Захира нусха — барча паролларингиз сақланган қулфланган файл. У фақат асосий паролингиз билан очилади.</string>
-    <string name="pin_backups_outside">Захира нусхани шу телефондан ташқарида сақланг — Google Дриве хизматида, компьютерда ёки уни ўзингизга юборинг.</string>
+    <string name="pin_backups_outside">Захира нусхани шу телефондан ташқарида сақланг — Google Drive хизматида, компьютерда ёки уни ўзингизга юборинг.</string>
     <string name="pin_backups_remind">Захира нусха яратишни эслатиб туриш</string>
     <string name="pin_backups_finish">Якунлаш</string>
 

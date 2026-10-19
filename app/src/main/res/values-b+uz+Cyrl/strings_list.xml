@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Oʻzbekcha (lotin): the Passwords list, its search and banners, and Recently deleted (build plan
-     6.3a; English in values/strings_list.xml). Glossary (i18n.md §3): 1 "Parollar", 2 "Hisob", 12 to
-     14 "Saralanganlar", 17 search, 27 to 29 copy, 141 "Yangi parolni bekor qilish", 143
-     "almashtirildi". An account's name takes no suffix: "%1$s paroli", "%1$s uchun". -->
+<!-- Ўзбекча (кирилл): the Passwords list, its search and banners, and Recently deleted (build plan
+    6.3a; English in values/strings_list.xml). Drafted from values-uz/strings_list.xml with
+    UzbekCyrillicStrings (i18n.md §2.5), then read string by string against the Latin and the
+    Cyrillic column of the glossary (i18n.md §3). Latin letters only in the names of
+    ResourceCheck.LATIN_IN_CYRILLIC. -->
 <resources>
 
     <!-- ===== The Passwords screen (ux.md §5.11) ===== -->
@@ -33,7 +34,7 @@
     <string name="list_menu_remove_favourite">Сараланганлардан олиб ташлаш</string>
     <string name="list_menu_edit">Таҳрирлаш</string>
 
-    <!-- What was copied, in the clipboard row: "Gmail paroli · 0:52 dan keyin tozalanadi". -->
+    <!-- What was copied, in the clipboard row: "Gmail пароли · 0:52 дан кейин тозаланади". -->
     <string name="list_copied_password">%1$s пароли</string>
     <string name="list_copied_username">%1$s фойдаланувчи номи</string>
     <string name="list_copied_old_password">%1$s эски пароли</string>
@@ -43,7 +44,7 @@
     <string name="list_empty_title">Ҳали ҳисоблар йўқ</string>
     <string name="list_empty_body">Биринчи ҳисобингиз ва унинг паролини қўшинг ёки паролларингизни Chrome браузеридан олиб келинг.</string>
     <string name="list_empty_add">Ҳисоб қўшиш</string>
-    <string name="list_empty_import">Google Пассwорд Манагер хизматидан импорт қилиш</string>
+    <string name="list_empty_import">Google Password Manager хизматидан импорт қилиш</string>
 
     <!-- Search. -->
     <string name="list_search_retried">“%1$s” бўйича натижалар кўрсатилмоқда</string>
@@ -80,7 +81,7 @@
     <string name="list_banner_type_it_now">Ҳозир киритиш</string>
     <string name="list_banner_i_forgot_it">Унутиб қўйдим</string>
 
-    <!-- %1$s is the file's name; %2$s says when it was saved ("2 soat oldin", "hozirgina"). -->
+    <!-- %1$s is the file's name; %2$s says when it was saved ("2 соат олдин", "ҳозиргина"). -->
     <string name="list_banner_export">Сизда паролларингиз ёзилган ҳимояланмаган файл бор: %1$s (%2$s сақланган).</string>
     <string name="list_banner_deleted_it_myself">Уни ўзим ўчирдим</string>
     <string name="list_banner_cannot_delete">Бу жой иловаларга файлларни ўчиришга рухсат бермайди. Уни “Файллар” иловасида ўзингиз ўчиринг.</string>

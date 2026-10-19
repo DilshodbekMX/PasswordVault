@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Oʻzbekcha (lotin): shared words and the shared parts of the screens (build plan 6.3a; English in
-     values/strings_common.xml). Words of the glossary (i18n.md §3); oʻ and gʻ with U+02BB, the
-     tutuq belgisi with U+02BC (i18n.md §2.4); a no-break space between a number and its word. -->
+<!-- Ўзбекча (кирилл): shared words and the shared parts of the screens (build plan 6.3a; English in
+    values/strings_common.xml). Drafted from values-uz/strings_common.xml with UzbekCyrillicStrings
+    (i18n.md §2.5), then read string by string against the Latin and the Cyrillic column of the
+    glossary (i18n.md §3). Latin letters only in the names of ResourceCheck.LATIN_IN_CYRILLIC. -->
 <resources>
 
     <!-- Buttons that many screens and dialogs use (glossary 26, 37, 38, 41, 42, 46). -->
@@ -34,9 +35,9 @@
     <string name="common_strength_strong">Кучли</string>
     <string name="common_strength_description">Парол кучи: %1$s</string>
 
-    <!-- Inside a sentence: "Parol hozirgina oʻzgartirilgan", "(hozirgina saqlangan)". -->
+    <!-- Inside a sentence: "Парол ҳозиргина ўзгартирилган", "(ҳозиргина сақланган)". -->
     <string name="common_just_now">ҳозиргина</string>
 
-    <string name="common_obscured_touch">Бошқа илова бу экран устида тасвир чиқармоқда, шунинг учун хавфсизлик мақсадида босишлар блокланди. Экран филтрлари ёки чат пуфакчаларини ўчиринг ва қайта урининг.</string>
+    <string name="common_obscured_touch">Бошқа илова бу экран устида тасвир чиқармоқда, шунинг учун хавфсизлик мақсадида босишлар блокланди. Экран фильтрлари ёки чат пуфакчаларини ўчиринг ва қайта урининг.</string>
 
 </resources>

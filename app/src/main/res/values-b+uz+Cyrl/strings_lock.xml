@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Oʻzbekcha (lotin): the lock screens, the "Forgot master password?" sheet and the notices after
-     unlock (build plan 6.3a; English in values/strings_lock.xml). Glossary terms (i18n.md §3): 48
-     "asosiy parol", 52 "PIN kod", 130 "ilova PIN kodi", 135 "faolsizlantirildi" (never "oʻchirildi",
-     which also means "deleted"), 136 "ishlamay qoldi", 137 "hozircha tekshirib boʻlmayapti", 141
-     "Yangi parolni bekor qilish", 143 "almashtirildi", 145 "… holatidagi parollarimni ochish". A date
-     never takes a suffix: "%1$s kuni" (on), "%1$s sanasidan oldingi" (before), a date and time
-     "%1$s da", as glossary 149 writes "0:52 dan". -->
+<!-- Ўзбекча (кирилл): the lock screens, the "Forgot master password?" sheet and the notices after
+    unlock (build plan 6.3a; English in values/strings_lock.xml). Drafted from
+    values-uz/strings_lock.xml with UzbekCyrillicStrings (i18n.md §2.5), then read string by string
+    against the Latin and the Cyrillic column of the glossary (i18n.md §3). Latin letters only in
+    the names of ResourceCheck.LATIN_IN_CYRILLIC. -->
 <resources>
 
     <!-- ===== Titles and the line of a set of passwords put aside ===== -->
@@ -120,7 +118,7 @@
     <string name="lock_older_confirm_body">Ўзгартириш вақтида яратилган нусха бу телефонда қолади, лекин энди ишлатилмайди.</string>
     <string name="lock_older_confirm_open">Очиш</string>
 
-    <!-- ===== "Open the older set instead?" ("toʻplam": a set of passwords) ===== -->
+    <!-- ===== "Open the older set instead?" ("тўплам": a set of passwords) ===== -->
     <string name="lock_older_set_text">Булар паролларингизнинг %1$s кунги ҳолати. Ундан кейин қўшилган ёки ўзгартирилган пароллар янгироқ тўпламда, у бу телефонда қолади. Унинг ўрнига эскироқ тўплам очилсинми?</string>
     <string name="lock_older_set_open">%1$s ҳолатидаги паролларимни очиш</string>
 
@@ -137,7 +135,7 @@
     <string name="lock_cannot_open_text">Уларнинг бу телефондаги файллари шикастланган.</string>
     <string name="lock_back">Орқага</string>
 
-    <!-- ===== The "Forgot master password?" sheet: no option says "Oʻchirish" ===== -->
+    <!-- ===== The "Forgot master password?" sheet: no option says "Ўчириш" ===== -->
     <string name="lock_sheet_title">Асосий паролни унутдингизми?</string>
     <string name="lock_sheet_body">Уни ҳеч ким тиклай олмайди: у ҳеч қаерда сақланмайди.</string>
     <string name="lock_sheet_pin_text">PIN кодингиз бу телефонда иловани ҳали ҳам очади. Иловани у билан очинг, сўнг янги асосий парол танланг.</string>
@@ -148,7 +146,7 @@
     <string name="lock_sheet_empty_text">Бўш илова билан бошланг. Ҳозирги паролларингиз бу телефонда қулфланган ҳолда қолади. Асосий паролни кейинроқ эсласангиз, уларни яна очишингиз мумкин.</string>
     <string name="lock_sheet_empty">Бўш илова билан бошлаш…</string>
     <string name="lock_empty_title">Бўш илова билан бошлансинми?</string>
-    <!-- "Sozlamalar › Zaxiralash va koʻchirish" names the Settings page (settings_group_backup). -->
+    <!-- "Созламалар › Захиралаш ва кўчириш" names the Settings page (settings_group_backup). -->
     <string name="lock_empty_body">Паролларингиз бу телефонда эски асосий паролингиз билан қулфланган ҳолда қолади. Уларни биринчи экрандан ёки “Созламалар › Захиралаш ва кўчириш” бўлимидан яна очишингиз мумкин.</string>
     <string name="lock_empty_confirm">Бўш илова билан бошлаш</string>
 

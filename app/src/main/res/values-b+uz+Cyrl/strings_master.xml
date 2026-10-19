@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Oʻzbekcha (lotin): changing and replacing the master password (build plan 6.3a; English in
-     values/strings_master.xml). Glossary (i18n.md §3): 48 "asosiy parol", 51 "Asosiy parolni
-     oʻzgartirish", 130 "ilova PIN kodi", 135 "faolsizlantirildi", 138 "yangi asosiy parol", 97
-     "zaxira nusxa". -->
+<!-- Ўзбекча (кирилл): changing and replacing the master password (build plan 6.3a; English in
+    values/strings_master.xml). Drafted from values-uz/strings_master.xml with UzbekCyrillicStrings
+    (i18n.md §2.5), then read string by string against the Latin and the Cyrillic column of the
+    glossary (i18n.md §3). Latin letters only in the names of ResourceCheck.LATIN_IN_CYRILLIC. -->
 <resources>
 
     <!-- ===== Change master password (ux.md §5.18; lock.md F8) ===== -->
@@ -49,7 +49,7 @@
     <string name="master_places_none">Эски асосий паролингизни кимдир билиши мумкин. У билан яратган захира нусхаларингизни ўчиринг.</string>
     <!-- %1$s is the file's name, %2$s a date with the year. -->
     <string name="master_place">%1$s, %2$s куни сақланган</string>
-    <string name="master_places_also">Телеграм ёки эмаил орқали юборган нусхаларингизни ҳам ўчиринг.</string>
+    <string name="master_places_also">Telegram ёки эл. почта орқали юборган нусхаларингизни ҳам ўчиринг.</string>
     <string name="master_place_deleted">Ўчириб ташланди</string>
     <string name="master_place_not_deletable">Илова бу файлни ўчира олмайди. Уни сақланган жойида ўзингиз ўчиринг.</string>
     <string name="master_place_not_noted">Файл ўчирилди, лекин илова буни қайд қила олмади. У кейинроқ ҳам бу рўйхатда кўриниши мумкин.</string>

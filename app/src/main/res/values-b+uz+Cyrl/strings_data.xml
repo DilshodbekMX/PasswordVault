@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Oʻzbekcha (lotin): texts stored with an account (build plan 6.3a). "Zaxira nusxa" is glossary 97. -->
+<!-- Ўзбекча (кирилл): texts stored with an account (build plan 6.3a; English in
+    values/strings_data.xml). Drafted from values-uz/strings_data.xml with UzbekCyrillicStrings
+    (i18n.md §2.5), then read string by string against the Latin and the Cyrillic column of the
+    glossary (i18n.md §3). Latin letters only in the names of ResourceCheck.LATIN_IN_CYRILLIC. -->
 <resources>
     <string name="data_from_backup">%1$s (захира нусхадан)</string>
 </resources>

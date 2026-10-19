@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Oʻzbekcha (lotin): the clipboard status row (build plan 6.3a). "Vaqtinchalik xotira" is glossary
-     112, "Nusxalangan matn" 148, "… dan keyin tozalanadi" 149, "Parol nusxalandi" 31, "Nusxa olindi" 30. -->
+<!-- Ўзбекча (кирилл): the clipboard status row (build plan 6.3a; English in
+    values/strings_clipboard.xml). Drafted from values-uz/strings_clipboard.xml with
+    UzbekCyrillicStrings (i18n.md §2.5), then read string by string against the Latin and the
+    Cyrillic column of the glossary (i18n.md §3). Latin letters only in the names of
+    ResourceCheck.LATIN_IN_CYRILLIC. -->
 <resources>
 
     <string name="clipboard_copied_text">Нусхаланган матн</string>

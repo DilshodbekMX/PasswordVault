@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Oʻzbekcha (lotin): the setup screens (build plan 6.3a; English in values/strings_setup.xml).
-     Polite "siz", short sentences; "Asosiy parol" is glossary 48, "Zaxira nusxa" 97, "PIN kod" 52. -->
+<!-- Ўзбекча (кирилл): the setup screens (build plan 6.3a; English in values/strings_setup.xml).
+    Drafted from values-uz/strings_setup.xml with UzbekCyrillicStrings (i18n.md §2.5), then read
+    string by string against the Latin and the Cyrillic column of the glossary (i18n.md §3). Latin
+    letters only in the names of ResourceCheck.LATIN_IN_CYRILLIC. -->
 <resources>
 
     <!-- Welcome (ux.md §5.1). -->
@@ -17,10 +19,10 @@
     <!-- "Choose your master password" (ux.md §5.3). -->
     <string name="setup_create_title">Асосий паролни танланг</string>
     <string name="setup_create_body">Асосий парол — бошқа барча паролларингиз калити. PIN кодни унутсангиз, захира нусхани очишда ва янги телефонга ўтишда у сизга керак бўлади.</string>
-    <string name="setup_create_warning_reset">Уни ҳеч ким тиклай олмайди. Биз унинг нусхасини сақламаймиз, “Паролни унутдингизми?” деган эмаил хабар ҳам келмайди. Агар уни унутсангиз, паролларингизни янги телефонда ҳам, захира нусхадан ҳам очиб бўлмайди.</string>
+    <string name="setup_create_warning_reset">Уни ҳеч ким тиклай олмайди. Биз унинг нусхасини сақламаймиз, “Паролни унутдингизми?” деган эл. почта хабари ҳам келмайди. Агар уни унутсангиз, паролларингизни янги телефонда ҳам, захира нусхадан ҳам очиб бўлмайди.</string>
     <string name="setup_create_warning_reuse">Бошқа жойда ишлатаётган паролингиздан фойдаланманг.</string>
     <string name="setup_create_interrupted">Созлаш тўхтаб қолган эди. Аввал ёзиб олган сўзларингизни чизиб ташланг. Мана сизнинг янги сўзларингиз.</string>
-    <!-- "1-soʻz (jami 6 ta): vowel", read by TalkBack. -->
+    <!-- "1-сўз (жами 6 та): vowel", read by TalkBack. -->
     <string name="setup_create_word">%1$d-сўз (жами %2$d&#160;та): %3$s</string>
     <string name="setup_create_typed_as">Уни шундай киритасиз:</string>
     <string name="setup_create_latin">Сўзлар инглиз тилида. Уларни лотин ҳарфларида киритинг.</string>
@@ -38,7 +40,7 @@
     <string name="setup_own_hint_add_word">Яна битта сўз қўшинг</string>
     <string name="setup_own_hint_names">Шаҳар номлари, одамларнинг исмлари ва йиллардан фойдаланманг</string>
     <!-- "qwerty" is the row of keys itself, kept in Latin letters. -->
-    <string name="setup_own_hint_keyboard">қwертй каби клавиатура қаторларидан фойдаланманг</string>
+    <string name="setup_own_hint_keyboard">qwerty каби клавиатура қаторларидан фойдаланманг</string>
     <string name="setup_own_mixed_scripts">Паролингизда лотин ва кирилл ҳарфлари аралашиб кетган. Клавиатурангиз тўғри тилга созланганми?</string>
     <string name="setup_own_use">Шу паролдан фойдаланиш</string>
     <string name="setup_own_missing_length">Асосий паролда камида 12&#160;та белги бўлиши керак.</string>

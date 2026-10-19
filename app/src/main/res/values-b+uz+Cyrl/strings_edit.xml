@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Oʻzbekcha (lotin): add and edit an account and the password generator (build plan 6.3a; English
-     in values/strings_edit.xml). Glossary (i18n.md §3): 6 "Nomi", 9 "Parol", 10 "Sayt", 11
-     "Qaydlar", 24 "Saqlash", 76 and 77 "yaratish", 78 "Uzunlik", 82 "Maxsus belgilar", 84 "Soʻzlar
-     soni", 85 "Ajratgich". "A–Z", "a–z", "0–9" and "I l 1 O 0" stay as they are. -->
+<!-- Ўзбекча (кирилл): add and edit an account and the password generator (build plan 6.3a; English
+    in values/strings_edit.xml). Drafted from values-uz/strings_edit.xml with UzbekCyrillicStrings
+    (i18n.md §2.5), then read string by string against the Latin and the Cyrillic column of the
+    glossary (i18n.md §3). Latin letters only in the names of ResourceCheck.LATIN_IN_CYRILLIC. -->
 <resources>
 
     <!-- ===== The top bar ===== -->
@@ -14,7 +14,7 @@
     <!-- ===== The form ===== -->
     <string name="edit_name">Номи</string>
     <string name="edit_name_example">Масалан, Gmail</string>
-    <string name="edit_username">Эмаил, телефон ёки логин</string>
+    <string name="edit_username">Эл. почта, телефон ёки логин</string>
     <string name="edit_password">Парол</string>
     <string name="edit_generate">Кучли парол яратиш</string>
     <plurals name="edit_reuse">
@@ -56,7 +56,7 @@
 
     <!-- ===== Unsaved changes kept from an earlier visit ===== -->
     <string name="edit_kept">Сақланмаган ўзгаришларингиз йўқолмади.</string>
-    <!-- %1$s is the account's name, %2$s a short date ("5-sen"). -->
+    <!-- %1$s is the account's name, %2$s a short date ("5 сен"). -->
     <string name="edit_old_draft">Сизда %1$s ҳисоби учун %2$s куни киритилган сақланмаган ўзгаришлар бор. Улар очилсинми?</string>
     <string name="edit_old_draft_new">Сизда янги ҳисоб учун %1$s куни киритилган сақланмаган ўзгаришлар бор. Улар очилсинми?</string>
     <string name="edit_old_draft_open">Очиш</string>
@@ -66,14 +66,14 @@
     <string name="edit_save_failed">Сақлаб бўлмади. Телефон хотираси тўлган бўлиши мумкин.</string>
     <string name="edit_too_large">Паролларингиз энди битта файлга сиғмаяпти. Кераксиз ҳисобларни ўчиринг ёки жуда узун қайдларни қисқартиринг.</string>
     <string name="edit_gone">Бу ҳисоб энди мавжуд эмас.</string>
-    <!-- Stored with the account: "Nomsiz 7-okt, 2026, 17:50". -->
+    <!-- Stored with the account: "Номсиз 7 окт, 2026, 17:50". -->
     <string name="edit_untitled">Номсиз %1$s</string>
 
     <!-- ===== The "Add field" dialog ===== -->
     <string name="edit_field_title">Майдон қўшиш</string>
     <string name="edit_field_pin">PIN код</string>
     <string name="edit_field_phone">Телефон рақами</string>
-    <string name="edit_field_recovery_email">Тиклаш учун эмаил</string>
+    <string name="edit_field_recovery_email">Тиклаш учун эл. почта</string>
     <string name="edit_field_question">Хавфсизлик саволи</string>
     <string name="edit_field_answer">Жавоб</string>
     <string name="edit_field_code_word">Кодли сўз</string>
@@ -91,11 +91,11 @@
     <string name="edit_gen_length">Узунлик</string>
     <string name="edit_gen_shorter">Қисқароқ</string>
     <string name="edit_gen_longer">Узунроқ</string>
-    <string name="edit_gen_upper">А–З</string>
-    <string name="edit_gen_lower">а–з</string>
+    <string name="edit_gen_upper">A–Z</string>
+    <string name="edit_gen_lower">a–z</string>
     <string name="edit_gen_digits">0–9</string>
     <string name="edit_gen_symbols">Махсус белгилар ! # $ % &amp; * + - = ? @ _</string>
-    <string name="edit_gen_look_alike">Бир-бирига ўхшаш белгиларсиз (I л 1 О 0)</string>
+    <string name="edit_gen_look_alike">Бир-бирига ўхшаш белгиларсиз (I l 1 O 0)</string>
     <string name="edit_gen_one_kind">Камида битта белги тури керак.</string>
     <string name="edit_gen_word_count">Сўзлар сони</string>
     <string name="edit_gen_fewer_words">Камроқ сўз</string>
