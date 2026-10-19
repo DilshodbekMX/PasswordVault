@@ -27,9 +27,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
@@ -66,6 +64,7 @@ import io.github.dilshodbekmx.passwordvault.data.SaveProblem
 import io.github.dilshodbekmx.passwordvault.nav.Navigator
 import io.github.dilshodbekmx.passwordvault.nav.Route
 import io.github.dilshodbekmx.passwordvault.ui.common.LongLabelShape
+import io.github.dilshodbekmx.passwordvault.ui.common.VaultSnackbarHost
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultTopBar
 import io.github.dilshodbekmx.passwordvault.ui.common.userText
 import io.github.dilshodbekmx.passwordvault.ui.edit.GeneratorSheet
@@ -197,7 +196,7 @@ fun GuidedChangeScreen(vm: GuidedChangeViewModel, nav: Navigator) {
                 },
             )
         },
-        snackbarHost = { SnackbarHost(snackbar) { data -> Snackbar(data, modifier = Modifier.testTag(GuidedChangeTags.MESSAGE)) } },
+        snackbarHost = { VaultSnackbarHost(snackbar, tag = GuidedChangeTags.MESSAGE) },
     ) { padding ->
         when (val now = state) {
             GuidedChangeUiState.Loading -> Unit

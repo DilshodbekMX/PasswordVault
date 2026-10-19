@@ -27,9 +27,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
@@ -79,6 +77,7 @@ import io.github.dilshodbekmx.passwordvault.ui.common.StrengthBar
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultDialog
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultFieldDefaults
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultSecureField
+import io.github.dilshodbekmx.passwordvault.ui.common.VaultSnackbarHost
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultTextField
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultTopBar
 import io.github.dilshodbekmx.passwordvault.ui.common.rememberFieldKeyboard
@@ -160,7 +159,7 @@ fun EditScreen(vm: EditViewModel, nav: Navigator) {
                 },
             )
         },
-        snackbarHost = { SnackbarHost(snackbar) { data -> Snackbar(data, modifier = Modifier.testTag(EditTags.MESSAGE)) } },
+        snackbarHost = { VaultSnackbarHost(snackbar, tag = EditTags.MESSAGE) },
     ) { padding ->
         when (ui.phase) {
             Phase.LOADING -> Unit

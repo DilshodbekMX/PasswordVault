@@ -38,7 +38,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
@@ -95,6 +94,7 @@ import io.github.dilshodbekmx.passwordvault.ui.common.CardPart
 import io.github.dilshodbekmx.passwordvault.ui.common.FittedText
 import io.github.dilshodbekmx.passwordvault.ui.common.KeyboardFirstOnBack
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultSearchField
+import io.github.dilshodbekmx.passwordvault.ui.common.VaultSnackbarHost
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultTopBar
 import io.github.dilshodbekmx.passwordvault.ui.common.cardPart
 import io.github.dilshodbekmx.passwordvault.ui.theme.LocalLook
@@ -290,7 +290,7 @@ fun PasswordsScreen(viewModel: PasswordsViewModel, nav: Navigator) {
                 )
             }
         },
-        snackbarHost = { SnackbarHost(snackbar) },
+        snackbarHost = { VaultSnackbarHost(snackbar) },
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)) {
             VaultSearchField(

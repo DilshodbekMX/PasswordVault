@@ -16,7 +16,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -41,6 +40,7 @@ import io.github.dilshodbekmx.passwordvault.nav.Route
 import io.github.dilshodbekmx.passwordvault.settings.ClipDelay
 import io.github.dilshodbekmx.passwordvault.settings.LockDelay
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultDialog
+import io.github.dilshodbekmx.passwordvault.ui.common.VaultSnackbarHost
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultTopBar
 import io.github.dilshodbekmx.passwordvault.ui.setup.MasterPasswordAsk
 import io.github.dilshodbekmx.passwordvault.ui.setup.MasterPasswordInput
@@ -69,7 +69,7 @@ fun AppLockPage(vm: SettingsViewModel, nav: Navigator, modifier: Modifier = Modi
                 navigationIcon = { BackArrow(nav) },
             )
         },
-        snackbarHost = { SnackbarHost(snackbar) },
+        snackbarHost = { VaultSnackbarHost(snackbar) },
     ) { padding ->
         LazyColumn(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding).testTag(SettingsTags.LIST)) {
             appLockRows(ui, AppLockActions.of(vm, nav))
