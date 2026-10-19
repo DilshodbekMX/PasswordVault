@@ -424,7 +424,8 @@ abstract class CheckMergedManifest : DefaultTask() {
  * androidx). Where R8 ran, its mapping also names no code of those packages, so nothing of them was
  * inlined into or merged with another class; no dex file names one of their types; and the APK
  * holds no JVM class file, which ART would never load (kotlinx-coroutines' DebugProbesKt.bin is left
- * out of these builds). The report counts the classes of [countedPackages].
+ * out of these builds), and no dex, jar or APK file other than its own classes*.dex, whose classes
+ * this check could not see. The report counts the classes of [countedPackages].
  */
 abstract class CheckApk : DefaultTask() {
     @get:InputFiles
@@ -509,6 +510,12 @@ abstract class CheckApk : DefaultTask() {
                 if (classFiles.isNotEmpty()) {
                     problems += "R-17: ${apk.name} holds JVM class files, which ART never loads: $classFiles"
                 }
+                // Files that would hold code outside the APK's own classes*.dex.
+                val otherCodeFile = Regex("(?i).*\\.(dex|jar|apk|odex|vdex|oat)")
+                val otherCode = if (r8) names.filter { it.matches(otherCodeFile) && it !in dexNames } else emptyList()
+                if (otherCode.isNotEmpty()) {
+                    problems += "R-17: ${apk.name} holds code besides its classes*.dex, which this check cannot read: $otherCode"
+                }
 
                 lines += "${apk.name}: lib/ $found, debug receiver ${if (inDex) "present" else "absent"}"
                 lines += "${apk.name}: ${classes.size} classes (dex files: ${dexNames.size})" +
@@ -523,7 +530,7 @@ abstract class CheckApk : DefaultTask() {
                 }
                 if (map != null) {
                     lines += "  R8's mapping names code of " + forbidden.joinToString(", ") { p -> "$p on ${map.mentions.getValue(p).count} lines" }
-                    lines += "  JVM class files in the APK: ${classFiles.size}"
+                    lines += "  JVM class files in the APK: ${classFiles.size}; other dex, jar or APK files: ${otherCode.size}"
                 }
             }
         }
