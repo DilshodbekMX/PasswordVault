@@ -8,10 +8,11 @@
 #
 #   tools/emu/checks/6-pictures-session.sh SERIAL --apk FILE --lang TAG --out DIR [--only PART,PART]
 #
-# SERIAL is an API 37 device of this worktree (the system's own prompt, cmd locale, cmd alarm set-time),
+# SERIAL is an API 37 device of this worktree (the system's own prompt, cmd alarm set-time),
 # or for the parts setup and pad an API 24 device (androidx.biometric's own dialog in the activity; the
 # language set with the debug command `locale`); FILE a debug APK (screenshots, run-as). TAG is the app's
-# own language tag (en, uz, uz-Cyrl, ru), set with cmd locale set-app-locales before the app first starts. The pictures go to DIR as
+# own language tag (en, uz, uz-Cyrl, ru), set with the debug command `locale` once the app runs on Welcome
+# (set_language says why not before the first start). The pictures go to DIR as
 # NNN-name.png; the numbers are fixed, so that a picture of one state has the same name in every
 # language. A picture of a screen that scrolls is taken once per swipe while the screen changes
 # (NNN-name-1, -2, ...).
@@ -30,7 +31,8 @@
 #              master password typed on the lock screen.
 #   files      the import (sources, Google's help, a crafted CSV's preview with its counts and result,
 #              the fifty accounts), the Security tab with them (cards, a group, a row's menu, "Leave out",
-#              a guided change left for later), the account with a change waiting, the backup, the
+#              a guided change to its end, the next one left for later), the account with a change
+#              waiting, the backup, the
 #              exports (the warnings, "Delete it now", one CSV kept: the list's banners), Settings' dialogs,
 #              Recently deleted's "Delete forever".
 #   time       the clock moved on (cmd alarm set-time; put back at the end): the practice screen within
@@ -201,16 +203,25 @@ PIN_NOW=$PIN1
 settings() { to_list && pva_tap pv.tab.Settings && pva_on Settings 20; }
 
 # ---- setup ----------------------------------------------------------------------------------------------
+# set_language: the app's language set as the language dialog sets it (the debug command `locale`,
+# AppLanguages.setTags) on Welcome, once the app runs, and checked: the command answers which language
+# the screens show. Set from outside before the first start of a fresh install (cmd locale
+# set-app-locales), the language was lost: at that start AppCompat moves its own stored language into
+# Android's (autoStoreLocales), and a fresh install has none, so the first uz-Latn session came out in
+# English.
+set_language() {
+    local answer want
+    case "$LANG_TAG" in en) want=EN ;; uz) want=UZ_LATN ;; uz-Cyrl) want=UZ_CYRL ;; ru) want=RU ;; *) want="" ;; esac
+    pva_on Welcome 30 || return 1
+    answer=$(pva_debug "locale $LANG_TAG") || return 1
+    pv_log "$answer"
+    [ -z "$want" ] || [[ "$answer" == *"shown: $want"* ]] || { pv_log "the app does not show $want"; return 1; }
+    pv_sleep 3
+    pva_on Welcome 30
+}
+
 start_in_language() {
-    pva_install "$APK" || return 1
-    if [ "$API" -lt 33 ]; then
-        pva_start && pva_on Welcome 30 && pva_debug "locale $LANG_TAG" >/dev/null && pv_sleep 3 && pva_on Welcome 30
-        return
-    fi
-    pv_shell cmd locale set-app-locales "$PV_PACKAGE" --locales "$LANG_TAG" >/dev/null || return 1
-    pv_shell cmd locale get-app-locales "$PV_PACKAGE" | tr -d '\r' | grep -q "\[$LANG_TAG\]" \
-        || { pv_log "the app's locales: $(pv_shell cmd locale get-app-locales "$PV_PACKAGE" | tr -d '\r')"; return 1; }
-    pva_start && pva_on Welcome 30
+    pva_install "$APK" && pva_start && set_language
 }
 
 set_up() {
@@ -488,6 +499,13 @@ security() {
     shots 214 change-steps 6
     pva_reveal pv.change.create && pva_tap pv.change.create && pva_need pv.change.saved 20 || return 1
     shots 215 change-created 6
+    # Step 5's "Yes, it's changed": the end of the change and its "Next"; the next account's change is
+    # created and left for later (the list's and the account's banners).
+    pva_reveal pv.change.yes && pva_tap pv.change.yes || return 1
+    pv_sleep 2
+    shots 216 change-end 4
+    pva_reveal pv.change.next && pva_tap pv.change.next || return 1
+    pva_on GuidedChange 20 && pva_reveal pv.change.create && pva_tap pv.change.create && pva_need pv.change.saved 20 || return 1
     pva_reveal pv.change.later && pva_tap pv.change.later || return 1
     pv_sleep 2
     shot 216 change-later
@@ -595,7 +613,7 @@ part_files() {
     pv_step "the import's files pushed to Download" -- push_files || return 1
     pv_step "import: Google's help, a CSV's preview and its result" -- import_screens
     pv_step "import: the fifty accounts" -- import_fifty
-    pv_step "Security: the cards, a group, a row's menu, Leave out, a guided change left for later" -- security
+    pv_step "Security: the cards, a group, a row's menu, Leave out, a guided change to its end, the next one left for later" -- security
     pv_step "the list and the account whose change waits" -- change_waiting
     pv_step "Backup: the explanation, the master password, saved" -- backup
     pv_step "Export: the formats, the warnings, the master password, saved, deleted" -- export_csv 225 yes
@@ -668,6 +686,10 @@ practice_required() {
         if pva_present pv.tab.Passwords 1; then pva_tap pv.tab.Passwords; else back; fi
     done
     pva_on Passwords 20 || return 1
+    # The list shows its banners by importance: the replaced master password's and the kept export's
+    # come before practice's, so they are answered first ("OK", "I deleted it myself").
+    if pva_present pv.list.banner.replaced.ok 2; then pva_tap pv.list.banner.replaced.ok; pv_sleep 1; fi
+    if pva_present pv.list.banner.export.deletedMyself 2; then pva_tap pv.list.banner.export.deletedMyself; pv_sleep 1; fi
     shots 254 list-practice-overdue 3
     if pva_present pv.list.banner.practice.typeItNow 3; then
         pva_tap pv.list.banner.practice.typeItNow && pva_need pv.list.practiceField 10 && pva_hide_keyboard && shot 257 practice-dialog
@@ -725,9 +747,7 @@ start_empty() {
     local open del
     # A vault without a PIN and without fingerprint unlock: only then does the sheet offer an empty app.
     pv_shell pm clear "$PV_PACKAGE" >/dev/null 2>&1
-    if [ "$API" -ge 33 ]; then pv_shell cmd locale set-app-locales "$PV_PACKAGE" --locales "$LANG_TAG" >/dev/null 2>&1; fi
-    pva_start && pva_on Welcome 60 || return 1
-    if [ "$API" -lt 33 ]; then pva_debug "locale $LANG_TAG" >/dev/null && pv_sleep 3 && pva_on Welcome 30 || return 1; fi
+    pva_start && set_language || return 1
     pva_set_up && pva_settle Passwords 120 || return 1
     PIN_NOW=none
     pva_add_account Olx aziz olx-Samarqand1999 olx.uz 'Old account' && to_list || return 1
@@ -765,8 +785,7 @@ part_empty() { pv_step "Forgot master password? > Start with an empty app; Old p
 restore() {
     [ -n "$BACKUP" ] || { pv_log "no backup made (the part files)"; return 1; }
     pv_shell pm clear "$PV_PACKAGE" >/dev/null 2>&1
-    pv_shell cmd locale set-app-locales "$PV_PACKAGE" --locales "$LANG_TAG" >/dev/null 2>&1
-    pva_start && pva_on Welcome 60 || return 1
+    pva_start && set_language || return 1
     pva_tap pv.open.Restore && pva_on Restore 20 || return 1
     shots 280 restore-intro 3
     pva_need pv.backup.choose 20 && pva_tap pv.backup.choose && pva_picker_open "$BACKUP" || return 1
