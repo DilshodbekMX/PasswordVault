@@ -24,10 +24,10 @@
 
     <string name="settings_fingerprint">Barmoq izi bilan ochish</string>
     <string name="settings_fingerprint_turn_on_again">Barmoq izi bilan ochish: qayta yoqing</string>
-    <string name="settings_fingerprint_none_enrolled">Avval telefoningiz sozlamalarida ekran qulfini oʻrnating va barmoq izini qoʻshing</string>
+    <string name="settings_fingerprint_none_enrolled">Avval telefonning Sozlamalar ilovasida ekran qulfini oʻrnating va barmoq izini qoʻshing</string>
     <string name="settings_fingerprint_no_sensor">Bu telefonda ilovalar foydalana oladigan barmoq izi skaneri yoʻq</string>
-    <string name="settings_fingerprint_not_for_apps">Hozir ilovalarda barmoq izidan foydalanib boʻlmaydi. Telefoningiz sozlamalarida ilovalarda shaxsingizni tasdiqlash uchun barmoq izidan foydalanishga ruxsat berilganini tekshiring.</string>
-    <string name="settings_fingerprint_update_needed">Barmoq izidan foydalanishdan oldin telefoningizga xavfsizlik yangilanishi oʻrnatilishi kerak</string>
+    <string name="settings_fingerprint_not_for_apps">Hozir ilovalarda barmoq izidan foydalanib boʻlmaydi. Sozlamalar ilovasida barmoq izi bilan ilovalarda shaxsni tasdiqlashga ruxsat berilganini tekshiring.</string>
+    <string name="settings_fingerprint_update_needed">Barmoq izi uchun avval telefonga xavfsizlik yangilanishi oʻrnatilishi kerak</string>
     <string name="settings_fingerprint_on_body">Barmoq izi bilan ochishni yoqish uchun asosiy parolni kiriting.</string>
     <string name="settings_fingerprint_on_button">Yoqish</string>
     <string name="settings_fingerprint_failed">Barmoq izi bilan ochishni yoqib boʻlmadi. Keyinroq qayta urining.</string>

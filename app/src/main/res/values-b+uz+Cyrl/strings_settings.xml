@@ -24,10 +24,10 @@
 
     <string name="settings_fingerprint">Бармоқ изи билан очиш</string>
     <string name="settings_fingerprint_turn_on_again">Бармоқ изи билан очиш: қайта ёқинг</string>
-    <string name="settings_fingerprint_none_enrolled">Аввал телефонингиз созламаларида экран қулфини ўрнатинг ва бармоқ изини қўшинг</string>
+    <string name="settings_fingerprint_none_enrolled">Аввал телефоннинг Созламалар иловасида экран қулфини ўрнатинг ва бармоқ изини қўшинг</string>
     <string name="settings_fingerprint_no_sensor">Бу телефонда иловалар фойдалана оладиган бармоқ изи сканери йўқ</string>
-    <string name="settings_fingerprint_not_for_apps">Ҳозир иловаларда бармоқ изидан фойдаланиб бўлмайди. Телефонингиз созламаларида иловаларда шахсингизни тасдиқлаш учун бармоқ изидан фойдаланишга рухсат берилганини текширинг.</string>
-    <string name="settings_fingerprint_update_needed">Бармоқ изидан фойдаланишдан олдин телефонингизга хавфсизлик янгиланиши ўрнатилиши керак</string>
+    <string name="settings_fingerprint_not_for_apps">Ҳозир иловаларда бармоқ изидан фойдаланиб бўлмайди. Созламалар иловасида бармоқ изи билан иловаларда шахсни тасдиқлашга рухсат берилганини текширинг.</string>
+    <string name="settings_fingerprint_update_needed">Бармоқ изи учун аввал телефонга хавфсизлик янгиланиши ўрнатилиши керак</string>
     <string name="settings_fingerprint_on_body">Бармоқ изи билан очишни ёқиш учун асосий паролни киритинг.</string>
     <string name="settings_fingerprint_on_button">Ёқиш</string>
     <string name="settings_fingerprint_failed">Бармоқ изи билан очишни ёқиб бўлмади. Кейинроқ қайта урининг.</string>
