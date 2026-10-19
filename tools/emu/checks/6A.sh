@@ -8,9 +8,9 @@
 #
 #   tools/emu/checks/6A.sh [PART...] [--levels 24,28,37] [--shots DIR] [--keep] [-- GRADLE-ARGS...]
 #
-# The parts run in this order, all but layoutmore when none is named, on the integrator's devices (5584
-# is API 24, 5582 API 28, 5580 API 37): a device of this worktree that already runs on its port is used
-# as it is, the others are booted together (boot.sh --integrator). --levels limits every part to those
+# The parts run in this order, all but layoutmore and keepdata when none is named, on the integrator's
+# devices (5584 is API 24, 5582 API 28, 5580 API 37): a device of this worktree that already runs on its
+# port is used as it is, the others are booted together (boot.sh --integrator). --levels limits every part to those
 # API levels (a part runs on the levels it has among them; a part run on some levels logs to
 # PART-api-L-L/). The debug and staging APKs, and the test APK that the walk needs, are built first
 # (tools/gradle.sh). The devices are stopped at the end unless --keep is given; the part "stop" does
@@ -49,6 +49,10 @@
 #   layoutmore  only when named: the walk's optional runs of the review of 6.2: --parts app --style
 #               EMERALD and --style NIGHT_VAULT on API 37 (537 checks each), and --width 411 --font 1.0
 #               --parts app --locales en-XA on API 28 (269: a 1080-pixel phone at its own size).
+#   keepdata    only when named: docs/release/step-3-phone-checks.html check 9 on the devices, the debug
+#               build set up with a vault: the system's uninstall dialog offers to keep the app's data on
+#               API 37 (hasFragileUserData, Android 10 and later) and not on API 24 and 28 (Android 7 to 9,
+#               as check 9 says); Back keeps the app and its vault.
 #
 # After a part that drives the app, a NOTE names every Run that Android Studio started on one of the
 # devices meanwhile (its idea.log; tools/emu/README.md, "Device facts"): such a Run stops, reinstalls
@@ -572,9 +576,51 @@ window_checks() {
     return $rc
 }
 
+# ---- keepdata: docs/release's check 9 ---------------------------------------------------------------------
+# keep_data SERIAL: the debug app installed and set up (a vault on the phone, the PIN left off), then the
+# system's uninstall dialog (ACTION_DELETE, as Settings › Apps › Uninstall opens it): from Android 10 on
+# it offers to keep the app's data (the manifest's hasFragileUserData), on Android 7 to 9 it does not, as
+# docs/release/step-3-phone-checks.html check 9 tells the owner. Back closes it; the app and its vault
+# stay. In a subshell of its own, with its own counts.
+DIALOG_TEXTS=""
+uninstall_dialog() {
+    local i
+    pv_shell am start -a android.intent.action.DELETE -d "package:$PV_PACKAGE" > /dev/null 2>&1 || return 1
+    for i in $(seq 1 20); do
+        DIALOG_TEXTS=$(pv_ui_nodes 2> /dev/null | cut -d'|' -f1 | grep -v '^$' | tr '\n' ';')
+        grep -qi 'uninstall' <<< "$DIALOG_TEXTS" && { pv_log "the dialog: $DIALOG_TEXTS"; return 0; }
+        pv_sleep 1
+    done
+    pv_log "no uninstall dialog; the screen: $DIALOG_TEXTS"
+    return 1
+}
+
+keep_data() {
+    (
+        PV_PASSED=0; PV_FAILED=0; PV_SKIPPED=0
+        pv_use "$1"
+        pva_init
+        local api
+        api=$(pv_api)
+        echo "keepdata on $PV_SERIAL (API $api): $DEBUG_APK"
+        pv_step "a fresh install of the debug build, set up with a vault (the PIN left off)" -- eval 'pva_install "$DEBUG_APK" && pva_start && pva_set_up' || { pv_summary; exit 1; }
+        pv_shell input keyevent KEYCODE_HOME > /dev/null 2>&1
+        pv_step "the system's uninstall dialog opens (ACTION_DELETE)" -- uninstall_dialog || { pv_summary; exit 1; }
+        if [ "$api" -ge 29 ]; then
+            pv_step "Android 10 and later: the dialog offers to keep the app's data (hasFragileUserData)" -- eval 'grep -qi "keep" <<< "$DIALOG_TEXTS"'
+        else
+            pv_step "Android 7 to 9: the dialog offers no \"Keep app data\" (docs/release check 9)" -- eval '! grep -qi "keep" <<< "$DIALOG_TEXTS"'
+        fi
+        pva_screenshot "$LOGS/uninstall-dialog-$api.png" > /dev/null 2>&1 || true
+        pv_shell input keyevent KEYCODE_BACK > /dev/null 2>&1
+        pv_step "Back closes the dialog; the app and its vault are still there" -- eval 'pv_sleep 2 && pv_shell pm path "$PV_PACKAGE" | grep -q "^package:" && pv_shell run-as "$PV_PACKAGE" ls files/vaults/live | grep -q "\.pvault"'
+        pv_summary
+    )
+}
+
 # ---- arguments ------------------------------------------------------------------------------------------
 ALL_PARTS=(merged connected layout skeleton smoke window d21 extras)
-DEVICE_PARTS=(connected layout skeleton smoke window d21 extras layoutmore)
+DEVICE_PARTS=(connected layout skeleton smoke window d21 extras layoutmore keepdata)
 parts=()
 gradle_args=()
 keep=0
@@ -654,6 +700,8 @@ for part in "${DEVICE_PARTS[@]}"; do
             pv_step "the walk's part app in Emerald and in Night vault on API 37: 537 checks each" -- in_parallel --quiet styles layout_styles -- 37
             pv_step "the walk's part app in en-XA at API 28's own size (411 dp, font 1.0): 269 checks" -- in_parallel --quiet own-size layout_own_size -- 28
             pv_step "the walk removed its test APK" -- no_test_apk ;;
+        keepdata)
+            pv_step "docs/release check 9: the uninstall dialog offers \"Keep app data\" on API 37 only, not on API 24 and 28" -- in_parallel keepdata keep_data -- 24 28 37 ;;
     esac
 done
 if needs_devices || wants stop; then
