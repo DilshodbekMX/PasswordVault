@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Oʻzbekcha (lotin): changing and replacing the master password (build plan 6.3a; English in
+     values/strings_master.xml). Glossary (i18n.md §3): 48 "asosiy parol", 51 "Asosiy parolni
+     oʻzgartirish", 130 "ilova PIN kodi", 135 "faolsizlantirildi", 138 "yangi asosiy parol", 97
+     "zaxira nusxa". -->
+<resources>
+
+    <!-- ===== Change master password (ux.md §5.18; lock.md F8) ===== -->
+    <string name="master_change_title">Asosiy parolni oʻzgartirish</string>
+    <string name="master_back">Orqaga</string>
+    <string name="master_current_heading">Hozirgi asosiy parolni kiriting</string>
+    <string name="master_current_text">Hozir foydalanayotgan asosiy parolingizni kiriting. Keyin yangisini tanlaysiz.</string>
+    <string name="master_current_again">Xavfsizligingiz uchun hozirgi asosiy parolni yana bir marta kiriting. Siz tanlagan yangi parol saqlab qolinadi.</string>
+    <string name="master_current_label">Hozirgi asosiy parol</string>
+    <string name="master_next">Keyingisi</string>
+    <string name="master_dont_remember">Esimda yoʻq</string>
+    <string name="master_checking">Tekshirilmoqda…</string>
+    <string name="master_wrong">Asosiy parol notoʻgʻri. Klaviatura tilini (lotin yoki kirill) va bosh harflarni tekshiring.</string>
+    <string name="master_wait">30&#160;soniya kuting, keyin qayta urining. Shoshilmang, yozib qoʻygan qogʻozingizga qarang.</string>
+    <plurals name="master_wait_seconds">
+        <item quantity="one">%d&#160;soniyadan keyin qayta urining.</item>
+        <item quantity="other">%d&#160;soniyadan keyin qayta urining.</item>
+    </plurals>
+    <string name="master_no_memory">Asosiy parolni tekshirish uchun telefoningizda boʻsh operativ xotira yetarli emas. Boshqa ilovalarni yoping yoki telefonni qayta ishga tushiring, keyin qayta urining.</string>
+
+    <!-- Step 3: the app PIN keeps working with the new master password. -->
+    <string name="master_keep_pin_title">Ilova PIN kodini saqlab qolish uchun uni kiriting</string>
+    <string name="master_keep_pin_text">Asosiy parolingiz oʻzgarmoqda. PIN koddan foydalanishda davom etish uchun uni kiriting. “Hozir emas” tugmasini bossangiz, yangi PIN kodni keyinroq tanlaysiz.</string>
+    <plurals name="master_pin_wrong">
+        <item quantity="one">PIN kod xato. Yana %d&#160;marta urinish mumkin.</item>
+        <item quantity="other">PIN kod xato. Yana %d&#160;marta urinish mumkin.</item>
+    </plurals>
+    <string name="master_pin_same_again">Bu PIN kodni allaqachon kiritgansiz. U qayta hisoblanmadi.</string>
+
+    <!-- Steps 4 and 5. -->
+    <string name="master_saving">Saqlanmoqda…</string>
+    <string name="master_touch_sensor">Barmoq izi bilan ochish yoniq qolishi uchun skanerga tegining.</string>
+    <string name="master_not_changed">Asosiy parolni oʻzgartirib boʻlmadi. Hech narsa oʻzgarmadi. Eski asosiy parolingiz, PIN kod va barmoq izingiz hali ham ishlaydi.</string>
+    <string name="master_unclear">Saqlash yakunlanmagan boʻlishi mumkin. Keyingi safar avval yangi asosiy parolingizni, keyin eskisini sinab koʻring.</string>
+    <string name="master_not_changed_heading">Asosiy parol oʻzgarmadi</string>
+    <string name="master_unclear_heading">Asosiy parol oʻzgargan boʻlishi mumkin</string>
+    <string name="master_change_no_memory">Asosiy parolni oʻzgartirish uchun telefoningizda boʻsh operativ xotira yetarli emas. Boshqa ilovalarni yoping yoki telefonni qayta ishga tushiring, keyin qayta urining.</string>
+    <string name="master_changed">Asosiy parolingiz oʻzgartirildi.</string>
+
+    <!-- ===== After the change or the replacement: the new backup ===== -->
+    <string name="master_backup_text">Hozir yangi zaxira nusxa yarating. Eski zaxira nusxalaringiz hamon faqat eski asosiy parolingiz bilan ochiladi.</string>
+    <string name="master_back_up_now">Hozir zaxiralash</string>
+    <string name="master_places_heading">Eski asosiy parolingizni kimdir bilishi mumkin. U bilan yaratgan zaxira nusxalaringizni oʻchiring:</string>
+    <string name="master_places_none">Eski asosiy parolingizni kimdir bilishi mumkin. U bilan yaratgan zaxira nusxalaringizni oʻchiring.</string>
+    <!-- %1$s is the file's name, %2$s a date with the year. -->
+    <string name="master_place">%1$s, %2$s kuni saqlangan</string>
+    <string name="master_places_also">Telegram yoki email orqali yuborgan nusxalaringizni ham oʻchiring.</string>
+    <string name="master_place_deleted">Oʻchirib tashlandi</string>
+    <string name="master_place_not_deletable">Ilova bu faylni oʻchira olmaydi. Uni saqlangan joyida oʻzingiz oʻchiring.</string>
+    <string name="master_place_not_noted">Fayl oʻchirildi, lekin ilova buni qayd qila olmadi. U keyinroq ham bu roʻyxatda koʻrinishi mumkin.</string>
+
+    <!-- ===== A new master password, the old one forgotten (ux.md §5.24; lock.md F11) ===== -->
+    <string name="master_new_title">Yangi asosiy parol</string>
+    <string name="master_explain_heading">Asosiy parolni unutdingizmi?</string>
+    <string name="master_explain_pin">PIN kodingiz bu telefonda ilovani hali ham ochgani uchun yangi asosiy parol tanlashingiz mumkin. Xavfsizligingiz uchun u telefon yoniq holda 24&#160;soat oʻtgach ishlay boshlaydi. Ungacha hech narsa oʻzgarmaydi. Avval yaratgan zaxira nusxalaringizni ochish uchun eski asosiy parolingiz kerak boʻlib qolaveradi.</string>
+    <string name="master_explain_fingerprint">Barmoq izingiz bu telefonda ilovani hali ham ochgani uchun yangi asosiy parol tanlashingiz mumkin. Xavfsizligingiz uchun u telefon yoniq holda 24&#160;soat oʻtgach ishlay boshlaydi. Ungacha hech narsa oʻzgarmaydi. Avval yaratgan zaxira nusxalaringizni ochish uchun eski asosiy parolingiz kerak boʻlib qolaveradi.</string>
+    <string name="master_explain_replaces">Yangi asosiy parol allaqachon ishga tushishini kutmoqda. Agar boshqasini tanlasangiz, 24&#160;soatlik muddat qaytadan boshlanadi.</string>
+    <string name="master_continue">Davom etish</string>
+    <string name="master_proof_pin_title">Ilova PIN kodini kiriting</string>
+    <string name="master_proof_pin_text">Xavfsizligingiz uchun ilova ochiq boʻlsa ham, PIN kodni hozir kiriting.</string>
+    <string name="master_proof_pin_forgot">PIN kodni ham unutdingizmi? 5&#160;marta xato kiritilgandan keyin PIN kod faolsizlantiriladi, shundan soʻng barmoq izingiz bilan davom etishingiz mumkin.</string>
+    <string name="master_proof_fingerprint">Barmoq izingiz bilan tasdiqlash uchun skanerga tegining.</string>
+    <string name="master_pin_gone_heading">PIN kod faolsizlantirildi</string>
+    <string name="master_proof_pin_gone">Juda koʻp xato urinishlardan keyin PIN kod faolsizlantirildi. Barmoq izingiz bilan davom etishingiz mumkin.</string>
+    <string name="master_use_fingerprint">Barmoq izidan foydalanish</string>
+    <string name="master_stopped_heading">Hozir yangi asosiy parol tanlab boʻlmaydi</string>
+    <string name="master_proof_cannot_check">PIN kodingizni hozircha tekshirib boʻlmayapti. Keyinroq qayta urining.</string>
+    <string name="master_not_offered">Yangi asosiy parolni faqat PIN kodingiz yoki barmoq izingiz bu telefonda ilovani ochayotgan paytda tanlash mumkin. Hozir ularning hech biri ishlamayapti.</string>
+    <string name="master_fingerprint_did_not_confirm">Bu safar barmoq izi tasdiqlamadi. Qayta urining.</string>
+    <string name="master_fingerprint_locked">Barmoq izi vaqtincha qulflangan. Keyinroq qayta urining.</string>
+    <string name="master_fingerprint_not_for_apps">Hozir ilovalarda barmoq izidan foydalanib boʻlmaydi. Telefoningiz sozlamalarida ilovalarda shaxsingizni tasdiqlash uchun barmoq izidan foydalanishga ruxsat berilganini tekshiring.</string>
+    <string name="master_fingerprint_none_saved">Bu telefonda hozir saqlangan barmoq izi yoʻq. Telefon sozlamalarida barmoq izi qoʻshing.</string>
+    <string name="master_fingerprint_update_needed">Barmoq izidan foydalanish uchun telefoningizga xavfsizlik yangilanishi kerak.</string>
+    <string name="master_fingerprint_cannot_check">Barmoq izini hozircha tekshirib boʻlmayapti. Keyinroq qayta urining.</string>
+    <string name="master_proof_again">Xavfsizligingiz uchun buni yana bir marta tasdiqlang. Siz tanlagan yangi asosiy parol saqlab qolinadi.</string>
+    <string name="master_requesting_heading">Yangi asosiy parolingiz saqlanmoqda</string>
+    <string name="master_requesting">Saqlanmoqda…</string>
+    <string name="master_request_not_saved">Saqlab boʻlmadi. Telefoningiz xotirasi toʻlgan boʻlishi mumkin.</string>
+    <string name="master_request_no_memory">Telefoningizda boʻsh operativ xotira yetarli emas. Boshqa ilovalarni yoping yoki telefonni qayta ishga tushiring, keyin qayta urining.</string>
+    <string name="master_request_cancelled">Ilovadan chiqilgani uchun hech narsa oʻzgarmadi. Qaytadan boshlang.</string>
+    <string name="master_wait_heading">Yangi asosiy parol tanlandi</string>
+    <string name="master_wait_text">Yangi asosiy parolingiz telefon yoniq holda taxminan 24&#160;soat oʻtgach ishlay boshlaydi. Qogʻozni saqlab qoʻying. Ungacha ilovani odatdagidek PIN kod yoki barmoq izingiz bilan oching. Telefon oʻchiq paytda sanoq toʻxtaydi. U davom etishi uchun bu ilovani ertalab va yana kechqurun oching.</string>
+
+    <!-- ===== Finish now (glossary 140) ===== -->
+    <string name="master_finish_heading">Yangi asosiy parolni kiriting</string>
+    <string name="master_finish_text">Yangi asosiy parolingiz tayyor. Yakunlash uchun uni bir marta kiriting. Parollaringiz ochiq qoladi.</string>
+    <string name="master_finish_label">Yangi asosiy parol</string>
+    <string name="master_finish">Yakunlash</string>
+    <string name="master_finishing">Yakunlanmoqda…</string>
+    <string name="master_not_finished">Hozir yakunlab boʻlmadi. Hech narsa oʻzgarmadi. Keyinroq qayta urining.</string>
+    <string name="master_finished">Yangi asosiy parolingiz endi ishlaydi.</string>
+</resources>

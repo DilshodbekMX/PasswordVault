@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ўзбекча (кирилл): the lock screens, the "Forgot master password?" sheet and the notices after
+    unlock (build plan 6.3a; English in values/strings_lock.xml). Drafted from
+    values-uz/strings_lock.xml with UzbekCyrillicStrings (i18n.md §2.5), then read string by string
+    against the Latin and the Cyrillic column of the glossary (i18n.md §3). Latin letters only in
+    the names of ResourceCheck.LATIN_IN_CYRILLIC. -->
+<resources>
+
+    <!-- ===== Titles and the line of a set of passwords put aside ===== -->
+    <string name="lock_mp_title">Асосий паролни киритинг</string>
+    <string name="lock_mp_title_welcome_back">Яна хуш келибсиз</string>
+    <string name="lock_from_before">%1$s ҳолатидаги пароллар</string>
+    <string name="lock_aside_locked_on">%1$s куни қулфланган пароллар</string>
+
+    <!-- ===== Why the master password is asked for ===== -->
+    <string name="lock_mp_reason_practice">Асосий паролни машқ қилиш вақти келди. Уни унутиб қўймаслигингиз учун вақти-вақти билан сўраб турамиз. У захира нусхани очиш ва янги телефонга ўтиш учун керак.</string>
+    <string name="lock_mp_reason_welcome_back">PIN кодингиз ва бармоқ изингиз бу ерда ҳали ишламайди. Бу янги телефонга ўтганингизда ёки иловани қайта ўрнатганингизда шундай бўлади. Асосий паролни бир марта киритинг, сўнг бу телефон учун PIN код танланг.</string>
+    <string name="lock_mp_reason_from_before">Ўша пайтда фойдаланган асосий паролингизни киритинг.</string>
+    <string name="lock_mp_reason_pin_limit">PIN код жуда кўп марта хато киритилди, шунинг учун у фаолсизлантирилди. Ҳеч нарса ўчирилмади. Асосий паролни киритинг, сўнг янги PIN код танланг.</string>
+    <string name="lock_mp_reason_pin_stopped_working">PIN кодингиз бу телефонда ишламай қолди. Асосий паролни киритинг, сўнг PIN кодни қайтадан танланг.</string>
+    <string name="lock_mp_reason_pin_newer_app">PIN кодингиз бу илованинг янгироқ версиясида созланган. Асосий паролингиздан фойдаланинг ва иловани янгиланг.</string>
+    <string name="lock_mp_reason_pin_cannot_check">PIN кодингизни ҳозирча текшириб бўлмаяпти. Бу сафар асосий паролингиздан фойдаланинг. Одатда телефонни қайта ишга тушириш ёрдам беради. Бу такрорланаверса, Созламаларда PIN кодни қайтадан созланг.</string>
+    <string name="lock_mp_reason_pin_storage_full">Телефонингиз хотираси тўлган, шунинг учун PIN кодни ҳозир текшириб бўлмайди. Бироз жой бўшатинг ёки асосий паролингиздан фойдаланинг.</string>
+    <string name="lock_mp_reason_master_changed">Сиз асосий паролни ўзгартирдингиз. Уни бир марта киритинг, сўнг PIN кодни қайтадан танланг.</string>
+    <!-- %1$s is a day and a month. -->
+    <string name="lock_mp_reason_older_copy">Паролларингизнинг энг сўнгги нусхасини ўқиб бўлмаяпти. %1$s кунги эскироқ нусха ўша пайтдаги асосий паролингиз билан очилади.</string>
+    <string name="lock_mp_reason_no_secure_hardware">Бу телефон PIN код ёки бармоқ изи калитини ҳимояланган аппарат қисмида сақлай олмайди, шунинг учун илова фақат асосий парол билан очилади.</string>
+
+    <!-- ===== Fingerprint unlock is on but cannot be used now, with "Use your master password" ===== -->
+    <string name="lock_fingerprint_turned_off_master">Бу телефондаги бармоқ излари ёки экран қулфи ўзгаргани учун бармоқ изи билан очиш фаолсизлантирилди. Асосий паролингиздан фойдаланинг. Уни Созламаларда қайта ёқишингиз мумкин.</string>
+    <string name="lock_fingerprint_stopped_working_master">Бармоқ изи билан очиш бу телефонда ишламай қолди. Асосий паролингиздан фойдаланинг. Уни Созламаларда қайта ёқишингиз мумкин.</string>
+    <string name="lock_fingerprint_locked_master">Бармоқ изи вақтинча қулфланган. Асосий паролингиздан фойдаланинг.</string>
+    <string name="lock_fingerprint_did_not_open_master">Бу сафар бармоқ изи иловани очмади. Асосий паролингиздан фойдаланинг.</string>
+    <string name="lock_fingerprint_not_for_apps_master">Ҳозир иловаларда бармоқ изидан фойдаланиб бўлмайди. Асосий паролингиздан фойдаланинг. Телефонингиз созламаларида иловаларда шахсингизни тасдиқлаш учун бармоқ изидан фойдаланишга рухсат берилганини текширинг.</string>
+    <string name="lock_fingerprint_none_saved_master">Бу телефонда ҳозир сақланган бармоқ изи йўқ. Асосий паролингиздан фойдаланинг. Бармоқ изи билан очишдан яна фойдаланиш учун телефон созламаларида бармоқ изи қўшинг.</string>
+    <string name="lock_fingerprint_update_needed_master">Бармоқ изидан фойдаланиш учун телефонингизга хавфсизлик янгиланиши керак. Асосий паролингиздан фойдаланинг.</string>
+    <string name="lock_fingerprint_cannot_check_master">Бармоқ изини ҳозирча текшириб бўлмаяпти. Асосий паролингиздан фойдаланинг. Бу такрорланаверса, Созламаларда бармоқ изи билан очишни ўчириб, қайта ёқинг.</string>
+
+    <!-- ===== The field and the buttons ===== -->
+    <string name="lock_mp_field">Асосий парол</string>
+    <string name="lock_mp_unlock">Қулфни очиш</string>
+    <string name="lock_opening">Очилмоқда…</string>
+    <string name="lock_mp_use_pin">PIN коддан фойдаланиш</string>
+    <string name="lock_mp_not_now_pin">Ҳозир эмас: PIN коддан фойдаланиш</string>
+    <string name="lock_mp_not_now_fingerprint">Ҳозир эмас: бармоқ изидан фойдаланиш</string>
+    <string name="lock_mp_cant_remember">Эслай олмаяпман</string>
+    <string name="lock_mp_forgot">Асосий паролни унутдингизми?</string>
+
+    <!-- ===== After a try ===== -->
+    <string name="lock_mp_wrong">Асосий парол нотўғри. Клавиатура тилини (лотин ёки кирилл) ва бош ҳарфларни текширинг.</string>
+    <string name="lock_mp_wrong_forgot_pin">Эслай олмаяпсизми? Иловани PIN код билан очинг, сўнг янги асосий парол танланг.</string>
+    <string name="lock_mp_wrong_forgot_fingerprint">Эслай олмаяпсизми? Иловани бармоқ изингиз билан очинг, сўнг янги асосий парол танланг.</string>
+    <string name="lock_mp_i_forgot">Унутиб қўйдим</string>
+    <string name="lock_mp_wrong_replaced_pin">Асосий парол %1$s куни PIN код ёрдамида алмаштирилган. Агар буни сиз қилмаган бўлсангиз, алмаштиришдан олдинги паролларингизни очинг.</string>
+    <string name="lock_mp_wrong_replaced_fingerprint">Асосий парол %1$s куни бармоқ изи ёрдамида алмаштирилган. Агар буни сиз қилмаган бўлсангиз, алмаштиришдан олдинги паролларингизни очинг.</string>
+    <string name="lock_mp_open_from_before">%1$s ҳолатидаги паролларимни очиш</string>
+    <string name="lock_mp_no_memory">Паролларингизни очиш учун телефонингизда бўш оператив хотира етарли эмас. Бошқа иловаларни ёпинг ёки телефонни қайта ишга туширинг, кейин қайта урининг.</string>
+    <string name="lock_mp_not_finished">Ҳозир якунлаб бўлмади. Ҳеч нарса ўзгармади. Кейинроқ қайта урининг.</string>
+    <string name="lock_mp_older_set_not_opened">%1$s ҳолатидаги паролларингизни очиб бўлмади. Ҳеч нарса ўзгармади.</string>
+    <string name="lock_mp_wait">30&#160;сония кутинг, кейин қайта урининг. Шошилманг, ёзиб қўйган қоғозингизга қаранг.</string>
+    <plurals name="lock_mp_wait_seconds">
+        <item quantity="one">%d&#160;сониядан кейин қайта урининг</item>
+        <item quantity="other">%d&#160;сониядан кейин қайта урининг</item>
+    </plurals>
+    <plurals name="lock_mp_pending_hours">
+        <item quantity="one">Янги асосий паролингиз тахминан %d&#160;соатдан кейин ишлай бошлайди.</item>
+        <item quantity="other">Янги асосий паролингиз тахминан %d&#160;соатдан кейин ишлай бошлайди.</item>
+    </plurals>
+
+    <!-- ===== The PIN pad ===== -->
+    <string name="lock_pad_subtitle">Илова PIN кодини киритинг</string>
+    <string name="lock_pad_forgot">PIN кодни унутдингизми? Асосий паролдан фойдаланинг</string>
+    <plurals name="lock_pad_tries_left">
+        <item quantity="one">Яна %d&#160;марта уриниш мумкин. Кейин PIN код фаолсизлантирилади.</item>
+        <item quantity="other">Яна %d&#160;марта уриниш мумкин. Кейин PIN код фаолсизлантирилади.</item>
+    </plurals>
+    <plurals name="lock_pad_wrong_pin">
+        <item quantity="one">PIN код хато. Яна %d&#160;марта уриниш мумкин.</item>
+        <item quantity="other">PIN код хато. Яна %d&#160;марта уриниш мумкин.</item>
+    </plurals>
+    <string name="lock_pad_last_try_fingerprint">PIN код хато. Яна 1&#160;марта уриниш мумкин. Ундан кейин бармоқ изингиз ёки асосий паролингиз керак бўлади.</string>
+    <string name="lock_pad_last_try">PIN код хато. Яна 1&#160;марта уриниш мумкин. Ундан кейин асосий паролингиз керак бўлади.</string>
+    <string name="lock_pad_last_try_pending">Эҳтиёт бўлинг: янги асосий паролингиз ҳали ишламаяпти. Кейинги PIN код хато бўлса, PIN код фаолсизлантирилади.</string>
+    <string name="lock_pad_same_again">Бу PIN кодни аллақачон киритгансиз. У қайта ҳисобланмади.</string>
+    <plurals name="lock_pad_interrupted">
+        <item quantity="one">Охирги PIN код киритиш узилиб қолди ва уриниш сифатида ҳисобланди. Яна %d&#160;марта уриниш мумкин.</item>
+        <item quantity="other">Охирги PIN код киритиш узилиб қолди ва уриниш сифатида ҳисобланди. Яна %d&#160;марта уриниш мумкин.</item>
+    </plurals>
+    <string name="lock_pad_storage_full">Телефонингиз хотираси тўлган, шунинг учун PIN кодни ҳозир текшириб бўлмайди. Бироз жой бўшатинг ёки асосий паролингиздан фойдаланинг.</string>
+    <string name="lock_pad_storage_full_fingerprint">Телефонингиз хотираси тўлган, шунинг учун PIN кодни ҳозир текшириб бўлмайди. Бироз жой бўшатинг ёки бармоқ изингиз ёхуд асосий паролингиздан фойдаланинг.</string>
+    <string name="lock_test_build">ТЕСТ ЙИҒМАСИ: PIN код калитлари ҳимояланмаган</string>
+
+    <!-- ===== Fingerprint unlock is on but cannot be used now, with "Use your PIN" ===== -->
+    <string name="lock_fingerprint_turned_off_pin">Бу телефондаги бармоқ излари ёки экран қулфи ўзгаргани учун бармоқ изи билан очиш фаолсизлантирилди. PIN кодингиздан фойдаланинг. Уни Созламаларда қайта ёқишингиз мумкин.</string>
+    <string name="lock_fingerprint_stopped_working_pin">Бармоқ изи билан очиш бу телефонда ишламай қолди. PIN кодингиздан фойдаланинг. Уни Созламаларда қайта ёқишингиз мумкин.</string>
+    <string name="lock_fingerprint_locked_pin">Бармоқ изи вақтинча қулфланган. PIN кодингиздан фойдаланинг.</string>
+    <string name="lock_fingerprint_did_not_open_pin">Бу сафар бармоқ изи иловани очмади. Илова PIN кодини киритинг.</string>
+    <string name="lock_fingerprint_not_for_apps_pin">Ҳозир иловаларда бармоқ изидан фойдаланиб бўлмайди. PIN кодингиздан фойдаланинг. Телефонингиз созламаларида иловаларда шахсингизни тасдиқлаш учун бармоқ изидан фойдаланишга рухсат берилганини текширинг.</string>
+    <string name="lock_fingerprint_none_saved_pin">Бу телефонда ҳозир сақланган бармоқ изи йўқ. PIN кодингиздан фойдаланинг. Бармоқ изи билан очишдан яна фойдаланиш учун телефон созламаларида бармоқ изи қўшинг.</string>
+    <string name="lock_fingerprint_update_needed_pin">Бармоқ изидан фойдаланиш учун телефонингизга хавфсизлик янгиланиши керак. PIN кодингиздан фойдаланинг.</string>
+    <string name="lock_fingerprint_cannot_check_pin">Бармоқ изини ҳозирча текшириб бўлмаяпти. PIN кодингиздан фойдаланинг. Бу такрорланаверса, Созламаларда бармоқ изи билан очишни ўчириб, қайта ёқинг.</string>
+
+    <!-- ===== The fingerprint-only screen ===== -->
+    <string name="lock_use_fingerprint">Бармоқ изидан фойдаланиш</string>
+    <string name="lock_use_master_password">Асосий паролдан фойдаланиш</string>
+    <string name="lock_fingerprint_only_pin_limit">Жуда кўп хато уринишлардан кейин PIN код билан очиш фаолсизлантирилди. Ҳеч нарса ўчирилмади. Бармоқ изингиз ёки асосий паролингиздан фойдаланинг, сўнг янги PIN код танланг.</string>
+    <string name="lock_fingerprint_only_pin_cannot_check">PIN кодингизни ҳозирча текшириб бўлмаяпти. Бармоқ изингиз ёки асосий паролингиздан фойдаланинг. Одатда телефонни қайта ишга тушириш ёрдам беради. Бу такрорланаверса, Созламаларда PIN кодни қайтадан созланг.</string>
+    <string name="lock_fingerprint_only_pin_stopped_working">PIN кодингиз бу телефонда ишламай қолди. Бармоқ изингиз ёки асосий паролингиздан фойдаланинг, сўнг PIN кодни қайтадан танланг.</string>
+    <string name="lock_fingerprint_only_pin_storage_full">Телефонингиз хотираси тўлган, шунинг учун PIN кодни ҳозир текшириб бўлмайди. Бироз жой бўшатинг ёки бармоқ изингиз ёхуд асосий паролингиздан фойдаланинг.</string>
+    <string name="lock_fingerprint_only_pin_newer_app">PIN кодингиз бу илованинг янгироқ версиясида созланган. Бармоқ изингиз ёки асосий паролингиздан фойдаланинг ва иловани янгиланг.</string>
+
+    <!-- ===== "This is an older master password" (glossary 144) ===== -->
+    <string name="lock_older_title">Бу эски асосий парол</string>
+    <string name="lock_older_proven">Сиз асосий паролингизни %1$s куни ўзгартиргансиз. Янгисини киритинг.</string>
+    <string name="lock_older_unfinished">%1$s куни асосий паролингизни ўзгартириш якунланмаган бўлиши мумкин. Аввал янги асосий паролингизни синаб кўринг. У ишламаса, паролларингизни ўзгартиришдан олдинги ҳолатида очишингиз мумкин.</string>
+    <string name="lock_older_open_from_before">Паролларимни ўзгартиришдан олдинги ҳолатида очиш</string>
+    <string name="lock_older_confirm_title">Паролларингиз %1$s санасидан олдинги ҳолатида очилсинми?</string>
+    <string name="lock_older_confirm_body">Ўзгартириш вақтида яратилган нусха бу телефонда қолади, лекин энди ишлатилмайди.</string>
+    <string name="lock_older_confirm_open">Очиш</string>
+
+    <!-- ===== "Open the older set instead?" ("тўплам": a set of passwords) ===== -->
+    <string name="lock_older_set_text">Булар паролларингизнинг %1$s кунги ҳолати. Ундан кейин қўшилган ёки ўзгартирилган пароллар янгироқ тўпламда, у бу телефонда қолади. Унинг ўрнига эскироқ тўплам очилсинми?</string>
+    <string name="lock_older_set_open">%1$s ҳолатидаги паролларимни очиш</string>
+
+    <!-- ===== "Your passwords can't be opened" ===== -->
+    <string name="lock_unreadable_title">Паролларни очиб бўлмаяпти</string>
+    <string name="lock_unreadable_damaged">Паролларингиз сақланган файл шикастланган. Ҳеч нарса ўчирилмади. Телефонни қайта ишга туширинг ва қайта урининг. Бу ёрдам бермаса, захира нусха файлидан тикланг.</string>
+    <string name="lock_unreadable_io">Паролларингиз сақланган файлни ҳозир ўқиб бўлмаяпти. Ҳеч нарса ўчирилмади. Қайта урининг. Бу ёрдам бермаса, телефонни қайта ишга туширинг ёки захира нусха файлидан тикланг.</string>
+    <string name="lock_unreadable_newer">Паролларингиз бу илованинг янгироқ версиясида сақланган. Ҳеч нарса ўчирилмади. Уларни очиш учун PasswordVault иловасининг энг янги версиясини ўрнатинг.</string>
+    <string name="lock_restore">Захира нусха файлидан тиклаш</string>
+    <string name="lock_open_aside">Олдинги паролларимни очиш (%1$s куни қулфланган)</string>
+
+    <!-- ===== A set of passwords put aside that cannot be opened ===== -->
+    <string name="lock_cannot_open_title">Бу паролларни очиб бўлмаяпти</string>
+    <string name="lock_cannot_open_text">Уларнинг бу телефондаги файллари шикастланган.</string>
+    <string name="lock_back">Орқага</string>
+
+    <!-- ===== The "Forgot master password?" sheet: no option says "Ўчириш" ===== -->
+    <string name="lock_sheet_title">Асосий паролни унутдингизми?</string>
+    <string name="lock_sheet_body">Уни ҳеч ким тиклай олмайди: у ҳеч қаерда сақланмайди.</string>
+    <string name="lock_sheet_pin_text">PIN кодингиз бу телефонда иловани ҳали ҳам очади. Иловани у билан очинг, сўнг янги асосий парол танланг.</string>
+    <string name="lock_sheet_use_pin">PIN кодимдан фойдаланиш</string>
+    <string name="lock_sheet_fingerprint_text">Бармоқ изингиз бу телефонда иловани ҳали ҳам очади. Иловани у билан очинг, сўнг янги асосий парол танланг.</string>
+    <string name="lock_sheet_use_fingerprint">Бармоқ изимдан фойдаланиш</string>
+    <string name="lock_sheet_restore_text">Агар эскироқ захира нусханинг асосий паролини эсласангиз, унинг ўрнига ўша захира нусхани очишингиз мумкин. Ҳозирги паролларингиз бу телефонда қулфланган ҳолда қолади.</string>
+    <string name="lock_sheet_empty_text">Бўш илова билан бошланг. Ҳозирги паролларингиз бу телефонда қулфланган ҳолда қолади. Асосий паролни кейинроқ эсласангиз, уларни яна очишингиз мумкин.</string>
+    <string name="lock_sheet_empty">Бўш илова билан бошлаш…</string>
+    <string name="lock_empty_title">Бўш илова билан бошлансинми?</string>
+    <!-- "Созламалар › Захиралаш ва кўчириш" names the Settings page (settings_group_backup). -->
+    <string name="lock_empty_body">Паролларингиз бу телефонда эски асосий паролингиз билан қулфланган ҳолда қолади. Уларни биринчи экрандан ёки “Созламалар › Захиралаш ва кўчириш” бўлимидан яна очишингиз мумкин.</string>
+    <string name="lock_empty_confirm">Бўш илова билан бошлаш</string>
+
+    <!-- ===== Notices after unlock ===== -->
+    <!-- %1$s is a date and a time. -->
+    <string name="lock_notice_older_copy">Паролларингизнинг энг сўнгги нусхасини ўқиб бўлмади. Биз %1$s ҳолатидаги нусхани очдик. Ўша вақтдан кейинги ўзгаришлар йўқ.</string>
+    <string name="lock_notice_back_up_now">Ҳозир захира нусха яратиш</string>
+    <string name="lock_notice_older_than_last">Бу пароллар илова %1$s да очган пароллардан эскироқ. Ўша вақтдан кейинги ўзгаришлар йўқ. Агар ҳеч нарсани тикламаган бўлсангиз, илова файлларини кимдир алмаштирган бўлиши мумкин.</string>
+    <plurals name="lock_notice_pending_pin">
+        <item quantity="one">%2$s да PIN код ёрдамида янги асосий парол танланди. У тахминан %1$d&#160;соатдан кейин ишлай бошлайди. Телефон ўчиқ пайтда саноқ тўхтайди; у давом этиши учун бу иловани эрталаб ва яна кечқурун очинг. Агар бу сиз бўлмасангиз, уни бекор қилинг, сўнг PIN кодни ўзгартиринг.</item>
+        <item quantity="other">%2$s да PIN код ёрдамида янги асосий парол танланди. У тахминан %1$d&#160;соатдан кейин ишлай бошлайди. Телефон ўчиқ пайтда саноқ тўхтайди; у давом этиши учун бу иловани эрталаб ва яна кечқурун очинг. Агар бу сиз бўлмасангиз, уни бекор қилинг, сўнг PIN кодни ўзгартиринг.</item>
+    </plurals>
+    <plurals name="lock_notice_pending_fingerprint">
+        <item quantity="one">%2$s да бармоқ изи ёрдамида янги асосий парол танланди. У тахминан %1$d&#160;соатдан кейин ишлай бошлайди. Телефон ўчиқ пайтда саноқ тўхтайди; у давом этиши учун бу иловани эрталаб ва яна кечқурун очинг. Агар бу сиз бўлмасангиз, уни бекор қилинг. Бу телефонга бармоқ изи қўшилган ҳар ким иловани оча олади.</item>
+        <item quantity="other">%2$s да бармоқ изи ёрдамида янги асосий парол танланди. У тахминан %1$d&#160;соатдан кейин ишлай бошлайди. Телефон ўчиқ пайтда саноқ тўхтайди; у давом этиши учун бу иловани эрталаб ва яна кечқурун очинг. Агар бу сиз бўлмасангиз, уни бекор қилинг. Бу телефонга бармоқ изи қўшилган ҳар ким иловани оча олади.</item>
+    </plurals>
+    <string name="lock_notice_cancel_it">Янги паролни бекор қилиш</string>
+    <string name="lock_notice_pending_ready">Янги асосий паролингиз тайёр. Якунлаш учун уни киритинг.</string>
+    <string name="lock_notice_finish_now">Ҳозир якунлаш</string>
+    <string name="lock_notice_pending_cancelled">Сиз амалдаги асосий паролингизни киритдингиз, шунинг учун янгиси бекор қилинди.</string>
+    <string name="lock_notice_replaced_pin">Асосий паролингиз %1$s куни PIN код ёрдамида алмаштирилди. Агар буни сиз қилмаган бўлсангиз, алмаштиришдан олдинги паролларингиз бу телефонда ҳали ҳам бор.</string>
+    <string name="lock_notice_replaced_fingerprint">Асосий паролингиз %1$s куни бармоқ изи ёрдамида алмаштирилди. Агар буни сиз қилмаган бўлсангиз, алмаштиришдан олдинги паролларингиз бу телефонда ҳали ҳам бор.</string>
+    <string name="lock_notice_it_wasnt_me">Буни мен қилмадим</string>
+    <!-- %2$s is a time, for example "14:32". -->
+    <plurals name="lock_notice_wrong_pins_today">
+        <item quantity="one">Иловани очишингиздан олдин PIN код %1$d&#160;марта хато киритилган (охирги марта: бугун, соат %2$s). Агар бу сиз бўлмасангиз, телефонингизни ёнингизда сақланг ва PIN кодни ўзгартиринг.</item>
+        <item quantity="other">Иловани очишингиздан олдин PIN код %1$d&#160;марта хато киритилган (охирги марта: бугун, соат %2$s). Агар бу сиз бўлмасангиз, телефонингизни ёнингизда сақланг ва PIN кодни ўзгартиринг.</item>
+    </plurals>
+    <!-- %2$s is a date and a time. -->
+    <plurals name="lock_notice_wrong_pins_on">
+        <item quantity="one">Иловани очишингиздан олдин PIN код %1$d&#160;марта хато киритилган (охирги марта: %2$s). Агар бу сиз бўлмасангиз, телефонингизни ёнингизда сақланг ва PIN кодни ўзгартиринг.</item>
+        <item quantity="other">Иловани очишингиздан олдин PIN код %1$d&#160;марта хато киритилган (охирги марта: %2$s). Агар бу сиз бўлмасангиз, телефонингизни ёнингизда сақланг ва PIN кодни ўзгартиринг.</item>
+    </plurals>
+    <plurals name="lock_notice_wrong_pins">
+        <item quantity="one">Иловани очишингиздан олдин PIN код %1$d&#160;марта хато киритилган. Агар бу сиз бўлмасангиз, телефонингизни ёнингизда сақланг ва PIN кодни ўзгартиринг.</item>
+        <item quantity="other">Иловани очишингиздан олдин PIN код %1$d&#160;марта хато киритилган. Агар бу сиз бўлмасангиз, телефонингизни ёнингизда сақланг ва PIN кодни ўзгартиринг.</item>
+    </plurals>
+    <string name="lock_notice_interrupted">Киритишлардан бири узилиб қолди ва уриниш сифатида ҳисобланди.</string>
+    <plurals name="lock_notice_pins_before_off">
+        <item quantity="one">Яна %1$d&#160;марта PIN код хато киритилса ва дарҳол тўғриси киритилмаса, PIN код фаолсизлантирилади. Саноқни қайтадан бошлаш учун асосий паролни бир марта киритинг.</item>
+        <item quantity="other">Яна %1$d&#160;марта PIN код хато киритилса ва дарҳол тўғриси киритилмаса, PIN код фаолсизлантирилади. Саноқни қайтадан бошлаш учун асосий паролни бир марта киритинг.</item>
+    </plurals>
+    <string name="lock_notice_type_master_password">Асосий паролни киритиш</string>
+    <string name="lock_notice_new_master_text">Эслай олмаяпсизми? Янгисини танланг.</string>
+    <string name="lock_notice_new_master">Янги асосий парол танлаш</string>
+    <plurals name="lock_notice_wrong_master">
+        <item quantity="one">Иловани очишингиздан олдин асосий парол %1$d&#160;марта хато киритилган.</item>
+        <item quantity="other">Иловани очишингиздан олдин асосий парол %1$d&#160;марта хато киритилган.</item>
+    </plurals>
+    <string name="lock_notice_change_pin">PIN кодни ўзгартириш</string>
+    <string name="lock_notice_choose_pin_master">PIN код билан очиш фаолсизлантирилган. Янги PIN код танлаш учун асосий паролингиз керак.</string>
+    <string name="lock_notice_choose_pin">Янги PIN код танлаш</string>
+    <string name="lock_notice_fingerprint_again">Бармоқ изи билан очиш қайта ёқилсинми?</string>
+    <string name="lock_notice_turn_on">Ёқиш</string>
+    <string name="lock_notice_storage_unreadable">Илова хотирасининг бир қисмини ўқиб бўлмади. Ҳозир захира нусха яратинг.</string>
+    <string name="lock_notice_set_up_again">Қайтадан созлаш</string>
+    <string name="lock_notice_backup_title">Ҳозир захира нусха яратилсинми?</string>
+    <string name="lock_notice_backup_body">Захира нусха — барча паролларингизнинг қулфланган нусхаси. У исталган телефонда фақат асосий паролингиз билан очилади.</string>
+    <string name="lock_notice_back_up">Ҳозир захиралаш</string>
+
+    <!-- ===== The system's fingerprint prompt ===== -->
+    <string name="lock_prompt_unlock_title">PasswordVault иловасини очиш</string>
+    <string name="lock_prompt_turn_on_title">Бармоқ изи билан очишни ёқиш</string>
+    <string name="lock_prompt_keep_title">Бармоқ изи билан очишни сақлаб қолиш</string>
+    <string name="lock_prompt_confirm_title">Бармоқ изингиз билан тасдиқланг</string>
+
+    <!-- ===== "Type master password" from the notice about wrong PINs ===== -->
+    <string name="lock_prompt_check">Текшириш</string>
+    <string name="lock_prompt_no_memory">Асосий паролни текшириш учун телефонингизда бўш оператив хотира етарли эмас. Бошқа иловаларни ёпинг ёки телефонни қайта ишга туширинг, кейин қайта урининг.</string>
+    <string name="lock_prompt_older">Бу %1$s санасидан олдинги асосий паролингиз. Ҳозиргисини киритинг.</string>
+
+</resources>

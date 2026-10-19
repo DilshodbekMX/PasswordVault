@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ўзбекча (кирилл): the Passwords list, its search and banners, and Recently deleted (build plan
+    6.3a; English in values/strings_list.xml). Drafted from values-uz/strings_list.xml with
+    UzbekCyrillicStrings (i18n.md §2.5), then read string by string against the Latin and the
+    Cyrillic column of the glossary (i18n.md §3). Latin letters only in the names of
+    ResourceCheck.LATIN_IN_CYRILLIC. -->
+<resources>
+
+    <!-- ===== The Passwords screen (ux.md §5.11) ===== -->
+    <string name="list_title">Пароллар</string>
+    <string name="list_lock_now">Ҳозир қулфлаш</string>
+    <string name="list_search_placeholder">Ҳисобларни қидириш</string>
+    <string name="list_search_clear">Қидирувни тозалаш</string>
+    <string name="list_add">Қўшиш</string>
+    <string name="list_add_account_description">Ҳисоб қўшиш</string>
+
+    <string name="list_favourites">Сараланганлар</string>
+    <string name="list_show_all_favourites">Барча сараланганларни кўрсатиш</string>
+    <string name="list_all_accounts">Барча ҳисоблар · %1$s</string>
+    <string name="list_recently_deleted_row">Яқинда ўчирилганлар (%1$s)</string>
+
+    <string name="list_copy_password_for">%1$s паролидан нусха олиш</string>
+    <string name="list_copy_password_choose">%1$s паролидан нусха олиш, эскисини ёки янгисини танланг</string>
+    <string name="list_change_pending">Паролни ўзгартириш тугалланмаган</string>
+
+    <!-- The menu of a row. -->
+    <string name="list_menu_copy_username">Фойдаланувчи номидан нусха олиш</string>
+    <string name="list_menu_copy_password">Паролдан нусха олиш</string>
+    <string name="list_menu_copy_old_password">Эски паролдан нусха олиш</string>
+    <string name="list_menu_copy_new_password">Янги паролдан нусха олиш (тасдиқланмаган)</string>
+    <string name="list_menu_open_website">Сайтни очиш</string>
+    <string name="list_menu_big_letters">Катта ҳарфларда кўрсатиш</string>
+    <string name="list_menu_add_favourite">Сараланганларга киритиш</string>
+    <string name="list_menu_remove_favourite">Сараланганлардан олиб ташлаш</string>
+    <string name="list_menu_edit">Таҳрирлаш</string>
+
+    <!-- What was copied, in the clipboard row: "Gmail пароли · 0:52 дан кейин тозаланади". -->
+    <string name="list_copied_password">%1$s пароли</string>
+    <string name="list_copied_username">%1$s фойдаланувчи номи</string>
+    <string name="list_copied_old_password">%1$s эски пароли</string>
+    <string name="list_copied_new_password">%1$s янги пароли</string>
+
+    <!-- An empty vault. -->
+    <string name="list_empty_title">Ҳали ҳисоблар йўқ</string>
+    <string name="list_empty_body">Биринчи ҳисобингиз ва унинг паролини қўшинг ёки паролларингизни Chrome браузеридан олиб келинг.</string>
+    <string name="list_empty_add">Ҳисоб қўшиш</string>
+    <string name="list_empty_import">Google Password Manager хизматидан импорт қилиш</string>
+
+    <!-- Search. -->
+    <string name="list_search_retried">“%1$s” бўйича натижалар кўрсатилмоқда</string>
+    <string name="list_no_results">“%1$s” бўйича ҳеч қандай ҳисоб топилмади.</string>
+    <string name="list_add_as_new">“%1$s” номли янги ҳисоб қўшиш</string>
+
+    <!-- Messages. -->
+    <string name="list_deleted_message">%1$s ўчириб ташланди</string>
+    <string name="list_save_failed">Сақлаб бўлмади. Телефонингиз хотираси тўлган бўлиши мумкин.</string>
+    <string name="list_too_large">Паролларингиз энди битта файлга сиғмаяпти. Кераксиз ҳисобларни ўчиринг ёки жуда узун қайдларни қисқартиринг.</string>
+    <string name="list_no_browser">Бу телефонда браузер топилмади.</string>
+    <string name="list_copy_blocked">Бу телефон нусха олишга рухсат бермади. Паролни “Катта ҳарфларда кўрсатиш” орқали очинг ва уни қўлда киритинг.</string>
+    <string name="list_account_gone">Бу ҳисоб энди мавжуд эмас.</string>
+
+    <!-- ===== Banners ===== -->
+    <!-- %1$s is a date and a time, %2$d the hours left. -->
+    <plurals name="list_banner_pending_pin">
+        <item quantity="one">%1$s да PIN код ёрдамида янги асосий парол танланди. У тахминан %2$d&#160;соатдан кейин ишлай бошлайди. Телефон ўчиқ пайтда саноқ тўхтайди; у давом этиши учун бу иловани эрталаб ва яна кечқурун очинг. Агар бу сиз бўлмасангиз, уни бекор қилинг, сўнг PIN кодни ўзгартиринг.</item>
+        <item quantity="other">%1$s да PIN код ёрдамида янги асосий парол танланди. У тахминан %2$d&#160;соатдан кейин ишлай бошлайди. Телефон ўчиқ пайтда саноқ тўхтайди; у давом этиши учун бу иловани эрталаб ва яна кечқурун очинг. Агар бу сиз бўлмасангиз, уни бекор қилинг, сўнг PIN кодни ўзгартиринг.</item>
+    </plurals>
+    <plurals name="list_banner_pending_fingerprint">
+        <item quantity="one">%1$s да бармоқ изи ёрдамида янги асосий парол танланди. У тахминан %2$d&#160;соатдан кейин ишлай бошлайди. Телефон ўчиқ пайтда саноқ тўхтайди; у давом этиши учун бу иловани эрталаб ва яна кечқурун очинг. Агар бу сиз бўлмасангиз, уни бекор қилинг.</item>
+        <item quantity="other">%1$s да бармоқ изи ёрдамида янги асосий парол танланди. У тахминан %2$d&#160;соатдан кейин ишлай бошлайди. Телефон ўчиқ пайтда саноқ тўхтайди; у давом этиши учун бу иловани эрталаб ва яна кечқурун очинг. Агар бу сиз бўлмасангиз, уни бекор қилинг.</item>
+    </plurals>
+    <string name="list_banner_pending_ready">Янги асосий паролингиз тайёр. Якунлаш учун уни киритинг.</string>
+    <string name="list_banner_cancel_it">Янги паролни бекор қилиш</string>
+    <string name="list_banner_finish_now">Ҳозир якунлаш</string>
+
+    <string name="list_banner_replaced_pin">Асосий паролингиз %1$s куни PIN код ёрдамида алмаштирилди. Агар буни сиз қилмаган бўлсангиз, алмаштиришдан олдинги паролларингиз бу телефонда ҳали ҳам бор.</string>
+    <string name="list_banner_replaced_fingerprint">Асосий паролингиз %1$s куни бармоқ изи ёрдамида алмаштирилди. Агар буни сиз қилмаган бўлсангиз, алмаштиришдан олдинги паролларингиз бу телефонда ҳали ҳам бор.</string>
+    <string name="list_banner_it_wasnt_me">Буни мен қилмадим</string>
+
+    <string name="list_banner_practice">Сиз %1$s санасидан бери асосий паролингизни киритмадингиз. Усиз захира нусхани оча олмайсиз ва янги телефонга ўта олмайсиз.</string>
+    <string name="list_banner_type_it_now">Ҳозир киритиш</string>
+    <string name="list_banner_i_forgot_it">Унутиб қўйдим</string>
+
+    <!-- %1$s is the file's name; %2$s says when it was saved ("2 соат олдин", "ҳозиргина"). -->
+    <string name="list_banner_export">Сизда паролларингиз ёзилган ҳимояланмаган файл бор: %1$s (%2$s сақланган).</string>
+    <string name="list_banner_deleted_it_myself">Уни ўзим ўчирдим</string>
+    <string name="list_banner_cannot_delete">Бу жой иловаларга файлларни ўчиришга рухсат бермайди. Уни Файллар иловасида ўзингиз ўчиринг.</string>
+
+    <string name="list_banner_backup">Энг сўнгги паролларингиз ҳали захира нусхада йўқ.</string>
+    <string name="list_banner_back_up_now">Ҳозир захиралаш</string>
+
+    <!-- %1$d is how many, %2$s the name of the first account. -->
+    <plurals name="list_banner_change">
+        <item quantity="one">%1$d&#160;та парол ўзгариши жавобингизни кутмоқда (%2$s).</item>
+        <item quantity="other">%1$d&#160;та парол ўзгариши жавобингизни кутмоқда (%2$s ва бошқалар).</item>
+    </plurals>
+    <string name="list_banner_answer_now">Ҳозир жавоб бериш</string>
+
+    <!-- ===== "Hozir kiritish": the master password in the open app ===== -->
+    <string name="list_practice_title">Асосий паролни киритинг</string>
+    <string name="list_practice_body">Бу уни ҳали ҳам эслаб қолганингизни текширади. У захира нусхани очиш ва янги телефонга ўтиш учун керак.</string>
+    <string name="list_practice_field">Асосий парол</string>
+    <string name="list_practice_check">Текшириш</string>
+    <string name="list_practice_wrong">Асосий парол нотўғри. Клавиатура тилини (лотин ёки кирилл) ва бош ҳарфларни текширинг.</string>
+    <plurals name="list_practice_wait">
+        <item quantity="one">%1$d&#160;сония кутинг, кейин қайта урининг. Шошилманг, ёзиб қўйган қоғозингизга қаранг.</item>
+        <item quantity="other">%1$d&#160;сония кутинг, кейин қайта урининг. Шошилманг, ёзиб қўйган қоғозингизга қаранг.</item>
+    </plurals>
+    <string name="list_practice_no_memory">Асосий паролни текшириш учун телефонингизда бўш оператив хотира етарли эмас. Бошқа иловаларни ёпинг ёки телефонни қайта ишга туширинг, кейин қайта урининг.</string>
+    <string name="list_practice_older">Бу %1$s санасидан олдинги асосий паролингиз. Ҳозиргисини киритинг.</string>
+    <string name="list_practice_right">Тўғри. Асосий паролингиз ишлаяпти.</string>
+
+    <!-- ===== Recently deleted (ux.md §5.23) ===== -->
+    <string name="list_deleted_title">Яқинда ўчирилганлар</string>
+    <string name="list_back">Орқага</string>
+    <string name="list_deleted_empty">Бўшатиш</string>
+    <string name="list_deleted_info">Ўчирилган ҳисоблар бу ерда 30&#160;кун туради. Кейин улар бутунлай ўчирилади.</string>
+    <string name="list_deleted_nothing">Бу ерда ҳеч нарса йўқ. Сиз ўчирган ҳисоблар бу ерда 30&#160;кун туради.</string>
+    <string name="list_deleted_on">Ўчирилган сана: %1$s</string>
+    <string name="list_deleted_restore">Тиклаш</string>
+    <string name="list_deleted_restore_description">%1$s ҳисобини тиклаш</string>
+    <string name="list_deleted_more">“%1$s” учун бошқа амаллар</string>
+    <string name="list_deleted_delete_forever">Бутунлай ўчириш</string>
+    <string name="list_deleted_forever_question">%1$s бутунлай ўчирилсинми? Бу амални ортга қайтариш имконсиз.</string>
+    <!-- %1$s is a number already formatted for the language. -->
+    <plurals name="list_deleted_empty_question">
+        <item quantity="one">%1$s&#160;та ҳисоб бутунлай ўчирилсинми? Бу амални ортга қайтариш имконсиз.</item>
+        <item quantity="other">Барча %1$s&#160;та ҳисоб бутунлай ўчирилсинми? Бу амални ортга қайтариш имконсиз.</item>
+    </plurals>
+    <string name="list_restored_message">%1$s тикланди</string>
+
+</resources>

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ўзбекча (кирилл): the setup screens (build plan 6.3a; English in values/strings_setup.xml).
+    Drafted from values-uz/strings_setup.xml with UzbekCyrillicStrings (i18n.md §2.5), then read
+    string by string against the Latin and the Cyrillic column of the glossary (i18n.md §3). Latin
+    letters only in the names of ResourceCheck.LATIN_IN_CYRILLIC. -->
+<resources>
+
+    <!-- Welcome (ux.md §5.1). -->
+    <string name="setup_welcome_title">Паролларингиз шу телефонда хавфсиз сақланади</string>
+    <string name="setup_welcome_point_offline">Ҳаммаси шу телефонда қолади. Рўйхатдан ўтиш ҳам, интернет ҳам керак эмас.</string>
+    <string name="setup_welcome_point_lock">Иловани банк иловасидаги каби PIN код ёки бармоқ изингиз билан очинг.</string>
+    <string name="setup_welcome_point_copy">Керак пайтда паролдан бир босишда нусха олинг.</string>
+    <string name="setup_welcome_start">Бошлаш</string>
+    <!-- Glossary 146; %1$s is a date with the year. -->
+    <string name="setup_welcome_open_aside">Олдинги паролларимни очиш (%1$s куни қулфланган)</string>
+    <string name="setup_welcome_restore">Захира нусха файлидан тиклаш</string>
+    <string name="setup_welcome_language">Тил</string>
+
+    <!-- "Choose your master password" (ux.md §5.3). -->
+    <string name="setup_create_title">Асосий паролни танланг</string>
+    <string name="setup_create_body">Асосий парол — бошқа барча паролларингиз калити. PIN кодни унутсангиз, захира нусхани очишда ва янги телефонга ўтишда у сизга керак бўлади.</string>
+    <string name="setup_create_warning_reset">Уни ҳеч ким тиклай олмайди. Биз унинг нусхасини сақламаймиз, “Паролни унутдингизми?” деган эл. почта хабари ҳам келмайди. Агар уни унутсангиз, паролларингиз янги телефонда ҳам, захира нусхадан ҳам очилмайди.</string>
+    <string name="setup_create_warning_reuse">Бошқа жойда ишлатаётган паролингиздан фойдаланманг.</string>
+    <string name="setup_create_interrupted">Созлаш тўхтаб қолган эди. Аввал ёзиб олган сўзларингизни чизиб ташланг. Мана сизнинг янги сўзларингиз.</string>
+    <!-- "1-сўз (жами 6 та): vowel", read by TalkBack. -->
+    <string name="setup_create_word">%1$d-сўз (жами %2$d&#160;та): %3$s</string>
+    <string name="setup_create_typed_as">Уни шундай киритасиз:</string>
+    <string name="setup_create_latin">Сўзлар инглиз тилида. Уларни лотин ҳарфларида киритинг.</string>
+    <string name="setup_create_use_words">Шу сўзлардан фойдаланиш</string>
+    <string name="setup_create_other_words">Бошқа сўзларни кўрсатиш</string>
+    <string name="setup_create_type_own">Ўз паролимни киритиш</string>
+    <string name="setup_create_show_words">Таклиф қилинган сўзлардан фойдаланиш</string>
+
+    <!-- A master password of one's own (ux.md §5.3 "Own password view"). -->
+    <string name="setup_field_label">Асосий парол</string>
+    <string name="setup_own_rule_length">Камида 12&#160;та белги</string>
+    <string name="setup_own_rule_hard">Топиш қийин</string>
+    <string name="setup_own_rule_met">%1$s: бажарилди</string>
+    <string name="setup_own_rule_not_met">%1$s: ҳали бажарилмаган</string>
+    <string name="setup_own_hint_add_word">Яна битта сўз қўшинг</string>
+    <string name="setup_own_hint_names">Шаҳар номлари, одамларнинг исмлари ва йиллардан фойдаланманг</string>
+    <!-- "qwerty" is the row of keys itself, kept in Latin letters. -->
+    <string name="setup_own_hint_keyboard">qwerty каби клавиатура қаторларидан фойдаланманг</string>
+    <string name="setup_own_mixed_scripts">Паролингизда лотин ва кирилл ҳарфлари аралашиб кетган. Клавиатурангиз тўғри тилга созланганми?</string>
+    <string name="setup_own_use">Шу паролдан фойдаланиш</string>
+    <string name="setup_own_missing_length">Асосий паролда камида 12&#160;та белги бўлиши керак.</string>
+    <string name="setup_own_missing_hard">Асосий паролни топиш жуда осон.</string>
+    <string name="setup_own_unassigned">Паролингизда баъзи телефонлар ўқий олмайдиган белги бор. Уни олиб ташланг ва қайта урининг.</string>
+    <string name="setup_own_reuse_question">Бу паролни бошқа бирор ҳисобда ишлатасизми?</string>
+    <string name="setup_own_reuse_yes">Ҳа</string>
+    <string name="setup_own_reuse_no">Йўқ, бу янги парол</string>
+    <string name="setup_own_reuse_refused">Унда бошқасини танланг. Агар бирор сайт бу паролни ошкор қилиб қўйса, захира нусха файлингиз қўлига тушган ҳар ким уни очиши мумкин.</string>
+
+    <!-- "Write it down on paper" (ux.md §5.4). -->
+    <string name="setup_write_title">Уни қоғозга ёзиб қўйинг</string>
+    <string name="setup_write_body">Асосий паролни ҳозир қоғозга ёзиб қўйинг. Қоғозни уйда, хавфсиз жойда сақланг — телефон ғилофида эмас, ҳамёнингизда эмас ва бу телефонда расм кўринишида ҳам эмас.</string>
+    <string name="setup_write_big_letters">Катта ҳарфларда кўрсатиш</string>
+    <string name="setup_write_wrote">Ёзиб олдим</string>
+    <string name="setup_next">Кейингиси</string>
+    <string name="setup_big_cell">%1$d: %2$s</string>
+    <string name="setup_big_too_long">Катта ҳарфларда кўрсатиш учун жуда узун</string>
+
+    <!-- "Type your master password again" (ux.md §5.5). -->
+    <string name="setup_again_title">Асосий паролни қайта киритинг</string>
+    <string name="setup_again_body">Бу уни тўғри ёзиб олганингизни текширади.</string>
+    <string name="setup_again_mismatch">Мос келмади. Қоғозингизга қаранг ва қайта урининг.</string>
+    <!-- The keyboard may be Russian or Uzbek Cyrillic: both are named. -->
+    <string name="setup_again_cyrillic">Клавиатурангиз кирилл ёзувига (масалан, рус тилига) созланган бўлиши мумкин. Лотин ҳарфларига ўтинг.</string>
+    <string name="setup_again_show_again">Паролимни яна кўрсатиш</string>
+    <string name="setup_again_setting_up">Созланмоқда…</string>
+    <string name="setup_again_not_saved">Сақлаб бўлмади. Телефонингиз хотираси тўлган бўлиши мумкин.</string>
+    <string name="setup_again_no_memory">Созлашни якунлаш учун телефонингизда бўш оператив хотира етарли эмас. Бошқа иловаларни ёпинг ёки телефонни қайта ишга туширинг, кейин қайта урининг.</string>
+
+</resources>

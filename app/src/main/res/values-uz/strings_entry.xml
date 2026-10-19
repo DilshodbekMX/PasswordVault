@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Oʻzbekcha (lotin): one account's screen and "Show in big letters" (build plan 6.3a; English in
+     values/strings_entry.xml). Glossary (i18n.md §3): 2 "Hisob", 7 "Foydalanuvchi nomi", 13 and 14
+     favourites, 21 "Avvalgi parollar", 27 to 29 copy, 91 "Xavfsizlik tekshiruvi". A name, label or
+     website the person typed never takes a suffix: "%1$s paroli", "Nusxa olish: %1$s". -->
+<resources>
+
+    <!-- ===== The top bar ===== -->
+    <string name="entry_back">Orqaga</string>
+    <string name="entry_pane">Hisob</string>
+    <string name="entry_add_favourite">Saralanganlarga kiritish</string>
+    <string name="entry_remove_favourite">Saralanganlardan olib tashlash</string>
+    <string name="entry_edit">Tahrirlash</string>
+    <string name="entry_more">Boshqa amallar</string>
+    <string name="entry_big_letters">Katta harflarda koʻrsatish</string>
+    <string name="entry_leave_out">Xavfsizlik tekshiruvidan chiqarish</string>
+
+    <!-- ===== The rows ===== -->
+    <string name="entry_username">Foydalanuvchi nomi</string>
+    <string name="entry_password">Parol</string>
+    <string name="entry_old_password">Eski parol (sayt hali undan foydalanayotgan boʻlishi mumkin)</string>
+    <string name="entry_new_password">Yangi parol (hali tasdiqlanmagan)</string>
+    <string name="entry_website">Sayt</string>
+    <string name="entry_app">Ilova: %1$s</string>
+    <string name="entry_notes">Qaydlar</string>
+    <string name="entry_show_more">Koʻproq koʻrsatish</string>
+    <string name="entry_show_less">Kamroq koʻrsatish</string>
+
+    <!-- Hidden values as TalkBack reads them. -->
+    <string name="entry_password_hidden">Parol, berkitilgan</string>
+    <string name="entry_old_password_hidden">Eski parol, berkitilgan</string>
+    <string name="entry_new_password_hidden">Yangi parol, berkitilgan</string>
+    <string name="entry_previous_hidden">Avvalgi parol, berkitilgan</string>
+    <string name="entry_field_hidden">%1$s, berkitilgan</string>
+    <string name="entry_shown_hint">Ekranga tegilmasa, 30&#160;soniyadan keyin berkitiladi. Koʻproq vaqt kerak boʻlsa, “Katta harflarda koʻrsatish” tugmasini bosing.</string>
+
+    <!-- After "… uchun ikki marta bosing" (Double-tap to): lower case, no full stop. -->
+    <string name="entry_row_options">amallarni koʻrsatish</string>
+    <string name="entry_copy_username">Foydalanuvchi nomidan nusxa olish</string>
+    <string name="entry_copy_password">Paroldan nusxa olish</string>
+    <string name="entry_copy_old_password">Eski paroldan nusxa olish</string>
+    <string name="entry_copy_new_password">Yangi paroldan nusxa olish</string>
+    <string name="entry_copy_previous">Avvalgi paroldan nusxa olish</string>
+    <string name="entry_copy_notes">Qaydlardan nusxa olish</string>
+    <string name="entry_copy_named">Nusxa olish: %1$s</string>
+    <string name="entry_copy">Nusxa olish</string>
+    <string name="entry_show_named">Koʻrsatish: %1$s</string>
+    <string name="entry_hide_named">Berkitish: %1$s</string>
+    <string name="entry_open_in_browser">%1$s saytini brauzerda ochish</string>
+    <string name="entry_open_website">Saytni ochish</string>
+
+    <!-- ===== History and dates ===== -->
+    <!-- %1$s is "3 kun oldin", "kecha" or "hozirgina". -->
+    <string name="entry_password_changed">Parol %1$s oʻzgartirilgan</string>
+    <string name="entry_added">Qoʻshilgan sana: %1$s</string>
+    <string name="entry_edited">Tahrirlangan sana: %1$s</string>
+    <string name="entry_previous">Avvalgi parollar (%1$s)</string>
+    <string name="entry_previous_until">%1$s sanasigacha ishlatilgan</string>
+
+    <!-- ===== Banners ===== -->
+    <!-- %1$s is a day and a month. -->
+    <string name="entry_banner_change">Siz bu parolni %1$s kuni oʻzgartira boshlagansiz. Sayt yangi parolni qabul qildimi?</string>
+    <string name="entry_banner_change_yes">Ha, oʻzgartirildi</string>
+    <string name="entry_banner_change_no">Yoʻq, eski parolni qaytarish</string>
+    <string name="entry_banner_left_out">Bu hisob xavfsizlik tekshiruviga kiritilmagan.</string>
+    <string name="entry_banner_check_again">Yana tekshiruvga kiritish</string>
+    <string name="entry_banner_master">Bu parol asosiy parolingiz bilan bir xil. Agar bu sayt uni oshkor qilib qoʻysa, zaxira nusxa faylingiz qoʻliga tushgan har kim uni ochishi mumkin. Yangi asosiy parol tanlang.</string>
+    <string name="entry_banner_master_choose">Yangi asosiy parol tanlash</string>
+
+    <!-- ===== States ===== -->
+    <string name="entry_empty">Hali maʼlumot yoʻq</string>
+    <string name="entry_gone">Bu hisob endi mavjud emas.</string>
+    <string name="entry_gone_deleted">Bu hisob oʻchirilgan. Uni 30&#160;kun davomida “Yaqinda oʻchirilganlar” boʻlimidan tiklashingiz mumkin.</string>
+    <string name="entry_open_deleted">“Yaqinda oʻchirilganlar” boʻlimini ochish</string>
+    <string name="entry_deleted_message">%1$s oʻchirib tashlandi</string>
+    <string name="entry_deleted_body">Bu hisob endi “Yaqinda oʻchirilganlar” boʻlimida. U yerda 30&#160;kun turadi.</string>
+
+    <!-- ===== Short messages ===== -->
+    <string name="entry_saved">Saqlandi</string>
+    <string name="entry_save_failed">Saqlab boʻlmadi. Telefoningiz xotirasi toʻlgan boʻlishi mumkin.</string>
+    <string name="entry_too_large">Parollaringiz endi bitta faylga sigʻmayapti. Keraksiz hisoblarni oʻchiring yoki juda uzun qaydlarni qisqartiring.</string>
+    <string name="entry_no_browser">Bu telefonda brauzer topilmadi.</string>
+    <string name="entry_copy_blocked">Bu telefon nusxa olishga ruxsat bermadi. Parolni “Katta harflarda koʻrsatish” orqali oching va uni qoʻlda kiriting.</string>
+
+    <!-- ===== What was copied, in the clipboard row ===== -->
+    <string name="entry_copied_username">%1$s foydalanuvchi nomi</string>
+    <string name="entry_copied_password">%1$s paroli</string>
+    <string name="entry_copied_old_password">%1$s eski paroli</string>
+    <string name="entry_copied_new_password">%1$s yangi paroli</string>
+    <string name="entry_copied_previous">%1$s avvalgi paroli</string>
+    <string name="entry_copied_website">%1$s sayti</string>
+    <string name="entry_copied_notes">%1$s qaydlari</string>
+    <!-- %1$s is the field's label, %2$s the account's name: "Click: PIN kod". -->
+    <string name="entry_copied_field">%2$s: %1$s</string>
+
+    <!-- ===== "Show in big letters" (ux.md §5.13) ===== -->
+    <string name="entry_big_old_password">Eski parol</string>
+    <string name="entry_big_new_password">Yangi parol</string>
+    <string name="entry_big_previous">Avvalgi parol</string>
+    <string name="entry_big_too_long">Katta harflarda koʻrsatish uchun juda uzun</string>
+    <string name="entry_big_hint">Qayerga yetganingizni belgilash uchun belgi ustiga bosing. Ekranga tegilmasa, bu oyna 2&#160;daqiqadan keyin yopiladi.</string>
+    <string name="entry_big_mark">shu joyni belgilash</string>
+    <string name="entry_big_space">boʻsh joy</string>
+    <string name="entry_big_line_break">yangi qator</string>
+
+    <!-- A box as TalkBack reads it: "3-belgi: bosh harf A". -->
+    <string name="entry_big_cell_upper">%1$d-belgi: bosh harf %2$s</string>
+    <string name="entry_big_cell_lower">%1$d-belgi: kichik harf %2$s</string>
+    <string name="entry_big_cell_letter">%1$d-belgi: harf %2$s</string>
+    <string name="entry_big_cell_digit">%1$d-belgi: raqam %2$s</string>
+    <string name="entry_big_cell_symbol">%1$d-belgi: maxsus belgi %2$s</string>
+    <string name="entry_big_cell_space">%1$d-belgi: boʻsh joy</string>
+    <string name="entry_big_cell_line_break">%1$d-belgi: yangi qator</string>
+    <string name="entry_big_cell_invisible">%1$d-belgi: koʻrinmas belgi %2$s</string>
+
+</resources>

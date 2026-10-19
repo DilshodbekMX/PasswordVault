@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ўзбекча (кирилл): the bottom bar of the unlocked screens (build plan 6.3a; English in
+    values/strings_shell.xml). Drafted from values-uz/strings_shell.xml with UzbekCyrillicStrings
+    (i18n.md §2.5), then read string by string against the Latin and the Cyrillic column of the
+    glossary (i18n.md §3). Latin letters only in the names of ResourceCheck.LATIN_IN_CYRILLIC. -->
+<resources>
+    <string name="shell_tab_passwords">Пароллар</string>
+    <string name="shell_tab_security">Хавфсизлик</string>
+    <string name="shell_tab_settings">Созламалар</string>
+</resources>
