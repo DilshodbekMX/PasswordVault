@@ -174,7 +174,9 @@
 
     <!-- ===== The «Забыли мастер-пароль?» sheet. No option deletes anything ===== -->
 
-    <string name="lock_sheet_title">Забыли мастер-пароль?</string>
+    <!-- "Forgot your master password?": «свой» keeps it apart from the button that opens the sheet
+         (lock_mp_forgot, glossary 132), as the English does. -->
+    <string name="lock_sheet_title">Забыли свой мастер-пароль?</string>
     <string name="lock_sheet_body">Его никто не сможет восстановить: он нигде не хранится.</string>
     <string name="lock_sheet_pin_text">PIN-код всё ещё открывает приложение на этом телефоне. Откройте приложение с его помощью, затем задайте новый мастер-пароль.</string>
     <string name="lock_sheet_use_pin">Использовать мой PIN-код</string>
