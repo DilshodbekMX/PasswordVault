@@ -83,7 +83,7 @@ if [ ${#PARTS[@]} -eq 0 ]; then
     if [ "$API" -ge 33 ]; then PARTS=(phone switch survives page mixing formats); else PARTS=(phone switch survives formats prompt); fi
 fi
 echo "i18n matrix on $SERIAL (API $API): ${PARTS[*]}; $APK"
-pvl_quiet_network
+pvi_quiet_network
 KNOWN=0
 # The prompt part's PIN: allowed by lock.md §7.2, and made of 1 to 6 only, the pad's first two rows. In
 # en-XA the PIN steps' longer texts push the row 7 8 9 under the navigation bar of a 1920-pixel screen
@@ -103,7 +103,7 @@ fresh() {
 
 # The phone's languages back to en-US, the app back to "System language" (where it can be told).
 restore() {
-    pvl_phone_set en-US >/dev/null 2>&1
+    pvi_phone_set en-US >/dev/null 2>&1
     [ "$API" -lt 33 ] || pv_shell cmd locale set-app-locales "$PV_PACKAGE" >/dev/null 2>&1
 }
 
@@ -113,13 +113,13 @@ restore() {
 phone_case() {
     local tags=$1 shown=$2
     pv_shell am force-stop "$PV_PACKAGE" >/dev/null
-    pvl_phone_set "$tags" || return 1
-    pv_log "the phone's languages: $(pvl_phone_get)"
-    pva_relaunch && pva_on Welcome 30 && pvl_open_language || return 1
-    PVL_PHONE_SHOWN=$shown pvl_dialog_is SYSTEM "$shown"
+    pvi_phone_set "$tags" || return 1
+    pv_log "the phone's languages: $(pvi_phone_get)"
+    pva_relaunch && pva_on Welcome 30 && pvi_open_language || return 1
+    PVI_PHONE_SHOWN=$shown pvi_dialog_is SYSTEM "$shown"
     local rc=$?
     shot "phone-$tags"
-    pvl_cancel Welcome || rc=1
+    pvi_cancel Welcome || rc=1
     return $rc
 }
 
@@ -148,7 +148,7 @@ stored() {
             EN_XA) want="[en-XA]" ;;
             AR_XB) want="[ar-XB]" ;;
         esac
-        [ "$(pvl_app_locales)" = "$want" ] || { pv_log "the system keeps $(pvl_app_locales), not $want"; return 1; }
+        [ "$(pvi_app_locales)" = "$want" ] || { pv_log "the system keeps $(pvi_app_locales), not $want"; return 1; }
         pv_log "the system keeps $want"
     elif pv_is_debuggable; then
         case "$1" in
@@ -156,10 +156,10 @@ stored() {
                 # The empty choice: AppCompat deletes its record (AppLocalesStorageHelper).
                 local i
                 for i in 1 2 3 4 5; do
-                    [ -z "$(pvl_record_file)" ] && { pv_log "AppCompat's record is gone"; return 0; }
+                    [ -z "$(pvi_record_file)" ] && { pv_log "AppCompat's record is gone"; return 0; }
                     pv_sleep 1
                 done
-                pv_log "AppCompat's record is '$(pvl_record_file | tr '\n' ' ')', not gone"
+                pv_log "AppCompat's record is '$(pvi_record_file | tr '\n' ' ')', not gone"
                 return 1 ;;
             UZ_LATN) want='application_locales="uz-Latn"' ;;
             UZ_CYRL) want='application_locales="uz-Cyrl"' ;;
@@ -171,10 +171,10 @@ stored() {
         # AppCompat writes the record on a thread of its own: give it a moment.
         local i
         for i in 1 2 3 4 5; do
-            pvl_record_file | grep -qF "$want" && { pv_log "AppCompat's record: $(pvl_record_file | tr '\n' ' ')"; return 0; }
+            pvi_record_file | grep -qF "$want" && { pv_log "AppCompat's record: $(pvi_record_file | tr '\n' ' ')"; return 0; }
             pv_sleep 1
         done
-        pv_log "AppCompat's record is '$(pvl_record_file | tr '\n' ' ')', without $want"
+        pv_log "AppCompat's record is '$(pvi_record_file | tr '\n' ' ')', without $want"
         return 1
     fi
 }
@@ -184,18 +184,18 @@ stored() {
 switch_to() {
     local choice=$1 before after
     before=$(pva_pid)
-    pvl_open_language && pvl_choose "$choice" Welcome || return 1
+    pvi_open_language && pvi_choose "$choice" Welcome || return 1
     after=$(pva_pid)
     [ -n "$before" ] && [ "$before" = "$after" ] || { pv_log "the process changed: $before -> $after"; return 1; }
-    pvl_open_language || return 1
+    pvi_open_language || return 1
     case "$choice" in
         EN_XA | AR_XB) pseudo_dialog "$choice" ;;
-        *) pvl_dialog_is "$choice" ;;
+        *) pvi_dialog_is "$choice" ;;
     esac
     local rc=$?
     shot "switch-$choice"
     stored "$choice" || rc=1
-    pvl_cancel Welcome || rc=1
+    pvi_cancel Welcome || rc=1
     return $rc
 }
 
@@ -204,10 +204,10 @@ switch_to() {
 pseudo_dialog() {
     local qualifier want title
     case "$1" in EN_XA) qualifier=en-rXA ;; *) qualifier=ar-rXB ;; esac
-    want=$(pvl_apk_string "$APK" language_title "$qualifier" | no_bidi)
-    title=$(pvl_dialog_texts | head -n 1 | no_bidi)
+    want=$(pvi_apk_string "$APK" language_title "$qualifier" | no_bidi)
+    title=$(pvi_dialog_texts | head -n 1 | no_bidi)
     [ -n "$want" ] && [ "$title" = "$want" ] || { pv_log "the title is '$title', not the $qualifier '$want'"; return 1; }
-    [ "$(pvl_selected)" = "$1" ] || { pv_log "the checked row is '$(pvl_selected)', not $1"; return 1; }
+    [ "$(pvi_selected)" = "$1" ] || { pv_log "the checked row is '$(pvi_selected)', not $1"; return 1; }
 }
 
 no_bidi() { python3 -c 'import sys; print(sys.stdin.read().translate({c: None for c in (0x200E, 0x200F, 0x202A, 0x202B, 0x202C, 0x202D, 0x202E)}).strip())'; }
@@ -218,7 +218,7 @@ choice_name() {
         SYSTEM) echo "System language" ;;
         EN_XA) echo "English (XA)" ;;
         AR_XB) echo "Arabic (XB)" ;;
-        *) pvl_own_name "$1" ;;
+        *) pvi_own_name "$1" ;;
     esac
 }
 
@@ -232,10 +232,10 @@ part_switch() {
 
 # ---- survives: process death and reboot -------------------------------------------------------------
 still_uzbek_cyrillic() {
-    pva_on Welcome 60 && pvl_open_language || return 1
-    pvl_dialog_is UZ_CYRL
+    pva_on Welcome 60 && pvi_open_language || return 1
+    pvi_dialog_is UZ_CYRL
     local rc=$?
-    pvl_cancel Welcome || rc=1
+    pvi_cancel Welcome || rc=1
     return $rc
 }
 
@@ -344,10 +344,10 @@ page_chooses() {
         pv_ui_tap '^Россия[|]' >/dev/null || { pv_log "no region Россия; texts: $(pv_ui_nodes | awk -F'|' '$1 != "" { printf "%s; ", $1 }')"; return 1; }
     fi
     pv_sleep 3
-    case "$(pvl_app_locales)" in "[ru"*) ;; *) pv_log "the app's locales are $(pvl_app_locales)"; return 1 ;; esac
-    pv_log "the page set $(pvl_app_locales)"
+    case "$(pvi_app_locales)" in "[ru"*) ;; *) pv_log "the app's locales are $(pvi_app_locales)"; return 1 ;; esac
+    pv_log "the page set $(pvi_app_locales)"
     pva_in_front || pva_relaunch
-    pva_on Welcome 30 && pvl_open_language && pvl_dialog_is RU && pvl_cancel Welcome
+    pva_on Welcome 30 && pvi_open_language && pvi_dialog_is RU && pvi_cancel Welcome
 }
 
 part_page() {
@@ -382,8 +382,8 @@ no_default_locale() {
 # Russian and Latin Uzbek texts but none in Uzbek Cyrillic.
 drag_handle_english() {
     local english russian handle
-    english=$(pvl_apk_string "$APK" m3c_bottom_sheet_drag_handle_description)
-    russian=$(pvl_apk_string "$APK" m3c_bottom_sheet_drag_handle_description ru)
+    english=$(pvi_apk_string "$APK" m3c_bottom_sheet_drag_handle_description)
+    russian=$(pvi_apk_string "$APK" m3c_bottom_sheet_drag_handle_description ru)
     pva_tap pv.tab.Passwords && pva_on Passwords || return 1
     if pva_present pv.list.emptyAdd 2; then pva_tap pv.list.emptyAdd; else pva_tap pv.list.add; fi || return 1
     pva_on Edit && pva_tap pv.edit.generateButton && pva_need pv.gen.preview 15 || return 1
@@ -401,20 +401,20 @@ drag_handle_english() {
 }
 
 two_languages_dialog() {
-    pva_tap pv.tab.Settings && pva_on Settings && pvl_open_language || return 1
-    PVL_PHONE_SHOWN=UZ_CYRL pvl_dialog_is SYSTEM UZ_CYRL || return 1
+    pva_tap pv.tab.Settings && pva_on Settings && pvi_open_language || return 1
+    PVI_PHONE_SHOWN=UZ_CYRL pvi_dialog_is SYSTEM UZ_CYRL || return 1
     shot "mixing-dialog"
-    pvl_cancel Settings
+    pvi_cancel Settings
 }
 
 part_mixing() {
     pv_step "mixing: the API 35 locale config has no android:defaultLocale" -- no_default_locale
     fresh && pva_set_up || { pv_report FAIL "mixing: install, set up a vault"; return 1; }
-    pv_step "mixing: the phone set to uz-Cyrl-UZ, then ru-RU" -- pvl_phone_set uz-Cyrl-UZ,ru-RU
+    pv_step "mixing: the phone set to uz-Cyrl-UZ, then ru-RU" -- pvi_phone_set uz-Cyrl-UZ,ru-RU
     pva_in_front || pva_relaunch
     pv_step "mixing: the app on System language is in Ўзбекча (its dialog)" -- two_languages_dialog
     pv_step "mixing: a library text without Uzbek Cyrillic is English, not Russian" -- drag_handle_english
-    pv_step "mixing: the phone back to en-US" -- pvl_phone_set en-US
+    pv_step "mixing: the phone back to en-US" -- pvi_phone_set en-US
 }
 
 # ---- formats: the phone's ICU in each language ---------------------------------------------------------
@@ -425,7 +425,7 @@ added_in() {
     local tag=$1 answer expected found deadline icu
     answer=$(pva_debug locale "$tag") || return 1
     pv_log "$answer"
-    icu=$(pvl_icu_date yMMMd "$tag") || return 1
+    icu=$(pvi_icu_date yMMMd "$tag") || return 1
     expected=${icu// /$(printf '\302\240')}
     deadline=$((SECONDS + 20))
     while :; do
@@ -447,7 +447,7 @@ open_account() {
 
 icu_version() {
     local v
-    v=$(pvl_icu_version) || return 1
+    v=$(pvi_icu_version) || return 1
     pv_log "the phone's ICU: $v"
     if [ "$API" -eq 24 ]; then case "$v" in 56.*) ;; *) pv_log "API 24 should have ICU 56"; return 1 ;; esac; fi
 }
@@ -465,7 +465,7 @@ part_formats() {
 
 # ---- prompt: the fingerprint prompt's texts --------------------------------------------------------------
 prompt_set_up() {
-    pvl_open_language && pvl_choose EN_XA Welcome || return 1
+    pvi_open_language && pvi_choose EN_XA Welcome || return 1
     pva_tap pv.open.CreateMasterPassword && pva_on CreateMasterPassword && pva_reveal pv.setup.passphrase || return 1
     PVA_PASSWORD=$(pva_text pv.setup.passphrase) || return 1
     pva_tap pv.open.WriteDown && pva_on WriteDown && pva_tap pv.open.TypeAgain && pva_on TypeAgain || return 1
@@ -490,10 +490,10 @@ pin_digits() {
 
 prompt_texts() {
     local title button english_title english_button nodes deadline
-    title=$(pvl_apk_string "$APK" lock_prompt_turn_on_title en-rXA)
-    button=$(pvl_apk_string "$APK" common_cancel en-rXA)
-    english_title=$(pvl_apk_string "$APK" lock_prompt_turn_on_title)
-    english_button=$(pvl_apk_string "$APK" common_cancel)
+    title=$(pvi_apk_string "$APK" lock_prompt_turn_on_title en-rXA)
+    button=$(pvi_apk_string "$APK" common_cancel en-rXA)
+    english_title=$(pvi_apk_string "$APK" lock_prompt_turn_on_title)
+    english_button=$(pvi_apk_string "$APK" common_cancel)
     [ -n "$title" ] && [ -n "$button" ] || { pv_log "the APK has no en-XA texts for the prompt"; return 1; }
     pva_tap pv.fingerprintOffer.use || return 1
     deadline=$((SECONDS + 20))

@@ -132,9 +132,10 @@ APIS=(24 28 37)
 declare -A SER=()
 
 build_apks() {
-    "$REPO/tools/gradle.sh" :app:assembleDebug :app:assembleStaging ${gradle_args[@]+"${gradle_args[@]}"} > "$LOGS_ROOT/assemble.log" 2>&1
+    # One log per run's levels: runs of other levels may build at the same time.
+    "$REPO/tools/gradle.sh" :app:assembleDebug :app:assembleStaging ${gradle_args[@]+"${gradle_args[@]}"} > "$LOGS_ROOT/assemble$LEVELS_SUFFIX.log" 2>&1
     local rc=$?
-    grep -E '^BUILD' "$LOGS_ROOT/assemble.log" | sed 's/^/   /'
+    grep -aE '^BUILD' "$LOGS_ROOT/assemble$LEVELS_SUFFIX.log" | sed 's/^/   /'
     return $rc
 }
 
@@ -1097,8 +1098,9 @@ line3() {
     ls -l "$dir" | sed 's/^/    | /'
     pv_step "$T: tools/validate/run.sh on the three files" -- eval '"$REPO/tools/validate/run.sh" "$dir" > "$DEV_OUT/validate.log" 2>&1; rc=$?; grep -E "^(FAIL|RESULT)" "$DEV_OUT/validate.log" | sed "s/^/    | /"; [ $rc = 0 ]'
     pv_step "$T: the exports hold the values" -- eval 'export_holds "$dir/$json" "Oʻzbekiston pochtasi" "Почта Ташкент" "+998901234567" "=SUM(1+1)" "Ikkinchi qator" && export_holds "$dir/$csv" "Парол-Ёз-2026" "=HYPERLINK" && export_holds "$dir/$xlsx" "азиз" "Gʻalaba-2024!"'
-    # The exports leave Download (Android 7's picker saves over a file of the same name), and the two to
-    # import come back under names of their own.
+    # The exports leave Download (a second file of a name in Download gets " (1)", on Android 7 after
+    # the extension for JSON: "passwords-2026-10-19.json (1)"), and the two to import come back under
+    # names of their own.
     clean_download
     pv_step "$T: an empty vault (pm clear, setup); the CSV export imported" -- eval 'empty_vault && pva_push_download "$dir/$csv" pv-5-export.csv && w5_import csv pv-5-export.csv pushed' || return 1
     pv_step "$T: exported again as JSON: the same accounts as the first JSON (title, login, password, websites, notes, fields)" -- eval 'json2=$(export_new json) && pull "$json2" > /dev/null && cp "$DEV_OUT/$json2" "$dir/after-the-csv-import.json" && same_accounts "$dir/$json" "$dir/after-the-csv-import.json"'
@@ -1690,6 +1692,11 @@ wants() { [[ " ${parts[*]} " == *" $1 "* ]]; }
 needs_devices() { local p; for p in "${DEVICE_PARTS[@]}"; do wants "$p" && return 0; done; return 1; }
 CONN_DIR=$LOGS_ROOT/connected/api-$(IFS=-; echo "${APIS[*]}")
 
+# A part run on some of the levels keeps its logs apart (LOGS_ROOT/PART-api-28-37), so that the same part
+# run on the other levels does not remove them.
+LEVELS_SUFFIX=""
+[ "${APIS[*]}" = "24 28 37" ] || LEVELS_SUFFIX=-api-$(IFS=-; echo "${APIS[*]}")
+
 mkdir -p "$LOGS_ROOT"
 echo "round R4 (waves 4, 5 and 7) device check in $REPO at $(git -C "$REPO" rev-parse --short HEAD) ($(date '+%F %T')): ${parts[*]} on API ${APIS[*]}; logs in ${LOGS_ROOT#"$REPO"/}"
 
@@ -1705,10 +1712,6 @@ if needs_devices; then
         parts=(stop)
     fi
 fi
-# A part run on some of the levels keeps its logs apart (LOGS_ROOT/PART-api-28-37), so that the same part
-# run on the other levels does not remove them.
-LEVELS_SUFFIX=""
-[ "${APIS[*]}" = "24 28 37" ] || LEVELS_SUFFIX=-api-$(IFS=-; echo "${APIS[*]}")
 for part in "${DEVICE_PARTS[@]}"; do
     wants "$part" || continue
     LOGS=$LOGS_ROOT/$part$LEVELS_SUFFIX

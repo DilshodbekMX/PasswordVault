@@ -52,7 +52,7 @@ LOGS=$REPO/build/emu-i18n/$SERIAL
 SHOTS=${SHOTS:-$LOGS/shots}
 mkdir -p "$LOGS" "$SHOTS"
 echo "lock.md E11, the language step, on $SERIAL (API $API): $APK"
-pvl_quiet_network
+pvi_quiet_network
 PID=""
 
 shot() { pva_screenshot "$SHOTS/$1.png" && pv_log "screenshot $SHOTS/$1.png"; }
@@ -105,7 +105,7 @@ change_in_settings() {
     pva_tap pv.tab.Settings && pva_on Settings || return 1
     pva_reveal pv.open.Language || return 1
     row_y=$(pva_node pv.open.Language | cut -d'|' -f7)
-    pvl_open_language && pvl_choose "$choice" Settings || return 1
+    pvi_open_language && pvi_choose "$choice" Settings || return 1
     pva_absent pv.route.Locked || { pv_log "the lock screen is shown"; return 1; }
     after=$(pva_pid)
     [ "$after" = "$PID" ] || { pv_log "the process changed: $PID -> $after"; return 1; }
@@ -115,13 +115,13 @@ change_in_settings() {
     pv_log "the language row: $(printf '%s' "$texts" | tr '\n' ';')"
     case "$choice" in
         SYSTEM) printf '%s\n' "$texts" | grep -qx 'System language' || { pv_log "the row does not say System language"; return 1; } ;;
-        *) printf '%s\n' "$texts" | grep -qxF "$(pvl_own_name "$choice")" || { pv_log "the row does not name $(pvl_own_name "$choice")"; return 1; } ;;
+        *) printf '%s\n' "$texts" | grep -qxF "$(pvi_own_name "$choice")" || { pv_log "the row does not name $(pvi_own_name "$choice")"; return 1; } ;;
     esac
     shot "e11-settings-$choice"
-    pvl_open_language || return 1
-    pvl_dialog_is "$choice"
+    pvi_open_language || return 1
+    pvi_dialog_is "$choice"
     local rc=$?
-    pvl_cancel Settings || rc=1
+    pvi_cancel Settings || rc=1
     return $rc
 }
 
