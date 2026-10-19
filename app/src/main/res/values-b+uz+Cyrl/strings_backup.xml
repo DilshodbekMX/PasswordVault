@@ -30,7 +30,7 @@
     <string name="backup_older">Сиз асосий паролингизни %1$s куни ўзгартиргансиз. Янгисини киритинг.</string>
     <string name="backup_older_unfinished">%1$s куни асосий паролингизни ўзгартириш якунланмаган бўлиши мумкин. Янги асосий паролингизни киритинг.</string>
     <string name="backup_making">Захира нусха яратилмоқда…</string>
-    <string name="backup_choose_text">Захира нусха файлини қаерга сақлашни танланг. Google Drive иловаси шу телефонда бўлса, у ҳам рўйхатда чиқади.</string>
+    <string name="backup_choose_text">Захира нусха файлини қаерга сақлашни танланг. Google Drive иловаси бу телефонда бўлса, у ҳам рўйхатда чиқади.</string>
     <string name="backup_choose">Жойни танлаш</string>
     <string name="backup_picker_failed">Жойлар рўйхатини очиб бўлмади. Қайта урининг.</string>
     <string name="backup_saving">Сақланмоқда…</string>
@@ -56,19 +56,19 @@
     <string name="backup_choose_other">Бошқа жойни танлаш</string>
 
     <string name="backup_file_removed">Файл ўчириб ташланди.</string>
-    <string name="backup_file_left_phone">%1$s номли файлни шу телефон хотирасидан ўзингиз ўчиринг.</string>
+    <string name="backup_file_left_phone">%1$s номли файлни бу телефон хотирасидан ўзингиз ўчиринг.</string>
     <string name="backup_file_left_drive">Google Drive хизматидаги %1$s номли файлни ўзингиз ўчиринг.</string>
     <string name="backup_file_left_other">%1$s номли файлни ўзингиз ўчиринг (жойи: %2$s).</string>
 
     <string name="backup_stopped_removed">Захира нусха яратилмади. Бўш файл ўчириб ташланди.</string>
-    <string name="backup_stopped_left_phone">Захира нусха яратилмади. %1$s номли бўш файлни шу телефон хотирасидан ўзингиз ўчиринг.</string>
+    <string name="backup_stopped_left_phone">Захира нусха яратилмади. %1$s номли бўш файлни бу телефон хотирасидан ўзингиз ўчиринг.</string>
     <string name="backup_stopped_left_drive">Захира нусха яратилмади. Google Drive хизматидаги %1$s номли бўш файлни ўзингиз ўчиринг.</string>
     <string name="backup_stopped_left_other">Захира нусха яратилмади. %1$s номли бўш файлни ўзингиз ўчиринг (жойи: %2$s).</string>
 
     <!-- ===== Захира нусха файлидан тиклаш ===== -->
 
     <string name="backup_restore_title">Захира нусха файлидан тиклаш</string>
-    <string name="backup_restore_intro">Шу илова сақлаган захира нусха файлини танланг. Унинг номи PasswordVault-backup билан бошланади.</string>
+    <string name="backup_restore_intro">Бу илова сақлаган захира нусха файлини танланг. Унинг номи PasswordVault-backup билан бошланади.</string>
     <string name="backup_restore_choose">Файлни танлаш</string>
     <string name="backup_restore_choose_other">Бошқа файлни танлаш</string>
     <string name="backup_restore_picker_failed">Файллар рўйхатини очиб бўлмади. Қайта урининг.</string>
@@ -83,12 +83,12 @@
         <item quantity="other">%1$d&#160;та ҳисоб, захира нусха %2$s куни яратилган.</item>
     </plurals>
     <string name="backup_restore_restore">Тиклаш</string>
-    <string name="backup_restore_stays">Ҳозирги паролларингиз шу телефонда қулфланган ҳолда қолади.</string>
+    <string name="backup_restore_stays">Ҳозирги паролларингиз бу телефонда қулфланган ҳолда қолади.</string>
     <string name="backup_restore_use">Шу захира нусхадан фойдаланиш</string>
     <string name="backup_restore_restoring">Тикланмоқда…</string>
 
     <string name="backup_restore_not_ours">Бу PasswordVault захира нусхаси эмас. Паролларни Chrome ёки бошқа иловадан олиб келиш учун аввал созлашни якунланг, сўнг Созламалар › Импорт бўлимидан фойдаланинг.</string>
-    <string name="backup_restore_not_ours_locked">Бу PasswordVault захира нусхаси эмас. Шу илова сақлаган захира нусха файлини танланг.</string>
+    <string name="backup_restore_not_ours_locked">Бу PasswordVault захира нусхаси эмас. Бу илова сақлаган захира нусха файлини танланг.</string>
     <string name="backup_restore_wrong">Бу парол ушбу захира нусхани очмайди. Захира нусхани яратган пайтингиздаги асосий паролни синаб кўринг.</string>
     <string name="backup_restore_wrong_or_damaged">Бу файл шикастланган бўлиши ёки парол нотўғри бўлиши мумкин.</string>
     <string name="backup_restore_damaged">Бу захира нусха файли шикастланган ва уни очиб бўлмайди. Бошқа захира нусха файлини синаб кўринг.</string>
@@ -108,7 +108,7 @@
     <string name="backup_old_open_text">Бу пароллар учун ишлатган асосий паролингизни киритинг. Уларнинг ҳисоблари ҳозирги паролларингизга қўшилади. Ҳеч нарса алмаштирилмайди.</string>
     <string name="backup_old_open_button">Ҳисобларни қўшиш</string>
     <string name="backup_old_delete_title">%1$s куни қулфланган пароллар ўчирилсинми?</string>
-    <string name="backup_old_delete_text">Улар шу телефондан бутунлай ўчирилади. Уларни фақат улар учун ишлатган асосий паролингиз билан ўчириш мумкин. Ҳозирги асосий паролингиз билан уларни ўчириб бўлмайди.</string>
+    <string name="backup_old_delete_text">Улар бу телефондан бутунлай ўчирилади. Уларни фақат улар учун ишлатган асосий паролингиз билан ўчириш мумкин. Ҳозирги асосий паролингиз билан уларни ўчириб бўлмайди.</string>
     <string name="backup_old_delete_button">Бутунлай ўчириш</string>
     <string name="backup_old_field">Уларнинг асосий пароли</string>
     <string name="backup_old_adding">Ҳисоблар қўшилмоқда…</string>

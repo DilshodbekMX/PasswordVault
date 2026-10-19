@@ -37,7 +37,7 @@
     <string name="change_step4">Parollarni saytga joylang.</string>
     <string name="change_copy_new">Yangi paroldan nusxa olish</string>
     <string name="change_hint_ask">Saytlar odatda eski parolni bir marta, yangisini esa ikki marta soʻraydi.</string>
-    <string name="change_hint_chrome">Agar Chrome siz uchun parol yaratishni taklif qilsa, undan foydalanmang. Shu ilova yaratgan parolni joylang.</string>
+    <string name="change_hint_chrome">Agar Chrome siz uchun parol yaratishni taklif qilsa, undan foydalanmang. Bu ilova yaratgan parolni joylang.</string>
     <string name="change_first_step3">Avval 3-qadamda yangi parol yarating.</string>
 
     <!-- ===== 5-qadam ===== -->
@@ -52,7 +52,7 @@
     <string name="change_done">“%1$s” hisobining endi oʻz paroli bor.</string>
     <string name="change_next">Keyingisi: %1$s</string>
     <string name="change_done_for_now">Hozircha yakunlash</string>
-    <string name="change_backup_only_here">“%1$s” hisobining yangi paroli zaxira nusxa yaratmaguningizcha faqat shu telefonda boʻladi.</string>
+    <string name="change_backup_only_here">“%1$s” hisobining yangi paroli zaxira nusxa yaratmaguningizcha faqat bu telefonda boʻladi.</string>
     <string name="change_back_up_now">Hozir zaxiralash</string>
 
     <!-- ===== Ekran pastidagi xabarlar ===== -->

@@ -18,20 +18,20 @@
     <!-- ===== Манбалар ===== -->
 
     <string name="import_sources_intro">Паролларингиз ҳозир қаерда? Улар сақланган файлни танланг. Рўйхатни текшириб, импорт тугмасини босмагунингизча ҳеч нарса қўшилмайди.</string>
-    <string name="import_source_backup">Шу илованинг захира нусха файли</string>
+    <string name="import_source_backup">Бу илованинг захира нусха файли</string>
     <string name="import_source_backup_body">“Захира нусха яратиш” орқали яратилган қулфланган файл. Уни яратган пайтингиздаги асосий парол керак бўлади.</string>
     <string name="import_source_google">Google Password Manager ёки Chrome (CSV)</string>
     <string name="import_source_google_body">Аввал паролларингизни Chrome браузеридан экспорт қилинг. Қандай қилишни кўрсатамиз.</string>
     <string name="import_source_csv">Бошқа парол иловаси ёки CSV сифатида сақланган жадвал</string>
     <string name="import_source_csv_body">Bitwarden, KeePassXC, Firefox, Excel ва бошқалар.</string>
-    <string name="import_source_json">JSON (шу илова ёки Bitwarden)</string>
-    <string name="import_source_json_body">Шу илова ёки Bitwarden экспорт қилган файл. У шифрланмаган бўлиши керак.</string>
+    <string name="import_source_json">JSON (бу илова ёки Bitwarden)</string>
+    <string name="import_source_json_body">Бу илова ёки Bitwarden экспорт қилган файл. У шифрланмаган бўлиши керак.</string>
     <string name="import_no_picker">Бу телефонда файлларни оча оладиган илова йўқ. Файл менежерини ёқинг ёки ўрнатинг ва қайта урининг.</string>
     <string name="import_opening_picker">Файл танлаш ойнаси очилмоқда…</string>
 
     <!-- ===== Google йўриқномаси ===== -->
 
-    <string name="import_google_steps">Шу телефондаги Chrome браузерида: ⋮ › Созламалар › (Автоматик киритиш ва пароллар ›) Google Пароллар менежери › Созламалар › Паролларни экспорт қилиш › Файлни юклаб олиш. Номлар бироз фарқ қилиши мумкин. Сўнг шу ерга қайтинг ва файлни танланг.</string>
+    <string name="import_google_steps">Бу телефондаги Chrome браузерида: ⋮ › Созламалар › (Автоматик киритиш ва пароллар ›) Google Пароллар менежери › Созламалар › Паролларни экспорт қилиш › Файлни юклаб олиш. Номлар бироз фарқ қилиши мумкин. Сўнг шу ерга қайтинг ва файлни танланг.</string>
     <string name="import_google_cant_find">Топа олмаяпман</string>
     <string name="import_google_settings">Телефонингиздаги Созламалар иловасини очинг ва “Пароллар менежери” деб қидиринг. Кейин очинг: Google Пароллар менежери › Созламалар › Паролларни экспорт қилиш.</string>
     <string name="import_choose_file">Файлни танлаш</string>

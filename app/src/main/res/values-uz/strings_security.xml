@@ -17,7 +17,7 @@
     <string name="security_checking_start">Parollaringiz tekshirilmoqda…</string>
 
     <string name="security_all_clear">Barcha parollaringiz har xil va ularni topish qiyin. Juda yaxshi.</string>
-    <string name="security_empty">Avval bir nechta hisob qoʻshing. Tekshiruv faqat shu telefonda bajariladi.</string>
+    <string name="security_empty">Avval bir nechta hisob qoʻshing. Tekshiruv faqat bu telefonda bajariladi.</string>
 
     <string name="security_master_title">Asosiy parol boshqa joyda ishlatilgan</string>
     <string name="security_master_one">Asosiy parolingiz “%1$s” hisobining ham paroli. Uni biror saytdan bilib olgan har qanday odam zaxira nusxalaringizni ocha oladi. Hoziroq yangi asosiy parol tanlang, yangi zaxira nusxa yarating va eski zaxira nusxa fayllaringizni oʻchiring.</string>

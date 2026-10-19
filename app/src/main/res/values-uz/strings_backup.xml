@@ -29,7 +29,7 @@
     <string name="backup_older">Siz asosiy parolingizni %1$s kuni oʻzgartirgansiz. Yangisini kiriting.</string>
     <string name="backup_older_unfinished">%1$s kuni asosiy parolingizni oʻzgartirish yakunlanmagan boʻlishi mumkin. Yangi asosiy parolingizni kiriting.</string>
     <string name="backup_making">Zaxira nusxa yaratilmoqda…</string>
-    <string name="backup_choose_text">Zaxira nusxa faylini qayerga saqlashni tanlang. Google Drive ilovasi shu telefonda boʻlsa, u ham roʻyxatda chiqadi.</string>
+    <string name="backup_choose_text">Zaxira nusxa faylini qayerga saqlashni tanlang. Google Drive ilovasi bu telefonda boʻlsa, u ham roʻyxatda chiqadi.</string>
     <string name="backup_choose">Joyni tanlash</string>
     <string name="backup_picker_failed">Joylar roʻyxatini ochib boʻlmadi. Qayta urining.</string>
     <string name="backup_saving">Saqlanmoqda…</string>
@@ -55,19 +55,19 @@
     <string name="backup_choose_other">Boshqa joyni tanlash</string>
 
     <string name="backup_file_removed">Fayl oʻchirib tashlandi.</string>
-    <string name="backup_file_left_phone">%1$s nomli faylni shu telefon xotirasidan oʻzingiz oʻchiring.</string>
+    <string name="backup_file_left_phone">%1$s nomli faylni bu telefon xotirasidan oʻzingiz oʻchiring.</string>
     <string name="backup_file_left_drive">Google Drive xizmatidagi %1$s nomli faylni oʻzingiz oʻchiring.</string>
     <string name="backup_file_left_other">%1$s nomli faylni oʻzingiz oʻchiring (joyi: %2$s).</string>
 
     <string name="backup_stopped_removed">Zaxira nusxa yaratilmadi. Boʻsh fayl oʻchirib tashlandi.</string>
-    <string name="backup_stopped_left_phone">Zaxira nusxa yaratilmadi. %1$s nomli boʻsh faylni shu telefon xotirasidan oʻzingiz oʻchiring.</string>
+    <string name="backup_stopped_left_phone">Zaxira nusxa yaratilmadi. %1$s nomli boʻsh faylni bu telefon xotirasidan oʻzingiz oʻchiring.</string>
     <string name="backup_stopped_left_drive">Zaxira nusxa yaratilmadi. Google Drive xizmatidagi %1$s nomli boʻsh faylni oʻzingiz oʻchiring.</string>
     <string name="backup_stopped_left_other">Zaxira nusxa yaratilmadi. %1$s nomli boʻsh faylni oʻzingiz oʻchiring (joyi: %2$s).</string>
 
     <!-- ===== Zaxira nusxa faylidan tiklash ===== -->
 
     <string name="backup_restore_title">Zaxira nusxa faylidan tiklash</string>
-    <string name="backup_restore_intro">Shu ilova saqlagan zaxira nusxa faylini tanlang. Uning nomi PasswordVault-backup bilan boshlanadi.</string>
+    <string name="backup_restore_intro">Bu ilova saqlagan zaxira nusxa faylini tanlang. Uning nomi PasswordVault-backup bilan boshlanadi.</string>
     <string name="backup_restore_choose">Faylni tanlash</string>
     <string name="backup_restore_choose_other">Boshqa faylni tanlash</string>
     <string name="backup_restore_picker_failed">Fayllar roʻyxatini ochib boʻlmadi. Qayta urining.</string>
@@ -82,12 +82,12 @@
         <item quantity="other">%1$d&#160;ta hisob, zaxira nusxa %2$s kuni yaratilgan.</item>
     </plurals>
     <string name="backup_restore_restore">Tiklash</string>
-    <string name="backup_restore_stays">Hozirgi parollaringiz shu telefonda qulflangan holda qoladi.</string>
+    <string name="backup_restore_stays">Hozirgi parollaringiz bu telefonda qulflangan holda qoladi.</string>
     <string name="backup_restore_use">Shu zaxira nusxadan foydalanish</string>
     <string name="backup_restore_restoring">Tiklanmoqda…</string>
 
     <string name="backup_restore_not_ours">Bu PasswordVault zaxira nusxasi emas. Parollarni Chrome yoki boshqa ilovadan olib kelish uchun avval sozlashni yakunlang, soʻng Sozlamalar › Import boʻlimidan foydalaning.</string>
-    <string name="backup_restore_not_ours_locked">Bu PasswordVault zaxira nusxasi emas. Shu ilova saqlagan zaxira nusxa faylini tanlang.</string>
+    <string name="backup_restore_not_ours_locked">Bu PasswordVault zaxira nusxasi emas. Bu ilova saqlagan zaxira nusxa faylini tanlang.</string>
     <string name="backup_restore_wrong">Bu parol ushbu zaxira nusxani ochmaydi. Zaxira nusxani yaratgan paytingizdagi asosiy parolni sinab koʻring.</string>
     <string name="backup_restore_wrong_or_damaged">Bu fayl shikastlangan boʻlishi yoki parol notoʻgʻri boʻlishi mumkin.</string>
     <string name="backup_restore_damaged">Bu zaxira nusxa fayli shikastlangan va uni ochib boʻlmaydi. Boshqa zaxira nusxa faylini sinab koʻring.</string>
@@ -107,7 +107,7 @@
     <string name="backup_old_open_text">Bu parollar uchun ishlatgan asosiy parolingizni kiriting. Ularning hisoblari hozirgi parollaringizga qoʻshiladi. Hech narsa almashtirilmaydi.</string>
     <string name="backup_old_open_button">Hisoblarni qoʻshish</string>
     <string name="backup_old_delete_title">%1$s kuni qulflangan parollar oʻchirilsinmi?</string>
-    <string name="backup_old_delete_text">Ular shu telefondan butunlay oʻchiriladi. Ularni faqat ular uchun ishlatgan asosiy parolingiz bilan oʻchirish mumkin. Hozirgi asosiy parolingiz bilan ularni oʻchirib boʻlmaydi.</string>
+    <string name="backup_old_delete_text">Ular bu telefondan butunlay oʻchiriladi. Ularni faqat ular uchun ishlatgan asosiy parolingiz bilan oʻchirish mumkin. Hozirgi asosiy parolingiz bilan ularni oʻchirib boʻlmaydi.</string>
     <string name="backup_old_delete_button">Butunlay oʻchirish</string>
     <string name="backup_old_field">Ularning asosiy paroli</string>
     <string name="backup_old_adding">Hisoblar qoʻshilmoqda…</string>

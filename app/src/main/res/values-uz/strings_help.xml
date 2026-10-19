@@ -22,7 +22,7 @@
 
     <!-- ===== Parollaringiz qanday himoyalanadi ===== -->
 
-    <string name="help_protection_file">Parollaringiz shu telefondagi qulflangan faylda saqlanadi. Uni faqat asosiy parolingiz ocha oladi.</string>
+    <string name="help_protection_file">Parollaringiz bu telefondagi qulflangan faylda saqlanadi. Uni faqat asosiy parolingiz ocha oladi.</string>
     <string name="help_protection_offline">Ilova hech qachon internetga ulanmaydi: bunga uning ruxsati yoʻq. Shuning uchun biror sayt parolingizni oshkor qilib qoʻyganini u sizga ayta olmaydi.</string>
     <string name="help_protection_screenshots">Ilova ekranidan skrinshot olib boʻlmaydi.</string>
 
@@ -39,7 +39,7 @@
     <string name="help_never_pin">Parolni hech qachon klaviaturangizning vaqtinchalik xotirasiga qadab qoʻymang: qadalgan elementlar hech qachon olib tashlanmaydi.</string>
 
     <string name="help_protection_heading_pin">PIN kodingiz va barmoq izingiz</string>
-    <string name="help_protection_fingerprint">Barmoq izi shu telefon sozlamalarida saqlangan har kim ilovani ocha oladi.</string>
+    <string name="help_protection_fingerprint">Barmoq izi bu telefon sozlamalarida saqlangan har kim ilovani ocha oladi.</string>
     <string name="help_protection_pin_reuse">Telefoningiz qulfini ochadigan PIN kodni yoki bank kartangizning PIN kodini ilova PIN kodi sifatida ishlatmang. Uni biladigan odam ilovani ochishi mumkin.</string>
     <string name="help_protection_rooted">Himoyasi olib tashlangan (“root” qilingan) telefonda kimdir bir necha soat ichida barcha PIN kodlarni sinab chiqishi mumkin. Asosiy parolingiz baribir parollaringizni himoya qiladi, shuning uchun u kuchli boʻlsin va uni hech qachon boshqa joyda ishlatmang.</string>
     <string name="help_protection_new_mp">PIN kodingizni biladigan odam ilova uchun yangi asosiy parol tanlashi mumkin. U faqat telefon yoniq holda 24&#160;soat oʻtgach ishlay boshlaydi va ungacha ilova har safar ochilganda bu haqda sizga aytadi. Agar buni siz qilmagan boʻlsangiz, “Yangi parolni bekor qilish” tugmasini bosing va PIN kodingizni oʻzgartiring.</string>
@@ -57,7 +57,7 @@
     <string name="help_lost_restore">Parollaringizni yangi telefonga oʻtkazish uchun unga %1$s ilovasini oʻrnating, “Zaxira nusxa faylidan tiklash” tugmasini bosing, eng yangi zaxira nusxangizni tanlang va asosiy parolni kiriting. Zaxira nusxasiz parollaringizni qaytarib boʻlmaydi.</string>
     <string name="help_lost_transfer">Ilovalaringizni yangi telefonga koʻchirish, masalan, “Ilovalar va maʼlumotlarni nusxalash” orqali, parollaringizni olib oʻtmaydi. Eski telefonda zaxira nusxa yarating va uni yangi telefonda tiklang.</string>
     <string name="help_lost_welcome_back">Agar yangi telefondagi %1$s ilovasi “Yana xush kelibsiz” desa, asosiy parolni bir marta kiriting. Soʻng yangi telefon uchun PIN kod tanlang.</string>
-    <string name="help_lost_backup">Parollar qoʻshganingiz yoki oʻzgartirganingizdan keyin har safar yangi zaxira nusxa yarating. Uni shu telefondan tashqarida saqlang: Google Drive xizmatida, kompyuterda yoki oʻzingizga yuborib qoʻying.</string>
+    <string name="help_lost_backup">Parollar qoʻshganingiz yoki oʻzgartirganingizdan keyin har safar yangi zaxira nusxa yarating. Uni bu telefondan tashqarida saqlang: Google Drive xizmatida, kompyuterda yoki oʻzingizga yuborib qoʻying.</string>
 
     <!-- ===== Asosiy parolingizni unutsangiz ===== -->
 
@@ -76,7 +76,7 @@
     <!-- ===== Versiya ===== -->
 
     <string name="help_version_number">Versiya %1$s (%2$d)</string>
-    <string name="help_version_about">%1$s ilovasi parollaringizni faqat shu telefonda saqlaydi. U hech qachon internetga ulanmaydi.</string>
+    <string name="help_version_about">%1$s ilovasi parollaringizni faqat bu telefonda saqlaydi. U hech qachon internetga ulanmaydi.</string>
     <string name="help_version_android">Bu telefon: Android %1$s</string>
     <string name="help_version_test_build">Sinov versiyasi: ilovani tekshirish uchun yaratilgan. Unda haqiqiy parollaringizni saqlamang.</string>
 
@@ -116,7 +116,7 @@
     <string name="help_licences_others_use">Yuqoridagi kutubxonalar uchun zarur boʻlgan kichik qismlar.</string>
     <string name="help_licences_material_icons_use">Tugmalar va sozlamalar qatorlaridagi nishonchalar, Android Studio dasturidagi Vector Asset Studio vositasidan olingan.</string>
     <string name="help_licences_own_icons">Ilovaning oʻz nishonchalari</string>
-    <string name="help_licences_own_icons_use">Ilova nishonchasi, logotipi va pastki paneldagi nishonchalar shu ilova uchun chizilgan. Eski telefonlar uchun nishoncha rasmlari uning chizmasidan librsvg yordamida tayyorlangan.</string>
+    <string name="help_licences_own_icons_use">Ilova nishonchasi, logotipi va pastki paneldagi nishonchalar bu ilova uchun chizilgan. Eski telefonlar uchun nishoncha rasmlari uning chizmasidan librsvg yordamida tayyorlangan.</string>
 
     <!-- ===== Birinchi nusxa olishdagi maslahat ===== -->
 

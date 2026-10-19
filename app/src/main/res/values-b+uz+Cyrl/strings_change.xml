@@ -38,7 +38,7 @@
     <string name="change_step4">Паролларни сайтга жойланг.</string>
     <string name="change_copy_new">Янги паролдан нусха олиш</string>
     <string name="change_hint_ask">Сайтлар одатда эски паролни бир марта, янгисини эса икки марта сўрайди.</string>
-    <string name="change_hint_chrome">Агар Chrome сиз учун парол яратишни таклиф қилса, ундан фойдаланманг. Шу илова яратган паролни жойланг.</string>
+    <string name="change_hint_chrome">Агар Chrome сиз учун парол яратишни таклиф қилса, ундан фойдаланманг. Бу илова яратган паролни жойланг.</string>
     <string name="change_first_step3">Аввал 3-қадамда янги парол яратинг.</string>
 
     <!-- ===== 5-қадам ===== -->
@@ -53,7 +53,7 @@
     <string name="change_done">“%1$s” ҳисобининг энди ўз пароли бор.</string>
     <string name="change_next">Кейингиси: %1$s</string>
     <string name="change_done_for_now">Ҳозирча якунлаш</string>
-    <string name="change_backup_only_here">“%1$s” ҳисобининг янги пароли захира нусха яратмагунингизча фақат шу телефонда бўлади.</string>
+    <string name="change_backup_only_here">“%1$s” ҳисобининг янги пароли захира нусха яратмагунингизча фақат бу телефонда бўлади.</string>
     <string name="change_back_up_now">Ҳозир захиралаш</string>
 
     <!-- ===== Экран пастидаги хабарлар ===== -->

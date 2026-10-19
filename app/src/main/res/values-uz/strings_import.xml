@@ -20,20 +20,20 @@
     <!-- ===== Manbalar ===== -->
 
     <string name="import_sources_intro">Parollaringiz hozir qayerda? Ular saqlangan faylni tanlang. Roʻyxatni tekshirib, import tugmasini bosmaguningizcha hech narsa qoʻshilmaydi.</string>
-    <string name="import_source_backup">Shu ilovaning zaxira nusxa fayli</string>
+    <string name="import_source_backup">Bu ilovaning zaxira nusxa fayli</string>
     <string name="import_source_backup_body">“Zaxira nusxa yaratish” orqali yaratilgan qulflangan fayl. Uni yaratgan paytingizdagi asosiy parol kerak boʻladi.</string>
     <string name="import_source_google">Google Password Manager yoki Chrome (CSV)</string>
     <string name="import_source_google_body">Avval parollaringizni Chrome brauzeridan eksport qiling. Qanday qilishni koʻrsatamiz.</string>
     <string name="import_source_csv">Boshqa parol ilovasi yoki CSV sifatida saqlangan jadval</string>
     <string name="import_source_csv_body">Bitwarden, KeePassXC, Firefox, Excel va boshqalar.</string>
-    <string name="import_source_json">JSON (shu ilova yoki Bitwarden)</string>
-    <string name="import_source_json_body">Shu ilova yoki Bitwarden eksport qilgan fayl. U shifrlanmagan boʻlishi kerak.</string>
+    <string name="import_source_json">JSON (bu ilova yoki Bitwarden)</string>
+    <string name="import_source_json_body">Bu ilova yoki Bitwarden eksport qilgan fayl. U shifrlanmagan boʻlishi kerak.</string>
     <string name="import_no_picker">Bu telefonda fayllarni ocha oladigan ilova yoʻq. Fayl menejerini yoqing yoki oʻrnating va qayta urining.</string>
     <string name="import_opening_picker">Fayl tanlash oynasi ochilmoqda…</string>
 
     <!-- ===== Google yoʻriqnomasi ===== -->
 
-    <string name="import_google_steps">Shu telefondagi Chrome brauzerida: ⋮ › Sozlamalar › (Avtomatik kiritish va parollar ›) Google Parollar menejeri › Sozlamalar › Parollarni eksport qilish › Faylni yuklab olish. Nomlar biroz farq qilishi mumkin. Soʻng shu yerga qayting va faylni tanlang.</string>
+    <string name="import_google_steps">Bu telefondagi Chrome brauzerida: ⋮ › Sozlamalar › (Avtomatik kiritish va parollar ›) Google Parollar menejeri › Sozlamalar › Parollarni eksport qilish › Faylni yuklab olish. Nomlar biroz farq qilishi mumkin. Soʻng shu yerga qayting va faylni tanlang.</string>
     <string name="import_google_cant_find">Topa olmayapman</string>
     <string name="import_google_settings">Telefoningizdagi Sozlamalar ilovasini oching va “Parollar menejeri” deb qidiring. Keyin oching: Google Parollar menejeri › Sozlamalar › Parollarni eksport qilish.</string>
     <string name="import_choose_file">Faylni tanlash</string>
