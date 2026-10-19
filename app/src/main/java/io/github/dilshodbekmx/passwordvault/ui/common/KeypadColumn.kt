@@ -26,8 +26,8 @@ import androidx.compose.ui.unit.dp
  *    screen, reached by scrolling the page;
  * 3. the smallest keys, the foot below, and the head given the height that is left, at least
  *    [minHead], scrolling there on its own: so [head] must be a column that scrolls;
- * 4. on a page too short for that (a small window), everything at its least, the page scrolling as a
- *    whole.
+ * 4. on a page too short for that (a small window, or a long line under the dots), everything at its
+ *    least, the head [minHead] high and scrolling there on its own, the page scrolling as a whole.
  *
  * What the head needs to show whole is its intrinsic height; a head whose parts cannot say (a layout
  * without intrinsic sizes) counts as needing [minHead]. The keys shrink in [PinKeys]
@@ -69,7 +69,9 @@ fun KeypadColumn(
         }
         val keysPlaced = keyPart.map { it.measure(loose.copy(maxHeight = keysLimit)) }
         val keysHeight = keysPlaced.sumOf { it.height }
-        val headConstraints = if (first != null) loose.copy(maxHeight = (first - dotsHeight - keysHeight).coerceAtLeast(0)) else loose
+        // In the fourth case the head is at its least too: given all it wanted, it pushed the whole keypad
+        // below the first screen (the lock pad's last try, its line long at 200 % on a 569 dp screen).
+        val headConstraints = loose.copy(maxHeight = if (first != null) (first - dotsHeight - keysHeight).coerceAtLeast(0) else least)
         val headPlaced = heads.map { it.measure(headConstraints) }
         val parts = headPlaced + dotsPlaced + keysPlaced + footPlaced
         val height = if (first == page - footHeight) page.coerceAtLeast(parts.sumOf { it.height }) else parts.sumOf { it.height }

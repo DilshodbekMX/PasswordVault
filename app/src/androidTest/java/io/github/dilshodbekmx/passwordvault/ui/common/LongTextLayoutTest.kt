@@ -230,6 +230,43 @@ class LongTextLayoutTest {
     }
 
     @Test
+    fun aKeypadPageTooShortForItsPartsKeepsItsTextsAtTheirLeast() {
+        // KeypadColumn's fourth case: a long line under the dots (the last try's "Wrong PIN. 1 try left. After
+        // that…" at 200 % on a 569 dp screen) leaves the keypad too little room even beside the least of the
+        // texts. Then everything is at its least and the page scrolls as a whole: the texts take MIN_HEAD and
+        // scroll in it, so the dots and the first keys stay on the first screen.
+        show(height = 569) {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
+                KeypadColumn(
+                    viewport = 569.dp,
+                    head = {
+                        Column(Modifier.verticalScroll(rememberScrollState()).testTag(HEAD).padding(horizontal = 24.dp)) {
+                            Text("Enter your app PIN", style = MaterialTheme.typography.headlineSmall)
+                            repeat(4) { Text("Use this PIN to open the app on this phone, like your bank app. It is not your phone's PIN.") }
+                        }
+                    },
+                    dots = {
+                        Column(Modifier.padding(horizontal = 24.dp)) {
+                            PinDots(entered = 2, modifier = Modifier.padding(16.dp))
+                            Text("Wrong PIN. 1 try left. After that you'll need your fingerprint or master password. Take your time.")
+                        }
+                    },
+                    keys = { PinKeys(onDigit = {}, onDelete = {}) },
+                    foot = { TextButton(onClick = {}, modifier = Modifier.padding(8.dp)) { Text("Forgot PIN? Use master password") } },
+                )
+            }
+        }
+        val density = compose.activity.resources.displayMetrics.density
+        val head = compose.onNodeWithTag(HEAD, useUnmergedTree = true).fetchSemanticsNode()
+        assertTrue("the texts take at most $MIN_HEAD: ${head.size.height / density} dp", head.size.height <= MIN_HEAD.value * density + 1)
+        // Where the parts lie on the page, scrolled away or not (boundsInRoot is empty for a node out of view).
+        val dots = compose.onNodeWithTag(PinPadTags.DOTS, useUnmergedTree = true).fetchSemanticsNode()
+        assertTrue("the dots are on the first screen", dots.positionInRoot.y + dots.size.height <= 569 * density)
+        val key = compose.onNodeWithTag(PinPadTags.key(1), useUnmergedTree = true).fetchSemanticsNode().positionInRoot.y
+        assertTrue("the keypad starts on the first screen: key 1 at ${key / density} dp", key < 569 * density)
+    }
+
+    @Test
     fun theTopBarMirrorsRightToLeft() {
         // ux.md §9: start and end everywhere. In a right-to-left language the back button stands at the
         // right, where a line starts, the title beside it, and the screen's actions at the left.
