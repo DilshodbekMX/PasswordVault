@@ -52,6 +52,16 @@ object ResourceCheck {
         // setup_own_hint_keyboard the English text's own example of a key row; in Cyrillic letters they
         // would name other characters.
         "I l 1 O 0", "qwerty",
+        // Build plan 6.3b: names that part b's Cyrillic files write as its Latin files do: apps and
+        // formats, the backup file's name, an example web address, the menu paths of programs that
+        // the Latin text quotes in English, the libraries and licences of the licences page, and the
+        // word "yo-yo" of the EFF list.
+        "PasswordVault-backup", "Bitwarden", "KeePassXC", "KeePass", "Firefox", "Proton Pass", "Google Sheets",
+        "Samsung Keyboard", "Samsung", "UTF-8", "File › Save As", "Database › Export", ".json (Encrypted)",
+        "accounts.google.com", "APK", "CC BY-SA 4.0", "yo-yo", "zxcvbn4j", "Java", "Argon2kt", "Argon2",
+        "Apache License 2.0", "Material 3", "Jetpack Compose", "Navigation 3", "Lifecycle", "Activity",
+        "AppCompat", "Core", "kotlinx.coroutines", "kotlinx.serialization", "Android Studio",
+        "Vector Asset Studio", "librsvg",
     ).sortedByDescending { it.length }
 
     /** The checks for [language] over the resource directory [res] (`app/src/main/res`). */
