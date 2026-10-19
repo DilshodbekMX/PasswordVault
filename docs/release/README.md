@@ -28,7 +28,7 @@ xdg-open /home/asus/AndroidStudioProjects/PasswordVault/docs/release/step-3-phon
 |---|---|---|---|
 | **The release key**: the folder `/home/asus/passwordvault-key`, with the file `passwordvault-release.jks` | Android installs an update only when it is signed with the same key as the app on the phone. Nobody can make this key again, not even with the password. Without it the app on your phone can never be updated. | USB stick 1, in envelope 1, at home | USB stick 2, in envelope 2, in another building (a relative you trust, or a locked drawer at work) |
 | **The release key's password** | The key file is useless without it. | On paper, in envelope 1 | On paper, in envelope 2 |
-| **Your master password** | It opens your passwords on a new phone, from a backup file, and when you forget your PIN. Nobody can reset it: there is no "Forgot password" email. | On the paper from the app's setup ("Write it down"), at home, not with the phone | On a second paper, in a sealed envelope, in another building |
+| **Your master password** | It opens your passwords on a new phone, from a backup file, and when you forget your PIN. Nobody can reset it: there is no "Forgot password" email. | On the paper from the app's setup ("Write it down on paper"), at home, not with the phone | On a second paper, in a sealed envelope, in another building |
 
 Two more rules:
 
@@ -48,6 +48,11 @@ Two more rules:
 | Terminal | The Terminal app of Ubuntu. Open it with **Ctrl+Alt+T**. |
 | Project folder | `/home/asus/AndroidStudioProjects/PasswordVault` |
 | adb | A program of Android Studio that talks to the phone over the USB cable. These pages always give its full path. |
+
+The pages quote the app's texts in English. If your app is set to Oʻzbekcha, Ўзбекча or
+Русский, the words differ, but the screens and buttons are the same. To follow the pages
+word by word, switch the app to English (Settings › **Til · Тил · Язык · Language** ›
+English) and back afterwards.
 
 ## How to use the commands
 
