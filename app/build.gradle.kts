@@ -1,6 +1,8 @@
 import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.variant.BuiltArtifactsLoader
 import java.io.ByteArrayOutputStream
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import java.util.Properties
 import java.util.zip.ZipFile
 import javax.inject.Inject
@@ -227,8 +229,18 @@ class VariantSpec(
     /** R-2: whether the debug receiver's class is in the APK. */
     val hasDebugReceiver: Boolean,
     val allowBackup: Boolean,
-    /** R8 runs (§7.2), so R-16 reads the variant's mapping. */
+    /**
+     * R8 runs (§7.2), so R-16 reads the variant's mapping, and R-17 reads the APK's classes through
+     * it. These are the optimised builds, which also leave out every JVM class file (R-17).
+     */
     val r8: Boolean,
+    /** The merged manifest's `android:debuggable` (§7.2, "Debuggable"). */
+    val debuggable: Boolean,
+    /**
+     * R-17: src/debug is one of the variant's source sets, so classes of the app's `debug` and
+     * `fake` packages may be in its APK. Where it is not (release), none may.
+     */
+    val debugSources: Boolean,
 )
 
 val mainActivity = "$appId.MainActivity"
@@ -244,11 +256,27 @@ val phoneAbis = setOf("arm64-v8a", "armeabi-v7a")
 val emulatorAbis = phoneAbis + "x86_64"
 
 val variantSpecs = mapOf(
-    "debug" to VariantSpec(true, false, emulatorAbis, debugExported, true, false, r8 = false),
-    "staging" to VariantSpec(true, true, emulatorAbis, stagingExported, true, false, r8 = true),
-    "release" to VariantSpec(false, true, phoneAbis, releaseExported, false, false, r8 = true),
-    "backupCheck" to VariantSpec(true, false, emulatorAbis, debugExported, true, true, r8 = false),
+    "debug" to VariantSpec(
+        true, false, emulatorAbis, debugExported, true, false, r8 = false, debuggable = true, debugSources = true,
+    ),
+    "staging" to VariantSpec(
+        true, true, emulatorAbis, stagingExported, true, false, r8 = true, debuggable = false, debugSources = true,
+    ),
+    "release" to VariantSpec(
+        false, true, phoneAbis, releaseExported, false, false, r8 = true, debuggable = false, debugSources = false,
+    ),
+    "backupCheck" to VariantSpec(
+        true, false, emulatorAbis, debugExported, true, true, r8 = false, debuggable = true, debugSources = true,
+    ),
 )
+
+/**
+ * R-17: the app's test hooks (src/debug: the debug commands and the fakes of the app's interfaces)
+ * and the fakes of `:testing`, which is only ever a test dependency. A package here includes its
+ * sub-packages.
+ */
+val debugPackages = setOf("$appId.debug", "$appId.fake")
+val testingPackage = "$appId.testing"
 
 /**
  * R-16: the members that R8 must keep under their own names, by class, as `mapping.txt` writes
@@ -277,7 +305,8 @@ val allowedPermissions = setOf(
 /**
  * R-1 (no INTERNET), R-5 (FingerprintDialogActivity not exported), R-7 (HIDE_OVERLAY_WINDOWS),
  * R-9 (permissions and exported components), R-14 (package and generator string), and the
- * variant's allowBackup, read from the merged manifest, which includes everything libraries add.
+ * variant's allowBackup and debuggable, read from the merged manifest, which includes everything
+ * libraries add.
  */
 abstract class CheckMergedManifest : DefaultTask() {
     @get:InputFile
@@ -289,6 +318,7 @@ abstract class CheckMergedManifest : DefaultTask() {
     @get:Input abstract val allowedPermissions: SetProperty<String>
     @get:Input abstract val exported: SetProperty<String>
     @get:Input abstract val allowBackup: Property<Boolean>
+    @get:Input abstract val debuggable: Property<Boolean>
 
     @get:OutputFile abstract val report: RegularFileProperty
 
@@ -363,13 +393,18 @@ abstract class CheckMergedManifest : DefaultTask() {
         val backup = application.android("allowBackup") == "true"
         if (backup != allowBackup.get()) problems += "allowBackup is $backup, expected ${allowBackup.get()}"
 
+        // debuggable: only debug and backupCheck (architecture.md §7.2). A debuggable build lets
+        // `run-as` read the vault and the lock records, and a debugger attach.
+        val isDebuggable = application.android("debuggable") == "true"
+        if (isDebuggable != debuggable.get()) problems += "android:debuggable is $isDebuggable, expected ${debuggable.get()}"
+
         val v = variantName.get()
         if (problems.isNotEmpty()) {
             throw GradleException("Build checks failed for the merged manifest of '$v':\n- " + problems.joinToString("\n- "))
         }
         report.get().asFile.writeText(
             "Merged manifest of '$v': package $pkg, generator '$generator'\n" +
-                "permissions: $uses\nexported: $exportedNow\nallowBackup: $backup\n" +
+                "permissions: $uses\nexported: $exportedNow\nallowBackup: $backup\ndebuggable: $isDebuggable\n" +
                 "R-1, R-5, R-7, R-9 and R-14 pass.\n",
         )
     }
@@ -379,17 +414,34 @@ abstract class CheckMergedManifest : DefaultTask() {
  * R-8: the APK's native libraries are exactly the variant's ABIs (release: arm64-v8a and
  * armeabi-v7a only). R-2: the debug receiver's class is in the APK exactly where the variant
  * declares the receiver, and never in release.
+ *
+ * R-17: no class of [forbiddenPackages] is in the APK: in release, none of the app's `debug` and
+ * `fake` packages (src/debug, which release does not compile), and in no variant any of `:testing`.
+ * The classes are those the APK's dex files define, under their original names: where R8 ran, its
+ * mapping gives them, since R8 renames and moves almost every class (in release `a00` is a class of
+ * androidx). Where R8 ran, its mapping also names no code of those packages, so nothing of them was
+ * inlined into or merged with another class; no dex file names one of their types; and the APK
+ * holds no JVM class file, which ART would never load (kotlinx-coroutines' DebugProbesKt.bin is left
+ * out of these builds). The report counts the classes of [countedPackages].
  */
 abstract class CheckApk : DefaultTask() {
     @get:InputFiles
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val apkFolder: DirectoryProperty
 
+    /** R8's mapping of the variant, only where R8 runs. */
+    @get:Optional
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.NONE)
+    abstract val mapping: RegularFileProperty
+
     @get:Internal abstract val artifactsLoader: Property<BuiltArtifactsLoader>
     @get:Input abstract val variantName: Property<String>
     @get:Input abstract val abis: SetProperty<String>
     @get:Input abstract val debugReceiver: Property<String>
     @get:Input abstract val hasDebugReceiver: Property<Boolean>
+    @get:Input abstract val forbiddenPackages: SetProperty<String>
+    @get:Input abstract val countedPackages: SetProperty<String>
 
     @get:OutputFile abstract val report: RegularFileProperty
 
@@ -399,6 +451,10 @@ abstract class CheckApk : DefaultTask() {
         val apks = artifactsLoader.get().load(apkFolder.get())?.elements?.map { File(it.outputFile) }.orEmpty()
         if (apks.isEmpty()) throw GradleException("No APK found for '$v' in ${apkFolder.get().asFile}")
         val descriptor = "L" + debugReceiver.get().replace('.', '/') + ";"
+        val forbidden = forbiddenPackages.get().toSortedSet()
+        val counted = (countedPackages.get() + forbidden).toSortedSet()
+        val r8 = mapping.isPresent
+        val map = if (r8) readMapping(mapping.get().asFile, forbidden) else null
         val problems = mutableListOf<String>()
         val lines = mutableListOf<String>()
         for (apk in apks) {
@@ -409,19 +465,151 @@ abstract class CheckApk : DefaultTask() {
                 if (found != abis.get().toSortedSet()) {
                     problems += "R-8: ${apk.name} has native libraries for $found; expected exactly ${abis.get().toSortedSet()}"
                 }
-                val inDex = names.filter { Regex("classes\\d*\\.dex").matches(it) }.any { dex ->
+                val dexNames = names.filter { Regex("classes\\d*\\.dex").matches(it) }
+                if (dexNames.isEmpty()) problems += "R-17: ${apk.name} has no classes.dex"
+                var inDex = false
+                val classes = mutableListOf<String>()
+                val typesNamed = forbidden.associateWith { mutableListOf<String>() }
+                for (dex in dexNames) {
                     val bytes = zip.getInputStream(zip.getEntry(dex)).use { it.readBytes() }
-                    String(bytes, Charsets.ISO_8859_1).contains(descriptor)
+                    val text = String(bytes, Charsets.ISO_8859_1)
+                    if (text.contains(descriptor)) inDex = true
+                    for (p in forbidden) {
+                        val typePrefix = "L" + p.replace('.', '/') + "/"
+                        if (text.contains(typePrefix)) typesNamed.getValue(p) += dex
+                    }
+                    classes += dexClassNames(bytes, "${apk.name}!$dex")
                 }
                 if (inDex != hasDebugReceiver.get()) {
                     problems += "R-2: ${debugReceiver.get()} is ${if (inDex) "" else "not "}in ${apk.name}; " +
                         "expected ${if (hasDebugReceiver.get()) "in" else "not in"} '$v'"
                 }
+
+                // R-17. A class that the mapping does not list kept its name.
+                val original = classes.map { map?.originalOf?.get(it) ?: it }
+                val unlisted = if (map == null) 0 else classes.count { it !in map.originalOf }
+                val counts = counted.associateWith { p -> original.filter { it == p || it.startsWith("$p.") }.sorted() }
+                for (p in forbidden) {
+                    val hits = counts.getValue(p)
+                    if (hits.isNotEmpty()) {
+                        problems += "R-17: ${apk.name} holds classes of $p (${hits.size}), for example ${hits.take(3)}"
+                    }
+                    if (typesNamed.getValue(p).isNotEmpty()) {
+                        problems += "R-17: ${typesNamed.getValue(p)} of ${apk.name} name types of $p"
+                    }
+                    val mentions = map?.mentions?.getValue(p)
+                    if (mentions != null && mentions.count > 0) {
+                        problems += "R-17: R8's mapping of '$v' names code of $p (a class, or code inlined into or merged " +
+                            "with another) on ${mentions.count} lines, for example ${mentions.examples}"
+                    }
+                }
+                val classFiles = if (r8) jvmClassFiles(zip, names) else emptyList()
+                if (classFiles.isNotEmpty()) {
+                    problems += "R-17: ${apk.name} holds JVM class files, which ART never loads: $classFiles"
+                }
+
                 lines += "${apk.name}: lib/ $found, debug receiver ${if (inDex) "present" else "absent"}"
+                lines += "${apk.name}: ${classes.size} classes (dex files: ${dexNames.size})" +
+                    if (map == null) {
+                        ", under their own names (no R8)"
+                    } else {
+                        ", named back through R8's mapping (${map.originalOf.size} class lines; " +
+                            "$unlisted classes not listed there, so not renamed)"
+                    }
+                for ((p, hits) in counts) {
+                    lines += "  $p: ${hits.size} classes" + if (p in forbidden) " (must be 0)" else ""
+                }
+                if (map != null) {
+                    lines += "  R8's mapping names code of " + forbidden.joinToString(", ") { p -> "$p on ${map.mentions.getValue(p).count} lines" }
+                    lines += "  JVM class files in the APK: ${classFiles.size}"
+                }
             }
         }
         if (problems.isNotEmpty()) throw GradleException("Build checks failed for the APK of '$v':\n- " + problems.joinToString("\n- "))
-        report.get().asFile.writeText(lines.joinToString("\n", postfix = "\nR-2 (APK part) and R-8 pass.\n"))
+        report.get().asFile.writeText(lines.joinToString("\n", postfix = "\nR-2 (APK part), R-8 and R-17 pass.\n"))
+    }
+
+    /** How often, and on which lines, a mapping names code of one package. */
+    class Mentions {
+        var count = 0
+        val examples = mutableListOf<String>()
+    }
+
+    /** R8's mapping: each class line as R8's name to the original one, and the lines naming code of watched packages. */
+    class Mapping(val originalOf: Map<String, String>, val mentions: Map<String, Mentions>)
+
+    /**
+     * Reads `mapping.txt`, where a class is a line `original -> renamed:` and its members are indented
+     * lines below it; an inlined method's frame names its own class (`1:2:void a.B.c():3:4 -> d`), and
+     * comment lines (`#`) carry R8's notes in JSON, some with type descriptors.
+     */
+    private fun readMapping(file: File, watched: Set<String>): Mapping {
+        val originalOf = HashMap<String, String>()
+        val mentions = watched.associateWith { Mentions() }
+        val spellings = watched.associateWith { listOf("$it.", it.replace('.', '/') + "/") }
+        val classLine = Regex("(\\S+) -> (\\S+):")
+        file.useLines { lines ->
+            for (line in lines) {
+                for ((p, forms) in spellings) {
+                    if (forms.any { line.contains(it) }) {
+                        val m = mentions.getValue(p)
+                        m.count++
+                        if (m.examples.size < 3) m.examples += line.trim()
+                    }
+                }
+                if (line.isEmpty() || line[0] == '#' || line[0].isWhitespace()) continue
+                classLine.matchEntire(line)?.let { originalOf[it.groupValues[2]] = it.groupValues[1] }
+            }
+        }
+        return Mapping(originalOf, mentions)
+    }
+
+    /**
+     * The classes a dex file defines, from its `class_defs`, as `a.b.C`. Dex 035 to 040 hold one dex
+     * per file; a later version may hold several in one container, which this does not read, so it
+     * fails rather than check part of the file.
+     */
+    private fun dexClassNames(dex: ByteArray, where: String): List<String> {
+        fun fail(why: String): Nothing = throw GradleException("R-17: cannot read $where: $why")
+        if (dex.size < 0x70) fail("${dex.size} bytes, less than a dex header")
+        val magic = String(dex, 0, 8, Charsets.ISO_8859_1)
+        if (!Regex("dex\n0(3[5-9]|40)\u0000").matches(magic)) fail("not a dex file of version 035 to 040")
+        val buf = ByteBuffer.wrap(dex).order(ByteOrder.LITTLE_ENDIAN)
+        fun u4(at: Int): Int {
+            if (at < 0 || at > dex.size - 4) fail("offset $at is outside the file")
+            return buf.getInt(at).also { if (it < 0) fail("value at $at is out of range") }
+        }
+        val stringIdsSize = u4(0x38)
+        val stringIdsOff = u4(0x3C)
+        val typeIdsSize = u4(0x40)
+        val typeIdsOff = u4(0x44)
+        val classDefsSize = u4(0x60)
+        val classDefsOff = u4(0x64)
+        return List(classDefsSize) { i ->
+            // class_def_item: 8 uints, the first the index of the class's type_id.
+            val type = u4(classDefsOff + 32 * i)
+            if (type >= typeIdsSize) fail("class_def $i names type $type of $typeIdsSize")
+            val string = u4(typeIdsOff + 4 * type)
+            if (string >= stringIdsSize) fail("type $type names string $string of $stringIdsSize")
+            // string_data_item: the length as ULEB128, then MUTF-8 bytes up to a 0 byte.
+            var at = u4(stringIdsOff + 4 * string)
+            while (at < dex.size && dex[at] < 0) at++
+            at++
+            var end = at
+            while (end < dex.size && dex[end] != 0.toByte()) end++
+            if (end >= dex.size) fail("string $string runs past the end of the file")
+            val name = String(dex, at, end - at, Charsets.UTF_8)
+            if (name.length < 3 || name[0] != 'L' || !name.endsWith(";")) fail("class_def $i is '$name', not a class type")
+            name.substring(1, name.length - 1).replace('/', '.')
+        }
+    }
+
+    /** Entries that are JVM class files: named `.class`, or starting with the class file magic 0xCAFEBABE. */
+    private fun jvmClassFiles(zip: ZipFile, names: List<String>): List<String> = names.filter { name ->
+        if (name.endsWith("/")) return@filter false
+        if (name.endsWith(".class")) return@filter true
+        val head = zip.getInputStream(zip.getEntry(name)).use { it.readNBytes(4) }
+        head.size == 4 && ByteBuffer.wrap(head).int == 0xCAFEBABE.toInt()
     }
 }
 
@@ -556,16 +744,20 @@ androidComponents {
             allowedPermissions.set(expectedPermissions)
             exported.set(spec.exported)
             allowBackup.set(spec.allowBackup)
+            debuggable.set(spec.debuggable)
             report.set(reports.map { it.file("manifest.txt") })
         }
         val apkCheck = tasks.register<CheckApk>("buildCheck${cap}Apk") {
-            description = "R-2 and R-8 on the APK of ${variant.name}."
+            description = "R-2, R-8 and R-17 on the APK of ${variant.name}."
             apkFolder.set(variant.artifacts.get(SingleArtifact.APK))
+            if (spec.r8) mapping.set(variant.artifacts.get(SingleArtifact.OBFUSCATION_MAPPING_FILE))
             artifactsLoader.set(variant.artifacts.getBuiltArtifactsLoader())
             variantName.set(variant.name)
             abis.set(spec.abis)
             debugReceiver.set(receiverClass)
             hasDebugReceiver.set(spec.hasDebugReceiver)
+            forbiddenPackages.set(if (spec.debugSources) setOf(testingPackage) else debugPackages + testingPackage)
+            countedPackages.set(debugPackages + testingPackage)
             report.set(reports.map { it.file("apk.txt") })
         }
         val buildConfigCheck = tasks.register<CheckBuildConfig>("buildCheck${cap}BuildConfig") {
