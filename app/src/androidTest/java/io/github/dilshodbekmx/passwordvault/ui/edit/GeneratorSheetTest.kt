@@ -4,6 +4,7 @@ import android.content.res.Configuration
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.width
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
@@ -47,7 +48,7 @@ class GeneratorSheetTest {
      * 320 dp wide) at a font scale of 2, in the language [tag]. Drawn without the sheet: a bottom sheet is
      * a window of its own, which takes the phone's own density, font scale and language.
      */
-    private fun show(tag: String) {
+    private fun show(tag: String, content: @Composable () -> Unit = { SeparatorChoices(GeneratorOptions.Separator.HYPHEN, onChoose = {}) }) {
         compose.setContent {
             val configuration = Configuration(LocalConfiguration.current).apply { setLocale(Locale.forLanguageTag(tag)) }
             val context = LocalContext.current.createConfigurationContext(configuration)
@@ -58,7 +59,7 @@ class GeneratorSheetTest {
                 LocalDensity provides Density(density.density, fontScale = 2f),
             ) {
                 PasswordVaultTheme(ThemeChoice.LIGHT) {
-                    Box(Modifier.width(272.dp)) { SeparatorChoices(GeneratorOptions.Separator.HYPHEN, onChoose = {}) }
+                    Box(Modifier.width(272.dp)) { content() }
                 }
             }
         }
@@ -101,6 +102,32 @@ class GeneratorSheetTest {
         }
         assertEquals("$tag: the name alone where it is its own symbol", text(tag, R.string.edit_gen_separator_space), shown(GeneratorOptions.Separator.SPACE))
         assertClean(tag)
+    }
+
+    /**
+     * Build plan §12, R6 question 1 (answer B, "Tasodifiy" / "Тасодифий"): the kind's two segments keep
+     * their words whole at 272 dp and 200 % in every language, the check mark above the label where a
+     * label does not fit beside it.
+     */
+    @Test
+    fun theKindsKeepTheirWordsWhole_inUzbekCyrillic() = kinds("uz-Cyrl")
+
+    @Test
+    fun theKindsKeepTheirWordsWhole_inUzbekLatin() = kinds("uz")
+
+    @Test
+    fun theKindsKeepTheirWordsWhole_inRussian() = kinds("ru")
+
+    @Test
+    fun theKindsKeepTheirWordsWhole_inEnglish() = kinds("en")
+
+    private fun kinds(tag: String) {
+        show(tag) { KindChoices(GeneratorOptions.Kind.RANDOM, onChoose = {}) }
+        for ((kind, id) in listOf(GenTags.RANDOM to R.string.edit_gen_random, GenTags.WORDS to R.string.edit_gen_words)) {
+            val texts = compose.onNodeWithTag(kind).fetchSemanticsNode().config.getOrNull(SemanticsProperties.Text).orEmpty().map { it.text }
+            assertEquals("$tag $kind", listOf(text(tag, id)), texts)
+        }
+        assertClean("$tag: the kinds")
     }
 
     /** The description of the separator [separator]'s row, which TalkBack says in place of what it shows. */
