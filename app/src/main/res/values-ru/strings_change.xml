@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Русский: the guided change of one password (build plan 6.4b; ux.md §5.17). Glossary (i18n.md §3):
+     95 «Изменить пароль», 36 «Открыть сайт», 76 «Создать пароль», 30 «Скопировано», 39 «Далее».
+     The OLD password is the one the website has now, the NEW one the app created. An account's name
+     (%1$s) cannot be declined in Russian, so it follows «аккаунт» in quotes (i18n.md §4.4). -->
+<resources>
+
+    <string name="change_title">Изменить пароль</string>
+    <string name="change_back">Назад</string>
+
+    <string name="change_last_one">Остался последний! После этого ваш старый пароль больше нигде не используется.</string>
+    <string name="change_step_number">Шаг %1$d из %2$d</string>
+
+    <string name="change_step1">Откройте сайт или приложение «%1$s» и войдите в аккаунт.</string>
+    <string name="change_open_website">Открыть сайт</string>
+    <string name="change_copy_old">Копировать старый пароль</string>
+
+    <string name="change_step2">Найдите «Изменить пароль».</string>
+    <string name="change_step2_where">Обычно это в разделе «Настройки › Безопасность» или «Аккаунт › Пароль».</string>
+
+    <string name="change_step3">Создайте новый пароль.</string>
+    <string name="change_create">Создать новый пароль</string>
+    <string name="change_create_another">Создать другой пароль</string>
+    <string name="change_saved">Сохранено. Старый пароль хранится, пока вы не закончите.</string>
+    <string name="change_rules">Требования к паролю</string>
+
+    <string name="change_step4">Вставьте пароли на сайте.</string>
+    <string name="change_copy_new">Копировать новый пароль</string>
+    <string name="change_hint_ask">Обычно сайты просят ввести старый пароль один раз, а новый&#160;— дважды.</string>
+    <string name="change_hint_chrome">Если Chrome предложит создать для вас пароль, не соглашайтесь. Вставьте наш.</string>
+    <string name="change_first_step3">Сначала создайте новый пароль на шаге 3.</string>
+
+    <string name="change_step5">Сайт принял новый пароль?</string>
+    <string name="change_yes">Да, пароль изменён</string>
+    <string name="change_no">Нет, вернуть старый пароль</string>
+    <string name="change_later">Закончу позже</string>
+
+    <string name="change_done">Теперь у аккаунта «%1$s» свой пароль.</string>
+    <string name="change_next">Далее: %1$s</string>
+    <string name="change_done_for_now">Закончить на этом</string>
+    <string name="change_backup_only_here">Новый пароль аккаунта «%1$s» есть только на этом телефоне, пока вы не создадите резервную копию.</string>
+    <string name="change_back_up_now">Создать резервную копию</string>
+
+    <string name="change_created">Новый пароль сохранён.</string>
+    <string name="change_reverted">Старый пароль возвращён.</string>
+    <string name="change_save_failed">Не удалось сохранить. Возможно, хранилище телефона заполнено.</string>
+    <string name="change_too_large">Ваши пароли больше не помещаются в один файл. Удалите ненужные аккаунты или сократите очень длинные заметки.</string>
+    <string name="change_no_browser">На этом телефоне не найден браузер.</string>
+    <string name="change_copy_blocked">Этот телефон заблокировал копирование. Откройте аккаунт, нажмите «Показать крупно» и введите пароль вручную.</string>
+
+    <string name="change_gone">Этот аккаунт больше не существует.</string>
+    <string name="change_gone_deleted">Этот аккаунт удалён. В течение 30&#160;дней его можно восстановить в разделе «Недавно удалённые».</string>
+
+    <string name="change_copied_old">Старый пароль аккаунта «%1$s»</string>
+    <string name="change_copied_new">Новый пароль аккаунта «%1$s»</string>
+    <string name="change_copied">Скопировано</string>
+</resources>

@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Русский: the Settings tab (build plan 6.4b; ux.md §5.18). Words of the glossary (i18n.md §3):
+     69 «Блокировка приложения», 55 «задать PIN-код» (a row, so the infinitive), 62 «Разблокировка по
+     отпечатку пальца», 70 to 73 (the lock delay), 113 «Очистка буфера обмена» (the row's title; its
+     values carry «Через», as the lock delay's do), 115 to 117 (light or dark), 121. "Open-source
+     licences" is «Лицензии открытого ПО», as the English says (glossary 120 is "Third-party licences").
+     The style names (glossary 150 to 157) are names, spelled the same everywhere. -->
+<resources>
+
+    <string name="settings_title">Настройки</string>
+
+    <string name="settings_group_app_lock">Блокировка приложения</string>
+    <string name="settings_change_pin">Изменить PIN-код</string>
+    <string name="settings_set_pin">Задать PIN-код</string>
+    <string name="settings_pin_off_limit">Разблокировка по PIN-коду отключена после слишком большого числа неверных попыток.</string>
+    <string name="settings_pin_stopped_working">PIN-код перестал работать на этом телефоне.</string>
+    <string name="settings_pin_newer_app">PIN-код был задан в более новой версии этого приложения.</string>
+    <string name="settings_pin_storage_full">Хранилище телефона заполнено, поэтому сейчас не удаётся проверить PIN-код.</string>
+    <string name="settings_pin_cannot_check">Сейчас не удаётся проверить PIN-код. Если это повторяется, задайте новый PIN-код с помощью мастер-пароля.</string>
+    <string name="settings_no_secure_hardware">Этот телефон не может хранить ключ PIN-кода или отпечатка пальца в защищённом аппаратном хранилище.</string>
+
+    <string name="settings_fingerprint">Разблокировка по отпечатку пальца</string>
+    <string name="settings_fingerprint_turn_on_again">Разблокировка по отпечатку пальца: включите снова</string>
+    <string name="settings_fingerprint_none_enrolled">Сначала настройте блокировку экрана и добавьте отпечаток пальца в настройках телефона</string>
+    <string name="settings_fingerprint_no_sensor">На этом телефоне нет сканера отпечатков пальцев, доступного приложениям</string>
+    <string name="settings_fingerprint_not_for_apps">Сейчас отпечаток пальца нельзя использовать в приложениях. Проверьте в настройках телефона, что отпечаток пальца разрешено использовать для подтверждения личности в приложениях.</string>
+    <string name="settings_fingerprint_update_needed">Чтобы можно было использовать отпечаток пальца, телефону нужно обновление системы безопасности</string>
+    <string name="settings_fingerprint_on_body">Введите мастер-пароль, чтобы включить разблокировку по отпечатку пальца.</string>
+    <string name="settings_fingerprint_on_button">Включить</string>
+    <string name="settings_fingerprint_failed">Не удалось включить разблокировку по отпечатку пальца. Повторите попытку позже.</string>
+    <string name="settings_fingerprint_is_on">Разблокировка по отпечатку пальца включена.</string>
+
+    <string name="settings_lock_delay">Блокировка после выхода из приложения</string>
+    <string name="settings_lock_delay_immediately">Сразу</string>
+    <plurals name="settings_lock_delay_seconds">
+        <item quantity="one">Через %d&#160;секунду</item>
+        <item quantity="few">Через %d&#160;секунды</item>
+        <item quantity="many">Через %d&#160;секунд</item>
+        <item quantity="other">Через %d&#160;секунды</item>
+    </plurals>
+    <plurals name="settings_lock_delay_minutes">
+        <item quantity="one">Через %d&#160;минуту</item>
+        <item quantity="few">Через %d&#160;минуты</item>
+        <item quantity="many">Через %d&#160;минут</item>
+        <item quantity="other">Через %d&#160;минуты</item>
+    </plurals>
+    <string name="settings_lock_delay_note">Время в окне выбора файлов или в меню «Поделиться», которые открыло приложение, считается временем в приложении.</string>
+    <string name="settings_lock_always">Приложение также блокируется сразу при выключении экрана и через 5&#160;минут без касаний.</string>
+
+    <string name="settings_clip_delay">Очистка буфера обмена</string>
+    <plurals name="settings_clip_delay_seconds">
+        <item quantity="one">Через %d&#160;секунду</item>
+        <item quantity="few">Через %d&#160;секунды</item>
+        <item quantity="many">Через %d&#160;секунд</item>
+        <item quantity="other">Через %d&#160;секунды</item>
+    </plurals>
+    <plurals name="settings_clip_delay_minutes">
+        <item quantity="one">Через %d&#160;минуту</item>
+        <item quantity="few">Через %d&#160;минуты</item>
+        <item quantity="many">Через %d&#160;минут</item>
+        <item quantity="other">Через %d&#160;минуты</item>
+    </plurals>
+
+    <string name="settings_change_master_password">Изменить мастер-пароль</string>
+    <string name="settings_lock_now">Заблокировать сейчас</string>
+
+    <string name="settings_group_backup">Резервное копирование и перенос</string>
+    <string name="settings_backup">Создать резервную копию</string>
+    <string name="settings_backup_last">Последняя резервная копия: %1$s, %2$s</string>
+    <string name="settings_backup_none">Резервных копий пока нет</string>
+    <string name="settings_place_phone">этот телефон</string>
+    <string name="settings_backup_reminders">Напоминания о резервном копировании</string>
+    <string name="settings_export">Экспорт</string>
+    <string name="settings_export_body">Файл Excel, CSV или JSON</string>
+    <string name="settings_import">Импорт</string>
+    <string name="settings_import_body">Из Chrome, другого приложения для паролей или файла</string>
+    <string name="settings_old_passwords">Старые пароли (заблокированы %1$s)</string>
+
+    <string name="settings_group_appearance">Оформление и язык</string>
+    <string name="settings_appearance">Оформление</string>
+    <string name="settings_appearance_value">%1$s · %2$s</string>
+    <string name="settings_colours">Цвета</string>
+    <string name="settings_style_bank_blue">Банковский синий</string>
+    <string name="settings_style_emerald">Изумруд</string>
+    <string name="settings_style_night_vault">Ночной сейф</string>
+    <string name="settings_style_phone">Цвета телефона</string>
+    <string name="settings_style_phone_body">На основе ваших обоев</string>
+    <string name="settings_light_or_dark">Светлая или тёмная тема</string>
+    <string name="settings_theme_system">Тема устройства</string>
+    <string name="settings_theme_light">Светлая</string>
+    <string name="settings_theme_dark">Тёмная</string>
+
+    <string name="settings_group_help">Справка</string>
+    <string name="settings_help_protection">Как защищены ваши пароли</string>
+    <string name="settings_help_lost_phone">Если вы потеряете телефон или перейдёте на новый</string>
+    <string name="settings_help_forgot_master_password">Если вы забудете мастер-пароль</string>
+    <string name="settings_help_forgot_pin">Если вы забудете PIN-код</string>
+    <string name="settings_licences">Лицензии открытого ПО</string>
+    <string name="settings_version">Версия</string>
+
+    <string name="settings_not_saved">Не удалось сохранить настройку. Повторите попытку.</string>
+    <string name="settings_back">Назад</string>
+
+</resources>
