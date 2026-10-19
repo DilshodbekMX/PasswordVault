@@ -11,7 +11,6 @@ import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasScrollToNodeAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.isDialog
-import androidx.compose.ui.test.isPopup
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
@@ -178,9 +177,10 @@ class Walker(private val compose: ComposeTestRule, val run: LayoutRun) {
      *
      * When the run asks for them ([LayoutRun.stretchShots]: the owner's picture set), a list or column
      * also gets a picture each time it has moved by about the part it shows (a lazy list moves by a few
-     * rows per stretch), and one at its end, as `<screen>--2`, `--3`, ...; with a dialog or a menu open,
-     * only the lists inside it do (a list behind it would move under the same dialog). Such a run follows
-     * a list to its end ([MAX_STRETCHES_FOR_PICTURES]).
+     * rows per stretch), and one at its end, as `<screen>--2`, `--3`, ...; with a dialog open, only the
+     * lists inside it do (a list behind it would move under the same dialog; a menu is looked at without
+     * scrolling). Such a run follows a list to its end ([MAX_STRETCHES_FOR_PICTURES]) and notes how many
+     * pictures each screen got.
      */
     fun look(screen: String, scrollLists: Boolean = true, english: Boolean = true) {
         compose.waitForIdle()
@@ -194,7 +194,7 @@ class Walker(private val compose: ComposeTestRule, val run: LayoutRun) {
         // row it belongs to, and the menu with it.
         val scrollers = if (!scrollLists) emptyList() else compose.onAllNodes(hasScrollAction() and scrollsVertically, useUnmergedTree = true).fetchSemanticsNodes(atLeastOneRootRequired = false)
         val overlays = run.stretchShots &&
-            compose.onAllNodes(isDialog() or isPopup(), useUnmergedTree = true).fetchSemanticsNodes(atLeastOneRootRequired = false).isNotEmpty()
+            compose.onAllNodes(isDialog(), useUnmergedTree = true).fetchSemanticsNodes(atLeastOneRootRequired = false).isNotEmpty()
         var pictures = 1
         for (index in scrollers.indices) {
             val scroller = compose.onAllNodes(hasScrollAction() and scrollsVertically, useUnmergedTree = true)[index]
@@ -225,14 +225,15 @@ class Walker(private val compose: ComposeTestRule, val run: LayoutRun) {
             }
             toTop(scroller)
         }
+        if (run.stretchShots) run.note("$screen: ${pictures - 1} more pictures of its stretches, ${scrollers.size} lists or columns that scroll${if (overlays) ", a dialog open" else ""}")
         run.record(screen, findings)
     }
 
-    /** Whether this node is inside a dialog or a popup (a menu), whose root says so. */
+    /** Whether this node is inside a dialog, whose root says so. */
     private fun SemanticsNode.insideOverlay(): Boolean {
         var node: SemanticsNode? = this
         while (node != null) {
-            if (node.config.contains(SemanticsProperties.IsDialog) || node.config.contains(SemanticsProperties.IsPopup)) return true
+            if (node.config.contains(SemanticsProperties.IsDialog)) return true
             node = node.parent
         }
         return false
