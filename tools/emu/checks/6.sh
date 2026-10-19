@@ -592,15 +592,19 @@ LOCK_OUT=$REPO/build/emu-lock/all
 # are copied to LOGS/lock/ (all.sh keeps only its last run). A SKIPPED step needs run-as or root, which
 # staging and the API 37 image do not give: the step lists them.
 lock_staging() {
-    local levels rc began
+    local levels rc began s
     levels=$(levels_of 24 37)
     [ -n "$levels" ] || { echo "   none of API 24 and 37 is among --levels"; return 0; }
+    # build/emu-lock/all/ keeps the logs of every earlier run: this run's serials start clean, and only
+    # theirs are copied.
+    for s in $(serials_of $levels); do rm -f "$LOCK_OUT/$s"-E*.log; done
     began=$(date +%s)
     # shellcheck disable=SC2046,SC2086 # the levels and serials are words
     "$EMU/lock/all.sh" --apk "$STAGING_APK" --levels "${levels// /,}" $(serials_of $levels) > "$LOGS/lock.log" 2>&1
     rc=$?
     mkdir -p "$LOGS/lock"
-    cp -r "$LOCK_OUT/." "$LOGS/lock/" 2> /dev/null
+    for s in $(serials_of $levels); do cp "$LOCK_OUT/$s"-E*.log "$LOGS/lock/" 2> /dev/null; done
+    cp "$LOCK_OUT/results.txt" "$LOCK_OUT/status.txt" "$LOGS/lock/" 2> /dev/null
     sed -n '/^SUMMARY lock checks/,$p' "$LOGS/lock.log" | sed 's/^/   /'
     grep -h '^SKIPPED' "$LOGS"/lock/emulator-*-E*.log 2> /dev/null | sed 's/ (.*//' | sort | uniq -c | sed 's/^/     /'
     studio_runs "$began" | sed 's/^/   /'
