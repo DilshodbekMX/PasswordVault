@@ -34,7 +34,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
@@ -75,11 +74,13 @@ import io.github.dilshodbekmx.passwordvault.i18n.rememberFormatters
 import io.github.dilshodbekmx.passwordvault.nav.Navigator
 import io.github.dilshodbekmx.passwordvault.nav.Route
 import io.github.dilshodbekmx.passwordvault.ui.common.KeyboardFirstOnBack
+import io.github.dilshodbekmx.passwordvault.ui.common.LongLabelShape
 import io.github.dilshodbekmx.passwordvault.ui.common.StrengthBar
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultDialog
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultFieldDefaults
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultSecureField
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultTextField
+import io.github.dilshodbekmx.passwordvault.ui.common.VaultTopBar
 import io.github.dilshodbekmx.passwordvault.ui.common.rememberFieldKeyboard
 
 /**
@@ -147,8 +148,8 @@ fun EditScreen(vm: EditViewModel, nav: Navigator) {
             testTagsAsResourceId = true
         },
         topBar = {
-            TopAppBar(
-                title = { Text(text = title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+            VaultTopBar(
+                title = title,
                 navigationIcon = {
                     IconButton(onClick = vm::close, modifier = Modifier.testTag(EditTags.CLOSE)) {
                         Icon(painterResource(R.drawable.ic_edit_close), contentDescription = stringResource(R.string.common_close))
@@ -345,7 +346,7 @@ private fun PasswordPart(vm: EditViewModel, ui: EditUiState, focus: FieldFocus, 
         keyboardOptions = VaultFieldDefaults.Secret.copy(imeAction = ImeAction.Next),
     )
     if (form.password.text.isEmpty()) {
-        TextButton(onClick = vm::openGenerator, modifier = Modifier.testTag(EditTags.GENERATE_BUTTON)) { Text(text = generate) }
+        TextButton(onClick = vm::openGenerator, modifier = Modifier.testTag(EditTags.GENERATE_BUTTON), shape = LongLabelShape) { Text(text = generate) }
     } else {
         ui.strength?.let { StrengthBar(score = it.score, modifier = Modifier.fillMaxWidth().testTag(EditTags.STRENGTH)) }
         if (ui.reuse > 0) {

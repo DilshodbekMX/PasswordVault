@@ -3,13 +3,16 @@ package io.github.dilshodbekmx.passwordvault.ui.lock
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
@@ -33,6 +36,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -47,6 +51,9 @@ import io.github.dilshodbekmx.passwordvault.i18n.Formatters
 import io.github.dilshodbekmx.passwordvault.i18n.UiText
 import io.github.dilshodbekmx.passwordvault.i18n.resolve
 import io.github.dilshodbekmx.passwordvault.ui.common.AppLogo
+import io.github.dilshodbekmx.passwordvault.ui.common.KeypadColumn
+import io.github.dilshodbekmx.passwordvault.ui.common.LongLabelShape
+import io.github.dilshodbekmx.passwordvault.ui.common.fadeWhereMore
 import io.github.dilshodbekmx.passwordvault.ui.theme.LocalLook
 import io.github.dilshodbekmx.passwordvault.ui.theme.LockPanel
 import io.github.dilshodbekmx.passwordvault.ui.theme.StatusBarIconsOver
@@ -65,6 +72,12 @@ private val PANEL_CORNER = 32.dp
 
 /** The corners of the lock panel as a block beside the keypad (landscape). */
 private val PANEL_BLOCK_CORNER = 28.dp
+
+/** What the pad's head keeps below its texts, however short: the dots with their padding and the space above them. */
+private val HEAD_DOTS = 42.dp
+
+/** One line of the head's texts at 200 %, the least of them that stays in view. */
+private val HEAD_LINE = 40.dp
 
 /** Between the parts of a lock screen's head. */
 private val PANEL_SPACING = 12.dp
@@ -135,6 +148,104 @@ internal fun LockPage(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(spacing),
             content = content,
+        )
+    }
+}
+
+/**
+ * The PIN pad's upright page (ux.md §5.9): [LockPage]'s head, on the look's lock panel where it has
+ * one, with the [dots] at its foot; under it the [status] line, the [keys] and the [foot] (the
+ * buttons). A [KeypadColumn] keeps the dots and the whole keypad on the screen together, with the
+ * head whole above them where the screen allows: on a short screen, or with the phone's font at
+ * 200 %, the buttons go below the first screen, then the keys shrink (never under 64 dp), and only
+ * then do the head's texts get the height that is left and scroll there, above the dots (build plan
+ * 6.2: at 320 dp and 200 % the keys 7, 8, 9 and 0 lay below the screen's edge). The panel still
+ * reaches up behind the status bar, whose icons are light while it shows.
+ */
+@Composable
+internal fun LockPadPage(
+    head: @Composable ColumnScope.() -> Unit,
+    dots: @Composable ColumnScope.() -> Unit,
+    status: @Composable ColumnScope.() -> Unit,
+    keys: @Composable () -> Unit,
+    foot: @Composable ColumnScope.() -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val panel = LocalLook.current.lockPanel
+    if (panel != null) StatusBarIconsOver(panel.colour)
+    val insets = if (panel == null) WindowInsets.safeDrawing else WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom)
+    val density = LocalDensity.current
+    val top = with(density) { WindowInsets.safeDrawing.getTop(density).toDp() }
+    // The head may shrink to its panel's padding, the status bar it reaches behind, the dots and one
+    // line of its texts: what is left of its texts then scrolls above the dots.
+    val minHead = (if (panel == null) 32.dp else top + 44.dp) + HEAD_DOTS + HEAD_LINE
+    BoxWithConstraints(modifier.fillMaxSize().windowInsetsPadding(insets)) {
+        val viewport = maxHeight
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), horizontalAlignment = Alignment.CenterHorizontally) {
+            KeypadColumn(
+                viewport = viewport,
+                minHead = minHead,
+                modifier = Modifier.fillMaxWidth(),
+                head = { PadHeadBlock(panel, head, dots) },
+                dots = {
+                    Column(
+                        modifier = Modifier.widthIn(max = LOCK_COLUMN_MAX).fillMaxWidth().padding(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        content = status,
+                    )
+                },
+                keys = { Box(Modifier.fillMaxWidth().padding(horizontal = 24.dp), contentAlignment = Alignment.Center) { keys() } },
+                foot = {
+                    Column(
+                        modifier = Modifier.widthIn(max = LOCK_COLUMN_MAX).fillMaxWidth().padding(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        content = foot,
+                    )
+                },
+            )
+        }
+    }
+}
+
+/**
+ * The pad's head on the panel (or on the screen's own background): its texts in a column that
+ * scrolls within the height the page leaves it, and the [dots] under them, always shown.
+ */
+@Composable
+private fun PadHeadBlock(panel: LockPanel?, head: @Composable ColumnScope.() -> Unit, dots: @Composable ColumnScope.() -> Unit) {
+    val scroll = rememberScrollState()
+    val behind = panel?.colour ?: MaterialTheme.colorScheme.surface
+    val texts: @Composable ColumnScope.() -> Unit = {
+        Column(
+            modifier = Modifier.weight(1f, fill = false).fadeWhereMore(scroll, behind).verticalScroll(scroll).fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(PANEL_SPACING),
+            content = head,
+        )
+        Spacer(Modifier.height(PANEL_SPACING))
+        dots()
+    }
+    if (panel == null) {
+        Column(
+            modifier = Modifier
+                .widthIn(max = LOCK_COLUMN_MAX)
+                .fillMaxWidth()
+                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top))
+                .padding(start = 24.dp, end = 24.dp, top = 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            content = texts,
+        )
+    } else {
+        LockPanelBox(
+            panel = panel,
+            modifier = Modifier
+                .testTag(LockTags.PANEL)
+                .fillMaxWidth()
+                .background(panel.colour, RoundedCornerShape(bottomStart = PANEL_CORNER, bottomEnd = PANEL_CORNER))
+                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top))
+                .padding(start = 24.dp, end = 24.dp, top = 20.dp, bottom = 24.dp),
+            content = texts,
         )
     }
 }
@@ -256,18 +367,21 @@ internal fun LockLineText(line: LockLine, formatters: Formatters, tag: String, m
     )
 }
 
-/** A button of a lock screen, drawn as its [LockButton.style] says; full width unless it is a text button. */
+/**
+ * A button of a lock screen, drawn as its [LockButton.style] says; full width unless it is a text button.
+ * Its label may take several lines ("Open my previous passwords (locked on 7 Oct 2026)"): [LongLabelShape].
+ */
 @Composable
 internal fun LockButtonView(button: LockButton, formatters: Formatters, onAction: (LockAction) -> Unit, enabled: Boolean = true) {
     val label = button.label.show(formatters)
     when (button.style) {
-        ButtonStyle.FILLED -> Button(onClick = { onAction(button.action) }, enabled = enabled, modifier = Modifier.fillMaxWidth().testTag(button.tag)) {
+        ButtonStyle.FILLED -> Button(onClick = { onAction(button.action) }, enabled = enabled, modifier = Modifier.fillMaxWidth().testTag(button.tag), shape = LongLabelShape) {
             Text(label, textAlign = TextAlign.Center)
         }
-        ButtonStyle.OUTLINED -> OutlinedButton(onClick = { onAction(button.action) }, enabled = enabled, modifier = Modifier.fillMaxWidth().testTag(button.tag)) {
+        ButtonStyle.OUTLINED -> OutlinedButton(onClick = { onAction(button.action) }, enabled = enabled, modifier = Modifier.fillMaxWidth().testTag(button.tag), shape = LongLabelShape) {
             Text(label, textAlign = TextAlign.Center)
         }
-        ButtonStyle.TEXT -> TextButton(onClick = { onAction(button.action) }, enabled = enabled, modifier = Modifier.testTag(button.tag)) {
+        ButtonStyle.TEXT -> TextButton(onClick = { onAction(button.action) }, enabled = enabled, modifier = Modifier.testTag(button.tag), shape = LongLabelShape) {
             Text(label, textAlign = TextAlign.Center)
         }
     }

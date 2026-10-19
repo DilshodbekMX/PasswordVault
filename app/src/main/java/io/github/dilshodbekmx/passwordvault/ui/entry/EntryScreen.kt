@@ -28,7 +28,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -48,7 +47,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -56,6 +54,7 @@ import io.github.dilshodbekmx.passwordvault.R
 import io.github.dilshodbekmx.passwordvault.data.SaveProblem
 import io.github.dilshodbekmx.passwordvault.nav.Navigator
 import io.github.dilshodbekmx.passwordvault.nav.Route
+import io.github.dilshodbekmx.passwordvault.ui.common.VaultTopBar
 import io.github.dilshodbekmx.passwordvault.ui.list.GoneNotice
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -189,9 +188,8 @@ fun EntryScreen(vm: EntryViewModel, nav: Navigator) {
             }
             .onAnyTouch(vm::touched),
         topBar = {
-            TopAppBar(
-                // One line here; the whole name is the first line of the content (ux.md §5.12).
-                title = { Text(text = details?.title ?: deletedTitle.orEmpty(), maxLines = 1, overflow = TextOverflow.Ellipsis) },
+            VaultTopBar(
+                title = details?.title ?: deletedTitle.orEmpty(),
                 navigationIcon = {
                     IconButton(onClick = { nav.back() }, modifier = Modifier.testTag(EntryTags.BACK)) {
                         Icon(painterResource(R.drawable.ic_entry_back), contentDescription = stringResource(R.string.entry_back))
@@ -209,6 +207,8 @@ fun EntryScreen(vm: EntryViewModel, nav: Navigator) {
                         )
                     }
                 },
+                titleMayBeCut = true,
+                titleIsUserText = details != null || deletedTitle != null,
             )
         },
         snackbarHost = { SnackbarHost(snackbar) { data -> Snackbar(data, modifier = Modifier.testTag(EntryTags.MESSAGE)) } },

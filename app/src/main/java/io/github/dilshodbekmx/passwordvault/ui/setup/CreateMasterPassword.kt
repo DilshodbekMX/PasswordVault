@@ -42,11 +42,13 @@ import io.github.dilshodbekmx.passwordvault.i18n.UiText
 import io.github.dilshodbekmx.passwordvault.i18n.resolve
 import io.github.dilshodbekmx.passwordvault.ui.common.Banner
 import io.github.dilshodbekmx.passwordvault.ui.common.BannerKind
+import io.github.dilshodbekmx.passwordvault.ui.common.LongLabelShape
 import io.github.dilshodbekmx.passwordvault.ui.common.SecretText
 import io.github.dilshodbekmx.passwordvault.ui.common.StrengthBar
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultDialog
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultFieldDefaults
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultSecureField
+import io.github.dilshodbekmx.passwordvault.ui.common.userText
 
 /**
  * "Choose your master password" (ux.md §5.3, §7.1, §7.2; lock.md F1 step 2): what the master
@@ -120,10 +122,10 @@ private fun ColumnScope.SuggestedWords(state: SetupState, onUseWords: () -> Unit
     Button(onClick = onUseWords, enabled = passphrase != null, modifier = Modifier.fillMaxWidth().testTag(SetupTags.USE_WORDS)) {
         Text(stringResource(R.string.setup_create_use_words))
     }
-    TextButton(onClick = onOtherWords, modifier = Modifier.fillMaxWidth().testTag(SetupTags.OTHER_WORDS)) {
+    TextButton(onClick = onOtherWords, modifier = Modifier.fillMaxWidth().testTag(SetupTags.OTHER_WORDS), shape = LongLabelShape) {
         Text(stringResource(R.string.setup_create_other_words))
     }
-    TextButton(onClick = onTypeOwn, modifier = Modifier.fillMaxWidth().testTag(SetupTags.TYPE_OWN)) {
+    TextButton(onClick = onTypeOwn, modifier = Modifier.fillMaxWidth().testTag(SetupTags.TYPE_OWN), shape = LongLabelShape) {
         Text(stringResource(R.string.setup_create_type_own))
     }
 }
@@ -153,7 +155,7 @@ internal fun NumberedWords(words: List<String>, modifier: Modifier = Modifier) {
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.widthIn(min = 32.dp),
                     )
-                    Text(text = word, style = MaterialTheme.typography.headlineSmall)
+                    Text(text = word, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.userText())
                 }
             }
         }
@@ -210,7 +212,7 @@ private fun ColumnScope.OwnPassword(state: SetupState, own: TextFieldState, onUs
     Button(onClick = onUseOwn, modifier = Modifier.fillMaxWidth().testTag(SetupTags.USE_OWN)) {
         Text(stringResource(R.string.setup_own_use))
     }
-    TextButton(onClick = onShowWords, modifier = Modifier.fillMaxWidth().testTag(SetupTags.SHOW_WORDS)) {
+    TextButton(onClick = onShowWords, modifier = Modifier.fillMaxWidth().testTag(SetupTags.SHOW_WORDS), shape = LongLabelShape) {
         Text(stringResource(R.string.setup_create_show_words))
     }
 }

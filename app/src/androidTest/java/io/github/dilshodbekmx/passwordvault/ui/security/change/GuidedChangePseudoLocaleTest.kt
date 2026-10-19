@@ -25,6 +25,7 @@ import io.github.dilshodbekmx.passwordvault.R
 import io.github.dilshodbekmx.passwordvault.core.model.HistoryItem
 import io.github.dilshodbekmx.passwordvault.core.model.Vault
 import io.github.dilshodbekmx.passwordvault.settings.ThemeChoice
+import io.github.dilshodbekmx.passwordvault.ui.layout.LayoutHook
 import io.github.dilshodbekmx.passwordvault.ui.security.GuidedChangeScreen
 import io.github.dilshodbekmx.passwordvault.ui.security.GuidedChangeTags
 import io.github.dilshodbekmx.passwordvault.ui.security.GuidedChangeUiState
@@ -86,6 +87,7 @@ class GuidedChangePseudoLocaleTest {
 
     /** Keeps a picture of the whole screen in `cache/pv-screens/`. */
     private fun save(name: String) {
+        LayoutHook.look(compose, "change", name)
         compose.waitForIdle()
         val dir = File(compose.activity.cacheDir, "pv-screens").apply { mkdirs() }
         val bitmap = InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot() ?: return

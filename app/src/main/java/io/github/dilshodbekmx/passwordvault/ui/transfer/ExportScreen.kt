@@ -39,7 +39,6 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -64,7 +63,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.isSpecified
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -79,6 +77,8 @@ import io.github.dilshodbekmx.passwordvault.ui.common.Banner
 import io.github.dilshodbekmx.passwordvault.ui.common.KeyboardFirstOnBack
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultFieldDefaults
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultSecureField
+import io.github.dilshodbekmx.passwordvault.ui.common.VaultTopBar
+import io.github.dilshodbekmx.passwordvault.ui.common.userText
 
 /**
  * The export screen (ux.md §5.20): one route, `Export(step)`, whose steps [vm] moves through, under a
@@ -143,8 +143,8 @@ fun ExportFrame(state: ExportUiState, password: TextFieldState, actions: ExportA
             testTagsAsResourceId = true
         },
         topBar = {
-            TopAppBar(
-                title = { Text(text = title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+            VaultTopBar(
+                title = title,
                 navigationIcon = {
                     IconButton(
                         onClick = onBack,
@@ -330,7 +330,7 @@ private fun CsvCard(summary: ExportCsvSummary?, showWhich: Boolean, toggleWhich:
                                 modifier = Modifier.semantics { heading() },
                             )
                             for (title in skipped.titles) {
-                                Text(title, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(start = 12.dp))
+                                Text(title, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(start = 12.dp).userText())
                             }
                         }
                     }

@@ -44,6 +44,8 @@ import io.github.dilshodbekmx.passwordvault.R
 import io.github.dilshodbekmx.passwordvault.core.search.matchedRanges
 import io.github.dilshodbekmx.passwordvault.ui.common.CardPart
 import io.github.dilshodbekmx.passwordvault.ui.common.cardPart
+import io.github.dilshodbekmx.passwordvault.ui.common.mayTruncate
+import io.github.dilshodbekmx.passwordvault.ui.common.userText
 import io.github.dilshodbekmx.passwordvault.ui.theme.CardsLook
 import io.github.dilshodbekmx.passwordvault.ui.theme.LocalLook
 import io.github.dilshodbekmx.passwordvault.ui.theme.Look
@@ -112,7 +114,8 @@ internal fun EntryRowItem(
     val part = rowGroup(look, card)
     Box(Modifier.cardPart(part, look)) {
         ListItem(
-            headlineContent = { Text(title, maxLines = 2, overflow = TextOverflow.Ellipsis) },
+            // The row may cut the name and the login: the account's screen shows them whole (i18n.md §4.5 rule 3).
+            headlineContent = { Text(title, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.mayTruncate().userText()) },
             supportingContent = if (row.detail.isEmpty()) {
                 null
             } else {
@@ -122,6 +125,7 @@ internal fun EntryRowItem(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         style = LocalTextStyle.current.copy(textDirection = TextDirection.Ltr),
+                        modifier = Modifier.mayTruncate().userText(),
                     )
                 }
             },
@@ -134,13 +138,14 @@ internal fun EntryRowItem(
                 .semantics { customActions = rowActionsFor(row, key, actions, labels) },
         )
         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-            for ((label, action) in menuItems(row, key, actions, labels)) {
+            for (item in menuItems(row, key, actions, labels)) {
                 DropdownMenuItem(
-                    text = { Text(label) },
+                    text = { Text(item.label) },
                     onClick = {
                         menu = false
-                        action()
+                        item.run()
                     },
+                    modifier = Modifier.testTag(ListTags.menuItem(item.name)),
                 )
             }
         }
@@ -210,28 +215,31 @@ private class RowLabels(
 )
 
 /** The items of a row's menu that apply to it, in the order of ux.md §5.11. */
-private fun menuItems(row: EntryRow, key: String, actions: RowActions, labels: RowLabels): List<Pair<String, () -> Unit>> = buildList {
-    if (row.hasUsername) add(labels.copyUsername to { actions.copyUsername(row) })
+/** An item of a row's menu: its [name] for its test tag ([ListTags.menuItem]), its [label] and what it does. */
+private class RowMenuItem(val name: String, val label: String, val run: () -> Unit)
+
+private fun menuItems(row: EntryRow, key: String, actions: RowActions, labels: RowLabels): List<RowMenuItem> = buildList {
+    if (row.hasUsername) add(RowMenuItem("copyUsername", labels.copyUsername) { actions.copyUsername(row) })
     if (row.hasPassword) {
         if (row.changePending) {
-            add(labels.copyOld to { actions.copyOldPassword(row, key) })
-            add(labels.copyNew to { actions.copyNewPassword(row, key) })
+            add(RowMenuItem("copyOld", labels.copyOld) { actions.copyOldPassword(row, key) })
+            add(RowMenuItem("copyNew", labels.copyNew) { actions.copyNewPassword(row, key) })
         } else {
-            add(labels.copyPassword to { actions.copyPassword(row, key) })
+            add(RowMenuItem("copyPassword", labels.copyPassword) { actions.copyPassword(row, key) })
         }
     }
-    if (row.website != null) add(labels.openWebsite to { actions.openWebsite(row) })
-    if (row.hasPassword) add(labels.bigLetters to { actions.bigLetters(row) })
-    add(labels.favourite to { actions.favourite(row) })
-    add(labels.edit to { actions.edit(row) })
-    add(labels.delete to { actions.delete(row) })
+    if (row.website != null) add(RowMenuItem("openWebsite", labels.openWebsite) { actions.openWebsite(row) })
+    if (row.hasPassword) add(RowMenuItem("bigLetters", labels.bigLetters) { actions.bigLetters(row) })
+    add(RowMenuItem("favourite", labels.favourite) { actions.favourite(row) })
+    add(RowMenuItem("edit", labels.edit) { actions.edit(row) })
+    add(RowMenuItem("delete", labels.delete) { actions.delete(row) })
 }
 
 /** The same items as TalkBack's custom actions on the row (ux.md §8). */
 private fun rowActionsFor(row: EntryRow, key: String, actions: RowActions, labels: RowLabels): List<CustomAccessibilityAction> =
-    menuItems(row, key, actions, labels).map { (label, action) ->
-        CustomAccessibilityAction(label) {
-            action()
+    menuItems(row, key, actions, labels).map { item ->
+        CustomAccessibilityAction(item.label) {
+            item.run()
             true
         }
     }

@@ -23,31 +23,29 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
-import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.dilshodbekmx.passwordvault.R
 import io.github.dilshodbekmx.passwordvault.i18n.Formatters
@@ -57,7 +55,8 @@ import io.github.dilshodbekmx.passwordvault.i18n.resolve
 import io.github.dilshodbekmx.passwordvault.ui.common.KeyboardFirstOnBack
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultFieldDefaults
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultSecureField
-import kotlinx.coroutines.flow.first
+import io.github.dilshodbekmx.passwordvault.ui.common.VaultTopBar
+import io.github.dilshodbekmx.passwordvault.ui.common.rememberFieldKeyboard
 
 /**
  * The frame of the backup, restore and old-passwords screens: a top bar with Back and the [title],
@@ -74,8 +73,8 @@ fun BackupScaffold(title: String, onBack: () -> Unit, modifier: Modifier = Modif
             testTagsAsResourceId = true
         },
         topBar = {
-            TopAppBar(
-                title = { Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.semantics { heading() }) },
+            VaultTopBar(
+                title = title,
                 navigationIcon = {
                     IconButton(onClick = onBack, modifier = Modifier.testTag(BackupTags.BACK)) {
                         Icon(BackArrow, contentDescription = stringResource(R.string.backup_back))
@@ -143,17 +142,23 @@ fun BackupProgress(text: UiText, modifier: Modifier = Modifier) {
 @Composable
 fun BackupPasswordField(state: TextFieldState, label: String, enabled: Boolean, isError: Boolean, onSubmit: () -> Unit, modifier: Modifier = Modifier) {
     val focusRequester = remember { FocusRequester() }
-    val keyboard = LocalSoftwareKeyboardController.current
-    val windowInfo = LocalWindowInfo.current
-    LaunchedEffect(enabled) {
+    // The keyboard asked for as the other master-password fields ask for it (FieldKeyboard): Android 17
+    // no longer brings it back after a rotation, and Gboard may close it again by itself.
+    val fieldKeyboard = rememberFieldKeyboard()
+    var focused by remember { mutableStateOf(false) }
+    LaunchedEffect(enabled, fieldKeyboard) {
         if (!enabled) return@LaunchedEffect
-        snapshotFlow { windowInfo.isWindowFocused }.first { it }
-        focusRequester.requestFocus()
-        keyboard?.show()
+        fieldKeyboard.awaitWindowFocus()
+        try {
+            focusRequester.requestFocus()
+        } catch (_: IllegalStateException) {
+            return@LaunchedEffect
+        }
+        fieldKeyboard.show { focused }
     }
     VaultSecureField(
         state = state,
-        modifier = modifier.fillMaxWidth().focusRequester(focusRequester).testTag(BackupTags.FIELD),
+        modifier = modifier.fillMaxWidth().focusRequester(focusRequester).onFocusChanged { focused = it.isFocused }.testTag(BackupTags.FIELD),
         label = { Text(label) },
         enabled = enabled,
         isError = isError,

@@ -16,12 +16,14 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToKey
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.github.dilshodbekmx.passwordvault.R
+import io.github.dilshodbekmx.passwordvault.ui.layout.LayoutHook
+import io.github.dilshodbekmx.passwordvault.ui.layout.press
+import io.github.dilshodbekmx.passwordvault.ui.layout.revealTag
+import io.github.dilshodbekmx.passwordvault.ui.layout.revealText
 import io.github.dilshodbekmx.passwordvault.ui.transfer.ColumnMappingScreen
 import io.github.dilshodbekmx.passwordvault.ui.transfer.ColumnsScreen
 import io.github.dilshodbekmx.passwordvault.ui.transfer.ImportColumnsViewModel
@@ -102,7 +104,10 @@ class ImportPseudoLocaleTest {
     @Test
     fun theScreensInArXb() = screens("ar-XB")
 
-    /** The sources, the Google help, the preview top and end, the result, and the column mapping, in the locale [tag]. */
+    /**
+     * The sources, the Google help, the preview top and end, the result, the column mapping, and a
+     * preview's line for a hidden value that was not imported, in the locale [tag].
+     */
     private fun screens(tag: String) {
         val context = pseudo(tag)
         val res = context.resources
@@ -125,26 +130,26 @@ class ImportPseudoLocaleTest {
                 }
             }
         }
-        compose.onNodeWithText(res.getString(R.string.import_source_google)).assertExists()
-        compose.onNodeWithText(res.getString(R.string.import_sources_intro)).assertExists()
+        compose.revealText(res.getString(R.string.import_source_google)).assertExists()
+        compose.revealText(res.getString(R.string.import_sources_intro)).assertExists()
         save("sources-$tag")
         compose.runOnUiThread { sources.choose(io.github.dilshodbekmx.passwordvault.ui.transfer.ImportSource.GOOGLE) }
-        compose.onNodeWithText(res.getString(R.string.import_google_steps)).assertExists()
+        compose.revealText(res.getString(R.string.import_google_steps)).assertExists()
         save("help-$tag")
 
         compose.runOnUiThread { which = FILE }
         compose.waitUntil(TIMEOUT_MS) { file.ui.value.screen is ImportScreen.Preview }
-        compose.onNodeWithText(res.getQuantityString(R.plurals.import_found, 5, 5)).assertExists()
-        compose.onNodeWithText(res.getQuantityString(R.plurals.import_button, 5, 5)).assertExists()
+        compose.revealText(res.getQuantityString(R.plurals.import_found, 5, 5)).assertExists()
+        compose.revealText(res.getQuantityString(R.plurals.import_button, 5, 5)).assertExists()
         save("preview-$tag")
         compose.onNodeWithTag(ImportTags.PREVIEW).performScrollToKey("tidy")
-        compose.onNodeWithText(res.getString(R.string.import_tidy_names)).assertExists()
+        compose.revealText(res.getString(R.string.import_tidy_names)).assertExists()
         save("preview-end-$tag")
 
-        compose.onNodeWithTag(ImportTags.IMPORT).performClick()
+        compose.revealTag(ImportTags.IMPORT).press()
         compose.waitUntil(TIMEOUT_MS) { file.ui.value.screen is ImportScreen.Done }
-        compose.onNodeWithText(res.getQuantityString(R.plurals.import_done, 5, 5)).assertExists()
-        compose.onNodeWithText(res.getString(R.string.import_undo)).assertExists()
+        compose.revealText(res.getQuantityString(R.plurals.import_done, 5, 5)).assertExists()
+        compose.revealText(res.getString(R.string.import_undo)).assertExists()
         save("done-$tag")
 
         // The mapping of another file, with no password column.
@@ -154,11 +159,34 @@ class ImportPseudoLocaleTest {
             which = MAPPING
         }
         compose.waitUntil(TIMEOUT_MS) { columns.ui.value.screen is ColumnsScreen.Shown }
-        compose.onNodeWithText(res.getString(R.string.import_columns_no_password)).assertExists()
+        compose.revealText(res.getString(R.string.import_columns_no_password)).assertExists()
         save("mapping-$tag")
+
+        // A hidden value too long to keep hidden (decision 20): its line among the preview's changes.
+        val secret = "Qz8" + (1..250).joinToString("") { "Xy${it % 10}w" }
+        rig.recorded(
+            (
+                """{"encrypted": false, "items": [{"type": 1, "name": "Bank", "fields": [{"name": "Recovery key", "value": "$secret", "type": 1}],""" +
+                    """ "login": {"username": "aziz", "password": "Pw-Bank-1", "uris": [{"uri": "https://bank.uz"}]}}]}"""
+                ).toByteArray(),
+            name = "bitwarden.json",
+        )
+        compose.runOnUiThread {
+            file = rig.file()
+            which = FILE
+        }
+        compose.waitUntil(TIMEOUT_MS) { file.ui.value.screen is ImportScreen.Preview }
+        compose.onNodeWithTag(ImportTags.PREVIEW).performScrollToKey("changes")
+        compose.waitForIdle()
+        val hidden = res.getQuantityString(R.plurals.import_change_hidden_not_imported, 1, 1)
+        compose.revealText(res.getString(R.string.import_change, "Bank", hidden)).assertExists()
+        save("preview-hidden-$tag")
     }
 
-    private fun save(name: String) = ImportShots.take(compose, "pseudo-$name-api${Build.VERSION.SDK_INT}", everyApi = true)
+    private fun save(name: String) {
+        LayoutHook.look(compose, "import", name)
+        ImportShots.take(compose, "pseudo-$name-api${Build.VERSION.SDK_INT}", everyApi = true)
+    }
 
     private companion object {
         const val TIMEOUT_MS = 10_000L

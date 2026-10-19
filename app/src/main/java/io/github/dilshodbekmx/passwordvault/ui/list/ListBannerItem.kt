@@ -16,6 +16,7 @@ import io.github.dilshodbekmx.passwordvault.core.lock.record.Shortcut
 import io.github.dilshodbekmx.passwordvault.i18n.rememberFormatters
 import io.github.dilshodbekmx.passwordvault.ui.common.Banner
 import io.github.dilshodbekmx.passwordvault.ui.common.BannerKind
+import io.github.dilshodbekmx.passwordvault.ui.common.LongLabelShape
 
 /** What the buttons of the list's banners do (ux.md §5.11). Made once per screen. */
 internal class BannerActions(
@@ -113,7 +114,7 @@ internal fun ListBannerItem(banner: ListBanner, actions: BannerActions) {
 /** A banner's button, tagged `pv.list.banner.<kind>.<name>`. */
 @Composable
 private fun RowScope.BannerButton(banner: ListBanner, name: String, @StringRes label: Int, onClick: () -> Unit) {
-    TextButton(onClick = onClick, modifier = Modifier.testTag(ListTags.bannerButton(banner, name))) {
+    TextButton(onClick = onClick, modifier = Modifier.testTag(ListTags.bannerButton(banner, name)), shape = LongLabelShape) {
         Text(stringResource(label))
     }
 }

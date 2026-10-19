@@ -23,11 +23,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.autofill.ContentDataType
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.autofill.ContentDataType
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDataType
 import androidx.compose.ui.semantics.heading
@@ -43,6 +43,8 @@ import io.github.dilshodbekmx.passwordvault.core.model.EntryRules
 import io.github.dilshodbekmx.passwordvault.i18n.Formatters
 import io.github.dilshodbekmx.passwordvault.ui.common.Banner
 import io.github.dilshodbekmx.passwordvault.ui.common.BannerKind
+import io.github.dilshodbekmx.passwordvault.ui.common.LongLabelShape
+import io.github.dilshodbekmx.passwordvault.ui.common.userText
 
 /**
  * The preview of ux.md §5.21, before anything is saved: the sample of names and usernames (never a
@@ -101,7 +103,7 @@ private fun Sample(vm: ImportViewModel, p: ImportPreview) {
             )
             for (row in p.samples) {
                 Column {
-                    Text(text = row.title, style = MaterialTheme.typography.bodyLarge)
+                    Text(text = row.title, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.userText())
                     if (row.username.isNotEmpty()) {
                         // Usernames are laid out left to right in every language (ux.md §3).
                         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
@@ -109,6 +111,7 @@ private fun Sample(vm: ImportViewModel, p: ImportPreview) {
                                 text = row.username,
                                 style = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Ltr),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.userText(),
                             )
                         }
                     }
@@ -134,7 +137,7 @@ private fun Sample(vm: ImportViewModel, p: ImportPreview) {
                     )
                 }
                 decoding.alternative?.let { other ->
-                    TextButton(onClick = { vm.readAs(other) }, modifier = Modifier.testTag(ImportTags.READ_AS)) {
+                    TextButton(onClick = { vm.readAs(other) }, modifier = Modifier.testTag(ImportTags.READ_AS), shape = LongLabelShape) {
                         Text(text = stringResource(R.string.import_read_as, importEncodingName(other)))
                     }
                 }

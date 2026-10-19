@@ -22,13 +22,15 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.testTagsAsResourceId
+import androidx.compose.ui.text.style.TextAlign
 import io.github.dilshodbekmx.passwordvault.AppGraph
 import io.github.dilshodbekmx.passwordvault.R
 import io.github.dilshodbekmx.passwordvault.clipboard.ClipboardRowSlot
 import io.github.dilshodbekmx.passwordvault.nav.NavState
 import io.github.dilshodbekmx.passwordvault.nav.Route
-import io.github.dilshodbekmx.passwordvault.ui.lock.LockNotices
+import io.github.dilshodbekmx.passwordvault.ui.common.FittedText
 import io.github.dilshodbekmx.passwordvault.ui.common.topHairline
+import io.github.dilshodbekmx.passwordvault.ui.lock.LockNotices
 import io.github.dilshodbekmx.passwordvault.ui.security.SecurityBadge
 import io.github.dilshodbekmx.passwordvault.ui.security.securityTabState
 import io.github.dilshodbekmx.passwordvault.ui.settings.NewMasterPasswordAfterUnlock
@@ -78,10 +80,12 @@ fun UnlockedScaffold(graph: AppGraph, nav: NavState, content: @Composable (Paddi
  */
 @Composable
 private fun TabBar(graph: AppGraph, nav: NavState) {
+    // The three labels take one size: the one that needs the smallest gets it (FittedText).
+    val labels = listOf(R.string.shell_tab_passwords, R.string.shell_tab_security, R.string.shell_tab_settings).map { stringResource(it) }
     NavigationBar(Modifier.testTag(TAB_BAR_TAG).topHairline(LocalLook.current.barOutline)) {
-        Tab(nav, Route.Passwords, R.drawable.ic_shell_passwords, R.string.shell_tab_passwords)
-        Tab(nav, Route.Security, R.drawable.ic_shell_security, R.string.shell_tab_security, state = securityTabState(graph)) { SecurityBadge(graph) }
-        Tab(nav, Route.Settings, R.drawable.ic_shell_settings, R.string.shell_tab_settings)
+        Tab(nav, Route.Passwords, R.drawable.ic_shell_passwords, R.string.shell_tab_passwords, labels)
+        Tab(nav, Route.Security, R.drawable.ic_shell_security, R.string.shell_tab_security, labels, state = securityTabState(graph)) { SecurityBadge(graph) }
+        Tab(nav, Route.Settings, R.drawable.ic_shell_settings, R.string.shell_tab_settings, labels)
     }
 }
 
@@ -89,7 +93,9 @@ private fun TabBar(graph: AppGraph, nav: NavState) {
 const val TAB_BAR_TAG = "pv.tabBar"
 
 /**
- * One tab of the bar. [state] is what TalkBack says after the tab's name ("Security, new results",
+ * One tab of the bar; its label is a [FittedText], as large as the phone's font makes it while each
+ * of its words fits on a line, and as large as the bar's other [labels]. [state] is what TalkBack says
+ * after the tab's name ("Security, new results",
  * ux.md §8): material3's `NavigationBarItem` clears the semantics of its icon slot, where [badge]
  * sits, whenever the item has a label, so the badge itself is never read.
  */
@@ -99,6 +105,7 @@ private fun RowScope.Tab(
     root: Route,
     @DrawableRes icon: Int,
     @StringRes label: Int,
+    labels: List<String>,
     state: String? = null,
     badge: (@Composable () -> Unit)? = null,
 ) {
@@ -112,7 +119,11 @@ private fun RowScope.Tab(
                 BadgedBox(badge = { badge() }) { Icon(painterResource(icon), contentDescription = null) }
             }
         },
-        label = { Text(stringResource(label)) },
+        // Never a word broken across lines, at 320 dp and 200 % in every language (i18n.md §4.5 rule 5).
+        label = {
+            val text = stringResource(label)
+            FittedText(text, textAlign = TextAlign.Center, alongside = labels - text)
+        },
         modifier = Modifier.testTag("pv.tab.${root.name}").semantics { if (state != null) stateDescription = state },
     )
 }

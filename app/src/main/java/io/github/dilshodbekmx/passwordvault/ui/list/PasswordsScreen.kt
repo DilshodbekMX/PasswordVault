@@ -3,15 +3,22 @@ package io.github.dilshodbekmx.passwordvault.ui.list
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
@@ -21,8 +28,8 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -37,12 +44,13 @@ import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -58,7 +66,9 @@ import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.platform.LocalResources
@@ -81,8 +91,10 @@ import io.github.dilshodbekmx.passwordvault.i18n.rememberFormatters
 import io.github.dilshodbekmx.passwordvault.nav.Navigator
 import io.github.dilshodbekmx.passwordvault.nav.Route
 import io.github.dilshodbekmx.passwordvault.ui.common.CardPart
+import io.github.dilshodbekmx.passwordvault.ui.common.FittedText
 import io.github.dilshodbekmx.passwordvault.ui.common.KeyboardFirstOnBack
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultSearchField
+import io.github.dilshodbekmx.passwordvault.ui.common.VaultTopBar
 import io.github.dilshodbekmx.passwordvault.ui.common.cardPart
 import io.github.dilshodbekmx.passwordvault.ui.theme.LocalLook
 import kotlinx.coroutines.delay
@@ -227,11 +239,24 @@ fun PasswordsScreen(viewModel: PasswordsViewModel, nav: Navigator) {
     }
 
     val title = stringResource(R.string.list_title)
+    // The "Add" button's height as drawn (it grows with the font): the list keeps room for it.
+    var addHeight by remember { mutableIntStateOf(0) }
+    // The "Add" button floats over the list only where it leaves the list a row's room above it, and
+    // not while the keyboard is up (a search is being typed; "No results" has its own "Add"): on a
+    // short screen at 200 % the list's space, under the keyboard or the clipboard row, is about the
+    // button's own height, and the button lay over the only row, or over the top bar (build plan 6.2).
+    // It is back as soon as there is room.
+    var listHeight by remember { mutableStateOf<Int?>(null) }
+    val density = LocalDensity.current
+    val ime = WindowInsets.ime
+    val keyboardUp by remember(ime, density) { derivedStateOf { ime.getBottom(density) > 0 } }
+    val roomForAdd = listHeight.let { it == null || it - addHeight >= with(density) { (ADD_MARGIN + ADD_ROOM_ABOVE).roundToPx() } }
+    val showAdd = !keyboardUp && roomForAdd
     Scaffold(
         modifier = Modifier.semantics { paneTitle = title },
         topBar = {
-            TopAppBar(
-                title = { Text(title, modifier = Modifier.semantics { heading() }) },
+            VaultTopBar(
+                title = title,
                 actions = {
                     IconButton(onClick = viewModel::lockNow, modifier = Modifier.testTag(ListTags.LOCK_NOW)) {
                         Icon(painterResource(R.drawable.ic_list_lock), contentDescription = stringResource(R.string.list_lock_now))
@@ -242,24 +267,26 @@ fun PasswordsScreen(viewModel: PasswordsViewModel, nav: Navigator) {
         floatingActionButton = {
             // Drawn as the style says (docs/design/looks/README.md "\"Add\" button").
             val add = LocalLook.current.addButton
-            ExtendedFloatingActionButton(
-                text = { Text(stringResource(R.string.list_add)) },
-                icon = {
-                    Icon(
-                        painterResource(R.drawable.ic_list_add),
-                        contentDescription = if (addExpanded) null else stringResource(R.string.list_add_account_description),
-                    )
-                },
-                onClick = {
-                    viewModel.addAccount()
-                    nav.go(Route.Edit())
-                },
-                expanded = addExpanded,
-                modifier = Modifier.testTag(ListTags.ADD),
-                shape = if (add.fullyRounded) CircleShape else FloatingActionButtonDefaults.extendedFabShape,
-                containerColor = add.container(MaterialTheme.colorScheme),
-                contentColor = add.content(MaterialTheme.colorScheme),
-            )
+            AnimatedVisibility(visible = showAdd, enter = fadeIn() + scaleIn(), exit = fadeOut() + scaleOut()) {
+                ExtendedFloatingActionButton(
+                    text = { Text(stringResource(R.string.list_add)) },
+                    icon = {
+                        Icon(
+                            painterResource(R.drawable.ic_list_add),
+                            contentDescription = if (addExpanded) null else stringResource(R.string.list_add_account_description),
+                        )
+                    },
+                    onClick = {
+                        viewModel.addAccount()
+                        nav.go(Route.Edit())
+                    },
+                    expanded = addExpanded,
+                    modifier = Modifier.testTag(ListTags.ADD).onSizeChanged { addHeight = it.height },
+                    shape = if (add.fullyRounded) CircleShape else FloatingActionButtonDefaults.extendedFabShape,
+                    containerColor = add.container(MaterialTheme.colorScheme),
+                    contentColor = add.content(MaterialTheme.colorScheme),
+                )
+            }
         },
         snackbarHost = { SnackbarHost(snackbar) },
     ) { padding ->
@@ -272,7 +299,9 @@ fun PasswordsScreen(viewModel: PasswordsViewModel, nav: Navigator) {
                     .padding(start = 16.dp, end = 16.dp, bottom = 8.dp)
                     .refusesHandedOnFocus(inputModes)
                     .testTag(ListTags.SEARCH),
-                placeholder = { Text(stringResource(R.string.list_search_placeholder)) },
+                // On one line, smaller with a large font, and cut there only if even that does not fit:
+                // the field keeps its own height (ux.md §5.11; build plan 6.2).
+                placeholder = { FittedText(stringResource(R.string.list_search_placeholder), maxLines = 1, cut = true) },
                 leadingIcon = { Icon(painterResource(R.drawable.ic_list_search), contentDescription = null) },
                 trailingIcon = if (hasQuery) {
                     {
@@ -285,6 +314,7 @@ fun PasswordsScreen(viewModel: PasswordsViewModel, nav: Navigator) {
                 },
             )
             ListContent(
+                addHeight = addHeight,
                 state = state,
                 listState = listState,
                 copiedKey = copiedKey,
@@ -301,7 +331,7 @@ fun PasswordsScreen(viewModel: PasswordsViewModel, nav: Navigator) {
                 },
                 onImport = { nav.go(Route.Import()) },
                 onRecentlyDeleted = { nav.go(Route.RecentlyDeleted) },
-                modifier = Modifier.nestedScroll(scrollWatch),
+                modifier = Modifier.nestedScroll(scrollWatch).onSizeChanged { listHeight = it.height },
             )
         }
     }
@@ -321,6 +351,7 @@ fun PasswordsScreen(viewModel: PasswordsViewModel, nav: Navigator) {
 /** The list, the search results, or the empty and loading states, with the banners above. */
 @Composable
 private fun ListContent(
+    addHeight: Int,
     state: PasswordsUiState,
     listState: LazyListState,
     copiedKey: String?,
@@ -348,8 +379,9 @@ private fun ListContent(
     LazyColumn(
         state = listState,
         modifier = modifier.fillMaxSize().testTag(ListTags.LIST),
-        // Room for the "Add" button, so it never covers the last row's copy button (ux.md §5.11, §8).
-        contentPadding = PaddingValues(bottom = LIST_BOTTOM_PADDING),
+        // Room for the "Add" button, so it never covers the last row's copy button (ux.md §5.11, §8):
+        // its height as drawn, which grows with the font, its margin and a little more.
+        contentPadding = PaddingValues(bottom = maxOf(LIST_BOTTOM_PADDING, with(LocalDensity.current) { addHeight.toDp() } + ADD_MARGIN + ADD_CLEARANCE)),
     ) {
         // While searching only the results show; the banners wait (ux.md §5.11). The banners are one
         // item with a key of its own that is always first, even with no banner: so a banner that
@@ -585,6 +617,13 @@ private val CARD_GAP = 12.dp
 
 /** The "Add" button's height (56 dp) and its margin (16 dp), and 24 dp more: the list's bottom padding (ux.md §5.11). */
 private val LIST_BOTTOM_PADDING = 96.dp
+
+/** The "Add" button's margin above the bottom of the screen's content, and the room kept above it. */
+private val ADD_MARGIN = 16.dp
+private val ADD_CLEARANCE = 24.dp
+
+/** The least of the list that the "Add" button leaves free above it; with less, the button hides. */
+private val ADD_ROOM_ABOVE = 48.dp
 
 /** The keys of the list's rows (`LazyColumn` keys): an account is listed among the favourites and A to Z, so the key says where. */
 internal const val BANNERS_KEY = "banners"

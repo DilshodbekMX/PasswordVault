@@ -21,7 +21,6 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -48,6 +47,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import io.github.dilshodbekmx.passwordvault.R
 import io.github.dilshodbekmx.passwordvault.nav.Navigator
+import io.github.dilshodbekmx.passwordvault.ui.common.VaultTopBar
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -91,8 +91,8 @@ fun LicencesScreen(vm: LicencesViewModel, nav: Navigator, modifier: Modifier = M
             testTagsAsResourceId = true
         },
         topBar = {
-            TopAppBar(
-                title = { Text(title, maxLines = 1, modifier = Modifier.semantics { heading() }) },
+            VaultTopBar(
+                title = title,
                 navigationIcon = { BackArrow(nav) },
             )
         },

@@ -35,7 +35,7 @@
     <!-- After a wrong master password (lock.md §13.3). -->
     <string name="master_wrong">That’s not the right master password. Check the keyboard language (Latin or Cyrillic) and capital letters.</string>
     <!-- After several wrong master passwords the field waits 30 seconds (lock.md §6.8). -->
-    <string name="master_wait">Wait 30 seconds, then try again. Take your time and look at your paper.</string>
+    <string name="master_wait">Wait 30&#160;seconds, then try again. Take your time and look at your paper.</string>
     <!-- The countdown of that wait, once a second. -->
     <plurals name="master_wait_seconds">
         <item quantity="one">Try again in %d&#160;second.</item>
@@ -48,7 +48,7 @@
          it is typed now. Title above the PIN pad. -->
     <string name="master_keep_pin_title">Enter your app PIN to keep using it</string>
     <!-- Under that title. "Not now" is the button that skips this step. -->
-    <string name="master_keep_pin_text">Your master password is changing, so your PIN must be confirmed to keep working. With “Not now”, you choose a PIN again afterwards.</string>
+    <string name="master_keep_pin_text">Your master password is changing. Enter your PIN to keep using it. If you tap “Not now”, you choose a new PIN later.</string>
     <!-- A wrong PIN on that step or on the step that proves a new master password; it is counted. -->
     <plurals name="master_pin_wrong">
         <item quantity="one">Wrong PIN. %d&#160;try left.</item>
@@ -83,9 +83,9 @@
     <string name="master_back_up_now">Back up now</string>
     <!-- Above the list of the backups this app saved, when the old master password is also the
          password of some account (ux.md §5.16 card 1): others may know it. -->
-    <string name="master_places_heading">Your old master password may be known to others. Delete the backups made with it:</string>
+    <string name="master_places_heading">Someone may know your old master password. Delete the backups you made with it:</string>
     <!-- The same when this app noted no saved backup: some may have been sent with another app. -->
-    <string name="master_places_none">Your old master password may be known to others. Delete the backups you made with it.</string>
+    <string name="master_places_none">Someone may know your old master password. Delete the backups you made with it.</string>
     <!-- One backup in that list: %1$s is its file name, %2$s the day it was saved, for example
          "Oct 6, 2026". -->
     <string name="master_place">%1$s, saved %2$s</string>
@@ -96,7 +96,7 @@
     <!-- The place where that backup is saved does not let the app delete it. -->
     <string name="master_place_not_deletable">The app can’t delete this file. Delete it yourself in the place where it is saved.</string>
     <!-- The file was deleted, but the app could not note it. -->
-    <string name="master_place_not_noted">The file was deleted, but the app couldn’t note it. It may still be listed later.</string>
+    <string name="master_place_not_noted">The file was deleted, but the app couldn’t record that. It may still be in this list later.</string>
 
     <!-- ===== A new master password, the old one forgotten (ux.md §5.24; lock.md F11) ===== -->
 
@@ -105,12 +105,12 @@
     <!-- The heading of the explanation (lock.md F11 step 2), as on the lock screen's sheet. -->
     <string name="master_explain_heading">Forgot your master password?</string>
     <!-- Step 1, the explanation, when the app PIN still opens the app (lock.md F11 step 2). -->
-    <string name="master_explain_pin">You can choose a new master password because your PIN still opens the app on this phone. For your safety it starts working after 24 hours with the phone switched on. Until then nothing changes. Backups you made before will still need your old master password.</string>
+    <string name="master_explain_pin">You can choose a new master password because your PIN still opens the app on this phone. For your safety it starts working after 24&#160;hours with the phone switched on. Until then nothing changes. Backups you made before will still need your old master password.</string>
     <!-- The same when there is no PIN and fingerprint opens the app. -->
-    <string name="master_explain_fingerprint">You can choose a new master password because your fingerprint still opens the app on this phone. For your safety it starts working after 24 hours with the phone switched on. Until then nothing changes. Backups you made before will still need your old master password.</string>
+    <string name="master_explain_fingerprint">You can choose a new master password because your fingerprint still opens the app on this phone. For your safety it starts working after 24&#160;hours with the phone switched on. Until then nothing changes. Backups you made before will still need your old master password.</string>
     <!-- Added to the explanation while another new master password is still waiting (lock.md F11
          step 5: a new request replaces it, and its wait starts again). -->
-    <string name="master_explain_replaces">A new master password is already waiting to start working. If you choose another one, its 24 hours start again.</string>
+    <string name="master_explain_replaces">A new master password is already waiting to start working. If you choose another one, its 24&#160;hours start again.</string>
     <!-- The button under the explanation. -->
     <string name="master_continue">Continue</string>
     <!-- Step 2 (lock.md F11 step 3): title above the PIN pad. The PIN typed now proves that the
@@ -160,7 +160,7 @@
     <string name="master_wait_heading">Your new master password is chosen</string>
     <!-- Step 4, the wait (lock.md F11 step 6). No date or time is promised: only hours with the phone
          switched on count. -->
-    <string name="master_wait_text">Your new master password starts working after about 24 hours with the phone switched on. Keep the paper. Until then, open the app with your PIN or fingerprint as usual. The countdown stops while the phone is switched off. To keep it moving, open this app in the morning and again in the evening.</string>
+    <string name="master_wait_text">Your new master password starts working after about 24&#160;hours with the phone switched on. Keep the paper. Until then, open the app with your PIN or fingerprint as usual. The countdown stops while the phone is switched off. To keep it moving, open this app in the morning and again in the evening.</string>
 
     <!-- ===== Finish now (lock.md F11 steps 13 to 19; build-plan.md §12, decision 14) ===== -->
 

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -25,7 +26,6 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -56,8 +56,10 @@ import io.github.dilshodbekmx.passwordvault.i18n.rememberFormatters
 import io.github.dilshodbekmx.passwordvault.i18n.resolve
 import io.github.dilshodbekmx.passwordvault.ui.common.FieldKeyboard
 import io.github.dilshodbekmx.passwordvault.ui.common.KeyboardFirstOnBack
+import io.github.dilshodbekmx.passwordvault.ui.common.TextBeside
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultFieldDefaults
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultSecureField
+import io.github.dilshodbekmx.passwordvault.ui.common.VaultTopBar
 import io.github.dilshodbekmx.passwordvault.ui.common.rememberFieldKeyboard
 
 // The parts that "Change master password" and the screen of a new master password share (build plan
@@ -134,8 +136,8 @@ internal fun MasterFrame(title: String, onBack: () -> Unit, backEnabled: Boolean
             testTagsAsResourceId = true
         },
         topBar = {
-            TopAppBar(
-                title = { Text(title, modifier = Modifier.semantics { heading() }) },
+            VaultTopBar(
+                title = title,
                 navigationIcon = {
                     IconButton(onClick = onBack, enabled = backEnabled, modifier = Modifier.testTag(MasterTags.BACK)) {
                         Icon(painterResource(R.drawable.ic_settings_back), contentDescription = stringResource(R.string.master_back))
@@ -150,11 +152,14 @@ internal fun MasterFrame(title: String, onBack: () -> Unit, backEnabled: Boolean
 
 /**
  * A step without a pad: [heading] and the [content] in one column that scrolls, at most 640 dp wide
- * (ux.md §3 "Layout"), above the keyboard.
+ * (ux.md §3 "Layout"), above the keyboard (`imePadding`, as the form's column has it): the column ends
+ * where the keyboard begins, so a field that has the focus is scrolled into view above it. Without it
+ * the column ran on under the keyboard, and with a long text above the field (the phone's font at
+ * 200 % on a small phone) the master-password field and its line lay under the keyboard.
  */
 @Composable
 internal fun MasterPage(heading: String, content: @Composable ColumnScope.() -> Unit) {
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+    Box(Modifier.fillMaxSize().imePadding(), contentAlignment = Alignment.TopCenter) {
         Column(
             modifier = Modifier
                 .widthIn(max = 640.dp)
@@ -303,25 +308,31 @@ private fun Places(places: List<BackupPlace>, onDelete: (FileRef) -> Unit) {
         )
         places.forEachIndexed { index, place ->
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        text = stringResource(R.string.master_place, place.ref.name, formatters.date(place.ref.savedAt)),
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.weight(1f).testTag(MasterTags.place(index)),
-                    )
-                    when (place.state) {
-                        PlaceState.DELETED -> Text(
-                            text = stringResource(R.string.master_place_deleted),
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                // "Delete" goes under the file's line when the two do not fit side by side (TextBeside).
+                TextBeside(
+                    modifier = Modifier.fillMaxWidth(),
+                    text = {
+                        Text(
+                            text = stringResource(R.string.master_place, place.ref.name, formatters.date(place.ref.savedAt)),
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.testTag(MasterTags.place(index)),
                         )
-                        PlaceState.DELETING -> CircularProgressIndicator(Modifier.size(24.dp))
-                        else -> OutlinedButton(onClick = { onDelete(place.ref) }, modifier = Modifier.testTag(MasterTags.deletePlace(index))) {
-                            Text(stringResource(R.string.common_delete))
+                    },
+                    action = {
+                        when (place.state) {
+                            PlaceState.DELETED -> Text(
+                                text = stringResource(R.string.master_place_deleted),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                            )
+                            PlaceState.DELETING -> CircularProgressIndicator(Modifier.size(24.dp))
+                            else -> OutlinedButton(onClick = { onDelete(place.ref) }, modifier = Modifier.testTag(MasterTags.deletePlace(index))) {
+                                Text(stringResource(R.string.common_delete))
+                            }
                         }
-                    }
-                }
+                    },
+                )
                 when (place.state) {
                     PlaceState.NOT_DELETABLE -> MasterLine(UiText.of(R.string.master_place_not_deletable), tag = "${MasterTags.place(index)}.line")
                     PlaceState.NOT_NOTED -> MasterLine(UiText.of(R.string.master_place_not_noted), tag = "${MasterTags.place(index)}.line")

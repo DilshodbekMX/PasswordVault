@@ -27,7 +27,6 @@ import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -56,6 +55,8 @@ import io.github.dilshodbekmx.passwordvault.i18n.Formatters
 import io.github.dilshodbekmx.passwordvault.i18n.rememberFormatters
 import io.github.dilshodbekmx.passwordvault.nav.Navigator
 import io.github.dilshodbekmx.passwordvault.nav.Route
+import io.github.dilshodbekmx.passwordvault.ui.common.LongLabelShape
+import io.github.dilshodbekmx.passwordvault.ui.common.VaultTopBar
 
 /** The Security tab's route (ux.md §5.16): its ViewModel over the app's check, and the screen. */
 @Composable
@@ -83,7 +84,7 @@ fun SecurityScreen(viewModel: SecurityViewModel, nav: Navigator) {
     val title = stringResource(R.string.security_title)
     Scaffold(
         modifier = Modifier.semantics { paneTitle = title },
-        topBar = { TopAppBar(title = { Text(title, modifier = Modifier.semantics { heading() }) }) },
+        topBar = { VaultTopBar(title = title) },
     ) { padding ->
         val formatters = rememberFormatters()
         LazyColumn(
@@ -200,7 +201,7 @@ private fun CardOf(card: SecurityCard, nav: Navigator, formatters: Formatters) {
                 },
             )
             CardButtons {
-                Button(onClick = { nav.go(Route.ChangeMasterPassword) }, modifier = Modifier.testTag(SecurityTags.cardButton(SecurityTags.MASTER))) {
+                Button(onClick = { nav.go(Route.ChangeMasterPassword) }, modifier = Modifier.testTag(SecurityTags.cardButton(SecurityTags.MASTER)), shape = LongLabelShape) {
                     Text(stringResource(R.string.security_master_choose))
                 }
             }

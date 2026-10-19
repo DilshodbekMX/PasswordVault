@@ -38,6 +38,12 @@ object ListTags {
      */
     fun copy(key: String): String = "pv.list.copy.$key"
 
+    /**
+     * An item of a row's menu (long press), by what it does: `copyUsername`, `copyPassword`, `copyOld`,
+     * `copyNew`, `openWebsite`, `bigLetters`, `favourite`, `edit`, `delete`.
+     */
+    fun menuItem(name: String): String = "pv.list.menu.$name"
+
     /** A favourite's row in the Favourites part. */
     fun favourite(id: String): String = "pv.list.fav.$id"
 

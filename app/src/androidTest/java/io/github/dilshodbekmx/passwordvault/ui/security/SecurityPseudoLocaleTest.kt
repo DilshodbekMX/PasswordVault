@@ -26,15 +26,17 @@ import io.github.dilshodbekmx.passwordvault.R
 import io.github.dilshodbekmx.passwordvault.i18n.AppLanguages
 import io.github.dilshodbekmx.passwordvault.i18n.Formatters
 import io.github.dilshodbekmx.passwordvault.settings.ThemeChoice
+import io.github.dilshodbekmx.passwordvault.ui.layout.LayoutHook
+import io.github.dilshodbekmx.passwordvault.ui.layout.revealText
 import io.github.dilshodbekmx.passwordvault.ui.theme.PasswordVaultTheme
+import java.io.File
+import java.util.Locale
 import org.junit.After
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.io.File
-import java.util.Locale
 
 /**
  * Build plan §1 rule 5: the Security tab's screens walked once in the `en-XA` pseudo-locale (the debug
@@ -82,6 +84,7 @@ class SecurityPseudoLocaleTest {
      * leaves for the package's agent to look at.
      */
     private fun save(name: String) {
+        LayoutHook.look(compose, "security", name)
         compose.waitForIdle()
         val dir = File(compose.activity.cacheDir, "pv-screens").apply { mkdirs() }
         val bitmap = InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot() ?: return
@@ -147,14 +150,14 @@ class SecurityPseudoLocaleTest {
         }
         compose.waitForIdle()
         val res = context.resources
-        compose.onNodeWithText(res.getString(R.string.security_title)).assertExists()
-        compose.onNodeWithText(res.getString(R.string.security_why_title)).assertExists()
-        compose.onNodeWithText(res.getString(R.string.security_master_title)).assertExists()
+        compose.revealText(res.getString(R.string.security_title)).assertExists()
+        compose.revealText(res.getString(R.string.security_why_title)).assertExists()
+        compose.revealText(res.getString(R.string.security_master_title)).assertExists()
         compose.onNodeWithText(compose.activity.getString(R.string.security_title)).assertDoesNotExist()
         save("tab-top-$tag")
         compose.onNodeWithTag(SecurityTags.LIST).performScrollToNode(hasTestTag(SecurityTags.card(SecurityTags.LEFT_OUT)))
-        compose.onNodeWithText(res.getString(R.string.security_left_out_title)).assertExists()
-        compose.onNodeWithText(res.getQuantityString(R.plurals.security_left_out_count, 2, number(context, 2))).assertExists()
+        compose.revealText(res.getString(R.string.security_left_out_title)).assertExists()
+        compose.revealText(res.getQuantityString(R.plurals.security_left_out_count, 2, number(context, 2))).assertExists()
         save("tab-end-$tag")
     }
 
@@ -171,9 +174,9 @@ class SecurityPseudoLocaleTest {
         }
         compose.waitForIdle()
         val res = context.resources
-        compose.onNodeWithText(res.getString(R.string.security_list_reused)).assertExists()
-        compose.onNodeWithText(res.getQuantityString(R.plurals.security_group_reused, 7, number(context, 7))).assertExists()
-        compose.onNodeWithText(res.getQuantityString(R.plurals.security_reused_progress, 7, number(context, 3), number(context, 7))).assertExists()
+        compose.revealText(res.getString(R.string.security_list_reused)).assertExists()
+        compose.revealText(res.getQuantityString(R.plurals.security_group_reused, 7, number(context, 7))).assertExists()
+        compose.revealText(res.getQuantityString(R.plurals.security_reused_progress, 7, number(context, 3), number(context, 7))).assertExists()
         compose.onAllNodesWithText(res.getString(R.string.security_change)).onFirst().assertExists()
         save("group-$tag")
     }

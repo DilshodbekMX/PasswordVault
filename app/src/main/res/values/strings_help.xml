@@ -65,7 +65,7 @@
     <string name="help_protection_rooted">On a rooted phone, someone can try every PIN in a few hours. Your master password still protects your passwords, so make it strong and never use it anywhere else.</string>
     <!-- lock.md F11: the PIN can start a new master password, which works after 24 hours with the
          phone switched on. "Cancel it" is the button on that message (glossary 141). -->
-    <string name="help_protection_new_mp">Someone who knows your PIN can choose a new master password for the app. It starts working only after 24 hours with the phone switched on, and until then the app tells you about it each time you open it. If it wasn’t you, tap “Cancel it” and change your PIN.</string>
+    <string name="help_protection_new_mp">Someone who knows your PIN can choose a new master password for the app. It starts working only after 24&#160;hours with the phone switched on, and until then the app tells you about it each time you open it. If it wasn’t you, tap “Cancel it” and change your PIN.</string>
 
     <!-- A heading inside the page. -->
     <string name="help_protection_heading_limits">What the app cannot protect you from</string>
@@ -101,7 +101,7 @@
     <!-- The way through the app's screens: the Settings tab, the group "App lock", the row "Change
          master password", the button "I don’t remember it". Use the names those screens show. -->
     <string name="help_forgot_mp_new">If your PIN or fingerprint still opens the app, open it and choose a new master password: Settings › App lock › Change master password › I don’t remember it.</string>
-    <string name="help_forgot_mp_wait">The new master password starts working after 24 hours with the phone switched on. The countdown stops while the phone is switched off, so open the app in the morning and again in the evening. Until then, open the app with your PIN or fingerprint as usual.</string>
+    <string name="help_forgot_mp_wait">The new master password starts working after 24&#160;hours with the phone switched on. The countdown stops while the phone is switched off, so open the app in the morning and again in the evening. Until then, open the app with your PIN or fingerprint as usual.</string>
     <string name="help_forgot_mp_backup">Then make a new backup. Your old backups still open only with your old master password.</string>
     <!-- "Forgot master password?" and "Open my passwords from before …" are buttons on the lock
          screen (glossary 132, 145). -->

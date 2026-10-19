@@ -19,7 +19,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,13 +33,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.dilshodbekmx.passwordvault.R
 import io.github.dilshodbekmx.passwordvault.core.formats.TextDecoding
+import io.github.dilshodbekmx.passwordvault.ui.common.VaultTopBar
 
 /** The import screens' top bar: the title and a back arrow that does what Back does there. */
 @OptIn(ExperimentalMaterial3Api::class) // TopAppBar's signature names TopAppBarScrollBehavior (ux.md §10)
 @Composable
 internal fun ImportTopBar(title: String, onBack: () -> Unit) {
-    TopAppBar(
-        title = { Text(text = title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+    VaultTopBar(
+        title = title,
         navigationIcon = {
             IconButton(onClick = onBack, modifier = Modifier.testTag(ImportTags.BACK)) {
                 Icon(painterResource(R.drawable.ic_entry_back), contentDescription = stringResource(R.string.import_back))

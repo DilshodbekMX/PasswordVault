@@ -162,8 +162,8 @@
     <!-- Banner while password changes wait for the user's answer (ux.md §5.17). %1$d is how many
          (1 or more), %2$s the name of the first account, for example “Gmail”. -->
     <plurals name="list_banner_change">
-        <item quantity="one">%1$d password change is waiting for your answer (%2$s).</item>
-        <item quantity="other">%1$d password changes are waiting for your answer (%2$s and others).</item>
+        <item quantity="one">%1$d&#160;password change is waiting for your answer (%2$s).</item>
+        <item quantity="other">%1$d&#160;password changes are waiting for your answer (%2$s and others).</item>
     </plurals>
     <!-- Button on that banner: opens the first of those accounts. -->
     <string name="list_banner_answer_now">Answer now</string>
@@ -203,9 +203,9 @@
     <!-- Top-bar button: deletes every account on this screen for good, after a question. -->
     <string name="list_deleted_empty">Empty</string>
     <!-- The line at the top of the screen. -->
-    <string name="list_deleted_info">Deleted accounts wait here for 30 days. Then they are removed.</string>
+    <string name="list_deleted_info">Deleted accounts wait here for 30&#160;days. Then they are removed.</string>
     <!-- The screen when nothing is deleted. -->
-    <string name="list_deleted_nothing">Nothing here. Accounts you delete wait here for 30 days.</string>
+    <string name="list_deleted_nothing">Nothing here. Accounts you delete wait here for 30&#160;days.</string>
     <!-- Under an account's name: when it was deleted; %1$s is the date, for example “Oct 6, 2026”. -->
     <string name="list_deleted_on">Deleted %1$s</string>
     <!-- Button on a deleted account's row: brings it back to the list. -->

@@ -61,30 +61,30 @@
     <string name="settings_lock_delay_immediately">Immediately</string>
     <!-- A choice of the lock delay in seconds (glossary term 72); %d is 30. -->
     <plurals name="settings_lock_delay_seconds">
-        <item quantity="one">After %d second</item>
-        <item quantity="other">After %d seconds</item>
+        <item quantity="one">After %d&#160;second</item>
+        <item quantity="other">After %d&#160;seconds</item>
     </plurals>
     <!-- A choice of the lock delay in minutes (glossary term 73); %d is 1 or 5. -->
     <plurals name="settings_lock_delay_minutes">
-        <item quantity="one">After %d minute</item>
-        <item quantity="other">After %d minutes</item>
+        <item quantity="one">After %d&#160;minute</item>
+        <item quantity="other">After %d&#160;minutes</item>
     </plurals>
     <!-- Under the choices of the lock delay dialog (ux.md §5.18, lock.md §10.3). -->
     <string name="settings_lock_delay_note">Time in a file picker or share sheet that the app opened counts as time in the app.</string>
     <!-- Under the lock delay row: the two rules that cannot be changed (ux.md §5.18 "always"). -->
-    <string name="settings_lock_always">The app also locks at once when the screen turns off, and after 5 minutes without a touch.</string>
+    <string name="settings_lock_always">The app also locks at once when the screen turns off, and after 5&#160;minutes without a touch.</string>
 
     <!-- Row: when copied text is cleared from the clipboard (glossary term 113). Opens a dialog. -->
     <string name="settings_clip_delay">Clear copied text after</string>
     <!-- A choice of the clipboard delay in seconds; %d is 30. -->
     <plurals name="settings_clip_delay_seconds">
-        <item quantity="one">%d second</item>
-        <item quantity="other">%d seconds</item>
+        <item quantity="one">%d&#160;second</item>
+        <item quantity="other">%d&#160;seconds</item>
     </plurals>
     <!-- A choice of the clipboard delay in minutes; %d is 1, 2 or 5. -->
     <plurals name="settings_clip_delay_minutes">
-        <item quantity="one">%d minute</item>
-        <item quantity="other">%d minutes</item>
+        <item quantity="one">%d&#160;minute</item>
+        <item quantity="other">%d&#160;minutes</item>
     </plurals>
 
     <!-- Row: opens "Change master password" (glossary term 51). -->

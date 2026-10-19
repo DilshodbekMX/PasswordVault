@@ -34,7 +34,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -59,7 +58,6 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -67,6 +65,9 @@ import io.github.dilshodbekmx.passwordvault.R
 import io.github.dilshodbekmx.passwordvault.data.SaveProblem
 import io.github.dilshodbekmx.passwordvault.nav.Navigator
 import io.github.dilshodbekmx.passwordvault.nav.Route
+import io.github.dilshodbekmx.passwordvault.ui.common.LongLabelShape
+import io.github.dilshodbekmx.passwordvault.ui.common.VaultTopBar
+import io.github.dilshodbekmx.passwordvault.ui.common.userText
 import io.github.dilshodbekmx.passwordvault.ui.edit.GeneratorSheet
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -187,8 +188,8 @@ fun GuidedChangeScreen(vm: GuidedChangeViewModel, nav: Navigator) {
             testTagsAsResourceId = true
         },
         topBar = {
-            TopAppBar(
-                title = { Text(text = title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+            VaultTopBar(
+                title = title,
                 navigationIcon = {
                     IconButton(onClick = { nav.back() }, modifier = Modifier.testTag(GuidedChangeTags.BACK)) {
                         Icon(painterResource(R.drawable.ic_entry_back), contentDescription = stringResource(R.string.change_back))
@@ -261,10 +262,15 @@ private fun Steps(steps: GuidedChangeUiState.Steps, copied: String?, retried: Bo
             Text(
                 text = steps.title,
                 style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.testTag(GuidedChangeTags.ACCOUNT).semantics { heading() },
+                modifier = Modifier.testTag(GuidedChangeTags.ACCOUNT).semantics { heading() }.userText(),
             )
             if (steps.username.isNotEmpty()) {
-                Text(text = steps.username, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    text = steps.username,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.userText(),
+                )
             }
         }
         if (steps.lastOne) {
@@ -352,10 +358,10 @@ private fun Steps(steps: GuidedChangeUiState.Steps, copied: String?, retried: Bo
 
         StepCard(5, stringResource(R.string.change_step5)) {
             val answer = steps.started && !saving
-            Button(onClick = actions.yes, enabled = answer, modifier = Modifier.fillMaxWidth().testTag(GuidedChangeTags.YES)) {
+            Button(onClick = actions.yes, enabled = answer, modifier = Modifier.fillMaxWidth().testTag(GuidedChangeTags.YES), shape = LongLabelShape) {
                 Text(stringResource(R.string.change_yes))
             }
-            OutlinedButton(onClick = actions.no, enabled = answer, modifier = Modifier.fillMaxWidth().testTag(GuidedChangeTags.NO)) {
+            OutlinedButton(onClick = actions.no, enabled = answer, modifier = Modifier.fillMaxWidth().testTag(GuidedChangeTags.NO), shape = LongLabelShape) {
                 Text(stringResource(R.string.change_no))
             }
             TextButton(onClick = actions.later, enabled = steps.started, modifier = Modifier.testTag(GuidedChangeTags.LATER)) {

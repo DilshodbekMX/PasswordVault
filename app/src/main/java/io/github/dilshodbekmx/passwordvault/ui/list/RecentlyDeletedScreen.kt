@@ -1,6 +1,7 @@
 package io.github.dilshodbekmx.passwordvault.ui.list
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,16 +15,17 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -37,7 +39,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
@@ -49,7 +50,11 @@ import io.github.dilshodbekmx.passwordvault.R
 import io.github.dilshodbekmx.passwordvault.data.SaveProblem
 import io.github.dilshodbekmx.passwordvault.i18n.rememberFormatters
 import io.github.dilshodbekmx.passwordvault.nav.Navigator
+import io.github.dilshodbekmx.passwordvault.ui.common.TextBeside
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultDialog
+import io.github.dilshodbekmx.passwordvault.ui.common.VaultTopBar
+import io.github.dilshodbekmx.passwordvault.ui.common.mayTruncate
+import io.github.dilshodbekmx.passwordvault.ui.common.userText
 import kotlinx.coroutines.launch
 
 /** The Recently deleted route (ux.md §5.23): its ViewModel over the app's vault, and the screen. */
@@ -96,8 +101,8 @@ fun RecentlyDeletedScreen(viewModel: RecentlyDeletedViewModel, nav: Navigator) {
     Scaffold(
         modifier = Modifier.semantics { paneTitle = title },
         topBar = {
-            TopAppBar(
-                title = { Text(title, modifier = Modifier.semantics { heading() }) },
+            VaultTopBar(
+                title = title,
                 navigationIcon = {
                     IconButton(onClick = { nav.back() }) {
                         Icon(painterResource(R.drawable.ic_list_back), contentDescription = stringResource(R.string.list_back))
@@ -157,37 +162,53 @@ fun RecentlyDeletedScreen(viewModel: RecentlyDeletedViewModel, nav: Navigator) {
     }
 }
 
-/** One deleted account: its name, "Deleted Oct 6, 2026", "Restore" and the ⋮ menu with "Delete forever". */
+/**
+ * One deleted account: its name, "Deleted Oct 6, 2026", "Restore" and the ⋮ menu with "Delete forever".
+ * The two buttons stand beside the name and the date while those keep half the row, and under them
+ * otherwise (TextBeside): at 320 dp and 200 % the date, whose parts no-break spaces hold together, was
+ * squeezed into a column narrower than itself and broke inside its year (build plan 6.2).
+ */
 @Composable
 private fun DeletedRowItem(row: DeletedRow, deletedOn: String, onRestore: () -> Unit, onDeleteForever: () -> Unit) {
     var menu by remember { mutableStateOf(false) }
     val restore = stringResource(R.string.list_deleted_restore_description, row.title)
     ListItem(
-        headlineContent = { Text(row.title, maxLines = 2, overflow = TextOverflow.Ellipsis) },
-        supportingContent = { Text(deletedOn) },
-        trailingContent = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                TextButton(
-                    onClick = onRestore,
-                    modifier = Modifier.semantics { contentDescription = restore }.testTag(ListTags.restore(row.id)),
-                ) {
-                    Text(stringResource(R.string.list_deleted_restore))
-                }
-                Box {
-                    IconButton(onClick = { menu = true }, modifier = Modifier.testTag(ListTags.deletedMore(row.id))) {
-                        Icon(painterResource(R.drawable.ic_list_more), contentDescription = stringResource(R.string.list_deleted_more, row.title))
+        headlineContent = {
+            TextBeside(
+                text = {
+                    Column {
+                        // The row may cut the name: the account's screen, opened from it, shows it whole (i18n.md §4.5 rule 3).
+                        Text(row.title, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.mayTruncate().userText())
+                        Text(deletedOn, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.list_deleted_delete_forever)) },
-                            onClick = {
-                                menu = false
-                                onDeleteForever()
-                            },
-                        )
+                },
+                action = {
+                    CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurfaceVariant) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            TextButton(
+                                onClick = onRestore,
+                                modifier = Modifier.semantics { contentDescription = restore }.testTag(ListTags.restore(row.id)),
+                            ) {
+                                Text(stringResource(R.string.list_deleted_restore))
+                            }
+                            Box {
+                                IconButton(onClick = { menu = true }, modifier = Modifier.testTag(ListTags.deletedMore(row.id))) {
+                                    Icon(painterResource(R.drawable.ic_list_more), contentDescription = stringResource(R.string.list_deleted_more, row.title))
+                                }
+                                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.list_deleted_delete_forever)) },
+                                        onClick = {
+                                            menu = false
+                                            onDeleteForever()
+                                        },
+                                    )
+                                }
+                            }
+                        }
                     }
-                }
-            }
+                },
+            )
         },
         modifier = Modifier.testTag(ListTags.deletedRow(row.id)),
     )

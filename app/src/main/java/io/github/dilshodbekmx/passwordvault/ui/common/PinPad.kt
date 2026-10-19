@@ -178,7 +178,8 @@ fun PinDots(
 
 /**
  * The 3 × 4 keypad `1 2 3 / 4 5 6 / 7 8 9 / [fingerprint] 0 [⌫]` (ux.md §5.9): round keys of 72 dp
- * (never under 64 dp), larger with large fonts as far as the width allows, digits in
+ * (never under 64 dp), larger with large fonts as far as the width allows, and smaller where the
+ * page gives the keypad a height ([KeypadColumn]: the gaps first, to 8 dp, then the keys), digits in
  * `headlineMedium`, a ripple and `HapticFeedbackType.VirtualKey` on each press; no letters under the
  * digits, never shuffled; always left to right. How a key is drawn is the style's
  * (docs/design/looks/README.md "PIN keys", read from `LocalLook`): a digit on a filled circle, alone,
@@ -210,7 +211,9 @@ fun PinKeys(
             val fontScale = LocalDensity.current.fontScale
             val preferred = KEY_SIZE * fontScale.coerceIn(1f, MAX_KEY_GROWTH)
             val fits = if (constraints.hasBoundedWidth) (maxWidth - KEY_GAP * 2) / 3 else preferred
-            val keySize = minOf(preferred, fits).coerceAtLeast(MIN_KEY_SIZE)
+            // A page that keeps the whole keypad on the screen gives it a height (KeypadColumn): the
+            // gaps go down to 8 dp first, then the keys down to 64 dp (ux.md §8), never further.
+            val (keySize, gap) = keySizeAndGap(minOf(preferred, fits), if (constraints.hasBoundedHeight) maxHeight else null)
             val press: (Int) -> Unit = { n ->
                 haptics.performHapticFeedback(HapticFeedbackType.VirtualKey)
                 digit(n)
@@ -221,14 +224,14 @@ fun PinKeys(
                     .onKeyEvent { event -> keysOn && hardwareKey(event, digit, delete) }
                     .focusTarget(),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(KEY_GAP),
+                verticalArrangement = Arrangement.spacedBy(gap),
             ) {
                 for (row in DIGIT_ROWS) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(KEY_GAP)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(gap)) {
                         for (n in row) DigitKey(n, keySize, enabled, sensitiveKeys, press)
                     }
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(KEY_GAP)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(gap)) {
                     if (onFingerprint != null) {
                         Key(keySize, enabled, sensitiveKeys, PinPadTags.FINGERPRINT, KeyKind.FINGERPRINT, onClick = onFingerprint) {
                             Icon(painterResource(R.drawable.ic_common_fingerprint), contentDescription = stringResource(R.string.common_pin_fingerprint), modifier = Modifier.size(KEY_ICON))
@@ -264,6 +267,20 @@ fun PinKeys(
         }
     }
 }
+
+/**
+ * The keys' size and the gap between them: [wanted] and 16 dp while the four rows fit in [height]
+ * (null: no limit); else the gaps shrink, to 8 dp, then the keys, to [MIN_KEY_SIZE].
+ */
+private fun keySizeAndGap(wanted: Dp, height: Dp?): Pair<Dp, Dp> {
+    if (height == null || wanted * 4 + KEY_GAP * 3 <= height) return wanted.coerceAtLeast(MIN_KEY_SIZE) to KEY_GAP
+    val gap = ((height - wanted * 4) / 3).coerceIn(MIN_KEY_GAP, KEY_GAP)
+    val size = ((height - gap * 3) / 4).coerceIn(MIN_KEY_SIZE, wanted.coerceAtLeast(MIN_KEY_SIZE))
+    return size to gap
+}
+
+/** The height of the keypad at its smallest: four rows of 64 dp keys, 8 dp apart. */
+val MIN_KEYPAD_HEIGHT: Dp get() = MIN_KEY_SIZE * 4 + MIN_KEY_GAP * 3
 
 /** The test tags of the pad's nodes; none of them names a digit that was entered. */
 object PinPadTags {
@@ -366,6 +383,7 @@ private val KEY_SIZE = 72.dp
 private val MIN_KEY_SIZE = 64.dp
 private const val MAX_KEY_GROWTH = 1.5f
 private val KEY_GAP = 16.dp
+private val MIN_KEY_GAP = 8.dp
 private val KEY_ICON = 32.dp
 private val KEY_OUTLINE = 1.5.dp
 private val DOT_SIZE = 14.dp

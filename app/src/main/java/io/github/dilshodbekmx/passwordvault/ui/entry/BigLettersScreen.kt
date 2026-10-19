@@ -26,7 +26,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -49,7 +48,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -57,6 +55,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.dilshodbekmx.passwordvault.R
 import io.github.dilshodbekmx.passwordvault.nav.Navigator
+import io.github.dilshodbekmx.passwordvault.ui.common.VaultTopBar
+import io.github.dilshodbekmx.passwordvault.ui.common.userText
 
 /**
  * "Show in big letters" (ux.md §5.13): a full screen for one password, username or hidden value of
@@ -114,8 +114,9 @@ fun BigLettersScreen(vm: BigLettersViewModel, nav: Navigator) {
             }
             .onAnyTouch(vm::touched),
         topBar = {
-            TopAppBar(
-                title = { Text(text = title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+            VaultTopBar(
+                title = title,
+                titleIsUserText = ui.value is EntryValue.Field,
                 navigationIcon = {
                     IconButton(onClick = ::close, modifier = Modifier.testTag(EntryTags.BIG_CLOSE)) {
                         Icon(painterResource(R.drawable.ic_entry_close), contentDescription = stringResource(R.string.common_close))
@@ -139,7 +140,13 @@ fun BigLettersScreen(vm: BigLettersViewModel, nav: Navigator) {
                     .padding(CONTENT_PADDING),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                Text(text = ui.title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                // The account's name, as the user wrote it (UserText).
+                Text(
+                    text = ui.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.userText(),
+                )
                 if (ui.tooLong) {
                     Text(
                         text = stringResource(R.string.entry_big_too_long),

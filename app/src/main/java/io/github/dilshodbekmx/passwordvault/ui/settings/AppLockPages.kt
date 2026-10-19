@@ -20,7 +20,6 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -42,6 +41,7 @@ import io.github.dilshodbekmx.passwordvault.nav.Route
 import io.github.dilshodbekmx.passwordvault.settings.ClipDelay
 import io.github.dilshodbekmx.passwordvault.settings.LockDelay
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultDialog
+import io.github.dilshodbekmx.passwordvault.ui.common.VaultTopBar
 import io.github.dilshodbekmx.passwordvault.ui.setup.MasterPasswordAsk
 import io.github.dilshodbekmx.passwordvault.ui.setup.MasterPasswordInput
 
@@ -64,8 +64,8 @@ fun AppLockPage(vm: SettingsViewModel, nav: Navigator, modifier: Modifier = Modi
             testTagsAsResourceId = true
         },
         topBar = {
-            TopAppBar(
-                title = { Text(title, modifier = Modifier.semantics { heading() }) },
+            VaultTopBar(
+                title = title,
                 navigationIcon = { BackArrow(nav) },
             )
         },

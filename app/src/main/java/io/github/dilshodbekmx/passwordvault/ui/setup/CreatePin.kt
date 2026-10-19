@@ -33,14 +33,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
@@ -63,13 +62,16 @@ import io.github.dilshodbekmx.passwordvault.i18n.resolve
 import io.github.dilshodbekmx.passwordvault.lock.LockManager
 import io.github.dilshodbekmx.passwordvault.lock.MpPurpose
 import io.github.dilshodbekmx.passwordvault.lock.MpResult
+import io.github.dilshodbekmx.passwordvault.ui.common.KeypadColumn
 import io.github.dilshodbekmx.passwordvault.ui.common.PIN_LENGTH
 import io.github.dilshodbekmx.passwordvault.ui.common.PinDots
 import io.github.dilshodbekmx.passwordvault.ui.common.PinKeys
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultFieldDefaults
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultSecureField
 import io.github.dilshodbekmx.passwordvault.ui.common.clearSecret
+import io.github.dilshodbekmx.passwordvault.ui.common.fadeWhereMore
 import io.github.dilshodbekmx.passwordvault.ui.common.readSecret
+import io.github.dilshodbekmx.passwordvault.ui.common.rememberFieldKeyboard
 import java.security.MessageDigest
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -479,10 +481,14 @@ fun CreatePinScreen(
 /**
  * A page with a PIN pad (ux.md §5.6, §5.9): the title, the [body] lines, the dots, the [line] under
  * them, the keypad (or [cover] in its place: "Saving…" with a spinner, [BusyCover], or "Your PIN is
- * set." with a check mark, [DoneCover]), the [footer] and the [buttons]. In portrait one column that scrolls, at most 640 dp wide; in a wide
- * and low window (a phone in landscape) the texts and the dots on the left and the keypad on the
- * right (ux.md §5.9 "Landscape"). With large fonts the keys grow as far as the width allows and the
- * column scrolls, so nothing is cut off.
+ * set." with a check mark, [DoneCover]), the [footer] and the [buttons]. Upright, at most 640 dp
+ * wide, a [KeypadColumn]: the dots and the whole keypad stay on the screen together, with the title,
+ * the body and the footer whole above them where the page allows; on a short page or with a large
+ * font the buttons go below the first screen, then the keys shrink to 64 dp, and only then do the
+ * texts take the height left above the dots and scroll there (build plan 6.2: in `en-XA` on a 1080 ×
+ * 1920 screen the keys 7, 8, 9 and 0 were below the screen's edge). In a wide and low window (a
+ * phone in landscape) the texts and the dots on the left and the keypad on the right (ux.md §5.9
+ * "Landscape"). With large fonts the keys grow as far as the width allows; nothing is cut off.
  *
  * The dots shake (unless animations are off) with a reject haptic each time [shakes] grows: a
  * refused PIN, a mismatch, a wrong current PIN. A hardware keyboard's digits and Backspace work on
@@ -518,7 +524,7 @@ fun PinStepPage(
     val keys: @Composable () -> Unit = {
         if (cover == null) PinKeys(onDigit = onDigit, onDelete = onDelete, onClear = onClear) else cover()
     }
-    val end: @Composable ColumnScope.() -> Unit = {
+    val footerText: @Composable ColumnScope.() -> Unit = {
         if (footer != null) {
             Text(
                 text = footer,
@@ -527,6 +533,9 @@ fun PinStepPage(
                 modifier = Modifier.testTag(PinTags.FOOTER),
             )
         }
+    }
+    val end: @Composable ColumnScope.() -> Unit = {
+        footerText()
         buttons()
     }
     // The page has no text field: a keyboard left open by the step before (the master password)
@@ -560,19 +569,41 @@ fun PinStepPage(
                 }
             }
         } else {
-            Column(
-                modifier = Modifier
-                    .safeDrawingPadding()
-                    .widthIn(max = 640.dp)
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 24.dp, vertical = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                texts()
-                dots()
-                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { keys() }
-                end()
+            // Upright: the keypad and the dots stay whole on the screen together; the texts above them
+            // (with the footer) take the height that is left and scroll there (KeypadColumn).
+            BoxWithConstraints(Modifier.safeDrawingPadding().widthIn(max = 640.dp).fillMaxWidth()) {
+                val viewport = maxHeight
+                Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+                    KeypadColumn(
+                        viewport = viewport,
+                        head = {
+                            val scroll = rememberScrollState()
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .fadeWhereMore(scroll, MaterialTheme.colorScheme.surface)
+                                    .verticalScroll(scroll)
+                                    .padding(start = 24.dp, end = 24.dp, top = 16.dp),
+                                verticalArrangement = Arrangement.spacedBy(16.dp),
+                            ) {
+                                texts()
+                                footerText()
+                            }
+                        },
+                        dots = {
+                            Column(
+                                modifier = Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 8.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                dots()
+                            }
+                        },
+                        keys = { Box(Modifier.fillMaxWidth().padding(horizontal = 24.dp), contentAlignment = Alignment.Center) { keys() } },
+                        foot = {
+                            Column(Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 16.dp)) { buttons() }
+                        },
+                    )
+                }
             }
         }
     }
@@ -664,20 +695,25 @@ fun MasterPasswordPage(
 fun MasterPasswordInput(ask: MasterPasswordAsk, onNext: () -> Unit, focusFirst: Boolean, modifier: Modifier = Modifier) {
     val ui by ask.ui.collectAsStateWithLifecycle()
     val focus = remember { FocusRequester() }
-    val window = LocalWindowInfo.current
+    // The keyboard asked for as the other master-password fields ask for it (FieldKeyboard): Android 17
+    // no longer brings it back after a rotation, and Gboard may close it again by itself.
+    val fieldKeyboard = rememberFieldKeyboard()
+    var focused by remember { mutableStateOf(false) }
     if (focusFirst) {
-        LaunchedEffect(focus, window) {
-            snapshotFlow { window.isWindowFocused }.first { it }
+        LaunchedEffect(focus, fieldKeyboard) {
+            fieldKeyboard.awaitWindowFocus()
             try {
                 focus.requestFocus()
             } catch (_: IllegalStateException) {
+                return@LaunchedEffect
             }
+            fieldKeyboard.show { focused }
         }
     }
     Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         VaultSecureField(
             state = ask.field,
-            modifier = Modifier.fillMaxWidth().focusRequester(focus).testTag(PinTags.MP_FIELD),
+            modifier = Modifier.fillMaxWidth().focusRequester(focus).onFocusChanged { focused = it.isFocused }.testTag(PinTags.MP_FIELD),
             label = { Text(stringResource(R.string.pin_mp_label)) },
             enabled = ui.enabled,
             isError = ui.line?.alert == true,

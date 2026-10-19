@@ -62,7 +62,7 @@
          master password again". -->
     <string name="setup_field_label">Master password</string>
     <!-- The first item of the checklist under the field. -->
-    <string name="setup_own_rule_length">At least 12 characters</string>
+    <string name="setup_own_rule_length">At least 12&#160;characters</string>
     <!-- The second item of the checklist: the password scores 4, zxcvbn's highest, with the app's
          Uzbek and Russian word list. -->
     <string name="setup_own_rule_hard">Hard to guess</string>
@@ -83,7 +83,7 @@
          what (the next three texts). -->
     <string name="setup_own_use">Use this password</string>
     <!-- Shown when "Use this password" is tapped and the password is shorter than 12 characters. -->
-    <string name="setup_own_missing_length">Your master password needs at least 12 characters.</string>
+    <string name="setup_own_missing_length">Your master password needs at least 12&#160;characters.</string>
     <!-- Shown when "Use this password" is tapped and the password is too easy to guess. A hint
          (for example "Add another word") is shown with it. -->
     <string name="setup_own_missing_hard">Your master password is too easy to guess.</string>

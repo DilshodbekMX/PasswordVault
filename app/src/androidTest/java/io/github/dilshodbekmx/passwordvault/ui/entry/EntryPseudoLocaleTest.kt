@@ -14,13 +14,11 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalResources
-import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToKey
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -36,6 +34,10 @@ import io.github.dilshodbekmx.passwordvault.ui.entry.EntryRig.Companion.BANK
 import io.github.dilshodbekmx.passwordvault.ui.entry.EntryRig.Companion.GMAIL
 import io.github.dilshodbekmx.passwordvault.ui.entry.EntryRig.Companion.bare
 import io.github.dilshodbekmx.passwordvault.ui.entry.EntryRig.Companion.gmail
+import io.github.dilshodbekmx.passwordvault.ui.layout.LayoutHook
+import io.github.dilshodbekmx.passwordvault.ui.layout.press
+import io.github.dilshodbekmx.passwordvault.ui.layout.revealTag
+import io.github.dilshodbekmx.passwordvault.ui.layout.revealText
 import io.github.dilshodbekmx.passwordvault.ui.theme.PasswordVaultTheme
 import java.io.File
 import java.util.Locale
@@ -80,6 +82,7 @@ class EntryPseudoLocaleTest {
 
     /** Keeps a picture of the whole screen in `cache/pv-screens/`: menus included, which are windows of their own. */
     private fun save(name: String) {
+        LayoutHook.look(compose, "entry", name)
         compose.waitForIdle()
         val dir = File(compose.activity.cacheDir, "pv-screens").apply { mkdirs() }
         val bitmap = InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot() ?: return
@@ -132,42 +135,50 @@ class EntryPseudoLocaleTest {
             compose.waitForIdle()
         }
         // The banners, at the top.
-        compose.onNodeWithText(res.getString(R.string.entry_banner_master)).assertExists()
-        compose.onNodeWithText(res.getString(R.string.entry_banner_change_yes)).assertExists()
-        compose.onNodeWithText(res.getString(R.string.entry_saved)).assertExists()
+        compose.revealText(res.getString(R.string.entry_banner_master)).assertExists()
+        compose.revealText(res.getString(R.string.entry_banner_change_yes)).assertExists()
+        compose.revealText(res.getString(R.string.entry_saved)).assertExists()
         save("banners-$tag")
         // "Saved" lies over the bottom of the screen for a few seconds: wait until it is gone.
         compose.waitUntil(TIMEOUT_MS) { compose.onAllNodesWithTag(EntryTags.MESSAGE).fetchSemanticsNodes().isEmpty() }
 
         // The rows, with a password shown.
         scrollTo("username")
-        compose.onNodeWithTag(EntryTags.show(EntryValue.OldPassword)).performClick()
+        compose.revealTag(EntryTags.show(EntryValue.OldPassword)).press()
         compose.waitForIdle()
-        compose.onNodeWithText(res.getString(R.string.entry_username), useUnmergedTree = true).assertExists()
-        compose.onNodeWithText(res.getString(R.string.entry_old_password), useUnmergedTree = true).assertExists()
-        // Under each of the two passwords.
-        compose.onAllNodesWithText(res.getString(R.string.entry_big_letters), useUnmergedTree = true).assertCountEquals(2)
+        compose.revealText(res.getString(R.string.entry_username), useUnmergedTree = true).assertExists()
+        compose.revealText(res.getString(R.string.entry_old_password), useUnmergedTree = true).assertExists()
         compose.onNodeWithText(compose.activity.getString(R.string.entry_username), useUnmergedTree = true).assertDoesNotExist()
         save("rows-$tag")
+        // Under each of the two passwords; on a short screen with a large font one row at a time.
+        for (key in listOf("password", "old-password")) {
+            scrollTo(key)
+            compose.onAllNodesWithText(res.getString(R.string.entry_big_letters), useUnmergedTree = true).fetchSemanticsNodes().let {
+                assertTrue("\"Show in big letters\" under the row $key", it.isNotEmpty())
+            }
+        }
+        compose.onAllNodesWithText(res.getString(R.string.entry_big_letters), useUnmergedTree = true).fetchSemanticsNodes().let {
+            assertTrue("at most the two passwords have it: ${it.size}", it.size <= 2)
+        }
 
         scrollTo("notes")
-        compose.onNodeWithText(res.getString(R.string.entry_notes), useUnmergedTree = true).assertExists()
+        compose.revealText(res.getString(R.string.entry_notes), useUnmergedTree = true).assertExists()
         save("notes-$tag")
 
         // The end: the dates and the previous passwords, open.
         scrollTo("previous")
-        compose.onNodeWithTag(EntryTags.PREVIOUS).performClick()
+        compose.revealTag(EntryTags.PREVIOUS).press()
         compose.waitUntil(TIMEOUT_MS) { (vm.state.value as EntryUiState.Shown).details.previous.size == 2 }
         scrollTo("previous.1")
         // The count in the language's digits, as the screen writes it: ar-XB has Arabic-Indic digits
         // on Android 7 (ICU 56) and Latin ones from Android 9 on.
         val two = Formatters(AppLanguages.screenLocale(AppLanguages.localesOf(context.resources.configuration)), hour24 = false).number(2)
-        compose.onNodeWithText(res.getString(R.string.entry_previous, two), substring = true, useUnmergedTree = true).assertExists()
+        compose.revealText(res.getString(R.string.entry_previous, two), substring = true, useUnmergedTree = true).assertExists()
         save("dates-$tag")
 
         // A row's menu, and the top bar's.
-        compose.onNodeWithTag(EntryTags.previous(1)).performClick()
-        compose.onNodeWithText(res.getString(R.string.entry_copy_previous)).assertExists()
+        compose.revealTag(EntryTags.previous(1)).press()
+        compose.revealText(res.getString(R.string.entry_copy_previous)).assertExists()
         save("row-menu-$tag")
     }
 
@@ -191,17 +202,17 @@ class EntryPseudoLocaleTest {
         }
         val res = context.resources
         compose.waitUntil(TIMEOUT_MS) { empty.state.value is EntryUiState.Shown }
-        compose.onNodeWithText(res.getString(R.string.entry_empty)).assertExists()
-        compose.onNodeWithTag(EntryTags.MORE).performClick()
-        compose.onNodeWithText(res.getString(R.string.entry_leave_out)).assertExists()
+        compose.revealText(res.getString(R.string.entry_empty)).assertExists()
+        compose.revealTag(EntryTags.MORE).press()
+        compose.revealText(res.getString(R.string.entry_leave_out)).assertExists()
         save("empty-$tag")
 
         Espresso.pressBack()
         compose.runOnUiThread { which = 1 }
         compose.waitForIdle()
         compose.waitUntil(TIMEOUT_MS) { gone.state.value is EntryUiState.Gone }
-        compose.onNodeWithText(res.getString(R.string.entry_gone_deleted)).assertExists()
-        compose.onNodeWithText(res.getString(R.string.entry_open_deleted)).assertExists()
+        compose.revealText(res.getString(R.string.entry_gone_deleted)).assertExists()
+        compose.revealText(res.getString(R.string.entry_open_deleted)).assertExists()
         save("gone-$tag")
     }
 
@@ -218,9 +229,9 @@ class EntryPseudoLocaleTest {
         }
         compose.waitForIdle()
         val res = context.resources
-        compose.onNodeWithText(res.getString(R.string.entry_password)).assertExists()
-        compose.onNodeWithText(res.getString(R.string.entry_big_hint)).assertExists()
-        compose.onNodeWithTag(EntryTags.bigCell(4)).performClick()
+        compose.revealText(res.getString(R.string.entry_password)).assertExists()
+        compose.revealText(res.getString(R.string.entry_big_hint)).assertExists()
+        compose.revealTag(EntryTags.bigCell(4)).press()
         save("big-letters-$tag")
     }
 

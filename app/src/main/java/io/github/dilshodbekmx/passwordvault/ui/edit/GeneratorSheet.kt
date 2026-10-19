@@ -4,18 +4,22 @@ import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
@@ -26,6 +30,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -34,6 +39,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.dilshodbekmx.passwordvault.R
@@ -120,19 +126,7 @@ fun GeneratorSheet(model: GeneratorModel, onUse: () -> Unit, onDismiss: () -> Un
                         plus = Step(R.string.edit_gen_more_words, GenTags.MORE_WORDS, model::moreWords),
                     )
                     Text(text = stringResource(R.string.edit_gen_separator), style = MaterialTheme.typography.titleSmall)
-                    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-                        SEPARATORS.forEachIndexed { index, choice ->
-                            val name = stringResource(choice.name)
-                            SegmentedButton(
-                                selected = options.separator == choice.separator,
-                                onClick = { model.setSeparator(choice.separator) },
-                                shape = SegmentedButtonDefaults.itemShape(index, SEPARATORS.size),
-                                modifier = Modifier.semantics { contentDescription = name }.testTag(GenTags.SEPARATOR + choice.separator.name),
-                            ) {
-                                Text(text = stringResource(choice.shown))
-                            }
-                        }
-                    }
+                    SeparatorChoices(options.separator, model::setSeparator)
                     SwitchRow(R.string.edit_gen_capitalize, options.capitalize, GenTags.CAPITALIZE, model::setCapitalize)
                     SwitchRow(R.string.edit_gen_add_number, options.addNumber, GenTags.ADD_NUMBER, model::setAddNumber)
                 }
@@ -167,6 +161,60 @@ private fun androidx.compose.material3.SingleChoiceSegmentedButtonRowScope.KindB
         Text(text = stringResource(text))
     }
 }
+
+/**
+ * The separator's four choices: a segmented row while each choice's label fits on one line in its
+ * segment, else (a long word for "Space" in Uzbek or Russian, the phone's font at 200 %) a list of
+ * radio rows, one per choice, each a touch target of its own (i18n.md §4.5 rule 1; build plan 6.2).
+ */
+@Composable
+private fun SeparatorChoices(chosen: GeneratorOptions.Separator, onChoose: (GeneratorOptions.Separator) -> Unit) {
+    val shown = SEPARATORS.map { stringResource(it.shown) }
+    val names = SEPARATORS.map { stringResource(it.name) }
+    val measurer = rememberTextMeasurer()
+    val style = MaterialTheme.typography.labelLarge
+    val density = LocalDensity.current
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        // A segment: its share of the row, less its padding and the check mark of the chosen one.
+        val room = with(density) { (maxWidth / SEPARATORS.size - SEGMENT_FURNITURE).roundToPx() }
+        val fits = shown.all { measurer.measure(it, style, maxLines = 1, softWrap = false, density = density).size.width <= room }
+        if (fits) {
+            SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                SEPARATORS.forEachIndexed { index, choice ->
+                    SegmentedButton(
+                        selected = chosen == choice.separator,
+                        onClick = { onChoose(choice.separator) },
+                        shape = SegmentedButtonDefaults.itemShape(index, SEPARATORS.size),
+                        modifier = Modifier.semantics { contentDescription = names[index] }.testTag(GenTags.SEPARATOR + choice.separator.name),
+                    ) {
+                        Text(text = shown[index])
+                    }
+                }
+            }
+        } else {
+            Column(Modifier.selectableGroup()) {
+                SEPARATORS.forEachIndexed { index, choice ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 48.dp)
+                            .selectable(selected = chosen == choice.separator, role = Role.RadioButton, onClick = { onChoose(choice.separator) })
+                            .testTag(GenTags.SEPARATOR + choice.separator.name),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        RadioButton(selected = chosen == choice.separator, onClick = null)
+                        // The symbol and its name ("- Hyphen"), or the name alone where they are the same ("Space").
+                        val label = if (shown[index] == names[index]) names[index] else "${shown[index]}  ${names[index]}"
+                        Text(text = label, modifier = Modifier.padding(start = 16.dp).clearAndSetSemantics { contentDescription = names[index] })
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** What a segment of a segmented row takes besides its label: 12 dp each side and the chosen one's check mark (18 dp and 8 dp). */
+private val SEGMENT_FURNITURE = 50.dp
 
 /** A − or + button of a [Stepper]. */
 private class Step(@StringRes val description: Int, val tag: String, val onClick: () -> Unit)

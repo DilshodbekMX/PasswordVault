@@ -23,7 +23,7 @@ import io.github.dilshodbekmx.passwordvault.window.vaultTextField
  * it, and hidden from accessibility services that are not accessibility tools (lock.md §13.5,
  * ux.md §3). The keyboard flag that stops personalised learning comes from `WindowPolicy.Root`
  * around the whole content, and the text toolbar's "Autofill" item is removed by `VaultWindow` in
- * every window.
+ * every window. A label that needs a second line moves above the box ([FieldLabel]).
  *
  * [state] is held by the screen's ViewModel, never by `rememberTextFieldState()`, which writes the
  * text into the saved-instance state (architecture.md §5.6, [V-C11]). There is no `value` and
@@ -58,13 +58,15 @@ fun VaultTextField(
     textStyle: TextStyle = LocalTextStyle.current,
     interactionSource: MutableInteractionSource? = null,
 ) {
+    val fieldLabel = rememberFieldLabel(label)
     OutlinedTextField(
         state = state,
         modifier = modifier.vaultTextField(),
         enabled = enabled,
         readOnly = readOnly,
         textStyle = if (leftToRight) textStyle.copy(textDirection = TextDirection.Ltr) else textStyle,
-        label = label?.let { slot -> { slot() } },
+        labelPosition = fieldLabel.position,
+        label = fieldLabel.label,
         placeholder = placeholder,
         leadingIcon = leadingIcon,
         trailingIcon = trailingIcon,

@@ -56,7 +56,7 @@
 
     <!-- The text is longer than the field allows. %1$s is the most characters allowed, a number already
          formatted for the language. -->
-    <string name="edit_error_too_long">Too long. It can have at most %1$s characters.</string>
+    <string name="edit_error_too_long">Too long. It can have at most %1$s&#160;characters.</string>
     <!-- The text holds an invisible control character (such as a tab), which cannot be saved or pasted
          into websites. -->
     <string name="edit_error_control">This has a hidden character that can\'t be saved, such as a tab. Type it again without it.</string>
