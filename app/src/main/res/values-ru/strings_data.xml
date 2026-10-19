@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Русский: texts stored with an account (build plan 6.4a; English in values/strings_data.xml).
+     "Backup" is the backup file (glossary 97, «резервная копия»). -->
+<resources>
+    <string name="data_from_backup">%1$s (из резервной копии)</string>
+</resources>

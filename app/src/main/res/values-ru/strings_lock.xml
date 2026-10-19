@@ -1,0 +1,284 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Русский: the lock screens (build plan 6.4a; English in values/strings_lock.xml): the master-password
+     screen, the PIN pad, the fingerprint-only screen, the older master password and the older set,
+     «Не удаётся открыть пароли», the «Забыли мастер-пароль?» sheet, the notices after unlock and the
+     fingerprint prompt. Glossary of i18n.md §3, section I above all: PIN-код приложения (130, 131),
+     Забыли мастер-пароль? (132), Не могу вспомнить (133), повторение (134), отключён / отключена (135),
+     перестал / перестала работать (136), сейчас не удаётся проверить (137), новый мастер-пароль (138),
+     заработает примерно через N часов (139), Завершить сейчас (140), Отменить новый пароль (141), Это был
+     не я (142), заменён (143), старый мастер-пароль (144), пароли до 7 окт. (145), прежние пароли (146),
+     Начать с пустого приложения (147). A date is written by the screen in the phone's style
+     («7 окт.», «7 окт. 2026 г.», «5 окт. 2026 г., 18:42»), so it stands without a preposition where
+     Russian says «7 октября» («заменён 7 окт.»). "Storage" is «хранилище» and "memory" «оперативная
+     память», so that the two are never confused. -->
+<resources>
+
+    <!-- ===== Titles and the line of a set of passwords put aside ===== -->
+
+    <string name="lock_mp_title">Введите мастер-пароль</string>
+    <string name="lock_mp_title_welcome_back">С возвращением</string>
+    <string name="lock_from_before">Ваши пароли до %1$s</string>
+    <string name="lock_aside_locked_on">Пароли, заблокированные %1$s</string>
+
+    <!-- ===== Why the master password is asked for ===== -->
+
+    <string name="lock_mp_reason_practice">Пора повторить мастер-пароль. Мы иногда просим его ввести, чтобы вы его не забыли. Он нужен, чтобы открыть резервную копию и перейти на новый телефон.</string>
+    <string name="lock_mp_reason_welcome_back">PIN-код и отпечаток пальца здесь пока не работают. Так бывает после перехода на новый телефон или повторной установки приложения. Введите мастер-пароль один раз, затем задайте PIN-код для этого телефона.</string>
+    <string name="lock_mp_reason_from_before">Введите мастер-пароль, который вы использовали тогда.</string>
+    <string name="lock_mp_reason_pin_limit">PIN-код был введён неверно слишком много раз, поэтому он отключён. Ничего не удалено. Введите мастер-пароль, затем задайте новый PIN-код.</string>
+    <string name="lock_mp_reason_pin_stopped_working">PIN-код перестал работать на этом телефоне. Введите мастер-пароль, затем снова задайте PIN-код.</string>
+    <string name="lock_mp_reason_pin_newer_app">PIN-код был задан в более новой версии этого приложения. Используйте мастер-пароль и обновите приложение.</string>
+    <string name="lock_mp_reason_pin_cannot_check">Сейчас не удаётся проверить PIN-код. В этот раз используйте мастер-пароль. Обычно помогает перезапуск телефона. Если это повторяется, снова задайте PIN-код в настройках.</string>
+    <string name="lock_mp_reason_pin_storage_full">Хранилище телефона заполнено, поэтому сейчас не удаётся проверить PIN-код. Освободите место или используйте мастер-пароль.</string>
+    <string name="lock_mp_reason_master_changed">Вы изменили мастер-пароль. Введите его один раз, затем снова задайте PIN-код.</string>
+    <string name="lock_mp_reason_older_copy">Не удаётся прочитать последнюю копию ваших паролей. Более старая копия от %1$s открывается мастер-паролем, который вы использовали тогда.</string>
+    <string name="lock_mp_reason_no_secure_hardware">Этот телефон не может хранить ключ PIN-кода или отпечатка пальца в защищённом аппаратном хранилище, поэтому приложение открывается только мастер-паролем.</string>
+
+    <!-- ===== Fingerprint unlock is on but cannot be used now, with «Используйте мастер-пароль» ===== -->
+
+    <string name="lock_fingerprint_turned_off_master">Разблокировка по отпечатку пальца отключена, потому что на этом телефоне изменились отпечатки пальцев или блокировка экрана. Используйте мастер-пароль. Её можно снова включить в настройках.</string>
+    <string name="lock_fingerprint_stopped_working_master">Разблокировка по отпечатку пальца перестала работать на этом телефоне. Используйте мастер-пароль. Её можно снова включить в настройках.</string>
+    <!-- The phone locked its fingerprint sensor after too many failed fingers. -->
+    <string name="lock_fingerprint_locked_master">Сканер отпечатков пальцев временно заблокирован. Используйте мастер-пароль.</string>
+    <string name="lock_fingerprint_did_not_open_master">В этот раз приложение не открылось по отпечатку пальца. Используйте мастер-пароль.</string>
+    <string name="lock_fingerprint_not_for_apps_master">Сейчас отпечаток пальца нельзя использовать в приложениях. Используйте мастер-пароль. Проверьте в настройках телефона, что отпечаток пальца разрешено использовать для подтверждения личности в приложениях.</string>
+    <string name="lock_fingerprint_none_saved_master">На этом телефоне сейчас нет сохранённых отпечатков пальцев. Используйте мастер-пароль. Чтобы снова пользоваться разблокировкой по отпечатку пальца, добавьте отпечаток в настройках телефона.</string>
+    <string name="lock_fingerprint_update_needed_master">Чтобы можно было использовать отпечаток пальца, телефону нужно обновление системы безопасности. Используйте мастер-пароль.</string>
+    <string name="lock_fingerprint_cannot_check_master">Сейчас не удаётся проверить отпечаток пальца. Используйте мастер-пароль. Если это повторяется, отключите и снова включите разблокировку по отпечатку пальца в настройках.</string>
+
+    <!-- ===== The field and the buttons ===== -->
+
+    <string name="lock_mp_field">Мастер-пароль</string>
+    <string name="lock_mp_unlock">Разблокировать</string>
+    <string name="lock_opening">Открытие…</string>
+    <string name="lock_mp_use_pin">Использовать PIN-код</string>
+    <string name="lock_mp_not_now_pin">Не сейчас: использовать PIN-код</string>
+    <string name="lock_mp_not_now_fingerprint">Не сейчас: использовать отпечаток пальца</string>
+    <string name="lock_mp_cant_remember">Не могу вспомнить</string>
+    <string name="lock_mp_forgot">Забыли мастер-пароль?</string>
+
+    <!-- ===== After a try ===== -->
+
+    <string name="lock_mp_wrong">Неверный мастер-пароль. Проверьте язык клавиатуры (латиница или кириллица) и заглавные буквы.</string>
+    <string name="lock_mp_wrong_forgot_pin">Не можете вспомнить? Откройте приложение по PIN-коду, затем задайте новый мастер-пароль.</string>
+    <string name="lock_mp_wrong_forgot_fingerprint">Не можете вспомнить? Откройте приложение по отпечатку пальца, затем задайте новый мастер-пароль.</string>
+    <!-- Not «Я забыл(а)»: the same words for every reader, as on the other buttons that lead to a new
+         master password («Не помню»). -->
+    <string name="lock_mp_i_forgot">Не помню</string>
+    <string name="lock_mp_wrong_replaced_pin">Мастер-пароль был заменён %1$s с помощью PIN-кода. Если это сделали не вы, откройте свои пароли до замены.</string>
+    <string name="lock_mp_wrong_replaced_fingerprint">Мастер-пароль был заменён %1$s с помощью отпечатка пальца. Если это сделали не вы, откройте свои пароли до замены.</string>
+    <string name="lock_mp_open_from_before">Открыть мои пароли до %1$s</string>
+    <string name="lock_mp_no_memory">На телефоне недостаточно свободной оперативной памяти, чтобы открыть пароли. Закройте другие приложения или перезапустите телефон, затем повторите попытку.</string>
+    <string name="lock_mp_not_finished">Сейчас не удалось завершить. Ничего не изменено. Повторите попытку позже.</string>
+    <string name="lock_mp_older_set_not_opened">Ваши пароли от %1$s открыть не удалось. Ничего не изменено.</string>
+    <string name="lock_mp_wait">Подождите 30&#160;секунд, затем повторите попытку. Не спешите и сверьтесь с записью на бумаге.</string>
+    <!-- Glossary 59. -->
+    <plurals name="lock_mp_wait_seconds">
+        <item quantity="one">Повторите попытку через %d&#160;секунду</item>
+        <item quantity="few">Повторите попытку через %d&#160;секунды</item>
+        <item quantity="many">Повторите попытку через %d&#160;секунд</item>
+        <item quantity="other">Повторите попытку через %d&#160;секунды</item>
+    </plurals>
+    <!-- Glossary 139. -->
+    <plurals name="lock_mp_pending_hours">
+        <item quantity="one">Новый мастер-пароль заработает примерно через %d&#160;час.</item>
+        <item quantity="few">Новый мастер-пароль заработает примерно через %d&#160;часа.</item>
+        <item quantity="many">Новый мастер-пароль заработает примерно через %d&#160;часов.</item>
+        <item quantity="other">Новый мастер-пароль заработает примерно через %d&#160;часа.</item>
+    </plurals>
+
+    <!-- ===== The PIN pad ===== -->
+
+    <!-- Glossary 131: the app's PIN, never the phone's. -->
+    <string name="lock_pad_subtitle">Введите PIN-код приложения</string>
+    <string name="lock_pad_forgot">Забыли PIN-код? Использовать мастер-пароль</string>
+    <!-- Glossary 58, 135. -->
+    <plurals name="lock_pad_tries_left">
+        <item quantity="one">До отключения PIN-кода осталась %d&#160;попытка.</item>
+        <item quantity="few">До отключения PIN-кода осталось %d&#160;попытки.</item>
+        <item quantity="many">До отключения PIN-кода осталось %d&#160;попыток.</item>
+        <item quantity="other">До отключения PIN-кода осталось %d&#160;попытки.</item>
+    </plurals>
+    <plurals name="lock_pad_wrong_pin">
+        <item quantity="one">Неверный PIN-код. Осталась %d&#160;попытка.</item>
+        <item quantity="few">Неверный PIN-код. Осталось %d&#160;попытки.</item>
+        <item quantity="many">Неверный PIN-код. Осталось %d&#160;попыток.</item>
+        <item quantity="other">Неверный PIN-код. Осталось %d&#160;попытки.</item>
+    </plurals>
+    <string name="lock_pad_last_try_fingerprint">Неверный PIN-код. Осталась 1&#160;попытка. После неё понадобится отпечаток пальца или мастер-пароль.</string>
+    <string name="lock_pad_last_try">Неверный PIN-код. Осталась 1&#160;попытка. После неё понадобится мастер-пароль.</string>
+    <string name="lock_pad_last_try_pending">Осторожно: новый мастер-пароль ещё не работает. Если следующий PIN-код будет неверным, PIN-код отключится.</string>
+    <string name="lock_pad_same_again">Этот PIN-код уже вводился. Повторно он не засчитан.</string>
+    <plurals name="lock_pad_interrupted">
+        <item quantity="one">Последний ввод PIN-кода был прерван и засчитан как попытка. Осталась %d&#160;попытка.</item>
+        <item quantity="few">Последний ввод PIN-кода был прерван и засчитан как попытка. Осталось %d&#160;попытки.</item>
+        <item quantity="many">Последний ввод PIN-кода был прерван и засчитан как попытка. Осталось %d&#160;попыток.</item>
+        <item quantity="other">Последний ввод PIN-кода был прерван и засчитан как попытка. Осталось %d&#160;попытки.</item>
+    </plurals>
+    <string name="lock_pad_storage_full">Хранилище телефона заполнено, поэтому сейчас не удаётся проверить PIN-код. Освободите место или используйте мастер-пароль.</string>
+    <string name="lock_pad_storage_full_fingerprint">Хранилище телефона заполнено, поэтому сейчас не удаётся проверить PIN-код. Освободите место или используйте отпечаток пальца либо мастер-пароль.</string>
+    <string name="lock_test_build">ТЕСТОВАЯ СБОРКА: ключи PIN-кода не защищены</string>
+
+    <!-- ===== Fingerprint unlock is on but cannot be used now: the pad's status line, with
+         «Используйте PIN-код» ===== -->
+
+    <string name="lock_fingerprint_turned_off_pin">Разблокировка по отпечатку пальца отключена, потому что на этом телефоне изменились отпечатки пальцев или блокировка экрана. Используйте PIN-код. Её можно снова включить в настройках.</string>
+    <string name="lock_fingerprint_stopped_working_pin">Разблокировка по отпечатку пальца перестала работать на этом телефоне. Используйте PIN-код. Её можно снова включить в настройках.</string>
+    <string name="lock_fingerprint_locked_pin">Сканер отпечатков пальцев временно заблокирован. Используйте PIN-код.</string>
+    <string name="lock_fingerprint_did_not_open_pin">В этот раз приложение не открылось по отпечатку пальца. Введите PIN-код приложения.</string>
+    <string name="lock_fingerprint_not_for_apps_pin">Сейчас отпечаток пальца нельзя использовать в приложениях. Используйте PIN-код. Проверьте в настройках телефона, что отпечаток пальца разрешено использовать для подтверждения личности в приложениях.</string>
+    <string name="lock_fingerprint_none_saved_pin">На этом телефоне сейчас нет сохранённых отпечатков пальцев. Используйте PIN-код. Чтобы снова пользоваться разблокировкой по отпечатку пальца, добавьте отпечаток в настройках телефона.</string>
+    <string name="lock_fingerprint_update_needed_pin">Чтобы можно было использовать отпечаток пальца, телефону нужно обновление системы безопасности. Используйте PIN-код.</string>
+    <string name="lock_fingerprint_cannot_check_pin">Сейчас не удаётся проверить отпечаток пальца. Используйте PIN-код. Если это повторяется, отключите и снова включите разблокировку по отпечатку пальца в настройках.</string>
+
+    <!-- ===== The fingerprint-only screen ===== -->
+
+    <string name="lock_use_fingerprint">Использовать отпечаток пальца</string>
+    <string name="lock_use_master_password">Использовать мастер-пароль</string>
+    <string name="lock_fingerprint_only_pin_limit">Разблокировка по PIN-коду отключена после слишком большого числа неверных попыток. Ничего не удалено. Используйте отпечаток пальца или мастер-пароль, затем задайте новый PIN-код.</string>
+    <string name="lock_fingerprint_only_pin_cannot_check">Сейчас не удаётся проверить PIN-код. Используйте отпечаток пальца или мастер-пароль. Обычно помогает перезапуск телефона. Если это повторяется, снова задайте PIN-код в настройках.</string>
+    <string name="lock_fingerprint_only_pin_stopped_working">PIN-код перестал работать на этом телефоне. Используйте отпечаток пальца или мастер-пароль, затем снова задайте PIN-код.</string>
+    <string name="lock_fingerprint_only_pin_storage_full">Хранилище телефона заполнено, поэтому сейчас не удаётся проверить PIN-код. Освободите место или используйте отпечаток пальца либо мастер-пароль.</string>
+    <string name="lock_fingerprint_only_pin_newer_app">PIN-код был задан в более новой версии этого приложения. Используйте отпечаток пальца или мастер-пароль и обновите приложение.</string>
+
+    <!-- ===== «Это старый мастер-пароль» (glossary 144) ===== -->
+
+    <string name="lock_older_title">Это старый мастер-пароль</string>
+    <string name="lock_older_proven">Вы изменили мастер-пароль %1$s, поэтому введите новый.</string>
+    <string name="lock_older_unfinished">Возможно, изменение мастер-пароля %1$s не завершилось. Сначала попробуйте новый мастер-пароль. Если он не подойдёт, можно открыть пароли в том виде, в каком они были до изменения.</string>
+    <string name="lock_older_open_from_before">Открыть мои пароли до изменения</string>
+    <string name="lock_older_confirm_title">Открыть пароли в том виде, в каком они были до %1$s?</string>
+    <string name="lock_older_confirm_body">Копия, созданная во время изменения, останется на этом телефоне, но больше не будет использоваться.</string>
+    <string name="lock_older_confirm_open">Открыть</string>
+
+    <!-- ===== The older set: «старый набор» (these passwords, as they were when the master password
+         was replaced) and «новый набор» (the passwords used since then) ===== -->
+
+    <string name="lock_older_set_text">Это ваши пароли в том виде, в каком они были %1$s, а пароли, добавленные или изменённые позже, находятся в новом наборе, который останется на этом телефоне. Открыть старый набор вместо нового?</string>
+    <string name="lock_older_set_open">Открыть мои пароли от %1$s</string>
+
+    <!-- ===== «Не удаётся открыть пароли». Never an offer to delete ===== -->
+
+    <string name="lock_unreadable_title">Не удаётся открыть пароли</string>
+    <string name="lock_unreadable_damaged">Файл с вашими паролями повреждён. Ничего не удалено. Перезапустите телефон и повторите попытку. Если это не поможет, восстановите пароли из резервной копии.</string>
+    <string name="lock_unreadable_io">Сейчас не удаётся прочитать файл с вашими паролями. Ничего не удалено. Повторите попытку. Если это не поможет, перезапустите телефон или восстановите пароли из резервной копии.</string>
+    <string name="lock_unreadable_newer">Ваши пароли сохранены более новой версией этого приложения. Ничего не удалено. Чтобы открыть их, установите последнюю версию PasswordVault.</string>
+    <string name="lock_restore">Восстановить из резервной копии</string>
+    <string name="lock_open_aside">Открыть мои прежние пароли (заблокированы %1$s)</string>
+
+    <!-- ===== A set of passwords put aside that cannot be opened ===== -->
+
+    <string name="lock_cannot_open_title">Эти пароли не удаётся открыть</string>
+    <string name="lock_cannot_open_text">Их файлы на этом телефоне повреждены.</string>
+    <string name="lock_back">Назад</string>
+
+    <!-- ===== The «Забыли мастер-пароль?» sheet. No option deletes anything ===== -->
+
+    <!-- "Forgot your master password?": «свой» keeps it apart from the button that opens the sheet
+         (lock_mp_forgot, glossary 132), as the English does. -->
+    <string name="lock_sheet_title">Забыли свой мастер-пароль?</string>
+    <string name="lock_sheet_body">Его никто не сможет восстановить: он нигде не хранится.</string>
+    <string name="lock_sheet_pin_text">PIN-код всё ещё открывает приложение на этом телефоне. Откройте приложение с его помощью, затем задайте новый мастер-пароль.</string>
+    <string name="lock_sheet_use_pin">Использовать мой PIN-код</string>
+    <string name="lock_sheet_fingerprint_text">Отпечаток пальца всё ещё открывает приложение на этом телефоне. Откройте приложение с его помощью, затем задайте новый мастер-пароль.</string>
+    <string name="lock_sheet_use_fingerprint">Использовать мой отпечаток пальца</string>
+    <string name="lock_sheet_restore_text">Если вы помните мастер-пароль более старой резервной копии, можно вместо этого открыть её. Текущие пароли останутся на этом телефоне в заблокированном виде.</string>
+    <string name="lock_sheet_empty_text">Начните с пустого приложения. Текущие пароли останутся на этом телефоне в заблокированном виде. Если позже вы вспомните мастер-пароль, их можно будет открыть снова.</string>
+    <string name="lock_sheet_empty">Начать с пустого приложения…</string>
+    <string name="lock_empty_title">Начать с пустого приложения?</string>
+    <!-- «Настройки › Резервное копирование и перенос» names the Settings page (settings_title ›
+         settings_group_backup; glossary 96). -->
+    <string name="lock_empty_body">Ваши пароли останутся на этом телефоне и будут заблокированы старым мастер-паролем. Их можно снова открыть с первого экрана или в разделе «Настройки › Резервное копирование и перенос».</string>
+    <string name="lock_empty_confirm">Начать с пустого приложения</string>
+
+    <!-- ===== Notices after unlock ===== -->
+
+    <string name="lock_notice_older_copy">Не удалось прочитать последнюю копию ваших паролей. Мы открыли копию от %1$s. Изменений, сделанных после этого времени, в ней нет.</string>
+    <string name="lock_notice_back_up_now">Создать резервную копию</string>
+    <string name="lock_notice_older_than_last">Эти пароли старше тех, что приложение открывало %1$s. Изменений, сделанных после этого времени, здесь нет. Если вы ничего не восстанавливали, возможно, кто-то заменил файлы приложения.</string>
+    <!-- %1$d: the hours still to be counted with the phone switched on (glossary 139); %2$s: a date and
+         a time, «19 окт. 2026 г., 18:20». The comma after %2$s closes the time, which the date's own
+         comma opens (as the English has "on %2$s, using the PIN"). -->
+    <plurals name="lock_notice_pending_pin">
+        <item quantity="one">Новый мастер-пароль был задан %2$s, с помощью PIN-кода. Он заработает примерно через %1$d&#160;час. Пока телефон выключен, отсчёт останавливается; чтобы он продолжался, открывайте приложение утром и ещё раз вечером. Это были не вы? Отмените новый пароль, затем измените PIN-код.</item>
+        <item quantity="few">Новый мастер-пароль был задан %2$s, с помощью PIN-кода. Он заработает примерно через %1$d&#160;часа. Пока телефон выключен, отсчёт останавливается; чтобы он продолжался, открывайте приложение утром и ещё раз вечером. Это были не вы? Отмените новый пароль, затем измените PIN-код.</item>
+        <item quantity="many">Новый мастер-пароль был задан %2$s, с помощью PIN-кода. Он заработает примерно через %1$d&#160;часов. Пока телефон выключен, отсчёт останавливается; чтобы он продолжался, открывайте приложение утром и ещё раз вечером. Это были не вы? Отмените новый пароль, затем измените PIN-код.</item>
+        <item quantity="other">Новый мастер-пароль был задан %2$s, с помощью PIN-кода. Он заработает примерно через %1$d&#160;часа. Пока телефон выключен, отсчёт останавливается; чтобы он продолжался, открывайте приложение утром и ещё раз вечером. Это были не вы? Отмените новый пароль, затем измените PIN-код.</item>
+    </plurals>
+    <plurals name="lock_notice_pending_fingerprint">
+        <item quantity="one">Новый мастер-пароль был задан %2$s, с помощью отпечатка пальца. Он заработает примерно через %1$d&#160;час. Пока телефон выключен, отсчёт останавливается; чтобы он продолжался, открывайте приложение утром и ещё раз вечером. Это были не вы? Отмените новый пароль. Приложение может открыть любой, чей отпечаток пальца сохранён в настройках этого телефона.</item>
+        <item quantity="few">Новый мастер-пароль был задан %2$s, с помощью отпечатка пальца. Он заработает примерно через %1$d&#160;часа. Пока телефон выключен, отсчёт останавливается; чтобы он продолжался, открывайте приложение утром и ещё раз вечером. Это были не вы? Отмените новый пароль. Приложение может открыть любой, чей отпечаток пальца сохранён в настройках этого телефона.</item>
+        <item quantity="many">Новый мастер-пароль был задан %2$s, с помощью отпечатка пальца. Он заработает примерно через %1$d&#160;часов. Пока телефон выключен, отсчёт останавливается; чтобы он продолжался, открывайте приложение утром и ещё раз вечером. Это были не вы? Отмените новый пароль. Приложение может открыть любой, чей отпечаток пальца сохранён в настройках этого телефона.</item>
+        <item quantity="other">Новый мастер-пароль был задан %2$s, с помощью отпечатка пальца. Он заработает примерно через %1$d&#160;часа. Пока телефон выключен, отсчёт останавливается; чтобы он продолжался, открывайте приложение утром и ещё раз вечером. Это были не вы? Отмените новый пароль. Приложение может открыть любой, чей отпечаток пальца сохранён в настройках этого телефона.</item>
+    </plurals>
+    <!-- Glossary 141: not the plain «Отмена». -->
+    <string name="lock_notice_cancel_it">Отменить новый пароль</string>
+    <string name="lock_notice_pending_ready">Новый мастер-пароль готов. Введите его, чтобы завершить смену пароля.</string>
+    <string name="lock_notice_finish_now">Завершить сейчас</string>
+    <string name="lock_notice_pending_cancelled">Вы ввели свой мастер-пароль, поэтому новый отменён.</string>
+    <string name="lock_notice_replaced_pin">Ваш мастер-пароль был заменён %1$s с помощью PIN-кода. Если это сделали не вы, ваши пароли до замены всё ещё хранятся на этом телефоне.</string>
+    <string name="lock_notice_replaced_fingerprint">Ваш мастер-пароль был заменён %1$s с помощью отпечатка пальца. Если это сделали не вы, ваши пароли до замены всё ещё хранятся на этом телефоне.</string>
+    <!-- Glossary 142. -->
+    <string name="lock_notice_it_wasnt_me">Это был не я</string>
+    <!-- %1$d: how many wrong PINs («раз»: 1 раз, 2 раза, 5 раз); %2$s: a time («14:32»). -->
+    <plurals name="lock_notice_wrong_pins_today">
+        <item quantity="one">До того как вы открыли приложение, неверный PIN-код был введён %1$d&#160;раз (последний раз&#160;— сегодня в %2$s). Если это были не вы, держите телефон при себе и измените PIN-код.</item>
+        <item quantity="few">До того как вы открыли приложение, неверный PIN-код был введён %1$d&#160;раза (последний раз&#160;— сегодня в %2$s). Если это были не вы, держите телефон при себе и измените PIN-код.</item>
+        <item quantity="many">До того как вы открыли приложение, неверный PIN-код был введён %1$d&#160;раз (последний раз&#160;— сегодня в %2$s). Если это были не вы, держите телефон при себе и измените PIN-код.</item>
+        <item quantity="other">До того как вы открыли приложение, неверный PIN-код был введён %1$d&#160;раза (последний раз&#160;— сегодня в %2$s). Если это были не вы, держите телефон при себе и измените PIN-код.</item>
+    </plurals>
+    <!-- %2$s: a date and a time. -->
+    <plurals name="lock_notice_wrong_pins_on">
+        <item quantity="one">До того как вы открыли приложение, неверный PIN-код был введён %1$d&#160;раз (последний раз&#160;— %2$s). Если это были не вы, держите телефон при себе и измените PIN-код.</item>
+        <item quantity="few">До того как вы открыли приложение, неверный PIN-код был введён %1$d&#160;раза (последний раз&#160;— %2$s). Если это были не вы, держите телефон при себе и измените PIN-код.</item>
+        <item quantity="many">До того как вы открыли приложение, неверный PIN-код был введён %1$d&#160;раз (последний раз&#160;— %2$s). Если это были не вы, держите телефон при себе и измените PIN-код.</item>
+        <item quantity="other">До того как вы открыли приложение, неверный PIN-код был введён %1$d&#160;раза (последний раз&#160;— %2$s). Если это были не вы, держите телефон при себе и измените PIN-код.</item>
+    </plurals>
+    <plurals name="lock_notice_wrong_pins">
+        <item quantity="one">До того как вы открыли приложение, неверный PIN-код был введён %1$d&#160;раз. Если это были не вы, держите телефон при себе и измените PIN-код.</item>
+        <item quantity="few">До того как вы открыли приложение, неверный PIN-код был введён %1$d&#160;раза. Если это были не вы, держите телефон при себе и измените PIN-код.</item>
+        <item quantity="many">До того как вы открыли приложение, неверный PIN-код был введён %1$d&#160;раз. Если это были не вы, держите телефон при себе и измените PIN-код.</item>
+        <item quantity="other">До того как вы открыли приложение, неверный PIN-код был введён %1$d&#160;раза. Если это были не вы, держите телефон при себе и измените PIN-код.</item>
+    </plurals>
+    <string name="lock_notice_interrupted">Один ввод был прерван и засчитан как попытка.</string>
+    <!-- %1$d: how many more wrong PINs, each not followed at once by the right one, turn the PIN off. -->
+    <plurals name="lock_notice_pins_before_off">
+        <item quantity="one">Если ещё %1$d&#160;раз ввести неверный PIN-код и сразу после него не ввести верный, PIN-код отключится. Введите мастер-пароль один раз, чтобы начать счёт заново.</item>
+        <item quantity="few">Если ещё %1$d&#160;раза ввести неверный PIN-код и сразу после него не ввести верный, PIN-код отключится. Введите мастер-пароль один раз, чтобы начать счёт заново.</item>
+        <item quantity="many">Если ещё %1$d&#160;раз ввести неверный PIN-код и сразу после него не ввести верный, PIN-код отключится. Введите мастер-пароль один раз, чтобы начать счёт заново.</item>
+        <item quantity="other">Если ещё %1$d&#160;раза ввести неверный PIN-код и сразу после него не ввести верный, PIN-код отключится. Введите мастер-пароль один раз, чтобы начать счёт заново.</item>
+    </plurals>
+    <string name="lock_notice_type_master_password">Ввести мастер-пароль</string>
+    <string name="lock_notice_new_master_text">Не можете вспомнить? Задайте новый.</string>
+    <string name="lock_notice_new_master">Задать новый мастер-пароль</string>
+    <plurals name="lock_notice_wrong_master">
+        <item quantity="one">До того как вы открыли приложение, неверный мастер-пароль был введён %1$d&#160;раз.</item>
+        <item quantity="few">До того как вы открыли приложение, неверный мастер-пароль был введён %1$d&#160;раза.</item>
+        <item quantity="many">До того как вы открыли приложение, неверный мастер-пароль был введён %1$d&#160;раз.</item>
+        <item quantity="other">До того как вы открыли приложение, неверный мастер-пароль был введён %1$d&#160;раза.</item>
+    </plurals>
+    <string name="lock_notice_change_pin">Изменить PIN-код</string>
+    <string name="lock_notice_choose_pin_master">Разблокировка по PIN-коду отключена. Чтобы задать новый PIN-код, нужен мастер-пароль.</string>
+    <string name="lock_notice_choose_pin">Задать новый PIN-код</string>
+    <string name="lock_notice_fingerprint_again">Снова включить разблокировку по отпечатку пальца?</string>
+    <string name="lock_notice_turn_on">Включить</string>
+    <string name="lock_notice_storage_unreadable">Не удалось прочитать часть данных приложения. Создайте резервную копию сейчас.</string>
+    <string name="lock_notice_set_up_again">Настроить заново</string>
+    <string name="lock_notice_backup_title">Создать резервную копию сейчас?</string>
+    <string name="lock_notice_backup_body">Резервная копия&#160;— это защищённая копия всех ваших паролей. Она открывается только мастер-паролем, на любом телефоне.</string>
+    <string name="lock_notice_back_up">Создать резервную копию</string>
+
+    <!-- ===== The system's fingerprint prompt ===== -->
+
+    <string name="lock_prompt_unlock_title">Открыть PasswordVault</string>
+    <string name="lock_prompt_turn_on_title">Включить разблокировку по отпечатку пальца</string>
+    <string name="lock_prompt_keep_title">Оставить разблокировку по отпечатку пальца</string>
+    <string name="lock_prompt_confirm_title">Подтвердите отпечатком пальца</string>
+
+    <!-- ===== «Ввести мастер-пароль» from the notice about wrong PINs ===== -->
+
+    <string name="lock_prompt_check">Проверить</string>
+    <string name="lock_prompt_no_memory">На телефоне недостаточно свободной оперативной памяти, чтобы проверить мастер-пароль. Закройте другие приложения или перезапустите телефон, затем повторите попытку.</string>
+    <string name="lock_prompt_older">До %1$s у вас был этот мастер-пароль. Введите тот, которым пользуетесь сейчас.</string>
+
+</resources>

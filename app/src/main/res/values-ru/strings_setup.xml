@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Русский: the setup screens (build plan 6.4a; English in values/strings_setup.xml): Welcome,
+     «Задайте мастер-пароль», «Запишите его на бумаге», «Введите мастер-пароль ещё раз». Glossary of
+     i18n.md §3: мастер-пароль (48), PIN-код (52), отпечаток пальца (61), резервная копия (97). -->
+<resources>
+
+    <!-- Welcome (ux.md §5.1). -->
+    <string name="setup_welcome_title">Ваши пароли в безопасности на этом телефоне</string>
+    <string name="setup_welcome_point_offline">Всё хранится только на этом телефоне. Без регистрации и без интернета.</string>
+    <string name="setup_welcome_point_lock">Открывайте приложение по PIN-коду или отпечатку пальца, как банковское приложение.</string>
+    <string name="setup_welcome_point_copy">Копируйте пароль одним нажатием, когда он нужен.</string>
+    <string name="setup_welcome_start">Начать</string>
+    <!-- Glossary 146 («Открыть мои прежние пароли»); %1$s is a date with the year. -->
+    <string name="setup_welcome_open_aside">Открыть мои прежние пароли (заблокированы %1$s)</string>
+    <string name="setup_welcome_restore">Восстановить из резервной копии</string>
+    <string name="setup_welcome_language">Язык</string>
+
+    <!-- «Задайте мастер-пароль» (ux.md §5.3). -->
+    <string name="setup_create_title">Задайте мастер-пароль</string>
+    <string name="setup_create_body">Мастер-пароль&#160;— это ключ ко всем остальным вашим паролям. Он понадобится, если вы забудете PIN-код, а также чтобы открыть резервную копию и перейти на новый телефон.</string>
+    <string name="setup_create_warning_reset">Его никто не сможет сбросить. Мы не храним его копию, и письма «Забыли пароль?» не будет. Если вы его забудете, пароли не удастся открыть ни на новом телефоне, ни из резервной копии.</string>
+    <string name="setup_create_warning_reuse">Не используйте пароль, который вы уже используете где-то ещё.</string>
+    <string name="setup_create_interrupted">Настройка была прервана. Зачеркните слова, которые вы записали раньше. Вот ваши новые слова.</string>
+    <string name="setup_create_word">Слово %1$d из %2$d: %3$s</string>
+    <string name="setup_create_typed_as">Вводите его так:</string>
+    <string name="setup_create_latin">Это английские слова. Вводите их латинскими буквами.</string>
+    <string name="setup_create_use_words">Использовать эти слова</string>
+    <string name="setup_create_other_words">Показать другие слова</string>
+    <string name="setup_create_type_own">Ввести свой пароль</string>
+    <string name="setup_create_show_words">Использовать предложенные слова</string>
+
+    <!-- A master password of one's own (ux.md §5.3). -->
+    <string name="setup_field_label">Мастер-пароль</string>
+    <string name="setup_own_rule_length">Не менее 12&#160;символов</string>
+    <string name="setup_own_rule_hard">Трудно угадать</string>
+    <string name="setup_own_rule_met">%1$s: выполнено</string>
+    <string name="setup_own_rule_not_met">%1$s: ещё нет</string>
+    <string name="setup_own_hint_add_word">Добавьте ещё одно слово</string>
+    <string name="setup_own_hint_names">Избегайте названий городов, имён людей и годов</string>
+    <string name="setup_own_hint_keyboard">Избегайте рядов клавиш, например qwerty</string>
+    <string name="setup_own_mixed_scripts">В пароле есть и латинские, и кириллические буквы. На клавиатуре выбран нужный язык?</string>
+    <string name="setup_own_use">Использовать этот пароль</string>
+    <string name="setup_own_missing_length">Мастер-пароль должен содержать не менее 12&#160;символов.</string>
+    <string name="setup_own_missing_hard">Мастер-пароль слишком легко угадать.</string>
+    <string name="setup_own_unassigned">В пароле есть символ, который некоторые телефоны не могут прочитать. Удалите его и повторите попытку.</string>
+    <string name="setup_own_reuse_question">Вы используете этот пароль для других аккаунтов?</string>
+    <string name="setup_own_reuse_yes">Да</string>
+    <string name="setup_own_reuse_no">Нет, он новый</string>
+    <string name="setup_own_reuse_refused">Тогда задайте другой. Если какой-нибудь сайт допустит его утечку, ваш файл резервной копии сможет открыть любой, у кого он есть.</string>
+
+    <!-- «Запишите его на бумаге» (ux.md §5.4). -->
+    <string name="setup_write_title">Запишите его на бумаге</string>
+    <string name="setup_write_body">Запишите мастер-пароль на бумаге прямо сейчас. Храните бумагу дома в надёжном месте&#160;— не в чехле телефона, не в кошельке и не в виде фото на этом телефоне.</string>
+    <string name="setup_write_big_letters">Показать крупно</string>
+    <!-- Not «Я записал(а)»: the same words for every reader. -->
+    <string name="setup_write_wrote">Пароль записан</string>
+    <string name="setup_next">Далее</string>
+    <string name="setup_big_cell">%1$d: %2$s</string>
+    <string name="setup_big_too_long">Слишком длинный текст, чтобы показать его крупно</string>
+
+    <!-- «Введите мастер-пароль ещё раз» (ux.md §5.5). -->
+    <string name="setup_again_title">Введите мастер-пароль ещё раз</string>
+    <string name="setup_again_body">Так вы проверите, что записали его правильно.</string>
+    <string name="setup_again_mismatch">Не совпадает. Сверьтесь с записью на бумаге и повторите попытку.</string>
+    <string name="setup_again_cyrillic">Возможно, на клавиатуре выбран русский язык. Переключитесь на латиницу.</string>
+    <string name="setup_again_show_again">Снова показать пароль</string>
+    <string name="setup_again_setting_up">Настройка…</string>
+    <string name="setup_again_not_saved">Не удалось сохранить. Возможно, хранилище телефона заполнено.</string>
+    <string name="setup_again_no_memory">На телефоне недостаточно свободной оперативной памяти, чтобы завершить настройку. Закройте другие приложения или перезапустите телефон, затем повторите попытку.</string>
+
+</resources>

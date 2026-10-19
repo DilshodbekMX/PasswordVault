@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Русский: shared words and the texts of the shared parts of the screens (build plan 6.4a; English
+     in values/strings_common.xml). Glossary of i18n.md §3; writing rules of i18n.md §4: «вы» in lower
+     case, ё always, « » for quotes, a no-break space between a number and its word. -->
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- OK with the Cyrillic letters О and К, as Android's own Russian writes it (glossary 43). -->
+    <string name="common_ok" tools:ignore="UnusedResources">ОК</string>
+    <string name="common_cancel" tools:ignore="UnusedResources">Отмена</string>
+    <string name="common_close" tools:ignore="UnusedResources">Закрыть</string>
+    <string name="common_not_now" tools:ignore="UnusedResources">Не сейчас</string>
+    <string name="common_later" tools:ignore="UnusedResources">Позже</string>
+    <string name="common_try_again" tools:ignore="UnusedResources">Повторить попытку</string>
+    <string name="common_delete" tools:ignore="UnusedResources">Удалить</string>
+    <string name="common_undo" tools:ignore="UnusedResources">Отменить</string>
+    <string name="common_done" tools:ignore="UnusedResources">Готово</string>
+
+    <string name="common_show_password">Показать пароль</string>
+    <string name="common_hide_password">Скрыть пароль</string>
+
+    <string name="common_pin_delete">Удалить последнюю цифру</string>
+    <string name="common_pin_fingerprint">Разблокировать отпечатком пальца</string>
+    <!-- The plural follows %1$d, the digits typed; %2$d is always 6 ("из 6"). -->
+    <plurals name="common_pin_dots">
+        <item quantity="one">PIN-код: введена %1$d&#160;цифра из %2$d</item>
+        <item quantity="few">PIN-код: введены %1$d&#160;цифры из %2$d</item>
+        <item quantity="many">PIN-код: введено %1$d&#160;цифр из %2$d</item>
+        <item quantity="other">PIN-код: введено %1$d&#160;цифры из %2$d</item>
+    </plurals>
+
+    <!-- The four words of the strength meter agree with «пароль» (masculine; glossary 86 to 89). -->
+    <string name="common_strength_very_weak">Очень слабый</string>
+    <string name="common_strength_weak">Слабый</string>
+    <string name="common_strength_good">Хороший</string>
+    <string name="common_strength_strong">Надёжный</string>
+    <string name="common_strength_description">Надёжность пароля: %1$s</string>
+
+    <!-- Inside a sentence: «Пароль изменён только что», «(сохранён только что)». -->
+    <string name="common_just_now">только что</string>
+
+    <string name="common_obscured_touch">Поверх этого экрана отображается другое приложение, поэтому нажатия заблокированы в целях безопасности. Отключите фильтры экрана или всплывающие чаты и повторите попытку.</string>
+
+</resources>

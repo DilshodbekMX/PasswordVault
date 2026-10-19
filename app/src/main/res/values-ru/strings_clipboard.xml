@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Русский: the clipboard status row (build plan 6.4a; English in values/strings_clipboard.xml;
+     glossary 30, 31, 112, 148, 149). -->
+<resources>
+
+    <string name="clipboard_copied_text">Скопированный текст</string>
+
+    <!-- «Пароль аккаунта «Gmail» · очистится через 0:52» (glossary 149). -->
+    <string name="clipboard_row_clears_in">%1$s · очистится через %2$s</string>
+    <string name="clipboard_row_clearing">Очистка…</string>
+    <string name="clipboard_row_cleared">Буфер обмена очищен</string>
+    <string name="clipboard_clear_now">Очистить сейчас</string>
+
+    <string name="clipboard_copied_password">Пароль скопирован</string>
+    <string name="clipboard_copied_other">Скопировано</string>
+
+    <string name="clipboard_announcement">%1$s. %2$s</string>
+    <!-- «Буфер обмена будет очищен», as the row says «Буфер обмена очищен» when it is done; the
+         sentence fits after both «Пароль скопирован» and «Скопировано». -->
+    <plurals name="clipboard_removed_in_seconds">
+        <item quantity="one">Буфер обмена будет очищен через %d&#160;секунду.</item>
+        <item quantity="few">Буфер обмена будет очищен через %d&#160;секунды.</item>
+        <item quantity="many">Буфер обмена будет очищен через %d&#160;секунд.</item>
+        <item quantity="other">Буфер обмена будет очищен через %d&#160;секунды.</item>
+    </plurals>
+    <plurals name="clipboard_removed_in_minutes">
+        <item quantity="one">Буфер обмена будет очищен через %d&#160;минуту.</item>
+        <item quantity="few">Буфер обмена будет очищен через %d&#160;минуты.</item>
+        <item quantity="many">Буфер обмена будет очищен через %d&#160;минут.</item>
+        <item quantity="other">Буфер обмена будет очищен через %d&#160;минуты.</item>
+    </plurals>
+
+</resources>

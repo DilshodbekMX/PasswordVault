@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Русский: add and edit an account and the password generator (build plan 6.4a; English in
+     values/strings_edit.xml). Glossary 6 (Название), 8 (Эл. почта), 9, 10, 11, 22 to 24, 75 to 89. An
+     account's name or a field's label typed by the person stands in « » after a noun, because it
+     cannot be declined (i18n.md §4.4). -->
+<resources>
+
+    <!-- ===== The top bar ===== -->
+
+    <string name="edit_title_new">Новый аккаунт</string>
+    <string name="edit_title_edit">Изменение аккаунта</string>
+    <string name="edit_save">Сохранить</string>
+    <string name="edit_saving">Сохранение…</string>
+
+    <!-- ===== The form ===== -->
+
+    <string name="edit_name">Название</string>
+    <string name="edit_name_example">Например, Gmail</string>
+    <string name="edit_username">Эл. почта, телефон или логин</string>
+    <string name="edit_password">Пароль</string>
+    <string name="edit_generate">Создать надёжный пароль</string>
+    <!-- «Безопасность» is the name of the Security tab (shell_tab_security). Prepositional: «в 1
+         аккаунте», «в 3 аккаунтах» (glossary 94). -->
+    <plurals name="edit_reuse">
+        <item quantity="one">Этот пароль используется ещё в %1$d&#160;аккаунте. Его можно будет изменить на вкладке «Безопасность».</item>
+        <item quantity="few">Этот пароль используется ещё в %1$d&#160;аккаунтах. Его можно будет изменить на вкладке «Безопасность».</item>
+        <item quantity="many">Этот пароль используется ещё в %1$d&#160;аккаунтах. Его можно будет изменить на вкладке «Безопасность».</item>
+        <item quantity="other">Этот пароль используется ещё в %1$d&#160;аккаунта. Его можно будет изменить на вкладке «Безопасность».</item>
+    </plurals>
+    <string name="edit_website">Сайт</string>
+    <string name="edit_add_website">Добавить ещё один сайт</string>
+    <string name="edit_remove_website">Удалить сайт</string>
+    <string name="edit_notes">Заметки</string>
+    <string name="edit_add_field">Добавить поле</string>
+    <string name="edit_remove_field">Удалить поле «%1$s»</string>
+    <string name="edit_counter">%1$s / %2$s</string>
+
+    <!-- ===== What Save found wrong ===== -->
+
+    <!-- %1$s is a number formatted for the language; it stands at the end, so that no word has to
+         agree with it. -->
+    <string name="edit_error_too_long">Слишком длинно. Максимальное число символов: %1$s.</string>
+    <string name="edit_error_control">Здесь есть скрытый символ, который нельзя сохранить, например табуляция. Введите текст заново без него.</string>
+    <string name="edit_error_broken">Здесь есть повреждённый символ. Введите текст заново.</string>
+    <!-- After «не более»: 1 сайта, 2 сайтов, 10 сайтов. -->
+    <plurals name="edit_error_too_many_websites">
+        <item quantity="one">У аккаунта может быть не более %1$d&#160;сайта.</item>
+        <item quantity="few">У аккаунта может быть не более %1$d&#160;сайтов.</item>
+        <item quantity="many">У аккаунта может быть не более %1$d&#160;сайтов.</item>
+        <item quantity="other">У аккаунта может быть не более %1$d&#160;сайта.</item>
+    </plurals>
+    <plurals name="edit_error_too_many_fields">
+        <item quantity="one">У аккаунта может быть не более %1$d&#160;дополнительного поля.</item>
+        <item quantity="few">У аккаунта может быть не более %1$d&#160;дополнительных полей.</item>
+        <item quantity="many">У аккаунта может быть не более %1$d&#160;дополнительных полей.</item>
+        <item quantity="other">У аккаунта может быть не более %1$d&#160;дополнительного поля.</item>
+    </plurals>
+    <string name="edit_error_label">Укажите название этого поля.</string>
+
+    <!-- ===== Leaving with changes ===== -->
+
+    <string name="edit_unsaved_title">Сохранить изменения?</string>
+    <string name="edit_unsaved_save">Сохранить</string>
+    <string name="edit_unsaved_discard">Не сохранять</string>
+    <string name="edit_unsaved_keep">Продолжить редактирование</string>
+
+    <!-- ===== Same name and login ===== -->
+
+    <string name="edit_duplicate">У вас уже есть аккаунт «%1$s» с этим логином. Всё равно сохранить?</string>
+    <string name="edit_duplicate_save">Всё равно сохранить</string>
+
+    <!-- ===== Unsaved changes kept from an earlier visit ===== -->
+
+    <string name="edit_kept">Ваши несохранённые изменения не потеряны.</string>
+    <!-- %1$s: the account's name; %2$s: a short date such as «5 сент.». -->
+    <string name="edit_old_draft">Открыть несохранённые изменения аккаунта «%1$s» от %2$s?</string>
+    <string name="edit_old_draft_new">Открыть несохранённые изменения нового аккаунта от %1$s?</string>
+    <string name="edit_old_draft_open">Открыть</string>
+    <string name="edit_old_draft_discard">Удалить изменения</string>
+
+    <!-- ===== Messages ===== -->
+
+    <string name="edit_save_failed">Не удалось сохранить. Возможно, хранилище телефона заполнено.</string>
+    <string name="edit_too_large">Ваши пароли больше не помещаются в один файл. Удалите ненужные аккаунты или сократите очень длинные заметки.</string>
+    <string name="edit_gone">Этот аккаунт больше не существует.</string>
+
+    <!-- Stored as the account's name: «Без названия» and the date and time it was saved. -->
+    <string name="edit_untitled">Без названия %1$s</string>
+
+    <!-- ===== The «Добавить поле» dialog. Each ready label is stored as the field's label ===== -->
+
+    <string name="edit_field_title">Добавить поле</string>
+    <string name="edit_field_pin">PIN-код</string>
+    <string name="edit_field_phone">Номер телефона</string>
+    <string name="edit_field_recovery_email">Резервная эл. почта</string>
+    <string name="edit_field_question">Секретный вопрос</string>
+    <string name="edit_field_answer">Ответ</string>
+    <!-- The secret word a bank asks for on the phone. -->
+    <string name="edit_field_code_word">Кодовое слово</string>
+    <string name="edit_field_other">Другое…</string>
+    <string name="edit_field_label">Название</string>
+    <string name="edit_field_value">Значение</string>
+    <string name="edit_field_hide">Скрывать это значение</string>
+    <string name="edit_field_add">Добавить</string>
+
+    <!-- ===== The password generator sheet (glossary 75 to 85) ===== -->
+
+    <string name="edit_gen_title">Создать надёжный пароль</string>
+    <string name="edit_gen_new">Новый пароль</string>
+    <!-- The two kinds of password, a segmented button: random characters, or words. -->
+    <string name="edit_gen_random">Случайный</string>
+    <string name="edit_gen_words">Из слов</string>
+    <string name="edit_gen_length">Длина</string>
+    <string name="edit_gen_shorter">Короче</string>
+    <string name="edit_gen_longer">Длиннее</string>
+    <string name="edit_gen_upper">A–Z</string>
+    <string name="edit_gen_lower">a–z</string>
+    <string name="edit_gen_digits">0–9</string>
+    <!-- Glossary 82; the symbols are kept exactly as they are. -->
+    <string name="edit_gen_symbols">Специальные символы ! # $ % &amp; * + - = ? @ _</string>
+    <!-- The characters are kept as they are; no-break spaces keep the group on one line. -->
+    <string name="edit_gen_look_alike">Без похожих символов (I&#160;l&#160;1&#160;O&#160;0)</string>
+    <string name="edit_gen_one_kind">Нужен хотя бы один вид символов.</string>
+    <string name="edit_gen_word_count">Количество слов</string>
+    <string name="edit_gen_fewer_words">Меньше слов</string>
+    <string name="edit_gen_more_words">Больше слов</string>
+    <string name="edit_gen_separator">Разделитель</string>
+    <string name="edit_gen_separator_hyphen">Дефис</string>
+    <string name="edit_gen_separator_dot">Точка</string>
+    <string name="edit_gen_separator_underscore">Подчёркивание</string>
+    <string name="edit_gen_separator_space">Пробел</string>
+    <!-- Each word starts with a capital letter (glossary 79). -->
+    <string name="edit_gen_capitalize">Заглавные буквы</string>
+    <!-- One digit is added after one of the words. -->
+    <string name="edit_gen_add_number">Добавить цифру</string>
+    <string name="edit_gen_hint">Если сайт не принимает этот пароль, уменьшите число символов или отключите специальные символы.</string>
+    <string name="edit_gen_use">Использовать этот пароль</string>
+    <string name="edit_replace">Заменить текущий пароль?</string>
+    <string name="edit_replace_yes">Заменить</string>
+
+</resources>
