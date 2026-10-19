@@ -220,7 +220,7 @@
     <string name="lock_notice_replaced_pin">Ваш мастер-пароль был заменён %1$s с помощью PIN-кода. Если это сделали не вы, ваши пароли до замены всё ещё хранятся на этом телефоне.</string>
     <string name="lock_notice_replaced_fingerprint">Ваш мастер-пароль был заменён %1$s с помощью отпечатка пальца. Если это сделали не вы, ваши пароли до замены всё ещё хранятся на этом телефоне.</string>
     <!-- Glossary 142. -->
-    <string name="lock_notice_it_wasnt_me">Это был не я</string>
+    <string name="lock_notice_it_wasnt_me">Это не я</string>
     <!-- %1$d: how many wrong PINs («раз»: 1 раз, 2 раза, 5 раз); %2$s: a time («14:32»). -->
     <plurals name="lock_notice_wrong_pins_today">
         <item quantity="one">До того как вы открыли приложение, неверный PIN-код был введён %1$d&#160;раз (последний раз&#160;— сегодня в %2$s). Если это были не вы, держите телефон при себе и измените PIN-код.</item>
