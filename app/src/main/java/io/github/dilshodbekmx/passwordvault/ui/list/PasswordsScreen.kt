@@ -76,6 +76,7 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
@@ -267,21 +268,22 @@ fun PasswordsScreen(viewModel: PasswordsViewModel, nav: Navigator) {
         floatingActionButton = {
             // Drawn as the style says (docs/design/looks/README.md "\"Add\" button").
             val add = LocalLook.current.addButton
+            // TalkBack and Switch Access name the button by its object, "Add account", whether it shows
+            // "Add" beside its icon or the icon alone (ux.md §8: every icon button names its object).
+            val addLabel = stringResource(R.string.list_add_account_description)
             AnimatedVisibility(visible = showAdd, enter = fadeIn() + scaleIn(), exit = fadeOut() + scaleOut()) {
                 ExtendedFloatingActionButton(
                     text = { Text(stringResource(R.string.list_add)) },
-                    icon = {
-                        Icon(
-                            painterResource(R.drawable.ic_list_add),
-                            contentDescription = if (addExpanded) null else stringResource(R.string.list_add_account_description),
-                        )
-                    },
+                    icon = { Icon(painterResource(R.drawable.ic_list_add), contentDescription = null) },
                     onClick = {
                         viewModel.addAccount()
                         nav.go(Route.Edit())
                     },
                     expanded = addExpanded,
-                    modifier = Modifier.testTag(ListTags.ADD).onSizeChanged { addHeight = it.height },
+                    modifier = Modifier
+                        .semantics { contentDescription = addLabel }
+                        .testTag(ListTags.ADD)
+                        .onSizeChanged { addHeight = it.height },
                     shape = if (add.fullyRounded) CircleShape else FloatingActionButtonDefaults.extendedFabShape,
                     containerColor = add.container(MaterialTheme.colorScheme),
                     contentColor = add.content(MaterialTheme.colorScheme),

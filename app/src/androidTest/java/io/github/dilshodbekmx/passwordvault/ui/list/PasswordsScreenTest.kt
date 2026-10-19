@@ -18,6 +18,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToKey
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.test.espresso.Espresso
@@ -336,6 +337,26 @@ class PasswordsScreenTest {
         compose.onNodeWithTag(ListTags.DELETED_NOTHING).assertIsDisplayed()
         compose.onNodeWithTag(ListTags.DELETED_EMPTY).assertDoesNotExist()
         assertNull(vm.dialog.value)
+    }
+
+    /**
+     * Build plan 8.1 (the open problem of section 12, R4): TalkBack and Switch Access name the list's
+     * Add button "Add account" (ux.md §8: every icon button names its object) when it shows "Add" beside
+     * its icon, and again when scrolling has folded it to the icon alone; the name is said once.
+     */
+    @Test
+    fun theAddButtonIsCalledAddAccount_expandedAndFoldedToItsIcon() {
+        passwords(Vault(entries = (1..40).map { entry("a$it", "Account $it", username = "user$it", password = "pw$it") }))
+        val label = text(R.string.list_add_account_description)
+        fun said(): List<String> =
+            compose.onNodeWithTag(ListTags.ADD).fetchSemanticsNode().config.getOrNull(SemanticsProperties.ContentDescription).orEmpty()
+        compose.onNodeWithText(text(R.string.list_add), useUnmergedTree = true).assertIsDisplayed()
+        assertEquals("the expanded button", listOf(label), said())
+
+        // Scrolling down folds the button to its icon (ux.md §5.11).
+        compose.onNodeWithTag(ListTags.LIST).performTouchInput { swipeUp() }
+        compose.waitUntil(TIMEOUT_MS) { compose.onAllNodes(hasText(text(R.string.list_add)), useUnmergedTree = true).fetchSemanticsNodes().isEmpty() }
+        assertEquals("the button folded to its icon", listOf(label), said())
     }
 
     private companion object {
