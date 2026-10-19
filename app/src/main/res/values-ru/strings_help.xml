@@ -3,8 +3,8 @@
      §7). Glossary (i18n.md §3): 48 «мастер-пароль», 52 «PIN-код», 130 «PIN-код приложения», 135
      «отключён», 112 «буфер обмена», 132 «Забыли мастер-пароль?», 141 «Отменить новый пароль», 145
      «Открыть мои пароли до …», 147 «Начать с пустого приложения», 83 «парольная фраза», 86
-     «надёжность пароля», 119, 120. On the help pages the technical «зашифрованный» is allowed (i18n.md
-     §6). Quoted names of buttons and screens are those the app shows in Russian; the phone's own
+     «надёжность пароля», 119; «Лицензии открытого ПО» for "Open-source licences" (glossary 120 is
+     "Third-party"). On the help pages the technical «зашифрованный» is allowed (i18n.md §6). Quoted names of buttons and screens are those the app shows in Russian; the phone's own
      settings are named as Android names them in Russian. %1$s is the app's name. -->
 <resources>
 

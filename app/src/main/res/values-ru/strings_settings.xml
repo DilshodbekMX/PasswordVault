@@ -2,7 +2,8 @@
 <!-- Русский: the Settings tab (build plan 6.4b; ux.md §5.18). Words of the glossary (i18n.md §3):
      69 «Блокировка приложения», 55 «задать PIN-код» (a row, so the infinitive), 62 «Разблокировка по
      отпечатку пальца», 70 to 73 (the lock delay), 113 «Очистка буфера обмена» (the row's title; its
-     values carry «Через», as the lock delay's do), 115 to 117 (light or dark), 120 and 121.
+     values carry «Через», as the lock delay's do), 115 to 117 (light or dark), 121. "Open-source
+     licences" is «Лицензии открытого ПО», as the English says (glossary 120 is "Third-party licences").
      The style names (glossary 150 to 157) are names, spelled the same everywhere. -->
 <resources>
 
