@@ -905,7 +905,8 @@ line1() {
     pv_step "$T: the backup is in Download: ${backup:-none}" -- [ -n "$backup" ] || return 1
     # Kept with its master password (test data), for build plan 8.3's script ("a backup written by the
     # app on the emulator, given the master password").
-    pull "$backup" > /dev/null && printf '%s\n' "$PVA_PASSWORD" > "$DEV_OUT/$backup.master-password.txt"
+    pull "$backup" > /dev/null && cp "$DEV_OUT/$backup" "$DEV_OUT/line1-backup.pvault" \
+        && printf '%s\n' "$PVA_PASSWORD" > "$DEV_OUT/line1-backup.master-password.txt"
     pv_step "$T: adb uninstall; the backup stays in Download" -- eval 'pv_adb uninstall "$PV_PACKAGE" | grep -q "^Success" && in_download_exact "$backup"'
     pv_step "$T: installed again: Welcome" -- eval 'pva_install "$DEV_APK" && pva_start && pva_on Welcome 60' || return 1
     pv_step "$T: Welcome's \"Restore from a backup file\": the file in the picker, its master password, the summary" -- restore_from_welcome "$backup" || return 1
