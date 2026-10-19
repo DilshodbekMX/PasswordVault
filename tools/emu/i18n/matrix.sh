@@ -295,6 +295,18 @@ for node, parents in rows(root, []):
 '
 }
 
+# page_checked_soon: page_checked, read again for up to about 12 s until a row is checked: the page lists
+# the languages first and adds the app's current one to "Suggested" a moment later (on a busy machine the
+# device check of R4 read it before that, in a full run of the matrix right after other checks).
+page_checked_soon() {
+    local i checked
+    for i in 1 2 3 4 5 6 7 8; do
+        checked=$(page_checked)
+        [ -z "$checked" ] || { echo "$checked"; return 0; }
+        pv_sleep 1.5
+    done
+}
+
 # page_lists: every language of the app is on the page: Oʻzbekcha, Ўзбекча, English, Русский.
 page_lists() {
     local titles
@@ -310,7 +322,7 @@ page_marks() {
     local checked
     pva_relaunch && pva_on Welcome 30 && switch_to "$1" || return 1
     page_open || return 1
-    checked=$(page_checked)
+    checked=$(page_checked_soon)
     shot "page-$1"
     pv_shell input keyevent KEYCODE_BACK >/dev/null
     [ "$checked" = "$2" ] || { pv_log "the page marks '$checked', not '$2'"; return 1; }
@@ -321,7 +333,7 @@ page_uzbek_cyrillic() {
     local checked first
     pva_relaunch && pva_on Welcome 30 && switch_to UZ_CYRL || return 1
     page_open || return 1
-    checked=$(page_checked)
+    checked=$(page_checked_soon)
     first=$(pv_ui_nodes | awk -F'|' '$3 == "title" { if (all) { print $1; exit } } $1 == "All languages" { all = 1 }')
     shot "page-UZ_CYRL"
     pv_shell input keyevent KEYCODE_BACK >/dev/null
