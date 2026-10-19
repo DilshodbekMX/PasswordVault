@@ -159,13 +159,21 @@ pva_wait_keyboard() {
     done
 }
 
-# pva_hide_keyboard: closes the keyboard with Back, which the keyboard takes.
+# pva_hide_keyboard: closes the keyboard with Back, which the keyboard takes. Since w5-carry the screens'
+# FieldKeyboard (ui/common) asks for the keyboard again for about a second after a field took the focus or
+# the screen turned (on API 37, where Gboard hides itself), and a keyboard closed within that second comes
+# back (build-plan 12's open problem for 6.2): so the keyboard must stay closed for 1.5 s, and is closed
+# again when it came back (up to three times; the device check of R4 found shell/walk.sh failing so on API 37).
 pva_hide_keyboard() {
-    pva_keyboard_shown || return 0
-    pv_shell input keyevent KEYCODE_BACK >/dev/null
-    local i
-    for i in 1 2 3 4 5; do
-        pv_sleep 1
+    local try i
+    for try in 1 2 3; do
+        pva_keyboard_shown || return 0
+        pv_shell input keyevent KEYCODE_BACK >/dev/null
+        for i in 1 2 3 4 5; do
+            pv_sleep 1
+            pva_keyboard_shown || break
+        done
+        pv_sleep 1.5
         pva_keyboard_shown || return 0
     done
     pv_log "the keyboard stays open"
