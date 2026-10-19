@@ -739,7 +739,7 @@ pva_picker_open() {
             pva_picker_root '^Downloads[|]' || return 1
             pva_picker_list_view
         fi
-        pva_picker_keys_open "$re" || return 1
+        pva_picker_choose "$re" || return 1
     fi
     deadline=$((SECONDS + 30))
     while pva_picker_in_front; do
@@ -768,9 +768,20 @@ pva_picker_internal_download() {
     fi
     pva_picker_root "$PVA_DEVICE_ROOT" || return 1
     pva_picker_list_view
-    pva_picker_keys_open '^Download[|]' || return 1
+    pva_picker_choose '^Download[|]' || return 1
     pv_sleep 2
     pva_picker_list_view
+}
+
+# pva_picker_choose REGEX: the item REGEX (a file or a folder) of the folder shown, opened: on Android 7
+# (API below 26) with the arrow keys and Enter, as its picker ignores taps on items; from Android 9 by a
+# tap (Android 8 is not among the bases; taken as Android 9).
+pva_picker_choose() {
+    if [ "$(pv_api)" -lt 26 ]; then
+        pva_picker_keys_open "$1"
+    else
+        pva_picker_tap "$1" 15
+    fi
 }
 
 # pva_picker_keys_open REGEX: API 24 to 29: the arrow keys move the focus down the list until the

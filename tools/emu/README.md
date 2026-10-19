@@ -385,7 +385,8 @@ says `Found systemPath /home/asus/pvlab/sysimg/...`).
   named Downloads: a root is tapped among the drawer's nodes only (below `roots_list`). The open
   picker ignores taps on files and on folders alike: in its list view (the grid moves the arrow keys
   by column) `KEYCODE_DPAD_DOWN` moves the focus row by row, `uiautomator dump` marks the focused row
-  (`focused="true"`), and `KEYCODE_ENTER` opens it. A file pushed with adb is reached through ⋮ ›
+  (`focused="true"`), and `KEYCODE_ENTER` opens it (Android 9's picker, API 28, takes taps on folders and
+  files, and there the arrow keys stop in its toolbar and sort row). A file pushed with adb is reached through ⋮ ›
   "Show internal storage", the root "Android SDK built for x86_64" and its Download folder. A second
   file of a name that is already in Download gets " (1)": "PasswordVault-backup-2026-10-19 (1).pvault",
   but after the extension where the platform's table has none for the type (application/json on

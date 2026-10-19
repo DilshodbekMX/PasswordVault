@@ -718,7 +718,7 @@ What works, beyond what R3 left: every screen of the app is real (no placeholder
 - "Why this matters" on the Security tab stays open until results have once been seen, and opens again after decision 23's reset: recorded; 6.2 may fold it differently if the owner asks.
 - After a master-password unlock that follows decision 21's change under the lock, a due "Make a backup now?" of the lock and the route's own backup step can both show: recorded, for 8.1's pass.
 - "Set a PIN" in Settings now takes the steps of an unlock (decision 24: no "Make backups"): recorded.
-- `lock/lib.sh` and `i18n/lib.sh` both use the prefix `pvl_`: the device check of R4 (it owns `tools/emu/` shared parts between rounds).
+- `lock/lib.sh` and `i18n/lib.sh` both used the prefix `pvl_`: done by the device check of R4, `i18n/lib.sh`'s names start with `pvi_` (and `PVI_`).
 - Optional items 2 and 3 of "What the merge of R4 does" and `LockStatus.replacedAside` were not done: a later carry job.
 - E7 (b) on API 24 and 28 and E13's TEMPORARY on API 37 are recorded only (tools/emu/lock/README.md).
 - `MissingTranslation` and `ResourcesTest` stay warnings until the integration check of wave 6; `StrengthPerformanceTest` (JVM) and `ListPerformanceTest` (API 37) count only when they fail again alone.
