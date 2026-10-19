@@ -14,6 +14,7 @@ import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -23,6 +24,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
@@ -106,10 +110,11 @@ class LongTextLayoutTest {
 
     @Test
     fun tabLabelsShrinkRatherThanBreakAWord() {
+        // As in the bottom bar: a third of 320 dp less the bar's gaps, in the label's style (labelMedium).
         show {
             Row(Modifier.fillMaxWidth()) {
                 for (label in listOf("Parollar", "Безопасность", "Sozlamalar")) {
-                    Box(Modifier.width(100.dp).padding(horizontal = 4.dp)) { FittedText(label) }
+                    Box(Modifier.width(96.dp)) { FittedText(label, style = MaterialTheme.typography.labelMedium) }
                 }
             }
         }
@@ -140,6 +145,25 @@ class LongTextLayoutTest {
         }
         assertClean("the text and its button")
         assertTrue("the button is under the text", topOf(ACTION) >= bottomOf(TEXT) - 1)
+    }
+
+    @Test
+    fun theClipboardRowKeepsItsTextsToAFifthOfTheWindowAndScrollsThem() {
+        show {
+            ClipboardRow(
+                text = "«Kapitalbank internet banking» paroli · 0:52 dan keyin oʻchiriladi, agar uni oldinroq oʻchirmasangiz",
+                announcement = ANNOUNCEMENT,
+                headline = "Parol nusxalandi",
+                actionLabel = "Hozir oʻchirish",
+            )
+        }
+        assertClean("the clipboard row")
+        val texts = compose.onNode(hasContentDescription(ANNOUNCEMENT), useUnmergedTree = true).fetchSemanticsNode()
+        val window = compose.activity.window.decorView.height
+        assertTrue("the texts are longer than what shows: ${texts.size.height} px", texts.size.height > texts.boundsInRoot.height + 1)
+        assertTrue("what shows is at most a fifth of the window: ${texts.boundsInRoot.height} of $window px", texts.boundsInRoot.height <= window * 0.2f + 1)
+        val button = compose.onNode(hasText("Hozir oʻchirish") and hasClickAction()).fetchSemanticsNode()
+        assertTrue("Clear now is under the texts", button.boundsInRoot.top >= texts.boundsInRoot.bottom - 1)
     }
 
     @Test
@@ -176,5 +200,6 @@ class LongTextLayoutTest {
         const val BACK = "test.back"
         const val TEXT = "test.text"
         const val ACTION = "test.action"
+        const val ANNOUNCEMENT = "Parol nusxalandi. U 1 daqiqadan keyin oʻchiriladi."
     }
 }

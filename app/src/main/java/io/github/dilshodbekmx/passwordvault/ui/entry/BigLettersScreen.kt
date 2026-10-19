@@ -56,6 +56,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.dilshodbekmx.passwordvault.R
 import io.github.dilshodbekmx.passwordvault.nav.Navigator
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultTopBar
+import io.github.dilshodbekmx.passwordvault.ui.common.userText
 
 /**
  * "Show in big letters" (ux.md §5.13): a full screen for one password, username or hidden value of
@@ -139,7 +140,13 @@ fun BigLettersScreen(vm: BigLettersViewModel, nav: Navigator) {
                     .padding(CONTENT_PADDING),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                Text(text = ui.title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                // The account's name, as the user wrote it (UserText).
+                Text(
+                    text = ui.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.userText(),
+                )
                 if (ui.tooLong) {
                     Text(
                         text = stringResource(R.string.entry_big_too_long),

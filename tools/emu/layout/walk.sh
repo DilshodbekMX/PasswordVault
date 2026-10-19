@@ -89,7 +89,7 @@ restore() {
         '' | null) pv_shell settings delete system font_scale >/dev/null 2>&1 ;;
         *) pv_shell settings put system font_scale "$OLD_FONT" >/dev/null 2>&1 ;;
     esac
-    pv_log "the density is ${OLD_DENSITY:-the physical one} again and the font scale ${OLD_FONT:-unset}"
+    pv_log "the density is ${OLD_DENSITY:-the physical one} again and the font scale $( [ "$OLD_FONT" = null ] && echo unset || echo "${OLD_FONT:-unset}")"
 }
 trap restore EXIT
 trap 'exit 130' INT TERM

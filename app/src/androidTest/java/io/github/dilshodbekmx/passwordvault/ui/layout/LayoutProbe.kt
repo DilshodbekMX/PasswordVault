@@ -145,10 +145,12 @@ class LayoutProbe(private val compose: SemanticsNodeInteractionsProvider, privat
             val scrollers = generateSequence(node.parent) { it.parent }.filter {
                 it.config.contains(SemanticsProperties.VerticalScrollAxisRange) || it.config.contains(SemanticsProperties.HorizontalScrollAxisRange)
             }.toList()
-            // Partly scrolled away: seen whole once the walk scrolls it in.
-            val scrolled = scrollers.any { !inside(full, it.boundsInRoot) }
             // What counts is where the letters are, not the text's box, which can be wider.
             val cut = inkOf(node, layout).filterNot { inside(it, shown, density) }
+            // Partly scrolled away: seen whole once the walk scrolls it in. A scroller's node can be
+            // larger than what it shows (a tag given before its padding, as on the lock's pages), so
+            // letters cut at an edge it can still scroll towards count as scrolled away too.
+            val scrolled = scrollers.any { !inside(full, it.boundsInRoot) || scrollsIn(it, cut, shown) }
             if (!scrolled && cut.isNotEmpty() && !(mayCut && cut.all { it.top >= shown.top - 1 && it.bottom <= shown.bottom + 1 })) {
                 val line = cut.first()
                 return "clipped by its parent (letters at ${dp(line.left)}..${dp(line.right)} × ${dp(line.top)}..${dp(line.bottom)} dp, " +
@@ -157,6 +159,27 @@ class LayoutProbe(private val compose: SemanticsNodeInteractionsProvider, privat
         }
         if (layout != null && !secret(node)) splitWord(layout)?.let { return "a word split across two lines (\"$it\"; lines ${lines(layout)})" }
         return null
+    }
+
+    /**
+     * Whether [scroller] brings every [cut] line into view: each is cut at the top while it can scroll
+     * back, or at the bottom while it can scroll on (sideways: while it can scroll at all).
+     */
+    private fun scrollsIn(scroller: SemanticsNode, cut: List<Rect>, shown: Rect): Boolean {
+        if (cut.isEmpty()) return false
+        val vertical = scroller.config.getOrNull(SemanticsProperties.VerticalScrollAxisRange)
+        if (vertical != null) {
+            val back = vertical.value() > 0.5f
+            val on = vertical.maxValue() - vertical.value() > 0.5f
+            val up = if (vertical.reverseScrolling) on else back
+            val down = if (vertical.reverseScrolling) back else on
+            if (cut.all { (up && it.top < shown.top - density) || (down && it.bottom > shown.bottom + density) }) return true
+        }
+        val horizontal = scroller.config.getOrNull(SemanticsProperties.HorizontalScrollAxisRange)
+        if (horizontal != null && horizontal.maxValue() > 0.5f) {
+            if (cut.all { it.left < shown.left - density || it.right > shown.right + density }) return true
+        }
+        return false
     }
 
     /**

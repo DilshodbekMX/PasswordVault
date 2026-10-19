@@ -3,15 +3,22 @@ package io.github.dilshodbekmx.passwordvault.ui.list
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
@@ -40,6 +47,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
@@ -232,6 +240,17 @@ fun PasswordsScreen(viewModel: PasswordsViewModel, nav: Navigator) {
     val title = stringResource(R.string.list_title)
     // The "Add" button's height as drawn (it grows with the font): the list keeps room for it.
     var addHeight by remember { mutableIntStateOf(0) }
+    // The "Add" button floats over the list only where it leaves the list a row's room above it, and
+    // not while the keyboard is up (a search is being typed; "No results" has its own "Add"): on a
+    // short screen at 200 % the list's space, under the keyboard or the clipboard row, is about the
+    // button's own height, and the button lay over the only row, or over the top bar (build plan 6.2).
+    // It is back as soon as there is room.
+    var listHeight by remember { mutableIntStateOf(0) }
+    val density = LocalDensity.current
+    val ime = WindowInsets.ime
+    val keyboardUp by remember(ime, density) { derivedStateOf { ime.getBottom(density) > 0 } }
+    val roomForAdd = listHeight == 0 || listHeight - addHeight >= with(density) { (ADD_MARGIN + ADD_ROOM_ABOVE).roundToPx() }
+    val showAdd = !keyboardUp && roomForAdd
     Scaffold(
         modifier = Modifier.semantics { paneTitle = title },
         topBar = {
@@ -247,24 +266,26 @@ fun PasswordsScreen(viewModel: PasswordsViewModel, nav: Navigator) {
         floatingActionButton = {
             // Drawn as the style says (docs/design/looks/README.md "\"Add\" button").
             val add = LocalLook.current.addButton
-            ExtendedFloatingActionButton(
-                text = { Text(stringResource(R.string.list_add)) },
-                icon = {
-                    Icon(
-                        painterResource(R.drawable.ic_list_add),
-                        contentDescription = if (addExpanded) null else stringResource(R.string.list_add_account_description),
-                    )
-                },
-                onClick = {
-                    viewModel.addAccount()
-                    nav.go(Route.Edit())
-                },
-                expanded = addExpanded,
-                modifier = Modifier.testTag(ListTags.ADD).onSizeChanged { addHeight = it.height },
-                shape = if (add.fullyRounded) CircleShape else FloatingActionButtonDefaults.extendedFabShape,
-                containerColor = add.container(MaterialTheme.colorScheme),
-                contentColor = add.content(MaterialTheme.colorScheme),
-            )
+            AnimatedVisibility(visible = showAdd, enter = fadeIn() + scaleIn(), exit = fadeOut() + scaleOut()) {
+                ExtendedFloatingActionButton(
+                    text = { Text(stringResource(R.string.list_add)) },
+                    icon = {
+                        Icon(
+                            painterResource(R.drawable.ic_list_add),
+                            contentDescription = if (addExpanded) null else stringResource(R.string.list_add_account_description),
+                        )
+                    },
+                    onClick = {
+                        viewModel.addAccount()
+                        nav.go(Route.Edit())
+                    },
+                    expanded = addExpanded,
+                    modifier = Modifier.testTag(ListTags.ADD).onSizeChanged { addHeight = it.height },
+                    shape = if (add.fullyRounded) CircleShape else FloatingActionButtonDefaults.extendedFabShape,
+                    containerColor = add.container(MaterialTheme.colorScheme),
+                    contentColor = add.content(MaterialTheme.colorScheme),
+                )
+            }
         },
         snackbarHost = { SnackbarHost(snackbar) },
     ) { padding ->
@@ -307,7 +328,7 @@ fun PasswordsScreen(viewModel: PasswordsViewModel, nav: Navigator) {
                 },
                 onImport = { nav.go(Route.Import()) },
                 onRecentlyDeleted = { nav.go(Route.RecentlyDeleted) },
-                modifier = Modifier.nestedScroll(scrollWatch),
+                modifier = Modifier.nestedScroll(scrollWatch).onSizeChanged { listHeight = it.height },
             )
         }
     }
@@ -597,6 +618,9 @@ private val LIST_BOTTOM_PADDING = 96.dp
 /** The "Add" button's margin above the bottom of the screen's content, and the room kept above it. */
 private val ADD_MARGIN = 16.dp
 private val ADD_CLEARANCE = 24.dp
+
+/** The least of the list that the "Add" button leaves free above it; with less, the button hides. */
+private val ADD_ROOM_ABOVE = 48.dp
 
 /** The keys of the list's rows (`LazyColumn` keys): an account is listed among the favourites and A to Z, so the key says where. */
 internal const val BANNERS_KEY = "banners"
