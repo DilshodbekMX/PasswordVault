@@ -16,9 +16,9 @@
     <string name="settings_change_pin">PIN kodni oʻzgartirish</string>
     <string name="settings_set_pin">PIN kodni sozlang</string>
     <string name="settings_pin_off_limit">Juda koʻp xato urinishlardan keyin PIN kod bilan ochish faolsizlantirildi.</string>
-    <string name="settings_pin_stopped_working">PIN kod bu telefonda ishlamay qoldi.</string>
+    <string name="settings_pin_stopped_working">PIN kodingiz bu telefonda ishlamay qoldi.</string>
     <string name="settings_pin_newer_app">PIN kodingiz bu ilovaning yangiroq versiyasida sozlangan.</string>
-    <string name="settings_pin_storage_full">Telefon xotirasi toʻlgan, shuning uchun PIN kodni hozir tekshirib boʻlmaydi.</string>
+    <string name="settings_pin_storage_full">Telefoningiz xotirasi toʻlgan, shuning uchun PIN kodni hozir tekshirib boʻlmaydi.</string>
     <string name="settings_pin_cannot_check">PIN kodingizni hozircha tekshirib boʻlmayapti. Bu takrorlanaversa, asosiy parolingiz bilan yangi PIN kod tanlang.</string>
     <string name="settings_no_secure_hardware">Bu telefon PIN kod yoki barmoq izi kalitini himoyalangan apparat qismida saqlay olmaydi.</string>
 
@@ -28,7 +28,7 @@
     <string name="settings_fingerprint_no_sensor">Bu telefonda ilovalar foydalana oladigan barmoq izi skaneri yoʻq</string>
     <string name="settings_fingerprint_not_for_apps">Hozir ilovalarda barmoq izidan foydalanib boʻlmaydi. Telefoningiz sozlamalarida ilovalarda shaxsingizni tasdiqlash uchun barmoq izidan foydalanishga ruxsat berilganini tekshiring.</string>
     <string name="settings_fingerprint_update_needed">Barmoq izidan foydalanishdan oldin telefoningizga xavfsizlik yangilanishi oʻrnatilishi kerak</string>
-    <string name="settings_fingerprint_on_body">Barmoq izi bilan ochishni yoqish uchun asosiy parolingizni kiriting.</string>
+    <string name="settings_fingerprint_on_body">Barmoq izi bilan ochishni yoqish uchun asosiy parolni kiriting.</string>
     <string name="settings_fingerprint_on_button">Yoqish</string>
     <string name="settings_fingerprint_failed">Barmoq izi bilan ochishni yoqib boʻlmadi. Keyinroq qayta urining.</string>
     <string name="settings_fingerprint_is_on">Barmoq izi bilan ochish yoqildi.</string>

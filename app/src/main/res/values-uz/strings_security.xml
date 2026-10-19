@@ -95,15 +95,15 @@
     <string name="security_change_description">“%1$s” hisobining parolini oʻzgartirish</string>
     <string name="security_continue">Davom etish</string>
     <string name="security_continue_description">“%1$s” hisobining parolini oʻzgartirishni davom ettirish</string>
-    <string name="security_check_again">Qayta tekshirish</string>
-    <string name="security_check_again_description">“%1$s” hisobini qayta tekshirish</string>
+    <string name="security_check_again">Yana tekshiruvga kiritish</string>
+    <string name="security_check_again_description">“%1$s” hisobini yana tekshiruvga kiritish</string>
     <string name="security_more">“%1$s” uchun boshqa amallar</string>
     <string name="security_leave_out">Xavfsizlik tekshiruvidan chiqarish</string>
     <string name="security_back">Orqaga</string>
 
     <string name="security_left_out_message">“%1$s” hisobi xavfsizlik tekshiruvidan chiqarildi.</string>
     <string name="security_checked_again_message">“%1$s” hisobi yana tekshiriladi.</string>
-    <string name="security_save_failed">Saqlab boʻlmadi. Telefon xotirasi toʻlgan boʻlishi mumkin.</string>
+    <string name="security_save_failed">Saqlab boʻlmadi. Telefoningiz xotirasi toʻlgan boʻlishi mumkin.</string>
     <string name="security_too_large">Parollaringiz endi bitta faylga sigʻmayapti. Keraksiz hisoblarni oʻchiring yoki juda uzun qaydlarni qisqartiring.</string>
 
 </resources>

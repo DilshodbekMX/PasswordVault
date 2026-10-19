@@ -14,7 +14,7 @@
     <string name="backup_explain">Zaxira nusxa — barcha parollaringizning qulflangan nusxasi. U istalgan telefonda faqat asosiy parolingiz bilan ochiladi.</string>
     <string name="backup_explain_continue">Davom etish</string>
     <string name="backup_pending">Yangi asosiy parolingiz ishlay boshlagach, zaxira nusxa yaratishingiz mumkin.</string>
-    <string name="backup_password_text">Asosiy parolingizni kiriting. Shu bilan bu zaxira nusxani ochish uchun kerak boʻladigan parolni hali ham bilishingiz tekshiriladi.</string>
+    <string name="backup_password_text">Asosiy parolni kiriting. Shu bilan bu zaxira nusxani ochish uchun kerak boʻladigan parolni hali ham bilishingiz tekshiriladi.</string>
     <string name="backup_password_field">Asosiy parol</string>
     <string name="backup_paused">Bu jarayon ilova qulflanganda toʻxtatib turilgan edi.</string>
     <string name="backup_make">Zaxira nusxa yaratish</string>
@@ -93,7 +93,7 @@
     <string name="backup_restore_damaged">Bu zaxira nusxa fayli shikastlangan va uni ochib boʻlmaydi. Boshqa zaxira nusxa faylini sinab koʻring.</string>
     <string name="backup_restore_newer">Bu zaxira nusxa ilovaning yangiroq versiyasida yaratilgan. PasswordVault ilovasining eng yangi versiyasini oʻrnating va qayta urining.</string>
     <string name="backup_restore_no_memory">Faylni ochish uchun telefoningizda boʻsh operativ xotira yetarli emas. Boshqa ilovalarni yoping va qayta urining.</string>
-    <string name="backup_restore_not_saved">Saqlab boʻlmadi. Telefon xotirasi toʻlgan boʻlishi mumkin.</string>
+    <string name="backup_restore_not_saved">Saqlab boʻlmadi. Telefoningiz xotirasi toʻlgan boʻlishi mumkin.</string>
 
     <!-- ===== Sozlamalar › Eski parollar ===== -->
 

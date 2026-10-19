@@ -54,9 +54,9 @@
     <!-- ===== Telefoningizni yoʻqotsangiz yoki yangisiga oʻtsangiz ===== -->
 
     <string name="help_lost_locked">Telefoningiz yoʻqolsa yoki oʻgʻirlansa, parollaringiz qulflangan holda qoladi. PIN kod ketma-ket 5&#160;marta xato kiritilgandan keyin u faolsizlantiriladi va shundan soʻng ilovani faqat barmoq izingiz yoki asosiy parolingiz ocha oladi.</string>
-    <string name="help_lost_restore">Parollaringizni yangi telefonga oʻtkazish uchun unga %1$s ilovasini oʻrnating, “Zaxira nusxa faylidan tiklash” tugmasini bosing, eng yangi zaxira nusxangizni tanlang va asosiy parolingizni kiriting. Zaxira nusxasiz parollaringizni qaytarib boʻlmaydi.</string>
+    <string name="help_lost_restore">Parollaringizni yangi telefonga oʻtkazish uchun unga %1$s ilovasini oʻrnating, “Zaxira nusxa faylidan tiklash” tugmasini bosing, eng yangi zaxira nusxangizni tanlang va asosiy parolni kiriting. Zaxira nusxasiz parollaringizni qaytarib boʻlmaydi.</string>
     <string name="help_lost_transfer">Ilovalaringizni yangi telefonga koʻchirish, masalan, “Ilovalar va maʼlumotlarni nusxalash” orqali, parollaringizni olib oʻtmaydi. Eski telefonda zaxira nusxa yarating va uni yangi telefonda tiklang.</string>
-    <string name="help_lost_welcome_back">Agar yangi telefondagi %1$s ilovasi “Yana xush kelibsiz” desa, asosiy parolingizni bir marta kiriting. Soʻng yangi telefon uchun PIN kod tanlang.</string>
+    <string name="help_lost_welcome_back">Agar yangi telefondagi %1$s ilovasi “Yana xush kelibsiz” desa, asosiy parolni bir marta kiriting. Soʻng yangi telefon uchun PIN kod tanlang.</string>
     <string name="help_lost_backup">Parollar qoʻshganingiz yoki oʻzgartirganingizdan keyin har safar yangi zaxira nusxa yarating. Uni shu telefondan tashqarida saqlang: Google Drive xizmatida, kompyuterda yoki oʻzingizga yuborib qoʻying.</string>
 
     <!-- ===== Asosiy parolingizni unutsangiz ===== -->
@@ -70,8 +70,8 @@
 
     <!-- ===== PIN kodingizni unutsangiz ===== -->
 
-    <string name="help_forgot_pin_how">“PIN kodni unutdingizmi? Asosiy paroldan foydalaning” tugmasini bosing, asosiy parolingizni kiriting va yangi PIN kod tanlang.</string>
-    <string name="help_forgot_pin_limit">PIN kod ketma-ket 5&#160;marta xato kiritilgandan keyin u faolsizlantiriladi. Hech narsa oʻchirilmaydi: asosiy parolingizni kiriting, soʻng yangi PIN kod tanlang.</string>
+    <string name="help_forgot_pin_how">“PIN kodni unutdingizmi? Asosiy paroldan foydalaning” tugmasini bosing, asosiy parolni kiriting va yangi PIN kod tanlang.</string>
+    <string name="help_forgot_pin_limit">PIN kod ketma-ket 5&#160;marta xato kiritilgandan keyin u faolsizlantiriladi. Hech narsa oʻchirilmaydi: asosiy parolni kiriting, soʻng yangi PIN kod tanlang.</string>
 
     <!-- ===== Versiya ===== -->
 

@@ -252,7 +252,7 @@
     </plurals>
     <string name="import_nothing_to_add">Bu fayldan import qilinadigan yangi narsa yoʻq.</string>
     <string name="import_importing">Import qilinmoqda…</string>
-    <string name="import_save_failed">Saqlab boʻlmadi. Telefon xotirasi toʻlgan boʻlishi mumkin.</string>
+    <string name="import_save_failed">Saqlab boʻlmadi. Telefoningiz xotirasi toʻlgan boʻlishi mumkin.</string>
 
     <!-- ===== Natija ===== -->
 

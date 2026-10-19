@@ -78,7 +78,7 @@
 
     <!-- ===== 3-қадам: асосий парол ===== -->
 
-    <string name="export_password_title">Асосий паролингизни киритинг</string>
+    <string name="export_password_title">Асосий паролни киритинг</string>
     <string name="export_password_body">Илова уни ҳар бир экспортдан олдин сўрайди, чунки файл ҳимояланмайди.</string>
     <string name="export_password_field">Асосий парол</string>
     <string name="export_password_wrong">Асосий парол нотўғри. Клавиатура тилини (лотин ёки кирилл) ва бош ҳарфларни текширинг.</string>
@@ -90,8 +90,8 @@
     <!-- %1$s is a date ("6 окт, 2026"); "санасидан олдинги" ("from before the date") keeps it free of a suffix. -->
     <string name="export_password_older">Бу — %1$s санасидан олдинги асосий паролингиз. Ҳозир ишлатаётганингизни киритинг.</string>
     <string name="export_paused">Бу жараён илова қулфланганда тўхтатиб турилган эди.</string>
-    <string name="export_paused_body">%1$s номли файлни сақлаш учун асосий паролингизни қайта киритинг.</string>
-    <string name="export_paused_body_file">Файлни сақлаш учун асосий паролингизни қайта киритинг.</string>
+    <string name="export_paused_body">%1$s номли файлни сақлаш учун асосий паролни қайта киритинг.</string>
+    <string name="export_paused_body_file">Файлни сақлаш учун асосий паролни қайта киритинг.</string>
 
     <!-- ===== 4- ва 5-қадамлар: сақлаш ===== -->
 
@@ -123,7 +123,7 @@
     <string name="export_write_left_phone">%1$s номли файлда паролларингизнинг бир қисми бўлиши мумкин. Уни Файллар иловасида ўзингиз ўчиринг.</string>
     <string name="export_write_left_drive">%1$s номли файлда паролларингизнинг бир қисми бўлиши мумкин. Уни Google Drive хизматида ўзингиз ўчиринг.</string>
     <string name="export_write_left_other">%1$s номли файлда паролларингизнинг бир қисми бўлиши мумкин. Уни ўзингиз ўчиринг (жойи: %2$s).</string>
-    <string name="export_note_failed">Сақлаб бўлмади. Телефон хотираси тўлган бўлиши мумкин.</string>
+    <string name="export_note_failed">Сақлаб бўлмади. Телефонингиз хотираси тўлган бўлиши мумкин.</string>
     <string name="export_too_large">Паролларингиз энди битта файлга сиғмаяпти. Кераксиз ҳисобларни ўчиринг ёки жуда узун қайдларни қисқартиринг.</string>
     <string name="export_cleanup_removed">Файл сақланмади. Бўш файл ўчириб ташланди.</string>
     <string name="export_cleanup_left_phone">Файл сақланмади. %1$s номли бўш файлни Файллар иловасида ўзингиз ўчиринг.</string>

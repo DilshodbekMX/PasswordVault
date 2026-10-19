@@ -97,15 +97,15 @@
     <string name="security_change_description">“%1$s” ҳисобининг паролини ўзгартириш</string>
     <string name="security_continue">Давом этиш</string>
     <string name="security_continue_description">“%1$s” ҳисобининг паролини ўзгартиришни давом эттириш</string>
-    <string name="security_check_again">Қайта текшириш</string>
-    <string name="security_check_again_description">“%1$s” ҳисобини қайта текшириш</string>
+    <string name="security_check_again">Яна текширувга киритиш</string>
+    <string name="security_check_again_description">“%1$s” ҳисобини яна текширувга киритиш</string>
     <string name="security_more">“%1$s” учун бошқа амаллар</string>
     <string name="security_leave_out">Хавфсизлик текширувидан чиқариш</string>
     <string name="security_back">Орқага</string>
 
     <string name="security_left_out_message">“%1$s” ҳисоби хавфсизлик текширувидан чиқарилди.</string>
     <string name="security_checked_again_message">“%1$s” ҳисоби яна текширилади.</string>
-    <string name="security_save_failed">Сақлаб бўлмади. Телефон хотираси тўлган бўлиши мумкин.</string>
+    <string name="security_save_failed">Сақлаб бўлмади. Телефонингиз хотираси тўлган бўлиши мумкин.</string>
     <string name="security_too_large">Паролларингиз энди битта файлга сиғмаяпти. Кераксиз ҳисобларни ўчиринг ёки жуда узун қайдларни қисқартиринг.</string>
 
 </resources>

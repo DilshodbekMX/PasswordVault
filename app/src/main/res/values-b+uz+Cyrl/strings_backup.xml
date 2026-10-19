@@ -15,7 +15,7 @@
     <string name="backup_explain">Захира нусха — барча паролларингизнинг қулфланган нусхаси. У исталган телефонда фақат асосий паролингиз билан очилади.</string>
     <string name="backup_explain_continue">Давом этиш</string>
     <string name="backup_pending">Янги асосий паролингиз ишлай бошлагач, захира нусха яратишингиз мумкин.</string>
-    <string name="backup_password_text">Асосий паролингизни киритинг. Шу билан бу захира нусхани очиш учун керак бўладиган паролни ҳали ҳам билишингиз текширилади.</string>
+    <string name="backup_password_text">Асосий паролни киритинг. Шу билан бу захира нусхани очиш учун керак бўладиган паролни ҳали ҳам билишингиз текширилади.</string>
     <string name="backup_password_field">Асосий парол</string>
     <string name="backup_paused">Бу жараён илова қулфланганда тўхтатиб турилган эди.</string>
     <string name="backup_make">Захира нусха яратиш</string>
@@ -94,7 +94,7 @@
     <string name="backup_restore_damaged">Бу захира нусха файли шикастланган ва уни очиб бўлмайди. Бошқа захира нусха файлини синаб кўринг.</string>
     <string name="backup_restore_newer">Бу захира нусха илованинг янгироқ версиясида яратилган. PasswordVault иловасининг энг янги версиясини ўрнатинг ва қайта урининг.</string>
     <string name="backup_restore_no_memory">Файлни очиш учун телефонингизда бўш оператив хотира етарли эмас. Бошқа иловаларни ёпинг ва қайта урининг.</string>
-    <string name="backup_restore_not_saved">Сақлаб бўлмади. Телефон хотираси тўлган бўлиши мумкин.</string>
+    <string name="backup_restore_not_saved">Сақлаб бўлмади. Телефонингиз хотираси тўлган бўлиши мумкин.</string>
 
     <!-- ===== Созламалар › Эски пароллар ===== -->
 

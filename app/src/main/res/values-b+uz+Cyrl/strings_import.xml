@@ -250,7 +250,7 @@
     </plurals>
     <string name="import_nothing_to_add">Бу файлдан импорт қилинадиган янги нарса йўқ.</string>
     <string name="import_importing">Импорт қилинмоқда…</string>
-    <string name="import_save_failed">Сақлаб бўлмади. Телефон хотираси тўлган бўлиши мумкин.</string>
+    <string name="import_save_failed">Сақлаб бўлмади. Телефонингиз хотираси тўлган бўлиши мумкин.</string>
 
     <!-- ===== Натижа ===== -->
 

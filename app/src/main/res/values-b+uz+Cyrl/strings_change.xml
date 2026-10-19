@@ -60,7 +60,7 @@
 
     <string name="change_created">Янги парол сақланди.</string>
     <string name="change_reverted">Эски парол қайтарилди.</string>
-    <string name="change_save_failed">Сақлаб бўлмади. Телефон хотираси тўлган бўлиши мумкин.</string>
+    <string name="change_save_failed">Сақлаб бўлмади. Телефонингиз хотираси тўлган бўлиши мумкин.</string>
     <string name="change_too_large">Паролларингиз энди битта файлга сиғмаяпти. Кераксиз ҳисобларни ўчиринг ёки жуда узун қайдларни қисқартиринг.</string>
     <string name="change_no_browser">Бу телефонда браузер топилмади.</string>
     <string name="change_copy_blocked">Бу телефон нусха олишга рухсат бермади. Ҳисобни очинг ва паролни қўлда киритиш учун “Катта ҳарфларда кўрсатиш” тугмасидан фойдаланинг.</string>

@@ -59,7 +59,7 @@
 
     <string name="change_created">Yangi parol saqlandi.</string>
     <string name="change_reverted">Eski parol qaytarildi.</string>
-    <string name="change_save_failed">Saqlab boʻlmadi. Telefon xotirasi toʻlgan boʻlishi mumkin.</string>
+    <string name="change_save_failed">Saqlab boʻlmadi. Telefoningiz xotirasi toʻlgan boʻlishi mumkin.</string>
     <string name="change_too_large">Parollaringiz endi bitta faylga sigʻmayapti. Keraksiz hisoblarni oʻchiring yoki juda uzun qaydlarni qisqartiring.</string>
     <string name="change_no_browser">Bu telefonda brauzer topilmadi.</string>
     <string name="change_copy_blocked">Bu telefon nusxa olishga ruxsat bermadi. Hisobni oching va parolni qoʻlda kiritish uchun “Katta harflarda koʻrsatish” tugmasidan foydalaning.</string>

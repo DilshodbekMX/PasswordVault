@@ -16,9 +16,9 @@
     <string name="settings_change_pin">PIN кодни ўзгартириш</string>
     <string name="settings_set_pin">PIN кодни созланг</string>
     <string name="settings_pin_off_limit">Жуда кўп хато уринишлардан кейин PIN код билан очиш фаолсизлантирилди.</string>
-    <string name="settings_pin_stopped_working">PIN код бу телефонда ишламай қолди.</string>
+    <string name="settings_pin_stopped_working">PIN кодингиз бу телефонда ишламай қолди.</string>
     <string name="settings_pin_newer_app">PIN кодингиз бу илованинг янгироқ версиясида созланган.</string>
-    <string name="settings_pin_storage_full">Телефон хотираси тўлган, шунинг учун PIN кодни ҳозир текшириб бўлмайди.</string>
+    <string name="settings_pin_storage_full">Телефонингиз хотираси тўлган, шунинг учун PIN кодни ҳозир текшириб бўлмайди.</string>
     <string name="settings_pin_cannot_check">PIN кодингизни ҳозирча текшириб бўлмаяпти. Бу такрорланаверса, асосий паролингиз билан янги PIN код танланг.</string>
     <string name="settings_no_secure_hardware">Бу телефон PIN код ёки бармоқ изи калитини ҳимояланган аппарат қисмида сақлай олмайди.</string>
 
@@ -28,7 +28,7 @@
     <string name="settings_fingerprint_no_sensor">Бу телефонда иловалар фойдалана оладиган бармоқ изи сканери йўқ</string>
     <string name="settings_fingerprint_not_for_apps">Ҳозир иловаларда бармоқ изидан фойдаланиб бўлмайди. Телефонингиз созламаларида иловаларда шахсингизни тасдиқлаш учун бармоқ изидан фойдаланишга рухсат берилганини текширинг.</string>
     <string name="settings_fingerprint_update_needed">Бармоқ изидан фойдаланишдан олдин телефонингизга хавфсизлик янгиланиши ўрнатилиши керак</string>
-    <string name="settings_fingerprint_on_body">Бармоқ изи билан очишни ёқиш учун асосий паролингизни киритинг.</string>
+    <string name="settings_fingerprint_on_body">Бармоқ изи билан очишни ёқиш учун асосий паролни киритинг.</string>
     <string name="settings_fingerprint_on_button">Ёқиш</string>
     <string name="settings_fingerprint_failed">Бармоқ изи билан очишни ёқиб бўлмади. Кейинроқ қайта урининг.</string>
     <string name="settings_fingerprint_is_on">Бармоқ изи билан очиш ёқилди.</string>
