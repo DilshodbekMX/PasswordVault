@@ -88,4 +88,19 @@ wide at 200 %:
 | API 37 | app, en-XA and ar-XB, `--style NIGHT_VAULT` | 537 passed, 0 failed |
 | API 37 | app, `--locales en` (pictures) | 269 passed, 0 failed |
 
-Both parts take about 15 minutes on one device. The pictures of `docs/screens/` come from the API 37 run.
+Both parts take about 15 minutes on one device.
+
+2026-10-19, the review of 6.2 (the app and the probe as at e1cbeb4). The probe's check of a control's
+rounded shape is new there: with it, the walk of the app as at ca847bf found 19 buttons whose labels of
+three or four lines their round ends cut, on API 37 and 28 (commit e7cec27 lists them; logs under
+`/home/asus/pvwork/kept/w6A-6.2-review/logs/`). After the review's fixes:
+
+| Device | Parts and locales | Result |
+|---|---|---|
+| API 37, 1080 × 2400 (320 × 711 dp) | app and states, en-XA and ar-XB | 1718 checks passed, 0 failed |
+| API 28, 1080 × 1920 (320 × 569 dp) | app and states, en-XA and ar-XB | 1718 checks passed, 0 failed |
+| API 37 | app, en-XA and ar-XB, `--style EMERALD` | 537 passed, 0 failed |
+| API 37 | app, en-XA and ar-XB, `--style NIGHT_VAULT` | 537 passed, 0 failed |
+| API 28, 1080 × 1920 at its own size (`--width 411 --font 1.0`) | app, en-XA | 269 passed, 0 failed; the PIN steps and the lock pad show every key on the first screen |
+
+The pictures of `docs/screens/` come from the review's API 37 run.
