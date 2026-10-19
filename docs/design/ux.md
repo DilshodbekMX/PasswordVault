@@ -353,7 +353,7 @@ States and messages:
 
   Family members often know the phone PIN [I].
 - When TalkBack (or another spoken-feedback service) is on, the body adds: "TalkBack reads each key aloud. Use headphones if other people are near."
-- The keypad and dots are the same as on the lock screen (§5.9), without the fingerprint key.
+- The keypad and dots are the same as on the lock screen (§5.9), without the fingerprint key, on the same keypad page (§5.9, "Keypad pages"): upright, the dots and the whole keypad stay on the first screen, and the texts above them give way first.
 - **Refused PINs** (lock.md §7.2, §7.3): after the sixth digit, when a rule of the blocklist matches, the dots clear, the pad stays, and one of three messages says why:
   - "This PIN looks like a date or a year. Choose another."
   - "This PIN repeats digits or follows a pattern. Choose another."
@@ -407,6 +407,7 @@ The states, what each shows and its English wording are lock.md §13.1 to §13.3
 - a status line (below). A line about a wrong PIN or about tries left stays until the visit ends: typing or deleting digits does not remove it, so that someone who is handed the phone sees it;
 - a 3 × 4 keypad `1 2 3 / 4 5 6 / 7 8 9 / [fingerprint] 0 [⌫]`;
 - below it, `TextButton` **"Forgot PIN? Use master password"**.
+- **Keypad pages** (this screen, the PIN steps of §5.6 and "Change PIN"; `KeypadColumn`, build plan 6.2): upright, the dots and the whole keypad stay on the first screen together, because the keypad is typed into while the dots are watched, and the texts above them show whole where the page allows. When the height runs short, first the buttons under the keypad go below the first screen (reached by scrolling the page), then the keys shrink (never under 64 dp; the gaps first, down to 8 dp), and only then do the texts scroll on their own in the height that is left (at least 96 dp), with a fade where there is more. On a page too short even for that (a small window, or a long line under the dots at 200 %), every part is at its least and the page scrolls as a whole, the dots and the first rows of keys on the first screen.
 - In Bank blue the logo, the title, the subtitle and the dots lie on a panel in the primary colour across the top of the screen, behind the status bar, whose icons are then light, with rounded lower corners; in landscape it is a block with rounded corners on the left. The other styles draw them on the screen itself ([looks/README.md](looks/README.md) "What differs between styles besides colour").
 
 **The fingerprint-only screen** (lock.md §13.1 row 6, §13.2), when fingerprint is usable and the PIN is not: the logo, the title "PasswordVault", the status line, and the buttons "Use fingerprint" and "Use master password". No pad and no dots. The prompt opens by itself; its "Use master password" opens the master-password screen at once (build-plan §12, decision 19).
@@ -1217,8 +1218,8 @@ Rules for all text:
 - **Touch targets**: at least 48 × 48 dp everywhere (`minimumInteractiveComponentSize`); keypad keys at least 64 dp; 8 dp between adjacent targets. The list's bottom padding keeps the Add button off the last row's copy button (§5.11).
 - **Font scaling.**
   - Android 14+ scales text up to 200 %, non-linearly [V].
-  - All text is in `sp`, with no fixed heights on text containers. Rows and buttons grow; top-bar titles may cut, but the full title appears in the content.
-  - Every screen is tested at 200 % and with the largest display size.
+  - All text is in `sp`, with no fixed heights on text containers. Rows and buttons grow. A top-bar title that does not fit beside the bar's buttons moves under them and wraps; only an account's name stays on one line and may cut, and the content's first line shows it whole (`VaultTopBar`). A dialog's title and text scroll; its buttons stay in view and wrap (`VaultDialog`).
+  - Every screen is tested at 200 % and with the largest display size. The check is `tools/emu/layout/walk.sh` (build plan 6.2): every screen at 320 dp wide and 200 %, in `en-XA` and `ar-XB`, with no clipped button, no truncated or clipped text, no text left in plain English and no control under 48 dp.
 - **Contrast.**
   - WCAG 2.2 AA: 4.5:1 for text; 3:1 for large text, icons, the strength meter and focus indicators. Material 3 colour roles meet this when used as pairs.
   - The app's own styles (Bank blue, Emerald, Night vault; [looks/README.md](looks/README.md)) are fixed colour schemes, each in light and in dark. In each of the six, every pair that text is drawn in has at least 4.5:1, every icon and every outline that carries meaning at least 3:1, and the letter of every avatar tone 4.5:1; a test checks every pair (`SchemeContrastTest`, `LooksTest`). "Phone's colours" is Material 3's dynamic colour, on Android 12 and later.
@@ -1265,14 +1266,16 @@ material3 1.4.0 from Compose BOM 2026.09.00 [V: Maven]. Components marked *exp* 
 | Screen | Components |
 |---|---|
 | Shell | `Scaffold`, `NavigationSuiteScaffold` (`NavigationBar` / `NavigationRail`, `Badge` as a dot), `SnackbarHost`, `Surface` (clipboard row) |
-| Welcome, setup, help | `Button`, `OutlinedButton`, `TextButton`, `OutlinedCard`, `Checkbox`, `Switch`, `CircularProgressIndicator`, `AlertDialog` (button-slot version, stable); passphrase words as plain `Text` |
-| Lock | Custom keypad of `FilledTonalButton`/`Surface` keys, `IconButton`, `TextButton`, `OutlinedSecureTextField`, `ModalBottomSheet` *exp* ("Forgot master password?"), `AlertDialog` (notices after unlock) |
-| Passwords | `TopAppBar` (classic overload, stable), `SearchBarDefaults.InputField` *exp* (in-place filter), `LazyColumn` + `ListItem`, sticky headers, `ExtendedFloatingActionButton`, `IconButton`, `DropdownMenu`, `OutlinedCard` banners (up to two) |
-| Detail, Recently deleted | `TopAppBar`, `ListItem`, `IconToggleButton`, `FilledTonalIconButton`, `TextButton`, `AlertDialog`, `TooltipBox`/`PlainTooltip` *exp* (icon tooltips) |
-| Add/edit | `OutlinedTextField`, `OutlinedSecureTextField`, `IconButton`, `TextButton`, `Switch`, `SuggestionChip`/`FilterChip` (field labels), `AlertDialog` |
+| Welcome, setup, help | `Button`, `OutlinedButton`, `TextButton`, `OutlinedCard`, `Checkbox`, `Switch`, `CircularProgressIndicator`, `VaultDialog` (over `BasicAlertDialog` *exp*); passphrase words as plain `Text` |
+| Lock | Custom keypad of `FilledTonalButton`/`Surface` keys, `IconButton`, `TextButton`, `OutlinedSecureTextField`, `ModalBottomSheet` *exp* ("Forgot master password?"), `VaultDialog` (notices after unlock) |
+| Passwords | `VaultTopBar` (ui/common, laid out as Material's small top app bar), `SearchBarDefaults.InputField` *exp* (in-place filter), `LazyColumn` + `ListItem`, sticky headers, `ExtendedFloatingActionButton`, `IconButton`, `DropdownMenu`, `OutlinedCard` banners (up to two) |
+| Detail, Recently deleted | `VaultTopBar`, `ListItem`, `IconToggleButton`, `FilledTonalIconButton`, `TextButton`, `VaultDialog`, `TooltipBox`/`PlainTooltip` *exp* (icon tooltips) |
+| Add/edit | `OutlinedTextField`, `OutlinedSecureTextField`, `IconButton`, `TextButton`, `Switch`, `SuggestionChip`/`FilterChip` (field labels), `VaultDialog` |
 | Generator | `ModalBottomSheet` *exp*, `SingleChoiceSegmentedButtonRow` + `SegmentedButton`, `Slider` (value overload, stable), `IconButton`, `Switch`, `Button` |
 | Security | `ElevatedCard`, `LinearProgressIndicator`, `ListItem`, `TextButton`, `OutlinedCard` (steps), `Badge` |
 | Settings, import, export | `ListItem`, `RadioButton`, `Switch`, `ExposedDropdownMenuBox` *exp* (column mapping), `Checkbox`, `LinearProgressIndicator` |
+
+Since build plan 6.2 every screen's top bar is `VaultTopBar` and every dialog `VaultDialog` (over `BasicAlertDialog` *exp*; R-13), so where this document names `TopAppBar` or `AlertDialog` for a screen, those draw it.
 
 Icons are Material Symbols imported as vector drawables; `material-icons-extended` is frozen at 1.7.8 in this BOM [V: BOM POM]. Haptics: `HapticFeedbackType.Confirm`, `Reject`, `VirtualKey` [V].
 
