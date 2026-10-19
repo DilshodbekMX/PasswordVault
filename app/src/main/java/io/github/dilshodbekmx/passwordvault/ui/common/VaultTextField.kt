@@ -21,9 +21,9 @@ import io.github.dilshodbekmx.passwordvault.window.vaultTextField
  * The app's text field (R-13: the only way, with [VaultSecureField], to make one). An
  * `OutlinedTextField` with `vaultTextField()`: no autofill session and no fill or save request for
  * it, and hidden from accessibility services that are not accessibility tools (lock.md §13.5,
- * ux.md §3). A label that needs a second line moves above the box ([FieldLabel]). The keyboard flag that stops personalised learning comes from `WindowPolicy.Root`
+ * ux.md §3). The keyboard flag that stops personalised learning comes from `WindowPolicy.Root`
  * around the whole content, and the text toolbar's "Autofill" item is removed by `VaultWindow` in
- * every window.
+ * every window. A label that needs a second line moves above the box ([FieldLabel]).
  *
  * [state] is held by the screen's ViewModel, never by `rememberTextFieldState()`, which writes the
  * text into the saved-instance state (architecture.md §5.6, [V-C11]). There is no `value` and

@@ -2,12 +2,15 @@ package io.github.dilshodbekmx.passwordvault.ui.settings.master
 
 import android.content.Context
 import android.content.res.Configuration
+import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.github.dilshodbekmx.passwordvault.R
 import io.github.dilshodbekmx.passwordvault.ui.layout.LayoutHook
@@ -27,7 +30,8 @@ import org.junit.runner.RunWith
  * routes, walked in `en-XA` through states that between them show every line, button and step of
  * the package, show no text and no label that stayed plain English, so none is written into the
  * code. Not texts of their own: the keypad's digits, and the suggested words, which are English by
- * design (ux.md §5.3: "The words are English. Type them with Latin letters.").
+ * design (ux.md §5.3: "The words are English. Type them with Latin letters."). The routes are walked
+ * again in `ar-XB`, right to left, for build plan 6.2's layout walk (`LayoutHook`).
  */
 @RunWith(AndroidJUnit4::class)
 class MasterPseudoLocaleTest {
@@ -41,8 +45,8 @@ class MasterPseudoLocaleTest {
         walk?.close()
     }
 
-    private fun pseudo(base: Context): Context {
-        val configuration = Configuration(base.resources.configuration).apply { setLocale(Locale.forLanguageTag("en-XA")) }
+    private fun pseudo(base: Context, tag: String = "en-XA"): Context {
+        val configuration = Configuration(base.resources.configuration).apply { setLocale(Locale.forLanguageTag(tag)) }
         return base.createConfigurationContext(configuration)
     }
 
@@ -67,14 +71,21 @@ class MasterPseudoLocaleTest {
     }
 
     @Test
-    fun bothRoutesDrawEveryTextFromResources() {
-        val pseudo = pseudo(compose.activity)
-        val made = MasterWalk(compose) { step -> check(step) }.also { walk = it }
+    fun bothRoutesDrawEveryTextFromResources() = bothRoutes("en-XA")
+
+    @Test
+    fun bothRoutesDrawEveryTextFromResourcesInArXb() = bothRoutes("ar-XB")
+
+    private fun bothRoutes(tag: String) {
+        val pseudo = pseudo(compose.activity, tag)
+        val made = MasterWalk(compose) { step -> check(step, tag) }.also { walk = it }
+        val rtl = pseudo.resources.configuration.layoutDirection == View.LAYOUT_DIRECTION_RTL
         compose.setContent {
             CompositionLocalProvider(
                 LocalContext provides pseudo,
                 LocalConfiguration provides pseudo.resources.configuration,
                 LocalResources provides pseudo.resources,
+                LocalLayoutDirection provides if (rtl) LayoutDirection.Rtl else LayoutDirection.Ltr,
             ) {
                 SettingsTestTheme { made.Content() }
             }
@@ -87,13 +98,13 @@ class MasterPseudoLocaleTest {
         made.walkFinish(pictures = true)
     }
 
-    /** Every text shown now has a letter that the pseudo-locale made: nothing stayed plain English. */
-    private fun check(step: String) {
-        LayoutHook.look(compose, "master", "$step-en-XA")
+    /** Every text shown now has a letter that the pseudo-locale [tag] made: nothing stayed plain English. */
+    private fun check(step: String, tag: String) {
+        LayoutHook.look(compose, "master", "$step-$tag")
         val texts = compose.shownTexts().filterNot { it.matches(DIGIT) || it.matches(WORDS) }
         assertTrue("$step: the screen shows texts", texts.size >= 2)
         for (text in texts) {
-            assertTrue("\"$text\" stayed plain English in en-XA ($step)", text.any { it.code > 0x7F })
+            assertTrue("\"$text\" stayed plain English in $tag ($step)", text.any { it.code > 0x7F })
         }
     }
 

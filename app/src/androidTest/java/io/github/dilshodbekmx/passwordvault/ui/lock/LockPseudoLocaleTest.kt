@@ -3,17 +3,20 @@ package io.github.dilshodbekmx.passwordvault.ui.lock
 import android.content.Context
 import android.content.res.Configuration
 import android.os.SystemClock
+import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.github.dilshodbekmx.passwordvault.R
@@ -62,17 +65,26 @@ import org.junit.runner.RunWith
  * only, an older master password, "Open the older set instead?", "can't be opened"), the sheet, the
  * questions, every notice and the prompt, drawn in `en-XA` in states that between them show every
  * line and button, has no text and no label that stayed plain English, so none is written into the
- * code. The app's name and the keys' digits are the same in every language.
+ * code. The app's name and the keys' digits are the same in every language. Each walk runs again in
+ * `ar-XB`, right to left, for build plan 6.2's layout walk (`LayoutHook`), which looks at every state
+ * in both.
  */
 @RunWith(AndroidJUnit4::class)
 class LockPseudoLocaleTest {
     @get:Rule
     val compose = createAndroidComposeRule<ComponentActivity>()
 
+    /** The pseudo-locale the screens are drawn in: `en-XA`, or `ar-XB` (right to left). */
+    private var tag = "en-XA"
+
     private fun pseudo(base: Context): Context {
-        val configuration = Configuration(base.resources.configuration).apply { setLocale(Locale.forLanguageTag("en-XA")) }
+        val configuration = Configuration(base.resources.configuration).apply { setLocale(Locale.forLanguageTag(tag)) }
         return base.createConfigurationContext(configuration)
     }
+
+    /** The layout direction of [context]'s language, which the screens' composition must be given. */
+    private fun directionOf(context: Context): LayoutDirection =
+        if (context.resources.configuration.layoutDirection == View.LAYOUT_DIRECTION_RTL) LayoutDirection.Rtl else LayoutDirection.Ltr
 
     @Test
     fun everyLockStringIsPseudoLocalized() {
@@ -100,7 +112,15 @@ class LockPseudoLocaleTest {
     }
 
     @Test
-    fun theScreenDrawsEveryTextFromResources() {
+    fun theScreenDrawsEveryTextFromResources() = masterPasswordStates()
+
+    @Test
+    fun theScreenDrawsEveryTextFromResourcesInArXb() {
+        tag = "ar-XB"
+        masterPasswordStates()
+    }
+
+    private fun masterPasswordStates() {
         val pseudo = pseudo(compose.activity)
         val states = listOf(
             screen(
@@ -128,6 +148,7 @@ class LockPseudoLocaleTest {
                 LocalContext provides pseudo,
                 LocalConfiguration provides pseudo.resources.configuration,
                 LocalResources provides pseudo.resources,
+                LocalLayoutDirection provides directionOf(pseudo),
             ) {
                 MasterPasswordHost(lock)
             }
@@ -135,18 +156,26 @@ class LockPseudoLocaleTest {
         for ((index, state) in states.withIndex()) {
             compose.runOnUiThread { lock.state.value = LockUiState.Locked(state) }
             compose.waitForIdle()
-            LayoutHook.look(compose, "lock", "master-password-$index-en-XA")
+            LayoutHook.look(compose, "lock", "master-password-$index-$tag")
             compose.revealTag(LockTags.TITLE).assertExists()
             val texts = shownTexts()
             assertTrue("the screen shows texts", texts.size >= 4)
             for (text in texts) {
-                assertTrue("\"$text\" stayed plain English in en-XA (state $state)", text.any { it.code > 0x7F })
+                assertTrue("\"$text\" stayed plain English in $tag (state $state)", text.any { it.code > 0x7F })
             }
         }
     }
 
     @Test
-    fun theOtherLockScreensDrawEveryTextFromResources() {
+    fun theOtherLockScreensDrawEveryTextFromResources() = otherScreens()
+
+    @Test
+    fun theOtherLockScreensDrawEveryTextFromResourcesInArXb() {
+        tag = "ar-XB"
+        otherScreens()
+    }
+
+    private fun otherScreens() {
         val states = listOf(
             LockUiState.Locked(LockScreen.Pad(3, PadStatus.LastTry, fingerprintKey = true, opening = false, aside = AsideLine.LockedOn(AT))),
             LockUiState.Locked(LockScreen.Pad(6, PadStatus.Interrupted(3), fingerprintKey = false, opening = true, aside = null)),
@@ -167,25 +196,33 @@ class LockPseudoLocaleTest {
             compose.runOnUiThread { lock.state.value = state }
             compose.waitForIdle()
             val screen = (state as? LockUiState.Locked)?.screen?.let { it::class.simpleName } ?: state::class.simpleName
-            LayoutHook.look(compose, "lock", "$screen-$index-en-XA")
+            LayoutHook.look(compose, "lock", "$screen-$index-$tag")
             assertAllPseudo("$state", shownTexts(), atLeast = 3)
         }
     }
 
     @Test
-    fun theSheetAndTheQuestionsDrawEveryTextFromResources() {
+    fun theSheetAndTheQuestionsDrawEveryTextFromResources() = sheetAndQuestions()
+
+    @Test
+    fun theSheetAndTheQuestionsDrawEveryTextFromResourcesInArXb() {
+        tag = "ar-XB"
+        sheetAndQuestions()
+    }
+
+    private fun sheetAndQuestions() {
         val lock = FakeLockManager(initial = LockUiState.Locked(screen()))
         lock.status.value = LockStatus.NONE.copy(pin = PinStatus.CannotCheck, aside = listOf(AsideVault("00000000-0000-4000-8000-0000000000aa", AT, null)))
         inPseudo { LockRouteHost(lock) }
         compose.revealTag(LockTags.FORGOT).press()
         compose.waitForIdle()
         compose.revealTag(LockTags.SHEET).assertExists()
-        LayoutHook.look(compose, "lock", "forgot-sheet-en-XA")
+        LayoutHook.look(compose, "lock", "forgot-sheet-$tag")
         assertAllPseudo("the sheet", shownTexts(), atLeast = 12)
         compose.revealTag(LockTags.SHEET_EMPTY).press()
         compose.waitForIdle()
         compose.revealTag(LockTags.CONFIRM).assertExists()
-        LayoutHook.look(compose, "lock", "start-empty-question-en-XA")
+        LayoutHook.look(compose, "lock", "start-empty-question-$tag")
         assertAllPseudo("Start with an empty app?", shownTexts(), atLeast = 4)
         compose.revealTag(LockTags.CONFIRM_CANCEL).press()
         compose.revealTag(LockTags.SHEET_TRY_AGAIN).press()
@@ -194,12 +231,20 @@ class LockPseudoLocaleTest {
         compose.revealTag(LockTags.OLDER_FROM_BEFORE).press()
         compose.waitForIdle()
         compose.revealTag(LockTags.CONFIRM).assertExists()
-        LayoutHook.look(compose, "lock", "from-before-question-en-XA")
+        LayoutHook.look(compose, "lock", "from-before-question-$tag")
         assertAllPseudo("Open your passwords as they were before …?", shownTexts(), atLeast = 4)
     }
 
     @Test
-    fun theNoticesAndThePromptDrawEveryTextFromResources() {
+    fun theNoticesAndThePromptDrawEveryTextFromResources() = noticesAndPrompt()
+
+    @Test
+    fun theNoticesAndThePromptDrawEveryTextFromResourcesInArXb() {
+        tag = "ar-XB"
+        noticesAndPrompt()
+    }
+
+    private fun noticesAndPrompt() {
         val notices = listOf(
             Notice.OlderCopy(1, AT),
             Notice.OlderThanLastTime(2, AT),
@@ -228,14 +273,14 @@ class LockPseudoLocaleTest {
         for (notice in notices) {
             compose.waitForIdle()
             compose.revealTag(NoticeTags.NOTICE).assertExists()
-            LayoutHook.look(compose, "lock", "notice-${notice::class.simpleName}-${notice.id}-en-XA")
+            LayoutHook.look(compose, "lock", "notice-${notice::class.simpleName}-${notice.id}-$tag")
             assertAllPseudo("$notice", shownTexts(), atLeast = 2)
             if (notice is Notice.WrongTries && notice.pinsBeforeOff != null) {
                 // "Type master password": the prompt, then back to the notices.
                 compose.revealTag(NoticeTags.answer(NoticeAnswer.TYPE_MASTER_PASSWORD)).press()
                 compose.waitForIdle()
                 compose.revealTag(NoticeTags.PROMPT).assertExists()
-                LayoutHook.look(compose, "lock", "prompt-en-XA")
+                LayoutHook.look(compose, "lock", "prompt-$tag")
                 assertAllPseudo("the prompt", shownTexts(), atLeast = 4)
                 compose.revealTag(NoticeTags.PROMPT_CANCEL).press()
             } else {
@@ -256,7 +301,7 @@ class LockPseudoLocaleTest {
         }
     }
 
-    /** [content] in `en-XA`, as the screens draw it there. */
+    /** [content] in the pseudo-locale [tag], as the screens draw it there. */
     private fun inPseudo(content: @Composable () -> Unit) {
         val pseudo = pseudo(compose.activity)
         compose.setContent {
@@ -264,6 +309,7 @@ class LockPseudoLocaleTest {
                 LocalContext provides pseudo,
                 LocalConfiguration provides pseudo.resources.configuration,
                 LocalResources provides pseudo.resources,
+                LocalLayoutDirection provides directionOf(pseudo),
             ) {
                 content()
             }
@@ -280,7 +326,7 @@ class LockPseudoLocaleTest {
         val appName = compose.activity.getString(R.string.app_name)
         for (text in texts) {
             if (text == appName || text.all(Char::isDigit) || text in materialLabels) continue
-            assertTrue("\"$text\" stayed plain English in en-XA ($what)", text.any { it.code > 0x7F })
+            assertTrue("\"$text\" stayed plain English in $tag ($what)", text.any { it.code > 0x7F })
         }
     }
 

@@ -20,6 +20,7 @@ import io.github.dilshodbekmx.passwordvault.nav.NavViewModel
 import io.github.dilshodbekmx.passwordvault.nav.Route
 import io.github.dilshodbekmx.passwordvault.settings.ClipDelay
 import io.github.dilshodbekmx.passwordvault.settings.LockDelay
+import io.github.dilshodbekmx.passwordvault.settings.StyleChoice
 import io.github.dilshodbekmx.passwordvault.ui.common.PinPadTags
 import io.github.dilshodbekmx.passwordvault.ui.edit.EditTags
 import io.github.dilshodbekmx.passwordvault.ui.edit.GenTags
@@ -75,7 +76,7 @@ class LayoutWalkTest {
         val walk = Walker(compose, run)
         val intent = Intent(instrumentation.targetContext, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         ActivityScenario.launch<MainActivity>(intent).use {
-            if (walk.step("start in ${run.localeTag}") { start(walk, run.localeTag) }) {
+            if (walk.step("start in ${run.localeTag}") { start(walk, run.localeTag, run.style) }) {
                 walkFromSetup(walk)
             }
         }
@@ -83,10 +84,15 @@ class LayoutWalkTest {
         assertEquals("failed checks or broken steps: see the report ${run.name}", 0, failed)
     }
 
-    /** The app on Welcome (a fresh install), in the pseudo-locale [tag]. */
-    private fun start(walk: Walker, tag: String) {
+    /** The app on Welcome (a fresh install), in the pseudo-locale [tag], in the [style] given (a [StyleChoice] name). */
+    private fun start(walk: Walker, tag: String, style: String?) {
         compose.waitUntil(Walker.WAIT_MS) { app.graph.lock.state.value !is LockUiState.Starting }
         check(app.graph.lock.state.value is LockUiState.NoVault) { "the app has a vault: the script clears its data first" }
+        if (style != null) {
+            val choice = StyleChoice.valueOf(style)
+            check(app.graph.settings.update { it.style = choice }) { "the style $style was not saved" }
+            compose.waitUntil(Walker.WAIT_MS) { app.graph.settings.style.value == choice }
+        }
         walk.onRoute(Route.Welcome)
         val before = walk.activity()
         instrumentation.runOnMainSync { AppLanguages.setTags(app, tag) }

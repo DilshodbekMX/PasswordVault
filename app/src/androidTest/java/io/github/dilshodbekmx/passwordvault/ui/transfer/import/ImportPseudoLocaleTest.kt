@@ -104,7 +104,10 @@ class ImportPseudoLocaleTest {
     @Test
     fun theScreensInArXb() = screens("ar-XB")
 
-    /** The sources, the Google help, the preview top and end, the result, and the column mapping, in the locale [tag]. */
+    /**
+     * The sources, the Google help, the preview top and end, the result, the column mapping, and a
+     * preview's line for a hidden value that was not imported, in the locale [tag].
+     */
     private fun screens(tag: String) {
         val context = pseudo(tag)
         val res = context.resources
@@ -158,6 +161,26 @@ class ImportPseudoLocaleTest {
         compose.waitUntil(TIMEOUT_MS) { columns.ui.value.screen is ColumnsScreen.Shown }
         compose.revealText(res.getString(R.string.import_columns_no_password)).assertExists()
         save("mapping-$tag")
+
+        // A hidden value too long to keep hidden (decision 20): its line among the preview's changes.
+        val secret = "Qz8" + (1..250).joinToString("") { "Xy${it % 10}w" }
+        rig.recorded(
+            (
+                """{"encrypted": false, "items": [{"type": 1, "name": "Bank", "fields": [{"name": "Recovery key", "value": "$secret", "type": 1}],""" +
+                    """ "login": {"username": "aziz", "password": "Pw-Bank-1", "uris": [{"uri": "https://bank.uz"}]}}]}"""
+                ).toByteArray(),
+            name = "bitwarden.json",
+        )
+        compose.runOnUiThread {
+            file = rig.file()
+            which = FILE
+        }
+        compose.waitUntil(TIMEOUT_MS) { file.ui.value.screen is ImportScreen.Preview }
+        compose.onNodeWithTag(ImportTags.PREVIEW).performScrollToKey("changes")
+        compose.waitForIdle()
+        val hidden = res.getQuantityString(R.plurals.import_change_hidden_not_imported, 1, 1)
+        compose.revealText(res.getString(R.string.import_change, "Bank", hidden)).assertExists()
+        save("preview-hidden-$tag")
     }
 
     private fun save(name: String) {

@@ -569,7 +569,8 @@ private fun ValueRow(
             overlineContent = {
                 Text(
                     text = label,
-                    modifier = (if (labelSpoken) Modifier else Modifier.clearAndSetSemantics { }).then(if (value is EntryValue.Field) Modifier.userText() else Modifier),
+                    modifier = (if (labelSpoken) Modifier else Modifier.clearAndSetSemantics { })
+                        .then(if (value is EntryValue.Field) Modifier.userText() else Modifier),
                 )
             },
             headlineContent = content,

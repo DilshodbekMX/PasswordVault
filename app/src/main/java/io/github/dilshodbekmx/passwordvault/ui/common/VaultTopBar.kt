@@ -125,7 +125,14 @@ fun VaultTopBar(
  */
 private fun fitsBeside(measurer: TextMeasurer, title: String, style: TextStyle, width: Int, density: Density, direction: LayoutDirection): Boolean {
     if (width <= 0) return false
-    val twoLines = measurer.measure(title, style, maxLines = 2, constraints = Constraints(maxWidth = width), density = density, layoutDirection = direction)
+    val twoLines = measurer.measure(
+        title,
+        style,
+        maxLines = 2,
+        constraints = Constraints(maxWidth = width),
+        density = density,
+        layoutDirection = direction,
+    )
     if (twoLines.multiParagraph.didExceedMaxLines) return false
     if (twoLines.lineCount == 1) return true
     return title.split(' ', ' ').filter { it.isNotEmpty() }.all { word ->

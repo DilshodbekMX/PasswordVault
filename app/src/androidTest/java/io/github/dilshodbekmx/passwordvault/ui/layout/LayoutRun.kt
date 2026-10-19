@@ -9,7 +9,8 @@ import java.io.FileInputStream
 
 /**
  * One run of the layout walk (build plan 6.2, `tools/emu/layout/walk.sh`), started by the script with
- * the instrumentation arguments `-e pvLayout <run name>` and `-e pvLayoutLocale <tag>`. Without
+ * the instrumentation arguments `-e pvLayout <run name>` and `-e pvLayoutLocale <tag>`, and
+ * `-e pvLayoutStyle <style>` (a `StyleChoice` name) for a style other than the default. Without
  * `pvLayout` the walk's tests return at once, so that a plain connected run (`tools/emu/adb.sh
  * --connected`) does not walk the app at the size of the phone it runs on.
  *
@@ -23,7 +24,7 @@ import java.io.FileInputStream
  * A picture of each screen goes to `/data/local/tmp/pv-layout/<run>/<name>.png` (the shell's
  * `screencap`, which the debug build allows), from where the script takes it.
  */
-class LayoutRun private constructor(val name: String, val localeTag: String) {
+class LayoutRun private constructor(val name: String, val localeTag: String, val style: String?) {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val report = File(instrumentation.targetContext.cacheDir, "pv-layout/$name.txt").apply {
         parentFile?.mkdirs()
@@ -35,7 +36,7 @@ class LayoutRun private constructor(val name: String, val localeTag: String) {
 
     init {
         shell("mkdir -p $shots")
-        line("RUN $name|$localeTag")
+        line("RUN $name|$localeTag${style?.let { "|$it" }.orEmpty()}")
     }
 
     /** Records the checks of the screen [screen]. */
@@ -95,8 +96,9 @@ class LayoutRun private constructor(val name: String, val localeTag: String) {
             val args = InstrumentationRegistry.getArguments()
             val name = args.getString("pvLayout") ?: return null
             val tag = args.getString("pvLayoutLocale") ?: "en-XA"
+            val style = args.getString("pvLayoutStyle")
             require(Regex("[A-Za-z0-9._-]+").matches(name)) { "pvLayout: a run name of letters, digits, . _ -" }
-            return LayoutRun(name, tag)
+            return LayoutRun(name, tag, style)
         }
     }
 }

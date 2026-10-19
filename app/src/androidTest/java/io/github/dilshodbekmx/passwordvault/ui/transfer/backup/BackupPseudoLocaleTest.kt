@@ -194,7 +194,7 @@ class BackupPseudoLocaleTest {
             check(R.string.backup_choose_text)
             save("backup-choose-$suffix")
         }
-        for ((place, name) in listOf(Place.PhoneStorage to "phone", Place.GoogleDrive to "drive")) {
+        for ((place, name) in listOf(Place.PhoneStorage to "phone", Place.GoogleDrive to "drive", Place.Other("SD card") to "other")) {
             BackupScreensRig().use { rig ->
                 rig.opens()
                 rig.documents.places[BackupScreensRig.DOC] = place

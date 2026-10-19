@@ -91,6 +91,7 @@ import io.github.dilshodbekmx.passwordvault.i18n.rememberFormatters
 import io.github.dilshodbekmx.passwordvault.nav.Navigator
 import io.github.dilshodbekmx.passwordvault.nav.Route
 import io.github.dilshodbekmx.passwordvault.ui.common.CardPart
+import io.github.dilshodbekmx.passwordvault.ui.common.FittedText
 import io.github.dilshodbekmx.passwordvault.ui.common.KeyboardFirstOnBack
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultSearchField
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultTopBar
@@ -245,11 +246,11 @@ fun PasswordsScreen(viewModel: PasswordsViewModel, nav: Navigator) {
     // short screen at 200 % the list's space, under the keyboard or the clipboard row, is about the
     // button's own height, and the button lay over the only row, or over the top bar (build plan 6.2).
     // It is back as soon as there is room.
-    var listHeight by remember { mutableIntStateOf(0) }
+    var listHeight by remember { mutableStateOf<Int?>(null) }
     val density = LocalDensity.current
     val ime = WindowInsets.ime
     val keyboardUp by remember(ime, density) { derivedStateOf { ime.getBottom(density) > 0 } }
-    val roomForAdd = listHeight == 0 || listHeight - addHeight >= with(density) { (ADD_MARGIN + ADD_ROOM_ABOVE).roundToPx() }
+    val roomForAdd = listHeight.let { it == null || it - addHeight >= with(density) { (ADD_MARGIN + ADD_ROOM_ABOVE).roundToPx() } }
     val showAdd = !keyboardUp && roomForAdd
     Scaffold(
         modifier = Modifier.semantics { paneTitle = title },
@@ -298,7 +299,9 @@ fun PasswordsScreen(viewModel: PasswordsViewModel, nav: Navigator) {
                     .padding(start = 16.dp, end = 16.dp, bottom = 8.dp)
                     .refusesHandedOnFocus(inputModes)
                     .testTag(ListTags.SEARCH),
-                placeholder = { Text(stringResource(R.string.list_search_placeholder)) },
+                // On one line, smaller with a large font, and cut there only if even that does not fit:
+                // the field keeps its own height (ux.md §5.11; build plan 6.2).
+                placeholder = { FittedText(stringResource(R.string.list_search_placeholder), maxLines = 1, cut = true) },
                 leadingIcon = { Icon(painterResource(R.drawable.ic_list_search), contentDescription = null) },
                 trailingIcon = if (hasQuery) {
                     {

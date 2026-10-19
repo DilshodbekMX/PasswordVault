@@ -2,10 +2,8 @@ package io.github.dilshodbekmx.passwordvault.ui.common
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.rememberScrollState
@@ -21,7 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -35,7 +33,8 @@ import io.github.dilshodbekmx.passwordvault.window.VaultWindow
  * dialog and its buttons, which stay in view: a long title in Uzbek or Russian, the phone's font at
  * 200 %, or a dialog opened while the keyboard still takes half the screen otherwise pushed the last
  * buttons out of the dialog, where they could not be reached (build plan 6.2: "Discard" of "Save
- * changes?"). So [text] must not scroll by itself.
+ * changes?"). A [text] that scrolls by itself (a list of choices) takes the height of its content
+ * there and scrolls with the rest; a long text is never cut.
  *
  * A dialog is a window of its own, which the activity's window policy does not reach: [VaultWindow]
  * applies it to the dialog's window (the touch filter, the autofill and accessibility opt-outs, the
@@ -61,12 +60,19 @@ fun VaultDialog(
                 color = AlertDialogDefaults.containerColor,
                 tonalElevation = AlertDialogDefaults.TonalElevation,
             ) {
-                BoxWithConstraints(Modifier.sizeIn(minWidth = DIALOG_MIN_WIDTH, maxWidth = DIALOG_MAX_WIDTH)) {
-                    // A text that scrolls by itself (a list of choices) is given the dialog's height as its
-                    // limit, so that it can scroll inside the column that scrolls; any other scrolls with it.
-                    val textLimit = if (constraints.hasBoundedHeight) maxHeight - DIALOG_PADDING * 2 else Dp.Infinity
+                Box(Modifier.sizeIn(minWidth = DIALOG_MIN_WIDTH, maxWidth = DIALOG_MAX_WIDTH)) {
                     Column(Modifier.padding(DIALOG_PADDING)) {
-                        Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) {
+                        Column(
+                            Modifier
+                                .weight(1f, fill = false)
+                                .verticalScroll(rememberScrollState())
+                                // Measured with a finite height, so that a text that scrolls by itself (a list of
+                                // choices) does not throw: it takes its content's height and scrolls with the rest.
+                                .layout { measurable, constraints ->
+                                    val placeable = measurable.measure(constraints.copy(maxHeight = minOf(constraints.maxHeight, CONTENT_LIMIT)))
+                                    layout(placeable.width, placeable.height) { placeable.place(0, 0) }
+                                },
+                        ) {
                             if (icon != null) {
                                 CompositionLocalProvider(LocalContentColor provides AlertDialogDefaults.iconContentColor) {
                                     Box(Modifier.padding(bottom = 16.dp).align(Alignment.CenterHorizontally)) { icon() }
@@ -75,14 +81,15 @@ fun VaultDialog(
                             if (title != null) {
                                 CompositionLocalProvider(LocalContentColor provides AlertDialogDefaults.titleContentColor) {
                                     ProvideTextStyle(MaterialTheme.typography.headlineSmall) {
-                                        Box(Modifier.padding(bottom = 16.dp).align(if (icon == null) Alignment.Start else Alignment.CenterHorizontally)) { title() }
+                                        val titleAlignment = if (icon == null) Alignment.Start else Alignment.CenterHorizontally
+                                        Box(Modifier.padding(bottom = 16.dp).align(titleAlignment)) { title() }
                                     }
                                 }
                             }
                             if (text != null) {
                                 CompositionLocalProvider(LocalContentColor provides AlertDialogDefaults.textContentColor) {
                                     ProvideTextStyle(MaterialTheme.typography.bodyMedium) {
-                                        Box(Modifier.padding(bottom = 24.dp).heightIn(max = textLimit).align(Alignment.Start)) { text() }
+                                        Box(Modifier.padding(bottom = 24.dp).align(Alignment.Start)) { text() }
                                     }
                                 }
                             }
@@ -112,6 +119,9 @@ private val DIALOG_MAX_WIDTH = 560.dp
 private val DIALOG_PADDING = 24.dp
 private val BUTTON_GAP = 8.dp
 private val BUTTON_ROW_GAP = 12.dp
+
+/** The most the dialog's column is measured with: finite (see above), and far more than any dialog. */
+private const val CONTENT_LIMIT = 100_000
 
 /**
  * A dialog with content of its own, such as the full-screen "Show in big letters" (ux.md §5.13,

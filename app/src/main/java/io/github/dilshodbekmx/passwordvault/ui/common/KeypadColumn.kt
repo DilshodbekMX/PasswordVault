@@ -61,7 +61,8 @@ fun KeypadColumn(
             it.measure(loose.copy(maxHeight = if (first != null) (first - dotsHeight - head).coerceAtLeast(0) else keypad))
         }
         val keysHeight = keysPlaced.sumOf { it.height }
-        val headPlaced = heads.map { it.measure(if (first != null) loose.copy(maxHeight = (first - dotsHeight - keysHeight).coerceAtLeast(0)) else loose) }
+        val headConstraints = if (first != null) loose.copy(maxHeight = (first - dotsHeight - keysHeight).coerceAtLeast(0)) else loose
+        val headPlaced = heads.map { it.measure(headConstraints) }
         val parts = headPlaced + dotsPlaced + keysPlaced + footPlaced
         val height = if (first == page - footHeight) page.coerceAtLeast(parts.sumOf { it.height }) else parts.sumOf { it.height }
         layout(width, height) {

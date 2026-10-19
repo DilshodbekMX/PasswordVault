@@ -2,6 +2,7 @@ package io.github.dilshodbekmx.passwordvault.ui.layout
 
 import android.content.Context
 import android.content.res.Configuration
+import android.icu.text.BreakIterator
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
@@ -183,25 +184,25 @@ class LayoutProbe(private val compose: SemanticsNodeInteractionsProvider, privat
     }
 
     /**
-     * A word of an ordinary length that a line break cut in two: its box is too narrow for it. A word
-     * here is a whole token between ordinary spaces of at most [LONGEST_WORD] characters ("Settings",
-     * "[Šéţţîñĝš"). A longer token that cannot break (a file name, an address, a password of words, a
-     * date whose parts no-break spaces hold together) may break anywhere, and once one has, the text's
+     * A word of an ordinary length that a line break cut in two between two letters: its box is too
+     * narrow for it. A word here is what the line-breaking rules keep whole (ICU's, which Android's
+     * line breaker follows): the text between two places where a line may break, of at most
+     * [LONGEST_WORD] characters ("Settings", "[Šéţţîñĝš"). A longer run that cannot break (a file name,
+     * an address, a password of words, a date whose parts no-break spaces hold together, a word after
+     * `en-XA`'s "¿", after which no line may break) may break anywhere, and once one has, the text's
      * other breaks follow from it and are not looked at.
      */
     private fun splitWord(layout: TextLayoutResult): String? {
         val text = layout.layoutInput.text.text
-        fun space(c: Char) = c == ' ' || c == '\n' || c == '\t'
+        val breaks = BreakIterator.getLineInstance().apply { setText(text) }
         for (line in 0 until layout.lineCount - 1) {
             val end = layout.getLineEnd(line)
-            if (end <= 0 || end >= text.length) continue
-            if (space(text[end - 1]) || space(text[end])) continue
-            var from = end - 1
-            while (from > 0 && !space(text[from - 1])) from--
-            var to = end
-            while (to < text.length && !space(text[to])) to++
-            if (to - from > LONGEST_WORD) return null
-            if (text[end - 1].isLetterOrDigit() && text[end].isLetterOrDigit()) return text.substring(from, to)
+            if (end <= 0 || end >= text.length || breaks.isBoundary(end)) continue
+            val from = breaks.preceding(end).takeIf { it != BreakIterator.DONE } ?: 0
+            val to = breaks.following(end).takeIf { it != BreakIterator.DONE } ?: text.length
+            val word = text.substring(from, to).trim()
+            if (word.length > LONGEST_WORD) return null
+            if (text[end - 1].isLetterOrDigit() && text[end].isLetterOrDigit()) return word
         }
         return null
     }
@@ -209,7 +210,11 @@ class LayoutProbe(private val compose: SemanticsNodeInteractionsProvider, privat
     /**
      * A control of the same window that is not the text's own and lies over the text's letters where no
      * scroll can move the text out from under it: the text has no list or column that scrolls, or that
-     * list is scrolled to its end and the control lies below the text (or to its start, and above it).
+     * list is scrolled to its end. While the list can scroll on, the text moves up and out from under
+     * the floating button, which stays at the bottom: the list keeps room for it below its last row
+     * (ux.md §5.11). The walk scrolls every list to its end, so a text the button covers there is
+     * found. (A lazy list's range is where it is and one more while it can move on, not pixels: only
+     * "no further" can be told.)
      */
     private fun coveredBy(node: SemanticsNode, controls: List<SemanticsNode>): String? {
         val shown = node.boundsInRoot
@@ -217,24 +222,18 @@ class LayoutProbe(private val compose: SemanticsNodeInteractionsProvider, privat
         val layout = layoutOf(node) ?: return null
         val inked = inkOf(node, layout).mapNotNull { line -> line.intersect(shown).takeIf { it.width > 0f && it.height > 0f } }
         if (inked.isEmpty()) return null
+        val range = scroller(node, SemanticsProperties.VerticalScrollAxisRange)?.config?.getOrNull(SemanticsProperties.VerticalScrollAxisRange)
+        if (range != null && range.maxValue() - range.value() >= 0.5f) return null
         val own = generateSequence(node) { it.parent }.map { it.id }.toSet()
-        val vertical = scroller(node, SemanticsProperties.VerticalScrollAxisRange)
-        val range = vertical?.config?.getOrNull(SemanticsProperties.VerticalScrollAxisRange)
         for (control in controls) {
             if (control.id in own) continue
             if (generateSequence(control) { it.parent }.any { it.id == node.id }) continue
             val area = control.boundsInRoot
             val over = inked.map { it.intersect(area) }.filter { it.width >= MIN_COVER * density && it.height >= MIN_COVER * density }
             if (over.isEmpty()) continue
-            // At its end or at its start: a lazy list's range is where it is and one more while it can
-            // move on (not pixels), so only "no further" counts.
-            val stuck = when {
-                range == null -> true
-                range.maxValue() - range.value() < 0.5f && area.center.y > shown.center.y -> true
-                range.value() < 0.5f && area.center.y < shown.center.y -> true
-                else -> false
-            }
-            if (stuck) return "covered by ${describe(control)} (${dp(over.maxOf { it.width })} × ${dp(over.maxOf { it.height })} dp)"
+            val letters = over.first()
+            return "covered by ${describe(control)} (${dp(over.maxOf { it.width })} × ${dp(over.maxOf { it.height })} dp at " +
+                "${dp(letters.left)},${dp(letters.top)} dp; the button at ${dp(area.left)}..${dp(area.right)} × ${dp(area.top)}..${dp(area.bottom)} dp)"
         }
         return null
     }

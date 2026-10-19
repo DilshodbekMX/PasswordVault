@@ -3,8 +3,6 @@ package io.github.dilshodbekmx.passwordvault.ui.shell
 import android.os.Build
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -73,7 +71,10 @@ fun FirstCopyTip(
     if (open) FirstCopyTipDialog(FirstCopyTipModel.lines(delay, samsung), onOk = vm.model::close)
 }
 
-/** The tip: its title, its paragraphs (they scroll on a small screen) and "OK". Back and a tap outside close it as "OK" does. */
+/**
+ * The tip: its title, its paragraphs and "OK". Back and a tap outside close it as "OK" does. On a small
+ * screen the title and the paragraphs scroll, "OK" stays (VaultDialog).
+ */
 @Composable
 fun FirstCopyTipDialog(lines: List<UiText>, onOk: () -> Unit) {
     VaultDialog(
@@ -86,7 +87,7 @@ fun FirstCopyTipDialog(lines: List<UiText>, onOk: () -> Unit) {
         },
         title = { Text(stringResource(R.string.help_tip_title)) },
         text = {
-            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 for (line in lines) Text(line.resolve())
             }
         },

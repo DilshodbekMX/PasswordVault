@@ -5,14 +5,16 @@
 # English, no control under 48 dp.
 #
 #   tools/emu/layout/walk.sh SERIAL [--apk FILE] [--test-apk FILE] [--locales TAG,TAG] [--parts PART,PART]
-#                            [--shots DIR] [--width DP] [--font SCALE]
+#                            [--shots DIR] [--width DP] [--font SCALE] [--style NAME]
 #
 # SERIAL comes from tools/emu/boot.sh; the APKs default to this worktree's debug build and its test APK
 # (tools/gradle.sh :app:assembleDebug :app:assembleDebugAndroidTest); a debug build is needed (the
 # pseudo-locales, screenshots, run-as). --locales defaults to en-XA,ar-XB; --width to 320 and --font to
 # 2.0. --parts: app (the real app, LayoutWalkTest, once per locale) and states (the states the real app
 # reaches only with time or a damaged file: each area's pseudo-locale device test draws them with fakes
-# in en-XA and ar-XB and calls LayoutHook at each; run once); default both.
+# in en-XA and ar-XB and calls LayoutHook at each; run once); default both. --style walks the part app in
+# another colour style (EMERALD, NIGHT_VAULT; the default is the app's own, BANK_BLUE), as run
+# app-<locale>-<style>; the part states draws its screens in the tests' own style.
 #
 # The script sets the screen's density so that the phone is DP wide (`wm density`, the setting
 # "Display size") and the font scale (`settings put system font_scale`), and puts both back as they were
@@ -49,6 +51,7 @@ PARTS=app,states
 SHOTS=""
 WIDTH_DP=320
 FONT=2.0
+STYLE=""
 while [ $# -gt 0 ]; do
     case "$1" in
         --apk) [ $# -ge 2 ] || pv_usage "${BASH_SOURCE[0]}"; APK=$2; shift ;;
@@ -58,12 +61,14 @@ while [ $# -gt 0 ]; do
         --shots) [ $# -ge 2 ] || pv_usage "${BASH_SOURCE[0]}"; SHOTS=$2; shift ;;
         --width) [ $# -ge 2 ] || pv_usage "${BASH_SOURCE[0]}"; WIDTH_DP=$2; shift ;;
         --font) [ $# -ge 2 ] || pv_usage "${BASH_SOURCE[0]}"; FONT=$2; shift ;;
+        --style) [ $# -ge 2 ] || pv_usage "${BASH_SOURCE[0]}"; STYLE=$2; shift ;;
         *) pv_usage "${BASH_SOURCE[0]}" ;;
     esac
     shift
 done
 case "$WIDTH_DP" in '' | *[!0-9]*) pv_usage "${BASH_SOURCE[0]}" ;; esac
 case "$FONT" in '' | *[!0-9.]*) pv_usage "${BASH_SOURCE[0]}" ;; esac
+case "$STYLE" in '' | BANK_BLUE | EMERALD | NIGHT_VAULT) ;; *) pv_usage "${BASH_SOURCE[0]}" ;; esac
 
 pv_use "$SERIAL"
 pva_init
@@ -73,7 +78,7 @@ SHOTS=${SHOTS:-$LOGS}
 mkdir -p "$LOGS" "$SHOTS"
 TEST_PACKAGE=$PV_PACKAGE.test
 RUNNER=$TEST_PACKAGE/androidx.test.runner.AndroidJUnitRunner
-echo "layout walk on $SERIAL (API $API): ${WIDTH_DP} dp wide, font ${FONT}; locales $LOCALES; parts $PARTS"
+echo "layout walk on $SERIAL (API $API): ${WIDTH_DP} dp wide, font ${FONT}; locales $LOCALES; parts $PARTS${STYLE:+; style $STYLE}"
 
 # ---- the screen's size and the font, and putting them back -----------------------------------------
 # What was set before: an override of the density ("Override density: N", none when only the physical
@@ -179,7 +184,9 @@ run_part() {
     pv_unlock >/dev/null 2>&1
     pv_shell logcat -c >/dev/null 2>&1
     pv_log "run $name: $class${locale:+ in $locale}"
-    pv_adb shell am instrument -w -r -e class "$class" -e pvLayout "$name" ${locale:+-e pvLayoutLocale "$locale"} "$RUNNER" > "$log" 2>&1
+    local style=""
+    [ "$kind" = app ] && style=$STYLE
+    pv_adb shell am instrument -w -r -e class "$class" -e pvLayout "$name" ${locale:+-e pvLayoutLocale "$locale"} ${style:+-e pvLayoutStyle "$style"} "$RUNNER" > "$log" 2>&1
     pv_adb exec-out run-as "$PV_PACKAGE" cat "cache/pv-layout/$name.txt" > "$report" 2>/dev/null
     if ! grep -q '^RUN ' "$report"; then
         pv_report FAIL "${locale:-states} $name: the walk ran" "no report; $(grep -m 3 -E 'INSTRUMENTATION_RESULT|shortMsg|Error' "$log" | tr '\n' ' ')"
@@ -213,7 +220,7 @@ for part in ${PARTS//,/ }; do
     case "$part" in
         app)
             for locale in ${LOCALES//,/ }; do
-                run_part "$locale" io.github.dilshodbekmx.passwordvault.ui.layout.LayoutWalkTest "app-$locale" app
+                run_part "$locale" io.github.dilshodbekmx.passwordvault.ui.layout.LayoutWalkTest "app-$locale${STYLE:+-$STYLE}" app
             done ;;
         states)
             classes=""

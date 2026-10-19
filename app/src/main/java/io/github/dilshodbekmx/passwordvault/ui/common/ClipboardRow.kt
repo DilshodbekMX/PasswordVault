@@ -77,7 +77,10 @@ fun ClipboardRow(
             TextBeside(
                 modifier = Modifier.weight(1f),
                 text = {
-                    Box(Modifier.heightIn(max = textCap).verticalScroll(rememberScrollState())) {
+                    val scroll = rememberScrollState()
+                    // A fade at the edge where there is more: a line cut there reads as "scroll for more".
+                    val behind = MaterialTheme.colorScheme.secondaryContainer
+                    Box(Modifier.heightIn(max = textCap).fadeWhereMore(scroll, behind).verticalScroll(scroll)) {
                         Column(
                             modifier = Modifier.clearAndSetSemantics {
                                 contentDescription = announcement

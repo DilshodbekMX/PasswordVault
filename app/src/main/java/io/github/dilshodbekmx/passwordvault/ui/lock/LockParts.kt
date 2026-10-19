@@ -226,7 +226,11 @@ private fun PadHeadBlock(panel: LockPanel?, head: @Composable ColumnScope.() -> 
     }
     if (panel == null) {
         Column(
-            modifier = Modifier.widthIn(max = LOCK_COLUMN_MAX).fillMaxWidth().windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top)).padding(start = 24.dp, end = 24.dp, top = 32.dp),
+            modifier = Modifier
+                .widthIn(max = LOCK_COLUMN_MAX)
+                .fillMaxWidth()
+                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top))
+                .padding(start = 24.dp, end = 24.dp, top = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             content = texts,
         )

@@ -14,7 +14,6 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalResources
-import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
@@ -149,10 +148,18 @@ class EntryPseudoLocaleTest {
         compose.waitForIdle()
         compose.revealText(res.getString(R.string.entry_username), useUnmergedTree = true).assertExists()
         compose.revealText(res.getString(R.string.entry_old_password), useUnmergedTree = true).assertExists()
-        // Under each of the two passwords.
-        compose.onAllNodesWithText(res.getString(R.string.entry_big_letters), useUnmergedTree = true).assertCountEquals(2)
         compose.onNodeWithText(compose.activity.getString(R.string.entry_username), useUnmergedTree = true).assertDoesNotExist()
         save("rows-$tag")
+        // Under each of the two passwords; on a short screen with a large font one row at a time.
+        for (key in listOf("password", "old-password")) {
+            scrollTo(key)
+            compose.onAllNodesWithText(res.getString(R.string.entry_big_letters), useUnmergedTree = true).fetchSemanticsNodes().let {
+                assertTrue("\"Show in big letters\" under the row $key", it.isNotEmpty())
+            }
+        }
+        compose.onAllNodesWithText(res.getString(R.string.entry_big_letters), useUnmergedTree = true).fetchSemanticsNodes().let {
+            assertTrue("at most the two passwords have it: ${it.size}", it.size <= 2)
+        }
 
         scrollTo("notes")
         compose.revealText(res.getString(R.string.entry_notes), useUnmergedTree = true).assertExists()
