@@ -37,7 +37,7 @@
     <string name="master_touch_sensor">Barmoq izi bilan ochish yoniq qolishi uchun skanerga tegining.</string>
     <string name="master_not_changed">Asosiy parolni oʻzgartirib boʻlmadi. Hech narsa oʻzgarmadi. Eski asosiy parolingiz, PIN kod va barmoq izingiz hali ham ishlaydi.</string>
     <string name="master_unclear">Saqlash yakunlanmagan boʻlishi mumkin. Keyingi safar avval yangi asosiy parolingizni, keyin eskisini sinab koʻring.</string>
-    <string name="master_not_changed_heading">Asosiy parol oʻzgartirilmadi</string>
+    <string name="master_not_changed_heading">Asosiy parol oʻzgarmadi</string>
     <string name="master_unclear_heading">Asosiy parol oʻzgargan boʻlishi mumkin</string>
     <string name="master_change_no_memory">Asosiy parolni oʻzgartirish uchun telefoningizda boʻsh operativ xotira yetarli emas. Boshqa ilovalarni yoping yoki telefonni qayta ishga tushiring, keyin qayta urining.</string>
     <string name="master_changed">Asosiy parolingiz oʻzgartirildi.</string>

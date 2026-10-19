@@ -37,7 +37,7 @@
     <string name="master_touch_sensor">Бармоқ изи билан очиш ёниқ қолиши учун сканерга тегининг.</string>
     <string name="master_not_changed">Асосий паролни ўзгартириб бўлмади. Ҳеч нарса ўзгармади. Эски асосий паролингиз, PIN код ва бармоқ изингиз ҳали ҳам ишлайди.</string>
     <string name="master_unclear">Сақлаш якунланмаган бўлиши мумкин. Кейинги сафар аввал янги асосий паролингизни, кейин эскисини синаб кўринг.</string>
-    <string name="master_not_changed_heading">Асосий парол ўзгартирилмади</string>
+    <string name="master_not_changed_heading">Асосий парол ўзгармади</string>
     <string name="master_unclear_heading">Асосий парол ўзгарган бўлиши мумкин</string>
     <string name="master_change_no_memory">Асосий паролни ўзгартириш учун телефонингизда бўш оператив хотира етарли эмас. Бошқа иловаларни ёпинг ёки телефонни қайта ишга туширинг, кейин қайта урининг.</string>
     <string name="master_changed">Асосий паролингиз ўзгартирилди.</string>

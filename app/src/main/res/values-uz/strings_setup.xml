@@ -17,7 +17,7 @@
     <!-- "Choose your master password" (ux.md §5.3). -->
     <string name="setup_create_title">Asosiy parolni tanlang</string>
     <string name="setup_create_body">Asosiy parol — boshqa barcha parollaringiz kaliti. PIN kodni unutsangiz, zaxira nusxani ochishda va yangi telefonga oʻtishda u sizga kerak boʻladi.</string>
-    <string name="setup_create_warning_reset">Uni hech kim tiklay olmaydi. Biz uning nusxasini saqlamaymiz, “Parolni unutdingizmi?” degan email xabar ham kelmaydi. Agar uni unutsangiz, parollaringizni yangi telefonda ham, zaxira nusxadan ham ochib boʻlmaydi.</string>
+    <string name="setup_create_warning_reset">Uni hech kim tiklay olmaydi. Biz uning nusxasini saqlamaymiz, “Parolni unutdingizmi?” degan email xabar ham kelmaydi. Agar uni unutsangiz, parollaringiz yangi telefonda ham, zaxira nusxadan ham ochilmaydi.</string>
     <string name="setup_create_warning_reuse">Boshqa joyda ishlatayotgan parolingizdan foydalanmang.</string>
     <string name="setup_create_interrupted">Sozlash toʻxtab qolgan edi. Avval yozib olgan soʻzlaringizni chizib tashlang. Mana sizning yangi soʻzlaringiz.</string>
     <!-- "1-soʻz (jami 6 ta): vowel", read by TalkBack. -->
@@ -44,7 +44,7 @@
     <string name="setup_own_missing_length">Asosiy parolda kamida 12&#160;ta belgi boʻlishi kerak.</string>
     <string name="setup_own_missing_hard">Asosiy parolni topish juda oson.</string>
     <string name="setup_own_unassigned">Parolingizda baʼzi telefonlar oʻqiy olmaydigan belgi bor. Uni olib tashlang va qayta urining.</string>
-    <string name="setup_own_reuse_question">Bu paroldan boshqa biror hisobda foydalanasizmi?</string>
+    <string name="setup_own_reuse_question">Bu parolni boshqa biror hisobda ishlatasizmi?</string>
     <string name="setup_own_reuse_yes">Ha</string>
     <string name="setup_own_reuse_no">Yoʻq, bu yangi parol</string>
     <string name="setup_own_reuse_refused">Unda boshqasini tanlang. Agar biror sayt bu parolni oshkor qilib qoʻysa, zaxira nusxa faylingiz qoʻliga tushgan har kim uni ochishi mumkin.</string>

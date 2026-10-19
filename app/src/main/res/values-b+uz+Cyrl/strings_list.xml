@@ -52,7 +52,7 @@
     <string name="list_add_as_new">“%1$s” номли янги ҳисоб қўшиш</string>
 
     <!-- Messages. -->
-    <string name="list_deleted_message">%1$s ўчириб ташланди</string>
+    <string name="list_deleted_message">%1$s ўчирилди</string>
     <string name="list_save_failed">Сақлаб бўлмади. Телефонингиз хотираси тўлган бўлиши мумкин.</string>
     <string name="list_too_large">Паролларингиз энди битта файлга сиғмаяпти. Кераксиз ҳисобларни ўчиринг ёки жуда узун қайдларни қисқартиринг.</string>
     <string name="list_no_browser">Бу телефонда браузер топилмади.</string>
@@ -107,7 +107,7 @@
         <item quantity="other">%1$d&#160;сония кутинг, кейин қайта урининг. Шошилманг, ёзиб қўйган қоғозингизга қаранг.</item>
     </plurals>
     <string name="list_practice_no_memory">Асосий паролни текшириш учун телефонингизда бўш оператив хотира етарли эмас. Бошқа иловаларни ёпинг ёки телефонни қайта ишга туширинг, кейин қайта урининг.</string>
-    <string name="list_practice_older">Бу %1$s санасидан олдинги асосий паролингиз. Ҳозир фойдаланаётганингизни киритинг.</string>
+    <string name="list_practice_older">Бу %1$s санасидан олдинги асосий паролингиз. Ҳозиргисини киритинг.</string>
     <string name="list_practice_right">Тўғри. Асосий паролингиз ишлаяпти.</string>
 
     <!-- ===== Recently deleted (ux.md §5.23) ===== -->

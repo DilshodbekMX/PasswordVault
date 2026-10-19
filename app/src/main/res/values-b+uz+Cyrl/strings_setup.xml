@@ -19,7 +19,7 @@
     <!-- "Choose your master password" (ux.md §5.3). -->
     <string name="setup_create_title">Асосий паролни танланг</string>
     <string name="setup_create_body">Асосий парол — бошқа барча паролларингиз калити. PIN кодни унутсангиз, захира нусхани очишда ва янги телефонга ўтишда у сизга керак бўлади.</string>
-    <string name="setup_create_warning_reset">Уни ҳеч ким тиклай олмайди. Биз унинг нусхасини сақламаймиз, “Паролни унутдингизми?” деган эл. почта хабари ҳам келмайди. Агар уни унутсангиз, паролларингизни янги телефонда ҳам, захира нусхадан ҳам очиб бўлмайди.</string>
+    <string name="setup_create_warning_reset">Уни ҳеч ким тиклай олмайди. Биз унинг нусхасини сақламаймиз, “Паролни унутдингизми?” деган эл. почта хабари ҳам келмайди. Агар уни унутсангиз, паролларингиз янги телефонда ҳам, захира нусхадан ҳам очилмайди.</string>
     <string name="setup_create_warning_reuse">Бошқа жойда ишлатаётган паролингиздан фойдаланманг.</string>
     <string name="setup_create_interrupted">Созлаш тўхтаб қолган эди. Аввал ёзиб олган сўзларингизни чизиб ташланг. Мана сизнинг янги сўзларингиз.</string>
     <!-- "1-сўз (жами 6 та): vowel", read by TalkBack. -->
@@ -46,7 +46,7 @@
     <string name="setup_own_missing_length">Асосий паролда камида 12&#160;та белги бўлиши керак.</string>
     <string name="setup_own_missing_hard">Асосий паролни топиш жуда осон.</string>
     <string name="setup_own_unassigned">Паролингизда баъзи телефонлар ўқий олмайдиган белги бор. Уни олиб ташланг ва қайта урининг.</string>
-    <string name="setup_own_reuse_question">Бу паролдан бошқа бирор ҳисобда фойдаланасизми?</string>
+    <string name="setup_own_reuse_question">Бу паролни бошқа бирор ҳисобда ишлатасизми?</string>
     <string name="setup_own_reuse_yes">Ҳа</string>
     <string name="setup_own_reuse_no">Йўқ, бу янги парол</string>
     <string name="setup_own_reuse_refused">Унда бошқасини танланг. Агар бирор сайт бу паролни ошкор қилиб қўйса, захира нусха файлингиз қўлига тушган ҳар ким уни очиши мумкин.</string>

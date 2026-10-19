@@ -59,14 +59,14 @@
     <string name="pin_mp_no_memory">Asosiy parolni tekshirish uchun telefoningizda boʻsh operativ xotira yetarli emas. Boshqa ilovalarni yoping yoki telefonni qayta ishga tushiring, keyin qayta urining.</string>
 
     <!-- The fingerprint offer (ux.md §5.7). -->
-    <string name="pin_fingerprint_title">Barmoq izingizdan foydalanasizmi?</string>
+    <string name="pin_fingerprint_title">Barmoq izi bilan ochasizmi?</string>
     <string name="pin_fingerprint_body">Ilovani PIN kod oʻrniga barmoq izingiz bilan oching. PIN kod va asosiy parolingiz ham ishlayveradi.</string>
-    <string name="pin_fingerprint_anyone">Barmoq izi bu telefon sozlamalarida saqlangan har kim ilovani ocha oladi.</string>
+    <string name="pin_fingerprint_anyone">Bu telefonga barmoq izi qoʻshilgan har kim ilovani ocha oladi.</string>
     <string name="pin_fingerprint_note">Agar bu telefondagi barmoq izlari yoki ekran qulfi oʻzgarsa, xavfsizlik uchun barmoq izi bilan ochish faolsizlantiriladi. Uni Sozlamalarda qayta yoqishingiz mumkin.</string>
     <string name="pin_fingerprint_use">Barmoq izidan foydalanish</string>
     <string name="pin_fingerprint_turn_on">Barmoq izi bilan ochishni yoqish</string>
     <string name="pin_fingerprint_failed">Barmoq izi bilan ochishni yoqib boʻlmadi. Keyinroq Sozlamalarda qayta urinib koʻrishingiz mumkin.</string>
-    <string name="pin_fingerprint_may_not_be_on">Barmoq izi bilan ochish yoqilmagan boʻlishi mumkin. Agar barmoq izingiz qabul qilinmasa, uni Sozlamalarda qayta yoqing.</string>
+    <string name="pin_fingerprint_may_not_be_on">Barmoq izi bilan ochish yoqilmagan boʻlishi mumkin. Agar barmoq izingiz qabul qilinmasa, uni Sozlamalar boʻlimida qayta yoqing.</string>
     <string name="pin_fingerprint_add_first">Avval telefon sozlamalarida barmoq izi qoʻshing.</string>
     <string name="pin_fingerprint_no_secure_hardware">Bu telefon barmoq izi kalitini himoyalangan apparat qismida saqlay olmaydi.</string>
 

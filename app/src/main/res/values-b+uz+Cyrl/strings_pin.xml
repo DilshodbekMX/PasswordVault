@@ -59,14 +59,14 @@
     <string name="pin_mp_no_memory">Асосий паролни текшириш учун телефонингизда бўш оператив хотира етарли эмас. Бошқа иловаларни ёпинг ёки телефонни қайта ишга туширинг, кейин қайта урининг.</string>
 
     <!-- The fingerprint offer (ux.md §5.7). -->
-    <string name="pin_fingerprint_title">Бармоқ изингиздан фойдаланасизми?</string>
+    <string name="pin_fingerprint_title">Бармоқ изи билан очасизми?</string>
     <string name="pin_fingerprint_body">Иловани PIN код ўрнига бармоқ изингиз билан очинг. PIN код ва асосий паролингиз ҳам ишлайверади.</string>
-    <string name="pin_fingerprint_anyone">Бармоқ изи бу телефон созламаларида сақланган ҳар ким иловани оча олади.</string>
+    <string name="pin_fingerprint_anyone">Бу телефонга бармоқ изи қўшилган ҳар ким иловани оча олади.</string>
     <string name="pin_fingerprint_note">Агар бу телефондаги бармоқ излари ёки экран қулфи ўзгарса, хавфсизлик учун бармоқ изи билан очиш фаолсизлантирилади. Уни Созламаларда қайта ёқишингиз мумкин.</string>
     <string name="pin_fingerprint_use">Бармоқ изидан фойдаланиш</string>
     <string name="pin_fingerprint_turn_on">Бармоқ изи билан очишни ёқиш</string>
     <string name="pin_fingerprint_failed">Бармоқ изи билан очишни ёқиб бўлмади. Кейинроқ Созламаларда қайта уриниб кўришингиз мумкин.</string>
-    <string name="pin_fingerprint_may_not_be_on">Бармоқ изи билан очиш ёқилмаган бўлиши мумкин. Агар бармоқ изингиз қабул қилинмаса, уни Созламаларда қайта ёқинг.</string>
+    <string name="pin_fingerprint_may_not_be_on">Бармоқ изи билан очиш ёқилмаган бўлиши мумкин. Агар бармоқ изингиз қабул қилинмаса, уни Созламалар бўлимида қайта ёқинг.</string>
     <string name="pin_fingerprint_add_first">Аввал телефон созламаларида бармоқ изи қўшинг.</string>
     <string name="pin_fingerprint_no_secure_hardware">Бу телефон бармоқ изи калитини ҳимояланган аппарат қисмида сақлай олмайди.</string>
 

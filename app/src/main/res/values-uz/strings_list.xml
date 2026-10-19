@@ -51,7 +51,7 @@
     <string name="list_add_as_new">“%1$s” nomli yangi hisob qoʻshish</string>
 
     <!-- Messages. -->
-    <string name="list_deleted_message">%1$s oʻchirib tashlandi</string>
+    <string name="list_deleted_message">%1$s oʻchirildi</string>
     <string name="list_save_failed">Saqlab boʻlmadi. Telefoningiz xotirasi toʻlgan boʻlishi mumkin.</string>
     <string name="list_too_large">Parollaringiz endi bitta faylga sigʻmayapti. Keraksiz hisoblarni oʻchiring yoki juda uzun qaydlarni qisqartiring.</string>
     <string name="list_no_browser">Bu telefonda brauzer topilmadi.</string>
@@ -106,7 +106,7 @@
         <item quantity="other">%1$d&#160;soniya kuting, keyin qayta urining. Shoshilmang, yozib qoʻygan qogʻozingizga qarang.</item>
     </plurals>
     <string name="list_practice_no_memory">Asosiy parolni tekshirish uchun telefoningizda boʻsh operativ xotira yetarli emas. Boshqa ilovalarni yoping yoki telefonni qayta ishga tushiring, keyin qayta urining.</string>
-    <string name="list_practice_older">Bu %1$s sanasidan oldingi asosiy parolingiz. Hozir foydalanayotganingizni kiriting.</string>
+    <string name="list_practice_older">Bu %1$s sanasidan oldingi asosiy parolingiz. Hozirgisini kiriting.</string>
     <string name="list_practice_right">Toʻgʻri. Asosiy parolingiz ishlayapti.</string>
 
     <!-- ===== Recently deleted (ux.md §5.23) ===== -->
