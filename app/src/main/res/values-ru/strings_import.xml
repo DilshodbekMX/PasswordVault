@@ -332,10 +332,10 @@
     <string name="import_backup_wrong_or_damaged">Возможно, файл повреждён или пароль неверный.</string>
     <string name="import_backup_no_memory">На телефоне недостаточно свободной оперативной памяти, чтобы открыть файл. Закройте другие приложения и повторите попытку.</string>
     <plurals name="import_backup_summary">
-        <item quantity="one">Резервная копия от %2$s, в ней %1$d&#160;аккаунт.</item>
-        <item quantity="few">Резервная копия от %2$s, в ней %1$d&#160;аккаунта.</item>
-        <item quantity="many">Резервная копия от %2$s, в ней %1$d&#160;аккаунтов.</item>
-        <item quantity="other">Резервная копия от %2$s, в ней %1$d&#160;аккаунта.</item>
+        <item quantity="one">Резервная копия от %2$s, в&#160;ней %1$d&#160;аккаунт.</item>
+        <item quantity="few">Резервная копия от %2$s, в&#160;ней %1$d&#160;аккаунта.</item>
+        <item quantity="many">Резервная копия от %2$s, в&#160;ней %1$d&#160;аккаунтов.</item>
+        <item quantity="other">Резервная копия от %2$s, в&#160;ней %1$d&#160;аккаунта.</item>
     </plurals>
     <string name="import_backup_rules">Аккаунты, которые уже есть здесь, будут пропущены. Ничего из того, что уже здесь есть, не будет изменено или заменено.</string>
     <string name="import_backup_add">Добавить к моим паролям</string>

@@ -78,10 +78,10 @@
     <string name="backup_restore_open">Открыть резервную копию</string>
     <string name="backup_restore_opening">Открытие…</string>
     <plurals name="backup_restore_summary">
-        <item quantity="one">Резервная копия от %2$s, в ней %1$d&#160;аккаунт.</item>
-        <item quantity="few">Резервная копия от %2$s, в ней %1$d&#160;аккаунта.</item>
-        <item quantity="many">Резервная копия от %2$s, в ней %1$d&#160;аккаунтов.</item>
-        <item quantity="other">Резервная копия от %2$s, в ней %1$d&#160;аккаунта.</item>
+        <item quantity="one">Резервная копия от %2$s, в&#160;ней %1$d&#160;аккаунт.</item>
+        <item quantity="few">Резервная копия от %2$s, в&#160;ней %1$d&#160;аккаунта.</item>
+        <item quantity="many">Резервная копия от %2$s, в&#160;ней %1$d&#160;аккаунтов.</item>
+        <item quantity="other">Резервная копия от %2$s, в&#160;ней %1$d&#160;аккаунта.</item>
     </plurals>
     <string name="backup_restore_restore">Восстановить</string>
     <string name="backup_restore_stays">Текущие пароли останутся на этом телефоне в заблокированном виде.</string>
