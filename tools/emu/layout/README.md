@@ -13,13 +13,19 @@ tools/emu/stop.sh "$S37"
 ```
 
 `walk.sh SERIAL [--apk FILE] [--test-apk FILE] [--locales TAG,TAG] [--parts app,states] [--shots DIR]
-[--width DP] [--font SCALE] [--style NAME]` needs the debug build (pseudo-locales, screenshots,
+[--width DP] [--font SCALE] [--style NAME] [--stretch-shots]` needs the debug build (pseudo-locales, screenshots,
 `run-as`). It sets the screen's density so that the phone is 320 dp wide (`wm density`, as "Display
 size" does) and the font scale to 2.0 (`settings put system font_scale`), and puts both back however it
 ends, with the app's language (which Android 13 and later keep outside the app's data) and its data. `--width 411 --font 1.0` walks a 1080-pixel phone at its own size (build plan §12's open problem:
 the PIN steps in `en-XA` on a 1080 × 1920 screen). `--style EMERALD` or `NIGHT_VAULT` walks the part
 app in that colour style (run `app-<locale>-<style>`); `--locales en` walks it in plain English, for
-pictures (the English check is made only in a pseudo-locale).
+pictures (the English check is made only in a pseudo-locale), and `--locales uz,uz-Cyrl,ru` in the real
+languages with the app's own tags. `--stretch-shots` (since the device check of waves 6 and 8A) keeps in
+the part app a picture of every further stretch of a screen that scrolls too, `<screen>--2.png`, `--3`,
+...: one each time a list has moved by 0.7 of what it shows (a lazy list moves only about 100 px per
+stretch), one at its end, and with a dialog or a menu open only for the lists inside it; such a run
+follows a list to its end (400 stretches instead of 40). The owner's picture set (`checks/6-pictures.sh`)
+walks so at the phone's own size.
 
 ## The two parts
 
@@ -120,3 +126,17 @@ a load of about 35. API 24 was walked for the first time:
 
 Each full walk took about 18 minutes there (the part app about 4 minutes per locale, the part states about
 10). The logs, reports and pictures are kept under `/home/asus/pvwork/kept/6A-device-check/`.
+
+2026-10-19, the device check of waves 6 and 8A on `main` (`tools/emu/checks/6.sh walk`; the app as at
+`wave-6-merged`), the integrator's API 37 device, debug build, the part app in the four real languages at
+320 dp and 200 % (`--parts app --locales en,uz,uz-Cyrl,ru`), about 3 minutes per language:
+
+| Language | Result |
+|---|---|
+| en | 268 checks passed, 0 failed |
+| uz (Oʻzbekcha) | 268 passed, 0 failed |
+| uz-Cyrl (Ўзбекча) | 267 passed, 1 failed: Entry-deleted's snackbar "Olx ўчириб ташланди" beside "Қайтариш" splits "ташланди" (KNOWN, 8.1's) |
+| ru (Русский) | 212 passed, 56 failed: 145 findings, every one "a word split across two lines" where Russian's automatic hyphenation drew the hyphen (KNOWN: the probe does not accept a hyphenated break yet) |
+
+`6.sh` sorts every finding of such a walk into KNOWN (those two) and DEFECT; there was no DEFECT. The logs,
+reports and pictures are kept under `/home/asus/pvwork/kept/6-device-check/`.

@@ -339,7 +339,7 @@ connected_tests() {
     while read -r s cls; do
         echo "   $s: $cls failed in the full run; run again alone there"
         mkdir -p "$dir/again/$s/$cls"
-        touch_mode "$s" > /dev/null
+        touch_mode "$s" > /dev/null < /dev/null
         "$EMU/adb.sh" --connected "$s" -- "$RUNNER_ARG.class=$cls" ${gradle_args[@]+"${gradle_args[@]}"} > "$dir/again/$s/$cls.log" 2>&1 < /dev/null || again=1
         cp -r "$RESULTS/." "$dir/again/$s/$cls/" 2> /dev/null
         grep -E '^(PASS|FAIL) connected' "$dir/again/$s/$cls.log" | sed 's/^/     alone: /'
@@ -534,18 +534,20 @@ EOF
 # ---- i18n: 6.1's [script] lines ----------------------------------------------------------------------------
 I18N_OUT=$REPO/build/emu-i18n/all
 
-# i18n/all.sh on API 24 and 37 (those among --levels); its logs (build/emu-i18n/all/, which every run
-# shares) copied to LOGS/all/.
+# i18n/all.sh on API 24 and 37 (those among --levels); the logs of these serials in its folder
+# (build/emu-i18n/all/, which every run shares and nobody clears) are removed first and copied to
+# LOGS/all/ afterwards.
 i18n_all() {
-    local rc began serials
+    local rc began serials s
     serials=$(serials_of 24 37)
     [ -n "$serials" ] || { echo "   none of API 24 and 37 is among --levels"; return 0; }
+    for s in $serials; do rm -f "$I18N_OUT/$s"-*; done
     began=$(date +%s)
     # shellcheck disable=SC2086 # the serials are words
     "$EMU/i18n/all.sh" --apk "$DEBUG_APK" $serials > "$LOGS/all.log" 2>&1
     rc=$?
     mkdir -p "$LOGS/all"
-    cp -r "$I18N_OUT/." "$LOGS/all/" 2> /dev/null
+    for s in $serials; do cp "$I18N_OUT/$s"-* "$LOGS/all/" 2> /dev/null; done
     grep -E '^(PASS|FAIL) [a-z0-9]+\.sh|^SUMMARY' "$LOGS/all.log" | sed 's/^/   /'
     grep -E '^   (FAIL|KNOWN) ' "$LOGS/all.log" | sed 's/^/  /'
     studio_runs "$began" | sed 's/^/   /'
