@@ -168,7 +168,7 @@ private fun androidx.compose.material3.SingleChoiceSegmentedButtonRowScope.KindB
  * radio rows, one per choice, each a touch target of its own (i18n.md §4.5 rule 1; build plan 6.2).
  */
 @Composable
-private fun SeparatorChoices(chosen: GeneratorOptions.Separator, onChoose: (GeneratorOptions.Separator) -> Unit) {
+internal fun SeparatorChoices(chosen: GeneratorOptions.Separator, onChoose: (GeneratorOptions.Separator) -> Unit) {
     val shown = SEPARATORS.map { stringResource(it.shown) }
     val names = SEPARATORS.map { stringResource(it.name) }
     val measurer = rememberTextMeasurer()
@@ -194,18 +194,21 @@ private fun SeparatorChoices(chosen: GeneratorOptions.Separator, onChoose: (Gene
         } else {
             Column(Modifier.selectableGroup()) {
                 SEPARATORS.forEachIndexed { index, choice ->
+                    // TalkBack says the name ("Hyphen"), which the row's description gives in place of its text.
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .heightIn(min = 48.dp)
                             .selectable(selected = chosen == choice.separator, role = Role.RadioButton, onClick = { onChoose(choice.separator) })
+                            .semantics { contentDescription = names[index] }
                             .testTag(GenTags.SEPARATOR + choice.separator.name),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         RadioButton(selected = chosen == choice.separator, onClick = null)
-                        // The symbol and its name ("- Hyphen"), or the name alone where they are the same ("Space").
-                        val label = if (shown[index] == names[index]) names[index] else "${shown[index]}  ${names[index]}"
-                        Text(text = label, modifier = Modifier.padding(start = 16.dp).clearAndSetSemantics { contentDescription = names[index] })
+                        // The symbol and its name ("- Hyphen") in the order the language's string gives
+                        // (ux.md §9: no concatenation), or the name alone where they are the same ("Space").
+                        val label = if (shown[index] == names[index]) names[index] else stringResource(R.string.edit_gen_separator_choice, shown[index], names[index])
+                        Text(text = label, modifier = Modifier.padding(start = 16.dp))
                     }
                 }
             }

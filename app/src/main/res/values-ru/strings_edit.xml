@@ -125,6 +125,7 @@
     <string name="edit_gen_fewer_words">Меньше слов</string>
     <string name="edit_gen_more_words">Больше слов</string>
     <string name="edit_gen_separator">Разделитель</string>
+    <string name="edit_gen_separator_choice">%1$s %2$s</string>
     <string name="edit_gen_separator_hyphen">Дефис</string>
     <string name="edit_gen_separator_dot">Точка</string>
     <string name="edit_gen_separator_underscore">Подчёркивание</string>

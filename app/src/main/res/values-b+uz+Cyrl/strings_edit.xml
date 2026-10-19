@@ -101,6 +101,7 @@
     <string name="edit_gen_fewer_words">Камроқ сўз</string>
     <string name="edit_gen_more_words">Кўпроқ сўз</string>
     <string name="edit_gen_separator">Ажратгич</string>
+    <string name="edit_gen_separator_choice">%1$s %2$s</string>
     <string name="edit_gen_separator_hyphen">Чизиқча</string>
     <string name="edit_gen_separator_dot">Нуқта</string>
     <string name="edit_gen_separator_underscore">Пастки чизиқ</string>
