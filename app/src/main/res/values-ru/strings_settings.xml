@@ -30,7 +30,7 @@
     <string name="settings_fingerprint_failed">Не удалось включить разблокировку по отпечатку пальца. Повторите попытку позже.</string>
     <string name="settings_fingerprint_is_on">Разблокировка по отпечатку пальца включена.</string>
 
-    <string name="settings_lock_delay">Блокировать приложение после выхода из него</string>
+    <string name="settings_lock_delay">Блокировка после выхода из приложения</string>
     <string name="settings_lock_delay_immediately">Сразу</string>
     <plurals name="settings_lock_delay_seconds">
         <item quantity="one">Через %d&#160;секунду</item>

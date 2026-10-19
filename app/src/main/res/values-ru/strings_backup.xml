@@ -26,7 +26,7 @@
         <item quantity="other">Повторите попытку через %d&#160;секунды</item>
     </plurals>
     <string name="backup_no_memory">На телефоне недостаточно свободной оперативной памяти, чтобы проверить мастер-пароль. Закройте другие приложения или перезапустите телефон, затем повторите попытку.</string>
-    <string name="backup_older">Вы изменили мастер-пароль %1$s. Введите новый.</string>
+    <string name="backup_older">Вы изменили мастер-пароль %1$s, поэтому введите новый.</string>
     <string name="backup_older_unfinished">Возможно, изменение мастер-пароля %1$s не завершилось. Введите новый мастер-пароль.</string>
     <string name="backup_making">Создание резервной копии…</string>
     <string name="backup_choose_text">Выберите, куда сохранить файл резервной копии. Google Drive есть в списке, если на этом телефоне установлено его приложение.</string>
@@ -78,10 +78,10 @@
     <string name="backup_restore_open">Открыть резервную копию</string>
     <string name="backup_restore_opening">Открытие…</string>
     <plurals name="backup_restore_summary">
-        <item quantity="one">%1$d&#160;аккаунт, резервная копия создана %2$s.</item>
-        <item quantity="few">%1$d&#160;аккаунта, резервная копия создана %2$s.</item>
-        <item quantity="many">%1$d&#160;аккаунтов, резервная копия создана %2$s.</item>
-        <item quantity="other">%1$d&#160;аккаунта, резервная копия создана %2$s.</item>
+        <item quantity="one">Резервная копия от %2$s, в ней %1$d&#160;аккаунт.</item>
+        <item quantity="few">Резервная копия от %2$s, в ней %1$d&#160;аккаунта.</item>
+        <item quantity="many">Резервная копия от %2$s, в ней %1$d&#160;аккаунтов.</item>
+        <item quantity="other">Резервная копия от %2$s, в ней %1$d&#160;аккаунта.</item>
     </plurals>
     <string name="backup_restore_restore">Восстановить</string>
     <string name="backup_restore_stays">Текущие пароли останутся на этом телефоне в заблокированном виде.</string>
