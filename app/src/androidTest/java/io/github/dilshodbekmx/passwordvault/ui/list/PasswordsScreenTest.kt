@@ -359,6 +359,22 @@ class PasswordsScreenTest {
         assertEquals("the button folded to its icon", listOf(label), said())
     }
 
+    /**
+     * Build plan 8.1 (the accessibility walk at 320 dp and 200 %): a row's copy button carries its own name,
+     * so that TalkBack and Switch Access still name it while the floating Add button covers the icon inside
+     * (Compose leaves a covered child's words out of the tree, and the button then read only "Button").
+     */
+    @Test
+    fun aRowsCopyButtonCarriesItsOwnName() {
+        passwords()
+        scrollTo(ENTRY_KEY + "gm")
+        val own = compose.onNodeWithTag(ListTags.copy(ENTRY_KEY + "gm"), useUnmergedTree = true).fetchSemanticsNode()
+            .config.getOrNull(SemanticsProperties.ContentDescription)
+        assertEquals(listOf(text(R.string.list_copy_password_for, "Gmail")), own)
+        // Said once: the icon inside has no name of its own.
+        assertEquals(listOf(text(R.string.list_copy_password_for, "Gmail")), compose.onNodeWithTag(ListTags.copy(ENTRY_KEY + "gm")).fetchSemanticsNode().config.getOrNull(SemanticsProperties.ContentDescription))
+    }
+
     private companion object {
         const val TIMEOUT_MS = 10_000L
     }
