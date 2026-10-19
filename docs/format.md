@@ -10,12 +10,14 @@ A backup file of PasswordVault holds all your accounts, locked with the master p
 2. **One package: `cryptography`, version 44 or newer.** Version 44.0.0 is the first that can do Argon2id, which every backup needs, so an older version cannot open a backup. Open a terminal (on Windows: press the Windows key, type `cmd` and press Enter) and type:
    - on Windows: `py -m pip install --upgrade cryptography`
    - on macOS or Linux: `python3 -m pip install --upgrade cryptography`
+
+   On some Linux systems pip refuses to install for the system's own Python ("externally managed"); the script's message then says how to make a small environment of its own for it.
 3. Check that the computer has everything: `py pvault_decrypt.py --check` (on macOS and Linux, here and below: `python3` instead of `py`). Its last line says "Everything is ready".
 
 **How to run it**
 
 1. Put `pvault_decrypt.py` and your backup file in one folder.
-2. Open a terminal in that folder. On Windows: click the address bar of File Explorer, type `cmd` and press Enter.
+2. Open a terminal in that folder. On Windows: click the address bar of File Explorer, type `cmd` and press Enter. On a Mac: open Terminal (in Applications › Utilities), type `cd` and a space, drag the folder into the window and press Enter.
 3. Type, with the name of your own backup file:
 
    ```
@@ -40,7 +42,7 @@ Keep a copy of `pvault_decrypt.py` and of this page next to your backups, for ex
 
 | The script says | What to do |
 |---|---|
-| This password does not open this backup. Try the master password you used when you made it. | Type the master password you had on the day of the backup. After a change of the master password, older backups still open with the old one. A letter such as oʻ or gʻ may be typed with any apostrophe: ʻ, ‘, ’ and ' all count as the same. |
+| This password does not open this backup. Try the master password you used when you made it. | Type the master password you had on the day of the backup. After a change of the master password, older backups still open with the old one. A letter such as oʻ or gʻ may be typed with any apostrophe: ʻ, ‘, ’ and ' all count as the same. After five tries the script stops; run it again. |
 | This file may be damaged, or the password is wrong. | Try the password once more. If it still does not open, try another backup file. |
 | This backup file is damaged and cannot be opened. | Try another backup file. |
 | This is not a PasswordVault backup. | Choose the file whose name starts with `PasswordVault-backup`. |
@@ -159,7 +161,7 @@ The JSON is read strictly (RFC 8259): no key twice in one object, nesting at mos
 
 - **What a reader checks:** a known key with the wrong JSON type, or a required key that is missing, makes the body unreadable. Every key named for the objects inside the two tables (the draft and its `entry`, a field, a history item, an export or backup reference) is required, except the draft's `entry` keys that the entry table gives a default. Nothing else is checked: ids, lengths and text rules are rules for input, so no stored entry is ever refused for them.
 - **Unknown keys** at the top level and in each entry are kept and written back after the known keys, as they were read (the same tokens and the same spelling of every number). Anywhere else they are ignored. So a later version that only adds data adds it at one of those two levels; a change that an older app must not ignore raises the header's `version`.
-- **The writer's form.** The app writes every key of both tables for every object, in the order of the tables (the draft's `entry` in the order of the entry table), the kept unknown keys after them, no white space outside strings; in strings `"` and `\` escaped with a backslash, U+0008, U+0009, U+000A, U+000C and U+000D as `\b`, `\t`, `\n`, `\f`, `\r`, every other code point below U+0020 as `\u00xx` with lower-case hex digits, and everything else as itself in UTF-8. This is Python's `json.dumps(…, ensure_ascii=False, separators=(",", ":"))`. A reader must not depend on it.
+- **The writer's form.** The app writes every key of both tables for every object, in the order of the tables (the draft's `entry` in the order of the entry table), the kept unknown keys after them, no white space outside strings; in strings `"` and `\` escaped with a backslash, U+0008, U+0009, U+000A, U+000C and U+000D as `\b`, `\t`, `\n`, `\f`, `\r`, every other code point below U+0020 as `\u00xx` with lower-case hex digits, and everything else as itself in UTF-8 (the escapes of Python's `json.dumps(…, ensure_ascii=False, separators=(",", ":"))`); integers in plain decimal, and a kept unknown value in the compact form of what was read. Vector B (section 8) is in this form. A reader must not depend on it.
 
 ### 6. Reading a file
 
@@ -245,7 +247,7 @@ pvault_decrypt.py BACKUP OUTPUT [--yes] [--password-stdin]
 pvault_decrypt.py --check
 ```
 
-- **Needs** Python 3.7 or newer and `cryptography` 44.0.0 or newer: AES-GCM, and Argon2id, which came in 44.0.0 and needs OpenSSL 3.2 or newer (the package's own wheels include a newer OpenSSL; a build against an older system OpenSSL refuses Argon2id, and the script says so). The newest release on 2026-10-19, 50.0.2, needs Python 3.9 or newer. Checked on this project's machine with 44.0.0 and 50.0.2; 43.0.3 has no Argon2id, and the script then says what to install.
+- **Needs** Python 3.7 or newer and `cryptography` 44.0.0 or newer: AES-GCM, and Argon2id, which came in 44.0.0 and needs OpenSSL 3.2 or newer (the package's own wheels include a newer OpenSSL; a build against an older system OpenSSL refuses Argon2id, and the script says so). The newest release on 2026-10-19, 50.0.2, needs Python 3.9 or newer. Tested with Python 3.12 on Linux and with cryptography 44.0.0 and 50.0.2; 43.0.3 has no Argon2id, and the script then says what to install.
 - **Reads** the file by the rules of section 6, at most 16,777,217 bytes. It opens any version 1 vault file: a backup, or a generation copied from a phone. It asks for the master password up to five times.
 - **Writes** the accounts outside Recently deleted, as the app's own export writes them: `OUTPUT` ending in `.csv` gives the app's CSV (Google's columns `name,url,username,password,note`, one row per website, the extra fields, a name that differs from the website and a pending change's old password in a marked block at the end of the note), cut into `-part1`, `-part2`, … files when it would pass Google's limits of 3,000 rows or 1,000 KB in one file; `.json` gives the app's JSON (Bitwarden's unencrypted layout, with a `passwordVault` object at the top and in each item for what Bitwarden has no key for). Given the same vault, the CSV is byte for byte the app's and the JSON differs only in `exportedAt` and `generator`. The project's design documents describe both formats (`docs/design/formats.md` §4 and §5).
 - **Never writes over a file**: it checks before asking for the password and creates each file exclusively (readable by its owner only, where the system allows), reads it back and compares, and removes what it wrote when anything fails. It writes nothing before the warning of the first section has been shown, and waits for `yes` unless given `--yes`.
