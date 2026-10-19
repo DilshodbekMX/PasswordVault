@@ -15,19 +15,19 @@
     <string name="clipboard_copied_other">Скопировано</string>
 
     <string name="clipboard_announcement">%1$s. %2$s</string>
-    <!-- «Скопированное» (what was copied), so that the sentence fits after both «Пароль скопирован»
-         and «Скопировано». -->
+    <!-- «Буфер обмена будет очищен», as the row says «Буфер обмена очищен» when it is done; the
+         sentence fits after both «Пароль скопирован» and «Скопировано». -->
     <plurals name="clipboard_removed_in_seconds">
-        <item quantity="one">Скопированное будет удалено из буфера обмена через %d&#160;секунду.</item>
-        <item quantity="few">Скопированное будет удалено из буфера обмена через %d&#160;секунды.</item>
-        <item quantity="many">Скопированное будет удалено из буфера обмена через %d&#160;секунд.</item>
-        <item quantity="other">Скопированное будет удалено из буфера обмена через %d&#160;секунды.</item>
+        <item quantity="one">Буфер обмена будет очищен через %d&#160;секунду.</item>
+        <item quantity="few">Буфер обмена будет очищен через %d&#160;секунды.</item>
+        <item quantity="many">Буфер обмена будет очищен через %d&#160;секунд.</item>
+        <item quantity="other">Буфер обмена будет очищен через %d&#160;секунды.</item>
     </plurals>
     <plurals name="clipboard_removed_in_minutes">
-        <item quantity="one">Скопированное будет удалено из буфера обмена через %d&#160;минуту.</item>
-        <item quantity="few">Скопированное будет удалено из буфера обмена через %d&#160;минуты.</item>
-        <item quantity="many">Скопированное будет удалено из буфера обмена через %d&#160;минут.</item>
-        <item quantity="other">Скопированное будет удалено из буфера обмена через %d&#160;минуты.</item>
+        <item quantity="one">Буфер обмена будет очищен через %d&#160;минуту.</item>
+        <item quantity="few">Буфер обмена будет очищен через %d&#160;минуты.</item>
+        <item quantity="many">Буфер обмена будет очищен через %d&#160;минут.</item>
+        <item quantity="other">Буфер обмена будет очищен через %d&#160;минуты.</item>
     </plurals>
 
 </resources>
