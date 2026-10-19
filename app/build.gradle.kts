@@ -19,8 +19,8 @@ val appId = "io.github.dilshodbekmx.passwordvault"
 
 /**
  * Release signing (architecture.md §7.2): `keystore.properties` (storeFile, storePassword, keyAlias,
- * keyPassword; storeFile relative to the project root) and the keystore stay outside git. Without
- * them the release build gives an unsigned APK.
+ * keyPassword; storeFile an absolute path, or a path relative to the project root) and the keystore
+ * stay outside git. Without them the release build gives an unsigned APK.
  */
 val releaseKeys: Properties? = rootProject.file("keystore.properties").takeIf { it.isFile }?.let { file ->
     Properties().apply { file.inputStream().use { load(it) } }
