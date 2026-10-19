@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.Hyphens
 import androidx.compose.ui.text.style.TextDirection
 import io.github.dilshodbekmx.passwordvault.window.vaultTextField
 
@@ -23,7 +24,10 @@ import io.github.dilshodbekmx.passwordvault.window.vaultTextField
  * it, and hidden from accessibility services that are not accessibility tools (lock.md §13.5,
  * ux.md §3). The keyboard flag that stops personalised learning comes from `WindowPolicy.Root`
  * around the whole content, and the text toolbar's "Autofill" item is removed by `VaultWindow` in
- * every window. A label that needs a second line moves above the box ([FieldLabel]).
+ * every window. A label that needs a second line moves above the box ([FieldLabel]). The text is
+ * never hyphenated, as Android's own editable text is not: a value too long for its line wraps
+ * between two of its own characters, with no hyphen drawn that was not typed, although the theme
+ * hyphenates the app's texts (i18n.md §4.5 rule 4; `TextFieldLinesTest`).
  *
  * [state] is held by the screen's ViewModel, never by `rememberTextFieldState()`, which writes the
  * text into the saved-instance state (architecture.md §5.6, [V-C11]). There is no `value` and
@@ -64,7 +68,7 @@ fun VaultTextField(
         modifier = modifier.vaultTextField(),
         enabled = enabled,
         readOnly = readOnly,
-        textStyle = if (leftToRight) textStyle.copy(textDirection = TextDirection.Ltr) else textStyle,
+        textStyle = (if (leftToRight) textStyle.copy(textDirection = TextDirection.Ltr) else textStyle).copy(hyphens = Hyphens.None),
         labelPosition = fieldLabel.position,
         label = fieldLabel.label,
         placeholder = placeholder,
