@@ -18,8 +18,8 @@
     <string name="master_wrong">Asosiy parol notoʻgʻri. Klaviatura tilini (lotin yoki kirill) va bosh harflarni tekshiring.</string>
     <string name="master_wait">30&#160;soniya kuting, keyin qayta urining. Shoshilmang, yozib qoʻygan qogʻozingizga qarang.</string>
     <plurals name="master_wait_seconds">
-        <item quantity="one">%d&#160;soniyadan keyin qayta urining.</item>
-        <item quantity="other">%d&#160;soniyadan keyin qayta urining.</item>
+        <item quantity="one">%d&#160;soniyadan keyin qayta urining</item>
+        <item quantity="other">%d&#160;soniyadan keyin qayta urining</item>
     </plurals>
     <string name="master_no_memory">Asosiy parolni tekshirish uchun telefoningizda boʻsh operativ xotira yetarli emas. Boshqa ilovalarni yoping yoki telefonni qayta ishga tushiring, keyin qayta urining.</string>
 
