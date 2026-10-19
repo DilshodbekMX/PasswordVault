@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Oʻzbekcha (lotin): the Security tab (build plan 6.3b; values/strings_security.xml has the notes
+     for each string). Glossary of i18n.md §3: Xavfsizlik tekshiruvi (91), Asosiy parol (48),
+     Hisob (2), "%d ta" (3), Parolni oʻzgartirish (95). An account's name, which the user typed,
+     stands in quotes before the noun "hisobi" or the postposition "uchun", so that no suffix is glued
+     to it (i18n.md §4.4). oʻ and gʻ with U+02BB, the tutuq belgisi with U+02BC. -->
+<resources>
+
+    <string name="security_title">Хавфсизлик текшируви</string>
+
+    <string name="security_why_title">Бу нега муҳим</string>
+    <string name="security_why_text">Агар бирор сайт паролингизни ошкор қилиб қўйса, жиноятчилар уни бошқа ҳисобларингизда ҳам синаб кўради. Ҳар бир ҳисобга алоҳида парол беринг. Электрон почтангиздан бошланг — электрон почтангизни бошқарадиган одам бошқа паролларингизни ҳам тиклай олади.</string>
+    <string name="security_why_show">Бу нега муҳимлигини кўрсатиш</string>
+    <string name="security_why_hide">Бу нега муҳимлигини беркитиш</string>
+
+    <string name="security_checking">%2$s&#160;та ҳисобдан %1$s&#160;таси текширилди…</string>
+    <string name="security_checking_start">Паролларингиз текширилмоқда…</string>
+
+    <string name="security_all_clear">Барча паролларингиз ҳар хил ва уларни топиш қийин. Жуда яхши.</string>
+    <string name="security_empty">Аввал бир нечта ҳисоб қўшинг. Текширув фақат шу телефонда бажарилади.</string>
+
+    <string name="security_master_title">Асосий парол бошқа жойда ишлатилган</string>
+    <string name="security_master_one">Асосий паролингиз “%1$s” ҳисобининг ҳам пароли. Уни бирор сайтдан билиб олган ҳар қандай одам захира нусхаларингизни оча олади. Ҳозироқ янги асосий парол танланг, янги захира нусха яратинг ва эски захира нусха файлларингизни ўчиринг.</string>
+    <plurals name="security_master_many">
+        <item quantity="one">Асосий паролингиз %1$s&#160;та ҳисобнинг ҳам пароли (%2$s). Уни бирор сайтдан билиб олган ҳар қандай одам захира нусхаларингизни оча олади. Ҳозироқ янги асосий парол танланг, янги захира нусха яратинг ва эски захира нусха файлларингизни ўчиринг.</item>
+        <item quantity="other">Асосий паролингиз %1$s&#160;та ҳисобнинг ҳам пароли (%2$s). Уни бирор сайтдан билиб олган ҳар қандай одам захира нусхаларингизни оча олади. Ҳозироқ янги асосий парол танланг, янги захира нусха яратинг ва эски захира нусха файлларингизни ўчиринг.</item>
+    </plurals>
+    <string name="security_master_choose">Янги асосий парол танлаш</string>
+
+    <string name="security_names_two">%1$s, %2$s</string>
+    <string name="security_names_more">%1$s, %2$s…</string>
+
+    <string name="security_reused_title">Бир нечта ҳисобда бир хил парол</string>
+    <plurals name="security_reused_count">
+        <item quantity="one">%1$s&#160;та ҳисобда бир хил парол ишлатилган.</item>
+        <item quantity="other">%1$s&#160;та ҳисобда бир хил парол ишлатилган.</item>
+    </plurals>
+    <plurals name="security_reused_progress">
+        <item quantity="one">%1$s&#160;таси ўзгартирилди, %2$s&#160;таси қолди</item>
+        <item quantity="other">%1$s&#160;таси ўзгартирилди, %2$s&#160;таси қолди</item>
+    </plurals>
+    <plurals name="security_reused_other">
+        <item quantity="one">%1$s&#160;та ҳисобда бошқа умумий парол бор</item>
+        <item quantity="other">%1$s&#160;та ҳисобда бошқа умумий парол бор</item>
+    </plurals>
+    <string name="security_show_accounts">Ҳисобларни кўрсатиш</string>
+
+    <string name="security_weak_title">Топиш осон</string>
+    <plurals name="security_weak_count">
+        <item quantity="one">%1$s&#160;та паролни топиш осон.</item>
+        <item quantity="other">%1$s&#160;та паролни топиш осон.</item>
+    </plurals>
+
+    <string name="security_pending_title">Тугалланмаган ўзгаришлар</string>
+    <plurals name="security_pending_count">
+        <item quantity="one">%1$s&#160;та парол ўзгариши жавобингизни кутмоқда (%2$s).</item>
+        <item quantity="other">%1$s&#160;та парол ўзгариши жавобингизни кутмоқда (%2$s).</item>
+    </plurals>
+    <string name="security_show_account">Ҳисобни кўрсатиш</string>
+
+    <string name="security_left_out_title">Текширувга киритилмаган</string>
+    <plurals name="security_left_out_count">
+        <item quantity="one">%1$s&#160;та ҳисоб текширувга киритилмаган.</item>
+        <item quantity="other">%1$s&#160;та ҳисоб текширувга киритилмаган.</item>
+    </plurals>
+
+    <string name="security_new_results">Янги натижалар</string>
+
+    <!-- ===== Kartochka ortidagi roʻyxat ===== -->
+
+    <string name="security_list_reused">Бир хил парол</string>
+    <plurals name="security_group_reused">
+        <item quantity="one">%1$s&#160;та ҳисобда битта умумий парол</item>
+        <item quantity="other">Бу %1$s&#160;та ҳисобда битта умумий парол</item>
+    </plurals>
+    <plurals name="security_group_weak">
+        <item quantity="one">%1$s&#160;та паролни топиш осон</item>
+        <item quantity="other">Бу %1$s&#160;та паролни топиш осон</item>
+    </plurals>
+    <plurals name="security_group_pending">
+        <item quantity="one">%1$s&#160;та парол ўзгариши жавобингизни кутмоқда</item>
+        <item quantity="other">Бу %1$s&#160;та парол ўзгариши жавобингизни кутмоқда</item>
+    </plurals>
+    <plurals name="security_group_left_out">
+        <item quantity="one">%1$s&#160;та ҳисоб текширувга киритилмаган</item>
+        <item quantity="other">Бу %1$s&#160;та ҳисоб текширувга киритилмаган</item>
+    </plurals>
+
+    <string name="security_group_reused_done">Бу ҳисобларда энди умумий парол йўқ.</string>
+    <string name="security_group_weak_done">Энди топиш осон парол йўқ.</string>
+    <string name="security_group_pending_done">Жавобингизни кутаётган парол ўзгариши йўқ.</string>
+    <string name="security_group_left_out_done">Текширувга киритилмаган ҳисоб йўқ.</string>
+
+    <string name="security_change">Ўзгартириш</string>
+    <string name="security_change_description">“%1$s” ҳисобининг паролини ўзгартириш</string>
+    <string name="security_continue">Давом этиш</string>
+    <string name="security_continue_description">“%1$s” ҳисобининг паролини ўзгартиришни давом эттириш</string>
+    <string name="security_check_again">Қайта текшириш</string>
+    <string name="security_check_again_description">“%1$s” ҳисобини қайта текшириш</string>
+    <string name="security_more">“%1$s” учун бошқа амаллар</string>
+    <string name="security_leave_out">Хавфсизлик текширувидан чиқариш</string>
+    <string name="security_back">Орқага</string>
+
+    <string name="security_left_out_message">“%1$s” ҳисоби хавфсизлик текширувидан чиқарилди.</string>
+    <string name="security_checked_again_message">“%1$s” ҳисоби яна текширилади.</string>
+    <string name="security_save_failed">Сақлаб бўлмади. Телефон хотираси тўлган бўлиши мумкин.</string>
+    <string name="security_too_large">Паролларингиз энди битта файлга сиғмаяпти. Кераксиз ҳисобларни ўчиринг ёки жуда узун қайдларни қисқартиринг.</string>
+
+</resources>

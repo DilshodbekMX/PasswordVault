@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Oʻzbekcha (lotin): help, the open-source licences and the first-copy tip (build plan 6.3b;
+     values/strings_help.xml has the notes for each string). Glossary of i18n.md §3, and the names
+     the app's screens show (part a's files): “Zaxira nusxa faylidan tiklash”, “Yana xush
+     kelibsiz”, “Yangi parolni bekor qilish” (141), “Asosiy parolni unutdingizmi?” (132),
+     “… holatidagi parollarimni ochish” (145), “PIN kodni unutdingizmi? Asosiy paroldan
+     foydalaning”, “Esimda yoʻq”. The phone's own settings are named as Android's Uzbek names them:
+     “Majburan toʻxtatish”, “Cheklangan”, “Xotirani tozalash”, “Qulayliklar” (Accessibility),
+     “Joylash” (Paste), “Qadash” (Pin). %1$s is the app's name, followed by the noun "ilovasi". oʻ and
+     gʻ with U+02BB, the tutuq belgisi with U+02BC. -->
+<resources>
+
+    <!-- ===== Yordam sahifalari ===== -->
+
+    <string name="help_title">Ёрдам</string>
+    <string name="help_protection_title">Паролларингиз қандай ҳимояланади</string>
+    <string name="help_lost_title">Телефонингизни йўқотсангиз ёки янгисига ўтсангиз</string>
+    <string name="help_forgot_mp_title">Асосий паролингизни унутсангиз</string>
+    <string name="help_forgot_pin_title">PIN кодингизни унутсангиз</string>
+    <string name="help_version_title">Версия</string>
+    <string name="help_licences_title">Очиқ кодли дастурлар лицензиялари</string>
+
+    <!-- ===== Parollaringiz qanday himoyalanadi ===== -->
+
+    <string name="help_protection_file">Паролларингиз шу телефондаги қулфланган файлда сақланади. Уни фақат асосий паролингиз оча олади.</string>
+    <string name="help_protection_offline">Илова ҳеч қачон интернетга уланмайди: бунга унинг рухсати йўқ. Шунинг учун бирор сайт паролингизни ошкор қилиб қўйганини у сизга айта олмайди.</string>
+    <string name="help_protection_screenshots">Илова экранидан скриншот олиб бўлмайди.</string>
+
+    <string name="help_protection_heading_copy">Нусха олинган пароллар</string>
+    <plurals name="help_protection_copy_seconds">
+        <item quantity="one">Нусха олган паролларингиз %d&#160;сониядан кейин вақтинчалик хотирадан олиб ташланади. Шу вақт ичида нусха олган бошқа нарсаларингиз ҳам олиб ташланиши мумкин.</item>
+        <item quantity="other">Нусха олган паролларингиз %d&#160;сониядан кейин вақтинчалик хотирадан олиб ташланади. Шу вақт ичида нусха олган бошқа нарсаларингиз ҳам олиб ташланиши мумкин.</item>
+    </plurals>
+    <plurals name="help_protection_copy_minutes">
+        <item quantity="one">Нусха олган паролларингиз %d&#160;дақиқадан кейин вақтинчалик хотирадан олиб ташланади. Шу бир дақиқа ичида нусха олган бошқа нарсаларингиз ҳам олиб ташланиши мумкин.</item>
+        <item quantity="other">Нусха олган паролларингиз %d&#160;дақиқадан кейин вақтинчалик хотирадан олиб ташланади. Шу вақт ичида нусха олган бошқа нарсаларингиз ҳам олиб ташланиши мумкин.</item>
+    </plurals>
+    <string name="help_force_stop">Агар бу иловани “Мажбуран тўхтатиш” орқали тўхтатсангиз ёки унинг батарея сарфини “Чекланган” қилиб қўйсангиз, нусха олинган парол иловани қайта очмагунингизча вақтинчалик хотирада қолади.</string>
+    <string name="help_never_pin">Паролни ҳеч қачон клавиатурангизнинг вақтинчалик хотирасига қадаб қўйманг: қадалган элементлар ҳеч қачон олиб ташланмайди.</string>
+
+    <string name="help_protection_heading_pin">PIN кодингиз ва бармоқ изингиз</string>
+    <string name="help_protection_fingerprint">Бармоқ изи шу телефон созламаларида сақланган ҳар ким иловани оча олади.</string>
+    <string name="help_protection_pin_reuse">Телефонингиз қулфини очадиган PIN кодни ёки банк картангизнинг PIN кодини илова PIN коди сифатида ишлатманг. Уни биладиган одам иловани очиши мумкин.</string>
+    <string name="help_protection_rooted">Ҳимояси олиб ташланган (“роот” қилинган) телефонда кимдир бир неча соат ичида барча PIN кодларни синаб чиқиши мумкин. Асосий паролингиз барибир паролларингизни ҳимоя қилади, шунинг учун у кучли бўлсин ва уни ҳеч қачон бошқа жойда ишлатманг.</string>
+    <string name="help_protection_new_mp">PIN кодингизни биладиган одам илова учун янги асосий парол танлаши мумкин. У фақат телефон ёниқ ҳолда 24&#160;соат ўтгач ишлай бошлайди ва унгача илова ҳар сафар очилганда бу ҳақда сизга айтади. Агар буни сиз қилмаган бўлсангиз, “Янги паролни бекор қилиш” тугмасини босинг ва PIN кодингизни ўзгартиринг.</string>
+
+    <string name="help_protection_heading_limits">Илова сизни нимадан ҳимоя қила олмайди</string>
+    <string name="help_protection_limits">Бузиб кирилган ёки “роот” қилинган телефон, зарарли клавиатура иловаси ёки телефонингизни бошқаришга рухсат берган иловангиз (“Қулайликлар”).</string>
+    <string name="help_protection_accessibility">Нуқталар билан кўрсатилган пароллар бошқа иловалардан, ҳатто телефонингизни бошқара оладиган иловадан ҳам беркитилган ҳолда қолади. Android 13 ва ундан эски версияларда бундай илова паролни экранда кўрсатганингизда уни ўқий олади.</string>
+    <string name="help_protection_apk">Телеграм орқали сизга юборилган ёки бирор сайт таклиф қилган илова файлини (АПК) ҳеч қачон ўрнатманг, ҳатто у танишингиздан келганга ўхшаса ҳам. Агар соғлиғингиз сабабли керак бўлмаса, ҳеч бир иловага телефонингизни бошқаришга (“Қулайликлар”) рухсат берманг.</string>
+    <string name="help_clear_storage">PIN код билан боғлиқ муаммони ҳал қилиш учун ҳеч қачон “Хотирани тозалаш” тугмасини босманг: у паролларингизни, шунингдек, асосий парол алмаштирилишидан олдинги паролларингизни ҳам ўчириб юборади.</string>
+    <string name="help_protection_delete">Қулфи очиқ телефонингиз қўлига тушган ҳар ким иловани, у билан бирга паролларингизни ҳам ўчириб юбориши мумкин. Бунда фақат телефондан ташқарида сақланган захира нусха сақланиб қолади.</string>
+
+    <!-- ===== Telefoningizni yoʻqotsangiz yoki yangisiga oʻtsangiz ===== -->
+
+    <string name="help_lost_locked">Телефонингиз йўқолса ёки ўғирланса, паролларингиз қулфланган ҳолда қолади. PIN код кетма-кет 5&#160;марта хато киритилгандан кейин у фаолсизлантирилади ва шундан сўнг иловани фақат бармоқ изингиз ёки асосий паролингиз оча олади.</string>
+    <string name="help_lost_restore">Паролларингизни янги телефонга ўтказиш учун унга %1$s иловасини ўрнатинг, “Захира нусха файлидан тиклаш” тугмасини босинг, энг янги захира нусхангизни танланг ва асосий паролингизни киритинг. Захира нусхасиз паролларингизни қайтариб бўлмайди.</string>
+    <string name="help_lost_transfer">Иловаларингизни янги телефонга кўчириш, масалан, “Иловалар ва маълумотларни нусхалаш” орқали, паролларингизни олиб ўтмайди. Эски телефонда захира нусха яратинг ва уни янги телефонда тикланг.</string>
+    <string name="help_lost_welcome_back">Агар янги телефондаги %1$s иловаси “Яна хуш келибсиз” деса, асосий паролингизни бир марта киритинг. Сўнг янги телефон учун PIN код танланг.</string>
+    <string name="help_lost_backup">Пароллар қўшганингиз ёки ўзгартирганингиздан кейин ҳар сафар янги захира нусха яратинг. Уни шу телефондан ташқарида сақланг: Google Дриве хизматида, компьютерда ёки ўзингизга юбориб қўйинг.</string>
+
+    <!-- ===== Asosiy parolingizni unutsangiz ===== -->
+
+    <string name="help_forgot_mp_nobody">Асосий паролингизни ҳеч ким тиклай олмайди: у ҳеч қаерда сақланмайди.</string>
+    <string name="help_forgot_mp_new">Агар PIN кодингиз ёки бармоқ изингиз иловани ҳали ҳам очаётган бўлса, иловани очинг ва янги асосий парол танланг: Созламалар › Илова қулфи › Асосий паролни ўзгартириш › Эсимда йўқ.</string>
+    <string name="help_forgot_mp_wait">Янги асосий парол телефон ёниқ ҳолда 24&#160;соат ўтгач ишлай бошлайди. Телефон ўчиқ пайтда саноқ тўхтайди, шунинг учун иловани эрталаб ва яна кечқурун очинг. Унгача иловани одатдагидек PIN код ёки бармоқ изингиз билан очинг.</string>
+    <string name="help_forgot_mp_backup">Сўнг янги захира нусха яратинг. Эски захира нусхаларингиз ҳамон фақат эски асосий паролингиз билан очилади.</string>
+    <string name="help_forgot_mp_replaced">Агар асосий паролингизни бошқа биров алмаштирган бўлса, ўз паролингиз паролларингизни олдинги ҳолатида очади: “Асосий паролни унутдингизми?”, сўнг “… ҳолатидаги паролларимни очиш”.</string>
+    <string name="help_forgot_mp_cant_open">Агар иловани умуман оча олмасангиз: қоғозингиздаги сўзларни синаб кўринг ёки асосий пароли эсингизда бўлган захира нусхани тикланг. Бўш илова билан бошлашингиз ҳам мумкин. Паролни кейинроқ эслаб қолишингиз мумкинлиги учун эски паролларингиз телефонда қулфланган ҳолда қолади.</string>
+
+    <!-- ===== PIN kodingizni unutsangiz ===== -->
+
+    <string name="help_forgot_pin_how">“PIN кодни унутдингизми? Асосий паролдан фойдаланинг” тугмасини босинг, асосий паролингизни киритинг ва янги PIN код танланг.</string>
+    <string name="help_forgot_pin_limit">PIN код кетма-кет 5&#160;марта хато киритилгандан кейин у фаолсизлантирилади. Ҳеч нарса ўчирилмайди: асосий паролингизни киритинг, сўнг янги PIN код танланг.</string>
+
+    <!-- ===== Versiya ===== -->
+
+    <string name="help_version_number">Версия %1$s (%2$d)</string>
+    <string name="help_version_about">%1$s иловаси паролларингизни фақат шу телефонда сақлайди. У ҳеч қачон интернетга уланмайди.</string>
+    <string name="help_version_android">Бу телефон: Android %1$s</string>
+    <string name="help_version_test_build">Синов версияси: иловани текшириш учун яратилган. Унда ҳақиқий паролларингизни сақламанг.</string>
+
+    <!-- ===== Ochiq kodli dasturlar litsenziyalari =====
+         Qismlarning nomlari, mualliflik huquqi qatorlari, litsenziyalarning nomlari, veb-manzillar va
+         litsenziya matnlari tarjima qilinmaydi. -->
+
+    <string name="help_licences_intro">%1$s иловаси қуйидаги очиқ кодли қисмлардан фойдаланиб яратилган. Уларнинг ҳар бири ўз лицензияси шартларига кўра ишлатилади.</string>
+    <string name="help_licences_group_passphrase">Парол иборалари учун сўзлар</string>
+    <string name="help_licences_group_strength">Парол кучини баҳолаш учун сўзлар</string>
+    <string name="help_licences_strength_intro">Парол кучини баҳолашда илова бу ўзбекча ва русча сўзлар, исмлар ва жой номларини билади, шунинг учун улардан тузилган пароллар ҳақида сизни огоҳлантира олади. Бу илова учун улар танлаб олинган, санаб чиқилган ва ўзбек тилининг иккала ёзувида, рус тилида ҳамда лотин ҳарфларида ёзилган. Рўйхат CC БЙ-СА 4.0 лицензияси асосида тарқатилади.</string>
+    <string name="help_licences_group_libraries">Кутубхоналар</string>
+    <string name="help_licences_group_icons">Нишончалар</string>
+    <string name="help_licences_licence">Лицензия: %1$s</string>
+    <string name="help_licences_show_licence">Лицензияни кўрсатиш</string>
+    <string name="help_licences_hide_licence">Лицензияни беркитиш</string>
+    <string name="help_licences_show_details">Сўзлар қаердан олинганини кўрсатиш</string>
+    <string name="help_licences_hide_details">Сўзлар қаердан олинганини беркитиш</string>
+    <string name="help_licences_loading">Юкланмоқда…</string>
+    <string name="help_licences_unreadable">Бу матнни кўрсатиб бўлмайди.</string>
+    <string name="help_licences_no_browser">Бу телефонда веб-манзилларни оча оладиган илова йўқ.</string>
+
+    <string name="help_licences_eff_use">Тавсия этиладиган асосий парол ва генератор яратадиган парол ибораларининг сўзлари.</string>
+    <string name="help_licences_eff_change">Ўзгартирилган: “ё-ё” сўзи чиқариб ташланди, чунки ундаги чизиқча икки сўз орасидаги белгига ўхшаб қолади.</string>
+    <string name="help_licences_geonames_use">Ўзбекистон вилоятлари, туманлари ва шаҳарларининг номлари.</string>
+    <string name="help_licences_uzwiki_use">Кенг тарқалган ўзбекча сўзлар, исмлар ва туманлар.</string>
+    <string name="help_licences_wiktionary_use">Русча ва ўзбекча исмлар.</string>
+    <string name="help_licences_frequencywords_use">Кенг тарқалган русча сўзлар.</string>
+    <string name="help_licences_zxcvbn4j_use">Паролни топиш қанчалик осон эканини аниқлайди.</string>
+    <string name="help_licences_zxcvbn_use">зхcвбн4ж — унинг Жава тилидаги версияси, инглизча сўзлар рўйхатлари билан.</string>
+    <string name="help_licences_argon2kt_use">Асосий паролингизни паролларингизни қулфлайдиган калитга айлантиради.</string>
+    <string name="help_licences_argon2_use">Аргон2кт ичидаги Аргон2 коди. Бу ерда Апаче Лиcенсе 2.0 асосида ишлатилади.</string>
+    <string name="help_licences_bouncycastle_use">Аргон2кт ишлай олмайдиган телефонларда худди шу ишни бажаради.</string>
+    <string name="help_licences_androidx_use">Илованинг асосий қурилиш блоклари: Материал 3 билан Жетпаcк Cомпосе, Навигатион 3, Лифеcйcле, Аcтивитй, АппCомпат ва Cоре.</string>
+    <string name="help_licences_biometric_use">Бармоқ изи билан очиш. Кутубхонанинг бу дастлабки версияси атайлаб танланган: эски, барқарор версиясида бармоқ изи билан очиш Android 7 ва 8&#160;версияларида ишламайди.</string>
+    <string name="help_licences_kotlin_use">Илова ёзилган дастурлаш тили, унинг стандарт кутубхонаси, котлинх.cороутинес ва котлинх.сериализатион билан.</string>
+    <string name="help_licences_others_use">Юқоридаги кутубхоналар учун зарур бўлган кичик қисмлар.</string>
+    <string name="help_licences_material_icons_use">Тугмалар ва созламалар қаторларидаги нишончалар, Android Студио дастуридаги Веcтор Ассет Студио воситасидан олинган.</string>
+    <string name="help_licences_own_icons">Илованинг ўз нишончалари</string>
+    <string name="help_licences_own_icons_use">Илова нишончаси, логотипи ва пастки панелдаги нишончалар шу илова учун чизилган. Эски телефонлар учун нишонча расмлари унинг чизмасидан либрсвг ёрдамида тайёрланган.</string>
+
+    <!-- ===== Birinchi nusxa olishdagi maslahat ===== -->
+
+    <string name="help_tip_title">Қандай жойлаш керак</string>
+    <string name="help_tip_paste">Энди илова ёки сайтни очинг, парол майдонини босиб туринг ва “Жойлаш” тугмасини босинг.</string>
+    <plurals name="help_tip_cleared_seconds">
+        <item quantity="one">Парол %d&#160;сониядан кейин вақтинчалик хотирадан олиб ташланади. Шу вақт ичида нусха олган бошқа нарсаларингиз ҳам олиб ташланиши мумкин.</item>
+        <item quantity="other">Парол %d&#160;сониядан кейин вақтинчалик хотирадан олиб ташланади. Шу вақт ичида нусха олган бошқа нарсаларингиз ҳам олиб ташланиши мумкин.</item>
+    </plurals>
+    <plurals name="help_tip_cleared_minutes">
+        <item quantity="one">Парол %d&#160;дақиқадан кейин вақтинчалик хотирадан олиб ташланади. Шу бир дақиқа ичида нусха олган бошқа нарсаларингиз ҳам олиб ташланиши мумкин.</item>
+        <item quantity="other">Парол %d&#160;дақиқадан кейин вақтинчалик хотирадан олиб ташланади. Шу вақт ичида нусха олган бошқа нарсаларингиз ҳам олиб ташланиши мумкин.</item>
+    </plurals>
+    <string name="help_tip_samsung">Самсунг телефонлари нусха олинган матнлар рўйхатини сақлайди. Пароллар унга тушмаслиги учун Самсунг Кейбоард созламаларида вақтинчалик хотира тарихини фаолсизлантиринг ёки тозаланг.</string>
+    <string name="help_tip_keyboards">Баъзи клавиатуралар нусха олинган матнларнинг ўз рўйхатини сақлайди; уни клавиатура созламаларида фаолсизлантиришингиз мумкин.</string>
+
+</resources>
