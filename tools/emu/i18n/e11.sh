@@ -19,7 +19,7 @@
 #   5. Settings › Language › English: Bankomat before Почта, Shahar before Zebra again.
 #   6. Settings › Language › System language.
 #   7. The lock delay was in force all along: Home and back gives the lock screen at once; the master
-#      password opens the list.
+#      password opens the app on Settings, where it was (ux.md 4), and the list has the accounts.
 # and the app did not crash. Prints PASS, FAIL or SKIPPED per step and a summary; logs in
 # build/emu-i18n/. Exit 0 when no step failed, 1 otherwise, 2 for a usage error, 3 for a refused
 # serial.
@@ -145,9 +145,11 @@ uzbek_order() {
     shot "e11-list-UZ_LATN"
 }
 
+# The unlock brings back the screen the app was on, Settings (ux.md 4, "What survives a lock"; since the
+# merge of R4 no "Make backups" follows an unlock, decision 24), and the list then has the accounts.
 still_in_force() {
     pva_away 2 && pva_on Locked 20 || { pv_log "not locked after leaving with Immediately"; return 1; }
-    pva_unlock Passwords && pva_row_with Bankomat 10
+    pva_unlock Settings && pva_tap pv.tab.Passwords && pva_on Passwords && pva_row_with Bankomat 10
 }
 
 pv_step "1. fresh install, setup, four accounts; in English: Bankomat, Shahar, Zebra, Почта" -- set_up || { pv_summary; exit 1; }
@@ -159,6 +161,6 @@ pv_step "4. the list re-sorts in Uzbek (Sh after Z from API 28)" -- uzbek_order
 pv_step "5. Settings › Language › English: still open, the same process and screen" -- change_in_settings EN
 pv_step "5. the list re-sorts: Bankomat before Почта, Shahar before Zebra" -- list_shows EN Bankomat Почта Shahar Zebra
 pv_step "6. Settings › Language › System language" -- change_in_settings SYSTEM
-pv_step "7. Immediately was in force: Home and back gives the lock screen; the master password opens the list" -- still_in_force
+pv_step "7. Immediately was in force: Home and back gives the lock screen; the master password opens the app on Settings, where it was; the list has the accounts" -- still_in_force
 pv_step "the app did not crash" -- pva_no_crash
 pv_summary
