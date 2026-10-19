@@ -537,8 +537,8 @@ If fingerprint unlock is on and cannot be used now, the matching fingerprint lin
 ### 5.11 Passwords (home list) and search
 
 **Layout** (`Scaffold`):
-- **`TopAppBar`**: title "Passwords"; action `IconButton` "Lock now" (lock icon).
-- **Search field**, directly below: `SearchBarDefaults.InputField` from the Material 3 `SearchBar` family, used as an in-place filter (the full-screen expanded mode is not used). Placeholder "Search accounts". In Emerald's light scheme it has an outline of 1 dp, because it is white on a nearly white screen ([looks/README.md](looks/README.md)).
+- **Top bar** (`VaultTopBar`, the top bar of every screen; build plan 6.2): title "Passwords"; action `IconButton` "Lock now" (lock icon). A title that does not fit beside the bar's buttons moves under them and wraps (§8 "Font scaling").
+- **Search field**, directly below: `SearchBarDefaults.InputField` from the Material 3 `SearchBar` family, used as an in-place filter (the full-screen expanded mode is not used). Placeholder "Search accounts", on one line: with a large font it is drawn smaller, and cut with an ellipsis only where even that does not fit (`FittedText`). In Emerald's light scheme it has an outline of 1 dp, because it is white on a nearly white screen ([looks/README.md](looks/README.md)).
 - **Banners** (`OutlinedCard`), **at most two at a time**, in this priority order (the others wait):
   1. the lock's banner (`LockStatus`, architecture.md §3.5), one of two that never show together:
      - a new master password waiting to start working (§5.24): who asked, when, and about how many hours are left, with "Cancel it";
@@ -1051,7 +1051,7 @@ Short pages of plain text (the text is in §7.6):
 
 - **Delete** (from the detail overflow, a long press or a TalkBack action) sets `deletedAt` and hides the account at once. The snackbar says "Gmail deleted" with "Undo" (about 10 s). There is no confirmation dialog.
 - **Finding it.** "Recently deleted (3)" is the last row of the Passwords list, shown only when not empty.
-  - Its screen lists the accounts with the date each was deleted and `TextButton` "Restore".
+  - Its screen lists the accounts with the date each was deleted and `TextButton` "Restore". When the name and the date would be squeezed (a large font on a narrow phone), "Restore" and the row's menu button go under them (`TextBeside`).
   - Each row's overflow has "Delete forever", with the dialog "Delete Gmail forever? This can't be undone." (Delete · Cancel).
   - The top-bar action "Empty" opens a dialog with the count.
 - **Where deleted accounts are.** They are left out of search, the list, the security check and plain exports. They stay inside the locked file, and in backups made meanwhile, until 30 days have passed.
@@ -1112,7 +1112,7 @@ This is for a user who has forgotten the master password while the PIN or finger
 5. **One helper.** All in-app copies go through one helper. For text selected in notes (architecture.md D-25), a `SecretClipboardBridge` is provided as `LocalClipboard` at the root (Compose UI 1.12 `Clipboard` [V: ui-android 1.12.1 bytecode]): its `setClipEntry` goes to the same helper, with the sensitive flag and the timed clear, and the status row says "Copied text · clears in 0:52"; its `getClipEntry` is the platform's clipboard unchanged, so pasting into the app's own fields, such as a password into the Add form, still works.
 
 **Clipboard status row** (app-wide; part of the bottom-bar area, so the "Add" button moves above it):
-- **Content**: a `Surface` (secondary container) with a key icon, the text "Password for Gmail · clears in 0:52" (or "Username for Gmail · …", or "Copied text · clears in 0:52" for text selected in a note), and `TextButton` "Clear now".
+- **Content**: a `Surface` (secondary container) with a key icon, the text "Password for Gmail · clears in 0:52" (or "Username for Gmail · …", or "Copied text · clears in 0:52" for text selected in a note), and `TextButton` "Clear now". Its texts take at most a fifth of the window's height, in whole lines (at least two), and scroll beyond it, with a fade where there is more; "Clear now" goes under the text when the two do not fit side by side (build plan 6.2).
 - **Announcements**: the countdown updates every second, visually only. TalkBack hears one polite live-region message when the row appears: "Password copied. It will be removed from the clipboard in 1 minute."
 - **When the clear runs while the app is open**: "Clipboard cleared" for 2 s, then the row hides.
 - **Late jobs**: a scheduled job may run late. If the planned time has passed and the clear has not run, the row says "Clearing…" instead of a negative countdown.
