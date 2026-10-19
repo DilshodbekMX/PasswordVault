@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Oʻzbekcha (lotin): the setup screens (build plan 6.3a; English in values/strings_setup.xml).
+     Polite "siz", short sentences; "Asosiy parol" is glossary 48, "Zaxira nusxa" 97, "PIN kod" 52. -->
+<resources>
+
+    <!-- Welcome (ux.md §5.1). -->
+    <string name="setup_welcome_title">Parollaringiz shu telefonda xavfsiz saqlanadi</string>
+    <string name="setup_welcome_point_offline">Hammasi shu telefonda qoladi. Roʻyxatdan oʻtish ham, internet ham kerak emas.</string>
+    <string name="setup_welcome_point_lock">Ilovani bank ilovasidagi kabi PIN kod yoki barmoq izingiz bilan oching.</string>
+    <string name="setup_welcome_point_copy">Kerak paytda paroldan bir bosishda nusxa oling.</string>
+    <string name="setup_welcome_start">Boshlash</string>
+    <!-- Glossary 146; %1$s is a date with the year. -->
+    <string name="setup_welcome_open_aside">Oldingi parollarimni ochish (%1$s kuni qulflangan)</string>
+    <string name="setup_welcome_restore">Zaxira nusxa faylidan tiklash</string>
+    <string name="setup_welcome_language">Til</string>
+
+    <!-- "Choose your master password" (ux.md §5.3). -->
+    <string name="setup_create_title">Asosiy parolni tanlang</string>
+    <string name="setup_create_body">Asosiy parol — boshqa barcha parollaringiz kaliti. PIN kodni unutsangiz, zaxira nusxani ochishda va yangi telefonga oʻtishda u sizga kerak boʻladi.</string>
+    <string name="setup_create_warning_reset">Uni hech kim tiklay olmaydi. Biz uning nusxasini saqlamaymiz, “Parolni unutdingizmi?” degan email xabar ham kelmaydi. Agar uni unutsangiz, parollaringizni yangi telefonda ham, zaxira nusxadan ham ochib boʻlmaydi.</string>
+    <string name="setup_create_warning_reuse">Boshqa joyda ishlatayotgan parolingizdan foydalanmang.</string>
+    <string name="setup_create_interrupted">Sozlash toʻxtab qolgan edi. Avval yozib olgan soʻzlaringizni chizib tashlang. Mana sizning yangi soʻzlaringiz.</string>
+    <!-- "1-soʻz (jami 6 ta): vowel", read by TalkBack. -->
+    <string name="setup_create_word">%1$d-soʻz (jami %2$d&#160;ta): %3$s</string>
+    <string name="setup_create_typed_as">Uni shunday kiritasiz:</string>
+    <string name="setup_create_latin">Soʻzlar ingliz tilida. Ularni lotin harflarida kiriting.</string>
+    <string name="setup_create_use_words">Shu soʻzlardan foydalanish</string>
+    <string name="setup_create_other_words">Boshqa soʻzlarni koʻrsatish</string>
+    <string name="setup_create_type_own">Oʻz parolimni kiritish</string>
+    <string name="setup_create_show_words">Taklif qilingan soʻzlardan foydalanish</string>
+
+    <!-- A master password of one's own (ux.md §5.3 "Own password view"). -->
+    <string name="setup_field_label">Asosiy parol</string>
+    <string name="setup_own_rule_length">Kamida 12&#160;ta belgi</string>
+    <string name="setup_own_rule_hard">Topish qiyin</string>
+    <string name="setup_own_rule_met">%1$s: bajarildi</string>
+    <string name="setup_own_rule_not_met">%1$s: hali bajarilmagan</string>
+    <string name="setup_own_hint_add_word">Yana bitta soʻz qoʻshing</string>
+    <string name="setup_own_hint_names">Shahar nomlari, odamlarning ismlari va yillardan foydalanmang</string>
+    <!-- "qwerty" is the row of keys itself, kept in Latin letters. -->
+    <string name="setup_own_hint_keyboard">qwerty kabi klaviatura qatorlaridan foydalanmang</string>
+    <string name="setup_own_mixed_scripts">Parolingizda lotin va kirill harflari aralashib ketgan. Klaviaturangiz toʻgʻri tilga sozlanganmi?</string>
+    <string name="setup_own_use">Shu paroldan foydalanish</string>
+    <string name="setup_own_missing_length">Asosiy parolda kamida 12&#160;ta belgi boʻlishi kerak.</string>
+    <string name="setup_own_missing_hard">Asosiy parolni topish juda oson.</string>
+    <string name="setup_own_unassigned">Parolingizda baʼzi telefonlar oʻqiy olmaydigan belgi bor. Uni olib tashlang va qayta urining.</string>
+    <string name="setup_own_reuse_question">Bu paroldan boshqa biror hisobda foydalanasizmi?</string>
+    <string name="setup_own_reuse_yes">Ha</string>
+    <string name="setup_own_reuse_no">Yoʻq, bu yangi parol</string>
+    <string name="setup_own_reuse_refused">Unda boshqasini tanlang. Agar biror sayt bu parolni oshkor qilib qoʻysa, zaxira nusxa faylingiz qoʻliga tushgan har kim uni ochishi mumkin.</string>
+
+    <!-- "Write it down on paper" (ux.md §5.4). -->
+    <string name="setup_write_title">Uni qogʻozga yozib qoʻying</string>
+    <string name="setup_write_body">Asosiy parolni hozir qogʻozga yozib qoʻying. Qogʻozni uyda, xavfsiz joyda saqlang — telefon gʻilofida emas, hamyoningizda emas va bu telefonda rasm koʻrinishida ham emas.</string>
+    <string name="setup_write_big_letters">Katta harflarda koʻrsatish</string>
+    <string name="setup_write_wrote">Yozib oldim</string>
+    <string name="setup_next">Keyingisi</string>
+    <string name="setup_big_cell">%1$d: %2$s</string>
+    <string name="setup_big_too_long">Katta harflarda koʻrsatish uchun juda uzun</string>
+
+    <!-- "Type your master password again" (ux.md §5.5). -->
+    <string name="setup_again_title">Asosiy parolni qayta kiriting</string>
+    <string name="setup_again_body">Bu uni toʻgʻri yozib olganingizni tekshiradi.</string>
+    <string name="setup_again_mismatch">Mos kelmadi. Qogʻozingizga qarang va qayta urining.</string>
+    <!-- The keyboard may be Russian or Uzbek Cyrillic: both are named. -->
+    <string name="setup_again_cyrillic">Klaviaturangiz kirill yozuviga (masalan, rus tiliga) sozlangan boʻlishi mumkin. Lotin harflariga oʻting.</string>
+    <string name="setup_again_show_again">Parolimni yana koʻrsatish</string>
+    <string name="setup_again_setting_up">Sozlanmoqda…</string>
+    <string name="setup_again_not_saved">Saqlab boʻlmadi. Telefon xotirasi toʻlgan boʻlishi mumkin.</string>
+    <string name="setup_again_no_memory">Sozlashni yakunlash uchun telefoningizda boʻsh operativ xotira yetarli emas. Boshqa ilovalarni yoping yoki telefonni qayta ishga tushiring, keyin qayta urining.</string>
+
+</resources>

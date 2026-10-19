@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Oʻzbekcha (lotin): the bottom bar of the unlocked screens (build plan 6.3a; glossary 1, 47, 108). -->
+<resources>
+    <string name="shell_tab_passwords">Parollar</string>
+    <string name="shell_tab_security">Xavfsizlik</string>
+    <string name="shell_tab_settings">Sozlamalar</string>
+</resources>
