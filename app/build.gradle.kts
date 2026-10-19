@@ -153,14 +153,13 @@ android {
         includeInBundle = false
     }
     lint {
-        // i18n.md §1.1 makes these errors. MissingTranslation is a warning from round R3 until the
-        // integration check of wave 6 (build-plan.md §8, "Before 6A starts"): 6.1 brings the first
-        // files under values-uz and values-ru, and the other translations come only in 6B.
+        // i18n.md §1.1 makes these errors. MissingTranslation was a warning from round R3 until the
+        // merge of round R6 (build-plan.md §8, "Before 6A starts" and "Integration check for wave
+        // 6"), while the translations came; it ignores values-b+uz+Cyrl, which ResourcesTest covers.
         error += listOf(
-            "ExtraTranslation", "MissingQuantity",
+            "MissingTranslation", "ExtraTranslation", "MissingQuantity",
             "StringFormatMatches", "StringFormatInvalid", "TypographyEllipsis",
         )
-        warning += "MissingTranslation"
     }
 }
 
