@@ -7,6 +7,7 @@ import android.content.Context
 import android.os.Build
 import android.os.Bundle
 import android.os.ParcelFileDescriptor
+import android.os.SystemClock
 import android.view.View
 import android.view.inputmethod.InputMethodManager
 import androidx.activity.ComponentActivity
@@ -35,6 +36,7 @@ import io.github.dilshodbekmx.passwordvault.platform.AndroidClock
 import io.github.dilshodbekmx.passwordvault.platform.AppDispatchers
 import io.github.dilshodbekmx.passwordvault.settings.ThemeChoice
 import io.github.dilshodbekmx.passwordvault.testing.FakeRandom
+import io.github.dilshodbekmx.passwordvault.ui.common.FieldKeyboard
 import io.github.dilshodbekmx.passwordvault.ui.settings.ChangeMasterPasswordScreen
 import io.github.dilshodbekmx.passwordvault.ui.settings.ChangeMasterPasswordViewModel
 import io.github.dilshodbekmx.passwordvault.ui.settings.ChangeStage
@@ -208,6 +210,10 @@ class MasterPasswordRotationTest {
         assertSame("the activity keeps the view model", model, models.get())
         assertEquals("the typed text is kept (the field's state is in the view model)", typed, onMain(text))
 
+        // The keyboard closed by hand once the screen has stopped asking for it: FieldKeyboard asks again
+        // for about a second after a rotation, and a keyboard closed within it comes back (its KDoc), as in
+        // TypeAgainRotationTest and the lock's MasterPasswordScreenTest.
+        SystemClock.sleep(FieldKeyboard.AGAIN_MS + 300)
         val activity = current.get()!!
         instrumentation.runOnMainSync {
             val imm = activity.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
