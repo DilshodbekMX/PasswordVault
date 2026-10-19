@@ -143,11 +143,11 @@ class LongWordsTest {
         const val COLUMN_DP = 288
 
         /**
-         * Words too wide for the column that wait for the owner (build plan §12, R6 question 2: glossary
-         * 135 "turned off", "faolsizlantirildi"; the default answer B replaces them with "faolsiz
-         * qilindi"); an empty set once that answer is built.
+         * Words too wide for the column that wait for an answer of the owner, none now: the last were
+         * glossary 135's "faolsizlantirildi" forms, which answer B of build plan §12's R6 question 2
+         * replaced with "faolsiz qilindi".
          */
-        val WAITING_FOR_THE_OWNER = setOf("фаолсизлантирилади", "фаолсизлантирилди", "фаолсизлантирилган", "faolsizlantiriladi", "faolsizlantirildi", "faolsizlantirilgan")
+        val WAITING_FOR_THE_OWNER = emptySet<String>()
 
         const val BACKUP_NAME = "PasswordVault-backup"
 

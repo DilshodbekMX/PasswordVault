@@ -63,10 +63,10 @@
     <string name="master_continue">Давом этиш</string>
     <string name="master_proof_pin_title">Илова PIN кодини киритинг</string>
     <string name="master_proof_pin_text">Хавфсизлигингиз учун илова очиқ бўлса ҳам, PIN кодни ҳозир киритинг.</string>
-    <string name="master_proof_pin_forgot">PIN кодни ҳам унутдингизми? 5&#160;марта хато киритилгандан кейин PIN код фаолсизлантирилади, шундан сўнг бармоқ изингиз билан давом этишингиз мумкин.</string>
+    <string name="master_proof_pin_forgot">PIN кодни ҳам унутдингизми? 5&#160;марта хато киритилгандан кейин PIN код фаолсиз қилинади, шундан сўнг бармоқ изингиз билан давом этишингиз мумкин.</string>
     <string name="master_proof_fingerprint">Бармоқ изингиз билан тасдиқлаш учун сканерга тегининг.</string>
-    <string name="master_pin_gone_heading">PIN код фаолсизлантирилди</string>
-    <string name="master_proof_pin_gone">Жуда кўп хато уринишлардан кейин PIN код фаолсизлантирилди. Бармоқ изингиз билан давом этишингиз мумкин.</string>
+    <string name="master_pin_gone_heading">PIN код фаолсиз қилинди</string>
+    <string name="master_proof_pin_gone">Жуда кўп хато уринишлардан кейин PIN код фаолсиз қилинди. Бармоқ изингиз билан давом этишингиз мумкин.</string>
     <string name="master_use_fingerprint">Бармоқ изидан фойдаланиш</string>
     <string name="master_stopped_heading">Ҳозир янги асосий парол танлаб бўлмайди</string>
     <string name="master_proof_cannot_check">PIN кодингизни ҳозирча текшириб бўлмаяпти. Кейинроқ қайта урининг.</string>

@@ -15,7 +15,7 @@
     <string name="settings_group_app_lock">Илова қулфи</string>
     <string name="settings_change_pin">PIN кодни ўзгартириш</string>
     <string name="settings_set_pin">PIN кодни созланг</string>
-    <string name="settings_pin_off_limit">Жуда кўп хато уринишлардан кейин PIN код билан очиш фаолсизлантирилди.</string>
+    <string name="settings_pin_off_limit">Жуда кўп хато уринишлардан кейин PIN код билан очиш фаолсиз қилинди.</string>
     <string name="settings_pin_stopped_working">PIN кодингиз бу телефонда ишламай қолди.</string>
     <string name="settings_pin_newer_app">PIN кодингиз бу илованинг янгироқ версиясида созланган.</string>
     <string name="settings_pin_storage_full">Телефонингиз хотираси тўлган, шунинг учун PIN кодни ҳозир текшириб бўлмайди.</string>
