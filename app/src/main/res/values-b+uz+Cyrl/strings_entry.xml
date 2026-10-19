@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Oʻzbekcha (lotin): one account's screen and "Show in big letters" (build plan 6.3a; English in
+     values/strings_entry.xml). Glossary (i18n.md §3): 2 "Hisob", 7 "Foydalanuvchi nomi", 13 and 14
+     favourites, 21 "Avvalgi parollar", 27 to 29 copy, 91 "Xavfsizlik tekshiruvi". A name, label or
+     website the person typed never takes a suffix: "%1$s paroli", "Nusxa olish: %1$s". -->
+<resources>
+
+    <!-- ===== The top bar ===== -->
+    <string name="entry_back">Орқага</string>
+    <string name="entry_pane">Ҳисоб</string>
+    <string name="entry_add_favourite">Сараланганларга киритиш</string>
+    <string name="entry_remove_favourite">Сараланганлардан олиб ташлаш</string>
+    <string name="entry_edit">Таҳрирлаш</string>
+    <string name="entry_more">Бошқа амаллар</string>
+    <string name="entry_big_letters">Катта ҳарфларда кўрсатиш</string>
+    <string name="entry_leave_out">Хавфсизлик текширувидан чиқариш</string>
+
+    <!-- ===== The rows ===== -->
+    <string name="entry_username">Фойдаланувчи номи</string>
+    <string name="entry_password">Парол</string>
+    <string name="entry_old_password">Эски парол (сайт ҳали ундан фойдаланаётган бўлиши мумкин)</string>
+    <string name="entry_new_password">Янги парол (ҳали тасдиқланмаган)</string>
+    <string name="entry_website">Сайт</string>
+    <string name="entry_app">Илова: %1$s</string>
+    <string name="entry_notes">Қайдлар</string>
+    <string name="entry_show_more">Кўпроқ кўрсатиш</string>
+    <string name="entry_show_less">Камроқ кўрсатиш</string>
+
+    <!-- Hidden values as TalkBack reads them. -->
+    <string name="entry_password_hidden">Парол, беркитилган</string>
+    <string name="entry_old_password_hidden">Эски парол, беркитилган</string>
+    <string name="entry_new_password_hidden">Янги парол, беркитилган</string>
+    <string name="entry_previous_hidden">Аввалги парол, беркитилган</string>
+    <string name="entry_field_hidden">%1$s, беркитилган</string>
+    <string name="entry_shown_hint">Экранга тегилмаса, 30&#160;сониядан кейин беркитилади. Кўпроқ вақт керак бўлса, “Катта ҳарфларда кўрсатиш” тугмасини босинг.</string>
+
+    <!-- After "… uchun ikki marta bosing" (Double-tap to): lower case, no full stop. -->
+    <string name="entry_row_options">амалларни кўрсатиш</string>
+    <string name="entry_copy_username">Фойдаланувчи номидан нусха олиш</string>
+    <string name="entry_copy_password">Паролдан нусха олиш</string>
+    <string name="entry_copy_old_password">Эски паролдан нусха олиш</string>
+    <string name="entry_copy_new_password">Янги паролдан нусха олиш</string>
+    <string name="entry_copy_previous">Аввалги паролдан нусха олиш</string>
+    <string name="entry_copy_notes">Қайдлардан нусха олиш</string>
+    <string name="entry_copy_named">Нусха олиш: %1$s</string>
+    <string name="entry_copy">Нусха олиш</string>
+    <string name="entry_show_named">Кўрсатиш: %1$s</string>
+    <string name="entry_hide_named">Беркитиш: %1$s</string>
+    <string name="entry_open_in_browser">%1$s сайтини браузерда очиш</string>
+    <string name="entry_open_website">Сайтни очиш</string>
+
+    <!-- ===== History and dates ===== -->
+    <!-- %1$s is "3 kun oldin", "kecha" or "hozirgina". -->
+    <string name="entry_password_changed">Парол %1$s ўзгартирилган</string>
+    <string name="entry_added">Қўшилган сана: %1$s</string>
+    <string name="entry_edited">Таҳрирланган сана: %1$s</string>
+    <string name="entry_previous">Аввалги пароллар (%1$s)</string>
+    <string name="entry_previous_until">%1$s санасигача ишлатилган</string>
+
+    <!-- ===== Banners ===== -->
+    <!-- %1$s is a day and a month. -->
+    <string name="entry_banner_change">Сиз бу паролни %1$s куни ўзгартира бошлагансиз. Сайт янги паролни қабул қилдими?</string>
+    <string name="entry_banner_change_yes">Ҳа, ўзгартирилди</string>
+    <string name="entry_banner_change_no">Йўқ, эски паролни қайтариш</string>
+    <string name="entry_banner_left_out">Бу ҳисоб хавфсизлик текширувига киритилмаган.</string>
+    <string name="entry_banner_check_again">Яна текширувга киритиш</string>
+    <string name="entry_banner_master">Бу парол асосий паролингиз билан бир хил. Агар бу сайт уни ошкор қилиб қўйса, захира нусха файлингиз қўлига тушган ҳар ким уни очиши мумкин. Янги асосий парол танланг.</string>
+    <string name="entry_banner_master_choose">Янги асосий парол танлаш</string>
+
+    <!-- ===== States ===== -->
+    <string name="entry_empty">Ҳали маълумот йўқ</string>
+    <string name="entry_gone">Бу ҳисоб энди мавжуд эмас.</string>
+    <string name="entry_gone_deleted">Бу ҳисоб ўчирилган. Уни 30&#160;кун давомида “Яқинда ўчирилганлар” бўлимидан тиклашингиз мумкин.</string>
+    <string name="entry_open_deleted">“Яқинда ўчирилганлар” бўлимини очиш</string>
+    <string name="entry_deleted_message">%1$s ўчириб ташланди</string>
+    <string name="entry_deleted_body">Бу ҳисоб энди “Яқинда ўчирилганлар” бўлимида. У ерда 30&#160;кун туради.</string>
+
+    <!-- ===== Short messages ===== -->
+    <string name="entry_saved">Сақланди</string>
+    <string name="entry_save_failed">Сақлаб бўлмади. Телефон хотираси тўлган бўлиши мумкин.</string>
+    <string name="entry_too_large">Паролларингиз энди битта файлга сиғмаяпти. Кераксиз ҳисобларни ўчиринг ёки жуда узун қайдларни қисқартиринг.</string>
+    <string name="entry_no_browser">Бу телефонда браузер топилмади.</string>
+    <string name="entry_copy_blocked">Бу телефон нусха олишга рухсат бермади. Паролни “Катта ҳарфларда кўрсатиш” орқали очинг ва уни қўлда киритинг.</string>
+
+    <!-- ===== What was copied, in the clipboard row ===== -->
+    <string name="entry_copied_username">%1$s фойдаланувчи номи</string>
+    <string name="entry_copied_password">%1$s пароли</string>
+    <string name="entry_copied_old_password">%1$s эски пароли</string>
+    <string name="entry_copied_new_password">%1$s янги пароли</string>
+    <string name="entry_copied_previous">%1$s аввалги пароли</string>
+    <string name="entry_copied_website">%1$s сайти</string>
+    <string name="entry_copied_notes">%1$s қайдлари</string>
+    <!-- %1$s is the field's label, %2$s the account's name: "Click: PIN kod". -->
+    <string name="entry_copied_field">%2$s: %1$s</string>
+
+    <!-- ===== "Show in big letters" (ux.md §5.13) ===== -->
+    <string name="entry_big_old_password">Эски парол</string>
+    <string name="entry_big_new_password">Янги парол</string>
+    <string name="entry_big_previous">Аввалги парол</string>
+    <string name="entry_big_too_long">Катта ҳарфларда кўрсатиш учун жуда узун</string>
+    <string name="entry_big_hint">Қаерга етганингизни белгилаш учун белги устига босинг. Экранга тегилмаса, бу ойна 2&#160;дақиқадан кейин ёпилади.</string>
+    <string name="entry_big_mark">шу жойни белгилаш</string>
+    <string name="entry_big_space">бўш жой</string>
+    <string name="entry_big_line_break">янги қатор</string>
+
+    <!-- A box as TalkBack reads it: "3-belgi: bosh harf A". -->
+    <string name="entry_big_cell_upper">%1$d-белги: бош ҳарф %2$s</string>
+    <string name="entry_big_cell_lower">%1$d-белги: кичик ҳарф %2$s</string>
+    <string name="entry_big_cell_letter">%1$d-белги: ҳарф %2$s</string>
+    <string name="entry_big_cell_digit">%1$d-белги: рақам %2$s</string>
+    <string name="entry_big_cell_symbol">%1$d-белги: махсус белги %2$s</string>
+    <string name="entry_big_cell_space">%1$d-белги: бўш жой</string>
+    <string name="entry_big_cell_line_break">%1$d-белги: янги қатор</string>
+    <string name="entry_big_cell_invisible">%1$d-белги: кўринмас белги %2$s</string>
+
+</resources>

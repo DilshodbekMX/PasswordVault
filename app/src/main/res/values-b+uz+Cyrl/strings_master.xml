@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Oʻzbekcha (lotin): changing and replacing the master password (build plan 6.3a; English in
+     values/strings_master.xml). Glossary (i18n.md §3): 48 "asosiy parol", 51 "Asosiy parolni
+     oʻzgartirish", 130 "ilova PIN kodi", 135 "faolsizlantirildi", 138 "yangi asosiy parol", 97
+     "zaxira nusxa". -->
+<resources>
+
+    <!-- ===== Change master password (ux.md §5.18; lock.md F8) ===== -->
+    <string name="master_change_title">Асосий паролни ўзгартириш</string>
+    <string name="master_back">Орқага</string>
+    <string name="master_current_heading">Ҳозирги асосий паролни киритинг</string>
+    <string name="master_current_text">Ҳозир фойдаланаётган асосий паролингизни киритинг. Кейин янгисини танлайсиз.</string>
+    <string name="master_current_again">Хавфсизлигингиз учун ҳозирги асосий паролни яна бир марта киритинг. Сиз танлаган янги парол сақлаб қолинади.</string>
+    <string name="master_current_label">Ҳозирги асосий парол</string>
+    <string name="master_next">Кейингиси</string>
+    <string name="master_dont_remember">Эсимда йўқ</string>
+    <string name="master_checking">Текширилмоқда…</string>
+    <string name="master_wrong">Асосий парол нотўғри. Клавиатура тилини (лотин ёки кирилл) ва бош ҳарфларни текширинг.</string>
+    <string name="master_wait">30&#160;сония кутинг, кейин қайта урининг. Шошилманг, ёзиб қўйган қоғозингизга қаранг.</string>
+    <plurals name="master_wait_seconds">
+        <item quantity="one">%d&#160;сониядан кейин қайта урининг.</item>
+        <item quantity="other">%d&#160;сониядан кейин қайта урининг.</item>
+    </plurals>
+    <string name="master_no_memory">Асосий паролни текшириш учун телефонингизда бўш оператив хотира етарли эмас. Бошқа иловаларни ёпинг ёки телефонни қайта ишга туширинг, кейин қайта урининг.</string>
+
+    <!-- Step 3: the app PIN keeps working with the new master password. -->
+    <string name="master_keep_pin_title">Илова PIN кодини сақлаб қолиш учун уни киритинг</string>
+    <string name="master_keep_pin_text">Асосий паролингиз ўзгармоқда. PIN коддан фойдаланишда давом этиш учун уни киритинг. “Ҳозир эмас” тугмасини боссангиз, янги PIN кодни кейинроқ танлайсиз.</string>
+    <plurals name="master_pin_wrong">
+        <item quantity="one">PIN код хато. Яна %d&#160;марта уриниш мумкин.</item>
+        <item quantity="other">PIN код хато. Яна %d&#160;марта уриниш мумкин.</item>
+    </plurals>
+    <string name="master_pin_same_again">Бу PIN кодни аллақачон киритгансиз. У қайта ҳисобланмади.</string>
+
+    <!-- Steps 4 and 5. -->
+    <string name="master_saving">Сақланмоқда…</string>
+    <string name="master_touch_sensor">Бармоқ изи билан очиш ёниқ қолиши учун сканерга тегининг.</string>
+    <string name="master_not_changed">Асосий паролни ўзгартириб бўлмади. Ҳеч нарса ўзгармади. Эски асосий паролингиз, PIN код ва бармоқ изингиз ҳали ҳам ишлайди.</string>
+    <string name="master_unclear">Сақлаш охирига етмаган бўлиши мумкин. Кейинги сафар аввал янги асосий паролингизни, кейин эскисини синаб кўринг.</string>
+    <string name="master_not_changed_heading">Асосий парол ўзгартирилмади</string>
+    <string name="master_unclear_heading">Асосий парол ўзгарган бўлиши мумкин</string>
+    <string name="master_change_no_memory">Асосий паролни ўзгартириш учун телефонингизда бўш оператив хотира етарли эмас. Бошқа иловаларни ёпинг ёки телефонни қайта ишга туширинг, кейин қайта урининг.</string>
+    <string name="master_changed">Асосий паролингиз ўзгартирилди.</string>
+
+    <!-- ===== After the change or the replacement: the new backup ===== -->
+    <string name="master_backup_text">Ҳозир янги захира нусха яратинг. Эски захира нусхаларингиз ҳамон фақат эски асосий паролингиз билан очилади.</string>
+    <string name="master_back_up_now">Ҳозир захиралаш</string>
+    <string name="master_places_heading">Эски асосий паролингизни кимдир билиши мумкин. У билан яратган захира нусхаларингизни ўчиринг:</string>
+    <string name="master_places_none">Эски асосий паролингизни кимдир билиши мумкин. У билан яратган захира нусхаларингизни ўчиринг.</string>
+    <!-- %1$s is the file's name, %2$s a date with the year. -->
+    <string name="master_place">%1$s, %2$s куни сақланган</string>
+    <string name="master_places_also">Телеграм ёки эмаил орқали юборган нусхаларингизни ҳам ўчиринг.</string>
+    <string name="master_place_deleted">Ўчириб ташланди</string>
+    <string name="master_place_not_deletable">Илова бу файлни ўчира олмайди. Уни сақланган жойида ўзингиз ўчиринг.</string>
+    <string name="master_place_not_noted">Файл ўчирилди, лекин илова буни қайд қила олмади. У кейинроқ ҳам бу рўйхатда кўриниши мумкин.</string>
+
+    <!-- ===== A new master password, the old one forgotten (ux.md §5.24; lock.md F11) ===== -->
+    <string name="master_new_title">Янги асосий парол</string>
+    <string name="master_explain_heading">Асосий паролни унутдингизми?</string>
+    <string name="master_explain_pin">PIN кодингиз бу телефонда иловани ҳали ҳам очгани учун янги асосий парол танлашингиз мумкин. Хавфсизлигингиз учун у телефон ёниқ ҳолда 24&#160;соат ўтгач ишлай бошлайди. Унгача ҳеч нарса ўзгармайди. Аввал яратган захира нусхаларингизни очиш учун эски асосий паролингиз керак бўлиб қолаверади.</string>
+    <string name="master_explain_fingerprint">Бармоқ изингиз бу телефонда иловани ҳали ҳам очгани учун янги асосий парол танлашингиз мумкин. Хавфсизлигингиз учун у телефон ёниқ ҳолда 24&#160;соат ўтгач ишлай бошлайди. Унгача ҳеч нарса ўзгармайди. Аввал яратган захира нусхаларингизни очиш учун эски асосий паролингиз керак бўлиб қолаверади.</string>
+    <string name="master_explain_replaces">Янги асосий парол аллақачон ишга тушишини кутмоқда. Агар бошқасини танласангиз, 24&#160;соатлик муддат қайтадан бошланади.</string>
+    <string name="master_continue">Давом этиш</string>
+    <string name="master_proof_pin_title">Илова PIN кодини киритинг</string>
+    <string name="master_proof_pin_text">Хавфсизлигингиз учун илова очиқ бўлса ҳам, PIN кодни ҳозир киритинг.</string>
+    <string name="master_proof_pin_forgot">PIN кодни ҳам унутдингизми? 5&#160;марта хато киритилгандан кейин PIN код фаолсизлантирилади, шундан сўнг бармоқ изингиз билан давом этишингиз мумкин.</string>
+    <string name="master_proof_fingerprint">Бармоқ изингиз билан тасдиқлаш учун сканерга тегининг.</string>
+    <string name="master_pin_gone_heading">PIN код фаолсизлантирилди</string>
+    <string name="master_proof_pin_gone">Жуда кўп хато уринишлардан кейин PIN код фаолсизлантирилди. Бармоқ изингиз билан давом этишингиз мумкин.</string>
+    <string name="master_use_fingerprint">Бармоқ изидан фойдаланиш</string>
+    <string name="master_stopped_heading">Ҳозир янги асосий парол танлаб бўлмайди</string>
+    <string name="master_proof_cannot_check">PIN кодни ҳозирча текшириб бўлмаяпти. Кейинроқ қайта урининг.</string>
+    <string name="master_not_offered">Янги асосий паролни фақат PIN кодингиз ёки бармоқ изингиз бу телефонда иловани очаётган пайтда танлаш мумкин. Ҳозир уларнинг ҳеч бири ишламаяпти.</string>
+    <string name="master_fingerprint_did_not_confirm">Бу сафар бармоқ изи тасдиқламади. Қайта урининг.</string>
+    <string name="master_fingerprint_locked">Бармоқ изи вақтинча қулфланган. Кейинроқ қайта урининг.</string>
+    <string name="master_fingerprint_not_for_apps">Ҳозир бармоқ изидан иловаларда фойдаланиб бўлмайди. Телефон созламаларида бармоқ изи иловаларда шахсингизни тасдиқлаш учун ишлатилишига рухсат берилганини текширинг.</string>
+    <string name="master_fingerprint_none_saved">Бу телефонда ҳозир сақланган бармоқ изи йўқ. Телефон созламаларида бармоқ изи қўшинг.</string>
+    <string name="master_fingerprint_update_needed">Бармоқ изидан фойдаланиш учун телефонингизга хавфсизлик янгиланиши керак.</string>
+    <string name="master_fingerprint_cannot_check">Бармоқ изини ҳозирча текшириб бўлмаяпти. Кейинроқ қайта урининг.</string>
+    <string name="master_proof_again">Хавфсизлигингиз учун буни яна бир марта тасдиқланг. Сиз танлаган янги асосий парол сақлаб қолинади.</string>
+    <string name="master_requesting_heading">Янги асосий паролингиз сақланмоқда</string>
+    <string name="master_requesting">Сақланмоқда…</string>
+    <string name="master_request_not_saved">Сақлаб бўлмади. Телефон хотираси тўлган бўлиши мумкин.</string>
+    <string name="master_request_no_memory">Телефонингизда бўш оператив хотира етарли эмас. Бошқа иловаларни ёпинг ёки телефонни қайта ишга туширинг, кейин қайта урининг.</string>
+    <string name="master_request_cancelled">Иловадан чиқилгани учун ҳеч нарса ўзгармади. Қайтадан бошланг.</string>
+    <string name="master_wait_heading">Янги асосий парол танланди</string>
+    <string name="master_wait_text">Янги асосий паролингиз телефон ёниқ ҳолда тахминан 24&#160;соат ўтгач ишлай бошлайди. Қоғозни сақлаб қўйинг. Унгача иловани одатдагидек PIN код ёки бармоқ изингиз билан очинг. Телефон ўчиқ пайтда саноқ тўхтайди. У давом этиши учун бу иловани эрталаб ва яна кечқурун очинг.</string>
+
+    <!-- ===== Finish now (glossary 140) ===== -->
+    <string name="master_finish_heading">Янги асосий паролни киритинг</string>
+    <string name="master_finish_text">Янги асосий паролингиз тайёр. Якунлаш учун уни бир марта киритинг. Паролларингиз очиқ қолади.</string>
+    <string name="master_finish_label">Янги асосий парол</string>
+    <string name="master_finish">Якунлаш</string>
+    <string name="master_finishing">Якунланмоқда…</string>
+    <string name="master_not_finished">Ҳозир якунлаб бўлмади. Ҳеч нарса ўзгармади. Кейинроқ қайта урининг.</string>
+    <string name="master_finished">Янги асосий паролингиз энди ишлайди.</string>
+</resources>

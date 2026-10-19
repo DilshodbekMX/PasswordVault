@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Oʻzbekcha (lotin): shared words and the shared parts of the screens (build plan 6.3a; English in
+     values/strings_common.xml). Words of the glossary (i18n.md §3); oʻ and gʻ with U+02BB, the
+     tutuq belgisi with U+02BC (i18n.md §2.4); a no-break space between a number and its word. -->
+<resources>
+
+    <!-- Buttons that many screens and dialogs use (glossary 26, 37, 38, 41, 42, 46). -->
+    <string name="common_ok">OK</string>
+    <string name="common_cancel">Бекор қилиш</string>
+    <string name="common_close">Ёпиш</string>
+    <string name="common_not_now">Ҳозир эмас</string>
+    <string name="common_later">Кейинроқ</string>
+    <string name="common_try_again">Қайта уриниш</string>
+    <string name="common_delete">Ўчириш</string>
+    <string name="common_undo">Қайтариш</string>
+    <string name="common_done">Тайёр</string>
+
+    <!-- The eye button of a password field (glossary 34, 35). -->
+    <string name="common_show_password">Паролни кўрсатиш</string>
+    <string name="common_hide_password">Паролни беркитиш</string>
+
+    <!-- The PIN pad, read by TalkBack (glossary 52, 62). -->
+    <string name="common_pin_delete">Охирги рақамни ўчириш</string>
+    <string name="common_pin_fingerprint">Бармоқ изи билан очиш</string>
+    <plurals name="common_pin_dots">
+        <item quantity="one">PIN код, %2$d&#160;та рақамдан %1$d&#160;таси киритилди</item>
+        <item quantity="other">PIN код, %2$d&#160;та рақамдан %1$d&#160;таси киритилди</item>
+    </plurals>
+
+    <!-- The password strength meter (glossary 86, 87, 89). -->
+    <string name="common_strength_very_weak">Жуда заиф</string>
+    <string name="common_strength_weak">Заиф</string>
+    <string name="common_strength_good">Яхши</string>
+    <string name="common_strength_strong">Кучли</string>
+    <string name="common_strength_description">Парол кучи: %1$s</string>
+
+    <!-- Inside a sentence: "Parol hozirgina oʻzgartirilgan", "(hozirgina saqlangan)". -->
+    <string name="common_just_now">ҳозиргина</string>
+
+    <string name="common_obscured_touch">Бошқа илова бу экран устида тасвир чиқармоқда, шунинг учун хавфсизлик мақсадида босишлар блокланди. Экран филтрлари ёки чат пуфакчаларини ўчиринг ва қайта урининг.</string>
+
+</resources>

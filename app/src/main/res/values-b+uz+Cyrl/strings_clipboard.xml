@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Oʻzbekcha (lotin): the clipboard status row (build plan 6.3a). "Vaqtinchalik xotira" is glossary
+     112, "Nusxalangan matn" 148, "… dan keyin tozalanadi" 149, "Parol nusxalandi" 31, "Nusxa olindi" 30. -->
+<resources>
+
+    <string name="clipboard_copied_text">Нусхаланган матн</string>
+
+    <string name="clipboard_row_clears_in">%1$s · %2$s дан кейин тозаланади</string>
+    <string name="clipboard_row_clearing">Тозаланмоқда…</string>
+    <string name="clipboard_row_cleared">Вақтинчалик хотира тозаланди</string>
+    <string name="clipboard_clear_now">Ҳозир тозалаш</string>
+
+    <string name="clipboard_copied_password">Парол нусхаланди</string>
+    <string name="clipboard_copied_other">Нусха олинди</string>
+
+    <string name="clipboard_announcement">%1$s. %2$s</string>
+    <plurals name="clipboard_removed_in_seconds">
+        <item quantity="one">У %d&#160;сониядан кейин вақтинчалик хотирадан олиб ташланади.</item>
+        <item quantity="other">У %d&#160;сониядан кейин вақтинчалик хотирадан олиб ташланади.</item>
+    </plurals>
+    <plurals name="clipboard_removed_in_minutes">
+        <item quantity="one">У %d&#160;дақиқадан кейин вақтинчалик хотирадан олиб ташланади.</item>
+        <item quantity="other">У %d&#160;дақиқадан кейин вақтинчалик хотирадан олиб ташланади.</item>
+    </plurals>
+
+</resources>
