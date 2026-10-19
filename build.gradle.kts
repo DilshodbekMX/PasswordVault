@@ -22,12 +22,18 @@ allprojects {
     // buildscript-gradle.lockfile), and every artifact is checked against the SHA-256 sums in
     // gradle/verification-metadata.xml (architecture.md §7.2). Whoever changes a version regenerates
     // both in the same commit:
-    //   tools/gradle.sh resolveAll --write-locks
+    //   tools/gradle.sh --write-verification-metadata sha256 --write-locks resolveAll
     //   tools/gradle.sh --write-verification-metadata sha256 --rerun-tasks resolveAll \
     //       :core:testDebugUnitTest :app:testDebugUnitTest :core:lintDebug :app:lintDebug \
     //       :app:assembleDebug :app:assembleStaging :app:assembleRelease :app:assembleBackupCheck \
     //       :app:assembleDebugAndroidTest
-    // and then checks that the <configuration> part of the metadata file is unchanged.
+    // and then checks that the <configuration> part of the metadata file is unchanged: Gradle's
+    // rewrite drops the comment in it, which goes back by hand. The first command resolves every
+    // configuration without the old locks, and so also reads the .pom and .module files of versions
+    // that lose a conflict, which locked builds never read; --write-locks without
+    // --write-verification-metadata stops at any of them that the metadata lacks, as at every file
+    // of a new version. The second records what only the tasks resolve. Both run with --offline
+    // once the new versions are in the Gradle cache.
     dependencyLocking {
         lockAllConfigurations()
     }
