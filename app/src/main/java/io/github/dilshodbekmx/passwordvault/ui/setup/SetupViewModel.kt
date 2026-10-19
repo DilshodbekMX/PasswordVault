@@ -436,7 +436,7 @@ data class SetupState(
     val mismatches: Int = 0,
     /** Under the second typing's field: the mismatch, or why the vault was not made. */
     val againMessage: UiText? = null,
-    /** "Your keyboard may be set to Russian. …" with the last mismatch. */
+    /** "Your keyboard may be set to Cyrillic letters (Russian, for example). …" with the last mismatch. */
     val keyboardHint: UiText? = null,
     /** "Setting up…": the lock is making the vault; Back is ignored meanwhile (ux.md §4). */
     val settingUp: Boolean = false,
