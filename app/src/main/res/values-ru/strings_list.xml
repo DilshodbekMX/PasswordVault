@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Русский: the Passwords list, its search and banners, and «Недавно удалённые» (build plan 6.4a;
+     English in values/strings_list.xml). An account's name cannot be declined, so it stands in « »
+     after a noun («аккаунт «%1$s»», «пароль аккаунта «%1$s»»; i18n.md §4.4). Glossary 1 to 21, 138 to
+     143. -->
+<resources>
+
+    <!-- ===== The Passwords screen ===== -->
+
+    <string name="list_title">Пароли</string>
+    <string name="list_lock_now">Заблокировать сейчас</string>
+    <string name="list_search_placeholder">Поиск аккаунтов</string>
+    <string name="list_search_clear">Очистить поиск</string>
+    <string name="list_add">Добавить</string>
+    <string name="list_add_account_description">Добавить аккаунт</string>
+
+    <string name="list_favourites">Избранное</string>
+    <string name="list_show_all_favourites">Показать всё избранное</string>
+    <string name="list_all_accounts">Все аккаунты · %1$s</string>
+    <string name="list_recently_deleted_row">Недавно удалённые (%1$s)</string>
+
+    <string name="list_copy_password_for">Копировать пароль аккаунта «%1$s»</string>
+    <string name="list_copy_password_choose">Копировать пароль аккаунта «%1$s»: выбрать старый или новый</string>
+    <string name="list_change_pending">Смена пароля не завершена</string>
+
+    <string name="list_menu_copy_username">Копировать имя пользователя</string>
+    <string name="list_menu_copy_password">Копировать пароль</string>
+    <string name="list_menu_copy_old_password">Копировать старый пароль</string>
+    <string name="list_menu_copy_new_password">Копировать новый пароль (не подтверждён)</string>
+    <string name="list_menu_open_website">Открыть сайт</string>
+    <string name="list_menu_big_letters">Показать крупно</string>
+    <string name="list_menu_add_favourite">Добавить в избранное</string>
+    <string name="list_menu_remove_favourite">Удалить из избранного</string>
+    <string name="list_menu_edit">Изменить</string>
+
+    <!-- What was copied, in the clipboard row: «Пароль аккаунта «Gmail» · очистится через 0:52». -->
+    <string name="list_copied_password">Пароль аккаунта «%1$s»</string>
+    <string name="list_copied_username">Имя пользователя аккаунта «%1$s»</string>
+    <string name="list_copied_old_password">Старый пароль аккаунта «%1$s»</string>
+    <string name="list_copied_new_password">Новый пароль аккаунта «%1$s»</string>
+
+    <string name="list_empty_title">Аккаунтов пока нет</string>
+    <string name="list_empty_body">Добавьте первый аккаунт и его пароль или перенесите пароли из Chrome.</string>
+    <string name="list_empty_add">Добавить аккаунт</string>
+    <string name="list_empty_import">Импорт из Google Password Manager</string>
+
+    <string name="list_search_retried">Показаны результаты для «%1$s»</string>
+    <string name="list_no_results">Нет аккаунтов по запросу «%1$s».</string>
+    <string name="list_add_as_new">Добавить «%1$s» как новый аккаунт</string>
+
+    <string name="list_deleted_message">Аккаунт «%1$s» удалён</string>
+    <string name="list_save_failed">Не удалось сохранить. Возможно, хранилище телефона заполнено.</string>
+    <string name="list_too_large">Ваши пароли больше не помещаются в один файл. Удалите ненужные аккаунты или сократите очень длинные заметки.</string>
+    <string name="list_no_browser">На этом телефоне не найден браузер.</string>
+    <string name="list_copy_blocked">Этот телефон заблокировал копирование. Откройте пароль через «Показать крупно» и введите его вручную.</string>
+    <string name="list_account_gone">Этот аккаунт больше не существует.</string>
+
+    <!-- ===== Banners at the top of the list ===== -->
+
+    <!-- %1$s: the date and time; %2$d: the hours still to be counted with the phone switched on
+         (glossary 139). -->
+    <plurals name="list_banner_pending_pin">
+        <item quantity="one">Новый мастер-пароль был задан %1$s с помощью PIN-кода. Он заработает примерно через %2$d&#160;час. Пока телефон выключен, отсчёт останавливается; чтобы он продолжался, открывайте приложение утром и ещё раз вечером. Это были не вы? Отмените новый пароль, затем измените PIN-код.</item>
+        <item quantity="few">Новый мастер-пароль был задан %1$s с помощью PIN-кода. Он заработает примерно через %2$d&#160;часа. Пока телефон выключен, отсчёт останавливается; чтобы он продолжался, открывайте приложение утром и ещё раз вечером. Это были не вы? Отмените новый пароль, затем измените PIN-код.</item>
+        <item quantity="many">Новый мастер-пароль был задан %1$s с помощью PIN-кода. Он заработает примерно через %2$d&#160;часов. Пока телефон выключен, отсчёт останавливается; чтобы он продолжался, открывайте приложение утром и ещё раз вечером. Это были не вы? Отмените новый пароль, затем измените PIN-код.</item>
+        <item quantity="other">Новый мастер-пароль был задан %1$s с помощью PIN-кода. Он заработает примерно через %2$d&#160;часа. Пока телефон выключен, отсчёт останавливается; чтобы он продолжался, открывайте приложение утром и ещё раз вечером. Это были не вы? Отмените новый пароль, затем измените PIN-код.</item>
+    </plurals>
+    <plurals name="list_banner_pending_fingerprint">
+        <item quantity="one">Новый мастер-пароль был задан %1$s с помощью отпечатка пальца. Он заработает примерно через %2$d&#160;час. Пока телефон выключен, отсчёт останавливается; чтобы он продолжался, открывайте приложение утром и ещё раз вечером. Это были не вы? Отмените новый пароль.</item>
+        <item quantity="few">Новый мастер-пароль был задан %1$s с помощью отпечатка пальца. Он заработает примерно через %2$d&#160;часа. Пока телефон выключен, отсчёт останавливается; чтобы он продолжался, открывайте приложение утром и ещё раз вечером. Это были не вы? Отмените новый пароль.</item>
+        <item quantity="many">Новый мастер-пароль был задан %1$s с помощью отпечатка пальца. Он заработает примерно через %2$d&#160;часов. Пока телефон выключен, отсчёт останавливается; чтобы он продолжался, открывайте приложение утром и ещё раз вечером. Это были не вы? Отмените новый пароль.</item>
+        <item quantity="other">Новый мастер-пароль был задан %1$s с помощью отпечатка пальца. Он заработает примерно через %2$d&#160;часа. Пока телефон выключен, отсчёт останавливается; чтобы он продолжался, открывайте приложение утром и ещё раз вечером. Это были не вы? Отмените новый пароль.</item>
+    </plurals>
+    <string name="list_banner_pending_ready">Новый мастер-пароль готов. Введите его, чтобы завершить смену пароля.</string>
+    <!-- Glossary 141, 140. -->
+    <string name="list_banner_cancel_it">Отменить новый пароль</string>
+    <string name="list_banner_finish_now">Завершить сейчас</string>
+
+    <string name="list_banner_replaced_pin">Ваш мастер-пароль был заменён %1$s с помощью PIN-кода. Если это сделали не вы, ваши пароли до замены всё ещё хранятся на этом телефоне.</string>
+    <string name="list_banner_replaced_fingerprint">Ваш мастер-пароль был заменён %1$s с помощью отпечатка пальца. Если это сделали не вы, ваши пароли до замены всё ещё хранятся на этом телефоне.</string>
+    <!-- Glossary 142. -->
+    <string name="list_banner_it_wasnt_me">Это был не я</string>
+
+    <string name="list_banner_practice">Вы не вводили мастер-пароль с %1$s. Без него не получится открыть резервную копию или перейти на новый телефон.</string>
+    <string name="list_banner_type_it_now">Ввести сейчас</string>
+    <!-- The same words as the other buttons that lead to a new master password («Не помню»). -->
+    <string name="list_banner_i_forgot_it">Не помню</string>
+
+    <!-- Glossary 104 («незащищённый файл»). %2$s: when it was saved, for example «2 часа назад». -->
+    <string name="list_banner_export">У вас есть незащищённый файл с паролями: %1$s (сохранён %2$s).</string>
+    <!-- Not «Я удалил(а) его сам(а)»: the same words for every reader. -->
+    <string name="list_banner_deleted_it_myself">Файл уже удалён</string>
+    <string name="list_banner_cannot_delete">Это место не позволяет приложениям удалять файлы. Удалите файл сами в приложении «Файлы».</string>
+
+    <string name="list_banner_backup">Ваших последних паролей ещё нет в резервной копии.</string>
+    <string name="list_banner_back_up_now">Создать резервную копию</string>
+
+    <!-- %1$d: how many changes wait (1 or more); %2$s: the first account's name. The «one» item also
+         serves 21, 31…, so it names the first account without «и другие». -->
+    <plurals name="list_banner_change">
+        <item quantity="one">%1$d&#160;смена пароля ждёт вашего ответа (%2$s).</item>
+        <item quantity="few">%1$d&#160;смены пароля ждут вашего ответа (%2$s и другие).</item>
+        <item quantity="many">%1$d&#160;смен пароля ждут вашего ответа (%2$s и другие).</item>
+        <item quantity="other">%1$d&#160;смены пароля ждут вашего ответа (%2$s и другие).</item>
+    </plurals>
+    <string name="list_banner_answer_now">Ответить сейчас</string>
+
+    <!-- ===== «Ввести сейчас»: the master password in the open app ===== -->
+
+    <string name="list_practice_title">Введите мастер-пароль</string>
+    <string name="list_practice_body">Так вы проверите, что всё ещё помните его. Он нужен, чтобы открыть резервную копию и перейти на новый телефон.</string>
+    <string name="list_practice_field">Мастер-пароль</string>
+    <string name="list_practice_check">Проверить</string>
+    <string name="list_practice_wrong">Неверный мастер-пароль. Проверьте язык клавиатуры (латиница или кириллица) и заглавные буквы.</string>
+    <plurals name="list_practice_wait">
+        <item quantity="one">Подождите %1$d&#160;секунду, затем повторите попытку. Не спешите и сверьтесь с записью на бумаге.</item>
+        <item quantity="few">Подождите %1$d&#160;секунды, затем повторите попытку. Не спешите и сверьтесь с записью на бумаге.</item>
+        <item quantity="many">Подождите %1$d&#160;секунд, затем повторите попытку. Не спешите и сверьтесь с записью на бумаге.</item>
+        <item quantity="other">Подождите %1$d&#160;секунды, затем повторите попытку. Не спешите и сверьтесь с записью на бумаге.</item>
+    </plurals>
+    <string name="list_practice_no_memory">На телефоне недостаточно свободной оперативной памяти, чтобы проверить мастер-пароль. Закройте другие приложения или перезапустите телефон, затем повторите попытку.</string>
+    <string name="list_practice_older">Это ваш мастер-пароль, который действовал до %1$s. Введите тот, которым пользуетесь сейчас.</string>
+    <string name="list_practice_right">Верно. Ваш мастер-пароль работает.</string>
+
+    <!-- ===== «Недавно удалённые» ===== -->
+
+    <string name="list_deleted_title">Недавно удалённые</string>
+    <string name="list_back">Назад</string>
+    <!-- Deletes every account on this screen for good, after a question (glossary 45). -->
+    <string name="list_deleted_empty">Очистить</string>
+    <string name="list_deleted_info">Удалённые аккаунты хранятся здесь 30&#160;дней. Затем они удаляются.</string>
+    <string name="list_deleted_nothing">Здесь пусто. Удалённые аккаунты хранятся здесь 30&#160;дней.</string>
+    <!-- «Удалён» agrees with «аккаунт». -->
+    <string name="list_deleted_on">Удалён %1$s</string>
+    <string name="list_deleted_restore">Восстановить</string>
+    <string name="list_deleted_restore_description">Восстановить аккаунт «%1$s»</string>
+    <string name="list_deleted_more">Другие действия для аккаунта «%1$s»</string>
+    <string name="list_deleted_delete_forever">Удалить навсегда</string>
+    <!-- Glossary 129. -->
+    <string name="list_deleted_forever_question">Удалить аккаунт «%1$s» навсегда? Это действие нельзя отменить.</string>
+    <!-- %1$s: how many accounts (1 or more), written with the language's digit grouping; the plural
+         follows that number. -->
+    <plurals name="list_deleted_empty_question">
+        <item quantity="one">Удалить навсегда %1$s&#160;аккаунт? Это действие нельзя отменить.</item>
+        <item quantity="few">Удалить навсегда все %1$s&#160;аккаунта? Это действие нельзя отменить.</item>
+        <item quantity="many">Удалить навсегда все %1$s&#160;аккаунтов? Это действие нельзя отменить.</item>
+        <item quantity="other">Удалить навсегда все %1$s&#160;аккаунта? Это действие нельзя отменить.</item>
+    </plurals>
+    <string name="list_restored_message">Аккаунт «%1$s» восстановлен</string>
+
+</resources>

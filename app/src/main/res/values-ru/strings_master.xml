@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Русский: changing and replacing the master password (build plan 6.4a; English in
+     values/strings_master.xml): Settings › «Изменить мастер-пароль» and «Новый мастер-пароль» with
+     «Завершить сейчас». Glossary 48 (мастер-пароль), 51, 138 (новый мастер-пароль), 139, 143 (заменён);
+     the app's own PIN is «PIN-код» or «PIN-код приложения», never the phone's. -->
+<resources>
+
+    <!-- ===== «Изменить мастер-пароль» (glossary 51) ===== -->
+
+    <string name="master_change_title">Изменить мастер-пароль</string>
+    <string name="master_back">Назад</string>
+    <string name="master_current_heading">Введите текущий мастер-пароль</string>
+    <string name="master_current_text">Введите мастер-пароль, которым вы пользуетесь сейчас. Затем вы зададите новый.</string>
+    <string name="master_current_again">В целях безопасности введите текущий мастер-пароль ещё раз. Новый пароль, который вы задали, не потерян.</string>
+    <string name="master_current_label">Текущий мастер-пароль</string>
+    <string name="master_next">Далее</string>
+    <!-- The same words as the other buttons that lead to a new master password («Не помню»). -->
+    <string name="master_dont_remember">Не помню</string>
+    <string name="master_checking">Проверка…</string>
+    <string name="master_wrong">Неверный мастер-пароль. Проверьте язык клавиатуры (латиница или кириллица) и заглавные буквы.</string>
+    <string name="master_wait">Подождите 30&#160;секунд, затем повторите попытку. Не спешите и сверьтесь с записью на бумаге.</string>
+    <!-- Glossary 59. -->
+    <plurals name="master_wait_seconds">
+        <item quantity="one">Повторите попытку через %d&#160;секунду.</item>
+        <item quantity="few">Повторите попытку через %d&#160;секунды.</item>
+        <item quantity="many">Повторите попытку через %d&#160;секунд.</item>
+        <item quantity="other">Повторите попытку через %d&#160;секунды.</item>
+    </plurals>
+    <string name="master_no_memory">На телефоне недостаточно свободной оперативной памяти, чтобы проверить мастер-пароль. Закройте другие приложения или перезапустите телефон, затем повторите попытку.</string>
+
+    <string name="master_keep_pin_title">Введите PIN-код приложения, чтобы продолжать им пользоваться</string>
+    <!-- «Не сейчас» is common_not_now. -->
+    <string name="master_keep_pin_text">Мастер-пароль меняется. Введите PIN-код, чтобы продолжать им пользоваться. Если нажмёте «Не сейчас», новый PIN-код нужно будет задать позже.</string>
+    <plurals name="master_pin_wrong">
+        <item quantity="one">Неверный PIN-код. Осталась %d&#160;попытка.</item>
+        <item quantity="few">Неверный PIN-код. Осталось %d&#160;попытки.</item>
+        <item quantity="many">Неверный PIN-код. Осталось %d&#160;попыток.</item>
+        <item quantity="other">Неверный PIN-код. Осталось %d&#160;попытки.</item>
+    </plurals>
+    <string name="master_pin_same_again">Этот PIN-код уже вводился. Повторно он не засчитан.</string>
+
+    <string name="master_saving">Сохранение…</string>
+    <!-- Glossary 63: «Коснитесь сканера отпечатков пальцев». -->
+    <string name="master_touch_sensor">Коснитесь сканера, чтобы оставить разблокировку по отпечатку пальца включённой.</string>
+    <string name="master_not_changed">Не удалось изменить мастер-пароль. Ничего не изменено. Старый мастер-пароль, PIN-код и отпечаток пальца по-прежнему работают.</string>
+    <string name="master_unclear">Возможно, сохранение не завершилось. В следующий раз сначала попробуйте новый мастер-пароль, а затем старый.</string>
+    <string name="master_not_changed_heading">Мастер-пароль не изменён</string>
+    <string name="master_unclear_heading">Возможно, мастер-пароль изменился</string>
+    <string name="master_change_no_memory">На телефоне недостаточно свободной оперативной памяти, чтобы изменить мастер-пароль. Закройте другие приложения или перезапустите телефон, затем повторите попытку.</string>
+    <string name="master_changed">Мастер-пароль изменён.</string>
+
+    <!-- ===== After the change or the replacement: the new backup ===== -->
+
+    <string name="master_backup_text">Создайте новую резервную копию сейчас. Старые резервные копии по-прежнему открываются только старым мастер-паролем.</string>
+    <string name="master_back_up_now">Создать резервную копию</string>
+    <string name="master_places_heading">Ваш старый мастер-пароль может знать кто-то другой. Удалите резервные копии, созданные с ним:</string>
+    <string name="master_places_none">Ваш старый мастер-пароль может знать кто-то другой. Удалите резервные копии, созданные с ним.</string>
+    <!-- %1$s: the file's name; %2$s: the day it was saved. «Сохранён» agrees with «файл». -->
+    <string name="master_place">%1$s, сохранён %2$s</string>
+    <string name="master_places_also">Также удалите копии, которые вы отправили в Telegram или по эл. почте.</string>
+    <string name="master_place_deleted">Удалено</string>
+    <string name="master_place_not_deletable">Приложение не может удалить этот файл. Удалите его сами там, где он сохранён.</string>
+    <string name="master_place_not_noted">Файл удалён, но приложению не удалось это записать. Позже он может снова появиться в этом списке.</string>
+
+    <!-- ===== A new master password, the old one forgotten (glossary 138) ===== -->
+
+    <string name="master_new_title">Новый мастер-пароль</string>
+    <string name="master_explain_heading">Забыли мастер-пароль?</string>
+    <string name="master_explain_pin">Вы можете задать новый мастер-пароль, потому что PIN-код всё ещё открывает приложение на этом телефоне. В целях безопасности новый пароль заработает через 24&#160;часа, а считается только время, когда телефон включён. До этого ничего не изменится. Для прежних резервных копий по-прежнему понадобится старый мастер-пароль.</string>
+    <string name="master_explain_fingerprint">Вы можете задать новый мастер-пароль, потому что отпечаток пальца всё ещё открывает приложение на этом телефоне. В целях безопасности новый пароль заработает через 24&#160;часа, а считается только время, когда телефон включён. До этого ничего не изменится. Для прежних резервных копий по-прежнему понадобится старый мастер-пароль.</string>
+    <string name="master_explain_replaces">Новый мастер-пароль уже ожидает начала работы. Если задать другой, отсчёт 24&#160;часов начнётся заново.</string>
+    <string name="master_continue">Продолжить</string>
+    <string name="master_proof_pin_title">Введите PIN-код приложения</string>
+    <string name="master_proof_pin_text">В целях безопасности введите PIN-код сейчас, хотя приложение уже открыто.</string>
+    <string name="master_proof_pin_forgot">PIN-код тоже забыли? После 5&#160;неверных попыток PIN-код отключится, и тогда можно будет продолжить по отпечатку пальца.</string>
+    <string name="master_proof_fingerprint">Коснитесь сканера, чтобы подтвердить отпечатком пальца.</string>
+    <string name="master_pin_gone_heading">PIN-код отключён</string>
+    <string name="master_proof_pin_gone">PIN-код отключён после слишком большого числа неверных попыток. Можно продолжить по отпечатку пальца.</string>
+    <string name="master_use_fingerprint">Использовать отпечаток пальца</string>
+    <string name="master_stopped_heading">Сейчас нельзя задать новый мастер-пароль</string>
+    <string name="master_proof_cannot_check">Сейчас не удаётся проверить PIN-код. Повторите попытку позже.</string>
+    <string name="master_not_offered">Задать новый мастер-пароль можно, только пока PIN-код или отпечаток пальца открывает приложение на этом телефоне. Сейчас не работает ни то ни другое.</string>
+    <string name="master_fingerprint_did_not_confirm">В этот раз отпечаток пальца не подтвердил запрос. Повторите попытку.</string>
+    <string name="master_fingerprint_locked">Сканер отпечатков пальцев временно заблокирован. Повторите попытку позже.</string>
+    <string name="master_fingerprint_not_for_apps">Сейчас отпечаток пальца нельзя использовать в приложениях. Проверьте в настройках телефона, что отпечаток пальца можно использовать для подтверждения личности в приложениях.</string>
+    <string name="master_fingerprint_none_saved">На этом телефоне сейчас нет сохранённых отпечатков пальцев. Добавьте отпечаток в настройках телефона.</string>
+    <string name="master_fingerprint_update_needed">Чтобы можно было использовать отпечаток пальца, телефону нужно обновление системы безопасности.</string>
+    <string name="master_fingerprint_cannot_check">Сейчас не удаётся проверить отпечаток пальца. Повторите попытку позже.</string>
+    <string name="master_proof_again">В целях безопасности подтвердите ещё раз. Новый мастер-пароль, который вы задали, не потерян.</string>
+    <string name="master_requesting_heading">Сохранение нового мастер-пароля</string>
+    <string name="master_requesting">Сохранение…</string>
+    <string name="master_request_not_saved">Не удалось сохранить. Возможно, хранилище телефона заполнено.</string>
+    <string name="master_request_no_memory">На телефоне недостаточно свободной оперативной памяти. Закройте другие приложения или перезапустите телефон, затем повторите попытку.</string>
+    <string name="master_request_cancelled">Ничего не изменено, потому что вы вышли из приложения. Начните заново.</string>
+    <string name="master_wait_heading">Новый мастер-пароль задан</string>
+    <!-- No date or time is promised: only hours with the phone switched on count. -->
+    <string name="master_wait_text">Новый мастер-пароль заработает примерно через 24&#160;часа, а считается только время, когда телефон включён. Сохраните запись на бумаге. До этого открывайте приложение по PIN-коду или отпечатку пальца, как обычно. Пока телефон выключен, отсчёт останавливается. Чтобы он продолжался, открывайте приложение утром и ещё раз вечером.</string>
+
+    <!-- ===== «Завершить сейчас» (glossary 140) ===== -->
+
+    <string name="master_finish_heading">Введите новый мастер-пароль</string>
+    <string name="master_finish_text">Новый мастер-пароль готов. Введите его один раз, чтобы завершить смену пароля. Ваши пароли останутся открытыми.</string>
+    <string name="master_finish_label">Новый мастер-пароль</string>
+    <string name="master_finish">Завершить</string>
+    <string name="master_finishing">Завершение…</string>
+    <string name="master_not_finished">Сейчас не удалось завершить. Ничего не изменено. Повторите попытку позже.</string>
+    <string name="master_finished">Новый мастер-пароль теперь работает.</string>
+</resources>

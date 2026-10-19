@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Русский: the PIN and fingerprint steps (build plan 6.4a; English in values/strings_pin.xml):
+     «Задайте 6-значный PIN-код», «Введите PIN-код ещё раз», the fingerprint offer, «Создавайте
+     резервные копии», and Settings › «Изменить PIN-код» or «Задать PIN-код». The app's own PIN is
+     «PIN-код» or «PIN-код приложения», never the phone's (glossary 52, 130). -->
+<resources>
+
+    <!-- «Задайте 6-значный PIN-код» (glossary 55). -->
+    <string name="pin_create_title">Задайте 6-значный PIN-код</string>
+    <string name="pin_create_new_title">Задайте новый PIN-код</string>
+    <string name="pin_create_body_use">С этим PIN-кодом вы будете открывать приложение на этом телефоне, как банковское приложение. Это не PIN-код телефона.</string>
+    <string name="pin_create_body_avoid">Не используйте дату, год или простые комбинации вроде 123456 или 112233.</string>
+    <string name="pin_create_body_others">Не используйте PIN-код разблокировки телефона или PIN-код банковской карты. Их могут знать другие люди.</string>
+    <string name="pin_create_talkback">TalkBack произносит каждую клавишу вслух. Если рядом есть другие люди, используйте наушники.</string>
+    <string name="pin_create_someone_may_know">Старый PIN-код может знать кто-то другой.</string>
+    <string name="pin_create_footer">После 5&#160;неверных попыток подряд PIN-код отключается. Тогда нужно открыть приложение по отпечатку пальца или мастер-паролем и задать новый PIN-код.</string>
+    <string name="pin_refused_date">Этот PIN-код похож на дату или год. Задайте другой.</string>
+    <string name="pin_refused_pattern">В этом PIN-коде повторяются цифры или есть закономерность. Задайте другой.</string>
+    <string name="pin_refused_sequence">Этот PIN-код — последовательность или фигура на клавиатуре. Задайте другой.</string>
+    <string name="pin_same_as_current">Задайте PIN-код, который отличается от текущего.</string>
+
+    <!-- «Введите PIN-код ещё раз» (glossary 54). -->
+    <string name="pin_confirm_title">Введите PIN-код ещё раз</string>
+    <string name="pin_confirm_body">Введите те же 6&#160;цифр ещё раз.</string>
+    <string name="pin_mismatch">PIN-коды не совпадают. Повторите попытку.</string>
+    <string name="pin_saving">Сохранение…</string>
+    <string name="pin_set">PIN-код задан.</string>
+    <string name="pin_changed">PIN-код изменён.</string>
+    <string name="pin_not_saved_new">Сейчас не удаётся задать PIN-код. Повторите попытку позже.</string>
+    <string name="pin_not_saved_change">Не удалось сохранить новый PIN-код. Старый PIN-код по-прежнему работает.</string>
+    <!-- The owner's decision 4 (build-plan.md §12): nothing is promised. -->
+    <string name="pin_may_not_be_saved">Возможно, новый PIN-код не сохранился. В следующий раз сначала попробуйте новый PIN-код. Если он не подойдёт, используйте старый PIN-код или мастер-пароль.</string>
+    <string name="pin_may_not_be_saved_first">Возможно, PIN-код не сохранился. В следующий раз сначала попробуйте его. Если он не подойдёт, используйте мастер-пароль.</string>
+
+    <!-- Settings › «Блокировка приложения» › «Изменить PIN-код». -->
+    <string name="pin_current_title">Введите текущий PIN-код</string>
+    <string name="pin_use_master_password">Использовать мастер-пароль</string>
+    <!-- Glossary 57, 58. -->
+    <plurals name="pin_wrong_left">
+        <item quantity="one">Неверный PIN-код. Осталась %d&#160;попытка.</item>
+        <item quantity="few">Неверный PIN-код. Осталось %d&#160;попытки.</item>
+        <item quantity="many">Неверный PIN-код. Осталось %d&#160;попыток.</item>
+        <item quantity="other">Неверный PIN-код. Осталось %d&#160;попытки.</item>
+    </plurals>
+    <string name="pin_same_wrong_again">Этот PIN-код уже вводился. Повторно он не засчитан.</string>
+    <string name="pin_limit">Разблокировка по PIN-коду отключена после слишком большого числа неверных попыток. Ничего не удалено. Чтобы задать новый PIN-код, введите мастер-пароль.</string>
+    <string name="pin_type_master_password">Ввести мастер-пароль</string>
+    <string name="pin_cannot_check">Сейчас не удаётся проверить PIN-код. Используйте мастер-пароль или повторите попытку позже.</string>
+
+    <!-- The master-password step before a PIN is set. -->
+    <string name="pin_mp_title">Введите мастер-пароль</string>
+    <string name="pin_mp_body">Чтобы задать новый PIN-код, нужен мастер-пароль.</string>
+    <string name="pin_mp_label">Мастер-пароль</string>
+    <string name="pin_mp_next">Далее</string>
+    <string name="pin_mp_checking">Проверка…</string>
+    <string name="pin_mp_wrong">Неверный мастер-пароль. Проверьте язык клавиатуры (латиница или кириллица) и заглавные буквы.</string>
+    <string name="pin_mp_wait">Подождите 30&#160;секунд, затем повторите попытку. Не спешите и сверьтесь с записью на бумаге.</string>
+    <!-- Glossary 59. -->
+    <plurals name="pin_mp_countdown">
+        <item quantity="one">Повторите попытку через %d&#160;секунду</item>
+        <item quantity="few">Повторите попытку через %d&#160;секунды</item>
+        <item quantity="many">Повторите попытку через %d&#160;секунд</item>
+        <item quantity="other">Повторите попытку через %d&#160;секунды</item>
+    </plurals>
+    <string name="pin_mp_no_memory">На телефоне недостаточно свободной оперативной памяти, чтобы проверить мастер-пароль. Закройте другие приложения или перезапустите телефон, затем повторите попытку.</string>
+
+    <!-- The fingerprint offer (glossary 61, 62). -->
+    <string name="pin_fingerprint_title">Использовать отпечаток пальца?</string>
+    <string name="pin_fingerprint_body">Открывайте приложение по отпечатку пальца вместо PIN-кода. PIN-код и мастер-пароль продолжат работать.</string>
+    <string name="pin_fingerprint_anyone">Приложение сможет открыть любой, чей отпечаток пальца сохранён в настройках этого телефона.</string>
+    <string name="pin_fingerprint_note">Если на этом телефоне изменятся отпечатки пальцев или блокировка экрана, разблокировка по отпечатку пальца отключится в целях безопасности. Её можно снова включить в настройках.</string>
+    <string name="pin_fingerprint_use">Использовать отпечаток пальца</string>
+    <string name="pin_fingerprint_turn_on">Включить разблокировку по отпечатку пальца</string>
+    <string name="pin_fingerprint_failed">Не удалось включить разблокировку по отпечатку пальца. Повторить попытку можно позже в настройках.</string>
+    <!-- The owner's decision 4 (build-plan.md §12). -->
+    <string name="pin_fingerprint_may_not_be_on">Возможно, разблокировка по отпечатку пальца не включилась. Если отпечаток пальца не будет принят, снова включите её в настройках.</string>
+    <string name="pin_fingerprint_add_first">Сначала добавьте отпечаток пальца в настройках телефона.</string>
+    <string name="pin_fingerprint_no_secure_hardware">Этот телефон не может хранить ключ отпечатка пальца в защищённом аппаратном модуле.</string>
+
+    <!-- «Создавайте резервные копии», the last setup step (glossary 97). -->
+    <string name="pin_backups_title">Создавайте резервные копии</string>
+    <string name="pin_backups_only_here">Ваши пароли хранятся только на этом телефоне. Если телефон потеряется, сломается или будет сброшен, они пропадут. Удаление приложения или очистка его хранилища тоже их удалит.</string>
+    <string name="pin_backups_locked">Резервная копия — это защищённый файл со всеми вашими паролями. Он открывается только мастер-паролем.</string>
+    <string name="pin_backups_outside">Храните резервную копию не на этом телефоне — в Google Drive, на компьютере или отправьте её себе.</string>
+    <string name="pin_backups_remind">Напоминать о резервном копировании</string>
+    <string name="pin_backups_finish">Завершить</string>
+
+</resources>

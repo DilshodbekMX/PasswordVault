@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Русский: one account's screen and «Показать крупно» (build plan 6.4a; English in
+     values/strings_entry.xml). An account's name, a field's label and a website's name are texts the
+     person typed: they stand in « » after a noun, or after a colon, so that no ending has to change
+     (i18n.md §4.4). Glossary 2, 7, 9 to 14, 21, 27 to 36, 91. -->
+<resources>
+
+    <!-- ===== The top bar ===== -->
+
+    <string name="entry_back">Назад</string>
+    <string name="entry_pane">Аккаунт</string>
+    <string name="entry_add_favourite">Добавить в избранное</string>
+    <string name="entry_remove_favourite">Удалить из избранного</string>
+    <string name="entry_edit">Изменить</string>
+    <string name="entry_more">Другие действия</string>
+    <!-- The same words everywhere in the app. -->
+    <string name="entry_big_letters">Показать крупно</string>
+    <!-- Glossary 91 («Проверка безопасности»). -->
+    <string name="entry_leave_out">Исключить из проверки безопасности</string>
+
+    <!-- ===== The rows ===== -->
+
+    <string name="entry_username">Имя пользователя</string>
+    <string name="entry_password">Пароль</string>
+    <string name="entry_old_password">Старый пароль (сайт может всё ещё его использовать)</string>
+    <string name="entry_new_password">Новый пароль (ещё не подтверждён)</string>
+    <string name="entry_website">Сайт</string>
+    <string name="entry_app">Приложение: %1$s</string>
+    <string name="entry_notes">Заметки</string>
+    <string name="entry_show_more">Показать полностью</string>
+    <string name="entry_show_less">Свернуть</string>
+
+    <!-- Read by TalkBack instead of the dots; the length is never said. -->
+    <string name="entry_password_hidden">Пароль скрыт</string>
+    <string name="entry_old_password_hidden">Старый пароль скрыт</string>
+    <string name="entry_new_password_hidden">Новый пароль скрыт</string>
+    <string name="entry_previous_hidden">Предыдущий пароль скрыт</string>
+    <!-- «Значение скрыто» does not depend on the label %1$s. -->
+    <string name="entry_field_hidden">%1$s: значение скрыто</string>
+    <string name="entry_shown_hint">Скроется через 30&#160;секунд без касаний. Чтобы смотреть дольше, используйте «Показать крупно».</string>
+
+    <!-- Read after TalkBack's «Дважды нажмите, чтобы»: lower case, no full stop. -->
+    <string name="entry_row_options">показать действия</string>
+    <string name="entry_copy_username">Копировать имя пользователя</string>
+    <string name="entry_copy_password">Копировать пароль</string>
+    <string name="entry_copy_old_password">Копировать старый пароль</string>
+    <string name="entry_copy_new_password">Копировать новый пароль</string>
+    <string name="entry_copy_previous">Копировать предыдущий пароль</string>
+    <string name="entry_copy_notes">Копировать заметки</string>
+    <!-- %1$s after a colon: a website's name or a field's label as typed. -->
+    <string name="entry_copy_named">Копировать: %1$s</string>
+    <string name="entry_copy">Копировать</string>
+    <string name="entry_show_named">Показать: %1$s</string>
+    <string name="entry_hide_named">Скрыть: %1$s</string>
+    <!-- %1$s: a website's name, for example «mail.google.com». -->
+    <string name="entry_open_in_browser">Открыть %1$s в браузере</string>
+    <string name="entry_open_website">Открыть сайт</string>
+
+    <!-- ===== History and dates ===== -->
+
+    <!-- %1$s: how long ago, for example «3 дня назад», «вчера» or «только что». -->
+    <string name="entry_password_changed">Пароль изменён %1$s</string>
+    <!-- «Добавлен», «Изменён» agree with «аккаунт»; %1$s is a date. -->
+    <string name="entry_added">Добавлен %1$s</string>
+    <string name="entry_edited">Изменён %1$s</string>
+    <!-- Glossary 21. -->
+    <string name="entry_previous">Предыдущие пароли (%1$s)</string>
+    <string name="entry_previous_until">Использовался до %1$s</string>
+
+    <!-- ===== Banners at the top of the account ===== -->
+
+    <!-- %1$s: the day the change started, for example «6 окт.». -->
+    <string name="entry_banner_change">Вы начали менять этот пароль %1$s. Сайт принял новый пароль?</string>
+    <string name="entry_banner_change_yes">Да, пароль изменён</string>
+    <string name="entry_banner_change_no">Нет, вернуть старый пароль</string>
+    <string name="entry_banner_left_out">Этот аккаунт исключён из проверки безопасности.</string>
+    <string name="entry_banner_check_again">Снова включить в проверку</string>
+    <string name="entry_banner_master">Этот пароль совпадает с вашим мастер-паролем. Если этот сайт допустит его утечку, ваш файл резервной копии сможет открыть любой, у кого он есть. Задайте новый мастер-пароль.</string>
+    <string name="entry_banner_master_choose">Задать новый мастер-пароль</string>
+
+    <!-- ===== States ===== -->
+
+    <string name="entry_empty">Пока нет данных</string>
+    <string name="entry_gone">Этот аккаунт больше не существует.</string>
+    <string name="entry_gone_deleted">Этот аккаунт удалён. В течение 30&#160;дней его можно восстановить в разделе «Недавно удалённые».</string>
+    <string name="entry_open_deleted">Открыть «Недавно удалённые»</string>
+    <string name="entry_deleted_message">Аккаунт «%1$s» удалён</string>
+    <string name="entry_deleted_body">Этот аккаунт теперь в разделе «Недавно удалённые». Он будет храниться там 30&#160;дней.</string>
+
+    <!-- ===== Short messages at the bottom ===== -->
+
+    <string name="entry_saved">Сохранено</string>
+    <string name="entry_save_failed">Не удалось сохранить. Возможно, хранилище телефона заполнено.</string>
+    <string name="entry_too_large">Ваши пароли больше не помещаются в один файл. Удалите ненужные аккаунты или сократите очень длинные заметки.</string>
+    <string name="entry_no_browser">На этом телефоне не найден браузер.</string>
+    <string name="entry_copy_blocked">Этот телефон заблокировал копирование. Откройте пароль через «Показать крупно» и введите его вручную.</string>
+
+    <!-- ===== What was copied, for the clipboard row: «Пароль аккаунта «Gmail» · очистится через
+         0:52». %1$s is the account's name ===== -->
+
+    <string name="entry_copied_username">Имя пользователя аккаунта «%1$s»</string>
+    <string name="entry_copied_password">Пароль аккаунта «%1$s»</string>
+    <string name="entry_copied_old_password">Старый пароль аккаунта «%1$s»</string>
+    <string name="entry_copied_new_password">Новый пароль аккаунта «%1$s»</string>
+    <string name="entry_copied_previous">Предыдущий пароль аккаунта «%1$s»</string>
+    <string name="entry_copied_website">Сайт аккаунта «%1$s»</string>
+    <string name="entry_copied_notes">Заметки аккаунта «%1$s»</string>
+    <!-- %1$s: the field's label as typed (in the nominative); %2$s: the account's name. -->
+    <string name="entry_copied_field">%1$s аккаунта «%2$s»</string>
+
+    <!-- ===== «Показать крупно» ===== -->
+
+    <string name="entry_big_old_password">Старый пароль</string>
+    <string name="entry_big_new_password">Новый пароль</string>
+    <string name="entry_big_previous">Предыдущий пароль</string>
+    <string name="entry_big_too_long">Слишком длинный текст, чтобы показать его крупно</string>
+    <string name="entry_big_hint">Нажмите на символ, чтобы отметить, где вы остановились. Экран закроется через 2&#160;минуты без касаний.</string>
+    <!-- Read after TalkBack's «Дважды нажмите, чтобы»: lower case, no full stop. -->
+    <string name="entry_big_mark">отметить это место</string>
+    <string name="entry_big_space">пробел</string>
+    <string name="entry_big_line_break">новая строка</string>
+
+    <!-- A box as TalkBack reads it: %1$d is the character's place, %2$s the character. -->
+    <string name="entry_big_cell_upper">Символ %1$d: заглавная буква %2$s</string>
+    <string name="entry_big_cell_lower">Символ %1$d: строчная буква %2$s</string>
+    <string name="entry_big_cell_letter">Символ %1$d: буква %2$s</string>
+    <string name="entry_big_cell_digit">Символ %1$d: цифра %2$s</string>
+    <!-- «Знак»: a sign such as «!» or «@». -->
+    <string name="entry_big_cell_symbol">Символ %1$d: знак %2$s</string>
+    <string name="entry_big_cell_space">Символ %1$d: пробел</string>
+    <string name="entry_big_cell_line_break">Символ %1$d: новая строка</string>
+    <string name="entry_big_cell_invisible">Символ %1$d: невидимый символ %2$s</string>
+
+</resources>
