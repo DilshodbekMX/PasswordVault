@@ -112,6 +112,41 @@ API 24 device (`emulator-5584`), with main's APKs:
 image's own heap did not run. The 64 MiB of Argon2id fit on a 256 MiB heap once the first derivation's
 garbage (about 134 MiB on Android 7) is collected; nothing about the derivation's parameters changed.
 
+## Runs on 2026-10-19 and 2026-10-26: the device check of waves 6 and 8A, the merged staging APK
+
+`tools/emu/checks/6.sh staging` (that is `all.sh --apk` with the merged app's staging APK on the levels 24
+and 37: 8.2's line "the staging build passes the whole of `tools/emu/`" in the scope round R6 gave it, as
+8.2 ran it on its branch), on the integrator's devices 5584 (API 24) and 5580 (API 37). The app is the same
+at `wave-6-merged` and at the check's commits (the check changed test code of the layout walk, scripts and
+documents only). API 24 ran on 2026-10-19 with the APKs of b4ed17e, API 37 on 2026-10-26 with those of
+bf2bb89; a first run on API 37 on 2026-10-19 gave the same counts for E1 to E15 until the usage limit cut it
+off in E17. E15 uses its backupCheck variant, as always. Each cell is passed/failed/skipped; a SKIPPED step
+needs run-as (staging is not debuggable) or root (the API 37 image has none). No check failed.
+
+| Check | API 24 | API 37 |
+|---|---|---|
+| E1 | 14/0/0 | 14/0/0 |
+| E2 | 13/0/0 (the held check ended with `kill -9` through su) | 13/0/0 (with `am force-stop`: neither run-as nor root) |
+| E3 | 13/0/0 | 13/0/0 |
+| E4 | | 9/0/2 (the pending wait's credit is read, and the "replaced" notice's wait made ready, in `state.rec` with run-as) |
+| E5 | | 3/0/3 (the credit is read from `state.rec` with run-as) |
+| E6 | 9/0/0 (androidx.biometric's own dialog in the activity) | 9/0/0 (the system's prompt) |
+| E7 | 12/0/0 ((a) a NOTE) | 22/0/0 |
+| E8 | | 8/0/0 |
+| E9 | | 8/0/0 |
+| E10 | 57/0/0 | 57/0/0 |
+| E11 | 15/0/0 | 15/0/0 |
+| E12 | | 12/0/0 |
+| E13 | | 8/0/0 |
+| E14 | | 11/0/0 |
+| E15 | | 11/0/0 |
+| E16 | 11/0/0 | |
+| E17 | 5/0/0 (the pad) | 18/0/0 |
+
+`pm uninstall -k` and a new install (E10): the PIN and fingerprint keys survived on API 24 and 37. The logs
+are kept under `/home/asus/pvwork/kept/6-device-check/` (`emu-checks-6/staging-api-24/lock/` and
+`emu-checks-6-head/staging-api-37/lock/`).
+
 ## Runs on 2026-10-19: the device check of waves 4, 5 and 7 on the merged app
 
 `tools/emu/checks/5.sh lock` (that is `all.sh` with the debug build on each check's levels) against the
