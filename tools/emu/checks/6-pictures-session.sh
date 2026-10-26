@@ -79,7 +79,10 @@ want() { [ -z "$ONLY" ] || [[ ",$ONLY," == *",$1,"* ]]; }
 # shot N NAME [WAIT]: the screen as OUT/N-NAME.png after WAIT seconds (default 1). The system's
 # fingerprint prompt (API 28 and later) is a secure window, which screencap gives black: a picture that
 # is black throughout is taken again with the emulator's own screenshot (adb emu screenrecord
-# screenshot DIR, which writes on this computer; tools/emu/README.md, "Device facts").
+# screenshot DIR, which writes on this computer; tools/emu/README.md, "Device facts"). The texts of the
+# window in front (pv_ui_nodes: text|description|id|...) go beside it as OUT/N-NAME.nodes.txt, read
+# right after the picture, so that the set's check can tell which letters each picture shows
+# (6-pictures.sh: no Cyrillic in Oʻzbekcha, no Latin words in Ўзбекча beyond names).
 shot() {
     local f=$OUT/$1-$2.png dir newest
     pv_sleep "${3:-1}"
@@ -92,8 +95,10 @@ sys.exit(0 if Image.open(sys.argv[1]).convert("L").getextrema()[1] < 8 else 1)' 
         newest=$(ls -t "$dir"/*.png 2>/dev/null | head -n 1)
         if [ -n "$newest" ]; then mv -f "$newest" "$f"; echo "SHOT $1-$2 (the emulator's screenshot: a secure window)"; fi
         rm -rf "$dir"
+        pv_ui_nodes > "$OUT/$1-$2.nodes.txt" 2>/dev/null
         return 0
     fi
+    pv_ui_nodes > "$OUT/$1-$2.nodes.txt" 2>/dev/null
     echo "SHOT $1-$2"
     return 0
 }

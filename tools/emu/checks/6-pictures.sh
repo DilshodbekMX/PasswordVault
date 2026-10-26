@@ -114,7 +114,8 @@ lock|$P.ui.lock.LockScreensTest|-e pvShots 1|/data/local/tmp/shots-4A
 pad|$P.ui.lock.PadScreenTest|-e pvShots 1|/data/local/tmp/shots-4A
 notices|$P.ui.lock.NoticesScreenTest|-e pvShots 1|/data/local/tmp/shots-4A
 forgot|$P.ui.lock.ForgotSheetScreenTest|-e pvShots 1|/data/local/tmp/shots-4A
-master|$P.ui.settings.master.MasterScreenshotsTest||/data/local/tmp/pv-shots-5.5 /data/local/tmp/pv-shots-5.5-banners"
+master|$P.ui.settings.master.MasterScreenshotsTest||/data/local/tmp/pv-shots-5.5 /data/local/tmp/pv-shots-5.5-banners
+look|$P.ui.theme.LookScreenshotsTest||/data/local/tmp/pv-shots-look"
 
 # tests_lang LANGUAGE: each test with the app's data cleared and its language set first; its pictures
 # pulled to RAW/LANGUAGE/tests/NAME/.
@@ -276,6 +277,13 @@ def keys_of(lang, source):
                 found.append((name, rel))
             elif source == "tests":
                 name = f[:-4]
+                if parts[0] == "look":
+                    # The colour styles: of LookScreenshotsTest's pictures only the list, in each of the
+                    # three styles, light and dark (the phone's colours depend on the wallpaper).
+                    m = re.match(r"^look-api\d+-(bank-blue|emerald|night-vault)-(light|dark)-list$", name)
+                    if m:
+                        found.append((f"look-{m.group(1)}-{m.group(2)}-list", rel))
+                    continue
                 # The dark copies and the other colour styles' copies of a state show the same texts.
                 if "dark" in name.split("-") or "emerald" in name or "night-vault" in name or "bank-blue" in name:
                     continue
