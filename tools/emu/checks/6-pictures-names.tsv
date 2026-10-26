@@ -168,9 +168,9 @@ tests	master-5.5-21-banner-waiting	Passwords: the banner while a new master pass
 tests	master-5.5-22-banner-ready	Passwords: the banner, the new master password is ready
 tests	master-5.5-23-banner-replaced	Passwords: the banner, your master password was replaced
 tests	master-5.5-24-banner-practice-i-forgot-it	Passwords: the practice banner (with I forgot it)
-tests	look-bank-blue-light-list	Colour style: Bank blue, light
-tests	look-bank-blue-dark-list	Colour style: Bank blue, dark
-tests	look-emerald-light-list	Colour style: Emerald, light
-tests	look-emerald-dark-list	Colour style: Emerald, dark
-tests	look-night-vault-light-list	Colour style: Night vault, light
-tests	look-night-vault-dark-list	Colour style: Night vault, dark
+look	bank-blue-light-list	Passwords in Bank blue, light
+look	bank-blue-dark-list	Passwords in Bank blue, dark
+look	emerald-light-list	Passwords in Emerald, light
+look	emerald-dark-list	Passwords in Emerald, dark
+look	night-vault-light-list	Passwords in Night vault, light
+look	night-vault-dark-list	Passwords in Night vault, dark
