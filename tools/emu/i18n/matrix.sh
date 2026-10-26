@@ -384,12 +384,26 @@ part_page() {
 }
 
 # ---- mixing: two phone languages ------------------------------------------------------------------
+# locale_config_file AAPT2 QUALIFIER: the APK's file of the generated locale config for QUALIFIER ("" or
+# v35), as the resource table names it: res/xml-v35/_generated_res_locale_config.xml in the debug build,
+# a short name such as res/vY.xml where R8's resource optimisation renamed the files (staging, release).
+locale_config_file() {
+    "$1" dump resources "$APK" 2>/dev/null | awk -v q="($2)" '
+        / resource 0x[0-9a-f]+ xml\/_generated_res_locale_config$/ { on = 1; next }
+        on && / resource 0x/ { exit }
+        on && $1 == q && $2 == "(file)" { print $3; exit }'
+}
+
 no_default_locale() {
-    local aapt2 v35 base
+    local aapt2 v35 base v35_file base_file
     aapt2=$(ls -d "$PV_SDK"/build-tools/*/aapt2 2>/dev/null | sort -V | tail -n 1)
-    v35=$("$aapt2" dump xmltree "$APK" --file res/xml-v35/_generated_res_locale_config.xml 2>&1) || { pv_log "no res/xml-v35 locale config: $v35"; return 1; }
-    base=$("$aapt2" dump xmltree "$APK" --file res/xml/_generated_res_locale_config.xml 2>&1)
-    pv_log "res/xml-v35: $(printf '%s\n' "$v35" | grep -o 'name(0x01010003)="[^"]*"' | sed 's/.*="//; s/"$//' | tr '\n' ' ')"
+    v35_file=$(locale_config_file "$aapt2" v35)
+    base_file=$(locale_config_file "$aapt2" "")
+    pv_log "the locale config's files: ${base_file:-none} and, for API 35 and later, ${v35_file:-none}"
+    [ -n "$v35_file" ] || { pv_log "no v35 locale config in the APK's resource table"; return 1; }
+    v35=$("$aapt2" dump xmltree "$APK" --file "$v35_file" 2>&1) || { pv_log "no $v35_file: $v35"; return 1; }
+    base=$("$aapt2" dump xmltree "$APK" --file "${base_file:-res/xml/_generated_res_locale_config.xml}" 2>&1)
+    pv_log "the v35 locale config ($v35_file): $(printf '%s\n' "$v35" | grep -o 'name(0x01010003)="[^"]*"' | sed 's/.*="//; s/"$//' | tr '\n' ' ')"
     printf '%s\n' "$v35" | grep -q defaultLocale && { pv_log "the API 35 locale config sets android:defaultLocale"; return 1; }
     printf '%s\n' "$base" | grep -q defaultLocale && pv_log "res/xml (API 33 and 34, where the attribute does nothing) sets defaultLocale"
     return 0
