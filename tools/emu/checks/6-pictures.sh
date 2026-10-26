@@ -35,7 +35,7 @@
 # vault, light and dark, is the source "look". checks/6-pictures-check.py then checks every picture: in
 # uz-Latn, uz-Cyrl and ru it differs from the English one and from the other two, and it shows its own
 # letters (the session's texts beside its pictures; the walk's and the tests' by OCR when PV_OCR names a
-# command that prints tesseract's TSV, `$PV_OCR IMAGE LANGS tsv`; report LOGS/check.txt). DIR/index.html
+# command that prints tesseract's TSV, `$PV_OCR IMAGE LANGS --psm 11 tsv`; report LOGS/check.txt). DIR/index.html
 # shows the screens one per row, each with its name in English (checks/6-pictures-names.tsv) and its four
 # pictures side by side, with what the owner should look at first and the check's findings; DIR/README.md
 # lists them. The raw pictures and the logs stay in LOGS (default build/emu-checks/6/pictures).
@@ -315,7 +315,7 @@ EOF
 # check_set: tools/emu/checks/6-pictures-check.py over the set: every picture in uz-Latn, uz-Cyrl and ru
 # differs from English and from the others, and shows its own letters (the session's texts beside its
 # pictures; the walk's and the tests' pictures by OCR when PV_OCR names a command that prints tesseract's
-# TSV: `$PV_OCR IMAGE LANGS tsv`). Its report goes to LOGS/check.txt, every picture's result to
+# TSV: `$PV_OCR IMAGE LANGS --psm 11 tsv`). Its report goes to LOGS/check.txt, every picture's result to
 # LOGS/check.json for the index.
 check_set() {
     local rc

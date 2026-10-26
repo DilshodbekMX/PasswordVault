@@ -174,3 +174,95 @@ look	emerald-light-list	Passwords in Emerald, light
 look	emerald-dark-list	Passwords in Emerald, dark
 look	night-vault-light-list	Passwords in Night vault, light
 look	night-vault-dark-list	Passwords in Night vault, dark
+session	101-pin-refused	Setup › choose a PIN: a PIN that is too easy, refused
+session	102-prompt-turn-on	Setup › use your fingerprint: the phone's prompt to turn it on
+session	105-entry-deleted	An account deleted from its menu: the message
+session	106-recently-deleted	Recently deleted
+session	107-recently-deleted-menu	Recently deleted: a row's menu
+session	108-recently-deleted-forever-question	Recently deleted: delete forever?
+session	109-recently-deleted-empty-question	Recently deleted: empty it?
+session	110-prompt-unlock	Lock now: the phone's fingerprint prompt to open the app
+session	111-pad	Lock screen: enter your app PIN
+session	112-pad-wrong-1	Lock screen: a wrong PIN
+session	113-pad-same-again	Lock screen: the same wrong PIN again
+session	114-pad-wrong-3	Lock screen: three wrong PINs
+session	115-pad-last-try	Lock screen: one try left
+session	116-fingerprint-only-prompt	Lock screen: the fingerprint prompt after the PIN turned off
+session	117-fingerprint-only	Lock screen: fingerprint only, the PIN turned off
+session	118-master-password-pin-off	Lock screen: the master password, the PIN turned off
+session	119-master-password-wrong	Lock screen: a wrong master password
+session	120-create-pin	After the unlock: choose a new PIN
+session	121-settings-pin-off	Settings: the PIN row after the PIN turned off
+session	122-create-pin	The next unlock: choose a new PIN
+session	130-f11-explain	New master password: forgot your master password?
+session	131-f11-pin-proof	New master password: your PIN first
+session	132-f11-choose	New master password: choose it
+session	133-f11-write-down	New master password: write it down
+session	134-f11-type-again	New master password: type it again
+session	135-f11-wait	New master password: chosen, the wait
+session	136-list-pending-banner	Passwords: the banner while the new master password waits
+session	137-pad-pending	Lock screen while a new master password waits
+session	140-notice-ready	After the unlock: your new master password is ready
+session	141-f11-finish	New master password: type it to finish
+session	142-create-pin	New master password finished: choose a PIN
+session	143-f11-backup-step	New master password: it works now; make a new backup
+session	144-list-after-finish	Passwords after the new master password
+session	145-master-password-older	Lock screen: the master password from before the change
+session	201-import-google-help-cant-find	Import › passwords from Google: if you can't find it
+session	202-import-preview	Import: the preview of a CSV file
+session	203-import-kept-separate	Import: two accounts kept separate
+session	204-import-result	Import: imported
+session	205-import-file-kept	Import: the file kept
+session	206-import-fifty-preview	Import: fifty accounts, the preview
+session	207-import-fifty-result	Import: fifty accounts imported
+session	208-import-file-deleted	Import: the file deleted
+session	210-security	Security check with fifty accounts
+session	211-security-group	Security check › same password
+session	212-security-row-menu	Security check › same password: a row's menu
+session	213-security-left-out-message	Security check › left out of the check: the message
+session	214-change-steps	Change password: the five steps
+session	215-change-created	Change password: the new password created
+session	216-change-end	Change password: the end
+session	216-change-later	Change password: I'll finish later
+session	217-security-after	Security check after a change
+session	218-list-change-waiting	Passwords: a change waiting
+session	219-entry-change-waiting	An account whose change waits
+session	220-backup-explain	Make a backup: what a backup is
+session	221-backup-password	Make a backup: type your master password
+session	222-backup-saved	Make a backup: saved on this phone
+session	225-export-choose	Export: choose a format
+session	226-export-warning-xlsx	Export: the warning for Excel
+session	227-export-warning-json	Export: the warning for JSON
+session	228-export-warning-csv	Export: the warning for CSV
+session	229-export-warning-csv-which	Export: the warning for CSV, which accounts
+session	230-export-password	Export: type your master password
+session	231-export-saved	Export: saved
+session	232-export-deleted	Export: the file deleted
+session	235-export-saved-kept	Export: saved, the file kept
+session	240-list-banners	Passwords: the banners (a change waiting, a CSV kept)
+session	241-settings-fingerprint-switch	Settings › fingerprint unlock: turn it off?
+session	250-practice-in-grace	A day later: type your master password (practice)
+session	251-practice-not-now	Practice: not now
+session	252-practice-required	Ten days later: type your master password (practice)
+session	253-practice-cant-remember-pin	Practice › I can't remember it: your PIN first
+session	253-practice-cant-remember-explain	Practice › I can't remember it: a new master password
+session	254-list-practice-overdue	Passwords: the practice banner
+session	256-list-backup-due	Passwords: the backup banner
+session	257-practice-dialog	Passwords › type your master password (practice)
+session	258-practice-dialog-wrong	Practice: a wrong master password
+session	260-keys-prompt	The keys gone: the fingerprint prompt
+session	261-keys-lock-screen	The keys gone: the lock screen
+session	262-keys-after-pin	The keys gone: after the PIN
+session	263-create-pin	The keys gone: choose a new PIN
+session	269-master-password-no-pin	Lock screen without a PIN: the master password
+session	270-forgot-sheet-no-shortcut	Lock screen › forgot your master password? (no PIN, no fingerprint)
+session	271-start-empty-question	Start with an empty app?
+session	272-settings-old-passwords-row	Settings with "Old passwords"
+session	273-old-passwords	Old passwords
+session	274-old-passwords-open	Old passwords: open them
+session	275-old-passwords-delete	Old passwords: delete them
+session	280-restore-intro	Welcome › restore from a backup file
+session	281-restore-password	Restore: the backup's master password
+session	282-restore-password-wrong	Restore: a wrong master password
+session	283-restore-summary	Restore: what the backup holds
+session	284-create-pin	After the restore: choose a PIN

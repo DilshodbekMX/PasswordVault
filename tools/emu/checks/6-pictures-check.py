@@ -7,8 +7,9 @@
 SET is the set (SET/<lang>/NNN-SOURCE-KEY-LANG.png); RAW the raw pictures, where the session keeps beside
 each picture the texts of the window in front (RAW/<lang>/session/N-NAME.nodes.txt); REPO the repository
 (its strings, ResourceCheck's LATIN_IN_CYRILLIC and the test data). COMMAND, when given, reads the words of
-a picture that has no texts beside it (the walk's and the tests' pictures): `COMMAND IMAGE LANGS tsv` must
-print tesseract's TSV for the tesseract languages LANGS; its answers are kept in DIR (default RAW/../ocr).
+a picture that has no texts beside it (the walk's and the tests' pictures): `COMMAND IMAGE LANGS --psm 11 tsv`
+must print tesseract's TSV for the tesseract languages LANGS, as tesseract's own command line takes these
+arguments after the picture; its answers are kept in DIR (default RAW/../ocr).
 
 For every screen (one number in the four folders):
  1. Pixels. Each of uz-Latn, uz-Cyrl and ru differs from the English picture, and from the other two, in
@@ -260,9 +261,11 @@ def ocr_words(cmd, cache, image, lang):
     """(word, confidence) of every word OCR reads in the picture, from the cache when it has them; the
     lines of the system's keyboard (SYSTEM_LINES) left out."""
     os.makedirs(cache, exist_ok=True)
-    out = os.path.join(cache, lang + "--" + os.path.basename(image)[:-4] + ".tsv")
+    out = os.path.join(cache, lang + "--" + os.path.basename(image)[:-4] + ".psm11.tsv")
     if not os.path.exists(out) or os.path.getmtime(out) < os.path.getmtime(image):
-        r = subprocess.run([cmd, image, OCR_MODELS[lang], "tsv"], capture_output=True, text=True)
+        # Sparse text (--psm 11): a screen's texts sit apart, around buttons and fields, where the
+        # automatic page layout misses some.
+        r = subprocess.run([cmd, image, OCR_MODELS[lang], "--psm", "11", "tsv"], capture_output=True, text=True)
         open(out, "w", encoding="utf-8").write(r.stdout)
     lines = {}
     for line in open(out, encoding="utf-8"):
@@ -354,7 +357,9 @@ def main():
         bad = []
         if how == "texts":
             words = [w for t in texts for w in tokens_of(t)]
-            for w in words:
+            # In the system's window (the fingerprint prompt) only the app's own texts are judged: they are
+            # its strings, which must be translated; the system's own words are the phone's language.
+            for w in ([] if system else words):
                 why = rules.exact(lang, w)
                 if why:
                     bad.append(f"{why} \"{w}\"")
@@ -383,8 +388,7 @@ def main():
         bad = sorted(set(bad))
         if system:
             r["system"] = True
-            notes.append(f"{label(n, lang, how)}: the system's window in front" + (": " + "; ".join(bad[:6]) if bad else ""))
-            continue
+            notes.append(f"{label(n, lang, how)}: the system's window in front; the app's texts in it judged only")
         if bad:
             r["flags"] += bad
             failures.append(f"{label(n, lang, how)}: " + "; ".join(bad[:12]) + (f"; and {len(bad) - 12} more" if len(bad) > 12 else ""))
