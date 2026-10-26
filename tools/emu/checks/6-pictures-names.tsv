@@ -223,7 +223,7 @@ session	213-security-left-out-message	Security check › left out of the check: 
 session	214-change-steps	Change password: the five steps
 session	215-change-created	Change password: the new password created
 session	216-change-end	Change password: the end
-session	216-change-later	Change password: I'll finish later
+session	216-change-later	Security check › same password, after "I'll finish later"
 session	217-security-after	Security check after a change
 session	218-list-change-waiting	Passwords: a change waiting
 session	219-entry-change-waiting	An account whose change waits
@@ -240,19 +240,19 @@ session	231-export-saved	Export: saved
 session	232-export-deleted	Export: the file deleted
 session	235-export-saved-kept	Export: saved, the file kept
 session	240-list-banners	Passwords: the banners (a change waiting, a CSV kept)
-session	241-settings-fingerprint-switch	Settings › fingerprint unlock: turn it off?
+session	241-settings-fingerprint-switch	Settings › turn on fingerprint unlock: your master password
 session	250-practice-in-grace	A day later: type your master password (practice)
 session	251-practice-not-now	Practice: not now
 session	252-practice-required	Ten days later: type your master password (practice)
 session	253-practice-cant-remember-pin	Practice › I can't remember it: your PIN first
 session	253-practice-cant-remember-explain	Practice › I can't remember it: a new master password
 session	254-list-practice-overdue	Passwords: the practice banner
-session	256-list-backup-due	Passwords: the backup banner
+session	256-list-backup-due	Passwords ten days on, after the master password
 session	257-practice-dialog	Passwords › type your master password (practice)
 session	258-practice-dialog-wrong	Practice: a wrong master password
 session	260-keys-prompt	The keys gone: the fingerprint prompt
 session	261-keys-lock-screen	The keys gone: the lock screen
-session	262-keys-after-pin	The keys gone: after the PIN
+session	262-keys-after-pin	The keys gone: the PIN stopped working
 session	263-create-pin	The keys gone: choose a new PIN
 session	269-master-password-no-pin	Lock screen without a PIN: the master password
 session	270-forgot-sheet-no-shortcut	Lock screen › forgot your master password? (no PIN, no fingerprint)
