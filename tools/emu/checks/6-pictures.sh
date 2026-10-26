@@ -214,12 +214,12 @@ LOOK_AT = [
      "other than the English one beside it, English left on a screen, or a word cut off or split in a strange place. Write "
      "down the picture's number (the three digits at the start of its name) with what is wrong."),
     ("Two questions that wait for your answer",
-     "1. \"Random\" in the password generator (picture 'Generator'): the app now says \"Aralash\" / \"Аралаш\" (mixed). "
-     "The other choice is \"Tasodifiy\" / \"Тасодифий\" (the exact word; on a small phone with the largest text it then takes "
-     "two lines). 2. \"Turned off\" for the PIN after five wrong tries (the PIN pad pictures after wrong PINs, Help › If you "
-     "forget your PIN): the app now says \"faolsizlantirildi\" / \"фаолсизлантирилди\". The other choice is \"faolsiz "
-     "qilindi\" / \"фаолсиз қилинди\" (shorter, so it does not split on small phones). Until you answer, the next build "
-     "takes the second choice of each."),
+     "1. \"Random\" in the password generator (pictures 'Generator'): the app now says \"Tasodifiy\" / \"Тасодифий\" "
+     "(the exact word; on a small phone with the largest text the two choices become two rows). The other choice is "
+     "\"Aralash\" / \"Аралаш\" (mixed), which the first pictures showed. 2. \"Turned off\" for the PIN after five wrong "
+     "tries and for fingerprint unlock (the PIN pad's lines after wrong PINs, the notices, Help): the app now says "
+     "\"faolsiz qilindi\" / \"фаолсиз қилинди\" (shorter, so it does not split on small phones). The other choice is "
+     "\"faolsizlantirildi\" / \"фаолсизлантирилди\". Until you answer, the app keeps what these pictures show."),
     ("Words chosen for you to confirm",
      "Uzbek: \"Ekrandan oʻqish vositasi\" for TalkBack; \"Kodli soʻz\" (code word); \"Esimda yoʻq\" (I don't remember it); "
      "\"Saqlamasdan chiqish\" (Discard); \"Yana tekshiruvga kiritish\" (Check it again); \"Topish qiyin\" / \"oson\" (hard or "
@@ -228,12 +228,26 @@ LOOK_AT = [
      "мастер-пароль?»; «Показать крупно»; «Недавно удалённые»; «Не помню»; «Файл уже удалён»; «Пароль записан»; «Задать "
      "PIN-код»; «хранилище телефона» and «оперативная память»; «Лицензии открытого ПО»; «Блокировка после выхода из "
      "приложения»; «Очистка буфера обмена»; «Google Таблицы»; Chrome's and Excel's menu names in the import help."),
-    ("Already decided, not in these pictures yet",
-     "These pictures show the app as the translations left it. The next build changes: in Russian «Это не я» (not «Это был "
-     "не я»), «Менеджер паролей Google» everywhere, «Google Диск», and one wording of \"Until then, open the app with your PIN "
-     "or fingerprint as usual\"; in Ўзбекча the search word \"Parollar menejeri\" in Latin letters, as an Uzbek phone shows "
-     "it; in all four languages \"in this app's Settings\" where the texts mean the app's own Settings, and \"Your keyboard "
-     "may be set to Cyrillic letters (Russian, for example).\""),
+    ("Decided since the first pictures, and in these",
+     "In Russian «Это не я» (not «Это был не я»), «Менеджер паролей Google» in every text, «Google Диск», and one wording of "
+     "\"Until then, open the app with your PIN or fingerprint as usual\"; in Ўзбекча the word to search for in the phone's "
+     "Settings, \"Parollar menejeri\", in Latin letters, as an Uzbek phone shows it (the menu path after it stays in "
+     "Cyrillic letters); in all four languages \"in this app's Settings\" where a text sends you to the app's own Settings, "
+     "\"Your keyboard may be set to Cyrillic letters (Russian, for example).\", and \"Try again in 30 seconds\" without a "
+     "full stop."),
+    ("New sentences, in all four languages",
+     "\"Forgot master password?\" while the PIN cannot be checked now: \"Your PIN can't be checked right now. When it works "
+     "again, open the app with it, then choose a new master password.\" (its translations are new: please read them). In "
+     "the generator at the largest text, the separators read \"- Hyphen\", \". Dot\", \"_ Underscore\" from one sentence "
+     "per language. A message with \"Try again\" or \"Undo\" puts the button under its text where the two would not fit "
+     "side by side."),
+    ("Three questions from the last review",
+     "1. «Google Диск» in Russian is also in the PIN steps' sentence about backups outside the phone (pin_backups_outside), "
+     "beyond the seven texts your answer named: keep it there too, or «Google Drive» there? 2. A long note on an account's "
+     "screen breaks with a hyphen at the end of a line, in every language, as other long texts now do; a password, a user "
+     "name, a website and a field never do, because you may type them elsewhere. Should a note never be hyphenated either? "
+     "3. In English three texts keep a plain space after a number (\"After 5 wrong tries\" twice, \"After 1 more wrong PIN\"), "
+     "so the number can end a line on a small phone; their translations keep it with its word. Join them in English too?"),
     ("Made-up data",
      "The accounts, logins, dates and file names are test data. The pictures under \"States drawn by the app's own tests\" "
      "show made-up accounts and dates; their texts are the app's real texts. The red line \"TEST BUILD: PIN keys are not "
