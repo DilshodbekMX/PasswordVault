@@ -7,12 +7,19 @@
 #     -p is relative to the project root);
 #   - takes one of two machine-wide build slots, and waits while both are taken;
 #   - runs the build once more if it died with "daemon disappeared" or left an hs_err_pid file,
-#     which happens on this machine under heavy load.
+#     which happens on this machine under heavy load;
+#   - keeps its builds on Gradle daemons of its own, which run on that JDK: they are registered in
+#     their own directory (org.gradle.daemon.registry.base), so a build never joins a daemon that
+#     another client started on another JVM of the same version. VS Code's Gradle extension starts
+#     its daemons on the Java extension's bundled JRE, and an update of the extension removes that
+#     JRE (build plan §12, "From the device check of waves 6 and 8A", "Found on this machine").
 # The exit status is Gradle's.
 #
 # Environment (all optional):
 #   PV_JAVA_HOME          the JDK (default /home/asus/.jdks/jdk-25)
 #   PV_ANDROID_HOME       the Android SDK (default /home/asus/Android/Sdk)
+#   PV_GRADLE_DAEMONS     the daemons' registry and logs (default ~/.gradle/daemon-pv; the logs are
+#                         in its subdirectory of the Gradle version)
 #   PV_GRADLE_SLOTS       the directory of the slot lock files (default ~/.cache/passwordvault/gradle-slots)
 #   PV_GRADLE_SLOT_COUNT  the number of slots (default 2)
 set -u
@@ -31,6 +38,7 @@ if [[ ! -d "$ANDROID_HOME/platforms" ]]; then
     exit 2
 fi
 
+daemons="${PV_GRADLE_DAEMONS:-$HOME/.gradle/daemon-pv}"
 slots="${PV_GRADLE_SLOTS:-$HOME/.cache/passwordvault/gradle-slots}"
 count="${PV_GRADLE_SLOT_COUNT:-2}"
 mkdir -p "$slots"
@@ -68,7 +76,7 @@ trap 'rm -rf "$tmp"; rm -f "$slots/slot-$slot.owner"' EXIT
 # (test workers), and the working directories of the Gradle and Kotlin daemons.
 crash_logs_since() {
     find "$root" -maxdepth 2 -name 'hs_err_pid*.log' -newer "$1" 2>/dev/null
-    find "$HOME/.gradle/daemon" "$HOME/.local/share/kotlin/daemon" "$HOME/.kotlin/daemon" \
+    find "$daemons" "$HOME/.gradle/daemon" "$HOME/.local/share/kotlin/daemon" "$HOME/.kotlin/daemon" \
         -maxdepth 2 -name 'hs_err_pid*.log' -newer "$1" 2>/dev/null
 }
 
@@ -77,7 +85,8 @@ run_once() { # $1: log file; the rest: gradle arguments
     shift
     # The children do not get the slot's descriptor, so a daemon started by this build cannot hold
     # the slot after the build ends.
-    (cd "$root" && exec ./gradlew "$@") {lockfd}>&- 2>&1 | tee "$log" {lockfd}>&-
+    (cd "$root" && exec ./gradlew "-Dorg.gradle.daemon.registry.base=$daemons" "$@") {lockfd}>&- 2>&1 |
+        tee "$log" {lockfd}>&-
     return "${PIPESTATUS[0]}"
 }
 
