@@ -420,6 +420,14 @@ LOOK_AT = [
      "3. In English three texts keep a plain space after a number (\"After 5 wrong tries\" twice, \"After 1 more wrong PIN\"; "
      "[[walk:CreatePin]]), so the number can end a line on a small phone; their translations keep it with its word. Join them "
      "in English too?"),
+    ("Not in these pictures",
+     "Some texts show only when something goes wrong that a test phone cannot make happen, so no picture has them: a full "
+     "or damaged phone storage, too little free memory, a file saved by a newer version of the app, a phone without "
+     "protected key hardware, a phone that needs a security update for fingerprint, and the fingerprint's lines on the "
+     "master-password screen. Android 7 to 12's own messages after a copy, Android 7's fingerprint dialog drawn by the app "
+     "(this set was made on Android 17), the hints for Cyrillic letters typed at setup, and the names that TalkBack reads "
+     "aloud for buttons and icons are not pictured either. Every one of these texts is translated like the rest; if you "
+     "want to read them, they can be listed for you from the app's text files."),
     ("What is not the app",
      "The phone's own windows speak the phone's language, English on this test phone: the fingerprint prompt's lower line "
      "(\"Touch the fingerprint sensor\"), the file picker (\"Downloads\", \"SAVE\"), the keyboard and the bar at the top. "
