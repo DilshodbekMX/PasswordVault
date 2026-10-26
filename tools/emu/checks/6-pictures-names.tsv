@@ -291,3 +291,9 @@ session	316-setup-write-down-big-letters	Setup, step 2: the words in big letters
 session	317-setup-interrupted	Setup was interrupted: step 1 again
 session	318-setup-again-mismatch	Setup, step 3: it doesn't match
 session	319-setup-again-shown	Setup, step 3: show my password again
+session	320-recently-deleted-restored	Recently deleted: an account restored
+session	321-recently-deleted-nothing	Recently deleted: nothing here
+session	325-change-pin-date	Settings › Change PIN: a PIN that looks like a date
+session	326-change-pin-same-as-current	Settings › Change PIN: the same as your current PIN
+session	327-change-pin-not-saved	Settings › Change PIN: couldn't save the new PIN
+session	328-settings-pin-changed	Settings: your PIN was changed

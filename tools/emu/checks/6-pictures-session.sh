@@ -48,6 +48,10 @@
 #   faults     only when named (--only faults; right after the set-up, while fingerprint unlock is on):
 #              the PIN pad's lines when the fingerprint fails (the debug command ks-fault: locked for now,
 #              not usable in apps, can't be checked, did not open the app, turned off), each then the PIN.
+#   extra      only when named (--only extra; after the set-up, or after faults): an account restored in
+#              Recently deleted, then deleted again and "Empty" confirmed; Settings > Change PIN with a
+#              date refused, the current PIN refused, a save that fails (the debug command fail-next-write)
+#              and Retry, then "Your PIN was changed.".
 #   more       the PIN's record unreadable for a new process: the lock screen and the "Forgot master
 #              password?" sheet; then a fresh install's setup: the suggested words, a password of one's own
 #              (too short, a keyboard row, what is missing, the reuse question answered "Yes"), the words in
@@ -855,6 +859,68 @@ part_faults() {
     pv_step "fingerprint unlock turned off, its key no longer works (fp-dofinal-bad-tag): the pad's line" -- fault_line 294 pad-fingerprint-turned-off fp-dofinal-bad-tag yes
 }
 
+# ---- extra: Recently deleted's restore and its empty list; Change PIN's lines (only when named) ------------
+# dialog_confirm: the confirming button of the dialog in front (its buttons have no resource id): the
+# clickable node lowest and furthest right.
+dialog_confirm() {
+    local xy
+    xy=$(pv_ui_nodes | awk -F'|' '$4 == "true" { print $6, $7 }' | sort -k2,2n -k1,1n | tail -n 1)
+    [ -n "$xy" ] || return 1
+    pv_shell input tap $xy >/dev/null
+    pv_sleep 1
+}
+
+# An account deleted and restored ("Olx restored"), deleted again; "Empty" confirmed: nothing is there.
+deleted_more() {
+    local id
+    to_list && pva_add_account Olx aziz olx-Samarqand1999 olx.uz 'Old account' || return 1
+    pva_tap pv.entry.more && pva_need pv.entry.menu.delete 10 && pva_tap pv.entry.menu.delete || return 1
+    to_list && pva_reveal pv.list.recentlyDeleted && pva_tap pv.list.recentlyDeleted && pva_on RecentlyDeleted 20 || return 1
+    id=$(first_id pv.deleted.restore.)
+    [ -n "$id" ] || { pv_log "no Restore; ids: $(pva_ids)"; return 1; }
+    pva_tap "$id" && pv_sleep 1 && shot 320 recently-deleted-restored
+    to_list || return 1
+    # The row whose first text is Olx (pva_row_titles reads the rows so).
+    id=$(pv_ui_nodes | awk -F'|' '$3 ~ /^pv[.]list[.]row[.]/ { id = $3; pending = 1; next } pending && $3 ~ /^pv[.]/ { pending = 0 } pending && $1 != "" { if ($1 == "Olx") { print id; exit } pending = 0 }')
+    [ -n "$id" ] || { pv_log "no row of Olx; ids: $(pva_ids)"; return 1; }
+    pva_tap "$id" && pva_need pv.entry.more 10 && pva_tap pv.entry.more && pva_need pv.entry.menu.delete 10 && pva_tap pv.entry.menu.delete || return 1
+    to_list && pva_reveal pv.list.recentlyDeleted && pva_tap pv.list.recentlyDeleted && pva_on RecentlyDeleted 20 || return 1
+    pva_tap pv.deleted.empty && pv_sleep 1.5 && dialog_confirm || return 1
+    pva_need pv.deleted.nothing 10 && shot 321 recently-deleted-nothing
+    to_list
+}
+
+# Settings > Change PIN: the current PIN; a new PIN that looks like a date; the current one again; a new
+# PIN whose saving fails (the debug command fail-next-write): "Couldn't save the new PIN", Retry; then
+# the new PIN twice: Settings says "Your PIN was changed.".
+change_pin_more() {
+    local new=581930
+    settings && pva_reveal pv.open.ChangePin && pva_tap pv.open.ChangePin && pva_on ChangePin 20 || return 1
+    pva_need pv.pin.key.0 20 && pva_pin "$PIN_NOW" || return 1
+    pv_sleep 2
+    pva_pin 150387 && pv_sleep 1.5 && shot 325 change-pin-date
+    pva_pin "$PIN_NOW" && pv_sleep 1.5 && shot 326 change-pin-same-as-current
+    pva_pin "$new" && pv_sleep 1.5 || return 1
+    pva_debug fail-next-write >/dev/null || return 1
+    pva_pin "$new" && pv_sleep 3 || return 1
+    if pva_present pv.pin.retry 5; then
+        shot 327 change-pin-not-saved
+        pva_tap pv.pin.retry && pv_sleep 2
+        pva_need pv.pin.key.0 10 && pva_pin "$new" && pv_sleep 1.5 && pva_pin "$new" && pv_sleep 3 || return 1
+    else
+        pv_log "no Retry after the failed write; ids: $(pva_ids)"
+    fi
+    PIN_NOW=$new
+    pva_on Settings 20 && shot 328 settings-pin-changed 0.5
+    pva_debug "fail-next-write" >/dev/null 2>&1 && pva_debug status >/dev/null 2>&1
+    return 0
+}
+
+part_extra() {
+    pv_step "Recently deleted: an account restored, then deleted again and Empty confirmed" -- deleted_more
+    pv_step "Change PIN: a date, the current PIN, a failed save and Retry, the PIN changed" -- change_pin_more
+}
+
 # ---- more: the PIN's record unreadable; setup's own password and its questions; setup interrupted ----------
 # retype ID TEXT: the field's text replaced with TEXT.
 retype() {
@@ -945,6 +1011,7 @@ part_more() {
 echo "pictures of the real app in $LANG_TAG on $SERIAL, into $OUT"
 part_setup || pvl_end
 [[ ",$ONLY," == *",faults,"* ]] && part_faults
+[[ ",$ONLY," == *",extra,"* ]] && part_extra
 want deleted && part_deleted
 want pad && part_pad
 want newmp && part_newmp
