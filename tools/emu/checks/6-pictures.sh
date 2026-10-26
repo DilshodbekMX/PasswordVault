@@ -376,42 +376,50 @@ LOOK_AT = [
     ("Every text in your languages",
      "Read every text in Oʻzbekcha, Ўзбекча and Русский and note a wrong or unnatural word, a sentence that says something "
      "other than the English one beside it, English left on a screen, or a word cut off or split in a strange place. Write "
-     "down the picture's number (the three digits at the start of each row and of each file's name) with what is wrong."),
+     "down the screen's number (the three digits at the start of each row and of each file's name) with what is wrong."),
     ("Two questions that wait for your answer",
-     "1. \"Random\" in the password generator (\"Password generator: random characters\"): the app now says \"Tasodifiy\" / "
-     "\"Тасодифий\" (the exact word; on a small phone with the largest text the two choices become two rows). The other "
-     "choice is \"Aralash\" / \"Аралаш\" (mixed). 2. \"Turned off\" for the PIN after five wrong tries and for fingerprint "
-     "unlock (the PIN pad's lines after wrong PINs, the messages after an unlock, Help): the app now says \"faolsiz qilindi\" / "
-     "\"фаолсиз қилинди\" (shorter, so it does not split on small phones). The other choice is \"faolsizlantirildi\" / "
-     "\"фаолсизлантирилди\". Until you answer, the app keeps what these pictures show."),
+     "1. \"Random\" in the password generator ([[walk:Generator]]): the app now says \"Tasodifiy\" / \"Тасодифий\" (the "
+     "exact word; on a small phone with the largest text the two choices become two rows). The other choice is \"Aralash\" / "
+     "\"Аралаш\" (mixed). 2. \"Turned off\" for the PIN after five wrong tries and for fingerprint unlock (the PIN steps "
+     "[[walk:CreatePin]], the fingerprint-only screen [[session:117-fingerprint-only]], the pad's line [[session:294-pad-fingerprint-turned-off]], "
+     "Help [[walk:Help-FORGOT_PIN]]): the app now says \"faolsiz qilindi\" / \"фаолсиз қилинди\" (shorter, so it does not split on "
+     "small phones). The other choice is \"faolsizlantirildi\" / \"фаолсизлантирилди\". Until you answer, the app keeps what "
+     "these pictures show."),
     ("Words chosen for you to confirm",
      "Uzbek: \"Ekrandan oʻqish vositasi\" for TalkBack; \"Kodli soʻz\" (code word); \"Esimda yoʻq\" (I don't remember it); "
      "\"Saqlamasdan chiqish\" (Discard); \"Yana tekshiruvga kiritish\" (Check it again); \"Topish qiyin\" / \"oson\" (hard or "
      "easy to guess); the dates \"… kuni\", \"… sanasidan oldingi\" and \"… da\"; the style names \"Bank koʻki\", \"Zumrad\", "
-     "\"Tungi seyf\"; \"Mavzu\" for Appearance; \"operativ xotira\"; \"Test yigʻmasi\" for the test build. Russian: «Забыли свой "
-     "мастер-пароль?»; «Показать крупно»; «Недавно удалённые»; «Не помню»; «Файл уже удалён»; «Пароль записан»; «Задать "
-     "PIN-код»; «хранилище телефона» and «оперативная память»; «Лицензии открытого ПО»; «Блокировка после выхода из "
-     "приложения»; «Очистка буфера обмена»; «Google Таблицы»; Chrome's and Excel's menu names in the import help."),
+     "\"Tungi seyf\" ([[walk:Theme]]); \"Mavzu\" for Appearance; \"operativ xotira\"; \"Test yigʻmasi\" for the test build "
+     "([[walk:Help-VERSION]]). Russian: «Забыли свой мастер-пароль?»; «Показать крупно»; «Недавно удалённые»; «Не помню»; «Файл "
+     "уже удалён»; «Пароль записан»; «Задать PIN-код»; «хранилище телефона» and «оперативная память»; «Лицензии открытого "
+     "ПО»; «Блокировка после выхода из приложения»; «Очистка буфера обмена»; «Google Таблицы»; Chrome's and Excel's menu "
+     "names in the import help ([[walk:Import-google]], [[tests:import-5.4-15-excel-file]])."),
     ("Decided since the first pictures, and in these",
-     "In Russian «Это не я» (not «Это был не я»), «Менеджер паролей Google» in every text, «Google Диск», and one wording of "
-     "\"Until then, open the app with your PIN or fingerprint as usual\"; in Ўзбекча the word to search for in the phone's "
-     "Settings, \"Parollar menejeri\", in Latin letters, as an Uzbek phone shows it (the menu path after it stays in "
-     "Cyrillic letters); in all four languages \"in this app's Settings\" where a text sends you to the app's own Settings, "
-     "\"Your keyboard may be set to Cyrillic letters (Russian, for example).\", and \"Try again in 30 seconds\" without a "
-     "full stop."),
+     "In Russian «Это не я» (not «Это был не я»; [[session:253-notice-1]]), «Менеджер паролей Google» in every text "
+     "([[walk:Passwords-empty]], [[walk:Import-google]]), «Google Диск» ([[tests:backup-5.2-backup-saved-drive]]), and one wording of "
+     "\"Until then, open the app with your PIN or fingerprint as usual\" ([[session:135-f11-wait]]); in Ўзбекча the word to "
+     "search for in the phone's Settings, \"Parollar menejeri\", in Latin letters, as an Uzbek phone shows it (the menu path "
+     "after it stays in Cyrillic letters; [[session:201-import-google-help-cant-find]]); in all four languages \"in this app's "
+     "Settings\" where a text sends you to the app's own Settings ([[walk:FingerprintOffer]], [[session:292-pad-fingerprint-cannot-check]], "
+     "[[session:294-pad-fingerprint-turned-off]]). Two decided texts are not in these pictures: \"Your keyboard may be set to "
+     "Cyrillic letters (Russian, for example).\" shows only when Cyrillic letters are typed at setup's \"Type it again\", "
+     "which the test phone's keyboard could not type; and \"Try again in 30 seconds\" (without a full stop) shows only "
+     "after several wrong master passwords in a row."),
     ("New sentences, in all four languages",
      "\"Forgot master password?\" while the PIN cannot be checked now: \"Your PIN can't be checked right now. When it works "
-     "again, open the app with it, then choose a new master password.\" (its translations are new: please read them). In "
-     "the generator at the largest text, the separators read \"- Hyphen\", \". Dot\", \"_ Underscore\" from one sentence "
-     "per language. A message with \"Try again\" or \"Undo\" puts the button under its text where the two would not fit "
-     "side by side."),
+     "again, open the app with it, then choose a new master password.\" ([[session:301-pin-cannot-check-sheet]]; its "
+     "translations are new: please read them). A message with \"Try again\" or \"Undo\" puts the button under its text where "
+     "the two would not fit side by side ([[walk:Entry-deleted]]). In the generator at the largest text size the separators "
+     "read \"- Hyphen\", \". Dot\", \"_ Underscore\"; these pictures use the phone's normal text size, where the generator "
+     "shows the signs alone."),
     ("Three questions from the last review",
-     "1. «Google Диск» in Russian is also in the PIN steps' sentence about backups outside the phone (pin_backups_outside), "
+     "1. «Google Диск» in Russian is also in the PIN steps' sentence about backups outside the phone ([[walk:BackupsExplained]]), "
      "beyond the seven texts your answer named: keep it there too, or «Google Drive» there? 2. A long note on an account's "
      "screen breaks with a hyphen at the end of a line, in every language, as other long texts now do; a password, a user "
      "name, a website and a field never do, because you may type them elsewhere. Should a note never be hyphenated either? "
-     "3. In English three texts keep a plain space after a number (\"After 5 wrong tries\" twice, \"After 1 more wrong PIN\"), "
-     "so the number can end a line on a small phone; their translations keep it with its word. Join them in English too?"),
+     "3. In English three texts keep a plain space after a number (\"After 5 wrong tries\" twice, \"After 1 more wrong PIN\"; "
+     "[[walk:CreatePin]]), so the number can end a line on a small phone; their translations keep it with its word. Join them "
+     "in English too?"),
     ("What is not the app",
      "The phone's own windows speak the phone's language, English on this test phone: the fingerprint prompt's lower line "
      "(\"Touch the fingerprint sensor\"), the file picker (\"Downloads\", \"SAVE\"), the keyboard and the bar at the top. "
@@ -461,6 +469,19 @@ def name_of(source, key):
     return key.replace("-", " ")
 
 counts = {l: sum(1 for r in rows.values() if l in r) for l in langs}
+number_of = {}
+for n in sorted(rows):
+    number_of.setdefault((rows[n]["source"], rows[n]["key"]), n)
+    number_of.setdefault((rows[n]["source"], re.sub(r"-1$", "", rows[n]["key"])), n)
+
+def refs(text, link):
+    # [[source:key]] -> "No. NNN" (a link in the page), or nothing when the set has no such screen.
+    def one(m):
+        n = number_of.get((m.group(1), m.group(2)))
+        if not n:
+            return "not in this set"
+        return f"<a href='#s{n}'>No. {n}</a>" if link else f"No. {n}"
+    return re.sub(r"\[\[([a-z0-9]+):([^\]]+)\]\]", one, text)
 groups = [(s, t, d, [(n, rows[n]) for n in sorted(rows) if rows[n]["source"] == s]) for s, t, d in SOURCES]
 groups = [g for g in groups if g[3]]
 
@@ -500,7 +521,7 @@ h = ["<!doctype html><html lang='en'><head><meta charset='utf-8'><meta name='vie
      "<nav><a href='#look-at'>What to look at</a>" + "".join(f"<a href='#{s}'>{html.escape(t)}</a>" for s, t, _, _ in groups) + "</nav>",
      "<h2 id='look-at'>What to look at</h2>"]
 for title, text in LOOK_AT:
-    h.append(f"<h3>{html.escape(title)}</h3><p>{html.escape(text)}</p>")
+    h.append(f"<h3>{html.escape(title)}</h3><p>{refs(html.escape(text), True)}</p>")
 if summary:
     h.append(f"<h3>Checked</h3><p>Every picture in Oʻzbekcha, Ўзбекча and Русский was compared with the English one and with "
              f"each other, and the letters on it were read: {html.escape(summary.replace('SUMMARY ', ''))}. A finding is "
@@ -539,7 +560,7 @@ if summary:
           f"other, and the letters on it were read: {summary.replace('SUMMARY ', '')}.", ""]
 m += ["## What to look at", ""]
 for title, text in LOOK_AT:
-    m += [f"**{title}.** {text}", ""]
+    m += [f"**{title}.** {refs(text, False)}", ""]
 for source, title, text, group in groups:
     m += [f"## {title}", "", text, ""]
     for n, r in group:
