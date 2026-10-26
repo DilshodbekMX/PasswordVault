@@ -248,6 +248,17 @@ def keys_of(lang, source):
             elif source == "prompt24":
                 if PROMPT24.match(f):
                     found.append((name, rel))
+    if source == "session":
+        # The session numbers its notices across the whole run ("120-notice-4"), so one that shows in one
+        # language's run and not in another's would shift the rest: they are numbered again within their
+        # picture's number, in order (120-notice-1, 120-notice-2, ...).
+        notices = {}
+        for key, _ in found:
+            m = re.match(r"^(\d{3})-notice-(\d+)$", key)
+            if m:
+                notices.setdefault(m.group(1), []).append(int(m.group(2)))
+        again = {f"{n}-notice-{k}": f"{n}-notice-{i}" for n, ks in notices.items() for i, k in enumerate(sorted(ks), 1)}
+        found = [(again.get(key, key), rel) for key, rel in found]
     return found
 
 def walk_order(lang):

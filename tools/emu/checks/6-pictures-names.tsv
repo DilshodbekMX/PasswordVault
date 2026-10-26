@@ -266,3 +266,28 @@ session	281-restore-password	Restore: the backup's master password
 session	282-restore-password-wrong	Restore: a wrong master password
 session	283-restore-summary	Restore: what the backup holds
 session	284-create-pin	After the restore: choose a PIN
+session	120-notice-1	After the unlock: a wrong PIN was typed 5 times
+session	120-notice-2	After the unlock: make a backup now?
+session	138-notice-1	After the unlock: a new master password was chosen
+session	139-notice-1	After the unlock: a message before "Finish now"
+session	253-notice-1	After the unlock: your master password was replaced
+session	255-notice-1	After the unlock: your master password was replaced
+session	263-notice-1	After the unlock: your master password was replaced
+session	271-welcome-previous-passwords	Welcome with "Open my previous passwords"
+session	290-pad-fingerprint-locked	Lock screen: fingerprint is locked for now
+session	291-pad-fingerprint-not-for-apps	Lock screen: fingerprint can't be used in apps
+session	292-pad-fingerprint-cannot-check	Lock screen: fingerprint can't be checked
+session	293-pad-fingerprint-did-not-open	Lock screen: fingerprint did not open the app
+session	294-pad-fingerprint-turned-off	Lock screen: fingerprint unlock was turned off
+session	300-pin-cannot-check-lock	Lock screen: the PIN can't be checked
+session	301-pin-cannot-check-sheet	Lock screen › forgot your master password? (the PIN can't be checked)
+session	310-setup-words	Setup, step 1: the suggested words
+session	311-setup-own-short	Setup, step 1: your own password, too short
+session	312-setup-own-keyboard-row	Setup, step 1: your own password, a keyboard row
+session	313-setup-own-not-yet	Setup, step 1: your own password, what is missing
+session	314-setup-own-reuse-question	Setup, step 1: do you use this password for any other account?
+session	315-setup-own-reuse-refused	Setup, step 1: then choose a different one
+session	316-setup-write-down-big-letters	Setup, step 2: the words in big letters
+session	317-setup-interrupted	Setup was interrupted: step 1 again
+session	318-setup-again-mismatch	Setup, step 3: it doesn't match
+session	319-setup-again-shown	Setup, step 3: show my password again

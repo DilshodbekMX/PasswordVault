@@ -45,6 +45,9 @@
 #              passwords" and its dialogs.
 #   restore    a restore from Welcome with the backup of the part files: the intro, the master password,
 #              the summary.
+#   faults     only when named (--only faults; right after the set-up, while fingerprint unlock is on):
+#              the PIN pad's lines when the fingerprint fails (the debug command ks-fault: locked for now,
+#              not usable in apps, can't be checked, did not open the app, turned off), each then the PIN.
 #   more       the PIN's record unreadable for a new process: the lock screen and the "Forgot master
 #              password?" sheet; then a fresh install's setup: the suggested words, a password of one's own
 #              (too short, a keyboard row, what is missing, the reuse question answered "Yes"), the words in
@@ -820,6 +823,38 @@ restore() {
 
 part_restore() { pv_step "a restore from Welcome: the intro, the master password, the summary" -- restore; }
 
+# ---- faults: the fingerprint's lines on the PIN pad (only when named: --only faults) -----------------------
+# fault_line N NAME ROW TOUCH: from the list, with fingerprint unlock on, the debug command `ks-fault ROW`
+# armed, Lock now: the prompt ends at once with the error code ROW names, or (TOUCH yes) the finger is
+# accepted and the fault strikes at its result; the pad's line is pictured; then the PIN (lock.md §14.3; the
+# rows and their lines as lock/E10.sh checks them).
+fault_line() {
+    local n=$1 name=$2 row=$3 touch=$4
+    to_list || return 1
+    pva_debug "ks-fault $row" >/dev/null || return 1
+    pva_tap pv.list.lockNow || return 1
+    if [ "$touch" = yes ]; then
+        pvl_touch_prompt "$PVL_FINGER" 20 || return 1
+    else
+        pv_sleep 3
+    fi
+    pvl_prompt_down 15
+    pvl_wait_screen pad 20 || return 1
+    pv_sleep 1
+    shot "$n" "$name"
+    pva_debug "ks-fault none" >/dev/null
+    pva_pin "$PIN_NOW" && pvl_wait_answer 20
+    settle Passwords "$PIN_NOW" "$n"
+}
+
+part_faults() {
+    pv_step "fingerprint locked for now (prompt error 7): the pad's line" -- fault_line 290 pad-fingerprint-locked prompt-error-7 no
+    pv_step "fingerprint can't be used in apps (prompt error 1): the pad's line" -- fault_line 291 pad-fingerprint-not-for-apps prompt-error-1 no
+    pv_step "fingerprint can't be checked (prompt error 11): the pad's line" -- fault_line 292 pad-fingerprint-cannot-check prompt-error-11 no
+    pv_step "the finger accepted, the app not opened (prompt-no-cipher): the pad's line" -- fault_line 293 pad-fingerprint-did-not-open prompt-no-cipher yes
+    pv_step "fingerprint unlock turned off, its key no longer works (fp-dofinal-bad-tag): the pad's line" -- fault_line 294 pad-fingerprint-turned-off fp-dofinal-bad-tag yes
+}
+
 # ---- more: the PIN's record unreadable; setup's own password and its questions; setup interrupted ----------
 # retype ID TEXT: the field's text replaced with TEXT.
 retype() {
@@ -909,6 +944,7 @@ part_more() {
 
 echo "pictures of the real app in $LANG_TAG on $SERIAL, into $OUT"
 part_setup || pvl_end
+[[ ",$ONLY," == *",faults,"* ]] && part_faults
 want deleted && part_deleted
 want pad && part_pad
 want newmp && part_newmp
