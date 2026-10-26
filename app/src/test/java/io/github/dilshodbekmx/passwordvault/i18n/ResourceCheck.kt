@@ -62,6 +62,10 @@ object ResourceCheck {
         "Apache License 2.0", "Material 3", "Jetpack Compose", "Navigation 3", "Lifecycle", "Activity",
         "AppCompat", "Core", "kotlinx.coroutines", "kotlinx.serialization", "Android Studio",
         "Vector Asset Studio", "librsvg",
+        // Build plan §12, R6 question 3, answer B: the word import_google_settings tells the reader to
+        // search for in the phone's Settings, as an Uzbek phone shows it (Android and Chrome have no
+        // Uzbek Cyrillic, so an Ўзбекча reader's phone is in Uzbek Latin, Russian or English).
+        "Parollar menejeri",
     ).sortedByDescending { it.length }
 
     /** The checks for [language] over the resource directory [res] (`app/src/main/res`). */
