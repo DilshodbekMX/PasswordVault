@@ -7,7 +7,7 @@
 #
 #   tools/emu/checks/6-pictures.sh --s37 SERIAL [--s24 SERIAL] [--apk FILE] [--test-apk FILE] [--out DIR]
 #                                  [--logs DIR] [--langs en,uz-Latn,uz-Cyrl,ru] [--sources walk,tests,session,prompt24]
-#                                  [--assemble-only]
+#                                  [--assemble-only]   (env PV_OCR, PV_APP_COMMIT)
 #
 # The sources, each run in every language (the app's own tags: en, uz, uz-Cyrl, ru):
 #   walk      the real app: tools/emu/layout/walk.sh, its part app at the phone's own size (411 dp, font
@@ -341,8 +341,9 @@ check_set() {
 # index: OUT/index.html (the four languages side by side, screen by screen, each with its name in English
 # from checks/6-pictures-names.tsv) and OUT/README.md, from the pictures in OUT and LOGS/check.json.
 index() {
+    # PV_APP_COMMIT names the commit the APKs were built at when it is not this worktree's HEAD.
     python3 - "$OUT" "$LANGS" "$EMU/checks/6-pictures-names.tsv" "$LOGS/check.json" "$LOGS/check.txt" \
-        "$(git -C "$REPO" rev-parse --short HEAD)" "$(date '+%F %H:%M')" <<'EOF'
+        "${PV_APP_COMMIT:-$(git -C "$REPO" rev-parse --short HEAD)}" "$(date '+%F %H:%M')" <<'EOF'
 import glob, html, json, os, re, sys
 out, langs, names_file, check_file, check_txt, commit, when = sys.argv[1], sys.argv[2].split(","), *sys.argv[3:]
 LANG_NAMES = {"en": "English", "uz-Latn": "Oʻzbekcha (lotin)", "uz-Cyrl": "Ўзбекча (кирилл)", "ru": "Русский"}
@@ -522,7 +523,7 @@ h = ["<!doctype html><html lang='en'><head><meta charset='utf-8'><meta name='vie
      "@media (max-width:700px){th.n,td.n{width:6.5em}td.n small{display:none}body{padding:8px}}"
      "</style></head><body>",
      "<h1>PasswordVault: every screen in four languages</h1>",
-     f"<p class='muted'>Made on {html.escape(when)} from commit {html.escape(commit)}: the test build of the app on an "
+     f"<p class='muted'>Made on {html.escape(when)} with the test build of the app at commit {html.escape(commit)}, on an "
      "Android 17 emulator (1080 × 2400 pixels) at the phone's own size and text size. "
      + " · ".join(f"{html.escape(LANG_NAMES.get(l, l))}: {counts[l]} pictures" for l in langs) + f" · {len(rows)} screens.</p>",
      "<div class='how'><h3>How to read this page</h3><ul>"
@@ -568,8 +569,8 @@ h.append("</body></html>")
 open(os.path.join(out, "index.html"), "w", encoding="utf-8").write("\n".join(h))
 
 m = ["# PasswordVault: every screen in four languages", "",
-     f"Made on {when} from commit {commit}: the test build of the app on an Android 17 emulator (1080 × 2400 pixels) at the "
-     "phone's own size and text size. " + " · ".join(f"{LANG_NAMES.get(l, l)}: {counts[l]} pictures" for l in langs)
+     f"Made on {when} with the test build of the app at commit {commit}, on an Android 17 emulator (1080 × 2400 pixels) at "
+     "the phone's own size and text size. " + " · ".join(f"{LANG_NAMES.get(l, l)}: {counts[l]} pictures" for l in langs)
      + f" · {len(rows)} screens.", "",
      "## How to read this set", "",
      "- Open `index.html` in a browser (double-click it). Each row is one screen: its number and its name in English, then its "
