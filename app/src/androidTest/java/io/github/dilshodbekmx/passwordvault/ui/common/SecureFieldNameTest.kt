@@ -92,6 +92,23 @@ class SecureFieldNameTest {
         assertNoSecret("masked, in view")
     }
 
+    /**
+     * In view the field still tells a screen reader where its cursor is, so that it can move the cursor
+     * by character and edit at it (tools/emu/window/a11y.sh's lock-screen step): Compose reports a
+     * node's own description instead of its text and cursor once it has one, so the field's own name
+     * must not stand while its label names it.
+     */
+    @Test
+    fun inViewTheFieldReportsItsCursorToAScreenReader() {
+        val state = TextFieldState()
+        show(state)
+        compose.runOnIdle { state.edit { append(SECRET) } }
+        compose.waitForIdle()
+        val masked = fieldNode { it.text?.length == SECRET.length && it.textSelectionStart == SECRET.length }
+        assertEquals("the cursor's start", SECRET.length, masked.textSelectionStart)
+        assertEquals("the cursor's end", SECRET.length, masked.textSelectionEnd)
+    }
+
     /** Draws the field under 400 dp of space and over 2,000 dp more, 320 dp wide, at a font of 200 %. */
     private fun show(state: TextFieldState): ScrollState {
         lateinit var scroll: ScrollState

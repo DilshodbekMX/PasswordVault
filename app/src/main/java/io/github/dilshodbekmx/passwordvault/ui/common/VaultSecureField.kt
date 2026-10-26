@@ -20,12 +20,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.autofill.ContentDataType
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDataType
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.editableText
-import androidx.compose.ui.semantics.hideFromAccessibility
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
@@ -43,11 +44,11 @@ import io.github.dilshodbekmx.passwordvault.window.vaultTextField
  * of Android ([maskedForAccessibility]). A label that needs a second line moves above the box
  * ([FieldLabel]).
  *
- * The label is also the field's own name for accessibility services ([named]): Compose leaves a part
- * that is out of view out of the accessibility tree, so a field named only by its drawn label read
- * with no name where it was scrolled to a sliver at the top of the screen, its label above the view
- * (ux.md §12 check 9; build plan 8.1's accessibility walk at 320 dp and 200 %). The name is the
- * label's text and nothing of what is typed.
+ * The label names the field for accessibility services, and where the label is out of view the field
+ * names itself with it ([named]): Compose gives a part that is out of view no text, so a field named
+ * only by its drawn label read with no name where it was scrolled to a sliver at the top of the
+ * screen, its label above the view (ux.md §12 check 9; build plan 8.1's accessibility walk at 320 dp
+ * and 200 %). The name is the label's text and nothing of what is typed.
  *
  * [state] is held by the screen's ViewModel (architecture.md §5.6, lock.md §5.8): this field adds
  * nothing to the saved-instance state, not even whether the password is shown, which starts hidden
@@ -88,11 +89,14 @@ fun VaultSecureField(
         else -> trailingIcon
     }
     val masked = !(revealable && revealed)
-    // Drawn, but not read on its own: the field's name says it ([named]), once.
-    val fieldLabel = rememberFieldLabel(label?.let { text -> { Text(text = text, modifier = Modifier.semantics { hideFromAccessibility() }) } })
+    // Whether any of the drawn label is on the screen: while none is, the field names itself ([named]).
+    var labelInView by remember { mutableStateOf(true) }
+    val fieldLabel = rememberFieldLabel(
+        label?.let { text -> { Text(text = text, modifier = Modifier.onGloballyPositioned { labelInView = !it.boundsInWindow().isEmpty }) } },
+    )
     OutlinedSecureTextField(
         state = state,
-        modifier = modifier.vaultTextField().maskedForAccessibility(state, masked).named(label),
+        modifier = modifier.vaultTextField().maskedForAccessibility(state, masked).named(label.takeUnless { labelInView }),
         enabled = enabled,
         textStyle = textStyle.copy(textDirection = TextDirection.Ltr),
         labelPosition = fieldLabel.position,
@@ -111,11 +115,13 @@ fun VaultSecureField(
 }
 
 /**
- * The field's own name, [label], for accessibility services: its content description, which Compose
- * gives the field's node itself (a part of it with the field's bounds), so that TalkBack and Switch
- * Access name the field wherever a sliver of it shows. Without it the name came only from the drawn
- * label, a part of its own that Compose leaves out of the tree once it is out of view. The label as
- * drawn is hidden from accessibility, so that the name is read once.
+ * The field's own name, [label] (null: none), for accessibility services, given while none of its
+ * drawn label is on the screen: its content description, which Compose gives the field's node itself
+ * (a part of it with the field's bounds), so that TalkBack and Switch Access name the field wherever a
+ * sliver of it shows. Not while the label is in view, where the label names the field: Compose then
+ * reports a node's description in place of its text and its cursor, and a screen reader could no
+ * longer tell where the cursor is or move it by character (tools/emu/window/a11y.sh), and the name
+ * would be read twice. Once the field is scrolled back into view, its label names it again.
  */
 private fun Modifier.named(label: String?): Modifier = if (label == null) this else semantics { contentDescription = label }
 
