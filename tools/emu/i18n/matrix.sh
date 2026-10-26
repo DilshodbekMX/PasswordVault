@@ -98,7 +98,9 @@ known() { # NAME DETAIL: a platform behaviour that is not a failure of the app
     echo "KNOWN $1 ($2)"
 }
 
-shot() { pva_screenshot "$SHOTS/$1.png" && pv_log "screenshot $SHOTS/$1.png"; }
+# shot NAME: a picture for the review, SHOTS/NAME.png; never a reason for a step to fail: with the staging
+# build's secure window screencap gives nothing on API 24 and 28 (an empty file, or exit 1).
+shot() { if pva_screenshot "$SHOTS/$1.png"; then pv_log "screenshot $SHOTS/$1.png"; fi; return 0; }
 
 fresh() {
     pva_install "$APK" && pva_start && pva_on Welcome 30

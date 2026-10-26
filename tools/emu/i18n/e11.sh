@@ -55,7 +55,9 @@ echo "lock.md E11, the language step, on $SERIAL (API $API): $APK"
 pvi_quiet_network
 PID=""
 
-shot() { pva_screenshot "$SHOTS/$1.png" && pv_log "screenshot $SHOTS/$1.png"; }
+# shot NAME: a picture for the review, SHOTS/NAME.png; never a reason for a step to fail: with the staging
+# build's secure window screencap gives nothing on API 24 and 28 (an empty file, or exit 1).
+shot() { if pva_screenshot "$SHOTS/$1.png"; then pv_log "screenshot $SHOTS/$1.png"; fi; return 0; }
 
 # order_is A B: the list shows A above B (waiting up to 15 s for a new sort).
 order_is() {
