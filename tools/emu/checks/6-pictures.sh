@@ -538,10 +538,16 @@ h = ["<!doctype html><html lang='en'><head><meta charset='utf-8'><meta name='vie
      "<h2 id='look-at'>What to look at</h2>"]
 for title, text in LOOK_AT:
     h.append(f"<h3>{html.escape(title)}</h3><p>{refs(html.escape(text), True)}</p>")
-if summary:
-    h.append(f"<h3>Checked</h3><p>Every picture in Oʻzbekcha, Ўзбекча and Русский was compared with the English one and with "
-             f"each other, and the letters on it were read: {html.escape(summary.replace('SUMMARY ', ''))}. A finding is "
-             "written in red under its picture.</p>")
+flagged = sorted({(n, l) for n, r in rows.items() for l in langs if flags(n, l)})
+if check:
+    if flagged:
+        checked = (f"Each picture in Oʻzbekcha, Ўзбекча and Русский was compared with the English one and with the other two, "
+                   f"and the words on it were read. {len(flagged)} pictures have a finding, written in red under the picture.")
+    else:
+        checked = ("Each picture in Oʻzbekcha, Ўзбекча and Русский was compared with the English one and with the other two, "
+                   "and the words on it were read (from the app's screen, or by text recognition): no picture is the same as "
+                   "another language's, and none shows English or another language's words where the app's own texts should be.")
+    h.append(f"<h3>Checked</h3><p>{html.escape(checked)}</p>")
 for source, title, text, group in groups:
     h.append(f"<h2 id='{source}'>{html.escape(title)}</h2><p>{html.escape(text)}</p>")
     h.append("<table><tr><th class='n'>Screen</th>" + "".join(f"<th>{html.escape(LANG_NAMES.get(l, l))}</th>" for l in langs) + "</tr>")
@@ -572,9 +578,8 @@ m = ["# PasswordVault: every screen in four languages", "",
      "`NNN-<source>-<name>-<language>.png`: the same number NNN in every folder is the same screen.",
      "- When you find a mistake, write down the screen's number and the language.",
      "- A screen taller than the phone has a picture for each part; a language with longer texts may need one part more.", ""]
-if summary:
-    m += ["## Checked", "", f"Every picture in Oʻzbekcha, Ўзбекча and Русский was compared with the English one and with each "
-          f"other, and the letters on it were read: {summary.replace('SUMMARY ', '')}.", ""]
+if check:
+    m += ["## Checked", "", checked, ""]
 m += ["## What to look at", ""]
 for title, text in LOOK_AT:
     m += [f"**{title}.** {refs(text, False)}", ""]
