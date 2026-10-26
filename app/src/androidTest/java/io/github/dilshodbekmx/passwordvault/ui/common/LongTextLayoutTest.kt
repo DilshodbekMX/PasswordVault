@@ -131,8 +131,8 @@ class LongTextLayoutTest {
     fun aFieldLabelOfTwoLinesGoesAboveItsBoxAndCoversNothing() {
         show {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                VaultTextField(state = remember { TextFieldState("Gmail") }, label = { Text("Nomi") }, modifier = Modifier.fillMaxWidth())
-                VaultTextField(state = remember { TextFieldState("aziz@gmail.com") }, label = { Text("Elektron pochta, telefon raqami yoki login") }, modifier = Modifier.fillMaxWidth())
+                VaultTextField(state = remember { TextFieldState("Gmail") }, label = "Nomi", modifier = Modifier.fillMaxWidth())
+                VaultTextField(state = remember { TextFieldState("aziz@gmail.com") }, label = "Elektron pochta, telefon raqami yoki login", modifier = Modifier.fillMaxWidth())
                 VaultSecureField(state = remember { TextFieldState("x") }, label = "Master parolingizni yana bir marta yozing", modifier = Modifier.fillMaxWidth())
             }
         }

@@ -11,7 +11,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.OutlinedSecureTextField
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -20,12 +19,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.autofill.ContentDataType
-import androidx.compose.ui.layout.boundsInWindow
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDataType
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.editableText
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
@@ -44,11 +40,8 @@ import io.github.dilshodbekmx.passwordvault.window.vaultTextField
  * of Android ([maskedForAccessibility]). A label that needs a second line moves above the box
  * ([FieldLabel]).
  *
- * The label names the field for accessibility services, and where the label is out of view the field
- * names itself with it ([named]): Compose gives a part that is out of view no text, so a field named
- * only by its drawn label read with no name where it was scrolled to a sliver at the top of the
- * screen, its label above the view (ux.md §12 check 9; build plan 8.1's accessibility walk at 320 dp
- * and 200 %). The name is the label's text and nothing of what is typed.
+ * The label names the field for accessibility services, and while it is out of view the field names
+ * itself with it ([FieldLabel]): the name is the label's text and nothing of what is typed.
  *
  * [state] is held by the screen's ViewModel (architecture.md §5.6, lock.md §5.8): this field adds
  * nothing to the saved-instance state, not even whether the password is shown, which starts hidden
@@ -89,14 +82,10 @@ fun VaultSecureField(
         else -> trailingIcon
     }
     val masked = !(revealable && revealed)
-    // Whether any of the drawn label is on the screen: while none is, the field names itself ([named]).
-    var labelInView by remember { mutableStateOf(true) }
-    val fieldLabel = rememberFieldLabel(
-        label?.let { text -> { Text(text = text, modifier = Modifier.onGloballyPositioned { labelInView = !it.boundsInWindow().isEmpty }) } },
-    )
+    val fieldLabel = rememberFieldLabel(label)
     OutlinedSecureTextField(
         state = state,
-        modifier = modifier.vaultTextField().maskedForAccessibility(state, masked).named(label.takeUnless { labelInView }),
+        modifier = modifier.vaultTextField().maskedForAccessibility(state, masked).named(fieldLabel.name),
         enabled = enabled,
         textStyle = textStyle.copy(textDirection = TextDirection.Ltr),
         labelPosition = fieldLabel.position,
@@ -113,17 +102,6 @@ fun VaultSecureField(
         interactionSource = interactionSource,
     )
 }
-
-/**
- * The field's own name, [label] (null: none), for accessibility services, given while none of its
- * drawn label is on the screen: its content description, which Compose gives the field's node itself
- * (a part of it with the field's bounds), so that TalkBack and Switch Access name the field wherever a
- * sliver of it shows. Not while the label is in view, where the label names the field: Compose then
- * reports a node's description in place of its text and its cursor, and a screen reader could no
- * longer tell where the cursor is or move it by character (tools/emu/window/a11y.sh), and the name
- * would be read twice. Once the field is scrolled back into view, its label names it again.
- */
-private fun Modifier.named(label: String?): Modifier = if (label == null) this else semantics { contentDescription = label }
 
 /**
  * While [masked], the field's semantics hold one mask character for each character of [state]

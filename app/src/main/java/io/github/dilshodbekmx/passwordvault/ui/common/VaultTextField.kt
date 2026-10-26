@@ -24,7 +24,8 @@ import io.github.dilshodbekmx.passwordvault.window.vaultTextField
  * it, and hidden from accessibility services that are not accessibility tools (lock.md §13.5,
  * ux.md §3). The keyboard flag that stops personalised learning comes from `WindowPolicy.Root`
  * around the whole content, and the text toolbar's "Autofill" item is removed by `VaultWindow` in
- * every window. A label that needs a second line moves above the box ([FieldLabel]). The text is
+ * every window. A label that needs a second line moves above the box, and while it is out of view the
+ * field names itself with it for accessibility services ([FieldLabel]). The text is
  * never hyphenated, as Android's own editable text is not: a value too long for its line wraps
  * between two of its own characters, with no hyphen drawn that was not typed, although the theme
  * hyphenates the app's texts (i18n.md §4.5 rule 4; `TextFieldLinesTest`).
@@ -33,6 +34,7 @@ import io.github.dilshodbekmx.passwordvault.window.vaultTextField
  * text into the saved-instance state (architecture.md §5.6, [V-C11]). There is no `value` and
  * `onValueChange` form, for the same reason.
  *
+ * @param label the field's label, drawn on its border or above its box, and its name.
  * @param readOnly never for a stored secret: a read-only field is an autofill node holding its
  *   text, so stored passwords are shown with [SecretText] [V-P4].
  * @param leftToRight lays the text out left to right whatever the language, as usernames and
@@ -43,7 +45,7 @@ import io.github.dilshodbekmx.passwordvault.window.vaultTextField
 fun VaultTextField(
     state: TextFieldState,
     modifier: Modifier = Modifier,
-    label: @Composable (() -> Unit)? = null,
+    label: String? = null,
     enabled: Boolean = true,
     readOnly: Boolean = false,
     placeholder: @Composable (() -> Unit)? = null,
@@ -65,7 +67,7 @@ fun VaultTextField(
     val fieldLabel = rememberFieldLabel(label)
     OutlinedTextField(
         state = state,
-        modifier = modifier.vaultTextField(),
+        modifier = modifier.vaultTextField().named(fieldLabel.name),
         enabled = enabled,
         readOnly = readOnly,
         textStyle = (if (leftToRight) textStyle.copy(textDirection = TextDirection.Ltr) else textStyle).copy(hyphens = Hyphens.None),
