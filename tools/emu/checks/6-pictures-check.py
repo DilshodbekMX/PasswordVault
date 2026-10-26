@@ -48,6 +48,7 @@ SAME_BELOW = 0.002           # a picture is "the same" when fewer pixels differ
 PIXEL_DELTA = 40             # a pixel differs when a channel differs by more
 OCR_MIN_CONF = 80            # OCR words below this confidence are left out
 OCR_MIN_LEN = 4              # and shorter ones
+OCR_SURE = 90                # a word read at least this surely in the other alphabet is listed for a look
 UZ_CYRL_ONLY = set("ўқғҳЎҚҒҲ")
 CYR = re.compile(r"[Ѐ-ӿ]")
 LAT = re.compile(r"[A-Za-zÀ-ɏ]")
@@ -56,7 +57,7 @@ SIGNS = re.compile(r"[0-9@#%&*+=_/\\:|<>{}\[\]$^~]")
 STRIP = ".,;:!?()«»\"“”„…—–·•›‹'’ʻʼ‘*"
 # The language switch names each language in its own letters, in every language (donottranslate.xml), and
 # the debug build's language dialog adds its two pseudo-locales.
-LANGUAGE_NAMES = {"o'zbekcha", "ўзбекча", "english", "русский", "til", "тил", "язык", "language", "arabic", "xa", "xb"}
+LANGUAGE_NAMES = {"o'zbekcha", "ўзбекча", "узбекча", "english", "русский", "til", "тил", "язык", "language", "arabic", "xa", "xb"}
 
 
 def norm(w):
@@ -90,7 +91,7 @@ def literals_of(code):
 
 
 # Lines that the system's keyboard (Gboard) draws over the app: its tooltips.
-SYSTEM_LINES = {"see more features", "tap to enable contact suggestions"}
+SYSTEM_LINES = {"see more features", "tap to enable contact suggestions", "tap to enable", "contact suggestions"}
 
 
 # ---- what may show ----------------------------------------------------------------------------------------
@@ -226,6 +227,16 @@ class Rules:
         if lang == "uz-Cyrl" and lw in self.vocab["ru"] and lw not in self.vocab["uz-Cyrl"] and len(lw) >= OCR_MIN_LEN:
             return "Русский word"
         return None
+
+    def unknown(self, lang, w):
+        """A word in the other alphabet than the language's that is neither a name nor data."""
+        lw = norm(w)
+        if lw in self.names or lw in self.data:
+            return False
+        cyr, lat = bool(CYR.search(w)), bool(LAT.search(w))
+        if lang in ("en", "uz-Latn"):
+            return cyr and not lat
+        return lat and not cyr
 
     def read(self, lang, w):
         """For a word OCR read: the language whose strings have it when this language's lack it, or None."""
@@ -371,6 +382,7 @@ def main():
                             break
         else:
             words = []
+            unsure = set()
             for w, conf in ocr:
                 for t in tokens_of(w):
                     words.append(t)
@@ -378,6 +390,13 @@ def main():
                         why = rules.read(lang, t)
                         if why:
                             bad.append(f"{why} \"{t}\"")
+                        elif conf >= OCR_SURE and rules.unknown(lang, t):
+                            # Read surely, in the other alphabet, and no name or data: listed for a look
+                            # (a library's own label is in no string of the app).
+                            unsure.add(t)
+            if unsure:
+                r["unsure"] = sorted(unsure)
+                notes.append(f"{label(n, lang, how)}: other letters read, for a look: " + ", ".join(sorted(unsure)[:12]))
         cyr = sum(len(CYR.findall(w)) for w in words)
         uz = sum(1 for w in words for c in w if c in UZ_CYRL_ONLY)
         r["cyrillic_letters"], r["uzbek_letters"], r["words"] = cyr, uz, len(words)
