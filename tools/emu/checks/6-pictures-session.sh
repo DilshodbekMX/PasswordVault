@@ -891,8 +891,8 @@ deleted_more() {
 }
 
 # Settings > Change PIN: the current PIN; a new PIN that looks like a date; the current one again; a new
-# PIN whose saving fails (the debug command fail-next-write): "Couldn't save the new PIN", Retry; then
-# the new PIN twice: Settings says "Your PIN was changed.".
+# PIN whose saving fails (the debug command fail-next-write): "Couldn't save the new PIN"; Retry saves it:
+# Settings says "Your PIN was changed.".
 change_pin_more() {
     local new=581930
     settings && pva_reveal pv.open.ChangePin && pva_tap pv.open.ChangePin && pva_on ChangePin 20 || return 1
@@ -903,16 +903,12 @@ change_pin_more() {
     pva_pin "$new" && pv_sleep 1.5 || return 1
     pva_debug fail-next-write >/dev/null || return 1
     pva_pin "$new" && pv_sleep 3 || return 1
-    if pva_present pv.pin.retry 5; then
-        shot 327 change-pin-not-saved
-        pva_tap pv.pin.retry && pv_sleep 2
-        pva_need pv.pin.key.0 10 && pva_pin "$new" && pv_sleep 1.5 && pva_pin "$new" && pv_sleep 3 || return 1
-    else
-        pv_log "no Retry after the failed write; ids: $(pva_ids)"
-    fi
+    pva_present pv.pin.retry 5 || { pv_log "no Retry after the failed write; ids: $(pva_ids)"; return 1; }
+    shot 327 change-pin-not-saved
+    # Retry saves the new PIN again (ChangePinViewModel.retry); Settings then says it was changed.
+    pva_tap pv.pin.retry || return 1
     PIN_NOW=$new
     pva_on Settings 20 && shot 328 settings-pin-changed 0.5
-    return 0
 }
 
 part_extra() {
