@@ -1075,15 +1075,23 @@ rel_settings() {
     pva_tap pv.tab.Settings && pva_on Settings 20
 }
 
-# rel_no_pin_row: Settings' PIN row is not enabled and says why (lock.md F18 step 2).
+# rel_no_pin_row: Settings' PIN row is not enabled and says why (lock.md F18 step 2). A disabled node is
+# one that app.sh's helpers never match (pv_ui_match), so the row is looked for in the raw dump, from the
+# top of the list down.
 rel_no_pin_row() {
-    local want line
+    local want line i
     want=$(rel_string settings_no_secure_hardware) || return 1
-    rel_settings && pva_reveal pv.open.ChangePin || return 1
-    line=$(pv_ui_nodes | grep -m 1 '|pv\.open\.ChangePin|')
-    pv_log "the PIN row: $(printf '%s' "$line" | cut -d'|' -f1-5); texts: $(rel_texts | tr '\n' ';' | cut -c1-400)"
+    rel_settings || return 1
+    for i in 1 2 3; do pva_scroll_up; done
+    for i in 0 1 2 3; do
+        line=$(pv_ui_nodes | grep -m 1 '|pv\.open\.ChangePin|')
+        [ -n "$line" ] && break
+        pva_scroll_down
+    done
+    [ -n "$line" ] || { pv_log "no pv.open.ChangePin; ids: $(pva_ids)"; return 1; }
+    pv_log "the PIN row: $(printf '%s' "$line" | cut -d'|' -f1-5); the fingerprint row: $(pv_ui_nodes | grep -m 1 '|pv\.settings\.fingerprint|' | cut -d'|' -f1-5); texts: $(rel_texts | tr '\n' ';' | cut -c1-500)"
     rel_texts | grep -qF -- "$want" || { pv_log "no line '$want'"; return 1; }
-    [ "$(printf '%s' "$line" | cut -d'|' -f5)" != true ] || { pv_log "the PIN row is enabled"; return 1; }
+    [ "$(printf '%s' "$line" | cut -d'|' -f5)" = false ] || { pv_log "the PIN row is enabled"; return 1; }
 }
 
 # rel_version: Settings › Version reads "Version NAME (CODE)" and has no "Test build" line.
@@ -1180,7 +1188,19 @@ rel_master_password_screen() {
 }
 
 rel_back_locked() { pva_relaunch && rel_master_password_screen; }
-rel_unlock() { pva_unlock Passwords && pva_row_with "$REL_ACCOUNT" 15; }
+
+# rel_unlock [ROUTE]: the master password on the lock screen; ROUTE (default Passwords), the screen the app
+# was on (ux.md 4, "What survives a lock"), comes back; then, Back to it where needed, the list shows the
+# account.
+rel_unlock() {
+    local route=${1:-Passwords}
+    pva_unlock "$route" || return 1
+    if [ "$route" != Passwords ]; then
+        pv_shell input keyevent KEYCODE_BACK > /dev/null
+        pva_on Passwords 20 || return 1
+    fi
+    pva_row_with "$REL_ACCOUNT" 15
+}
 
 rel_lock_now() {
     local i
@@ -1262,7 +1282,7 @@ rel_run() {
     pv_step "Copy: the clip is flagged sensitive, has a token and holds the password; the status row is shown" -- rel_copy
     pv_step "with the app in the background the clip is gone at its time (setup's 1-minute delay)" -- rel_clear
     pv_step "back in front after more than 30 s: the master-password screen, no pad, no TEST BUILD line" -- rel_back_locked
-    pv_step "the master password opens the list with the account" -- rel_unlock || { pv_summary; return 1; }
+    pv_step "the master password brings back the account's screen, where the app was; Back: the list with the account" -- rel_unlock Entry || { pv_summary; return 1; }
     pv_step "Lock now: the master-password screen again; the master password opens the list" -- eval 'rel_lock_now && rel_unlock'
     pv_step "a backup into Download through the system's picker: \"Backup saved\"" -- rel_backup || { pv_summary; return 1; }
     pv_step "adb uninstall: the app and its data go, the backup stays in Download" -- rel_uninstall || { pv_summary; return 1; }
