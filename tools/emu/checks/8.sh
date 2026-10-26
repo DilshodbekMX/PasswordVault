@@ -34,11 +34,9 @@
 #   staging     section 10's "the staging build runs every script under tools/emu/ on API 24, 28 and 37",
 #               each script on the levels it supports, with the staging APK: checks/3A.sh skeleton,
 #               session/autolock.sh, setup/create.sh, clipboard/clear.sh and shell/walk.sh on 24, 28 and
-#               37; tools/emu/i18n/ as far as it needs no debuggable build: matrix.sh's parts phone,
-#               survives and formats on 24, 28 and 37 and page and mixing on 37 (switch and prompt need
-#               the debug build's pseudo-locales, and switch below API 33 run-as), and e11.sh on 24, 28
-#               and 37. smoke.sh, lock/, window/ and change/ are the parts smoke, lock, window and wave7.
-#               Every SKIPPED step must need run-as or root: the part debug runs those scripts again.
+#               37. smoke.sh, lock/, window/, i18n/ and change/ are the parts smoke, lock, window, i18n
+#               and wave7. Every SKIPPED step must need run-as or root, or a setting the level lacks: the
+#               part debug runs those scripts again.
 #   debug       the steps of the part staging that need a debuggable build, with the debug APK
 #               (section 10: "steps that need a debuggable build are run on debug"): checks/3A.sh
 #               skeleton (step 3 reads the vault files with run-as; pictures of steps 1, 2 and 4 on API
@@ -57,7 +55,10 @@
 #               part for other levels at the same time waits for it (a lock in LOGS/).
 #   i18n        6.1's [script] lines with the debug build (the pseudo-locales and run-as need it):
 #               tools/emu/i18n/all.sh (matrix.sh with the parts of the level, then e11.sh) on 24, 28 and
-#               37. KNOWN on API 37: Android 17's App language page never marks Ўзбекча.
+#               37. KNOWN on API 37: Android 17's App language page never marks Ўзбекча. Then i18n/ with the
+#               staging APK as far as it needs no debuggable build: matrix.sh's parts phone, survives and
+#               formats on 24, 28 and 37, and page and mixing on 37 (switch and prompt need the debug
+#               build's pseudo-locales, and switch below API 33 run-as), and e11.sh on 24, 28 and 37.
 #   walk        6.2's walk with the debug build and its test APK, each device alone: both parts in en-XA
 #               and ar-XB at 320 dp and 200 % on 24, 28 and 37, 1718 checks passed and none failed or
 #               skipped on each level; then on API 37 the part app in the four real languages (en, uz,
@@ -1361,8 +1362,7 @@ for part in "${DEVICE_PARTS[@]}"; do
             pv_step "setup/create.sh, staging build" -- in_parallel create-staging create_staging -- 24 28 37
             pv_step "clipboard/clear.sh, staging build" -- in_parallel --quiet clear-staging clear_staging -- 24 28 37
             pv_step "shell/walk.sh, staging build" -- in_parallel walk-staging walk_staging -- 24 28 37
-            pv_step "i18n/matrix.sh's parts without pseudo-locales or run-as, and i18n/e11.sh, staging build" -- in_parallel --quiet i18n-staging i18n_staging -- 24 28 37
-            pv_step "every SKIPPED step needs a debuggable build or root (the part debug runs them)" -- skipped_need_debug skeleton-staging autolock-staging create-staging clear-staging walk-staging i18n-staging -- 24 28 37 ;;
+            pv_step "every SKIPPED step needs a debuggable build or root (the part debug runs them)" -- skipped_need_debug skeleton-staging autolock-staging create-staging clear-staging walk-staging -- 24 28 37 ;;
         debug)
             pv_step "the test APK is not on the devices" -- no_test_apk
             pv_step "checks/3A.sh skeleton, debug build (step 3: the vault files with run-as)" -- in_parallel skeleton-debug skeleton_debug -- 24 28 37
@@ -1378,7 +1378,9 @@ for part in "${DEVICE_PARTS[@]}"; do
         window)
             pv_step "tools/emu/window/all.sh: keyboard, autofill, overlay, state, a11y and capture on API 28 and 37, a11y-old on API 24, debug and staging" -- window_checks ;;
         i18n)
-            pv_step "6.1: tools/emu/i18n/all.sh (the matrix of i18n.md 5 and E11's language step), debug build" -- i18n_all ;;
+            pv_step "6.1: tools/emu/i18n/all.sh (the matrix of i18n.md 5 and E11's language step), debug build" -- i18n_all
+            pv_step "i18n/matrix.sh's parts without pseudo-locales or run-as, and i18n/e11.sh, staging build" -- in_parallel --quiet i18n-staging i18n_staging -- 24 28 37
+            pv_step "every SKIPPED step of these needs a debuggable build or root" -- skipped_need_debug i18n-staging -- 24 28 37 ;;
         walk)
             pv_step "the test APK is not on the devices" -- no_test_apk
             pv_step "6.2: layout/walk.sh, both parts in en-XA and ar-XB at 320 dp and 200 %: 1718 checks passed on each level, none failed or skipped" -- in_parallel --quiet pseudo layout_walk -- 24 28 37
