@@ -11,6 +11,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.OutlinedSecureTextField
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -22,7 +23,9 @@ import androidx.compose.ui.autofill.ContentDataType
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDataType
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.editableText
+import androidx.compose.ui.semantics.hideFromAccessibility
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
@@ -40,10 +43,17 @@ import io.github.dilshodbekmx.passwordvault.window.vaultTextField
  * of Android ([maskedForAccessibility]). A label that needs a second line moves above the box
  * ([FieldLabel]).
  *
+ * The label is also the field's own name for accessibility services ([named]): Compose leaves a part
+ * that is out of view out of the accessibility tree, so a field named only by its drawn label read
+ * with no name where it was scrolled to a sliver at the top of the screen, its label above the view
+ * (ux.md §12 check 9; build plan 8.1's accessibility walk at 320 dp and 200 %). The name is the
+ * label's text and nothing of what is typed.
+ *
  * [state] is held by the screen's ViewModel (architecture.md §5.6, lock.md §5.8): this field adds
  * nothing to the saved-instance state, not even whether the password is shown, which starts hidden
  * again after a rotation. After reading the password, the ViewModel calls [clearSecret] [V-C11].
  *
+ * @param label the field's label, drawn on its border or above its box, and its name.
  * @param trailingIcon an extra button before the show/hide button, such as the generator's.
  * @param revealable whether the show/hide button is there.
  */
@@ -51,7 +61,7 @@ import io.github.dilshodbekmx.passwordvault.window.vaultTextField
 fun VaultSecureField(
     state: TextFieldState,
     modifier: Modifier = Modifier,
-    label: @Composable (() -> Unit)? = null,
+    label: String? = null,
     enabled: Boolean = true,
     placeholder: @Composable (() -> Unit)? = null,
     leadingIcon: @Composable (() -> Unit)? = null,
@@ -78,10 +88,11 @@ fun VaultSecureField(
         else -> trailingIcon
     }
     val masked = !(revealable && revealed)
-    val fieldLabel = rememberFieldLabel(label)
+    // Drawn, but not read on its own: the field's name says it ([named]), once.
+    val fieldLabel = rememberFieldLabel(label?.let { text -> { Text(text = text, modifier = Modifier.semantics { hideFromAccessibility() }) } })
     OutlinedSecureTextField(
         state = state,
-        modifier = modifier.vaultTextField().maskedForAccessibility(state, masked),
+        modifier = modifier.vaultTextField().maskedForAccessibility(state, masked).named(label),
         enabled = enabled,
         textStyle = textStyle.copy(textDirection = TextDirection.Ltr),
         labelPosition = fieldLabel.position,
@@ -98,6 +109,15 @@ fun VaultSecureField(
         interactionSource = interactionSource,
     )
 }
+
+/**
+ * The field's own name, [label], for accessibility services: its content description, which Compose
+ * gives the field's node itself (a part of it with the field's bounds), so that TalkBack and Switch
+ * Access name the field wherever a sliver of it shows. Without it the name came only from the drawn
+ * label, a part of its own that Compose leaves out of the tree once it is out of view. The label as
+ * drawn is hidden from accessibility, so that the name is read once.
+ */
+private fun Modifier.named(label: String?): Modifier = if (label == null) this else semantics { contentDescription = label }
 
 /**
  * While [masked], the field's semantics hold one mask character for each character of [state]

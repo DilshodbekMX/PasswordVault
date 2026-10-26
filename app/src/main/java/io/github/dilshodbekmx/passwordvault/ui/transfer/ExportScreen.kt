@@ -368,7 +368,7 @@ private fun ColumnScope.PasswordStep(state: ExportUiState.Password, password: Te
     VaultSecureField(
         state = password,
         modifier = Modifier.fillMaxWidth().focusRequester(focus).testTag(ExportTags.PASSWORD),
-        label = { Text(stringResource(R.string.export_password_field)) },
+        label = stringResource(R.string.export_password_field),
         enabled = state.enabled,
         isError = state.error != null && state.error != ExportPasswordError.Wait,
         keyboardOptions = VaultFieldDefaults.Secret.copy(imeAction = ImeAction.Done),

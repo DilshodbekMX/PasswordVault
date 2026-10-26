@@ -288,7 +288,7 @@ private fun Form(vm: EditViewModel, ui: EditUiState, padding: PaddingValues, foc
                             VaultSecureField(
                                 state = row.value,
                                 modifier = Modifier.weight(1f).formField(focus, rowKey, EditTags.field(index)),
-                                label = { Text(text = row.name) },
+                                label = row.name,
                                 supportingText = support(row.value, EntryRules.FIELD_VALUE_MAX, problems, formatters),
                                 isError = problems.isNotEmpty(),
                                 inputTransformation = vm.inputOf(rowKey),
@@ -333,7 +333,7 @@ private fun PasswordPart(vm: EditViewModel, ui: EditUiState, focus: FieldFocus, 
     VaultSecureField(
         state = form.password,
         modifier = Modifier.formField(focus, FieldKey.Password, EditTags.PASSWORD),
-        label = { Text(text = stringResource(R.string.edit_password)) },
+        label = stringResource(R.string.edit_password),
         trailingIcon = {
             IconButton(onClick = vm::openGenerator, modifier = Modifier.testTag(EditTags.GENERATE)) {
                 Icon(painterResource(R.drawable.ic_edit_dice), contentDescription = generate)
@@ -517,7 +517,7 @@ private fun AddFieldDialog(vm: EditViewModel, focus: FieldFocus, formatters: For
                     VaultSecureField(
                         state = add.value,
                         modifier = Modifier.formField(focus, FieldKey.AddFieldValue, EditTags.FIELD_VALUE),
-                        label = { Text(text = stringResource(R.string.edit_field_value)) },
+                        label = stringResource(R.string.edit_field_value),
                         supportingText = support(add.value, EntryRules.FIELD_VALUE_MAX, emptyList(), formatters),
                         inputTransformation = vm.inputOf(FieldKey.AddFieldValue),
                     )

@@ -88,7 +88,7 @@ internal fun PracticeDialog(
                 Text(stringResource(R.string.list_practice_body))
                 VaultSecureField(
                     state = password,
-                    label = { Text(stringResource(R.string.list_practice_field)) },
+                    label = stringResource(R.string.list_practice_field),
                     enabled = open,
                     isError = message != null,
                     supportingText = message?.let { text -> { Text(text) } },

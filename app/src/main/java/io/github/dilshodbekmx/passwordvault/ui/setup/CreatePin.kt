@@ -714,7 +714,7 @@ fun MasterPasswordInput(ask: MasterPasswordAsk, onNext: () -> Unit, focusFirst: 
         VaultSecureField(
             state = ask.field,
             modifier = Modifier.fillMaxWidth().focusRequester(focus).onFocusChanged { focused = it.isFocused }.testTag(PinTags.MP_FIELD),
-            label = { Text(stringResource(R.string.pin_mp_label)) },
+            label = stringResource(R.string.pin_mp_label),
             enabled = ui.enabled,
             isError = ui.line?.alert == true,
             keyboardOptions = VaultFieldDefaults.Secret.copy(imeAction = ImeAction.Done),

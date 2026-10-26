@@ -82,7 +82,7 @@ fun TypeAgainScreen(
         VaultSecureField(
             state = field,
             modifier = Modifier.fillMaxWidth().focusRequester(focus).onFocusChanged { fieldFocused = it.isFocused }.testTag(SetupTags.AGAIN_FIELD),
-            label = { Text(stringResource(R.string.setup_field_label)) },
+            label = stringResource(R.string.setup_field_label),
             keyboardOptions = VaultFieldDefaults.Secret.copy(imeAction = ImeAction.Done),
             onKeyboardAction = KeyboardActionHandler { onNext() },
             isError = message != null,

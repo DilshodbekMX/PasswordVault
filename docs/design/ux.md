@@ -1202,6 +1202,7 @@ Rules for all text:
 | Masked password | "Password, hidden" (password semantics; length never spoken) |
 | Revealed password | the value, with the hint "Hides after 30 seconds without a touch. For more time, use Show in big letters." |
 | Show toggle | "Show password" / "Hide password" with state description |
+| Password field | its label ("Master password"), read once, as the field's own name: also where only a sliver of the field is in view and its label is not (`VaultSecureField`; build plan 8.1) |
 | Website open | "Open mail.google.com in browser" |
 | Generator icon | "Create a strong password" |
 | Strength meter | "Password strength: weak" |

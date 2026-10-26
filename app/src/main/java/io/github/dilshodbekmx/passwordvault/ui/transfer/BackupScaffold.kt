@@ -159,7 +159,7 @@ fun BackupPasswordField(state: TextFieldState, label: String, enabled: Boolean, 
     VaultSecureField(
         state = state,
         modifier = modifier.fillMaxWidth().focusRequester(focusRequester).onFocusChanged { focused = it.isFocused }.testTag(BackupTags.FIELD),
-        label = { Text(label) },
+        label = label,
         enabled = enabled,
         isError = isError,
         keyboardOptions = VaultFieldDefaults.Secret.copy(imeAction = ImeAction.Done),

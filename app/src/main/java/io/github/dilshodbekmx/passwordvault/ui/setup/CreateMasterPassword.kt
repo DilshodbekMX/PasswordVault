@@ -188,7 +188,7 @@ private fun ColumnScope.OwnPassword(state: SetupState, own: TextFieldState, onUs
     VaultSecureField(
         state = own,
         modifier = Modifier.fillMaxWidth().testTag(SetupTags.OWN_FIELD),
-        label = { Text(stringResource(R.string.setup_field_label)) },
+        label = stringResource(R.string.setup_field_label),
         keyboardOptions = VaultFieldDefaults.Secret.copy(imeAction = ImeAction.Done),
         onKeyboardAction = KeyboardActionHandler { onUseOwn() },
         isError = message != null,

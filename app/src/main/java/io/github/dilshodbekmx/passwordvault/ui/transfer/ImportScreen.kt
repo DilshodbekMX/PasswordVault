@@ -357,7 +357,7 @@ private fun BackupPassword(vm: ImportViewModel, screen: ImportScreen.BackupPassw
     VaultSecureField(
         state = vm.backupPassword,
         modifier = Modifier.fillMaxWidth().testTag(ImportTags.BACKUP_PASSWORD),
-        label = { Text(text = stringResource(R.string.import_backup_password)) },
+        label = stringResource(R.string.import_backup_password),
         enabled = !screen.opening,
         isError = error != null,
         supportingText = error?.let { text -> { Text(text = text, modifier = Modifier.testTag(ImportTags.BACKUP_ERROR)) } },
