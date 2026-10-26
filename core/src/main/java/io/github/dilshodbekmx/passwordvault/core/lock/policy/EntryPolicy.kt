@@ -81,7 +81,7 @@ object EntryPolicy {
     /**
      * The line of lock.md §13.3 while `fingerprint.rec` reads DAMAGED (§5.3; build-plan.md §12,
      * decision 1): "Fingerprint unlock stopped working on this phone. Use your PIN. You can turn it on
-     * again in Settings." Not the line of a key that is gone (F15a), which blames a change of the
+     * again in this app's Settings." Not the line of a key that is gone (F15a), which blames a change of the
      * phone's fingerprints that nobody saw.
      */
     val DAMAGED_FINGERPRINT_LINE: FingerprintLine = FingerprintLine.StoppedWorking

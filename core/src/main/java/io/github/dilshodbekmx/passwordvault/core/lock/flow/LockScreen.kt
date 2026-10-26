@@ -145,7 +145,7 @@ sealed interface FingerprintLine : PadStatus {
 
     /**
      * `fingerprint.rec` reads DAMAGED (§5.3; build-plan.md §12, decision 1): "Fingerprint unlock
-     * stopped working on this phone. … You can turn it on again in Settings." Which key it named
+     * stopped working on this phone. … You can turn it on again in this app's Settings." Which key it named
      * cannot be known, so the phone's fingerprints are not blamed, as [TurnedOff] does.
      */
     data object StoppedWorking : FingerprintLine

@@ -296,7 +296,7 @@ sealed interface FingerprintOnResult {
     /** "This phone can't keep a fingerprint key in protected hardware." */
     data object NoSecureHardware : FingerprintOnResult
 
-    /** Anything else: "Fingerprint unlock could not be turned on. You can try again later in Settings." */
+    /** Anything else: "Fingerprint unlock could not be turned on. You can try again later in this app's Settings." */
     data object Failed : FingerprintOnResult
 
     /** The prompt could not be shown now (the activity is not resumed, lock.md §9.2 rule 3). */

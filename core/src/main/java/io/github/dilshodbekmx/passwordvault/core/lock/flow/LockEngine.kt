@@ -234,7 +234,7 @@ sealed interface FingerprintOnOutcome {
     /** "This phone can't keep a fingerprint key in protected hardware." */
     data object NoSecureHardware : FingerprintOnOutcome
 
-    /** Anything else: "Fingerprint unlock could not be turned on. You can try again later in Settings." */
+    /** Anything else: "Fingerprint unlock could not be turned on. You can try again later in this app's Settings." */
     data object Failed : FingerprintOnOutcome
 
     /** The prompt could not be shown now (§9.2 rule 3). */
@@ -244,7 +244,7 @@ sealed interface FingerprintOnOutcome {
      * The record write reported a failure, and the lock cannot say that the earlier record is the
      * one on disk (F9 step 9): the record read back is the new one, which this process goes on
      * with, or it could not be read back. "Fingerprint unlock may not have been turned on. If your
-     * fingerprint is not accepted, turn it on again in Settings."
+     * fingerprint is not accepted, turn it on again in this app's Settings."
      */
     data object MayNotBeOn : FingerprintOnOutcome
 }
