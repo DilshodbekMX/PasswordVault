@@ -485,6 +485,14 @@ def refs(text, link):
 groups = [(s, t, d, [(n, rows[n]) for n in sorted(rows) if rows[n]["source"] == s]) for s, t, d in SOURCES]
 groups = [g for g in groups if g[3]]
 
+def size_of(rel):
+    # The picture's own size, so that the page keeps its room before a lazily loaded picture arrives.
+    try:
+        from PIL import Image
+        return Image.open(os.path.join(out, rel)).size
+    except Exception:
+        return (1080, 2400)
+
 def flags(n, lang):
     return (check.get(n, {}).get(lang) or {}).get("flags") or []
 
@@ -535,7 +543,8 @@ for source, title, text, group in groups:
         for l in langs:
             if l in r:
                 fl = "".join(f"<div class='flag'>{html.escape(x)}</div>" for x in flags(n, l))
-                h.append(f"<td><a href='{html.escape(r[l])}'><img loading='lazy' src='{html.escape(r[l])}' "
+                w, ht = size_of(r[l])
+                h.append(f"<td><a href='{html.escape(r[l])}'><img loading='lazy' src='{html.escape(r[l])}' width='{w}' height='{ht}' "
                          f"alt='{n} {html.escape(nm)} ({html.escape(LANG_NAMES.get(l, l))})'></a>{fl}</td>")
             else:
                 h.append("<td class='none'>no picture in this language</td>")
