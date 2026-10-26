@@ -639,7 +639,8 @@ i18n_staging() {
 }
 
 # skipped_need_debug NAME... -- API...: every SKIPPED line in LOGS/NAME-API.log names a debuggable build
-# (run-as) or root as its reason; prints them, counted.
+# (run-as) or root as its reason, or a setting the level does not have (clear.sh's "restricted" on API
+# 24); prints them.
 skipped_need_debug() {
     local names=() api name rc=0 lines
     while [ $# -gt 0 ] && [ "$1" != "--" ]; do names+=("$1"); shift; done
@@ -650,7 +651,7 @@ skipped_need_debug() {
             lines=$(grep -E '^SKIPPED ' "$LOGS/$name-$api.log")
             [ -n "$lines" ] || continue
             printf '%s\n' "$lines" | sed "s/^/   $name on API $api: /"
-            if printf '%s\n' "$lines" | grep -viqE 'needs-debuggable|needs-root|run-as|debuggable|root|not debuggable|staging'; then
+            if printf '%s\n' "$lines" | grep -viqE 'needs-debuggable|needs-root|run-as|debuggable|root|has no such setting'; then
                 echo "   $name on API $api: a step was skipped for another reason"
                 rc=1
             fi
