@@ -912,7 +912,6 @@ change_pin_more() {
     fi
     PIN_NOW=$new
     pva_on Settings 20 && shot 328 settings-pin-changed 0.5
-    pva_debug "fail-next-write" >/dev/null 2>&1 && pva_debug status >/dev/null 2>&1
     return 0
 }
 
