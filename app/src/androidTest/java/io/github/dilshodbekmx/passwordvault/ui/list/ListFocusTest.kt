@@ -9,7 +9,6 @@ import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.text.input.TextFieldState
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -178,7 +177,7 @@ class ListFocusTest {
         VaultSecureField(
             state = state,
             modifier = Modifier.focusRequester(focus).testTag(STAND_IN),
-            label = { Text("Master password") },
+            label = "Master password",
         )
     }
 

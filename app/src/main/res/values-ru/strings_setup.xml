@@ -62,7 +62,7 @@
     <string name="setup_again_title">Введите мастер-пароль ещё раз</string>
     <string name="setup_again_body">Так вы проверите, что записали его правильно.</string>
     <string name="setup_again_mismatch">Не совпадает. Сверьтесь с записью на бумаге и повторите попытку.</string>
-    <string name="setup_again_cyrillic">Возможно, на клавиатуре выбран русский язык. Переключитесь на латиницу.</string>
+    <string name="setup_again_cyrillic">Возможно, на клавиатуре выбрана кириллица (например, русский язык). Переключитесь на латиницу.</string>
     <string name="setup_again_show_again">Снова показать пароль</string>
     <string name="setup_again_setting_up">Настройка…</string>
     <string name="setup_again_not_saved">Не удалось сохранить. Возможно, хранилище телефона заполнено.</string>

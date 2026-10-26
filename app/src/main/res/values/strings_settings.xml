@@ -105,8 +105,9 @@
     <string name="settings_backup_none">No backup yet</string>
     <!-- The place in settings_backup_last when the backup is in the phone's own storage. -->
     <string name="settings_place_phone">this phone</string>
-    <!-- The place in settings_backup_last for Google Drive: a product name, not translated (i18n.md §3). -->
-    <string name="settings_place_drive" translatable="false">Google Drive</string>
+    <!-- The place in settings_backup_last for Google Drive: the product's name as Google writes it in the language
+         ("Google Drive"; Russian «Google Диск», build plan §12, R6 question 6). -->
+    <string name="settings_place_drive">Google Drive</string>
     <!-- A switch (on by default): the app reminds the user when a backup is due (ux.md §5.11). -->
     <string name="settings_backup_reminders">Backup reminders</string>
     <!-- Row: opens "Export" (ux.md §5.20), to save the passwords as a CSV, JSON or Excel file. -->

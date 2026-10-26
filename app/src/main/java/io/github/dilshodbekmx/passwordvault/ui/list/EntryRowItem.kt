@@ -30,6 +30,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
@@ -167,17 +168,21 @@ private fun RowEnd(row: EntryRow, copied: Boolean, key: String, actions: RowActi
         if (row.hasPassword) {
             var choose by remember { mutableStateOf(false) }
             Box {
+                // The name is the button's own, not its icon's: a row scrolling under the floating Add button
+                // keeps its button for TalkBack and Switch Access while the icon inside is covered, and Compose
+                // leaves a covered child's words out of the tree (build plan 8.1, the accessibility walk at 200 %).
+                val name = if (row.changePending) {
+                    stringResource(R.string.list_copy_password_choose, row.title)
+                } else {
+                    stringResource(R.string.list_copy_password_for, row.title)
+                }
                 IconButton(
                     onClick = { if (row.changePending) choose = true else actions.copyPassword(row, key) },
-                    modifier = Modifier.testTag(ListTags.copy(key)),
+                    modifier = Modifier.semantics { contentDescription = name }.testTag(ListTags.copy(key)),
                 ) {
                     Icon(
                         painter = painterResource(if (copied) R.drawable.ic_common_check else R.drawable.ic_common_copy),
-                        contentDescription = if (row.changePending) {
-                            stringResource(R.string.list_copy_password_choose, row.title)
-                        } else {
-                            stringResource(R.string.list_copy_password_for, row.title)
-                        },
+                        contentDescription = null,
                     )
                 }
                 DropdownMenu(expanded = choose, onDismissRequest = { choose = false }) {

@@ -18,6 +18,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToKey
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.test.espresso.Espresso
@@ -336,6 +337,42 @@ class PasswordsScreenTest {
         compose.onNodeWithTag(ListTags.DELETED_NOTHING).assertIsDisplayed()
         compose.onNodeWithTag(ListTags.DELETED_EMPTY).assertDoesNotExist()
         assertNull(vm.dialog.value)
+    }
+
+    /**
+     * Build plan 8.1 (the open problem of section 12, R4): TalkBack and Switch Access name the list's
+     * Add button "Add account" (ux.md §8: every icon button names its object) when it shows "Add" beside
+     * its icon, and again when scrolling has folded it to the icon alone; the name is said once.
+     */
+    @Test
+    fun theAddButtonIsCalledAddAccount_expandedAndFoldedToItsIcon() {
+        passwords(Vault(entries = (1..40).map { entry("a$it", "Account $it", username = "user$it", password = "pw$it") }))
+        val label = text(R.string.list_add_account_description)
+        fun said(): List<String> =
+            compose.onNodeWithTag(ListTags.ADD).fetchSemanticsNode().config.getOrNull(SemanticsProperties.ContentDescription).orEmpty()
+        compose.onNodeWithText(text(R.string.list_add), useUnmergedTree = true).assertIsDisplayed()
+        assertEquals("the expanded button", listOf(label), said())
+
+        // Scrolling down folds the button to its icon (ux.md §5.11).
+        compose.onNodeWithTag(ListTags.LIST).performTouchInput { swipeUp() }
+        compose.waitUntil(TIMEOUT_MS) { compose.onAllNodes(hasText(text(R.string.list_add)), useUnmergedTree = true).fetchSemanticsNodes().isEmpty() }
+        assertEquals("the button folded to its icon", listOf(label), said())
+    }
+
+    /**
+     * Build plan 8.1 (the accessibility walk at 320 dp and 200 %): a row's copy button carries its own name,
+     * so that TalkBack and Switch Access still name it while the floating Add button covers the icon inside
+     * (Compose leaves a covered child's words out of the tree, and the button then read only "Button").
+     */
+    @Test
+    fun aRowsCopyButtonCarriesItsOwnName() {
+        passwords()
+        scrollTo(ENTRY_KEY + "gm")
+        val own = compose.onNodeWithTag(ListTags.copy(ENTRY_KEY + "gm"), useUnmergedTree = true).fetchSemanticsNode()
+            .config.getOrNull(SemanticsProperties.ContentDescription)
+        assertEquals(listOf(text(R.string.list_copy_password_for, "Gmail")), own)
+        // Said once: the icon inside has no name of its own.
+        assertEquals(listOf(text(R.string.list_copy_password_for, "Gmail")), compose.onNodeWithTag(ListTags.copy(ENTRY_KEY + "gm")).fetchSemanticsNode().config.getOrNull(SemanticsProperties.ContentDescription))
     }
 
     private companion object {

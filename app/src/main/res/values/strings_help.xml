@@ -85,7 +85,7 @@
     <!-- ===== If you lose your phone or move to a new one ===== -->
 
     <!-- "Turned off" (glossary 135), not "deleted": nothing is deleted. -->
-    <string name="help_lost_locked">If your phone is lost or stolen, your passwords stay locked. After 5 wrong PINs in a row the PIN is turned off, and then only your fingerprint or your master password opens the app.</string>
+    <string name="help_lost_locked">If your phone is lost or stolen, your passwords stay locked. After 5&#160;wrong PINs in a row the PIN is turned off, and then only your fingerprint or your master password opens the app.</string>
     <!-- %1$s is the app's name. "Restore from a backup file" is the button on the app's first screen. -->
     <string name="help_lost_restore">To get your passwords on a new phone, install %1$s there, tap “Restore from a backup file”, choose your newest backup and type your master password. Without a backup, your passwords can’t be brought back.</string>
     <!-- "Copy apps and data" is what the phone's own setup offers when you move to a new phone; use
@@ -113,7 +113,7 @@
     <!-- "Forgot PIN? Use master password" is the button under the PIN pad. -->
     <string name="help_forgot_pin_how">Tap “Forgot PIN? Use master password”, type your master password, and choose a new PIN.</string>
     <!-- "Turned off" (glossary 135), not "deleted". -->
-    <string name="help_forgot_pin_limit">After 5 wrong PINs in a row, the PIN is turned off. Nothing is deleted: type your master password, then choose a new PIN.</string>
+    <string name="help_forgot_pin_limit">After 5&#160;wrong PINs in a row, the PIN is turned off. Nothing is deleted: type your master password, then choose a new PIN.</string>
 
     <!-- ===== Version ===== -->
 

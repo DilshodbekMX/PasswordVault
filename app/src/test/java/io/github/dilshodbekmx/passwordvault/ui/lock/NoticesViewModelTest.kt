@@ -24,6 +24,7 @@ import io.github.dilshodbekmx.passwordvault.lock.PinStatus
 import io.github.dilshodbekmx.passwordvault.nav.Route
 import io.github.dilshodbekmx.passwordvault.testing.FakeClock
 import io.github.dilshodbekmx.passwordvault.ui.lock.LockKit.text
+import io.github.dilshodbekmx.passwordvault.ui.settings.ChangedUnderLock
 import io.github.dilshodbekmx.passwordvault.ui.setup.PinSetupStart
 import java.util.TimeZone
 import kotlinx.coroutines.Dispatchers
@@ -59,11 +60,13 @@ class NoticesViewModelTest {
     @Before
     fun setUp() {
         Dispatchers.setMain(StandardTestDispatcher())
+        ChangedUnderLock.clear() // a one-time holder of the process: nothing left by another test
     }
 
     @After
     fun tearDown() {
         store.clear()
+        ChangedUnderLock.clear()
         Dispatchers.resetMain()
     }
 
@@ -249,6 +252,62 @@ class NoticesViewModelTest {
         runCurrent()
         assertNull(vm.notice.value)
         assertNull(vm.choosePin.value)
+    }
+
+    /**
+     * Build plan 8.1 (the open problem of §12, R4): after an unlock that follows a master password
+     * changed under the lock (decision 21), the route's own backup step and a due "Make a backup now?"
+     * of the lock asked the same thing twice. The offer stays hidden while that step waits for the
+     * unlock or shows, and the step's answer is its answer.
+     */
+    @Test
+    fun aDueBackupOfferStaysAwayWhileTheChangesOwnBackupStepWaitsOrShows_andTakesItsAnswer() = runTest {
+        ChangedUnderLock.clear()
+        try {
+            ChangedUnderLock.leave(LockKit.VAULT_A, usedElsewhere = false)
+            val lock = FakeLockManager(initial = unlocked(Notice.BackupNow(9)))
+            val vm = vm(lock)
+            assertNull("hidden while the step waits for the route", vm.notice.value)
+            // The route's ViewModel takes the step and shows it.
+            assertTrue(ChangedUnderLock.take(checkNotNull(ChangedUnderLock.step.value)))
+            runCurrent()
+            assertNull("hidden while the step shows", vm.notice.value)
+            assertTrue(lock.sent.isEmpty())
+            // "Back up now" on the step: the offer is answered the same way, which keeps the unlock's proof
+            // for the backup that the step opens.
+            ChangedUnderLock.answered(ChangedUnderLock.Answer.BACK_UP_NOW)
+            runCurrent()
+            assertEquals(listOf<LockIntent>(LockIntent.NoticeAnswered(9, NoticeAnswer.BACK_UP_NOW)), lock.sent)
+            assertNull(vm.notice.value)
+            assertNull("the answer is taken once", ChangedUnderLock.answer.value)
+        } finally {
+            ChangedUnderLock.clear()
+        }
+    }
+
+    @Test
+    fun laterOnTheChangesBackupStepIsLaterOnTheOffer_andWithoutAStepTheOfferShowsAsBefore() = runTest {
+        ChangedUnderLock.clear()
+        try {
+            ChangedUnderLock.leave(LockKit.VAULT_A, usedElsewhere = true)
+            val lock = FakeLockManager(initial = unlocked(Notice.OlderThanLastTime(4, COPY_AT), Notice.BackupNow(5)))
+            val vm = vm(lock)
+            assertEquals("the notices before it show", 4L, vm.notice.value!!.id)
+            assertTrue(ChangedUnderLock.take(checkNotNull(ChangedUnderLock.step.value)))
+            // "Later" on the step while another notice is first: the offer behind it is answered "Later".
+            ChangedUnderLock.answered(ChangedUnderLock.Answer.LATER)
+            runCurrent()
+            assertEquals(listOf<LockIntent>(LockIntent.NoticeAnswered(5, NoticeAnswer.LATER)), lock.sent)
+            vm.answer(4, NoticeAnswer.OK)
+            runCurrent()
+            assertNull("no second backup question", vm.notice.value)
+        } finally {
+            ChangedUnderLock.clear()
+        }
+        // Without a change under the lock the offer is shown as before.
+        store.clear()
+        val lock = FakeLockManager(initial = unlocked(Notice.BackupNow(3)))
+        assertEquals(3L, vm(lock).notice.value!!.id)
     }
 
     @Test

@@ -19,7 +19,6 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
@@ -52,6 +51,7 @@ import io.github.dilshodbekmx.passwordvault.i18n.rememberFormatters
 import io.github.dilshodbekmx.passwordvault.nav.Navigator
 import io.github.dilshodbekmx.passwordvault.ui.common.TextBeside
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultDialog
+import io.github.dilshodbekmx.passwordvault.ui.common.VaultSnackbarHost
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultTopBar
 import io.github.dilshodbekmx.passwordvault.ui.common.mayTruncate
 import io.github.dilshodbekmx.passwordvault.ui.common.userText
@@ -117,7 +117,7 @@ fun RecentlyDeletedScreen(viewModel: RecentlyDeletedViewModel, nav: Navigator) {
                 },
             )
         },
-        snackbarHost = { SnackbarHost(snackbar) },
+        snackbarHost = { VaultSnackbarHost(snackbar) },
     ) { padding ->
         val shown = rows
         LazyColumn(

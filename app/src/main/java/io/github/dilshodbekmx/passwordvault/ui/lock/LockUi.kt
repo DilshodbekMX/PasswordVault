@@ -172,8 +172,8 @@ data class UnreadableUi(
  */
 data class ForgotSheetUi(val options: List<SheetOption>)
 
-/** One option of the sheet: the sentence before its button, if any, and the button. */
-data class SheetOption(val text: UiText?, val button: LockButton)
+/** One option of the sheet: the sentence before its button, if any, and the button, if any (a sentence alone says why an option is not offered now). */
+data class SheetOption(val text: UiText?, val button: LockButton?)
 
 /** A question asked once more before it is done (a dialog over the screen or the sheet). */
 sealed interface LockConfirm {

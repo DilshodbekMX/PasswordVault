@@ -1136,7 +1136,7 @@ The PIN never opens an older copy while a newer one is intact.
 6. Prompt: "Turn on fingerprint unlock", negative button "Cancel".
 7. On success: `ct = result.cryptoObject.cipher.doFinal(VK)` (48 bytes) and `nonce = cipher.iv` (12 bytes).
 8. Write `fingerprint.rec` with the new slot and one wrap for the current `vk_id`. An earlier key is left to the sweep.
-9. On any error or cancel in steps 4 to 7: delete the new alias and keep the earlier state. "Fingerprint unlock could not be turned on. You can try again later in Settings." If the record write of step 8 reports a failure, the lock reads `fingerprint.rec` back and goes on with what is on disk, as in F6 step 8. With the earlier record, the same sentence. With the new record, or with one that cannot be read back: "Fingerprint unlock may not have been turned on. If your fingerprint is not accepted, turn it on again in Settings." The new alias is left to the sweep in every case. Setup is never blocked.
+9. On any error or cancel in steps 4 to 7: delete the new alias and keep the earlier state. "Fingerprint unlock could not be turned on. You can try again later in this app's Settings." If the record write of step 8 reports a failure, the lock reads `fingerprint.rec` back and goes on with what is on disk, as in F6 step 8. With the earlier record, the same sentence. With the new record, or with one that cannot be read back: "Fingerprint unlock may not have been turned on. If your fingerprint is not accepted, turn it on again in this app's Settings." The new alias is left to the sweep in every case. Setup is never blocked.
 
 There is no second touch to test the wrap. A wrap that does not match shows at its first use and is removed then (section 14).
 
@@ -1240,7 +1240,7 @@ This happens when a vault is on the phone without its lock directory: the app di
 
 **a. The fingerprint key is invalid** because the phone's fingerprints changed: `KeyPermanentlyInvalidatedException` at `Cipher.init` (F3 step 2, F8 step 7).
 1. Write `fingerprint.rec` with `slot = null`, `off = key_gone`; delete the alias.
-2. The pad says: "Fingerprint unlock was turned off because this phone's fingerprints or screen lock changed. Use your PIN. You can turn it on again in Settings." Without a PIN: the master-password screen with the same first sentence.
+2. The pad says: "Fingerprint unlock was turned off because this phone's fingerprints or screen lock changed. Use your PIN. You can turn it on again in this app's Settings." Without a PIN: the master-password screen with the same first sentence.
 3. After unlock: "Turn fingerprint unlock on again?" leads to F9.
 
 **b. A key is gone** (14.2 says GONE for `K_pin` or `K_fp`). A reinstall that kept the app's data looks like this too, if Android did not keep the keys: the records are there, every alias is missing, and the canary can be made again (14.2) [architecture.md D-21; not run].
@@ -1377,14 +1377,14 @@ The look (layout, key sizes, haptics, landscape) is in ux.md §5.9 and §5.10. T
 | The same wrong PIN again | "You already tried that PIN. It was not counted again." |
 | A try was counted at start (6.3 S) | "Your last PIN entry was interrupted and counted as a try. 4 tries left." |
 | The charge could not be written | "Your phone's storage is full, so the PIN can't be checked now. Free some space or use your master password." |
-| Fingerprint key invalid (F15a) | "Fingerprint unlock was turned off because this phone's fingerprints or screen lock changed. Use your PIN. You can turn it on again in Settings." |
-| `fingerprint.rec` is damaged (5.3) | "Fingerprint unlock stopped working on this phone. Use your PIN. You can turn it on again in Settings." |
+| Fingerprint key invalid (F15a) | "Fingerprint unlock was turned off because this phone's fingerprints or screen lock changed. Use your PIN. You can turn it on again in this app's Settings." |
+| `fingerprint.rec` is damaged (5.3) | "Fingerprint unlock stopped working on this phone. Use your PIN. You can turn it on again in this app's Settings." |
 | Fingerprint locked by the system (codes 7, 9) | "Fingerprint is locked for now. Use your PIN." |
 | Fingerprint succeeded but did not open (9.3) | "Fingerprint did not open the app this time. Enter your app PIN." |
 | Fingerprint unlock is on, and `canAuthenticate` says 1, or the prompt ends with error 1 (switched off for apps) | "Fingerprint can't be used in apps right now. Use your PIN. In your phone's settings, check that fingerprint may be used to verify it's you in apps." |
 | Fingerprint unlock is on, and `canAuthenticate` says 11 (no finger saved, or no screen lock) | "No fingerprint is saved on this phone now. Use your PIN. To use fingerprint unlock again, add a fingerprint in your phone's settings." |
 | Fingerprint unlock is on, and `canAuthenticate` says 15 | "Your phone needs a security update before fingerprint can be used. Use your PIN." |
-| Any other fingerprint error, or any other `canAuthenticate` value | The fingerprint key is hidden until the next visit. "Fingerprint can't be checked right now. Use your PIN. If this keeps happening, turn fingerprint unlock off and on again in Settings." |
+| Any other fingerprint error, or any other `canAuthenticate` value | The fingerprint key is hidden until the next visit. "Fingerprint can't be checked right now. Use your PIN. If this keeps happening, turn fingerprint unlock off and on again in this app's Settings." |
 | Debug and staging builds only | "TEST BUILD: PIN keys are not protected" |
 
 There is no "Try again in 0:30" for the PIN: the PIN has no waits. There is never a message about wiping.
@@ -1394,7 +1394,7 @@ There is no "Try again in 0:30" for the PIN: the PIN has no waits. There is neve
 | Why there is no pad | Text |
 |---|---|
 | The PIN was turned off at a limit | "PIN unlock was turned off after too many wrong tries. Nothing was deleted. Use your fingerprint or master password, then choose a new PIN." |
-| The PIN cannot be checked (the Keystore is not answering, or its record cannot be read right now) | "Your PIN can't be checked right now. Use your fingerprint or master password. Restarting the phone usually fixes this. If it keeps happening, set your PIN up again in Settings." |
+| The PIN cannot be checked (the Keystore is not answering, or its record cannot be read right now) | "Your PIN can't be checked right now. Use your fingerprint or master password. Restarting the phone usually fixes this. If it keeps happening, set your PIN up again in this app's Settings." |
 | The PIN key is gone, or its record is damaged | "Your PIN stopped working on this phone. Use your fingerprint or master password, then choose a PIN again." |
 | The start-up write of 6.3 S failed | "Your phone's storage is full, so the PIN can't be checked now. Free some space, or use your fingerprint or master password." |
 | The PIN record was written by a newer version of the app | "Your PIN was set up by a newer version of this app. Use your fingerprint or master password, and update the app." |
@@ -1411,7 +1411,7 @@ There is no "Try again in 0:30" for the PIN: the PIN has no waits. There is neve
 | PIN turned off at a limit, no fingerprint | "Your PIN was entered wrong too many times, so it was turned off. Nothing was deleted. Type your master password, then choose a new PIN." |
 | PIN key gone, or its record is damaged | "Your PIN stopped working on this phone. Type your master password, then choose a PIN again." |
 | The PIN record was written by a newer version of the app | "Your PIN was set up by a newer version of this app. Use your master password, and update the app." |
-| PIN cannot be checked (the Keystore is not answering, or its record cannot be read right now) | "Your PIN can't be checked right now. Use your master password this time. Restarting the phone usually fixes this. If it keeps happening, set your PIN up again in Settings." |
+| PIN cannot be checked (the Keystore is not answering, or its record cannot be read right now) | "Your PIN can't be checked right now. Use your master password this time. Restarting the phone usually fixes this. If it keeps happening, set your PIN up again in this app's Settings." |
 | The start-up write of 6.3 S failed | "Your phone's storage is full, so the PIN can't be checked now. Free some space, or use your master password." |
 | The master password was changed and the PIN was not kept | "You changed your master password. Type it once, then choose a PIN again." |
 | An older copy with another key (F16a) | "The newest copy of your passwords can't be read. An older copy from 5 Oct opens with the master password you used then." |

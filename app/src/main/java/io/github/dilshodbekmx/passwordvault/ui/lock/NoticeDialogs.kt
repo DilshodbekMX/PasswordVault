@@ -97,7 +97,7 @@ internal fun PromptDialog(ui: PromptUi, password: TextFieldState, onCheck: () ->
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 VaultSecureField(
                     state = password,
-                    label = { Text(stringResource(R.string.lock_mp_field)) },
+                    label = stringResource(R.string.lock_mp_field),
                     enabled = ui.fieldEnabled,
                     isError = ui.lines.any { it.alert },
                     keyboardOptions = VaultFieldDefaults.Secret.copy(imeAction = ImeAction.Done),

@@ -19,6 +19,7 @@ import io.github.dilshodbekmx.passwordvault.lock.PinStatus
 import io.github.dilshodbekmx.passwordvault.nav.Route
 import io.github.dilshodbekmx.passwordvault.ui.common.clearSecret
 import io.github.dilshodbekmx.passwordvault.ui.common.readSecret
+import io.github.dilshodbekmx.passwordvault.ui.settings.ChangedUnderLock
 import io.github.dilshodbekmx.passwordvault.ui.setup.PinSetupStart
 import java.util.TimeZone
 import kotlinx.coroutines.CoroutineScope
@@ -27,6 +28,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
@@ -78,9 +80,13 @@ class NoticesViewModel(
 
     private val first: Flow<Notice?> = lock.state.map { (it as? LockUiState.Unlocked)?.notices?.firstOrNull() }
 
-    /** The notice to show as a dialog, or null: none, or the first is "Choose a PIN" with a proof ([choosePin]). */
-    val notice: StateFlow<NoticeUi?> = first.map { it?.let(::noticeUi) }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), firstNow()?.let(::noticeUi))
+    /**
+     * The notice to show as a dialog, or null: none, or the first is "Choose a PIN" with a proof
+     * ([choosePin]), or it is "Make a backup now?" while a master password changed under the lock shows
+     * its own backup step after this unlock ([ChangedUnderLock]), which asks the same.
+     */
+    val notice: StateFlow<NoticeUi?> = combine(first, ChangedUnderLock.covers) { notice, covered -> shown(notice, covered)?.let(::noticeUi) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), shown(firstNow(), ChangedUnderLock.coversNow())?.let(::noticeUi))
 
     /** The id of a first notice "Choose a PIN" that has the proof of this unlock: its screen follows without a dialog. */
     val choosePin: StateFlow<Long?> = first.map { choosePinId(it) }
@@ -104,6 +110,18 @@ class NoticesViewModel(
                     promptState.value = null
                     choosing.clear()
                 }
+            }
+        }
+        // The backup step of a master password changed under the lock answered for the lock's own
+        // "Make a backup now?" of this unlock, which stayed hidden meanwhile: "Back up now" keeps the
+        // unlock's proof for the backup that the step opens, "Later" drops it and puts the reminder off,
+        // as the offer's own answers do (build plan 8.1; the open problem of §12, R4).
+        viewModelScope.launch {
+            ChangedUnderLock.answer.collect { answered ->
+                if (answered == null) return@collect
+                ChangedUnderLock.takeAnswer() ?: return@collect
+                val offer = (lock.state.value as? LockUiState.Unlocked)?.notices?.firstOrNull { it is Notice.BackupNow } ?: return@collect
+                answer(offer.id, if (answered == ChangedUnderLock.Answer.BACK_UP_NOW) NoticeAnswer.BACK_UP_NOW else NoticeAnswer.LATER)
             }
         }
     }
@@ -192,6 +210,9 @@ class NoticesViewModel(
     }
 
     private fun firstNow(): Notice? = (lock.state.value as? LockUiState.Unlocked)?.notices?.firstOrNull()
+
+    /** [notice], unless it is "Make a backup now?" while the change's own backup step [covered] it. */
+    private fun shown(notice: Notice?, covered: Boolean): Notice? = notice.takeUnless { it is Notice.BackupNow && covered }
 
     private fun choosePinId(notice: Notice?): Long? = (notice as? Notice.ChoosePin)?.takeIf { !it.needsMasterPassword }?.id
 

@@ -127,7 +127,7 @@
     <string name="setup_again_mismatch">This doesn\'t match. Look at your paper and try again.</string>
     <!-- Shown with the mismatch message when what was typed has Cyrillic letters and the master
          password has none. -->
-    <string name="setup_again_cyrillic">Your keyboard may be set to Russian. Switch to Latin letters.</string>
+    <string name="setup_again_cyrillic">Your keyboard may be set to Cyrillic letters (Russian, for example). Switch to Latin letters.</string>
     <!-- A button shown after 3 mismatches: back to "Write it down on paper". -->
     <string name="setup_again_show_again">Show my password again</string>
     <!-- Shown with a spinner while the locked file is made, written and checked (about 1 second). -->

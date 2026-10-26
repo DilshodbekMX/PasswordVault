@@ -336,7 +336,7 @@ States and messages:
 - The field is focused and the keyboard opens when the screen appears. The keyboard's action key is "Done" and submits. A full-width `Button` "Next" under the field does the same.
 - **On mismatch**: "This doesn't match. Look at your paper and try again."
   - After 3 mismatches, a `TextButton` "Show my password again" is added (back to §5.4).
-  - If the attempt contains Cyrillic letters: "Your keyboard may be set to Russian. Switch to Latin letters."
+  - If the attempt contains Cyrillic letters: "Your keyboard may be set to Cyrillic letters (Russian, for example). Switch to Latin letters."
 - **On match**: "Setting up…" (`CircularProgressIndicator`, about 1 s for key derivation, the file write and a read-back check) [E: crypto.md §11]. Error: "Couldn't save. Your phone's storage may be full." with "Try again".
 - Then the vault exists, and back now leaves the app (§4).
 - In a change or a replacement of the master password the screen is kept on, as on "Write it down" (§5.4).
@@ -380,11 +380,11 @@ States and messages:
 **The screen.**
 - Title "Use your fingerprint?" Body: "Open the app with your fingerprint instead of your PIN. Your PIN and master password still work."
 - "Anyone whose fingerprint is saved in this phone's settings can open the app." (lock.md §9.4)
-- Note: "If this phone's fingerprints or screen lock change, fingerprint unlock turns off for safety. You can turn it on again in Settings."
+- Note: "If this phone's fingerprints or screen lock change, fingerprint unlock turns off for safety. You can turn it on again in this app's Settings."
 - `Button` "Use fingerprint" opens `BiometricPrompt` with the crypto object (title "Turn on fingerprint unlock", negative button "Cancel"). `TextButton` "Not now".
 - Errors:
   - cancelled → stay on the screen;
-  - failure → "Fingerprint unlock could not be turned on. You can try again later in Settings."
+  - failure → "Fingerprint unlock could not be turned on. You can try again later in this app's Settings."
   - Setup is never blocked.
 
 ### 5.8 Backups explained
@@ -440,18 +440,18 @@ Details:
 | A try was counted at start (the last entry was interrupted) | "Your last PIN entry was interrupted and counted as a try. 4 tries left." |
 | PIN turned off after too many wrong tries | With fingerprint usable, the fingerprint-only screen: "PIN unlock was turned off after too many wrong tries. Nothing was deleted. Use your fingerprint or master password, then choose a new PIN." Otherwise the §5.10 screen: "Your PIN was entered wrong too many times, so it was turned off. Nothing was deleted. Type your master password, then choose a new PIN." |
 | Opening | The keypad is replaced by `CircularProgressIndicator` and "Opening…" |
-| PIN can't be checked right now (the Keystore is not answering, or its record cannot be read right now [E: V-C6]) | The fingerprint-only screen: "Your PIN can't be checked right now. Use your fingerprint or master password. Restarting the phone usually fixes this. If it keeps happening, set your PIN up again in Settings." Without fingerprint the §5.10 screen: "Your PIN can't be checked right now. Use your master password this time. Restarting the phone usually fixes this. If it keeps happening, set your PIN up again in Settings." Nothing is removed |
+| PIN can't be checked right now (the Keystore is not answering, or its record cannot be read right now [E: V-C6]) | The fingerprint-only screen: "Your PIN can't be checked right now. Use your fingerprint or master password. Restarting the phone usually fixes this. If it keeps happening, set your PIN up again in this app's Settings." Without fingerprint the §5.10 screen: "Your PIN can't be checked right now. Use your master password this time. Restarting the phone usually fixes this. If it keeps happening, set your PIN up again in this app's Settings." Nothing is removed |
 | Storage full (the try could not be written) | "Your phone's storage is full, so the PIN can't be checked now. Free some space or use your master password." (with fingerprint: "…Free some space, or use your fingerprint or master password.") |
 | PIN stopped working (its key is gone, or its record is damaged) | "Your PIN stopped working on this phone. Use your fingerprint or master password, then choose a PIN again." Without fingerprint the §5.10 screen: "Your PIN stopped working on this phone. Type your master password, then choose a PIN again." |
 | The PIN was set up by a newer version of the app | "Your PIN was set up by a newer version of this app. Use your fingerprint or master password, and update the app." (without fingerprint: "Use your master password, and update the app.") |
 | **No PIN on this phone yet**: the vault came with "Copy apps and data", the app was installed again with its data kept, or the lock file is missing or damaged [E: V-P6; platform.md §3.4, §3.7] | The §5.10 screen with the title **"Welcome back"**: "Your PIN and fingerprint don't work here yet. This happens after you move to a new phone or install the app again. Type your master password once, then choose a PIN for this phone." Then "Choose a PIN" (skippable) and the fingerprint offer. Nothing is deleted |
-| Fingerprint turned off by the phone (only when its key is permanently invalidated) | "Fingerprint unlock was turned off because this phone's fingerprints or screen lock changed. Use your PIN. You can turn it on again in Settings." |
+| Fingerprint turned off by the phone (only when its key is permanently invalidated) | "Fingerprint unlock was turned off because this phone's fingerprints or screen lock changed. Use your PIN. You can turn it on again in this app's Settings." |
 | Fingerprint locked by the system after failures | "Fingerprint is locked for now. Use your PIN." |
 | The fingerprint was accepted but did not open the app (the phone's own PIN was typed in the system prompt first, lock.md §9.3) | "Fingerprint did not open the app this time. Enter your app PIN." |
 | Fingerprint can't be used now, because the phone's setting for apps is off | "Fingerprint can't be used in apps right now. Use your PIN. In your phone's settings, check that fingerprint may be used to verify it's you in apps." |
 | Fingerprint can't be used now, because no fingerprint is saved (or there is no screen lock) | "No fingerprint is saved on this phone now. Use your PIN. To use fingerprint unlock again, add a fingerprint in your phone's settings." |
 | Fingerprint can't be used now, because the phone needs a security update | "Your phone needs a security update before fingerprint can be used. Use your PIN." |
-| Fingerprint can't be checked right now (any other fingerprint error) | The fingerprint key is hidden until the next visit, with "Fingerprint can't be checked right now. Use your PIN. If this keeps happening, turn fingerprint unlock off and on again in Settings." The option stays on [E: V-C6] |
+| Fingerprint can't be checked right now (any other fingerprint error) | The fingerprint key is hidden until the next visit, with "Fingerprint can't be checked right now. Use your PIN. If this keeps happening, turn fingerprint unlock off and on again in this app's Settings." The option stays on [E: V-C6] |
 | Debug and staging builds only | "TEST BUILD: PIN keys are not protected" |
 
 On the fingerprint-only screen the fingerprint lines say "Use your master password" in place of "Use your PIN". A fingerprint that cannot be used now leaves its key alone: nothing is removed, and it works again when the phone allows it (lock.md §13.1).
@@ -516,7 +516,7 @@ If fingerprint unlock is on and cannot be used now, the matching fingerprint lin
 **"Forgot master password?"** opens a `ModalBottomSheet` (lock.md F17 step 1).
 - **Title**: "Forgot your master password?" Body: "Nobody can recover it: it is not stored anywhere."
 - **The options**, only those that apply, in this order:
-  1. **When a PIN exists**: "Your PIN still opens the app on this phone. Open the app with it, then choose a new master password." `Button` "Use my PIN" → §5.24. **When no PIN exists and fingerprint works**: the same with "fingerprint" and `Button` "Use my fingerprint". A fingerprint is not accepted where a PIN exists (lock.md F11 step 3).
+  1. **When a PIN exists**: "Your PIN still opens the app on this phone. Open the app with it, then choose a new master password." `Button` "Use my PIN" → §5.24. **When a PIN exists but cannot be checked now** (its record cannot be read, or the phone's storage is full; lock.md F11 step 3 stops there): "Your PIN can't be checked right now. When it works again, open the app with it, then choose a new master password.", without a button (build plan 8.1). **When no PIN exists and fingerprint works**: the same with "fingerprint" and `Button` "Use my fingerprint". A fingerprint is not accepted where a PIN exists (lock.md F11 step 3).
   2. "If you remember the master password of an older backup, you can open that backup instead. Your current passwords stay on this phone, locked." `OutlinedButton` "Restore from a backup file". This follows §5.2 steps 1–4: the backup is opened and checked with its password, and its summary card adds "Your current passwords stay on this phone, locked." with the button "Use this backup". Only then is the current vault archived and the backup installed. Setup continues at the PIN step.
   3. One entry for each vault that was put aside: "Open my previous passwords (locked on 6 Oct 2026)"; for a vault put aside by a replacement, "Open my passwords from before 7 Oct 2026". Each shows that vault's own lock screen (§5.1).
   4. **Whenever no PIN or fingerprint is usable now**: "Start with an empty app. Your current passwords stay on this phone, locked. If you remember the master password later, you can open them again." `TextButton` "Start with an empty app…" opens a dialog:
@@ -555,7 +555,7 @@ If fingerprint unlock is on and cannot be used now, the matching fingerprint lin
   - last, when not empty, a row "Recently deleted (3)" (§5.23).
   - Its bottom content padding is at least the height of the Add button plus 16 dp, plus the clipboard status row when it shows. So the button never covers the last row's copy button.
   - In Emerald the rows are grouped on cards: the favourites on one, all accounts with their letter headers on another, the search results on one, "Recently deleted" on its own; the headings and banners stay on the screen ([looks/README.md](looks/README.md)).
-- **`ExtendedFloatingActionButton`** "Add" (collapses to the + icon while scrolling down), drawn as the style says: tonal in Bank blue and the phone's colours, filled in Night vault, filled and fully rounded in Emerald ([looks/README.md](looks/README.md)).
+- **`ExtendedFloatingActionButton`** "Add" (collapses to the + icon while scrolling down), drawn as the style says: tonal in Bank blue and the phone's colours, filled in Night vault, filled and fully rounded in Emerald ([looks/README.md](looks/README.md)). TalkBack and Switch Access call it "Add account" in both forms (§8; build plan 8.1). It hides while the keyboard is up ("No results" has its own "Add") and while the list keeps less than 48 dp of itself above the button (its 16 dp margin aside), so that on a short phone at 200 % with the clipboard row showing it stays hidden until there is room; it is back as soon as there is (build plan 6.2; the owner's answer A to R5 question 1, build plan §12).
 - **Bottom**: the navigation bar (Passwords · Security · Settings) and, when something is copied, the clipboard status row (§6) above it. The Security item shows a dot when there are new results (§5.16). In Emerald's light scheme the bar has a line of 1 dp along its top edge, for the same reason as the search field.
 
 **Row** (`ListItem`):
@@ -710,7 +710,7 @@ Fields in order:
 
 A `ModalBottomSheet` (predictive back closes it).
 - **Preview**: the generated password large, monospace, with coloured digits and symbols; `IconButton` "New password" (refresh) next to it; the strength word under it.
-- **Mode**: `SingleChoiceSegmentedButtonRow` — "Random" · "Words".
+- **Mode**: `SingleChoiceSegmentedButtonRow` — "Random" · "Words". Where a label does not fit beside the chosen one's check mark, the check mark goes above the labels; where one does not fit its segment at all (a long word at a large font), the two are radio rows, as the separator's choices are then (build plan 8.1; §12 of the build plan, R6 question 1).
 - **Random** (default):
   - "Length" `Slider` 4–64, default **16**, with − and + `IconButton`s and the number shown (sliders alone are hard for some users).
   - `Switch`es "A–Z", "a–z", "0–9" and "Symbols ! # $ % & * + - = ? @ _" (all on); `Switch` "Avoid look-alike characters (I l 1 O 0)" (on).
@@ -1202,6 +1202,7 @@ Rules for all text:
 | Masked password | "Password, hidden" (password semantics; length never spoken) |
 | Revealed password | the value, with the hint "Hides after 30 seconds without a touch. For more time, use Show in big letters." |
 | Show toggle | "Show password" / "Hide password" with state description |
+| Text or password field | its label ("User name", "Master password"), read once; where only a sliver of the field is in view and its label is not, the same words as the field's own name (`FieldLabel`, in `VaultTextField` and `VaultSecureField`; build plan 8.1) |
 | Website open | "Open mail.google.com in browser" |
 | Generator icon | "Create a strong password" |
 | Strength meter | "Password strength: weak" |

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Oʻzbekcha (lotin): the PIN and fingerprint steps and "Make backups" (build plan 6.3a; English in
      values/strings_pin.xml). Glossary (i18n.md §3): 52 to 57 the PIN, 130 "ilova PIN kodi", 135
-     "faolsizlantiriladi", 61 to 63 the fingerprint, 97 "zaxira nusxa". The app's PIN is never the
+     "faolsiz qilinadi", 61 to 63 the fingerprint, 97 "zaxira nusxa". The app's PIN is never the
      phone's ("telefoningizning PIN kodi"). -->
 <resources>
 
@@ -14,7 +14,7 @@
     <!-- Only while a screen reader (TalkBack or another) is on. -->
     <string name="pin_create_talkback">Ekrandan oʻqish vositasi har bir tugmani ovoz chiqarib aytadi. Yoningizda boshqalar boʻlsa, quloqchindan foydalaning.</string>
     <string name="pin_create_someone_may_know">Eskisini boshqa birov bilishi mumkin.</string>
-    <string name="pin_create_footer">Ketma-ket 5&#160;marta xato kiritilsa, PIN kod faolsizlantiriladi. Shunda ilovani barmoq izingiz yoki asosiy parolingiz bilan ochib, yangi PIN kod tanlaysiz.</string>
+    <string name="pin_create_footer">Ketma-ket 5&#160;marta xato kiritilsa, PIN kod faolsiz qilinadi. Shunda ilovani barmoq izingiz yoki asosiy parolingiz bilan ochib, yangi PIN kod tanlaysiz.</string>
     <string name="pin_refused_date">Bu PIN kod sana yoki yilga oʻxshaydi. Boshqasini tanlang.</string>
     <string name="pin_refused_pattern">Bu PIN kodda raqamlar takrorlanadi yoki u oddiy kombinatsiyaga oʻxshaydi. Boshqasini tanlang.</string>
     <string name="pin_refused_sequence">Bu PIN kod ketma-ket raqamlar yoki tugmalar panelidagi shaklga oʻxshaydi. Boshqasini tanlang.</string>
@@ -40,7 +40,7 @@
         <item quantity="other">PIN kod xato. Yana %d&#160;marta urinish mumkin.</item>
     </plurals>
     <string name="pin_same_wrong_again">Bu PIN kodni allaqachon kiritgansiz. U qayta hisoblanmadi.</string>
-    <string name="pin_limit">Juda koʻp xato urinishlardan keyin PIN kod bilan ochish faolsizlantirildi. Hech narsa oʻchirilmadi. Yangi PIN kod tanlash uchun asosiy parolni kiriting.</string>
+    <string name="pin_limit">Juda koʻp xato urinishlardan keyin PIN kod bilan ochish faolsiz qilindi. Hech narsa oʻchirilmadi. Yangi PIN kod tanlash uchun asosiy parolni kiriting.</string>
     <string name="pin_type_master_password">Asosiy parolni kiritish</string>
     <string name="pin_cannot_check">PIN kodingizni hozircha tekshirib boʻlmayapti. Uning oʻrniga asosiy parolingizdan foydalaning yoki keyinroq qayta urining.</string>
 
@@ -62,11 +62,11 @@
     <string name="pin_fingerprint_title">Barmoq izi bilan ochasizmi?</string>
     <string name="pin_fingerprint_body">Ilovani PIN kod oʻrniga barmoq izingiz bilan oching. PIN kod va asosiy parolingiz ham ishlayveradi.</string>
     <string name="pin_fingerprint_anyone">Bu telefonga barmoq izi qoʻshilgan har kim ilovani ocha oladi.</string>
-    <string name="pin_fingerprint_note">Agar bu telefondagi barmoq izlari yoki ekran qulfi oʻzgarsa, xavfsizlik uchun barmoq izi bilan ochish faolsizlantiriladi. Uni Sozlamalarda qayta yoqishingiz mumkin.</string>
+    <string name="pin_fingerprint_note">Agar bu telefondagi barmoq izlari yoki ekran qulfi oʻzgarsa, xavfsizlik uchun barmoq izi bilan ochish faolsiz qilinadi. Uni ilova Sozlamalarida qayta yoqishingiz mumkin.</string>
     <string name="pin_fingerprint_use">Barmoq izidan foydalanish</string>
     <string name="pin_fingerprint_turn_on">Barmoq izi bilan ochishni yoqish</string>
-    <string name="pin_fingerprint_failed">Barmoq izi bilan ochishni yoqib boʻlmadi. Keyinroq Sozlamalarda qayta urinib koʻrishingiz mumkin.</string>
-    <string name="pin_fingerprint_may_not_be_on">Barmoq izi bilan ochish yoqilmagan boʻlishi mumkin. Agar barmoq izingiz qabul qilinmasa, uni Sozlamalar boʻlimida qayta yoqing.</string>
+    <string name="pin_fingerprint_failed">Barmoq izi bilan ochishni yoqib boʻlmadi. Keyinroq ilova Sozlamalarida qayta urinib koʻrishingiz mumkin.</string>
+    <string name="pin_fingerprint_may_not_be_on">Barmoq izi bilan ochish yoqilmagan boʻlishi mumkin. Agar barmoq izingiz qabul qilinmasa, uni ilova Sozlamalari boʻlimida qayta yoqing.</string>
     <string name="pin_fingerprint_add_first">Avval telefon sozlamalarida barmoq izi qoʻshing.</string>
     <string name="pin_fingerprint_no_secure_hardware">Bu telefon barmoq izi kalitini himoyalangan apparat qismida saqlay olmaydi.</string>
 

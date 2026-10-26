@@ -139,7 +139,7 @@ class HelpPagesTest {
         assertTrue(text.contains("Moving your apps to a new phone, for example with “Copy apps and data”, does not bring your passwords."))
         // A phone-copy tool or a reinstall that kept the data: "Welcome back" (lock.md F14).
         assertTrue(text.contains("says “Welcome back”, type your master password once. Then choose a PIN for the new phone."))
-        assertTrue(text.contains("After 5 wrong PINs in a row the PIN is turned off"))
+        assertTrue(text.contains("After 5\u00A0wrong PINs in a row the PIN is turned off"))
     }
 
     @Test
@@ -159,7 +159,7 @@ class HelpPagesTest {
         val text = page(HelpPage.FORGOT_PIN)
         assertTrue(text.contains("Tap “Forgot PIN? Use master password”, type your master password, and choose a new PIN."))
         assertTrue(text.contains("Never use “Clear storage” to fix a problem with your PIN"))
-        assertTrue(text.contains("After 5 wrong PINs in a row, the PIN is turned off. Nothing is deleted"))
+        assertTrue(text.contains("After 5\u00A0wrong PINs in a row, the PIN is turned off. Nothing is deleted"))
         assertEquals(Route.Help(HelpPage.FORGOT_MASTER_PASSWORD), HelpPages.blocks(HelpPage.FORGOT_PIN, facts).filterIsInstance<HelpBlock.Open>().single().route)
     }
 

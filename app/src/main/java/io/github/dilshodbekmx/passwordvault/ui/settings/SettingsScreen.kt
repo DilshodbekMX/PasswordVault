@@ -19,7 +19,6 @@ import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -54,6 +53,7 @@ import io.github.dilshodbekmx.passwordvault.settings.ClipDelay
 import io.github.dilshodbekmx.passwordvault.settings.LockDelay
 import io.github.dilshodbekmx.passwordvault.settings.StyleChoice
 import io.github.dilshodbekmx.passwordvault.settings.ThemeChoice
+import io.github.dilshodbekmx.passwordvault.ui.common.VaultSnackbarHost
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultTopBar
 import kotlinx.coroutines.launch
 
@@ -89,7 +89,7 @@ fun SettingsScreen(vm: SettingsViewModel, nav: Navigator, modifier: Modifier = M
             testTagsAsResourceId = true
         },
         topBar = { VaultTopBar(title = title) },
-        snackbarHost = { SnackbarHost(snackbar) },
+        snackbarHost = { VaultSnackbarHost(snackbar) },
     ) { padding ->
         LazyColumn(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding).testTag(SettingsTags.LIST), state = listState) {
             heading("appLock", R.string.settings_group_app_lock)

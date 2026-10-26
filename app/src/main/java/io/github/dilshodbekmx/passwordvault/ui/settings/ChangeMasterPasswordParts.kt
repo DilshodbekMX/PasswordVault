@@ -256,7 +256,7 @@ internal fun MasterField(
     VaultSecureField(
         state = state,
         modifier = Modifier.fillMaxWidth().focusRequester(focus).onFocusChanged { focused = it.isFocused }.testTag(tag),
-        label = { Text(label) },
+        label = label,
         enabled = enabled,
         isError = isError,
         keyboardOptions = VaultFieldDefaults.Secret.copy(imeAction = ImeAction.Done),

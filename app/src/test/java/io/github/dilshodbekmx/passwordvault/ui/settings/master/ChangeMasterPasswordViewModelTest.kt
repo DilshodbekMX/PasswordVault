@@ -567,9 +567,44 @@ class ChangeMasterPasswordViewModelTest {
         assertEquals("shown after the unlock", ChangeStage.BACKUP, vm.ui.value.stage)
         assertTrue(vm.ui.value.afterLock)
         assertFalse(vm.ui.value.choosePin)
+        assertTrue("the lock's own backup offer stays away while the step shows (build plan 8.1)", ChangedUnderLock.coversNow())
         vm.close()
         assertEquals(1, snoozes)
         assertEquals(Leave.BACK, vm.ui.value.leave)
+        assertEquals("its answer, for the lock's offer", ChangedUnderLock.Answer.LATER, ChangedUnderLock.answer.value)
+        assertFalse(ChangedUnderLock.coversNow())
+    }
+
+    /** Build plan 8.1: "Back up now" on the step shown after the unlock is the answer the lock's own offer gets too. */
+    @Test
+    fun backUpNowOnTheStepShownAfterTheUnlock_isTheLocksOfferAnswerToo() = runTest(dispatcher) {
+        val lock = lockWith(pin = PinStatus.NotSet)
+        val vm = model(lock)
+        upToThePin(vm)
+        advanceUntilIdle()
+        lock.fake.lock(LockReason.SCREEN_OFF)
+        store.clear()
+        advanceUntilIdle()
+        lock.fake.state.value = LockUiState.Unlocked(emptyList(), null)
+        val next = model(lock)
+        assertTrue(next.ui.value.afterLock)
+        assertTrue(ChangedUnderLock.coversNow())
+        next.backUpNow()
+        assertEquals(Leave.BACKUP, next.ui.value.leave)
+        assertEquals(ChangedUnderLock.Answer.BACK_UP_NOW, ChangedUnderLock.answer.value)
+        assertFalse(ChangedUnderLock.coversNow())
+    }
+
+    /** Build plan 8.1: the step of a vault put aside since is dropped and hides nothing of the lock's. */
+    @Test
+    fun aStepOfAVaultPutAsideIsDropped_andCoversNothing() = runTest(dispatcher) {
+        val lock = lockWith(pin = PinStatus.NotSet)
+        ChangedUnderLock.leave("00000000-0000-4000-8000-0000000000aa", usedElsewhere = false)
+        lock.fake.status.value = lock.fake.status.value.copy(aside = listOf(AsideVault("00000000-0000-4000-8000-0000000000aa", 1_000L, null)))
+        lock.fake.state.value = LockUiState.Unlocked(emptyList(), null)
+        assertEquals(ChangeStage.CURRENT, model(lock).ui.value.stage)
+        assertNull(ChangedUnderLock.step.value)
+        assertFalse(ChangedUnderLock.coversNow())
     }
 
     /**

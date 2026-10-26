@@ -186,6 +186,8 @@
     <string name="edit_gen_more_words">More words</string>
     <!-- Label of the choice of what goes between the words. -->
     <string name="edit_gen_separator">Separator</string>
+    <!-- A separator choice in the generator's list (at large fonts, where the segmented row does not fit): %1$s is the symbol ("-", ".", "_"), %2$s its name (edit_gen_separator_hyphen, …): "- Hyphen". Put the two in the order the language reads best (build plan 8.1; ux.md §9: no concatenation). -->
+    <string name="edit_gen_separator_choice">%1$s %2$s</string>
     <!-- Separator choice, read by TalkBack (the button shows "-"). -->
     <string name="edit_gen_separator_hyphen">Hyphen</string>
     <!-- Separator choice, read by TalkBack (the button shows "."). -->

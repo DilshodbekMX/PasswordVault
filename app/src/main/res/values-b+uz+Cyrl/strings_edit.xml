@@ -86,7 +86,7 @@
     <!-- ===== The password generator sheet (ux.md §5.15) ===== -->
     <string name="edit_gen_title">Кучли парол яратиш</string>
     <string name="edit_gen_new">Янги парол</string>
-    <string name="edit_gen_random">Аралаш</string>
+    <string name="edit_gen_random">Тасодифий</string>
     <string name="edit_gen_words">Сўзлар</string>
     <string name="edit_gen_length">Узунлик</string>
     <string name="edit_gen_shorter">Қисқароқ</string>
@@ -101,6 +101,7 @@
     <string name="edit_gen_fewer_words">Камроқ сўз</string>
     <string name="edit_gen_more_words">Кўпроқ сўз</string>
     <string name="edit_gen_separator">Ажратгич</string>
+    <string name="edit_gen_separator_choice">%1$s %2$s</string>
     <string name="edit_gen_separator_hyphen">Чизиқча</string>
     <string name="edit_gen_separator_dot">Нуқта</string>
     <string name="edit_gen_separator_underscore">Пастки чизиқ</string>

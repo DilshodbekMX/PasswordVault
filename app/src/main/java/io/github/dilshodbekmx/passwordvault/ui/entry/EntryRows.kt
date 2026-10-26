@@ -47,12 +47,12 @@ import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDataType
 import androidx.compose.ui.semantics.customActions
-import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.Hyphens
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -120,13 +120,15 @@ internal fun EntryRows(details: EntryDetails, copied: EntryValue?, actions: Entr
             contentPadding = PaddingValues(bottom = 24.dp),
         ) {
             item(key = "title", contentType = "title") {
+                // The name whole, where the top bar may cut it (ux.md §5.12). Not a heading: the top bar's
+                // title is the screen's heading, and TalkBack's heading navigation would meet the name
+                // twice (build plan 8.1; the open problem of §12, R5).
                 Text(
                     text = details.title,
                     style = MaterialTheme.typography.headlineSmall,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 8.dp)
-                        .semantics { heading() }
                         .testTag(EntryTags.TITLE)
                         .userText(),
                 )
@@ -324,7 +326,12 @@ private fun FieldRowItem(row: FieldRow, copied: Boolean, actions: EntryActions, 
             menu = if (row.empty) emptyList() else listOf(RowMenuItem(stringResource(R.string.entry_copy)) { actions.copy(value) }),
             trailing = { if (!row.empty) CopyButton(value, copied, copy, primary = false, actions.copy) },
         ) {
-            Text(text = row.shown.orEmpty(), modifier = Modifier.testTag(EntryTags.value(value)).userText())
+            // Never hyphenated, as the username: a value too long for its line shows no hyphen it does not have.
+            Text(
+                text = row.shown.orEmpty(),
+                style = LocalTextStyle.current.copy(hyphens = Hyphens.None),
+                modifier = Modifier.testTag(EntryTags.value(value)).userText(),
+            )
         }
     }
 }
@@ -644,9 +651,13 @@ private fun CopyButton(value: EntryValue, copied: Boolean, description: String, 
  */
 private fun Modifier.notForAutofill(): Modifier = semantics { contentDataType = ContentDataType.None }
 
-/** The text style of a username or a website: always left to right (ux.md §3). */
+/**
+ * The text style of a username or a website: always left to right (ux.md §3), and never hyphenated, so
+ * that a value too long for its line shows no hyphen it does not have (the theme hyphenates the app's
+ * texts, i18n.md §4.5 rule 4).
+ */
 @Composable
-private fun leftToRight(): TextStyle = LocalTextStyle.current.copy(textDirection = TextDirection.Ltr)
+private fun leftToRight(): TextStyle = LocalTextStyle.current.copy(textDirection = TextDirection.Ltr, hyphens = Hyphens.None)
 
 /** A row's colours: Material 3's on the screen, with no colour of its own on a card, whose colour is behind it. */
 @Composable

@@ -135,7 +135,7 @@ fun MasterPasswordContent(
         VaultSecureField(
             state = password,
             modifier = fieldModifier.fillMaxWidth().testTag(LockTags.FIELD),
-            label = { Text(stringResource(R.string.lock_mp_field)) },
+            label = stringResource(R.string.lock_mp_field),
             enabled = ui.fieldEnabled,
             supportingText = ui.pending?.let { pending -> { Text(pending.show(formatters), Modifier.testTag(LockTags.PENDING)) } },
             isError = ui.fieldError,

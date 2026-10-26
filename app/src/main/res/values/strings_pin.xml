@@ -124,18 +124,18 @@
     <!-- Who can open the app with fingerprint (lock.md §9.4). Also under the switch in Settings. -->
     <string name="pin_fingerprint_anyone">Anyone whose fingerprint is saved in this phone’s settings can open the app.</string>
     <!-- A note on the offer: when the app turns fingerprint unlock off by itself. -->
-    <string name="pin_fingerprint_note">If this phone’s fingerprints or screen lock change, fingerprint unlock turns off for safety. You can turn it on again in Settings.</string>
+    <string name="pin_fingerprint_note">If this phone’s fingerprints or screen lock change, fingerprint unlock turns off for safety. You can turn it on again in this app’s Settings.</string>
     <!-- Main button of the offer: opens the phone's fingerprint prompt. -->
     <string name="pin_fingerprint_use">Use fingerprint</string>
     <!-- The title of the phone's fingerprint prompt that turns fingerprint unlock on (lock.md §9.2).
          Also the title of the master-password question in Settings before it. -->
     <string name="pin_fingerprint_turn_on">Turn on fingerprint unlock</string>
     <!-- Turning fingerprint unlock on failed during setup (ux.md §5.7); setup goes on. -->
-    <string name="pin_fingerprint_failed">Fingerprint unlock could not be turned on. You can try again later in Settings.</string>
+    <string name="pin_fingerprint_failed">Fingerprint unlock could not be turned on. You can try again later in this app’s Settings.</string>
     <!-- Turning fingerprint unlock on ended in doubt: the phone reported an error while it was
          written, and the app cannot tell whether it is on (lock.md F9 step 9; build-plan.md §12,
          decision 4). Shown on the fingerprint offer and in Settings. -->
-    <string name="pin_fingerprint_may_not_be_on">Fingerprint unlock may not have been turned on. If your fingerprint is not accepted, turn it on again in Settings.</string>
+    <string name="pin_fingerprint_may_not_be_on">Fingerprint unlock may not have been turned on. If your fingerprint is not accepted, turn it on again in this app’s Settings.</string>
     <!-- No fingerprint is saved on the phone, so fingerprint unlock cannot be turned on (lock.md F9 step 4). -->
     <string name="pin_fingerprint_add_first">Add a fingerprint in your phone’s settings first.</string>
     <!-- The phone cannot keep the fingerprint key in its secure hardware (ux.md §5.7). -->

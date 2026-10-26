@@ -16,7 +16,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -41,6 +40,7 @@ import io.github.dilshodbekmx.passwordvault.nav.Route
 import io.github.dilshodbekmx.passwordvault.settings.ClipDelay
 import io.github.dilshodbekmx.passwordvault.settings.LockDelay
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultDialog
+import io.github.dilshodbekmx.passwordvault.ui.common.VaultSnackbarHost
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultTopBar
 import io.github.dilshodbekmx.passwordvault.ui.setup.MasterPasswordAsk
 import io.github.dilshodbekmx.passwordvault.ui.setup.MasterPasswordInput
@@ -48,7 +48,7 @@ import io.github.dilshodbekmx.passwordvault.ui.setup.MasterPasswordInput
 /**
  * Settings › App lock on a page of its own (ux.md §5.18; [Route.AppLock]): the same rows as the
  * group in the Settings list, for the screens that send the user to "Settings › App lock" (lock.md
- * §13.3: "You can turn it on again in Settings"; the notices of §13.4).
+ * §13.3: "You can turn it on again in this app’s Settings"; the notices of §13.4).
  */
 @OptIn(ExperimentalMaterial3Api::class) // TopAppBar's signature names TopAppBarScrollBehavior (ux.md §10)
 @Composable
@@ -69,7 +69,7 @@ fun AppLockPage(vm: SettingsViewModel, nav: Navigator, modifier: Modifier = Modi
                 navigationIcon = { BackArrow(nav) },
             )
         },
-        snackbarHost = { SnackbarHost(snackbar) },
+        snackbarHost = { VaultSnackbarHost(snackbar) },
     ) { padding ->
         LazyColumn(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding).testTag(SettingsTags.LIST)) {
             appLockRows(ui, AppLockActions.of(vm, nav))

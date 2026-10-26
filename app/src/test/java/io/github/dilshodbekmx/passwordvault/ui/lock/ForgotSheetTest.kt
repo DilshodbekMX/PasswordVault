@@ -99,21 +99,33 @@ class ForgotSheetTest {
         assertEquals(SheetOption(null, LockButton(text(R.string.common_try_again), LockAction.CloseSheet, LockTags.SHEET_TRY_AGAIN)), options[2])
     }
 
+    /**
+     * F11 step 3: whenever a PIN exists it is the proof; a fingerprint never stands in for it. A PIN that
+     * cannot be checked now gives no proof (F11 stops there), so the sheet says so without a button,
+     * rather than "Your PIN still opens the app" with "Use my PIN" (build plan 8.1; the open problem of
+     * §12 from the device check of R4: its record could not be read, and the sheet offered both "Use my
+     * PIN" and "Start with an empty app").
+     */
     @Test
-    fun aPinThatCannotBeCheckedIsStillThePinNeverAFingerprint() = runTest {
-        // F11 step 3: whenever a PIN exists it is the proof; a fingerprint never stands in for it.
+    fun aPinThatCannotBeCheckedNowIsNamedWithoutAButton_andNeverReplacedByAFingerprint() = runTest {
         for (pin in listOf(PinStatus.CannotCheck, PinStatus.Off(PinReason.STORAGE_FULL))) {
             store.clear()
             val lock = FakeLockManager(initial = LockUiState.Locked(masterPassword(reason = MpReason.Pin(PinReason.CANNOT_CHECK))))
             lock.status.value = LockStatus.NONE.copy(pin = pin, fingerprint = FingerprintStatus.Off)
             val vm = open(lock)
-            assertEquals("$pin", listOf(LockTags.SHEET_USE_PIN, LockTags.SHEET_RESTORE, LockTags.SHEET_EMPTY, LockTags.SHEET_TRY_AGAIN), tags(vm))
+            assertEquals("$pin", listOf(SAYS_WHY, LockTags.SHEET_RESTORE, LockTags.SHEET_EMPTY, LockTags.SHEET_TRY_AGAIN), tags(vm))
+            assertEquals(SheetOption(text(R.string.lock_sheet_pin_cannot_check_text), null), vm.sheet.value!!.options.first())
 
             store.clear()
             lock.status.value = LockStatus.NONE.copy(pin = pin, fingerprint = FingerprintStatus.On)
             val withFingerprint = open(lock)
-            assertEquals("$pin, fingerprint on", listOf(LockTags.SHEET_USE_PIN, LockTags.SHEET_RESTORE, LockTags.SHEET_TRY_AGAIN), tags(withFingerprint))
+            assertEquals("$pin, fingerprint on", listOf(SAYS_WHY, LockTags.SHEET_RESTORE, LockTags.SHEET_TRY_AGAIN), tags(withFingerprint))
         }
+        // The same PIN offered by the master-password screen itself (practice) can be checked: "Use my PIN".
+        store.clear()
+        val lock = FakeLockManager(initial = LockUiState.Locked(masterPassword(canUsePin = true)))
+        lock.status.value = LockStatus.NONE.copy(pin = PinStatus.CannotCheck)
+        assertEquals(LockTags.SHEET_USE_PIN, tags(open(lock)).first())
     }
 
     @Test
@@ -211,7 +223,7 @@ class ForgotSheetTest {
             val lock = FakeLockManager(initial = LockUiState.Locked(masterPassword(canUsePin = true)))
             lock.status.value = LockStatus.NONE.copy(pin = PinStatus.On, aside = listOf(aside(VAULT_A, ASIDE_AT)))
             val vm = open(lock)
-            vm.onAction(vm.sheet.value!!.options.single { it.button.tag == tag }.button.action)
+            vm.onAction(vm.sheet.value!!.options.single { it.button?.tag == tag }.button!!.action)
             runCurrent()
             assertNull("$tag closes the sheet", vm.sheet.value)
             assertEquals(tag, listOf<LockIntent>(LockIntent.OpenForgotSheet) + intents, lock.sent)
@@ -298,8 +310,9 @@ class ForgotSheetTest {
         val options = vm.sheet.value!!.options
         assertEquals(5, options.size)
         for (option in options) {
-            assertFalse(option.button.label.toString(), option.button.label == text(R.string.common_delete))
-            val action = option.button.action
+            val button = option.button ?: continue
+            assertFalse(button.label.toString(), button.label == text(R.string.common_delete))
+            val action = button.action
             assertTrue(
                 "$action",
                 action == LockAction.Restore || action == LockAction.AskStartEmpty || action == LockAction.CloseSheet ||
@@ -318,5 +331,10 @@ class ForgotSheetTest {
         return vm
     }
 
-    private fun tags(vm: LockViewModel): List<String> = vm.sheet.value!!.options.map { it.button.tag }
+    private fun tags(vm: LockViewModel): List<String> = vm.sheet.value!!.options.map { it.button?.tag ?: SAYS_WHY }
+
+    private companion object {
+        /** In [tags], an option that is a sentence without a button. */
+        const val SAYS_WHY = "(a sentence without a button)"
+    }
 }

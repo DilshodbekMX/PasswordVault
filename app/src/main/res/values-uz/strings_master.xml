@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Oʻzbekcha (lotin): changing and replacing the master password (build plan 6.3a; English in
      values/strings_master.xml). Glossary (i18n.md §3): 48 "asosiy parol", 51 "Asosiy parolni
-     oʻzgartirish", 130 "ilova PIN kodi", 135 "faolsizlantirildi", 138 "yangi asosiy parol", 97
+     oʻzgartirish", 130 "ilova PIN kodi", 135 "faolsiz qilindi", 138 "yangi asosiy parol", 97
      "zaxira nusxa". -->
 <resources>
 
@@ -18,8 +18,8 @@
     <string name="master_wrong">Asosiy parol notoʻgʻri. Klaviatura tilini (lotin yoki kirill) va bosh harflarni tekshiring.</string>
     <string name="master_wait">30&#160;soniya kuting, keyin qayta urining. Shoshilmang, yozib qoʻygan qogʻozingizga qarang.</string>
     <plurals name="master_wait_seconds">
-        <item quantity="one">%d&#160;soniyadan keyin qayta urining.</item>
-        <item quantity="other">%d&#160;soniyadan keyin qayta urining.</item>
+        <item quantity="one">%d&#160;soniyadan keyin qayta urining</item>
+        <item quantity="other">%d&#160;soniyadan keyin qayta urining</item>
     </plurals>
     <string name="master_no_memory">Asosiy parolni tekshirish uchun telefoningizda boʻsh operativ xotira yetarli emas. Boshqa ilovalarni yoping yoki telefonni qayta ishga tushiring, keyin qayta urining.</string>
 
@@ -63,10 +63,10 @@
     <string name="master_continue">Davom etish</string>
     <string name="master_proof_pin_title">Ilova PIN kodini kiriting</string>
     <string name="master_proof_pin_text">Xavfsizligingiz uchun ilova ochiq boʻlsa ham, PIN kodni hozir kiriting.</string>
-    <string name="master_proof_pin_forgot">PIN kodni ham unutdingizmi? 5&#160;marta xato kiritilgandan keyin PIN kod faolsizlantiriladi, shundan soʻng barmoq izingiz bilan davom etishingiz mumkin.</string>
+    <string name="master_proof_pin_forgot">PIN kodni ham unutdingizmi? 5&#160;marta xato kiritilgandan keyin PIN kod faolsiz qilinadi, shundan soʻng barmoq izingiz bilan davom etishingiz mumkin.</string>
     <string name="master_proof_fingerprint">Barmoq izingiz bilan tasdiqlash uchun skanerga tegining.</string>
-    <string name="master_pin_gone_heading">PIN kod faolsizlantirildi</string>
-    <string name="master_proof_pin_gone">Juda koʻp xato urinishlardan keyin PIN kod faolsizlantirildi. Barmoq izingiz bilan davom etishingiz mumkin.</string>
+    <string name="master_pin_gone_heading">PIN kod faolsiz qilindi</string>
+    <string name="master_proof_pin_gone">Juda koʻp xato urinishlardan keyin PIN kod faolsiz qilindi. Barmoq izingiz bilan davom etishingiz mumkin.</string>
     <string name="master_use_fingerprint">Barmoq izidan foydalanish</string>
     <string name="master_stopped_heading">Hozir yangi asosiy parol tanlab boʻlmaydi</string>
     <string name="master_proof_cannot_check">PIN kodingizni hozircha tekshirib boʻlmayapti. Keyinroq qayta urining.</string>

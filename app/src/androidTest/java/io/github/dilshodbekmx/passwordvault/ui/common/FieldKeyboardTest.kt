@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.input.TextFieldState
-import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -136,7 +135,7 @@ class FieldKeyboardTest {
                     VaultSecureField(
                         state = field,
                         modifier = Modifier.fillMaxWidth().focusRequester(focus).onFocusChanged { focused = it.isFocused }.testTag(FIELD),
-                        label = { Text("field") },
+                        label = "field",
                         keyboardOptions = VaultFieldDefaults.Secret.copy(imeAction = ImeAction.Done),
                     )
                 }

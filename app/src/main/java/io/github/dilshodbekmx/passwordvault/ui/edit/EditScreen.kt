@@ -27,9 +27,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
@@ -79,6 +77,7 @@ import io.github.dilshodbekmx.passwordvault.ui.common.StrengthBar
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultDialog
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultFieldDefaults
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultSecureField
+import io.github.dilshodbekmx.passwordvault.ui.common.VaultSnackbarHost
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultTextField
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultTopBar
 import io.github.dilshodbekmx.passwordvault.ui.common.rememberFieldKeyboard
@@ -160,7 +159,7 @@ fun EditScreen(vm: EditViewModel, nav: Navigator) {
                 },
             )
         },
-        snackbarHost = { SnackbarHost(snackbar) { data -> Snackbar(data, modifier = Modifier.testTag(EditTags.MESSAGE)) } },
+        snackbarHost = { VaultSnackbarHost(snackbar, tag = EditTags.MESSAGE) },
     ) { padding ->
         when (ui.phase) {
             Phase.LOADING -> Unit
@@ -219,7 +218,7 @@ private fun Form(vm: EditViewModel, ui: EditUiState, padding: PaddingValues, foc
             VaultTextField(
                 state = form.title,
                 modifier = Modifier.formField(focus, FieldKey.Title, EditTags.NAME),
-                label = { Text(text = stringResource(R.string.edit_name)) },
+                label = stringResource(R.string.edit_name),
                 placeholder = { Text(text = stringResource(R.string.edit_name_example)) },
                 supportingText = support(form.title, EntryRules.TITLE_MAX, problemsOf(ui, vm, FieldKey.Title), formatters),
                 isError = problemsOf(ui, vm, FieldKey.Title).isNotEmpty(),
@@ -230,7 +229,7 @@ private fun Form(vm: EditViewModel, ui: EditUiState, padding: PaddingValues, foc
             VaultTextField(
                 state = form.username,
                 modifier = Modifier.formField(focus, FieldKey.Username, EditTags.USERNAME),
-                label = { Text(text = stringResource(R.string.edit_username)) },
+                label = stringResource(R.string.edit_username),
                 supportingText = support(form.username, EntryRules.USERNAME_MAX, problemsOf(ui, vm, FieldKey.Username), formatters),
                 isError = problemsOf(ui, vm, FieldKey.Username).isNotEmpty(),
                 inputTransformation = vm.inputOf(FieldKey.Username),
@@ -246,7 +245,7 @@ private fun Form(vm: EditViewModel, ui: EditUiState, padding: PaddingValues, foc
                         VaultTextField(
                             state = row.state,
                             modifier = Modifier.weight(1f).formField(focus, rowKey, EditTags.website(index)),
-                            label = { Text(text = stringResource(R.string.edit_website)) },
+                            label = stringResource(R.string.edit_website),
                             supportingText = support(row.state, EntryRules.URL_MAX, problemsOf(ui, vm, rowKey), formatters),
                             isError = problemsOf(ui, vm, rowKey).isNotEmpty(),
                             inputTransformation = vm.inputOf(rowKey),
@@ -273,7 +272,7 @@ private fun Form(vm: EditViewModel, ui: EditUiState, padding: PaddingValues, foc
             VaultTextField(
                 state = form.notes,
                 modifier = Modifier.formField(focus, FieldKey.Notes, EditTags.NOTES),
-                label = { Text(text = stringResource(R.string.edit_notes)) },
+                label = stringResource(R.string.edit_notes),
                 supportingText = support(form.notes, EntryRules.NOTES_MAX, problemsOf(ui, vm, FieldKey.Notes), formatters),
                 isError = problemsOf(ui, vm, FieldKey.Notes).isNotEmpty(),
                 inputTransformation = vm.inputOf(FieldKey.Notes),
@@ -289,7 +288,7 @@ private fun Form(vm: EditViewModel, ui: EditUiState, padding: PaddingValues, foc
                             VaultSecureField(
                                 state = row.value,
                                 modifier = Modifier.weight(1f).formField(focus, rowKey, EditTags.field(index)),
-                                label = { Text(text = row.name) },
+                                label = row.name,
                                 supportingText = support(row.value, EntryRules.FIELD_VALUE_MAX, problems, formatters),
                                 isError = problems.isNotEmpty(),
                                 inputTransformation = vm.inputOf(rowKey),
@@ -299,7 +298,7 @@ private fun Form(vm: EditViewModel, ui: EditUiState, padding: PaddingValues, foc
                             VaultTextField(
                                 state = row.value,
                                 modifier = Modifier.weight(1f).formField(focus, rowKey, EditTags.field(index)),
-                                label = { Text(text = row.name) },
+                                label = row.name,
                                 supportingText = support(row.value, EntryRules.FIELD_VALUE_MAX, problems, formatters),
                                 isError = problems.isNotEmpty(),
                                 inputTransformation = vm.inputOf(rowKey),
@@ -334,7 +333,7 @@ private fun PasswordPart(vm: EditViewModel, ui: EditUiState, focus: FieldFocus, 
     VaultSecureField(
         state = form.password,
         modifier = Modifier.formField(focus, FieldKey.Password, EditTags.PASSWORD),
-        label = { Text(text = stringResource(R.string.edit_password)) },
+        label = stringResource(R.string.edit_password),
         trailingIcon = {
             IconButton(onClick = vm::openGenerator, modifier = Modifier.testTag(EditTags.GENERATE)) {
                 Icon(painterResource(R.drawable.ic_edit_dice), contentDescription = generate)
@@ -504,7 +503,7 @@ private fun AddFieldDialog(vm: EditViewModel, focus: FieldFocus, formatters: For
                     VaultTextField(
                         state = add.name,
                         modifier = Modifier.formField(focus, FieldKey.AddFieldName, EditTags.FIELD_LABEL),
-                        label = { Text(text = stringResource(R.string.edit_field_label)) },
+                        label = stringResource(R.string.edit_field_label),
                         supportingText = labelSupport(add, formatters),
                         isError = add.labelMissing,
                         inputTransformation = vm.inputOf(FieldKey.AddFieldName),
@@ -518,7 +517,7 @@ private fun AddFieldDialog(vm: EditViewModel, focus: FieldFocus, formatters: For
                     VaultSecureField(
                         state = add.value,
                         modifier = Modifier.formField(focus, FieldKey.AddFieldValue, EditTags.FIELD_VALUE),
-                        label = { Text(text = stringResource(R.string.edit_field_value)) },
+                        label = stringResource(R.string.edit_field_value),
                         supportingText = support(add.value, EntryRules.FIELD_VALUE_MAX, emptyList(), formatters),
                         inputTransformation = vm.inputOf(FieldKey.AddFieldValue),
                     )
@@ -526,7 +525,7 @@ private fun AddFieldDialog(vm: EditViewModel, focus: FieldFocus, formatters: For
                     VaultTextField(
                         state = add.value,
                         modifier = Modifier.formField(focus, FieldKey.AddFieldValue, EditTags.FIELD_VALUE),
-                        label = { Text(text = stringResource(R.string.edit_field_value)) },
+                        label = stringResource(R.string.edit_field_value),
                         supportingText = support(add.value, EntryRules.FIELD_VALUE_MAX, emptyList(), formatters),
                         inputTransformation = vm.inputOf(FieldKey.AddFieldValue),
                         lineLimits = TextFieldLineLimits.MultiLine(maxHeightInLines = 4),

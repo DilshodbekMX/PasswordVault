@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
@@ -40,6 +41,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.dilshodbekmx.passwordvault.R
@@ -87,10 +89,7 @@ fun GeneratorSheet(model: GeneratorModel, onUse: () -> Unit, onDismiss: () -> Un
                 }
             }
             state.strength?.let { StrengthBar(score = it.score) }
-            SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-                KindButton(GeneratorOptions.Kind.RANDOM, options.kind, 0, R.string.edit_gen_random, GenTags.RANDOM, model)
-                KindButton(GeneratorOptions.Kind.WORDS, options.kind, 1, R.string.edit_gen_words, GenTags.WORDS, model)
-            }
+            KindChoices(options.kind, model::setKind)
             when (options.kind) {
                 GeneratorOptions.Kind.RANDOM -> {
                     Stepper(
@@ -143,24 +142,78 @@ fun GeneratorSheet(model: GeneratorModel, onUse: () -> Unit, onDismiss: () -> Un
     }
 }
 
+/**
+ * "Random" and "Words": a segmented row while each label fits on one line beside the chosen one's
+ * check mark, as Material draws it; where a label fits only without the check mark, each segment takes
+ * two lines, the check mark above its label; where it does not fit its segment at all (a long word,
+ * "Тасодифий" or "Случайный", at a large font: build plan §12, R6 question 1), a radio row for each
+ * kind, as the separator's choices do. No word breaks in any of them.
+ */
 @Composable
-private fun androidx.compose.material3.SingleChoiceSegmentedButtonRowScope.KindButton(
-    kind: GeneratorOptions.Kind,
-    chosen: GeneratorOptions.Kind,
-    index: Int,
-    @StringRes text: Int,
-    tag: String,
-    model: GeneratorModel,
-) {
-    SegmentedButton(
-        selected = kind == chosen,
-        onClick = { model.setKind(kind) },
-        shape = SegmentedButtonDefaults.itemShape(index, 2),
-        modifier = Modifier.testTag(tag),
-    ) {
-        Text(text = stringResource(text))
+internal fun KindChoices(chosen: GeneratorOptions.Kind, onChoose: (GeneratorOptions.Kind) -> Unit) {
+    val labels = KINDS.map { stringResource(it.text) }
+    val measurer = rememberTextMeasurer()
+    val style = MaterialTheme.typography.labelLarge
+    val density = LocalDensity.current
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val widest = labels.maxOf { measurer.measure(it, style, maxLines = 1, softWrap = false, density = density).size.width }
+        val besideMark = with(density) { (maxWidth / KINDS.size - SEGMENT_FURNITURE).roundToPx() }
+        val alone = with(density) { (maxWidth / KINDS.size - SEGMENT_PADDING).roundToPx() }
+        when {
+            widest <= besideMark -> KindSegments(chosen, onChoose, labels, markAbove = false)
+            widest <= alone -> KindSegments(chosen, onChoose, labels, markAbove = true)
+            else -> Column(Modifier.selectableGroup()) {
+                KINDS.forEachIndexed { index, kind ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 48.dp)
+                            .selectable(selected = chosen == kind.kind, role = Role.RadioButton, onClick = { onChoose(kind.kind) })
+                            .testTag(kind.tag),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        RadioButton(selected = chosen == kind.kind, onClick = null)
+                        Text(text = labels[index], modifier = Modifier.padding(start = 16.dp))
+                    }
+                }
+            }
+        }
     }
 }
+
+@Composable
+private fun KindSegments(chosen: GeneratorOptions.Kind, onChoose: (GeneratorOptions.Kind) -> Unit, labels: List<String>, markAbove: Boolean) {
+    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+        KINDS.forEachIndexed { index, kind ->
+            val selected = kind.kind == chosen
+            SegmentedButton(
+                selected = selected,
+                onClick = { onChoose(kind.kind) },
+                shape = SegmentedButtonDefaults.itemShape(index, KINDS.size),
+                modifier = Modifier.testTag(kind.tag),
+                icon = if (markAbove) ({}) else ({ SegmentedButtonDefaults.Icon(selected) }),
+            ) {
+                if (markAbove) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        // The check mark's line, kept in both segments so that they stay level.
+                        Box(Modifier.size(SegmentedButtonDefaults.IconSize)) { if (selected) SegmentedButtonDefaults.ActiveIcon() }
+                        Text(text = labels[index], textAlign = TextAlign.Center)
+                    }
+                } else {
+                    Text(text = labels[index])
+                }
+            }
+        }
+    }
+}
+
+/** A kind of password: what its segment says and its test tag. */
+private class KindChoice(val kind: GeneratorOptions.Kind, @StringRes val text: Int, val tag: String)
+
+private val KINDS = listOf(
+    KindChoice(GeneratorOptions.Kind.RANDOM, R.string.edit_gen_random, GenTags.RANDOM),
+    KindChoice(GeneratorOptions.Kind.WORDS, R.string.edit_gen_words, GenTags.WORDS),
+)
 
 /**
  * The separator's four choices: a segmented row while each choice's label fits on one line in its
@@ -168,7 +221,7 @@ private fun androidx.compose.material3.SingleChoiceSegmentedButtonRowScope.KindB
  * radio rows, one per choice, each a touch target of its own (i18n.md §4.5 rule 1; build plan 6.2).
  */
 @Composable
-private fun SeparatorChoices(chosen: GeneratorOptions.Separator, onChoose: (GeneratorOptions.Separator) -> Unit) {
+internal fun SeparatorChoices(chosen: GeneratorOptions.Separator, onChoose: (GeneratorOptions.Separator) -> Unit) {
     val shown = SEPARATORS.map { stringResource(it.shown) }
     val names = SEPARATORS.map { stringResource(it.name) }
     val measurer = rememberTextMeasurer()
@@ -203,9 +256,13 @@ private fun SeparatorChoices(chosen: GeneratorOptions.Separator, onChoose: (Gene
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         RadioButton(selected = chosen == choice.separator, onClick = null)
-                        // The symbol and its name ("- Hyphen"), or the name alone where they are the same ("Space").
-                        val label = if (shown[index] == names[index]) names[index] else "${shown[index]}  ${names[index]}"
-                        Text(text = label, modifier = Modifier.padding(start = 16.dp).clearAndSetSemantics { contentDescription = names[index] })
+                        // The symbol and its name ("- Hyphen") in the order the language's string gives
+                        // (ux.md §9: no concatenation), or the name alone where they are the same ("Space").
+                        // TalkBack says the name ("Hyphen"), the label's description, in place of the label; the
+                        // label keeps its text in the semantics tree, for the layout probe. A description on the
+                        // row would not replace the label but be read before it ("Hyphen, - Hyphen").
+                        val label = if (shown[index] == names[index]) names[index] else stringResource(R.string.edit_gen_separator_choice, shown[index], names[index])
+                        Text(text = label, modifier = Modifier.padding(start = 16.dp).semantics { contentDescription = names[index] })
                     }
                 }
             }
@@ -215,6 +272,9 @@ private fun SeparatorChoices(chosen: GeneratorOptions.Separator, onChoose: (Gene
 
 /** What a segment of a segmented row takes besides its label: 12 dp each side and the chosen one's check mark (18 dp and 8 dp). */
 private val SEGMENT_FURNITURE = 50.dp
+
+/** What a segment takes besides its label without the check mark beside it: 12 dp each side. */
+private val SEGMENT_PADDING = 24.dp
 
 /** A − or + button of a [Stepper]. */
 private class Step(@StringRes val description: Int, val tag: String, val onClick: () -> Unit)

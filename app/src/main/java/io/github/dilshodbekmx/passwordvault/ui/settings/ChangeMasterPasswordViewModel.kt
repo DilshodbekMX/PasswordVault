@@ -31,9 +31,12 @@ import io.github.dilshodbekmx.passwordvault.ui.transfer.NoteDeleted
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -403,7 +406,7 @@ class ChangeMasterPasswordViewModel(
         val step = ChangedUnderLock.step.value ?: return
         if (lock.state.value !is LockUiState.Unlocked) return
         if (lock.status.value.aside.any { it.vaultId == step.vaultId }) {
-            ChangedUnderLock.take(step) // another vault is open now: that step is not this one's
+            ChangedUnderLock.drop(step) // another vault is open now: that step is not this one's
             return
         }
         if (cleared || state.value.stage != ChangeStage.CURRENT || proof != null) return
@@ -425,6 +428,7 @@ class ChangeMasterPasswordViewModel(
     fun backUpNow() {
         if (state.value.stage != ChangeStage.BACKUP) return
         (lock.state.value as? LockUiState.Unlocked)?.proof?.let(offerBackup)
+        if (state.value.afterLock) ChangedUnderLock.answered(ChangedUnderLock.Answer.BACK_UP_NOW)
         state.update { it.copy(leave = Leave.BACKUP) }
     }
 
@@ -435,7 +439,10 @@ class ChangeMasterPasswordViewModel(
     fun close() {
         val now = state.value
         if (now.stage == ChangeStage.SAVING) return
-        if (now.stage == ChangeStage.BACKUP && now.afterLock && now.leave == null) snoozeReminder()
+        if (now.stage == ChangeStage.BACKUP && now.afterLock && now.leave == null) {
+            snoozeReminder()
+            ChangedUnderLock.answered(ChangedUnderLock.Answer.LATER)
+        }
         dropAll()
         state.update { it.copy(leave = Leave.BACK) }
     }
@@ -506,6 +513,7 @@ class ChangeMasterPasswordViewModel(
         if (lock.state.value !is LockUiState.Unlocked && now.stage == ChangeStage.BACKUP && now.leave == null && changed != null) {
             ChangedUnderLock.leave(changed, now.usedElsewhere)
         }
+        if (now.afterLock && now.leave == null) ChangedUnderLock.leftUnanswered()
         dropAll()
     }
 
@@ -539,6 +547,7 @@ class ChangeMasterPasswordViewModel(
         state.value = ChangeMasterPasswordUi()
         val changed = vaultId
         if (now.stage == ChangeStage.BACKUP && now.leave == null && changed != null) ChangedUnderLock.leave(changed, now.usedElsewhere)
+        if (now.afterLock && now.leave == null) ChangedUnderLock.leftUnanswered()
     }
 
     private fun wipePin() {
@@ -603,15 +612,35 @@ class ChangeMasterPasswordViewModel(
  * app is open on that vault again ([ChangeMasterPasswordViewModel]). The vault's id and whether the
  * old master password was also an account's password, nothing secret; in memory only, so a new
  * process has none. A one-time holder (architecture.md §3.6).
+ *
+ * While the step waits or shows, the lock's own "Make a backup now?" of the same unlock (lock.md F12
+ * step 2, when a backup is due after a master-password unlock) is not shown as well: the step asks the
+ * same, with the reason. The notices hide that offer while [covers] holds, and answer it as the step was
+ * answered ([answered]): "Back up now" keeps the unlock's proof for the backup, "Later" drops it and
+ * puts the reminder off, as the offer's own answers do (build plan 8.1; the open problem of §12, R4).
  */
 object ChangedUnderLock {
     /** The step that waits: the vault [vaultId] had its master password changed. */
     data class Step(val vaultId: String, val usedElsewhere: Boolean)
 
+    /** How the step shown was answered. */
+    enum class Answer { BACK_UP_NOW, LATER }
+
     private val waiting = MutableStateFlow<Step?>(null)
+    private val showing = MutableStateFlow(false)
+    private val answers = MutableStateFlow<Answer?>(null)
 
     /** The step that waits, or null; the route's ViewModel watches it. */
     val step: StateFlow<Step?> = waiting.asStateFlow()
+
+    /** Whether a step waits for the unlock or shows and has not been answered: the lock's own backup offer stays away meanwhile. */
+    val covers: Flow<Boolean> = combine(waiting, showing) { waits, shows -> waits != null || shows }
+
+    /** [covers] now. */
+    fun coversNow(): Boolean = waiting.value != null || showing.value
+
+    /** The answer to the step shown, until the notices take it ([takeAnswer]). */
+    val answer: StateFlow<Answer?> = answers.asStateFlow()
 
     /** The change of [vaultId] ended under the lock, or its backup step was left unanswered by one. */
     fun leave(vaultId: String, usedElsewhere: Boolean) {
@@ -619,11 +648,37 @@ object ChangedUnderLock {
     }
 
     /** Takes [step] if it still waits: true for the one caller that shows it. */
-    fun take(step: Step): Boolean = waiting.compareAndSet(step, null)
+    fun take(step: Step): Boolean {
+        if (!waiting.compareAndSet(step, null)) return false
+        answers.value = null
+        showing.value = true
+        return true
+    }
+
+    /** Drops [step] if it still waits, without showing it (another vault is open now). */
+    fun drop(step: Step) {
+        waiting.compareAndSet(step, null)
+    }
+
+    /** The step shown was answered [answer]. */
+    fun answered(answer: Answer) {
+        answers.value = answer
+        showing.value = false
+    }
+
+    /** The step shown went away unanswered (a lock, which leaves it waiting again, or the route closed). */
+    fun leftUnanswered() {
+        showing.value = false
+    }
+
+    /** The answer to the step shown, once; null when there is none. */
+    fun takeAnswer(): Answer? = answers.getAndUpdate { null }
 
     /** Nothing waits any more. */
     fun clear() {
         waiting.value = null
+        showing.value = false
+        answers.value = null
     }
 }
 

@@ -42,7 +42,7 @@
     <string name="list_empty_title">Аккаунтов пока нет</string>
     <string name="list_empty_body">Добавьте первый аккаунт и его пароль или перенесите пароли из Chrome.</string>
     <string name="list_empty_add">Добавить аккаунт</string>
-    <string name="list_empty_import">Импорт из Google Password Manager</string>
+    <string name="list_empty_import">Импорт из Менеджера паролей Google</string>
 
     <string name="list_search_retried">Показаны результаты для «%1$s»</string>
     <string name="list_no_results">Нет аккаунтов по запросу «%1$s».</string>
@@ -80,7 +80,7 @@
     <string name="list_banner_replaced_pin">Ваш мастер-пароль был заменён %1$s с помощью PIN-кода. Если это сделали не вы, ваши пароли до замены всё ещё хранятся на этом телефоне.</string>
     <string name="list_banner_replaced_fingerprint">Ваш мастер-пароль был заменён %1$s с помощью отпечатка пальца. Если это сделали не вы, ваши пароли до замены всё ещё хранятся на этом телефоне.</string>
     <!-- Glossary 142. -->
-    <string name="list_banner_it_wasnt_me">Это был не я</string>
+    <string name="list_banner_it_wasnt_me">Это не я</string>
 
     <string name="list_banner_practice">С %1$s вы не вводили мастер-пароль. Без него не получится открыть резервную копию или перейти на новый телефон.</string>
     <string name="list_banner_type_it_now">Ввести сейчас</string>

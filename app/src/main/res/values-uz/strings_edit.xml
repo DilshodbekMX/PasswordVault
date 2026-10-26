@@ -86,7 +86,7 @@
     <!-- ===== The password generator sheet (ux.md §5.15) ===== -->
     <string name="edit_gen_title">Kuchli parol yaratish</string>
     <string name="edit_gen_new">Yangi parol</string>
-    <string name="edit_gen_random">Aralash</string>
+    <string name="edit_gen_random">Tasodifiy</string>
     <string name="edit_gen_words">Soʻzlar</string>
     <string name="edit_gen_length">Uzunlik</string>
     <string name="edit_gen_shorter">Qisqaroq</string>
@@ -101,6 +101,7 @@
     <string name="edit_gen_fewer_words">Kamroq soʻz</string>
     <string name="edit_gen_more_words">Koʻproq soʻz</string>
     <string name="edit_gen_separator">Ajratgich</string>
+    <string name="edit_gen_separator_choice">%1$s %2$s</string>
     <string name="edit_gen_separator_hyphen">Chiziqcha</string>
     <string name="edit_gen_separator_dot">Nuqta</string>
     <string name="edit_gen_separator_underscore">Pastki chiziq</string>

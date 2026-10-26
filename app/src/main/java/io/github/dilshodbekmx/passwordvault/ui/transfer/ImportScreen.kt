@@ -14,9 +14,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
@@ -54,6 +52,7 @@ import io.github.dilshodbekmx.passwordvault.ui.common.BannerKind
 import io.github.dilshodbekmx.passwordvault.ui.common.KeyboardFirstOnBack
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultFieldDefaults
 import io.github.dilshodbekmx.passwordvault.ui.common.VaultSecureField
+import io.github.dilshodbekmx.passwordvault.ui.common.VaultSnackbarHost
 
 /**
  * The import of the chosen file (`Route.Import(ImportStep.FILE)`; ux.md §5.21): "Reading the file…",
@@ -91,7 +90,7 @@ internal fun ImportScreen(vm: ImportViewModel, nav: Navigator) {
         },
         topBar = { ImportTopBar(title, onBack = vm::back) },
         bottomBar = { BottomButton(vm, ui.screen) },
-        snackbarHost = { SnackbarHost(snackbar) { data -> Snackbar(data, modifier = Modifier.testTag(ImportTags.MESSAGE)) } },
+        snackbarHost = { VaultSnackbarHost(snackbar, tag = ImportTags.MESSAGE) },
     ) { padding ->
         when (val screen = ui.screen) {
             is ImportScreen.Preview -> ImportPreviewList(vm, ui, screen, padding, formatters)
@@ -358,7 +357,7 @@ private fun BackupPassword(vm: ImportViewModel, screen: ImportScreen.BackupPassw
     VaultSecureField(
         state = vm.backupPassword,
         modifier = Modifier.fillMaxWidth().testTag(ImportTags.BACKUP_PASSWORD),
-        label = { Text(text = stringResource(R.string.import_backup_password)) },
+        label = stringResource(R.string.import_backup_password),
         enabled = !screen.opening,
         isError = error != null,
         supportingText = error?.let { text -> { Text(text = text, modifier = Modifier.testTag(ImportTags.BACKUP_ERROR)) } },

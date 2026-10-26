@@ -29,7 +29,7 @@
     <string name="backup_older">Вы изменили мастер-пароль %1$s, поэтому введите новый.</string>
     <string name="backup_older_unfinished">Возможно, изменение мастер-пароля %1$s не завершилось. Введите новый мастер-пароль.</string>
     <string name="backup_making">Создание резервной копии…</string>
-    <string name="backup_choose_text">Выберите, куда сохранить файл резервной копии. Google Drive есть в списке, если на этом телефоне установлено его приложение.</string>
+    <string name="backup_choose_text">Выберите, куда сохранить файл резервной копии. Google Диск есть в списке, если на этом телефоне установлено его приложение.</string>
     <string name="backup_choose">Выбрать место</string>
     <string name="backup_picker_failed">Не удалось открыть список мест. Повторите попытку.</string>
     <string name="backup_saving">Сохранение…</string>
@@ -42,7 +42,7 @@
         <item quantity="other">Резервная копия сохранена: %2$s (%1$d&#160;аккаунта).</item>
     </plurals>
     <string name="backup_place_phone">Эта копия хранится на этом телефоне. Если телефон потеряется, пропадёт и она. Сохраните копию ещё где-нибудь.</string>
-    <string name="backup_place_drive">Сохранено в Google Drive.</string>
+    <string name="backup_place_drive">Сохранено на Google Диске.</string>
     <string name="backup_place_other">Сохранено в хранилище «%1$s».</string>
     <string name="backup_upload_later">Это хранилище может загрузить файл позже. Откройте файл там один раз, чтобы проверить, что он загрузился.</string>
     <string name="backup_send">Отправить в другое приложение…</string>
@@ -58,12 +58,12 @@
 
     <string name="backup_file_removed">Файл удалён.</string>
     <string name="backup_file_left_phone">Удалите сами файл %1$s из хранилища этого телефона.</string>
-    <string name="backup_file_left_drive">Удалите сами файл %1$s из Google Drive.</string>
+    <string name="backup_file_left_drive">Удалите сами файл %1$s с Google Диска.</string>
     <string name="backup_file_left_other">Удалите сами файл %1$s из хранилища «%2$s».</string>
 
     <string name="backup_stopped_removed">Резервная копия не создана. Пустой файл удалён.</string>
     <string name="backup_stopped_left_phone">Резервная копия не создана. Удалите сами пустой файл %1$s из хранилища этого телефона.</string>
-    <string name="backup_stopped_left_drive">Резервная копия не создана. Удалите сами пустой файл %1$s из Google Drive.</string>
+    <string name="backup_stopped_left_drive">Резервная копия не создана. Удалите сами пустой файл %1$s с Google Диска.</string>
     <string name="backup_stopped_left_other">Резервная копия не создана. Удалите сами пустой файл %1$s из хранилища «%2$s».</string>
 
     <string name="backup_restore_title">Восстановить из резервной копии</string>

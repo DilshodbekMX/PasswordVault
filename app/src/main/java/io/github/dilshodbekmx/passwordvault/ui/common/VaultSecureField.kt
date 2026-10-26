@@ -40,10 +40,14 @@ import io.github.dilshodbekmx.passwordvault.window.vaultTextField
  * of Android ([maskedForAccessibility]). A label that needs a second line moves above the box
  * ([FieldLabel]).
  *
+ * The label names the field for accessibility services, and while it is out of view the field names
+ * itself with it ([FieldLabel]): the name is the label's text and nothing of what is typed.
+ *
  * [state] is held by the screen's ViewModel (architecture.md §5.6, lock.md §5.8): this field adds
  * nothing to the saved-instance state, not even whether the password is shown, which starts hidden
  * again after a rotation. After reading the password, the ViewModel calls [clearSecret] [V-C11].
  *
+ * @param label the field's label, drawn on its border or above its box, and its name.
  * @param trailingIcon an extra button before the show/hide button, such as the generator's.
  * @param revealable whether the show/hide button is there.
  */
@@ -51,7 +55,7 @@ import io.github.dilshodbekmx.passwordvault.window.vaultTextField
 fun VaultSecureField(
     state: TextFieldState,
     modifier: Modifier = Modifier,
-    label: @Composable (() -> Unit)? = null,
+    label: String? = null,
     enabled: Boolean = true,
     placeholder: @Composable (() -> Unit)? = null,
     leadingIcon: @Composable (() -> Unit)? = null,
@@ -81,7 +85,7 @@ fun VaultSecureField(
     val fieldLabel = rememberFieldLabel(label)
     OutlinedSecureTextField(
         state = state,
-        modifier = modifier.vaultTextField().maskedForAccessibility(state, masked),
+        modifier = modifier.vaultTextField().maskedForAccessibility(state, masked).named(fieldLabel.name),
         enabled = enabled,
         textStyle = textStyle.copy(textDirection = TextDirection.Ltr),
         labelPosition = fieldLabel.position,

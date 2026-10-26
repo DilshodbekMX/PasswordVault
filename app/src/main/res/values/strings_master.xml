@@ -38,8 +38,8 @@
     <string name="master_wait">Wait 30&#160;seconds, then try again. Take your time and look at your paper.</string>
     <!-- The countdown of that wait, once a second. -->
     <plurals name="master_wait_seconds">
-        <item quantity="one">Try again in %d&#160;second.</item>
-        <item quantity="other">Try again in %d&#160;seconds.</item>
+        <item quantity="one">Try again in %d&#160;second</item>
+        <item quantity="other">Try again in %d&#160;seconds</item>
     </plurals>
     <!-- The phone has too little free memory to check a master password (lock.md §6.8 step 3). -->
     <string name="master_no_memory">Your phone doesn’t have enough free memory to check your master password. Close other apps or restart the phone, then try again.</string>
