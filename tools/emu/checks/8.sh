@@ -53,7 +53,8 @@
 #               and the staging APK: keyboard, autofill, overlay, state, a11y and capture on API 28 and
 #               37 (capture's steps are SKIPPED on 28, as content capture starts with Android 10),
 #               a11y-old on API 24: 26 scripts. all.sh clears its own log folder when it starts, so two
-#               runs must not overlap: this part runs it once for every level it has.
+#               runs must not overlap: this part runs it once for every level it has, and a run of the
+#               part for other levels at the same time waits for it (a lock in LOGS/).
 #   i18n        6.1's [script] lines with the debug build (the pseudo-locales and run-as need it):
 #               tools/emu/i18n/all.sh (matrix.sh with the parts of the level, then e11.sh) on 24, 28 and
 #               37. KNOWN on API 37: Android 17's App language page never marks Ўзбекча.
@@ -762,7 +763,10 @@ lock_debug_skipped() {
 # API 28 and 37, a11y-old on API 24, each with the debug and the staging APK (architecture.md 8.4). Its
 # logs (build/window/all/, cleared by each all.sh) are copied to LOGS/all/.
 window_checks() {
-    local began rc
+    local began rc lock
+    # A run of this part for other levels waits here: all.sh clears build/window/all/ when it starts.
+    exec {lock}>> "$LOGS_ROOT/window.lock"
+    flock "$lock"
     began=$(date +%s)
     # shellcheck disable=SC2046 # the serials are words
     "$EMU/window/all.sh" --apk "$DEBUG_APK" --apk "$STAGING_APK" --only keyboard,autofill,overlay,state,a11y,capture \
@@ -770,6 +774,8 @@ window_checks() {
     rc=$?
     mkdir -p "$LOGS/all"
     cp -r "$REPO/build/window/all/." "$LOGS/all/" 2> /dev/null
+    flock -u "$lock"
+    exec {lock}>&-
     grep -E '^(PASS|FAIL) .* \(exit|^SUMMARY window' "$LOGS/all.log" | sed 's/^/   /'
     grep -E '^KNOWN ' "$LOGS/all.log" | sort | uniq -c | sed 's/^/     /'
     studio_runs "$began" | sed 's/^/   /'
