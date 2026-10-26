@@ -24,8 +24,9 @@ For every screen (one number in the four folders):
     and the data do not have (OCR's garbage matches no language, so it is not judged).
  3. Ўзбекча and Русский apart: an Ўзбекча picture with Cyrillic text shows at least one of ў қ ғ ҳ; a
     Русский picture read from its texts none.
-A picture whose window in front is the system's (the file picker, the fingerprint prompt: no resource id
-of the app) is listed as a NOTE, not judged: the system speaks the phone's language (English).
+A picture whose window in front is the system's (the file picker, the fingerprint prompt: resource ids, none
+of the app's) is listed as a NOTE, and only the app's own texts in it are judged: the system speaks the
+phone's language (English).
 Prints MISSING, NOTE and FAIL lines and a SUMMARY; with --json writes every picture's result for the
 set's index. Exit 0 when nothing failed.
 """
@@ -351,7 +352,10 @@ def main():
         nodes = raw_nodes(a.raw, lang, s["source"], s["key"]) if s["source"] == "session" else None
         if nodes is not None:
             texts = [row[0] for row in nodes if row[0].strip()]
-            system = not any(row[2].startswith("pv.") for row in nodes)
+            # The system's window (the fingerprint prompt, the file picker) has resource ids of its own; the
+            # app's own dialogs and menus are windows with none but the window's "content".
+            system = not any(row[2].startswith("pv.") for row in nodes) and \
+                any(row[2] not in ("", "content", "action_bar_root") for row in nodes)
             return job, "texts", system, texts, None
         if a.ocr:
             return job, "ocr", False, None, ocr_words(a.ocr, cache, s[lang], lang)
