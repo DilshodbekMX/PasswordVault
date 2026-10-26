@@ -1,6 +1,8 @@
 package io.github.dilshodbekmx.passwordvault.ui.edit
 
 import android.content.res.Configuration
+import android.os.SystemClock
+import android.view.accessibility.AccessibilityNodeInfo
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.width
@@ -12,11 +14,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import io.github.dilshodbekmx.passwordvault.R
 import io.github.dilshodbekmx.passwordvault.core.generator.GeneratorOptions
 import io.github.dilshodbekmx.passwordvault.settings.ThemeChoice
@@ -59,7 +64,7 @@ class GeneratorSheetTest {
                 LocalDensity provides Density(density.density, fontScale = 2f),
             ) {
                 PasswordVaultTheme(ThemeChoice.LIGHT) {
-                    Box(Modifier.width(272.dp)) { content() }
+                    Box(Modifier.width(272.dp).semantics { testTagsAsResourceId = true }) { content() }
                 }
             }
         }
@@ -103,6 +108,55 @@ class GeneratorSheetTest {
         assertEquals("$tag: the name alone where it is its own symbol", text(tag, R.string.edit_gen_separator_space), shown(GeneratorOptions.Separator.SPACE))
         assertClean(tag)
     }
+
+    /**
+     * What a screen reader says for each separator's row is its name, once (ux.md §8): read from the tree
+     * an accessibility service gets, where Compose gives a row's own description as a part of its own
+     * beside the parts the row is made of, so a description on the row did not replace the symbol and
+     * name it shows but was read before them ("Hyphen, - Hyphen"; 8.1's accessibility walk at 200 %).
+     */
+    @Test
+    fun aScreenReaderSaysEachSeparatorsNameOnce() {
+        show("en")
+        for ((separator, name) in listOf(
+            GeneratorOptions.Separator.HYPHEN to R.string.edit_gen_separator_hyphen,
+            GeneratorOptions.Separator.DOT to R.string.edit_gen_separator_dot,
+            GeneratorOptions.Separator.UNDERSCORE to R.string.edit_gen_separator_underscore,
+            GeneratorOptions.Separator.SPACE to R.string.edit_gen_separator_space,
+        )) {
+            assertEquals("$separator", listOf(text("en", name)), readAloud(GenTags.SEPARATOR + separator.name))
+        }
+    }
+
+    /**
+     * What a screen reader says for the node of the test tag [tag] in the tree an accessibility service
+     * gets, each part as often as it says it: the node's own description or text, else, for each part it
+     * is made of that is shown and is no control of its own, that part's description or else its text.
+     */
+    private fun readAloud(tag: String): List<String> {
+        val deadline = SystemClock.uptimeMillis() + 10_000
+        var node: AccessibilityNodeInfo? = null
+        while (node == null && SystemClock.uptimeMillis() < deadline) {
+            node = nodes(InstrumentationRegistry.getInstrumentation().uiAutomation.rootInActiveWindow).firstOrNull { it.viewIdResourceName == tag }
+            if (node == null) SystemClock.sleep(200)
+        }
+        checkNotNull(node) { "no node $tag in the accessibility tree" }
+        fun words(n: AccessibilityNodeInfo): String? = (n.contentDescription ?: n.text)?.toString()?.trim()?.takeIf { it.isNotEmpty() }
+        words(node)?.let { return listOf(it) }
+        val out = mutableListOf<String>()
+        fun gather(n: AccessibilityNodeInfo) {
+            for (i in 0 until n.childCount) {
+                val child = n.getChild(i) ?: continue
+                if (!child.isVisibleToUser || child.isClickable || child.isCheckable || child.isFocusable) continue
+                words(child)?.let(out::add) ?: gather(child)
+            }
+        }
+        gather(node)
+        return out
+    }
+
+    private fun nodes(root: AccessibilityNodeInfo?): List<AccessibilityNodeInfo> =
+        if (root == null) emptyList() else listOf(root) + (0 until root.childCount).flatMap { nodes(root.getChild(it)) }
 
     /**
      * Build plan §12, R6 question 1 (answer B, "Tasodifiy" / "Тасодифий"): the kind's two segments keep
