@@ -134,6 +134,34 @@ A wedged guest can leave `adb shell` waiting for ever. Set `PV_ADB_TIMEOUT=N` an
 Leave it unset around commands that may legitimately run long (`am instrument`, `logcat`
 without `-d`).
 
+## The staging build through `tools/emu/` (build plan 8.2 and section 10)
+
+Build plan 8.2's line "the staging build passes the whole of `tools/emu/`" ran in the scope round R6
+gave it (build-plan.md §12, "What the device check of waves 6 and 8A runs"): on 8.2's branch, then with
+the merged app's staging APK by the device check of waves 6 and 8A (`checks/6.sh smoke staging window`),
+on 2026-10-19 with the APKs of b4ed17e and, for the parts `staging` and `window` on API 37, on 2026-10-26
+with those of bf2bb89 (the usage limit had cut the first agent off during `staging` on API 37, before
+`window` ran there). The app was the same at `wave-6-merged` and at both commits. Each cell is passed/failed/skipped; every SKIPPED step needs
+run-as, or root on API 37.
+
+| Script | API 24 | API 28 | API 37 |
+|---|---|---|---|
+| `smoke.sh staging`, with its language stage | 43/0/0 | | 43/0/0 |
+| `checks/3A.sh skeleton staging` | 11/0/1 | | 11/0/1 |
+| `lock/all.sh` (each check in `lock/README.md`) | the level's 9 checks: nothing failed or skipped | | the level's 16 checks: nothing failed; E4 and E5 skip 5 steps |
+| `session/autolock.sh` | 12/0/4 | | |
+| `setup/create.sh` | 12/0/0 | | |
+| `clipboard/clear.sh` | 34/0/5 | | |
+| `shell/walk.sh` | | | 14/0/0 |
+| `window/all.sh` | `a11y-old` 14/0/0, 1 KNOWN | `keyboard` 29, `autofill` 29, `overlay` 15, `state` 29, `a11y` 29 with 5 KNOWN | `keyboard` 29, `autofill` 29, `overlay` 16, `state` 29, `a11y` 34 |
+
+The rest is wave 8's final check (build-plan.md §10: the staging build runs every script under
+`tools/emu/` on API 24, 28 and 37, and a step that needs a debuggable build runs on debug): the lock
+checks on API 28; `session/autolock.sh`, `setup/create.sh` and `clipboard/clear.sh` on 28 and 37;
+`shell/walk.sh` on 24 and 28; `smoke.sh` and `checks/3A.sh skeleton` on 28; `i18n/`, `change/guided.sh`
+and `window/capture.sh`. `layout/walk.sh` needs the debug build and its test APK (pseudo-locales,
+screenshots).
+
 ## The base: `/home/asus/pvlab/`
 
 ```
