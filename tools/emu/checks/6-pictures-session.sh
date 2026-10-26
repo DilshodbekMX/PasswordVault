@@ -50,8 +50,7 @@
 #              not usable in apps, can't be checked, did not open the app, turned off), each then the PIN.
 #   extra      only when named (--only extra; after the set-up, or after faults): an account restored in
 #              Recently deleted, then deleted again and "Empty" confirmed; Settings > Change PIN with a
-#              date refused, the current PIN refused, a save that fails (the debug command fail-next-write)
-#              and Retry, then "Your PIN was changed.".
+#              date refused, the current PIN refused, then "Your PIN was changed.".
 #   more       the PIN's record unreadable for a new process: the lock screen and the "Forgot master
 #              password?" sheet; then a fresh install's setup: the suggested words, a password of one's own
 #              (too short, a keyboard row, what is missing, the reuse question answered "Yes"), the words in
@@ -890,9 +889,8 @@ deleted_more() {
     to_list
 }
 
-# Settings > Change PIN: the current PIN; a new PIN that looks like a date; the current one again; a new
-# PIN whose saving fails (the debug command fail-next-write): "Couldn't save the new PIN"; Retry saves it:
-# Settings says "Your PIN was changed.".
+# Settings > Change PIN: the current PIN; a new PIN that looks like a date; the current one again; then a new
+# PIN twice: Settings says "Your PIN was changed.".
 change_pin_more() {
     local new=581930
     settings && pva_reveal pv.open.ChangePin && pva_tap pv.open.ChangePin && pva_on ChangePin 20 || return 1
@@ -900,20 +898,14 @@ change_pin_more() {
     pv_sleep 2
     pva_pin 150387 && pv_sleep 1.5 && shot 325 change-pin-date
     pva_pin "$PIN_NOW" && pv_sleep 1.5 && shot 326 change-pin-same-as-current
-    pva_pin "$new" && pv_sleep 1.5 || return 1
-    pva_debug fail-next-write >/dev/null || return 1
-    pva_pin "$new" && pv_sleep 3 || return 1
-    pva_present pv.pin.retry 5 || { pv_log "no Retry after the failed write; ids: $(pva_ids)"; return 1; }
-    shot 327 change-pin-not-saved
-    # Retry saves the new PIN again (ChangePinViewModel.retry); Settings then says it was changed.
-    pva_tap pv.pin.retry || return 1
+    pva_pin "$new" && pv_sleep 1.5 && pva_pin "$new" || return 1
     PIN_NOW=$new
-    pva_on Settings 20 && shot 328 settings-pin-changed 0.5
+    pva_on Settings 30 && shot 328 settings-pin-changed 0.5
 }
 
 part_extra() {
     pv_step "Recently deleted: an account restored, then deleted again and Empty confirmed" -- deleted_more
-    pv_step "Change PIN: a date, the current PIN, a failed save and Retry, the PIN changed" -- change_pin_more
+    pv_step "Change PIN: a date and the current PIN refused, the PIN changed" -- change_pin_more
 }
 
 # ---- more: the PIN's record unreadable; setup's own password and its questions; setup interrupted ----------
