@@ -296,3 +296,4 @@ session	321-recently-deleted-nothing	Recently deleted: nothing here
 session	325-change-pin-date	Settings › Change PIN: a PIN that looks like a date
 session	326-change-pin-same-as-current	Settings › Change PIN: the same as your current PIN
 session	328-settings-pin-changed	Settings: your PIN was changed
+session	294-notice-1	After the unlock: turn fingerprint unlock on again?
