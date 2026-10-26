@@ -219,7 +219,7 @@ class SettingsViewModel(
     /**
      * The lock cannot say whether fingerprint unlock was turned on (lock.md F9 step 9; build-plan.md
      * §12, decision 4): "Fingerprint unlock may not have been turned on. If your fingerprint is not
-     * accepted, turn it on again in Settings." The switch itself follows the lock's status.
+     * accepted, turn it on again in this app’s Settings." The switch itself follows the lock's status.
      *
      * Called for the answer of `LockManager.fingerprintOn` that says so (`FingerprintOnResult.MayNotBeOn`,
      * the branch in [turnOnFingerprint]).

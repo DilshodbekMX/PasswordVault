@@ -48,7 +48,7 @@ import io.github.dilshodbekmx.passwordvault.ui.setup.MasterPasswordInput
 /**
  * Settings › App lock on a page of its own (ux.md §5.18; [Route.AppLock]): the same rows as the
  * group in the Settings list, for the screens that send the user to "Settings › App lock" (lock.md
- * §13.3: "You can turn it on again in Settings"; the notices of §13.4).
+ * §13.3: "You can turn it on again in this app’s Settings"; the notices of §13.4).
  */
 @OptIn(ExperimentalMaterial3Api::class) // TopAppBar's signature names TopAppBarScrollBehavior (ux.md §10)
 @Composable
