@@ -112,6 +112,39 @@ API 24 device (`emulator-5584`), with main's APKs:
 image's own heap did not run. The 64 MiB of Argon2id fit on a 256 MiB heap once the first derivation's
 garbage (about 134 MiB on Android 7) is collected; nothing about the derivation's parameters changed.
 
+## Runs on 2026-10-27: the integration check of wave 8, the staging APK on the three levels
+
+`tools/emu/checks/8.sh lock` (that is `all.sh --apk` with the staging APK of `wave-8-merged`'s app, built at
+7f33d97, on every level lock.md gives each check; build-plan.md §10: "the staging build runs every script
+under `tools/emu/` on API 24, 28 and 37"), on the integrator's devices 5584 (API 24), 5582 (API 28, its first
+staging run of the lock) and 5580 (API 37), each level a run of its own at the same time. Then each check that
+skipped a step with staging ran again with the debug APK on that level ("steps that need a debuggable build
+are run on debug"): only E4 and E5 on API 37, whose skipped steps read `state.rec` with run-as. E15 used its
+backupCheck variant, as always. Each cell is passed/failed/skipped. No check failed.
+
+| Check | API 24 | API 28 | API 37 |
+|---|---|---|---|
+| E1 | 14/0/0 | 14/0/0 | 14/0/0 |
+| E2 | 13/0/0 | 13/0/0 | 13/0/0 |
+| E3 | 13/0/0 | 13/0/0 | 13/0/0 |
+| E4 | | | 9/0/2; with debug 11/0/0 |
+| E5 | | | 3/0/3; with debug 6/0/0 |
+| E6 | 9/0/0 | 9/0/0 | 9/0/0 |
+| E7 | 12/0/0 | 12/0/0 | 22/0/0 |
+| E8 | | | 8/0/0 |
+| E9 | | | 8/0/0 |
+| E10 | 57/0/0 | 57/0/0 | 57/0/0 |
+| E11 | 15/0/0 | 15/0/0 | 15/0/0 |
+| E12 | | 11/0/0 and 1 KNOWN (lock.md §2.3) | 12/0/0 |
+| E13 | | 8/0/0 | 8/0/0 |
+| E14 | | | 11/0/0 |
+| E15 | | 11/0/0 | 11/0/0 |
+| E16 | 11/0/0 | | |
+| E17 | 5/0/0 (the pad) | | 18/0/0 |
+
+The logs are kept under `/home/asus/pvwork/kept/8-device-check/emu-checks-8/lock-api-24/`, `lock-api-28/` and
+`lock-api-37/` (`staging/` and `debug/`, one file per device and check).
+
 ## Runs on 2026-10-19 and 2026-10-26: the device check of waves 6 and 8A, the merged staging APK
 
 `tools/emu/checks/6.sh staging` (that is `all.sh --apk` with the merged app's staging APK on the levels 24
