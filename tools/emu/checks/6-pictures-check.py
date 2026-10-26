@@ -220,6 +220,8 @@ class Rules:
                 return "Cyrillic"
             if lang == "uz-Latn" and lw in self.vocab["en"] and lw not in self.vocab["uz-Latn"] and len(lw) >= 3:
                 return "English word"
+            if lang == "en" and lw in self.vocab["uz-Latn"] and lw not in self.vocab["en"] and len(lw) >= OCR_MIN_LEN:
+                return "Oʻzbekcha word"
             return None
         if lat:
             return "English word" if lw in self.vocab["en"] and lw not in self.vocab[lang] else "Latin word"
