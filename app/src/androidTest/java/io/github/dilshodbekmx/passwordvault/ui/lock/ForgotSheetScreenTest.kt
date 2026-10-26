@@ -2,7 +2,10 @@ package io.github.dilshodbekmx.passwordvault.ui.lock
 
 import android.content.res.Resources
 import androidx.activity.ComponentActivity
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -55,14 +58,22 @@ class ForgotSheetScreenTest {
         compose.onNodeWithTag(LockTags.SHEET).assertExists()
     }
 
+    /**
+     * [text] in the sheet. In Uzbek the sheet's title is the screen's own "Forgot master password?"
+     * button word for word (lock_sheet_title, lock_mp_forgot), so a match on the whole screen finds two
+     * nodes when the owner's picture set runs this class in Uzbek (build plan §12, the device check of
+     * waves 6 and 8A).
+     */
+    private fun inSheet(text: String): SemanticsMatcher = hasText(text) and hasAnyAncestor(hasTestTag(LockTags.SHEET))
+
     @Test
     fun theSheetShowsItsTextsAndTheEntriesThatApply() {
         LockShots.touchMode()
         val lock = show(LockStatus.NONE.copy(pin = PinStatus.On, aside = listOf(AsideVault(VAULT, ASIDE_AT, null))))
         openSheet()
-        compose.onNode(hasText(resources.getString(R.string.lock_sheet_title))).assertExists()
-        compose.onNode(hasText(resources.getString(R.string.lock_sheet_body))).assertExists()
-        compose.onNode(hasText(resources.getString(R.string.lock_sheet_pin_text))).assertExists()
+        compose.onNode(inSheet(resources.getString(R.string.lock_sheet_title))).assertExists()
+        compose.onNode(inSheet(resources.getString(R.string.lock_sheet_body))).assertExists()
+        compose.onNode(inSheet(resources.getString(R.string.lock_sheet_pin_text))).assertExists()
         compose.onNodeWithTag(LockTags.SHEET_USE_PIN).assertTextEquals(resources.getString(R.string.lock_sheet_use_pin))
         compose.onNodeWithTag(LockTags.SHEET_RESTORE).assertTextEquals(resources.getString(R.string.lock_restore))
         val date = Formatters(AppLanguages.screenLocale(AppLanguages.localesOf(resources.configuration)), hour24 = true).date(ASIDE_AT)

@@ -106,7 +106,9 @@ class PadScreenTest {
         show()
         enter(2, 5, 9)
         val dots = resources.getQuantityString(R.plurals.common_pin_dots, 3, 3, PIN_LENGTH)
-        assertEquals("PIN, 3 of 6 digits entered", dots)
+        // ux.md §8's words, in English: the owner's picture set runs this class in every language,
+        // where the app's own translation is what the screen must say.
+        if (resources.configuration.locales[0].language == "en") assertEquals("PIN, 3 of 6 digits entered", dots)
         assertEquals(listOf(dots), compose.onNodeWithTag(PinPadTags.DOTS).fetchSemanticsNode().config[SemanticsProperties.ContentDescription])
         val node = platformNodes(expectDigits = 3).singleOrNull { it.contentDescription?.toString() == dots }
         assertNotNull("an accessibility service reads \"$dots\"", node)
