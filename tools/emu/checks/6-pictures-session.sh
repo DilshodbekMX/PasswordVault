@@ -41,9 +41,21 @@
 #   keys       fingerprint and PIN keys gone (the debug command drop-keys): the lock screen's lines, the
 #              master password, the notices ("Turn fingerprint unlock on again?", "Choose a new PIN").
 #   empty      a fresh install set up without a PIN: "Forgot master password?" with "Start with an empty
-#              app", the question, a new vault, Settings' "Old passwords" and its dialogs.
+#              app", the question, Welcome with "Open my previous passwords", a new vault, Settings' "Old
+#              passwords" and its dialogs.
 #   restore    a restore from Welcome with the backup of the part files: the intro, the master password,
 #              the summary.
+#   faults     only when named (--only faults; right after the set-up, while fingerprint unlock is on):
+#              the PIN pad's lines when the fingerprint fails (the debug command ks-fault: locked for now,
+#              not usable in apps, can't be checked, did not open the app, turned off), each then the PIN.
+#   extra      only when named (--only extra; after the set-up, or after faults): an account restored in
+#              Recently deleted, then deleted again and "Empty" confirmed; Settings > Change PIN with a
+#              date refused, the current PIN refused, then "Your PIN was changed.".
+#   more       the PIN's record unreadable for a new process: the lock screen and the "Forgot master
+#              password?" sheet; then a fresh install's setup: the suggested words, a password of one's own
+#              (too short, a keyboard row, what is missing, the reuse question answered "Yes"), the words in
+#              big letters, "Setup was interrupted", a mismatch on "Type it again" with "Show my password
+#              again" (setup left unfinished).
 # Exit 0 when no step failed.
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/lock/lib.sh"
 source "$EMU/lock/newmp.sh"
@@ -79,7 +91,10 @@ want() { [ -z "$ONLY" ] || [[ ",$ONLY," == *",$1,"* ]]; }
 # shot N NAME [WAIT]: the screen as OUT/N-NAME.png after WAIT seconds (default 1). The system's
 # fingerprint prompt (API 28 and later) is a secure window, which screencap gives black: a picture that
 # is black throughout is taken again with the emulator's own screenshot (adb emu screenrecord
-# screenshot DIR, which writes on this computer; tools/emu/README.md, "Device facts").
+# screenshot DIR, which writes on this computer; tools/emu/README.md, "Device facts"). The texts of the
+# window in front (pv_ui_nodes: text|description|id|...) go beside it as OUT/N-NAME.nodes.txt, read
+# right after the picture, so that the set's check can tell which letters each picture shows
+# (6-pictures.sh: no Cyrillic in Oʻzbekcha, no Latin words in Ўзбекча beyond names).
 shot() {
     local f=$OUT/$1-$2.png dir newest
     pv_sleep "${3:-1}"
@@ -92,8 +107,10 @@ sys.exit(0 if Image.open(sys.argv[1]).convert("L").getextrema()[1] < 8 else 1)' 
         newest=$(ls -t "$dir"/*.png 2>/dev/null | head -n 1)
         if [ -n "$newest" ]; then mv -f "$newest" "$f"; echo "SHOT $1-$2 (the emulator's screenshot: a secure window)"; fi
         rm -rf "$dir"
+        pv_ui_nodes > "$OUT/$1-$2.nodes.txt" 2>/dev/null
         return 0
     fi
+    pv_ui_nodes > "$OUT/$1-$2.nodes.txt" 2>/dev/null
     echo "SHOT $1-$2"
     return 0
 }
@@ -761,6 +778,8 @@ start_empty() {
     pva_tap pv.lock.sheet.empty && pva_need pv.lock.confirmYes 10 || return 1
     shots 271 start-empty-question 3
     pva_tap pv.lock.confirmYes || return 1
+    # Welcome again, now with "Open my previous passwords" for the passwords put aside.
+    pva_on Welcome 60 && pv_sleep 1 && shot 271 welcome-previous-passwords
     pva_set_up && pva_settle Passwords 120 || return 1
     PIN_NOW=none
     settings && pva_reveal pv.open.OldPasswords && shot 272 settings-old-passwords-row || return 1
@@ -802,13 +821,184 @@ restore() {
     PVA_PASSWORD=$BACKUP_PASSWORD
     shots 283 restore-summary 3
     pva_tap pv.backup.restore && pva_unlocked Passwords 120 || return 1
-    settle Passwords "$PIN1" 284
+    settle Passwords "$PIN1" 284 && PIN_NOW=$PIN1
 }
 
 part_restore() { pv_step "a restore from Welcome: the intro, the master password, the summary" -- restore; }
 
+# ---- faults: the fingerprint's lines on the PIN pad (only when named: --only faults) -----------------------
+# fault_line N NAME ROW TOUCH: from the list, with fingerprint unlock on, the debug command `ks-fault ROW`
+# armed, Lock now: the prompt ends at once with the error code ROW names, or (TOUCH yes) the finger is
+# accepted and the fault strikes at its result; the pad's line is pictured; then the PIN (lock.md §14.3; the
+# rows and their lines as lock/E10.sh checks them).
+fault_line() {
+    local n=$1 name=$2 row=$3 touch=$4
+    to_list || return 1
+    pva_debug "ks-fault $row" >/dev/null || return 1
+    pva_tap pv.list.lockNow || return 1
+    if [ "$touch" = yes ]; then
+        pvl_touch_prompt "$PVL_FINGER" 20 || return 1
+    else
+        pv_sleep 3
+    fi
+    pvl_prompt_down 15
+    pvl_wait_screen pad 20 || return 1
+    pv_sleep 1
+    shot "$n" "$name"
+    pva_debug "ks-fault none" >/dev/null
+    pva_pin "$PIN_NOW" && pvl_wait_answer 20
+    settle Passwords "$PIN_NOW" "$n"
+}
+
+part_faults() {
+    pv_step "fingerprint locked for now (prompt error 7): the pad's line" -- fault_line 290 pad-fingerprint-locked prompt-error-7 no
+    pv_step "fingerprint can't be used in apps (prompt error 1): the pad's line" -- fault_line 291 pad-fingerprint-not-for-apps prompt-error-1 no
+    pv_step "fingerprint can't be checked (prompt error 11): the pad's line" -- fault_line 292 pad-fingerprint-cannot-check prompt-error-11 no
+    pv_step "the finger accepted, the app not opened (prompt-no-cipher): the pad's line" -- fault_line 293 pad-fingerprint-did-not-open prompt-no-cipher yes
+    pv_step "fingerprint unlock turned off, its key no longer works (fp-dofinal-bad-tag): the pad's line" -- fault_line 294 pad-fingerprint-turned-off fp-dofinal-bad-tag yes
+}
+
+# ---- extra: Recently deleted's restore and its empty list; Change PIN's lines (only when named) ------------
+# dialog_confirm: the confirming button of the dialog in front (its buttons have no resource id): the
+# clickable node lowest and furthest right.
+dialog_confirm() {
+    local xy
+    xy=$(pv_ui_nodes | awk -F'|' '$4 == "true" { print $6, $7 }' | sort -k2,2n -k1,1n | tail -n 1)
+    [ -n "$xy" ] || return 1
+    pv_shell input tap $xy >/dev/null
+    pv_sleep 1
+}
+
+# An account deleted and restored ("Olx restored"), deleted again; "Empty" confirmed: nothing is there.
+deleted_more() {
+    local id
+    to_list && pva_add_account Olx aziz olx-Samarqand1999 olx.uz 'Old account' || return 1
+    pva_tap pv.entry.more && pva_need pv.entry.menu.delete 10 && pva_tap pv.entry.menu.delete || return 1
+    to_list && pva_reveal pv.list.recentlyDeleted && pva_tap pv.list.recentlyDeleted && pva_on RecentlyDeleted 20 || return 1
+    id=$(first_id pv.deleted.restore.)
+    [ -n "$id" ] || { pv_log "no Restore; ids: $(pva_ids)"; return 1; }
+    pva_tap "$id" && pv_sleep 1 && shot 320 recently-deleted-restored
+    to_list || return 1
+    # The row whose first text is Olx (pva_row_titles reads the rows so).
+    id=$(pv_ui_nodes | awk -F'|' '$3 ~ /^pv[.]list[.]row[.]/ { id = $3; pending = 1; next } pending && $3 ~ /^pv[.]/ { pending = 0 } pending && $1 != "" { if ($1 == "Olx") { print id; exit } pending = 0 }')
+    [ -n "$id" ] || { pv_log "no row of Olx; ids: $(pva_ids)"; return 1; }
+    pva_tap "$id" && pva_need pv.entry.more 10 && pva_tap pv.entry.more && pva_need pv.entry.menu.delete 10 && pva_tap pv.entry.menu.delete || return 1
+    to_list && pva_reveal pv.list.recentlyDeleted && pva_tap pv.list.recentlyDeleted && pva_on RecentlyDeleted 20 || return 1
+    pva_tap pv.deleted.empty && pv_sleep 1.5 && dialog_confirm || return 1
+    pva_need pv.deleted.nothing 10 && shot 321 recently-deleted-nothing
+    to_list
+}
+
+# Settings > Change PIN: the current PIN; a new PIN that looks like a date; the current one again; then a new
+# PIN twice: Settings says "Your PIN was changed.".
+change_pin_more() {
+    local new=581930
+    settings && pva_reveal pv.open.ChangePin && pva_tap pv.open.ChangePin && pva_on ChangePin 20 || return 1
+    pva_need pv.pin.key.0 20 && pva_pin "$PIN_NOW" || return 1
+    pv_sleep 2
+    pva_pin 150387 && pv_sleep 1.5 && shot 325 change-pin-date
+    pva_pin "$PIN_NOW" && pv_sleep 1.5 && shot 326 change-pin-same-as-current
+    pva_pin "$new" && pv_sleep 1.5 && pva_pin "$new" || return 1
+    PIN_NOW=$new
+    pva_on Settings 30 && shot 328 settings-pin-changed 0.5
+}
+
+part_extra() {
+    pv_step "Recently deleted: an account restored, then deleted again and Empty confirmed" -- deleted_more
+    pv_step "Change PIN: a date and the current PIN refused, the PIN changed" -- change_pin_more
+}
+
+# ---- more: the PIN's record unreadable; setup's own password and its questions; setup interrupted ----------
+# retype ID TEXT: the field's text replaced with TEXT.
+retype() {
+    local i
+    pva_tap "$1" || return 1
+    pv_sleep 1
+    pv_shell input keyevent KEYCODE_MOVE_END >/dev/null
+    for i in $(seq 1 45); do pv_shell input keyevent KEYCODE_DEL >/dev/null; done
+    pv_shell input text "$(printf '%s' "$2" | sed 's/ /%s/g')" >/dev/null
+    pv_sleep 1
+}
+
+# The PIN's record unreadable for a new process (run-as chmod 000, as checks/5.sh line 7 does; the state
+# of a phone whose storage failed for a moment, lock.md F15c): the lock screen's line, and the "Forgot
+# master password?" sheet with 8.1's sentence that the PIN can't be checked now. Then the record is
+# readable again and the PIN opens the app.
+pin_cannot_check() {
+    local vault mode rc=0
+    to_list && pvl_status || return 1
+    vault=$(pvl_vault_id)
+    [ -n "$vault" ] || { pv_log "no current vault in the status"; return 1; }
+    mode=$(pv_shell "run-as $PV_PACKAGE stat -c %a no_backup/lock/$vault/pin.rec" 2>/dev/null | tr -d '\r')
+    [ -n "$mode" ] || { pv_log "no pin.rec for $vault"; return 1; }
+    pv_shell am force-stop "$PV_PACKAGE" >/dev/null
+    pv_shell "run-as $PV_PACKAGE chmod 000 no_backup/lock/$vault/pin.rec" >/dev/null 2>&1 || return 1
+    if pva_start && pvl_wait_screen 'pad|prompt|fingerprint-only|master-password' 30; then
+        if [ "$(pvl_screen)" = prompt ]; then pvl_prompt_negative; pv_sleep 2; fi
+        if pva_present pv.lock.useMasterPassword 2; then pva_tap pv.lock.useMasterPassword; fi
+        if pva_need pv.lock.password 20; then
+            pva_hide_keyboard
+            shot 300 pin-cannot-check-lock
+            if pva_tap pv.lock.forgot && pva_need pv.lock.sheet 10; then shot 301 pin-cannot-check-sheet; else rc=1; fi
+            back
+        else
+            rc=1
+        fi
+    else
+        rc=1
+    fi
+    pv_shell "run-as $PV_PACKAGE chmod $mode no_backup/lock/$vault/pin.rec" >/dev/null 2>&1
+    pv_shell am force-stop "$PV_PACKAGE" >/dev/null
+    pva_start && to_list || rc=1
+    return $rc
+}
+
+# Setup on a fresh install, the states the walk passes by: every part of the suggested words; a password
+# of one's own too short, a keyboard row, what is missing when "Use this password" is pressed, the
+# question whether it is used elsewhere and the answer "Yes"; the words in big letters on "Write it down";
+# the app's process ended in the background there and the app opened again ("Setup was interrupted"); a
+# mismatch on "Type it again" and "Show my password again". Setup is left unfinished.
+setup_more() {
+    pv_shell pm clear "$PV_PACKAGE" >/dev/null 2>&1
+    PIN_NOW=none
+    pva_start && set_language || return 1
+    pva_tap pv.open.CreateMasterPassword && pva_on CreateMasterPassword 20 || return 1
+    pv_sleep 1
+    shots 310 setup-words 3
+    pva_reveal pv.setup.typeOwn && pva_tap pv.setup.typeOwn && pva_need pv.setup.own 10 || return 1
+    pva_type pv.setup.own "abc" && pva_hide_keyboard && shots 311 setup-own-short 3
+    retype pv.setup.own "qwertyuiopasdfgh" && pva_hide_keyboard && shots 312 setup-own-keyboard-row 3
+    pva_reveal pv.setup.useOwn && pva_tap pv.setup.useOwn && pv_sleep 1 && pva_hide_keyboard && shots 313 setup-own-not-yet 3
+    retype pv.setup.own "Lochin-Daryo-Bahor-Kitob-Gilam-Yulduz" && pva_hide_keyboard || return 1
+    pva_reveal pv.setup.useOwn && pva_tap pv.setup.useOwn || return 1
+    pva_need pv.setup.reuse.no 10 || { pv_log "no reuse question; ids: $(pva_ids)"; return 1; }
+    shot 314 setup-own-reuse-question
+    pva_tap pv.setup.reuse.yes && pv_sleep 1 && pva_hide_keyboard && shots 315 setup-own-reuse-refused 3
+    pva_reveal pv.setup.showWords && pva_tap pv.setup.showWords && pva_need pv.open.WriteDown 10 || return 1
+    pva_tap pv.open.WriteDown && pva_on WriteDown 20 || return 1
+    if pva_reveal pv.setup.bigLetters && pva_tap pv.setup.bigLetters; then pv_sleep 1; shot 316 setup-write-down-big-letters; back; fi
+    # The process ended in the background (Home, then killed) and the app opened again from Recents: the
+    # words are not kept, so setup starts again at step 1 (ux.md §5.5; shell/walk.sh's first step).
+    pva_kill_in_background && pva_relaunch && pva_on CreateMasterPassword 30 && pva_need pv.setup.interrupted 10 || return 1
+    shots 317 setup-interrupted 3
+    pva_tap pv.open.WriteDown && pva_on WriteDown 20 && pva_tap pv.open.TypeAgain && pva_on TypeAgain 20 || return 1
+    pva_type pv.setup.again "not-the-words" && pva_hide_keyboard && pva_tap pv.action.createVault || return 1
+    pv_sleep 2
+    pva_hide_keyboard
+    shots 318 setup-again-mismatch 3
+    if pva_reveal pv.setup.showAgain && pva_tap pv.setup.showAgain; then pv_sleep 1; pva_hide_keyboard; shots 319 setup-again-shown 3; fi
+    return 0
+}
+
+part_more() {
+    pv_step "the PIN's record unreadable for a new process: the lock screen and the sheet say the PIN can't be checked" -- pin_cannot_check
+    pv_step "setup again: the words, an own password (too short, a keyboard row, what is missing, the reuse question), big letters, setup interrupted, a mismatch" -- setup_more
+}
+
 echo "pictures of the real app in $LANG_TAG on $SERIAL, into $OUT"
 part_setup || pvl_end
+[[ ",$ONLY," == *",faults,"* ]] && part_faults
+[[ ",$ONLY," == *",extra,"* ]] && part_extra
 want deleted && part_deleted
 want pad && part_pad
 want newmp && part_newmp
@@ -817,6 +1007,7 @@ want keys && part_keys
 want time && part_time
 want empty && part_empty
 want restore && part_restore
+want more && part_more
 clock_back
 pv_shell cmd locale set-app-locales "$PV_PACKAGE" >/dev/null 2>&1
 pvl_end

@@ -1,0 +1,299 @@
+# The owner's picture set (checks/6-pictures.sh): each screen's name in English for index.html and README.md.
+# SOURCE<TAB>KEY<TAB>NAME. KEY is the picture's name without its language: the walk's screen (a further stretch
+# "<screen>--N" takes its screen's name with "(part N)"), the session's NNN-name (a series "NNN-name-K" takes
+# "NNN-name"'s with "(part K)"), the tests' TEST-name. A key not listed here is shown as it is.
+walk	Welcome	Welcome: the first screen
+walk	Language	Welcome › the language dialog
+walk	Restore	Welcome › Restore from a backup file
+walk	CreateMasterPassword	Setup, step 1: choose your master password (the suggested words)
+walk	CreateMasterPassword-own	Setup, step 1: your own master password, too short
+walk	WriteDown	Setup, step 2: write it down on paper
+walk	TypeAgain	Setup, step 3: type your master password again
+walk	TypeAgain-mismatch	Setup, step 3: it doesn't match
+walk	CreatePin	PIN steps: choose a 6-digit PIN
+walk	ConfirmPin	PIN steps: enter the PIN again
+walk	ConfirmPin-mismatch	PIN steps: the PINs don't match
+walk	FingerprintOffer	PIN steps: use your fingerprint?
+walk	BackupsExplained	PIN steps: make backups
+walk	Passwords-empty	Passwords: no accounts yet
+walk	Edit-new	New account: the empty form
+walk	Edit-filled	New account: the form filled in
+walk	Generator	Password generator: random characters
+walk	Generator-words	Password generator: words
+walk	Edit-replacePassword	The form: replace the current password?
+walk	Edit-addField	The form: add field
+walk	Entry	An account's screen ("Saved")
+walk	Entry-shown	An account's screen: the password shown
+walk	BigLetters	The password in big letters
+walk	Entry-menu	An account's screen: its menu
+walk	FirstCopyTip	The first copy of a password: how to paste
+walk	Entry-copied	An account's screen: the password copied
+walk	Edit	Edit account
+walk	Edit-saveChanges	Edit account: save changes?
+walk	Passwords	Passwords: the list with the copied password's row
+walk	Passwords-search	Passwords: search
+walk	Passwords-noResults	Passwords: no account matches the search
+walk	Passwords-rowMenu	Passwords: a row's menu
+walk	BigLetters-fromList	Big letters, opened from the list
+walk	Entry-deleted	An account deleted: its message with Undo
+walk	RecentlyDeleted	Recently deleted
+walk	Security	Security check
+walk	Group	Security check › same password (a group)
+walk	GuidedChange	Change password: the five steps
+walk	GuidedChange-created	Change password: the new password created
+walk	Settings	Settings
+walk	Theme	Settings › Appearance
+walk	Language-settings	Settings › Til · Тил · Язык · Language
+walk	Settings-lockDelay	Settings › Lock the app after leaving it
+walk	Settings-clipDelay	Settings › Clear copied text after
+walk	ChangePin	Settings › Change PIN: the current PIN
+walk	Backup	Make a backup: what a backup is
+walk	Backup-password	Make a backup: type your master password
+walk	Backup-wrong	Make a backup: the wrong master password
+walk	Export	Export: choose a format
+walk	Export-warning	Export: this file will not be protected
+walk	Export-password	Export: type your master password
+walk	Import	Import: where are your passwords now?
+walk	Import-google	Import: passwords from Google
+walk	ChangeMasterPassword	Change master password: the current one
+walk	ChangeMasterPassword-wrong	Change master password: the wrong current one
+walk	NewMasterPassword	New master password: forgot your master password?
+walk	Help-PROTECTION	Help: how your passwords are protected
+walk	Help-LOST_PHONE	Help: if you lose your phone or move to a new one
+walk	Help-FORGOT_MASTER_PASSWORD	Help: if you forget your master password
+walk	Help-FORGOT_PIN	Help: if you forget your PIN
+walk	Help-VERSION	Help: version
+walk	Licences	Open-source licences
+walk	Locked-pad	Lock screen: enter your app PIN
+walk	Locked-masterPassword	Lock screen: type your master password
+walk	Locked-wrong	Lock screen: the wrong master password
+walk	Locked-forgotSheet	Lock screen › forgot your master password?
+walk	Notice-1	After the unlock: wrong master passwords were typed
+tests	settings-01-settings-top	Settings (made-up data): the top
+tests	settings-02-settings-middle	Settings (made-up data): the middle
+tests	settings-03-settings-end	Settings (made-up data): the end
+tests	settings-04-lock-delay-dialog	Settings › Lock the app after leaving it
+tests	settings-05-clipboard-delay-dialog	Settings › Clear copied text after
+tests	settings-06-appearance-dialog	Settings › Appearance
+tests	settings-08-fingerprint-dialog	Settings › Fingerprint unlock: turn it on?
+tests	settings-09-app-lock-page	Settings › App lock
+tests	settings-10-create-pin	Set a PIN: choose a 6-digit PIN
+tests	settings-11-create-pin-refused	Set a PIN: a PIN that is too easy, refused
+tests	settings-12-confirm-pin	Set a PIN: enter the PIN again
+tests	settings-13-pin-is-set	Set a PIN: your PIN is set
+tests	settings-14-fingerprint-offer	Set a PIN: use your fingerprint?
+tests	settings-15-make-backups	Set a PIN: make backups
+tests	settings-16-master-password-before-a-pin	Choose a new PIN: your master password first
+tests	settings-17-change-pin-current	Settings › Change PIN: the current PIN
+tests	settings-18-set-a-pin-master-password	Settings › Set a PIN: type your master password
+tests	security-7.1-01-tab-first-visit	Security check: the first visit
+tests	security-7.1-02-tab-cards	Security check: the cards
+tests	security-7.1-03-tab-end	Security check: the cards, scrolled to the end
+tests	security-7.1-04-tab-later-visit	Security check: a later visit (master password used elsewhere)
+tests	security-7.1-05-tab-checking	Security check: checking
+tests	security-7.1-06-tab-all-clear	Security check: all clear
+tests	security-7.1-07-group-same-password	Security check › same password
+tests	security-7.1-08-weak-leave-out-menu	Security check › easy to guess: a row's menu
+tests	security-7.1-09-weak-left-out-undo	Security check › easy to guess: left out, with Undo
+tests	security-7.1-10-left-out	Security check › left out of the check
+tests	import-5.4-01-sources	Import: the sources
+tests	import-5.4-02-google-help	Import: passwords from Google
+tests	import-5.4-03-google-help-settings	Import: passwords from Google, if you can't find it
+tests	import-5.4-04-preview	Import: the preview
+tests	import-5.4-05-preview-rows	Import: the preview, its counts
+tests	import-5.4-06-preview-names	Import: the preview, tidy names
+tests	import-5.4-08-imported	Import: imported; the file still holds your passwords
+tests	import-5.4-09-file-deleted	Import: the file deleted
+tests	import-5.4-10-columns	Import: choose the columns yourself
+tests	import-5.4-11-columns-menu	Import: a column's menu
+tests	import-5.4-12-columns-chosen	Import: the columns chosen
+tests	import-5.4-13-backup-password	Import: a backup file, paused when the app locked
+tests	import-5.4-14-backup-summary	Import: what the backup file holds
+tests	import-5.4-15-excel-file	Import: an Excel file
+tests	export-5.3-01-choose	Export: choose a format
+tests	export-5.3-02-warning-csv	Export: the warning for CSV
+tests	export-5.3-03-warning-csv-see-which	Export: the warning for CSV, which accounts
+tests	export-5.3-04-warning-excel	Export: the warning for Excel
+tests	export-5.3-05-password	Export: type your master password
+tests	export-5.3-06-password-wrong	Export: the wrong master password
+tests	export-5.3-07-paused	Export: paused when the app locked
+tests	export-5.3-08-saving	Export: saving and checking the file
+tests	export-5.3-09-saved-drive	Export: saved to a place that uploads later
+tests	export-5.3-10-saved-part-1-of-2	Export: saved file 1 of 2
+tests	export-5.3-11-cannot-delete	Export: saved; the app can't delete it there
+tests	export-5.3-12-write-failed	Export: couldn't save to this place
+tests	export-5.3-13-pending	Export: not while a new master password waits
+tests	backup-5.2-backup-choose	Make a backup: choose a place
+tests	backup-5.2-backup-explain	Make a backup: what a backup is
+tests	backup-5.2-backup-failed	Make a backup: couldn't save to this place
+tests	backup-5.2-backup-making	Make a backup: making the backup
+tests	backup-5.2-backup-password-wrong	Make a backup: the wrong master password
+tests	backup-5.2-backup-saved-drive	Make a backup: saved to Google Drive
+tests	backup-5.2-backup-saved-other	Make a backup: saved to another place
+tests	backup-5.2-backup-saved-phone	Make a backup: saved on this phone
+tests	backup-5.2-old-delete-wrong	Old passwords: delete them, the wrong master password
+tests	backup-5.2-old-list	Old passwords: the list
+tests	backup-5.2-restore-start	Restore from a backup file: choose the file
+tests	backup-5.2-restore-summary	Restore from a backup file: what the backup holds
+tests	backup-5.2-restore-wrong	Restore from a backup file: the wrong master password
+tests	lock-4.2b-older-set	Lock screen: open the older set instead?
+tests	lock-cant-be-opened	Lock screen: your passwords can't be opened
+tests	lock-fingerprint-only	Lock screen: fingerprint only, no fingerprint saved
+tests	lock-w5-carry-cannot-open	Lock screen: passwords put aside whose files are damaged
+tests	pad-pad	Lock screen: the PIN pad (3 digits entered)
+tests	notices-notice-wrong-pins	After the unlock: wrong PINs were typed (one entry interrupted)
+tests	forgot-forgot-sheet	Lock screen › forgot your master password?
+tests	forgot-start-empty-question	Lock screen › start with an empty app?
+tests	master-5.5-01-current	Change master password: the current one
+tests	master-5.5-02-current-wrong	Change master password: the wrong current one
+tests	master-5.5-03-choose	Change master password: choose the new one
+tests	master-5.5-04-write-down	Change master password: write it down
+tests	master-5.5-05-type-again	Change master password: type it again
+tests	master-5.5-06-keep-pin	Change master password: enter your PIN to keep using it
+tests	master-5.5-07-keep-pin-wrong	Change master password: keep your PIN, a wrong PIN
+tests	master-5.5-08-saving	Change master password: saving (keep fingerprint unlock on)
+tests	master-5.5-09-changed-backup	Change master password: changed, make a new backup
+tests	master-5.5-10-changed-backups-deleted	Change master password: changed, old backups deleted
+tests	master-5.5-11-explain	New master password: forgot your master password?
+tests	master-5.5-12-proof-pin	New master password: enter your app PIN
+tests	master-5.5-13-proof-pin-wrong	New master password: a wrong PIN
+tests	master-5.5-14-choose	New master password: choose it
+tests	master-5.5-15-requesting	New master password: saving
+tests	master-5.5-16-wait	New master password: chosen, the wait
+tests	master-5.5-17-finish	New master password: type it to finish
+tests	master-5.5-18-finish-wrong	New master password: type it to finish, a wrong one
+tests	master-5.5-19-finishing	New master password: finishing
+tests	master-5.5-20-finished-backup	New master password: it works now; make a new backup
+tests	master-5.5-21-banner-waiting	Passwords: the banner while a new master password waits
+tests	master-5.5-22-banner-ready	Passwords: the banner, the new master password is ready
+tests	master-5.5-23-banner-replaced	Passwords: the banner, your master password was replaced
+tests	master-5.5-24-banner-practice-i-forgot-it	Passwords: the practice banner (with I forgot it)
+look	bank-blue-light-list	Passwords in Bank blue, light
+look	bank-blue-dark-list	Passwords in Bank blue, dark
+look	emerald-light-list	Passwords in Emerald, light
+look	emerald-dark-list	Passwords in Emerald, dark
+look	night-vault-light-list	Passwords in Night vault, light
+look	night-vault-dark-list	Passwords in Night vault, dark
+session	101-pin-refused	Setup › choose a PIN: a PIN that is too easy, refused
+session	102-prompt-turn-on	Setup › use your fingerprint: the phone's prompt to turn it on
+session	105-entry-deleted	An account deleted from its menu: the message
+session	106-recently-deleted	Recently deleted
+session	107-recently-deleted-menu	Recently deleted: a row's menu
+session	108-recently-deleted-forever-question	Recently deleted: delete forever?
+session	109-recently-deleted-empty-question	Recently deleted: empty it?
+session	110-prompt-unlock	Lock now: the phone's fingerprint prompt to open the app
+session	111-pad	Lock screen: enter your app PIN
+session	112-pad-wrong-1	Lock screen: a wrong PIN
+session	113-pad-same-again	Lock screen: the same wrong PIN again
+session	114-pad-wrong-3	Lock screen: three wrong PINs
+session	115-pad-last-try	Lock screen: one try left
+session	116-fingerprint-only-prompt	Lock screen: the fingerprint prompt after the PIN turned off
+session	117-fingerprint-only	Lock screen: fingerprint only, the PIN turned off
+session	118-master-password-pin-off	Lock screen: the master password, the PIN turned off
+session	119-master-password-wrong	Lock screen: a wrong master password
+session	120-create-pin	After the unlock: choose a new PIN
+session	121-settings-pin-off	Settings: the PIN row after the PIN turned off
+session	122-create-pin	The next unlock: choose a new PIN
+session	130-f11-explain	New master password: forgot your master password?
+session	131-f11-pin-proof	New master password: your PIN first
+session	132-f11-choose	New master password: choose it
+session	133-f11-write-down	New master password: write it down
+session	134-f11-type-again	New master password: type it again
+session	135-f11-wait	New master password: chosen, the wait
+session	136-list-pending-banner	Passwords: the banner while the new master password waits
+session	137-pad-pending	Lock screen while a new master password waits
+session	140-notice-ready	After the unlock: your new master password is ready
+session	141-f11-finish	New master password: type it to finish
+session	142-create-pin	New master password finished: choose a PIN
+session	143-f11-backup-step	New master password: it works now; make a new backup
+session	144-list-after-finish	Passwords after the new master password
+session	145-master-password-older	Lock screen: the master password from before the change
+session	201-import-google-help-cant-find	Import › passwords from Google: if you can't find it
+session	202-import-preview	Import: the preview of a CSV file
+session	203-import-kept-separate	Import: two accounts kept separate
+session	204-import-result	Import: imported
+session	205-import-file-kept	Import: the file kept
+session	206-import-fifty-preview	Import: fifty accounts, the preview
+session	207-import-fifty-result	Import: fifty accounts imported
+session	208-import-file-deleted	Import: the file deleted
+session	210-security	Security check with fifty accounts
+session	211-security-group	Security check › same password
+session	212-security-row-menu	Security check › same password: a row's menu
+session	213-security-left-out-message	Security check › left out of the check: the message
+session	214-change-steps	Change password: the five steps
+session	215-change-created	Change password: the new password created
+session	216-change-end	Change password: the end
+session	216-change-later	Security check › same password, after "I'll finish later"
+session	217-security-after	Security check after a change
+session	218-list-change-waiting	Passwords: a change waiting
+session	219-entry-change-waiting	An account whose change waits
+session	220-backup-explain	Make a backup: what a backup is
+session	221-backup-password	Make a backup: type your master password
+session	222-backup-saved	Make a backup: saved on this phone
+session	225-export-choose	Export: choose a format
+session	226-export-warning-xlsx	Export: the warning for Excel
+session	227-export-warning-json	Export: the warning for JSON
+session	228-export-warning-csv	Export: the warning for CSV
+session	229-export-warning-csv-which	Export: the warning for CSV, which accounts
+session	230-export-password	Export: type your master password
+session	231-export-saved	Export: saved
+session	232-export-deleted	Export: the file deleted
+session	235-export-saved-kept	Export: saved, the file kept
+session	240-list-banners	Passwords: the banners (a change waiting, a CSV kept)
+session	241-settings-fingerprint-switch	Settings › turn on fingerprint unlock: your master password
+session	250-practice-in-grace	A day later: type your master password (practice)
+session	251-practice-not-now	Practice: not now
+session	252-practice-required	Ten days later: type your master password (practice)
+session	253-practice-cant-remember-pin	Practice › I can't remember it: your PIN first
+session	253-practice-cant-remember-explain	Practice › I can't remember it: a new master password
+session	254-list-practice-overdue	Passwords: the practice banner
+session	256-list-backup-due	Passwords ten days on, after the master password
+session	257-practice-dialog	Passwords › type your master password (practice)
+session	258-practice-dialog-wrong	Practice: a wrong master password
+session	260-keys-prompt	The keys gone: the fingerprint prompt
+session	261-keys-lock-screen	The keys gone: the lock screen
+session	262-keys-after-pin	The keys gone: the PIN stopped working
+session	263-create-pin	The keys gone: choose a new PIN
+session	269-master-password-no-pin	Lock screen without a PIN: the master password
+session	270-forgot-sheet-no-shortcut	Lock screen › forgot your master password? (no PIN, no fingerprint)
+session	271-start-empty-question	Start with an empty app?
+session	272-settings-old-passwords-row	Settings with "Old passwords"
+session	273-old-passwords	Old passwords
+session	274-old-passwords-open	Old passwords: open them
+session	275-old-passwords-delete	Old passwords: delete them
+session	280-restore-intro	Welcome › restore from a backup file
+session	281-restore-password	Restore: the backup's master password
+session	282-restore-password-wrong	Restore: a wrong master password
+session	283-restore-summary	Restore: what the backup holds
+session	284-create-pin	After the restore: choose a PIN
+session	120-notice-1	After the unlock: a wrong PIN was typed 5 times
+session	120-notice-2	After the unlock: make a backup now?
+session	138-notice-1	After the unlock: a new master password was chosen
+session	139-notice-1	After the unlock: a message before "Finish now"
+session	253-notice-1	After the unlock: your master password was replaced
+session	255-notice-1	After the unlock: your master password was replaced
+session	263-notice-1	After the unlock: your master password was replaced
+session	271-welcome-previous-passwords	Welcome with "Open my previous passwords"
+session	290-pad-fingerprint-locked	Lock screen: fingerprint is locked for now
+session	291-pad-fingerprint-not-for-apps	Lock screen: fingerprint can't be used in apps
+session	292-pad-fingerprint-cannot-check	Lock screen: fingerprint can't be checked
+session	293-pad-fingerprint-did-not-open	Lock screen: fingerprint did not open the app
+session	294-pad-fingerprint-turned-off	Lock screen: fingerprint unlock was turned off
+session	300-pin-cannot-check-lock	Lock screen: the PIN can't be checked
+session	301-pin-cannot-check-sheet	Lock screen › forgot your master password? (the PIN can't be checked)
+session	310-setup-words	Setup, step 1: the suggested words
+session	311-setup-own-short	Setup, step 1: your own password, too short
+session	312-setup-own-keyboard-row	Setup, step 1: your own password, a keyboard row
+session	313-setup-own-not-yet	Setup, step 1: your own password, what is missing
+session	314-setup-own-reuse-question	Setup, step 1: do you use this password for any other account?
+session	315-setup-own-reuse-refused	Setup, step 1: then choose a different one
+session	316-setup-write-down-big-letters	Setup, step 2: the words in big letters
+session	317-setup-interrupted	Setup was interrupted: step 1 again
+session	318-setup-again-mismatch	Setup, step 3: it doesn't match
+session	319-setup-again-shown	Setup, step 3: show my password again
+session	320-recently-deleted-restored	Recently deleted: an account restored
+session	321-recently-deleted-nothing	Recently deleted: nothing here
+session	325-change-pin-date	Settings › Change PIN: a PIN that looks like a date
+session	326-change-pin-same-as-current	Settings › Change PIN: the same as your current PIN
+session	328-settings-pin-changed	Settings: your PIN was changed
+session	294-notice-1	After the unlock: turn fingerprint unlock on again?
