@@ -1,0 +1,49 @@
+# The project's own checks on every push to main and every pull request: tools/check.sh all runs
+# the unit tests (under tr-TR and fa-IR), lint, the debug, staging and release builds with their
+# build checks, and the offline checks (no INTERNET in any APK). The device tests need emulators;
+# they run with tools/emu/ (tools/emu/README.md), whose logs name the commit they checked.
+#
+# Each action is pinned to the commit of the release named beside it.
+name: Checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: tools/check.sh all
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      # Caches Gradle's downloads between runs and checks the wrapper jar.
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+
+      # tools/gradle.sh takes the JDK and the Android SDK from these two variables. The Android Gradle
+      # Plugin downloads the SDK platform and build tools the build needs.
+      - name: Unit tests, lint, builds and offline checks
+        run: PV_JAVA_HOME="$JAVA_HOME" PV_ANDROID_HOME="$ANDROID_HOME" tools/check.sh all
+
+      - name: Keep the logs
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: check-logs
+          path: build/check/
+          if-no-files-found: ignore
