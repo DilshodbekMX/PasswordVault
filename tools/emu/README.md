@@ -155,12 +155,35 @@ run-as, or root on API 37.
 | `shell/walk.sh` | | | 14/0/0 |
 | `window/all.sh` | `a11y-old` 14/0/0, 1 KNOWN | `keyboard` 29, `autofill` 29, `overlay` 15, `state` 29, `a11y` 29 with 5 KNOWN | `keyboard` 29, `autofill` 29, `overlay` 16, `state` 29, `a11y` 34 |
 
-The rest is wave 8's final check (build-plan.md §10: the staging build runs every script under
-`tools/emu/` on API 24, 28 and 37, and a step that needs a debuggable build runs on debug): the lock
-checks on API 28; `session/autolock.sh`, `setup/create.sh` and `clipboard/clear.sh` on 28 and 37;
-`shell/walk.sh` on 24 and 28; `smoke.sh` and `checks/3A.sh skeleton` on 28; `i18n/`, `change/guided.sh`
-and `window/capture.sh`. `layout/walk.sh` needs the debug build and its test APK (pseudo-locales,
-screenshots).
+Wave 8's integration check (build-plan.md §10: the staging build runs every script under `tools/emu/` on
+API 24, 28 and 37, and a step that needs a debuggable build runs on debug) ran the rest, and everything
+above again, with the APKs of `wave-8-merged`'s app (built at 7f33d97; `checks/8.sh`, 2026-10-26 and 27):
+each script with the staging APK on every level it supports, and each script that skipped a step for want
+of run-as again with the debug APK on that level (the second number in a cell). `layout/walk.sh`,
+`change/guided.sh`, `checks/5.sh`'s lines and 8.1's accessibility walk need the debug build (its test APK
+or run-as) and ran with it (`checks/8.sh` parts `walk`, `wave5`, `wave7` and `a11y`). Each cell is
+passed/failed/skipped, after the reruns that `build-plan.md` §12 ("From the integration check of wave 8")
+lists with their reasons.
+
+| Script | API 24 | API 28 | API 37 |
+|---|---|---|---|
+| `smoke.sh staging`, with its language stage | 43/0/0 | 43/0/0 | 43/0/0 |
+| `checks/3A.sh skeleton` (staging; debug) | 11/0/1; 12/0/0 | 11/0/1; 12/0/0 | 11/0/1; 12/0/0 |
+| `session/autolock.sh` (staging; debug) | 12/0/4; 16/0/0 | 12/0/4; 16/0/0 | 12/0/4; 16/0/0 |
+| `setup/create.sh` (staging; debug with `--vault-file`) | 12/0/0; 14/0/0 | 12/0/0; 14/0/0 | 12/0/0; 14/0/0 |
+| `clipboard/clear.sh` (staging; debug) | 34/0/5; 38/0/1 (`restricted`: Android 7 has no such setting) | 36/0/4; 40/0/0 | 36/0/4; 40/0/0 |
+| `shell/walk.sh` | 14/0/0 | 14/0/0 | 14/0/0 |
+| `lock/all.sh` (each check in `lock/README.md`) | the level's 9 checks: nothing failed or skipped | the level's 10 checks: nothing failed or skipped; E12 1 KNOWN | the level's 16 checks: nothing failed; E4 and E5 skip 5 steps, which pass with debug (11/0/0, 6/0/0) |
+| `i18n/matrix.sh` (staging: `phone`, `survives`, `formats`, and on 37 `page`, `mixing`; debug: all its parts) | 18/0/0; 29/0/0 | 18/0/0; 29/0/0 | 31/0/0 and 4 KNOWN (Android 17's page, below); 39/0/0 and 1 KNOWN |
+| `i18n/e11.sh` (staging; debug) | 11/0/0; 11/0/0 | 11/0/0; 11/0/0 | 11/0/0; 11/0/0 |
+| `window/all.sh` with `capture` (staging and debug) | `a11y-old` 14/0/0, 1 KNOWN | `keyboard` 29, `autofill` 29, `overlay` 15, `state` 29, `a11y` 29 with 5 KNOWN, `capture` 3/0/4 | `keyboard` 29, `autofill` 29, `overlay` 16, `state` 29, `a11y` 34, `capture` 7/0/1 |
+| the release APK (`checks/8.sh release`) | 21/0/0 (its copy with x86_64 code) | | 20/0/0 |
+
+On API 28 the first `window/all.sh` run failed `autofill.sh` with the staging APK (21/0/8): one fill request
+for the app's activity with an empty structure (no node: the decor view's opt-out kept every field out, as
+architecture.md and the window lab expect of a forgotten field), during the form or its "Add field" dialog,
+after which every later step of the script counts it. Alone it passed 7 times in a row, and the whole part
+again 12 of 12 scripts; not reproduced (build-plan.md §12, "From the integration check of wave 8").
 
 ## The base: `/home/asus/pvlab/`
 
@@ -471,3 +494,31 @@ says `Found systemPath /home/asus/pvlab/sysimg/...`).
   comes up in the phone's language; once the app has run, or for a device test whose activity is no
   AppCompat one after `pm clear`, the command holds. Scripts set the language on Welcome in the app (the
   debug command `locale`, whose answer says which language the screens show).
+- The release build on these emulators (the integration check of wave 8, `checks/8.sh release`): the
+  release APK carries ARM code only (architecture.md §7.2). The API 37 Google Play image runs it (its ABI
+  list is `x86_64,arm64-v8a`, through `libndk_translation`); the API 24 and 28 AOSP images refuse it with
+  `INSTALL_FAILED_NO_MATCHING_ABIS: Failed to extract native libraries`, as docs/release step 2.13 says. A copy
+  that runs there: the release APK with `lib/x86_64/` taken from the staging APK of the same commit (the same
+  argon2kt and androidx.graphics libraries; their ARM files are byte for byte the release's), added uncompressed
+  (`zip -0`), `zipalign -f -P 16 4`, and signed with the same key (`apksigner sign --v1-signing-enabled false
+  --v2-signing-enabled true --v3-signing-enabled false`); every other entry stays the release's. The release
+  build refuses keys in software (lock.md §4.5) and an emulator has no other, so it behaves as lock.md F18 says
+  a phone without protected hardware does: no "Choose a PIN" or "Make backups" after setup, Settings' PIN and
+  fingerprint rows off with "This phone can’t keep a PIN or fingerprint key in protected hardware." (and "… a
+  fingerprint key …"), and the lock screen says "…, so the app opens with your master password only." at the
+  first lock of an install. It has no debug receiver (`am broadcast … --es cmd status` answers `result=0` with no
+  data) and is not debuggable (no run-as). Disabled nodes, such as that PIN row, are never matched by app.sh's
+  helpers (`pv_ui_match` takes enabled nodes only): read them in `pv_ui_nodes`' raw lines.
+- Android 17's App language page (Settings › Apps › the app › Language) can leave out what it suggests (the
+  app's language, marked, and the phone's own "English (United States)") once the phone's languages have been
+  set by `i18n/PvLocale.java` and the device has restarted since (the parts `phone`, `mixing` and `survives`),
+  although `cmd locale get-app-locales` holds the app's choice: in the integration check of wave 8 the first i18n
+  run of a booted device passed and later runs failed three steps of the part `page`. The system's own `cmd locale
+  set-device-locale en-US` brought the suggestions back in some runs, not in all, and `pm clear
+  com.android.settings` did not. `i18n/matrix.sh`'s part `page` therefore sets the phone's language that way
+  first, and reads a page that suggests nothing but "System default" as KNOWN once the system is seen to hold
+  the app's choice; any other page without the mark fails as before.
+- `window/autofill.sh` with the staging APK on API 28 once (1 of 9 runs, the integration check of wave 8) saw a
+  fill request for the app's activity with an empty structure while the form and its "Add field" dialog were
+  typed in: the decor views' autofill opt-out held (no node, no value reached the service), and the script counts
+  that one request in every later step. Not reproduced in 8 runs since, alone or within `window/all.sh`.
