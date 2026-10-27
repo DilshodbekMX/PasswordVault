@@ -27,7 +27,11 @@
 #                                 run COMMAND, print "PASS NAME" or "FAIL NAME (exit N)"; with a
 #                                 marker that cannot be met on this device or build, print
 #                                 "SKIPPED NAME (reason)" and do not run it
-#   pv_summary                    print the counts; returns 1 if any step failed
+#   pv_summary                    print the commit (pv_commit_line), then the counts; returns 1 if
+#                                 any step failed
+#   pv_commit_line                print "COMMIT <sha>, work tree clean|with uncommitted changes, <time>":
+#                                 the code a run checked (PV_APP_COMMIT names it instead when the
+#                                 APKs were built at another commit)
 #   pv_reboot [SECONDS], pv_wait_booted [SECONDS], pv_unlock, pv_keyguard_showing, pv_focus, pv_ui_nodes,
 #   pv_ui_nodes_all, pv_ui_tap REGEX, pv_ui_wait REGEX SECONDS, pv_is_debuggable [PACKAGE], pv_has_root,
 #   pv_api
@@ -362,7 +366,26 @@ pv_step() { # NAME [needs-debuggable] [needs-root] -- COMMAND...
     return $rc
 }
 
+# The line that ties a run's log to the code it checked. It comes before SUMMARY, so that SUMMARY
+# stays the last line, word for word as before (checks/6A.sh and lock/all.sh read it).
+pv_commit_line() {
+    local repo head state
+    if [ -n "${PV_APP_COMMIT:-}" ]; then
+        echo "COMMIT $PV_APP_COMMIT (PV_APP_COMMIT), $(date '+%F %T')"
+        return 0
+    fi
+    repo=$(cd "$PV_EMU_DIR/../.." && pwd)
+    head=$(git -C "$repo" rev-parse --short=12 HEAD 2>/dev/null) || head=unknown
+    if [ -n "$(git -C "$repo" status --porcelain --untracked-files=no 2>/dev/null)" ]; then
+        state="with uncommitted changes"
+    else
+        state="work tree clean"
+    fi
+    echo "COMMIT $head, $state, $(date '+%F %T')"
+}
+
 pv_summary() {
+    pv_commit_line
     echo "SUMMARY ${PV_SERIAL:-}: $PV_PASSED passed, $PV_FAILED failed, $PV_SKIPPED skipped"
     [ "$PV_FAILED" -eq 0 ]
 }
@@ -718,6 +741,7 @@ pv_connected() { # SERIAL... [-- GRADLE-ARGS...]
     done
     rm -f "$stuck"
     pv_connected_results "$results" "${serials[@]}" || rc=1
+    pv_commit_line
     return $rc
 }
 

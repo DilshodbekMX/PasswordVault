@@ -108,8 +108,14 @@ pv_use "$SERIAL"                       # exits 3 if the serial is not this workt
 pv_step "app installs" -- pv_adb install -r "$APK"
 pv_step "vault file starts with PVAULT01" needs-debuggable -- check_vault_header
 pv_step "smaller Java heap" needs-root -- heapsim 128m 256m
-pv_summary                             # SUMMARY emulator-5556: 2 passed, 0 failed, 1 skipped
+pv_summary                             # COMMIT 1a2b3c4d5e6f, work tree clean, 2026-10-27 12:00:00
+                                       # SUMMARY emulator-5556: 2 passed, 0 failed, 1 skipped
 ```
+
+`pv_summary` prints a `COMMIT` line before `SUMMARY`: the commit the run checked, whether the work
+tree had uncommitted changes, and the time, so that a log answers "did this suite pass at this
+commit?". `PV_APP_COMMIT` names the commit instead when the APKs were built at another one.
+`--connected` prints the same line after the device tests' results.
 
 Each step prints `PASS name`, `FAIL name (exit N)` or `SKIPPED name (reason)`, and returns
 the command's status (0 when skipped). Scripts use `set -u`, not `set -e`: under `set -e` a
