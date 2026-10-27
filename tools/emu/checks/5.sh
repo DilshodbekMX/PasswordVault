@@ -1582,13 +1582,15 @@ master_password_on() {
     pva_on Passwords 10
 }
 
+# The card says "17 accounts …": since 6.2 a no-break space holds a number to its word (i18n.md 4.5 rule 6),
+# which the check reads as a space.
 fifty() {
     T="wave 7"
     pv_step "$T: a fresh install, setup (the PIN left off)" -- fresh mp || return 1
     cp "$REPO/app/src/androidTest/assets/fixtures/fifty-accounts.csv" "$DEV_OUT/$FIFTY"
     pv_step "$T: the fifty accounts of app/src/androidTest/assets/fixtures/fifty-accounts.csv imported (17 share one password)" -- eval 'clean_download && pva_push_download "$DEV_OUT/$FIFTY" && w5_import csv "$FIFTY" pushed'
     pv_step "$T: the Security tab's dot is shown (new results)" -- eval 'pva_tap pv.tab.Passwords && pva_on Passwords 20 && pv_sleep 5 && security_dot before'
-    pv_step "$T: the Security tab: \"Why this matters\" open; the cards of U 5.16: 17 accounts use the same password, easy to guess" -- eval 'pva_tap pv.tab.Security && pva_on Security 30 && pva_need pv.security.why.text 30 && pva_need pv.security.card.reused 30 && pv_ui_nodes | cut -d"|" -f1 | grep -q "^17 accounts use the same password" && pva_reveal pv.security.card.weak'
+    pv_step "$T: the Security tab: \"Why this matters\" open; the cards of U 5.16: 17 accounts use the same password, easy to guess" -- eval 'pva_tap pv.tab.Security && pva_on Security 30 && pva_need pv.security.why.text 30 && pva_need pv.security.card.reused 30 && pv_ui_nodes | cut -d"|" -f1 | sed "s/\xc2\xa0/ /g" | grep -q "^17 accounts use the same password" && pva_reveal pv.security.card.weak'
     pv_log "the cards: $(pv_ui_nodes | cut -d'|' -f1 | grep -v '^$' | tr '\n' ';' | cut -c1-600)"
     shot security-cards
     pv_step "$T: the dot is gone once the results were seen" -- eval 'pva_tap pv.tab.Passwords && pva_on Passwords 20 && ! security_dot seen'
