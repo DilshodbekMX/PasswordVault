@@ -323,14 +323,30 @@ page_lists() {
 }
 
 # page_marks CHOICE NAME: the app's choice made in the app is marked on the page as NAME.
+# page_suggested: the titles the page lists under "Suggested", one per line.
+page_suggested() {
+    pv_ui_nodes | awk -F'|' '$3 == "title" && $1 == "Suggested" { s = 1; next } $3 == "title" && $1 == "All languages" { exit } s && $3 == "title" { print $1 }'
+}
+
+# page_marks CHOICE TITLE: CHOICE made in the app, the page marks TITLE. When the page suggests nothing
+# but "System default", not even the phone's own language (Android 17 after the phone's languages were set
+# by PvLocale and the phone restarted: see part_page), it can mark no language of the app's: that is KNOWN
+# when the system holds the app's choice (stored), which is what the page would show.
 page_marks() {
-    local checked
+    local checked suggested
     pva_relaunch && pva_on Welcome 30 && switch_to "$1" || return 1
     page_open || return 1
     checked=$(page_checked_soon)
+    suggested=$(page_suggested | tr '\n' ';')
     shot "page-$1"
     pv_shell input keyevent KEYCODE_BACK >/dev/null
-    [ "$checked" = "$2" ] || { pv_log "the page marks '$checked', not '$2'"; return 1; }
+    if [ -z "$checked" ] && [ "$suggested" = "System default;" ] && [ "$1" != SYSTEM ]; then
+        stored "$1" || return 1
+        known "page: $2 chosen in the app is not marked, as the page suggests nothing but System default" \
+            "Android $(pv_getprop ro.build.version.release)'s page left out the app's language and the phone's own; the system holds the app's choice"
+        return 0
+    fi
+    [ "$checked" = "$2" ] || { pv_log "the page marks '$checked', not '$2' (it suggests: $suggested)"; return 1; }
     pv_log "the page marks '$checked'"
 }
 
@@ -367,12 +383,14 @@ page_chooses() {
     pva_on Welcome 30 && pvi_open_language && pvi_dialog_is RU && pvi_cancel Welcome
 }
 
-# Android 17's App language page leaves out what it suggests (the app's language, marked, and the phone's
-# own) once the phone's languages have been set by PvLocale in more than one run on a booted device: found by
-# the integration check of wave 8, where every first i18n run of a device passed and every later one failed,
-# with `cmd locale get-app-locales` holding the app's choice each time; after the system's own
-# `cmd locale set-device-locale en-US` the page marked it again. The part sets the phone's language that way
-# first, where the device has the command (Android 17 here), and goes on either way.
+# Android 17's App language page can leave out what it suggests (the app's language, marked, and the phone's
+# own) once the phone's languages have been set by PvLocale and the phone has restarted (the parts phone,
+# mixing and survives): found by the integration check of wave 8, where the first i18n run of a booted device
+# passed and later ones failed three steps, with `cmd locale get-app-locales` holding the app's choice each
+# time. The system's own `cmd locale set-device-locale en-US` brought the suggestions back in some runs, not in
+# all: the part sets the phone's language that way first, where the device has the command (Android 17 here),
+# and page_marks reads a page that suggests nothing but System default as KNOWN when the system holds the
+# app's choice.
 part_page() {
     if [ "$API" -lt 33 ]; then
         pv_report SKIPPED "page: the phone's own language page" "Android 13 (API 33) and later"
@@ -384,9 +402,9 @@ part_page() {
     fi
     fresh || { pv_report FAIL "page: install and start"; return 1; }
     pv_step "page: it lists Oʻzbekcha, Ўзбекча, English and Русский" -- eval 'page_open && page_lists; rc=$?; pv_shell input keyevent KEYCODE_BACK >/dev/null; [ $rc -eq 0 ]'
-    pv_step "page: Русский chosen in the app is marked" -- page_marks RU "Русский"
-    pv_step "page: English chosen in the app is marked" -- page_marks EN "English"
-    pv_step "page: Oʻzbekcha chosen in the app is marked (O‘zbek (lotin))" -- page_marks UZ_LATN "O‘zbek (lotin)"
+    pv_step "page: Русский chosen in the app is marked (or KNOWN, see page_marks)" -- page_marks RU "Русский"
+    pv_step "page: English chosen in the app is marked (or KNOWN, see page_marks)" -- page_marks EN "English"
+    pv_step "page: Oʻzbekcha chosen in the app is marked (O‘zbek (lotin); or KNOWN, see page_marks)" -- page_marks UZ_LATN "O‘zbek (lotin)"
     pv_step "page: System language chosen in the app is marked (System default)" -- page_marks SYSTEM "System default"
     pv_step "page: Ўзбекча chosen in the app" -- page_uzbek_cyrillic
     pv_step "page: Русский chosen on the phone's page changes the app" -- page_chooses
