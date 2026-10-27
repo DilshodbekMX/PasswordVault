@@ -12,7 +12,7 @@ them, with the full licence texts, under **Settings → Open-source licences**.
 
 | Library | Version | Licence |
 |---|---|---|
-| [AndroidX](https://developer.android.com/jetpack/androidx): Jetpack Compose, Material 3, Navigation 3, Lifecycle, Activity, AppCompat, Core | Compose BOM 2026.09.00; exact versions in [`app/gradle.lockfile`](app/gradle.lockfile) | Apache-2.0 |
+| [AndroidX](https://developer.android.com/jetpack/androidx): Jetpack Compose, Material 3, Navigation 3, Lifecycle, Activity, AppCompat, Core | Compose BOM 2026.09.00, Navigation 3 1.2.0, Lifecycle 2.11.0, Activity 1.13.0, AppCompat 1.8.0, Core 1.19.1; every version in [`app/gradle.lockfile`](app/gradle.lockfile) | Apache-2.0 |
 | [androidx.biometric](https://developer.android.com/jetpack/androidx/releases/biometric) | 1.4.0-alpha07 | Apache-2.0 |
 | [Kotlin](https://kotlinlang.org/) standard library, [kotlinx.coroutines](https://github.com/Kotlin/kotlinx.coroutines), [kotlinx.serialization](https://github.com/Kotlin/kotlinx.serialization) | 2.4.20 · 1.11.0 · 1.11.0 | Apache-2.0 |
 | [Bouncy Castle](https://www.bouncycastle.org/) (`bcprov-jdk18on`) | 1.86 | MIT (the Bouncy Castle Licence) |
@@ -20,7 +20,7 @@ them, with the full licence texts, under **Settings → Open-source licences**.
 | ↳ the [Argon2 reference implementation](https://github.com/P-H-C/phc-winner-argon2) inside Argon2kt | – | CC0-1.0 or Apache-2.0, used under Apache-2.0 |
 | [zxcvbn4j](https://github.com/nulab/zxcvbn4j) (`com.nulab-inc:zxcvbn`) | 1.9.0 | MIT |
 | ↳ [zxcvbn](https://github.com/dropbox/zxcvbn), which zxcvbn4j ports to Java | – | MIT |
-| Guava ListenableFuture, JetBrains Java Annotations, JSpecify (pulled in by AndroidX) | 1.0 · 23.0.0 · 1.0.0 | Apache-2.0 |
+| Guava ListenableFuture and JSpecify (pulled in by AndroidX), JetBrains Java Annotations (pulled in by Kotlin and kotlinx.coroutines) | 1.0 · 1.0.0 · 23.0.0 | Apache-2.0 |
 | [Material Icons](https://github.com/google/material-design-icons) (51 of the app's icons) | – | Apache-2.0 |
 
 In all, the release build's runtime classpath locks 128 artifacts (`releaseRuntimeClasspath` in
@@ -37,8 +37,7 @@ JUnit, AndroidX Test, Espresso) are not part of the app. The Gradle wrapper file
 | Files | What the app uses them for | Source | Licence |
 |---|---|---|---|
 | [`wordlists/eff_short_wordlist_1.txt`](core/src/main/resources/wordlists/) | The words of a suggested master password and of the generator's "Words" mode | The Electronic Frontier Foundation's [short word list 1](https://www.eff.org/deeplinks/2016/07/new-wordlists-random-passphrases), with the line `yo-yo` removed (1,295 words) | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), © Electronic Frontier Foundation |
-| [`strength/`](core/src/main/resources/strength/) `places.txt`, `names-uz.txt`, `names-ru.txt`, `words-uz.txt`, `words-ru.txt` | Uzbek and Russian words, names and places that the strength meter recognises | [GeoNames](https://www.geonames.org/) (CC BY 4.0), the [Uzbek Wikipedia](https://uz.wikipedia.org/), the English [Wiktionary](https://en.wiktionary.org/), [FrequencyWords](https://github.com/hermitdave/FrequencyWords) (OpenSubtitles 2018) | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) |
-| [`strength/common.txt`](core/src/main/resources/strength/) | Common passwords and patterns | Written for this app | GPL-3.0, like the rest of the repository |
+| [`strength/`](core/src/main/resources/strength/): `common.txt`, `places.txt`, `names-uz.txt`, `names-ru.txt`, `words-uz.txt`, `words-ru.txt` | A list written for this app, and the Uzbek and Russian words, names and places that the strength meter recognises | `common.txt` was written for this app; the others come from [GeoNames](https://www.geonames.org/) (CC BY 4.0), the [Uzbek Wikipedia](https://uz.wikipedia.org/), the English [Wiktionary](https://en.wiktionary.org/) and [FrequencyWords](https://github.com/hermitdave/FrequencyWords) (OpenSubtitles 2018) | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), the list as a whole |
 
 Each folder's `SOURCES.md` records the exact source, date, changes, sizes and SHA-256 of every
 file. The app shows them under **Open-source licences → Show where the words come from**.
@@ -49,16 +48,17 @@ None of this is packaged into the app.
 
 | Material | Where | Origin | Licence |
 |---|---|---|---|
-| Chrome and Bitwarden export samples | [`core/src/test/resources/formats/proton/`](core/src/test/resources/formats/proton/) | [Proton Pass's import tests](https://github.com/ProtonMail/WebClients/tree/b4be0231837aec0511955b0ba969bcf9b12d10b1/packages/pass/lib/import/providers) (ProtonMail/WebClients), copied unchanged | GPL-3.0; the full text is in that folder |
+| Chrome and Bitwarden export samples | [`core/src/test/resources/formats/proton/`](core/src/test/resources/formats/proton/) | The import tests of Proton Pass's web app ([ProtonMail/WebClients](https://github.com/ProtonMail/WebClients/tree/b4be0231837aec0511955b0ba969bcf9b12d10b1/packages/pass/lib/import/providers)), copied unchanged | GPL-3.0; the full text is in that folder |
 | A Python transcription of Chrome's CSV password reader | [`tools/validate/check_csv.py`](tools/validate/check_csv.py) | Chromium, `components/password_manager/core/browser/import/` | BSD-3-Clause, [below](#chromium) |
 | Test cases from Chromium's URL tests | [`ChromeUrlTest.kt`](core/src/test/java/io/github/dilshodbekmx/passwordvault/core/formats/writers/ChromeUrlTest.kt) | Chromium, `url/url_canon_unittest.cc` | BSD-3-Clause, [below](#chromium) |
-| 36 pairs of Uzbek words in Cyrillic and Latin letters | [`OfficialPairsTest.kt`](core/src/test/java/io/github/dilshodbekmx/passwordvault/core/text/OfficialPairsTest.kt) | The two official editions of the Constitution of Uzbekistan on [lex.uz](https://lex.uz/docs/6445145) | Official text |
-| Four fixed streams of a password-protected Excel file | [`tools/validate/samples/prototype/`](tools/validate/samples/prototype/) `fixed-*.bin` | Byte-identical to those in Excel's own reference file | Format structures |
+| 36 pairs of Uzbek words in Cyrillic and Latin letters | [`OfficialPairsTest.kt`](core/src/test/java/io/github/dilshodbekmx/passwordvault/core/text/OfficialPairsTest.kt) | The two official editions of the Constitution of Uzbekistan on lex.uz, [in Cyrillic](https://lex.uz/docs/6445145) and [in Latin letters](https://lex.uz/docs/-6445145) | Official text |
+| Four fixed streams of a password-protected Excel file | [`tools/validate/samples/prototype/`](tools/validate/samples/prototype/) `fixed-*.bin` | Written by the prototype from [MS-OFFCRYPTO] 2.1.5–2.1.9; byte-identical to the same streams of an Excel-written file in msoffcrypto-tool's tests (`example_password.xlsx`) | Fixed by the file format |
 | A lab project made from Android Studio's project template, with its launcher icons | [`docs/lab/clipboard-artifacts/kit/project/`](docs/lab/clipboard-artifacts/kit/project/) | Android Studio | Apache-2.0 |
 
 The app's own Kotlin code that checks a website the way Chrome's importer does
 ([`GoogleCsv.kt`](core/src/main/java/io/github/dilshodbekmx/passwordvault/core/formats/GoogleCsv.kt), `ChromeUrl`)
-was written for this project to match Chrome's behaviour; it is not a copy of Chromium's code.
+was written for this project from a reading of Chromium's code (`GoogleCsv.kt` names the files), to
+behave as Chrome does; it is not a copy of that code.
 
 <a id="chromium"></a>
 
@@ -103,12 +103,13 @@ No code from them was copied into PasswordVault.
 |---|---|---|
 | [PocketVault](https://github.com/greyfreedom/PocketVault) | Apache-2.0 | Its key design, a random vault key wrapped both by the password's key and by an Android Keystore key, was the model for PasswordVault's |
 | [Bitwarden](https://github.com/bitwarden/android) | GPL-3.0 | Compared; its JSON export format is read, and PasswordVault's JSON export is one that Bitwarden can import |
-| [Proton Pass](https://github.com/protonpass/android-pass) | GPL-3.0 | Compared; its import tests supplied the samples above |
+| [Proton Pass](https://github.com/protonpass/android-pass) | GPL-3.0 or later | Compared; the import tests of its web app ([ProtonMail/WebClients](https://github.com/ProtonMail/WebClients)) supplied the samples above |
 | [KeePassDX](https://github.com/Kunzisoft/KeePassDX), Keepass2Android, Monica, KeyPass, PassVault, Keyguard, 2FAS Pass | various | Compared in [`docs/research/offline.md`](docs/research/offline.md) |
 
-Single words of the Uzbek and Russian texts were checked against the translations of KeePassDX,
-Bitwarden, Firefox and Android itself ([`docs/design/i18n.md`](docs/design/i18n.md)).
+The Uzbek and Russian glossary takes single terms from the translations of Android itself, Firefox,
+Bitwarden, Proton Pass, KeePassDX, Aegis and GNOME, and from Microsoft's terminology collection
+([`docs/design/i18n.md`](docs/design/i18n.md) §3).
 
 Google, Chrome, Google Password Manager, Google Drive, Bitwarden, Proton Pass, KeePassXC, Firefox
-and Excel are trademarks of their owners. They are named only to say which files PasswordVault can
-read or write.
+and Excel are trademarks of their owners. They are named only to say which apps and services
+PasswordVault's files work with, and which projects were studied.
