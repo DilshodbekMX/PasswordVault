@@ -8,6 +8,7 @@
 ### Your passwords on your phone, and nowhere else.
 
 <p>
+<a href="https://github.com/DilshodbekMX/PasswordVault/actions/workflows/checks.yml"><img alt="Checks" src="https://img.shields.io/github/actions/workflow/status/DilshodbekMX/PasswordVault/checks.yml?branch=main&label=checks"></a>
 <img alt="Android 7.0+" src="https://img.shields.io/badge/Android-7.0%2B-1D4E89?logo=android&logoColor=white">
 <img alt="Kotlin 2.4" src="https://img.shields.io/badge/Kotlin-2.4-1D4E89?logo=kotlin&logoColor=white">
 <img alt="Jetpack Compose" src="https://img.shields.io/badge/UI-Jetpack%20Compose-1D4E89?logo=jetpackcompose&logoColor=white">
@@ -602,8 +603,9 @@ Every configuration is locked (`*/gradle.lockfile`, `buildscript-gradle.lockfile
 SHA-256 sum in [`gradle/verification-metadata.xml`](gradle/verification-metadata.xml) (the `-javadoc`
 and `-sources` jars that Android Studio fetches are trusted without one). After changing a version,
 regenerate both in the same commit with the two commands in the comment in
-[`build.gradle.kts`](build.gradle.kts), then put back by hand the comment that Gradle's rewrite drops
-from the metadata's `<configuration>` part.
+[`build.gradle.kts`](build.gradle.kts). Run them in a fresh clone with an empty Gradle home, as a CI
+server starts: Gradle does not record the files its own cache already answers. Then put back by hand
+the comment that Gradle's rewrite drops from the metadata's `<configuration>` part.
 
 `androidx.biometric` is pinned to 1.4.0-alpha07 on purpose: with the stable 1.1.0, fingerprint
 unlock does not work on Android 7 and 8. Moving to another version means running the lock checks

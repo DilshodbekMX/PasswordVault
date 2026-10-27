@@ -32,8 +32,10 @@ allprojects {
     // configuration without the old locks, and so also reads the .pom and .module files of versions
     // that lose a conflict, which locked builds never read; --write-locks without
     // --write-verification-metadata stops at any of them that the metadata lacks, as at every file
-    // of a new version. The second records what only the tasks resolve. Both run with --offline
-    // once the new versions are in the Gradle cache.
+    // of a new version. The second records what only the tasks resolve. Run both in a fresh clone
+    // with an empty Gradle home (GRADLE_USER_HOME set to a new directory), as a GitHub Actions
+    // runner starts: Gradle does not record a .pom or .module file that its own cache answers, and
+    // the first CI run stopped at six such files that this machine had cached.
     dependencyLocking {
         lockAllConfigurations()
     }
