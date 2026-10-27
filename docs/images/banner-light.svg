@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300" viewBox="0 0 1200 300" role="img" aria-label="PasswordVault — an offline password manager for Android">
+  <title>PasswordVault — an offline password manager for Android</title>
+  <defs>
+    <linearGradient id="pv-bg-l" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f1f5fc"/>
+      <stop offset="0.55" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#ecf1fa"/>
+    </linearGradient>
+    <linearGradient id="pv-tile-l" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2c64a8"/>
+      <stop offset="1" stop-color="#1d4e89"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="300" rx="16" fill="url(#pv-bg-l)"/>
+  <rect x="0.5" y="0.5" width="1199" height="299" rx="15.5" fill="none" stroke="#d7e0ee"/>
+
+  <!-- the list of accounts -->
+  <g>
+    <rect x="752" y="72" width="214" height="162" rx="12" fill="#ffffff" stroke="#d2dbea"/>
+    <rect x="768" y="86" width="182" height="22" rx="11" fill="#e8edf6"/>
+    <circle cx="782" cy="97" r="4.6" fill="none" stroke="#8a9bb4" stroke-width="2"/>
+    <path d="M785.6 100.6l4 4" stroke="#8a9bb4" stroke-width="2" stroke-linecap="round"/>
+    <rect x="796" y="94" width="58" height="6" rx="3" fill="#b9c5d8"/>
+
+    <circle cx="782" cy="137" r="11" fill="#ffd9df"/>
+    <rect x="802" y="129" width="64" height="7" rx="3.5" fill="#22324a"/>
+    <rect x="802" y="141" width="96" height="6" rx="3" fill="#b9c5d8"/>
+    <rect x="930" y="129" width="12" height="15" rx="2.5" fill="none" stroke="#8a9bb4" stroke-width="2"/>
+
+    <circle cx="782" cy="173" r="11" fill="#d6e3ff"/>
+    <rect x="802" y="165" width="48" height="7" rx="3.5" fill="#22324a"/>
+    <rect x="802" y="177" width="110" height="6" rx="3" fill="#b9c5d8"/>
+    <rect x="930" y="165" width="12" height="15" rx="2.5" fill="none" stroke="#8a9bb4" stroke-width="2"/>
+
+    <circle cx="782" cy="209" r="11" fill="#d4ebc9"/>
+    <rect x="802" y="201" width="72" height="7" rx="3.5" fill="#22324a"/>
+    <rect x="802" y="213" width="84" height="6" rx="3" fill="#b9c5d8"/>
+    <rect x="930" y="201" width="12" height="15" rx="2.5" fill="none" stroke="#8a9bb4" stroke-width="2"/>
+  </g>
+
+  <!-- no cloud, no internet -->
+  <g transform="translate(958 62)">
+    <circle r="21" fill="#ffffff" stroke="#d2dbea"/>
+    <path d="M-7.5 7.2h15.2a6 6 0 0 0 .5-11.98a9 9 0 0 0-16.9-1.9a7 7 0 0 0 1.2 13.88z" fill="#d6e3ff" stroke="#1d4e89" stroke-width="1.8" stroke-linejoin="round"/>
+    <path d="M-11 -11L11 11" stroke="#ffffff" stroke-width="6" stroke-linecap="round"/>
+    <path d="M-11 -11L11 11" stroke="#1d4e89" stroke-width="2.2" stroke-linecap="round"/>
+  </g>
+
+  <!-- the lock screen: the PIN pad -->
+  <g>
+    <rect x="990" y="36" width="142" height="230" rx="22" fill="#1f2329"/>
+    <rect x="996" y="42" width="130" height="218" rx="17" fill="#f8f9ff"/>
+    <path d="M1013 42h96a17 17 0 0 1 17 17v59a12 12 0 0 1-12 12h-106a12 12 0 0 1-12-12v-59a17 17 0 0 1 17-17z" fill="#1d4e89"/>
+    <rect x="1049" y="54" width="24" height="24" rx="6.5" fill="#2c64a8" stroke="#5c86bf"/>
+    <path transform="translate(1061 66) scale(0.27) translate(-54 -54)" fill="#ffffff" d="M54 26.4 l22.2 8.4 v17.4 c0 14.4 -9.6 24.9 -22.2 29.4 c-12.6 -4.5 -22.2 -15 -22.2 -29.4 V34.8 z M57.261 54.836 A6 6 0 1 0 50.739 54.836 L48.6 66.6 h10.8 z"/>
+    <rect x="1037" y="86" width="48" height="4" rx="2" fill="#d6e3ff"/>
+    <g fill="#ffffff">
+      <circle cx="1031" cy="106" r="3.4"/>
+      <circle cx="1043" cy="106" r="3.4"/>
+      <circle cx="1055" cy="106" r="3.4"/>
+    </g>
+    <g fill="none" stroke="#a9c7ff" stroke-width="1.4">
+      <circle cx="1067" cy="106" r="3"/>
+      <circle cx="1079" cy="106" r="3"/>
+      <circle cx="1091" cy="106" r="3"/>
+    </g>
+    <g fill="#e4e9f2">
+      <circle cx="1031" cy="150" r="10.5"/>
+      <circle cx="1061" cy="150" r="10.5"/>
+      <circle cx="1091" cy="150" r="10.5"/>
+      <circle cx="1031" cy="177" r="10.5"/>
+      <circle cx="1061" cy="177" r="10.5"/>
+      <circle cx="1091" cy="177" r="10.5"/>
+      <circle cx="1031" cy="204" r="10.5"/>
+      <circle cx="1061" cy="204" r="10.5"/>
+      <circle cx="1091" cy="204" r="10.5"/>
+      <circle cx="1061" cy="231" r="10.5"/>
+    </g>
+    <path d="M1086 227h11a1.5 1.5 0 0 1 1.5 1.5v5a1.5 1.5 0 0 1-1.5 1.5h-11l-4-4z" fill="none" stroke="#43474e" stroke-width="1.5" stroke-linejoin="round"/>
+    <rect x="1047" y="250" width="28" height="3" rx="1.5" fill="#c3c7cf"/>
+  </g>
+
+  <!-- logo -->
+  <g transform="translate(96,102) scale(3)">
+    <rect width="32" height="32" rx="7.5" fill="url(#pv-tile-l)"/>
+    <path transform="translate(16 16) scale(0.38) translate(-54 -54)" fill="#ffffff" d="M54 26.4 l22.2 8.4 v17.4 c0 14.4 -9.6 24.9 -22.2 29.4 c-12.6 -4.5 -22.2 -15 -22.2 -29.4 V34.8 z M57.261 54.836 A6 6 0 1 0 50.739 54.836 L48.6 66.6 h10.8 z"/>
+  </g>
+
+  <!-- wordmark -->
+  <g font-family="ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif">
+    <text x="226" y="150" font-size="64" font-weight="700" letter-spacing="-1.5" fill="#0f1d33">PasswordVault</text>
+    <text x="229" y="192" font-size="24" font-weight="500" letter-spacing="0.2" fill="#4a5a73">Offline password manager for Android</text>
+  </g>
+  <rect x="229" y="212" width="62" height="4" rx="2" fill="#1d4e89"/>
+</svg>
