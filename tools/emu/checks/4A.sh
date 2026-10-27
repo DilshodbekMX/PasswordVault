@@ -104,10 +104,10 @@ PACKAGE=io.github.dilshodbekmx.passwordvault
 note() { echo "     $*"; }
 
 # ---- merged ------------------------------------------------------------------------------------------
-# BRANCH:HEAD as round R3 merged them (the merge commits 58dae3e, 23e5cd7, ce90927, 3320aad, 09d1db2,
-# db89841 and c897807 name them; the two review branches were merged by the job "main: reviews in").
-MERGED=(w4A-4.1:0aeed9b w4A-4.2:a54c421 w4A-4.3:7893849 w4A-4.4:fad2e5c w5-5.2:b950fec w5-5.3:cfca2bc
-    w5-5.4:3f40885 w5-rev-3.15:c38c93a w5-rev-5.1:e002a41)
+# BRANCH:HEAD as round R3 merged them (the merge commits 52c980d, dcf9691, 26c50aa, 9797110, 0b929bf,
+# 508a0a2 and 5a293b9 name them; the two review branches were merged by the job "main: reviews in").
+MERGED=(w4A-4.1:bc2bcd4 w4A-4.2:3037224 w4A-4.3:698106f w4A-4.4:3f2a40e w5-5.2:ff1e5df w5-5.3:965a9a5
+    w5-5.4:131d99b w5-rev-3.15:a527ea9 w5-rev-5.1:5c401e1)
 
 heads_merged() {
     local pair branch head bad=0

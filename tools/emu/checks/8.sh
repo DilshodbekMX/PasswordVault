@@ -18,7 +18,7 @@
 # copied to LOGS/apk/, from where every part installs them: Android Studio, which has this worktree open,
 # rebuilds app/build/outputs/apk/debug/ when its Run is pressed. The devices are stopped at the end unless
 # --keep is given; the part "stop" does nothing else.
-#   merged      the head that round R7 merged is in HEAD: w8B-8.1 e07fbc9.
+#   merged      the head that round R7 merged is in HEAD: w8B-8.1 9cfbfd1.
 #   connected   adb.sh --connected on the devices, in touch mode (a tap on the launcher; on API 37, where
 #               the shell's tap leaves the display in keyboard mode, an instrumentation sets touch mode
 #               first): every connected test, and every serial has a passing report. A class that failed
@@ -129,8 +129,8 @@ RESULTS=$REPO/app/build/outputs/androidTest-results/connected/debug
 RUNNER_ARG=-Pandroid.testInstrumentationRunnerArguments
 
 # ---- merged ------------------------------------------------------------------------------------------
-# BRANCH:HEAD as round R7 merged it (the merge commit 1379db6 has it as its second parent).
-MERGED=(w8B-8.1:e07fbc9)
+# BRANCH:HEAD as round R7 merged it (the merge commit bc043da has it as its second parent).
+MERGED=(w8B-8.1:9cfbfd1)
 
 heads_merged() {
     local pair branch head bad=0

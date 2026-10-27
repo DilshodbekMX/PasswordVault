@@ -104,7 +104,7 @@ API 24 device (`emulator-5584`), with main's APKs:
 
 | APK | Steps | Setup at 128m/256m | Two unlocks in a row | 64m/128m |
 |---|---|---|---|---|
-| debug before the fix (c6126ca) | 12/2/0 | "not enough memory" (`dumpsys meminfo` afterwards: Dalvik heap 15,247 KiB, 11,151 KiB allocated, 163,087 KiB resident: the work area was garbage by then) | the second said "not enough memory"; 20 s later the same password opened the app | "not enough memory", nothing counted |
+| debug before the fix (c9e4138) | 12/2/0 | "not enough memory" (`dumpsys meminfo` afterwards: Dalvik heap 15,247 KiB, 11,151 KiB allocated, 163,087 KiB resident: the work area was garbage by then) | the second said "not enough memory"; 20 s later the same password opened the app | "not enough memory", nothing counted |
 | debug with the fix | 11/0/0 | the list | the list, both | "not enough memory", nothing counted |
 | staging with the fix | 11/0/0 | the list | the list, both | "not enough memory", nothing counted |
 
@@ -115,7 +115,7 @@ garbage (about 134 MiB on Android 7) is collected; nothing about the derivation'
 ## Runs on 2026-10-27: the integration check of wave 8, the staging APK on the three levels
 
 `tools/emu/checks/8.sh lock` (that is `all.sh --apk` with the staging APK of `wave-8-merged`'s app, built at
-7f33d97, on every level lock.md gives each check; build-plan.md §10: "the staging build runs every script
+d4a8287, on every level lock.md gives each check; build-plan.md §10: "the staging build runs every script
 under `tools/emu/` on API 24, 28 and 37"), on the integrator's devices 5584 (API 24), 5582 (API 28, its first
 staging run of the lock) and 5580 (API 37), each level a run of its own at the same time. Then each check that
 skipped a step with staging ran again with the debug APK on that level ("steps that need a debuggable build
@@ -151,8 +151,8 @@ The logs are kept under `/home/asus/pvwork/kept/8-device-check/emu-checks-8/lock
 and 37: 8.2's line "the staging build passes the whole of `tools/emu/`" in the scope round R6 gave it, as
 8.2 ran it on its branch), on the integrator's devices 5584 (API 24) and 5580 (API 37). The app is the same
 at `wave-6-merged` and at the check's commits (the check changed test code of the layout walk, scripts and
-documents only). API 24 ran on 2026-10-19 with the APKs of b4ed17e, API 37 on 2026-10-26 with those of
-bf2bb89; a first run on API 37 on 2026-10-19 gave the same counts for E1 to E15 until the usage limit cut it
+documents only). API 24 ran on 2026-10-19 with the APKs of af5feb1, API 37 on 2026-10-26 with those of
+add4ddf; a first run on API 37 on 2026-10-19 gave the same counts for E1 to E15 until the usage limit cut it
 off in E17. E15 uses its backupCheck variant, as always. Each cell is passed/failed/skipped; a SKIPPED step
 needs run-as (staging is not debuggable) or root (the API 37 image has none). No check failed.
 
@@ -274,7 +274,7 @@ on API 28 again through `all.sh`.
 `all.sh emulator-5558` (API 28, debug) ran E1 to E3, E6, E7 and E10 to E15 there one after another, all
 passing; `all.sh --only E16 emulator-5560` printed its table and ended with exit status 1. "Against
 5.5's branch" and "against 6.1's branch" are runs with the debug APK built from those branches as they
-were on 2026-10-09 (5.5 at 413a5ef, 6.1 at f424702), in a scratch copy: the steps that wait for them ran
+were on 2026-10-09 (5.5 at 85610da, 6.1 at ce8a7e2), in a scratch copy: the steps that wait for them ran
 there, all passing.
 
 What failed or was not run:

@@ -83,7 +83,7 @@ up and where the list has no room for it. `LongTextLayoutTest` checks them at 32
 
 ## Runs
 
-2026-10-19, branch `w6A-6.2` (the app as at 0af5b03, the probe as at 6b2502e), debug build, 320 dp
+2026-10-19, branch `w6A-6.2` (the app as at a34d3df, the probe as at 3e919e4), debug build, 320 dp
 wide at 200 %:
 
 | Device | Parts and locales | Result |
@@ -96,9 +96,9 @@ wide at 200 %:
 
 Both parts take about 15 minutes on one device.
 
-2026-10-19, the review of 6.2 (the app and the probe as at e1cbeb4). The probe's check of a control's
-rounded shape is new there: with it, the walk of the app as at ca847bf found 19 buttons whose labels of
-three or four lines their round ends cut, on API 37 and 28 (commit e7cec27 lists them; logs under
+2026-10-19, the review of 6.2 (the app and the probe as at 38482fc). The probe's check of a control's
+rounded shape is new there: with it, the walk of the app as at 1b6f50b found 19 buttons whose labels of
+three or four lines their round ends cut, on API 37 and 28 (commit 74f7fd9 lists them; logs under
 `/home/asus/pvwork/kept/w6A-6.2-review/logs/`). After the review's fixes:
 
 | Device | Parts and locales | Result |

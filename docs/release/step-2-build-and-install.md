@@ -13,7 +13,7 @@ git -C /home/asus/AndroidStudioProjects/PasswordVault status --short; git -C /ho
 ```
 
 - The last line shows the version of the code, for example
-  `2ca561f Round R4 merged ...`. Write its first seven characters on the form of step 3
+  `adc871f Round R4 merged ...`. Write its first seven characters on the form of step 3
   ("Built from").
 - If other lines come before it, files were changed in the project folder and not saved in
   git. Ask Claude before you go on.

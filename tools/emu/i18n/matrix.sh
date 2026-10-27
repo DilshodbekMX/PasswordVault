@@ -482,7 +482,7 @@ part_mixing() {
 
 # ---- formats: the phone's ICU in each language ---------------------------------------------------------
 # added_in TAG: on the account's screen in TAG, "Added …" ends with today's date as the phone's ICU
-# writes it for TAG, each of its spaces a no-break space (Formatters.unbroken since w5-carry, 7b8d930:
+# writes it for TAG, each of its spaces a no-break space (Formatters.unbroken since w5-carry, c2f14be:
 # a date never breaks across two lines; architecture.md 3.5, Formatters).
 added_in() {
     local tag=$1 answer expected found deadline icu

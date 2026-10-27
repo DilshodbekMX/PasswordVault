@@ -76,9 +76,9 @@ RUNNER_ARG=-Pandroid.testInstrumentationRunnerArguments
 note() { echo "     $*"; }
 
 # ---- merged ------------------------------------------------------------------------------------------
-# BRANCH:HEAD as round R2 merged it (the merge commit fe2e9ad names them), and the two branches of R2
+# BRANCH:HEAD as round R2 merged it (the merge commit 5f60760 names them), and the two branches of R2
 # that stay out until the merge of R3.
-MERGED=(w3C-3.13:4900d13 w3C-3.14:ad6eb59 w3C-3.15:974bd21 w5-5.1:917f6cb)
+MERGED=(w3C-3.13:5b7cde4 w3C-3.14:aa841ef w3C-3.15:616a03a w5-5.1:3516edb)
 HELD=(w4A-4.2 w4A-4.3)
 
 heads_merged() {

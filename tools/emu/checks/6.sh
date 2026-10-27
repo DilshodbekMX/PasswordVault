@@ -82,9 +82,9 @@ RESULTS=$REPO/app/build/outputs/androidTest-results/connected/debug
 RUNNER_ARG=-Pandroid.testInstrumentationRunnerArguments
 
 # ---- merged ------------------------------------------------------------------------------------------
-# BRANCH:HEAD as round R6 merged them (the merge commits 8ba5cd4, 15bd178, 86ea5f3, 427efdc and 0670af3
+# BRANCH:HEAD as round R6 merged them (the merge commits 7797daa, 3f871b1, e0d7cc4, 4d01079 and e299a68
 # have them as their second parents).
-MERGED=(w6B-6.3a:f4ef21a w6B-6.3b:4f95cdf w6B-6.4a:bc69f0b w6B-6.4b:681a65d w8A-8.2:e664ade)
+MERGED=(w6B-6.3a:5e7f7a3 w6B-6.3b:51006a3 w6B-6.4a:1849f4d w6B-6.4b:553d9fb w8A-8.2:1b2a46c)
 
 heads_merged() {
     local pair branch head bad=0
