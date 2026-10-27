@@ -367,10 +367,20 @@ page_chooses() {
     pva_on Welcome 30 && pvi_open_language && pvi_dialog_is RU && pvi_cancel Welcome
 }
 
+# Android 17's App language page leaves out what it suggests (the app's language, marked, and the phone's
+# own) once the phone's languages have been set by PvLocale in more than one run on a booted device: found by
+# the integration check of wave 8, where every first i18n run of a device passed and every later one failed,
+# with `cmd locale get-app-locales` holding the app's choice each time; after the system's own
+# `cmd locale set-device-locale en-US` the page marked it again. The part sets the phone's language that way
+# first, where the device has the command (Android 17 here), and goes on either way.
 part_page() {
     if [ "$API" -lt 33 ]; then
         pv_report SKIPPED "page: the phone's own language page" "Android 13 (API 33) and later"
         return 0
+    fi
+    if pv_shell cmd locale help 2>/dev/null | grep -q 'set-device-locale'; then
+        pv_shell cmd locale set-device-locale en-US >/dev/null 2>&1
+        pv_log "the phone's language set to en-US by the system's own command: $(pv_shell cmd locale get-device-locale 2>/dev/null | tr -d '\r')"
     fi
     fresh || { pv_report FAIL "page: install and start"; return 1; }
     pv_step "page: it lists Oʻzbekcha, Ўзбекча, English and Русский" -- eval 'page_open && page_lists; rc=$?; pv_shell input keyevent KEYCODE_BACK >/dev/null; [ $rc -eq 0 ]'
