@@ -56,7 +56,7 @@ Paste this and press Enter:
 
 ```bash
 {
-if [ "$(git -C /home/asus/AndroidStudioProjects/PasswordVault status --short --ignored keystore.properties)" = "!! keystore.properties" ]; then echo "OK: git ignores keystore.properties: it can never be committed by mistake."; else echo "STOP: git does not ignore keystore.properties. Do not commit anything. Ask Claude."; fi
+if git -C /home/asus/AndroidStudioProjects/PasswordVault check-ignore -q keystore.properties; then echo "OK: git ignores keystore.properties: it can never be committed by mistake."; else echo "STOP: git does not ignore keystore.properties. Do not commit anything. Ask Claude."; fi
 }
 ```
 
