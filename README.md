@@ -17,7 +17,7 @@
 <img alt="Tests: 3,197 on the JVM and 629 on device" src="https://img.shields.io/badge/tests-3%2C197%20JVM%20%C2%B7%20629%20on%20device-1D4E89">
 <img alt="Licence: GPL-3.0" src="https://img.shields.io/badge/licence-GPL--3.0-1D4E89">
 </p>
- 
+  
 [Why PasswordVault](#why) ·
 [Features](#features) ·
 [Get started](#get-started) ·
